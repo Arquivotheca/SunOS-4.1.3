@@ -1,0 +1,378 @@
+|*	@(#)dexp.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|* 
+|* hi: stored in SCRATCH_10 --> DA
+|* lo: stored in SCRATCH_11 --> DB
+|* z:  stored in SCRATCH_12 --> DC
+|* k:  stored in SCRATCH_13 --> DD
+|* c:  stored in SCRATCH_14 --> DE
+|*
+|* First get abs(x) and store it in the 'C' register in the TI8847.
+routine xd.ex 001000001101	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	call dnotfinx;		dabs enra loaddp halt;		regtoti;	rcslsw imm2;
+|* Compare abs(x) with ln2/2
+	jgt xgtln2_2;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;		ptr5!c_dln2_onehalf
+|* Check to see whether abs(x) < twom18.  If so, return x + one.  abs(x) is in C reg.
+	;			dnop;				;		ptr5; 		ptr5!c_dtwom18
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!c_ssin
+	jlt chktwom28;		smul enra enrb halt;		regtoti;	rcssp ptr5;
+|* If not, z=x, and k = 0.
+	;			;				regtotmp;	rcslsw ptr2;		
+	jtierr hang cstat;	dnop halt;			regtotmp;	rcsmsw ptr2;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDC
+	;			dnop;				tmptoreg;	rcsmsw ptr5;
+	;			dnop;				tmptoreg;	rcslsw ptr5;
+|* Store k=0 in SCRATCH_13
+	;			dnop;				;		ptr5;		ptr5!c_sizero
+	;			dnop;				regtotmp;	rcssp ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDD
+	call z.inrange;		dnop;				tmptoreg;	rcssp ptr5;
+
+chktwom28:
+	jtierr hang cstat;	dnop halt;			;		;
+	;			dnop halt;			;		ptr5;	ptr5!c_dtwom28
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr2;
+	jlt retxsq;		dnop enra enrb loaddp halt;	regtoti;	rcsmsw ptr2;
+	;			dmul enra enrb loaddp halt;	regtoti;	rcslsw ptr2;
+|* Compute 1 + x + 0.5x^2 and store in pointer 1.
+	;			dmul;				;		ptr5;		ptr5!dhalf
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulbmul enra loaddp halt;  regtoti;	rcslsw ptr5;
+	;			dmul mulbmul;			;		;
+	;			dadd aluamul halt;		;		ptr5;		ptr5!done
+	;			dadd aluamul halt;		;		ptr5;		ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+retxsq:
+|* Compute 1 + x and store in pointer 2.
+	;			dmul;				;		ptr5;		ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+xgtln2_2:
+|* abs(x) is greater than ln2/2:
+|* Now check whether abs(x) <= ln2 * 3/2
+	;			dnop;				;		ptr5;	ptr5!c_ssin
+	jle xlteln2t1.5;	smul enra enrb halt;		regtoti;	rcssp ptr5;
+        ;                       smul;				;               ptr5;	ptr5!dzero
+        jtierr hang cstat;	halt;				;		ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dcmp enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!c_dthrsh1
+	jlt xlzero;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+|* Need to check if abs(x) > thrsh1.  If so, then Bailout.overflow.
+	;			dnop;				;		ptr5;	ptr5!c_dinvln2		
+	jgt bail.ov;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;	
+|* Multiply x * invln2  (Note: X is in RA)
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;		
+	;			dnop srccmul clkcc;		;		;
+pmpt5:
+|* Convert double to integer: k in c register. Save in SCRATCH 13 register.
+	;			dcvtint aluacreg;		;		;		
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDD
+|* Calculate t= double k
+	;			dfloat enra tioe tisp loaddp halt;titoreg;	rcssp ptr5;
+	;			dfloat enra tioe tisp loaddp halt;;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;		ptr5!c_dln2hi
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt; 		regtoti; 	rcslsw ptr5;
+	;			dmul;				;		ptr2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr2;
+|* Store x - (result) in SCRATCH_10.
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+|* get lo = t*ln2lo.  Store in SCRATCH_11 and input to RB.
+	;			dnop;				;		ptr5;		ptr5!c_dln2lo
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;		ptr5!0x700+0x0DB
+|* load 'lo' in RB and call calcz = hi - lo.
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	call calcz;		dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+xlzero:
+|* Need to check if abs(x) > thrsh2.  If so, then Bailout.underflow.
+	;			dnop;				;		ptr5;	ptr5!c_dthrsh2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dinvln2
+	jgt bail.under;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;	
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+|* Multiply x * invln2  (Note: X is in RA) 
+	;			dmul;				;		;
+|* Will store in 'C' register, since abs(x) is not needed from here on.
+	call pmpt5;		dnop srccmul clkcc;		;		;
+bail.ov:
+|* Load maxnorm and square it.  Will cause overflow.  Go to bail.out
+	;			;				;		ptr5;		ptr5!smaxnorm
+	;			smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	call bail.out cstat;	halt;				;		;
+bail.under:
+|* Load an 'underflowed' number and pass it through ALU.  jtierr to bail.out -- will report a
+|* underflow.  If no tierr, then FAST mode is on, so return zero and do not signal an error.
+	;			dnop;				;		ptr5;		ptr5!dminsub
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	jtierr bail.out cstat;	dnop halt;			;		;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+xlteln2t1.5:
+|* abs(x) <= ln2 * 3/2
+|* Now check whether x => 0.  X is left in RA.  0 in RB
+	jtierr hang cstat;	dnop;				;		ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dcmp enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!c_dln2hi
+|* hi = x + ln2hi and store in SCRATCH_10
+	jge ygezero;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+|* Gets here if x<0, ie. msb(x)=1.
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+|* Store k=-1 in SCRATCH_13
+	;			dnop;				;		ptr5;		ptr5!c_simone
+	;			dnop;				regtotmp;	rcssp ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDD
+	;			dnop;				tmptoreg;	rcssp ptr5;
+|* Store -ln2lo in SCRATCH_11 and in RB
+	;			dnop;				;		ptr5;		ptr5!c_dmln2lo
+	;			dnop enrb loaddp halt;		regtitmp;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtitmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDB
+	;			dnop;				tmptoreg;	rcsmsw ptr5;
+	call calcz;		dnop;				tmptoreg;	rcslsw ptr5;
+
+ygezero:
+|* Gets here if x=>0, ie. msb(x)=0
+	;			dsub;				;		;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+|* Store k= 1 in SCRATCH_13
+	;			dnop;				;		ptr5;		ptr5!c_sione
+	;			dnop;				regtotmp;	rcssp ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDD
+	;			dnop;				tmptoreg;	rcssp ptr5;
+|* Store ln2lo in SCRATCH_11 and in RB
+	;			dnop;				;		ptr5;		ptr5!c_dln2lo
+	;			dnop enrb loaddp halt;		regtitmp;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtitmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDB
+	;			dnop;				tmptoreg;	rcsmsw ptr5;
+	;			dnop;				tmptoreg;	rcslsw ptr5;
+calcz:
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDC
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;	
+
+z.inrange:
+|* First, check to see whether K<-1021.  If not, then UNDERFLOW.
+|* Load K in RA, -1021 in RB and Integer compare:
+	;			;				;		ptr5;		ptr5!c_sim1021
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xDC
+	jlt bail.under;		dnop enra enrb loaddp halt;	regtoti;	rcsmsw ptr5;
+|* compute t = z*z and store in C register:
+	;			dmul enra enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop srccmul clkcc;		;		ptr5;	ptr5!c_dp5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		ptr5;	ptr5!c_dp4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dmul mulaalu mulbcreg;		;		ptr5;	ptr5!c_dp3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dmul mulaalu mulbcreg;		;		ptr5;	ptr5!c_dp2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dmul mulaalu mulbcreg;		;		ptr5;	ptr5!c_dp1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dmul mulaalu mulbcreg;		;		ptr5;	ptr5!0x700+0xDC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop srccalu clkcc tioe timsw halt;titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+| Check to see if k = 0
+	;			dnop;				;		ptr5;	ptr5!c_sizero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!dtwo
+	jne result.zero;	dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+| If zero, compute one - ((z*c)/(c-2.0)-z);   c in C register as well as in DE
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			ddiv enrb loaddp halt;		tmptoti;	rcsmsw;
+	;			ddiv enrb loaddp halt;		tmptoti;	rcslsw;		
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	;			dmul tioe timsw halt;		titotmp;	rcsmsw;
+	;			dmul tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		ptr5;	ptr5!0x700+0xDC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dsub enra loaddp halt;		tmptoti;	rcslsw;
+	;			dsub;				;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+
+result.zero:
+|* compute y = one -((lo-(z*c)/(2.0-c))-hi).  z in RB, c in C.  Ptr 5 with dtwo.
+	;			dsub alubcreg;			;		;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			ddiv enrb loaddp halt;		tmptoti;	rcsmsw;
+	;			ddiv enrb loaddp halt;		tmptoti;	rcslsw;		
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	;			dmul tioe timsw halt;		titotmp;	rcsmsw;
+	;			dmul tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		ptr5;	ptr5!0x700+0xDB
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	;			dsub enrb loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDA
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			drsub alubcreg;			;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call scalbn;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|* Do scalbn(y,k)  Add k to the exponent of y.  Y is in ptr2 register.  K is in SCRATCH_13
+	pipe idl1;		snop halt;			;		imm2;
+scalbn:
+|* Y (DP) in ptr2
+|* K (integer) in SCRATCH_13, 0x700+0xDD
+	;			;				;		ptr5;		ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sitwo20 
+      	;			imul enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			i2add enrb halt;		regtoti;	rcsmsw ptr1;
+	;			;				;		ptr1;
+	rtn;			tioe tisp halt;			titoreg;	rcsmsw ptr1;
+
+dnotfinx:
+|* In order to check for infinity or NAN, we need to look at msw[abs(x)] ANDed with 0x7FF00000,
+|* which is the msw(infinity) and then compare with msw(infinity).  If it's equal, then we have
+|* NAN or infinity.
+|* Get msw[abs(x)] and store it in RA.  This is done by routing the output to the input.
+	;			dabs tioe timsw;		;		;
+	;			i2cmp enra srccalu clkcc tioe timsw halt;;	;
+	;			;				;		ptr5;	ptr5!dinf
+	;			i2land enrb loadsp halt;	regtoti;	ptr5;
+	;			tioe tisp;			;		;
+|* Unload MASKED msw[abs(x)] and store in RA, compare with lsw(infinity), already in RB.
+	;			i2cmp enra tioe tisp loadsp halt;;		;
+	;			;				;		ptr5;	ptr5!c_dln2_2
+	jeq absx.in;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	rtn;			dnop;				;		ptr5;	ptr5!c_dln2_onehalf
+|* If equal, then x is (NAN or Infinity), else, continue w/ algorithm.
+|* If there was an error, it is due to underflow or overflow.  We will
+|* deal with this later.  (i.e.  ignore error here).
+|* 
+absx.in: 
+|* Result was a NAN or infinity.  
+|* Need to check whether it was  (-infinity) as exp(-infinity)=0. 
+|* Compare with x with (+inf).  If error, then x=NAN.  If eq, x=+inf.
+|* If (-inf), then store 0 in reg2 and call idle.  Else, call idle. (reg 2 already
+|* contains the result: exp(NAN) is NAN, exp(+inf)=+inf, exp(-inf)=0.
+	;			;				;		ptr5;		ptr5!dinf
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dcmp;				;		;	
+|* If tierr, result was NAN. Bailout.
+	jtierr bail.out cstat;	dcmp;				;		;
+|* If result is not equal, x =  (-inf) so load ptr2 with 0.0; Else, return x.
+	;			dcmp;				;		ptr5;		ptr5!dzero
+	jeq retexp1;		dnop halt;			regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr1;
+	;			;				tmptoreg;	rcsmsw ptr1;
+	call idle1;		;				tmptoreg;	rcslsw ptr1;
+retexp1:
+	;			;				regtotmp;	rcsmsw ptr2;
+	;			;				regtotmp; 	rcslsw ptr2;
+	;			;				;		ptr1;
+	;			;				tmptoreg;	rcsmsw ptr1;
+	call idle1;		;				tmptoreg;	rcslsw ptr1;
+
+bail.out:
+|* Signal an error to the cpu so it can recompute:  Replace ptr1 into ptr2.
+        hng;                    halt;                           ;      		;
+        call idle1;             halt;                           ;		;

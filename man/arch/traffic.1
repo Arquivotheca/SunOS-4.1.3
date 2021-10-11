@@ -1,0 +1,85 @@
+.\" @(#)traffic.1 1.1 92/07/30 SMI;
+.TH TRAFFIC 1 "28 Aug 1985"
+.SH NAME
+traffic \- graphical display of ethernet traffic
+.SH SYNOPSIS
+.B traffic
+[
+.B \-h  
+.I host
+] [
+.B \-s  
+.I subwindows
+]
+.br
+.SH DESCRIPTION
+.I Traffic
+graphically displays ethernet traffic.  It gets statistics from
+.IR etherd(8c),
+running on machine \fIhost\fP.  The tool is divided into subwindows,
+each giving a different view of network traffic.
+.SH OPTIONS
+.IP "\fB\-h\fI host\fR"
+Specify a host from which to get statistics.
+The default value of \fIhost\fP is the machine that
+.IR traffic
+is running on. 
+.IP "\fB\-s\fI subwindows\fR
+Specify the number of subwindows to display initially.  
+The default value of \fIsubwindows\fP is 1.
+.SH SUBWINDOWS
+.LP
+To the right of each subwindow is a panel that selects what
+the subwindow is viewing.  When \fISize\fP is checked,
+than the size distribution of packets is displayed.  \fIProto\fP
+is for protocol, \fISrc\fP is for source of packet, and \fIDst\fP
+is for destination of packet.  Since it is not possible to
+show all possible sources, when \fISrc\fP is selected, only the
+8 highest sources are displayed (and similarly for \fIDst\fP).
+.LP
+For each of these choices, the distribution is displayed by 
+a histogram.  The panel above each subwindow controls characteristics
+of the histograms.  At the left of the panel is a shaded square,
+corresponding to one of the two shades of bars in the histogram.
+You can switch the shade by either clicking on the square with the
+left button, or bringing up a menu over the square with the right mouse
+button.
+When the light colored square is visible, then
+the slider in the center of the panel controls how often the
+light colored bars are updated.  When the dark square is visible,
+then the slider refers to the dark bars of the histogram.  To the
+right of the slider is a choice of \fIAbs\fP versus \fIRel\fP.
+This selects whether the height of the histogram is \fIAbsolute\fP
+in packets per second, or \fIRelative\fP in percent of total packets
+on the ethernet.  Next in the panel are three small horizontal bars.
+When selected (that is, when a check mark appears to the left of
+the three bars),
+a horizontal grid appears on the histogram.
+Finally the button marked \fIDelete Me\fP will delete the subwindow.
+.LP
+The right hand panel also has a choice for \fILoad\fP.  Load is
+represented as a strip chart, rather than a histogram.
+The maximum value of the
+graph represents a load of 100%, that is 10 megabits per second
+on the ethernet.  When \fILoad\fP is selected, there is only one
+slider, and no \fIRel\fP versus \fIAbs\fP choice.
+.LP
+At the very top of the tool is a panel that contains filters, as
+well as a \fISplit\fP button that splits the tool and creates
+a new subwindow, and a \fIQuit\fP button that exits the tool.
+The filters apply to all the subwindows.  When a filter is selected,
+a check mark appears to the left of the word \fIFilter\fP.
+There can be
+more than one filter active at the same time.
+The meaning of each filter is as follows.  \fISrc\fP is 
+a host or net, which can be specified either by name or address
+(similarlry for \fIDst\fP).  \fIProto\fP is an ip protocol, and
+can either be a name (such as \fIudp\fP, \fIicmp\fP) or a number.
+\fILnth\fP is either a packet length, or a range of lengths
+separated by a dash.
+.SH "SEE ALSO"
+etherd(8c)
+.SH BUGS
+If multiple copies of \fItraffic\fP are using the same copy of
+\fIetherd\fP, and one of them invokes a filter, then all the copies
+of \fItraffic\fP will be filtered.

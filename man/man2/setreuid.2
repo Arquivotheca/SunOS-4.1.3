@@ -1,0 +1,128 @@
+.\" @(#)setreuid.2 1.1 92/07/30 SMI; from UCB 4.3 and S5R3
+.TH SETREUID 2 "21 January 1990"
+.SH NAME
+setreuid \- set real and effective user IDs
+.SH SYNOPSIS
+.nf
+.ft B
+int setreuid(ruid, euid)
+int ruid, euid;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  setreuid()  ""  \fLsetreuid()\fP
+.IX  "processes and protection"  setreuid()  ""  \fLsetreuid()\fP
+.IX  "user ID"  "set real and effective \(em \fLsetreuid()\fR"
+.IX  "real user ID"  "set \(em \fLsetreuid()\fR"
+.IX  "effective user ID"  "set \(em \fLsetreuid()\fR"
+.LP
+.B setreuid(\|)
+is used to set the real and effective user
+.SM ID\s0s
+of the calling process.  If
+.I ruid
+is \-1, the real user
+.SM ID
+is not changed; if
+.I euid
+is \-1, the effective user
+.SM ID
+is not changed.
+The real and effective user
+.SM ID\s0s
+may be set to different values
+in the same call.
+.LP
+If the effective user
+.SM ID
+of the calling process is super-user,
+the real user
+.SM ID
+and the effective user
+.SM ID
+can be set to any legal value.
+.LP
+If the effective user
+.SM ID
+of the calling process is not super-user,
+either the real user
+.SM ID
+can be set to the effective user
+.SM ID\s0,
+or the effective user
+.SM ID
+can either be set to the saved set-user
+.SM ID
+from
+.BR execve (2V)
+or the real user
+.SM ID\s0.
+Note: if a set-\s-1UID\s0
+process sets its effective user
+.SM ID
+to its real user
+.SM ID\s0,
+it can still set its effective user
+.SM ID
+back to the saved set-user
+.SM ID\s0.
+.LP
+In either case, if the real user
+.SM ID
+is being changed (that is, if
+.I ruid
+is not \-1), or the effective user
+.SM ID
+is being changed to a value not equal to the real user
+.SM ID\s0,
+the saved set-user
+.SM ID
+is set equal to the new effective user
+.SM ID\s0.
+.SH RETURN VALUES
+.B setreuid(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.B setreuid(\|)
+will fail and neither of the user
+.SM ID\s0s
+will be changed if:
+.TP 15
+.SM EINVAL
+The value of
+.I ruid
+or
+.I euid
+is less than 0 or greater than
+.SB USHRT_MAX
+(defined in
+.BR <sys/limits.h> ).
+.TP
+.SM EPERM
+The calling process' effective user
+.SM ID
+is not the super-user and a change
+other than changing the real user
+.SM ID
+to the effective user
+.SM ID\s0,
+or changing the effective user
+.SM ID
+to the real user
+.SM ID
+or the saved set-user
+.SM ID\s0,
+was specified.
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR getuid (2V),
+.BR setregid (2),
+.BR setuid (3V)

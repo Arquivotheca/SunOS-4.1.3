@@ -1,0 +1,225 @@
+#! /bin/sh -x
+#
+# %Z%%M% %I% %E% Copyr 1987 Sun Micro
+#
+#	makeSCCSsrctape type [intsrc|sunsrc] [1|2|3]
+#
+
+#
+# 1/4" tape layout, we also use these for the 1/2" tapes
+#
+if [ `whoami` != root ]; then
+        echo ${cmdname}: must be run as root
+        exit 2
+fi
+# if [ "$3" = "3" -a "$1" != "ar" -a "$1" != "st" -a "$2" != "intsrc" -a "$2" != "sunsrc" ]; then
+#        echo ${cmdname}: $1 only for $3 tape
+#        exit 2
+# fi
+#
+# if [ -n "$3" -a "$3" != 1 -a "$3" != 2 -a "$3" != 3 ]; then
+#        echo ${cmdname}: invalid partial maketape specified $2
+#        exit 2
+# fi
+
+tape1="5bin 5include 5lib SCCS adm bin demo diagnostics etc files include ucb lib"
+tape2="lang"
+tape3="sys"
+tape4="usr.lib vax"
+tape5="man games"
+tape6="old pub release sccs sundist usr.bin usr.etc"
+tape7="sys/sundev usr.lib/libsuntool usr.lib/vfont"
+
+intsrc_exclude="/usr/src/sundist/exclude.lists/intsrc_exclude_list"
+sunsrc_exclude="/usr/src/sundist/exclude.lists/sunsrc_exclude_list"
+winsrc="/usr/src/sundist/exclude.lists/winsrc_list"
+
+cd /usr/src/SCCS_DIRECTORIES
+
+cmdname=`basename $0`
+
+if [ "$1" = "mt" ]; then
+	tape=/dev/nrmt0
+	bs=20
+elif [ "$1" = "ar" ]; then
+	tape=/dev/nrar0
+	bs=200
+elif [ "$1" = "st" ]; then
+	tape=/dev/nrst0
+	bs=200
+else
+	echo ${cmdname}: missing or invalid tape type $1
+	exit 2
+fi
+
+if [ "$2" = "intsrc" -o "$2" = "sunsrc" ]; then
+
+	if [ "$2" = "sunsrc" ]; then
+		exclude_flags=X
+		exclude_files=${sunsrc_exclude}
+	else
+		exclude_flags=X
+		exclude_files=${intsrc_exclude}
+	fi
+
+	#
+exclude_flags_two=XX
+exclude_flags_four=XXXX
+
+lib_exclude="/usr/src/sundist/exclude.lists/intsrc_lib_exclude $exclude_files"
+sys_exclude="/usr/src/sundist/exclude.lists/intsrc_sys_exclude $exclude_files"
+
+
+	# 1/2" intsrc and sunsrc are 4 tapes
+	#
+	if [ "$1" = "mt" ]; then
+
+	   if [ -z "$3" -o "$3" = "1" ]; then
+
+                echo "load 1/2\" tape #1, then press RETURN"; read x
+		#
+		# 1/2" tape #1(contents of 1/4" tapes #1 & #2)
+		#
+		mt -f $tape rew
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		tar cvfb$exclude_flags $tape $bs $exclude_files $tape1 $tape2
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		mt -f $tape rew
+	   fi
+           if [ -z "$3" -o "$3" = "2" ]; then
+ 
+                echo "load 1/2\" tape #2, then press RETURN"; read x
+                #
+                # 1/2" tape #2(contents of 1/4" tapes #3 & #4)
+                #
+                mt -f $tape rew
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags_four $tape $bs $sys_exclude $lib_exclude $tape3 $tape4
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                mt -f $tape rew
+           fi
+	   if [ -z "$3" -o "$3" = "3" ]; then
+
+                echo "load 1/2\" tape #3, then press RETURN"; read x
+		#
+		# 1/2" tape #3 (contents of 1/4" tapes #5 & #6)
+		#
+		mt -f $tape rew
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags $tape $bs $exclude_files $tape5 $tape6
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		mt -f $tape rew
+	   fi
+           if [ -z "$3" -o "$3" = "4" ]; then
+ 
+                echo "load 1/2\" tape #4, then press RETURN"; read x
+                #
+                # 1/2" tape #4 (contents of 1/4" tapes #7)
+                #
+                mt -f $tape rew
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags $tape $bs $exclude_files $tape7
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                mt -f $tape rew
+
+
+		echo "Done with 1/2\" tapes."
+	   fi
+	#
+	# 1/4" intsrc and sunsrc are 6 tapes
+	#
+	elif [ \( "$1" = "st" -o "$1" = "ar" \) ]; then
+
+            if [ -z "$3" -o "$3" = "1" ]; then
+
+                echo "load 1/4\" tape #1, then press RETURN"; read x
+		#
+		# 1/4" tape #1
+		#
+		mt -f $tape rew
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		tar cvfb$exclude_flags $tape $bs $exclude_files $tape1
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		mt -f $tape rew
+	    fi
+	    if [ -z "$3" -o "$3" = "2" ];then
+
+                echo "load 1/4\" tape #2, then press RETURN"; read x
+		#
+		# 1/4" tape #2
+		#
+		mt -f $tape rew
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		tar cvfb$exclude_flags $tape $bs $exclude_files $tape2
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		mt -f $tape rew
+	    fi
+	    if [ -z "$3" -o "$3" = "3" ]; then
+
+                echo "load 1/4\" tape #3, then press RETURN"; read x
+		#
+		# 1/4" tape #3
+		#
+		mt -f $tape rew
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags_two $tape $bs $sys_exclude $tape3
+		dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+		mt -f $tape rew
+	    fi
+            if [ -z "$3" -o "$3" = "4" ]; then
+ 
+                echo "load 1/4\" tape #4, then press RETURN"; read x
+                #
+                # 1/4" tape #4
+                #
+                mt -f $tape rew
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags_two $tape $bs $lib_exclude $tape4
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                mt -f $tape rew
+            fi
+            if [ -z "$3" -o "$3" = "5" ]; then
+ 
+                echo "load 1/4\" tape #5, then press RETURN"; read x
+                #
+                # 1/4" tape #5
+                #
+                mt -f $tape rew
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags $tape $bs $exclude_files $tape5
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                mt -f $tape rew
+            fi
+            if [ -z "$3" -o "$3" = "6" ]; then
+ 
+                echo "load 1/4\" tape #6, then press RETURN"; read x
+                #
+                # 1/4" tape #6
+                #
+                mt -f $tape rew
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags $tape $bs $exclude_files $tape6
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                mt -f $tape rew
+            fi
+           if [ -z "$3" -o "$3" = "7" ]; then
+ 
+                echo "load 1/4\" tape #7, then press RETURN"; read x
+                #
+                # 1/4" tape #7
+                #
+                mt -f $tape rew
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                tar cvfb$exclude_flags $tape $bs $exclude_files $tape7
+                dd if=/usr/src/sundist/Copyright of=$tape conv=sync
+                mt -f $tape rew
+            fi 
+
+		echo "Done with 1/4\" tapes."
+	fi
+else
+
+	echo ${cmdname}: unknown source category $2
+	exit 2
+
+fi

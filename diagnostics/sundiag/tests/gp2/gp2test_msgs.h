@@ -1,0 +1,145 @@
+
+/*      @(#)gp2test_msgs.h 1.3 88/04/26 SMI          */
+ 
+/* 
+ * Copyright (c) 1988 by Sun Microsystems, Inc. 
+ */
+	/* gp2test.c */
+extern char *stopped_msg;
+extern char *rootfd_msg;
+extern char *winfd_msg;
+extern char *devtopfd_msg;
+	/* gp2_probe.c */
+extern char *gp2_open_msg;
+	/* gp2gpcitest.c */
+extern char *opengp_msg1;
+extern char *opengp_msg2;
+extern char *init_blk_msg1;
+extern char *init_blk_msg2;
+extern char *hardware_msg1;
+extern char *hardware_msg2;
+extern char *hardware_msg3;
+extern char *mul_matrix_msg1;
+extern char *mul_matrix_msg2;
+extern char *mul_point_msg1;
+extern char *mul_point_msg2;
+extern char *proc_line_msg1;
+extern char *proc_line_msg2;
+extern char *init_blk1_msg1;
+extern char *init_blk1_msg2;
+extern char *init_blk2_msg1;
+extern char *init_blk2_msg2;
+extern char *init_arbiter_msg1;
+extern char *init_arbiter_msg2;
+extern char *clrzb_msg1;
+extern char *clrzb_msg2;
+extern char *gp1poly3_msg1;
+extern char *gp1poly3_msg2;
+extern char *gp1poly3_msg3;
+extern char *gp1poly3_msg4;
+extern char *gp2_arb_poly3_msg1;
+extern char *gp2_arb_poly3_msg2;
+	/* gp2_hardware.c */
+extern char *data_err_msg1;
+extern char *data_err_msg2;
+extern char *xp_local_ram_msg1;
+extern char *xp_local_ram_msg2;
+extern char *xp_shared_ram_msg1;
+extern char *xp_shared_ram_msg2;
+extern char *xp_sequencer_msg1;
+extern char *xp_sequencer_msg2;
+extern char *xp_alu_msg1;
+extern char *xp_alu_msg2;
+extern char *xp_rp_fifo_msg1;
+extern char *xp_rp_fifo_msg2;
+extern char *rp_local_ram_msg1;
+extern char *rp_local_ram_msg2;
+extern char *rp_local_ram_msg3;
+extern char *rp_shared_ram_msg1;
+extern char *rp_shared_ram_msg2;
+extern char *rp_shared_ram_msg3;
+extern char *rp_sequencer_msg1;
+extern char *rp_sequencer_msg2;
+extern char *rp_sequencer_msg3;
+extern char *rp_alu_msg1;
+extern char *rp_alu_msg2;
+extern char *rp_alu_msg3;
+extern char *rp_pp_fifo_msg1;
+extern char *rp_pp_fifo_msg2;
+extern char *rp_pp_fifo_msg3;
+extern char *pp_ldx_ago_msg1;
+extern char *pp_ldx_ago_msg2;
+extern char *pp_ldx_ago_msg3;
+extern char *pp_ldx_ago_msg4;
+extern char *pp_ady_ago_msg1;
+extern char *pp_ady_ago_msg2;
+extern char *pp_ady_ago_msg3;
+extern char *pp_ady_ago_msg4;
+extern char *pp_adx_ago_msg1;
+extern char *pp_adx_ago_msg2;
+extern char *pp_adx_ago_msg3;
+extern char *pp_adx_ago_msg4;
+extern char *pp_sequencer_msg1;
+extern char *pp_sequencer_msg2;
+extern char *pp_sequencer_msg3;
+extern char *pp_sequencer_msg4;
+extern char *pp_alu_msg1;
+extern char *pp_alu_msg2;
+extern char *pp_alu_msg3;
+extern char *pp_alu_msg4;
+extern char *pp_rw_zbuf_msg1;
+extern char *pp_rw_zbuf_msg2;
+extern char *pp_rw_zbuf_msg3;
+extern char *pp_rw_zbuf_msg4;
+extern char *pp_zbuf_msg1;
+extern char *pp_zbuf_msg2;
+extern char *pp_zbuf_msg3;
+extern char *pp_zbuf_msg4;
+extern char *pp_zbuf_msg5;
+extern char *post_mem_msg1;
+extern char *post_mem_msg2;
+extern char *post_alu_msg1;
+extern char *post_alu_msg2;
+extern char *post_fifo_msg1;
+extern char *post_fifo_msg2;
+extern char *post_pp_ago_msg1;
+extern char *post_pp_ago_msg2;
+extern char *post_ppld_msg1;
+extern char *post_ppld_msg2;
+	/* gp2_matrix.c */
+extern char *rotmat_msg;
+extern char *set_mat_msg1;
+extern char *set_mat_msg2;
+extern char *chk_matrix_msg;
+	/* gp2_point.c */
+extern char *get_matrix_msg1;
+extern char *get_matrix_msg2;
+extern char *set_pts_msg1;
+extern char *set_pts_msg2;
+extern char *multiply_pts_msg;
+extern char *set_matrix_msg1;
+extern char *set_matrix_msg2;
+extern char *set_line_msg1;
+extern char *set_line_msg2;
+extern char *set_line_msg3;
+extern char *check_line_msg1;
+extern char *check_line_msg2;
+extern char *check_line_msg3;
+extern char *check_line_msg4;
+extern char *check_line_msg5;
+extern char *start_string;
+extern char *end_string;
+extern char *cmp_clip_msg;
+	/* gp2_polygon.c */
+extern char *create_screen_msg;
+extern char *paint_polygons_msg1;
+extern char *paint_polygons_msg2;
+extern char *paint_polygons_msg3;
+extern char *paint_polygons_msg4;
+extern char *paint_polygons_msg5;
+extern char *do_arbitration_msg1;
+extern char *do_arbitration_msg2;
+extern char *pix_clr_msg;
+extern char *display_msg1;
+extern char *display_msg2;
+extern char *display_msg3;

@@ -1,0 +1,109 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)kill.1 1.1 92/07/30 SMI; from UCB 4.3
+.TH KILL 1 "16 November 1987"
+.SH NAME
+kill \- send a signal to a process, or terminate a process
+.SH SYNOPSIS
+.B kill
+[
+.BI \- signal
+]
+.I pid
+\fB\&.\|.\|.\fP
+.br
+.B kill
+.B \-l
+.SH DESCRIPTION
+.IX  "kill command"  ""  "\fLkill\fP \(em terminate process"
+.IX  process  terminate  ""  "terminate \(em \fLkill\fR"
+.IX send "signal to process \(em \fLkill\fR"
+.B kill
+sends the
+.SB TERM
+(terminate, 15) signal to the processes with the specified
+.IR pid s.
+If a signal name or number preceded by
+.RB ` \- '
+is given as first argument, that signal is sent instead of terminate.
+The signal names are listed by using the
+.B \-l
+option, and are as given in
+.BR <signal.h> ,
+stripped of the common
+.SB SIG
+prefix.
+.LP
+The terminate signal will kill processes that do not catch the signal, so
+.RB ` "kill \-9 " .\|.\|.'
+is a sure kill, as the
+.SB KILL
+.B (9)
+signal cannot be caught.
+By convention, if process number 0 is specified, all members
+in the process group (that is, processes resulting from 
+the current login) are signaled (but beware: this works only if you use
+.BR sh (1);
+not if you use
+.BR csh (1).)
+Negative process numbers also have special meanings; see
+.BR kill (2V)
+for details.
+The killed processes must belong to the current user unless
+he is the super-user.
+.LP
+To shut the system down and bring it up single user
+the super-user may send the initialization process a
+.SB TERM
+(terminate) signal by
+.RB ` "kill 1" ';
+see
+.BR init (8).
+To force
+.B init
+to close and open terminals according to what is currently in
+.B /etc/ttytab
+use
+.RB ` "kill \-\s-1HUP\s0 1" '
+(sending a hangup signal to process 1).
+.LP
+The shell reports the process number of an asynchronous process
+started with
+.RB ` & '
+(run in the background).
+Process numbers can also be found by using
+.BR ps (1).
+.LP
+.B kill
+is built in to
+.BR csh (1);
+it allows job specifiers, such as
+.RB ` "kill  % " \|.\|.\|.',
+in place of
+.B kill
+arguments.  See
+.BR csh (1)
+for details.
+.SH OPTIONS
+.TP
+.B \-l
+Display a list of signal names.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/ttytab
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR ps (1),
+.BR kill (2V),
+.BR sigvec(2),
+.BR init (8)
+.SH BUGS
+A replacement for
+.RB ` "kill  0" '
+for
+.BR csh (1)
+users should be provided.

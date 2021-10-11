@@ -1,0 +1,495 @@
+.\" @(#)sendmail.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH SENDMAIL 8 "5 October 1990"
+.SH NAME
+sendmail \- send mail over the internet
+.SH SYNOPSIS
+.B /usr/lib/sendmail
+[
+.B \-ba
+] [
+.B \-bd
+] [
+.B \-bi
+] [
+.B \-bm
+] [
+.B \-bp
+] [
+.B \-bs
+]
+.if n .ti +0.5i
+[
+.B \-bt
+] [
+.B \-bv
+] [
+.B \-bz
+]
+.if t .ti +0.5i
+[
+.BI \-C file
+] [
+.BI \-d X
+]
+.if n .ti +0.5i
+[
+.BI \-F fullname
+] [
+.BI \-f name
+] [
+.BI \-h N
+] [
+.B \-n
+] [
+.BI \-o "x value"
+]
+.if n .ti +0.5i
+[
+\fB\-q\fR[
+.I time
+] ]
+.if t .ti +0.5i
+[
+.BI \-r name
+] [
+.BI \-R string
+] [
+.B \-t
+] [
+.B \-v
+] [
+.IR address " .\|.\|. ]"
+.SH DESCRIPTION
+.IX  "sendmail command"  ""  "\fLsendmail\fP \(em mail delivery system"
+.IX  "mail delivery server" "" "mail delivery server \(em \fLsendmail\fP"
+.B sendmail
+sends a message to one or more
+people,
+routing the message over whatever networks are necessary.
+.B sendmail
+does internetwork forwarding as
+necessary
+to deliver the message to the correct place.
+.LP
+.B sendmail
+is not intended as a user interface
+routine;
+other programs provide user-friendly front ends;
+.B sendmail
+is used only to deliver pre-formatted
+messages.
+.LP
+With no flags,
+.B sendmail
+reads its standard input up to an
+.SM EOF\s0,
+or a line with a single dot
+and sends a copy of the letter found there
+to all of the addresses listed.
+It determines the network to use
+based on the syntax and contents of the addresses.
+.LP
+Local addresses are looked up in the local
+.BR aliases (5)
+file, or by using the 
+Network Information Service
+(\s-1NIS\s0),
+and aliased appropriately.
+In addition, if there is a
+.B \&.forward
+file in a recipient's  home directory,
+.B sendmail
+forwards a copy of each message to the list of recipients that
+file contains.  Aliasing can be prevented by preceding the address
+with a backslash.
+Normally the sender is not included in alias expansions, for example,
+if `john' sends to `group', and `group'
+includes `john' in the expansion,
+then the letter will not be delivered to `john'.
+.LP
+.B sendmail
+will also route mail directly to other known hosts in a local
+network.  The list of hosts to which mail is directly sent is
+maintained in the file
+.BR /usr/lib/mailhosts .
+.SH OPTIONS
+.TP 15
+.B \-ba
+Go into
+\s-1ARPANET\s0
+mode.  All input lines must end with a
+.SM LINEFEED\s0,
+and all messages will be generated with a
+.SM CR-LF
+at the end.  Also, the ``From:'' and ``Sender:''
+fields are examined for the name of the sender.
+.TP
+.B \-bd
+Run as a daemon, waiting for incoming
+.SM SMTP
+connections.
+.TP
+.B \-bi
+Initialize the alias database.
+.TP
+.B \-bm
+Deliver mail in the usual way (default).
+.TP
+.B \-bp
+Print a summary of the mail queue.
+.TP
+.B \-bs
+Use the
+\s-2SMTP\s0
+protocol as described in
+.SM RFC
+821.  This flag implies all the operations of the
+.B \-ba
+flag that are compatible with
+\s-2SMTP\s0.
+.TP
+.B \-bt
+Run in address test mode.
+This mode reads addresses and shows the steps in parsing;
+it is used for debugging configuration tables.
+.TP
+.B \-bv
+Verify names only \(em do not try to collect or deliver a message.
+Verify mode is normally used for validating users or mailing lists.
+.TP
+.B \-bz
+Create the configuration freeze file.
+.TP
+.BI \-C file
+Use alternate configuration file.
+.TP
+.BI \-d X
+Set debugging value to
+.IR X .
+.TP
+.BI \-F fullname
+Set the full name of the sender.
+.TP
+.BI \-f name
+Sets the name of the ``from'' person (that is, the sender of the mail).
+.B \-f
+can only be used by ``trusted'' users (who are
+listed in the config file).
+.TP
+.BI \-h N
+Set the hop count to
+.IR N .
+The hop count is incremented every time the mail is processed.
+When it reaches a limit, the mail is returned with an error message,
+the victim of an aliasing loop.
+.TP
+.BI \-M id
+Attempt to deliver the queued message with message-id
+.BR id .
+.TP
+.B \-n
+Do not do aliasing.
+.TP
+.BI \-o x\|value
+Set option
+.I x
+to the specified
+.IR value .
+Options are described below.
+.TP
+.BI \-q\fR[ time]
+Processed saved messages in the queue at given intervals.
+If
+.I time
+is omitted, process the queue once.
+.I time
+is given as a tagged number, with
+.B s
+being seconds,
+.B m
+being minutes,
+.B h
+being hours,
+.B d
+being days, and
+.B w
+being weeks.
+For example,
+.B \-q1h30m
+or
+.B \-q90m
+would both set the timeout to one hour thirty minutes.
+.TP
+.BI \-r name
+An alternate and obsolete form of the
+.B \-f
+flag.
+.TP
+.BI \-R string
+Go through the queue of pending mail and attempt to deliver any
+message with a recipient containing the specified string.  This is
+useful for clearing out mail directed to a machine which has been
+down for awhile.
+.TP
+.B \-t
+Read message for recipients.
+``To:'', ``Cc:'', and ``Bcc:''
+lines will be scanned for people to send to.
+The ``Bcc:'' line will be deleted before transmission.
+Any addresses in the argument list will be suppressed.
+.TP
+.B \-v
+Go into verbose mode.
+Alias expansions will be announced, etc.
+.SH "PROCESSING OPTIONS"
+.LP
+There are also a number of processing options that may be set.
+Normally these will only be used by a system administrator.
+Options may be set either on the command line using the
+.B \-o
+flag or in the configuration file.
+These are described in detail in the
+\fIInstallation and Operation Guide\fP\|.
+The options are:
+.TP
+.BI A file
+Use alternate alias file.
+.TP
+.B c
+On mailers that are considered ``expensive'' to connect to,
+do not initiate immediate connection.  This requires queueing.
+.TP
+.BI d x
+Set the delivery mode to
+.BR x .
+Delivery modes are
+.B i
+for interactive (synchronous) delivery,
+.B b
+for background (asynchronous) delivery, and
+.B q
+for queue only \(em that is, actual delivery is done
+the next time the queue is run.
+.TP
+.B D
+Run
+.BR newaliases (8)
+to automatically rebuild the alias database, if necessary.
+.TP
+.BI e x
+Set error processing to mode
+.BR x .
+Valid modes are
+.B m
+to mail back the error message,
+.B w
+to ``write'' back the error message
+(or mail it back if the sender is not logged in),
+.B p
+to print the errors on the terminal (default),
+`q' to throw away error messages (only exit status is returned),
+and `e' to do special processing for the BerkNet.
+If the text of the message is not mailed back by modes
+.B m
+or
+.B w
+and if the sender is local to this machine,
+a copy of the message is appended to the file
+.B dead.letter
+in the sender's home directory.
+.TP
+.BI F mode
+The mode to use when creating temporary files.
+.TP
+.B f
+Save
+.SM UNIX\s0-system-style
+``From'' lines at the front of messages.
+.TP
+.BI g N
+The default group
+.SM ID
+to use when calling mailers.
+.TP
+.BI H file
+The
+.SB SMTP
+help file.
+.TP
+.B i
+Do not take dots on a line by themselves as a message terminator.
+.TP
+.BI L n
+The log level.
+.TP
+.B m
+Send to ``me'' (the sender) also if I am in an alias expansion.
+.TP
+.B o
+If set, this message may have old style headers.
+If not set, this message is guaranteed to have new style headers
+(that is, commas instead of spaces between addresses).
+If set, an adaptive algorithm is used that will correctly
+determine the header format in most cases.
+.TP
+.BI Q queuedir
+Select the directory in which to queue messages.
+.TP
+.BI r timeout
+The timeout on reads; if none is set,
+.B sendmail
+will wait forever for a mailer.
+.TP
+.BI S file
+Save statistics in the named file.
+.TP
+.B s
+Always instantiate the queue file,
+even under circumstances where it is not strictly necessary.
+.TP
+.BI T time
+Set the timeout on messages in the queue to the specified time.
+After sitting in the queue for this amount of time,
+they will be returned to the sender.
+The default is three days.
+.TP
+.BI t stz,dtz
+Set the name of the time zone.
+.TP
+.BI u N
+Set the default user id for mailers.
+.LP
+If the first character of the user name is a vertical bar,
+the rest of the user name is used as the name of a program
+to pipe the mail to.
+It may be necessary to quote the name of the user to keep
+.B sendmail
+from suppressing the blanks from between arguments.
+.LP
+.B sendmail
+returns an exit status describing what it
+did.
+The codes are defined in
+.B sysexits.h
+.ta 3n +\w'EX_UNAVAILABLE'u+3n
+.de XX
+.ti \n(.iu
+..
+.in +\w'EX_UNAVAILABLE'u+6n
+.XX
+	\s-1EX_OK\s0	Successful completion on all addresses.
+.XX
+	\s-1EX_NOUSER\s0	User name not recognized.
+.XX
+	\s-1EX_UNAVAILABLE\s0	Catchall meaning necessary resources
+were not available.
+.XX
+	\s-1EX_SYNTAX\s0	Syntax error in address.
+.XX
+	\s-1EX_SOFTWARE\s0	Internal software error,
+including bad arguments.
+.XX
+	\s-1EX_OSERR\s0	Temporary operating system error,
+such as \*(lqcannot fork\*(rq.
+.XX
+	\s-1EX_NOHOST\s0	Host name not recognized.
+.XX
+	\s-1EX_TEMPFAIL\s0	Message could not be sent immediately,
+but was queued.
+.LP
+If invoked as
+.BR newaliases ,
+.B sendmail
+rebuilds the alias database.  If invoked as
+.BR mailq ,
+.B sendmail
+prints the contents of the mail queue.
+.SH FILES
+Except for
+.BR /etc/sendmail.cf ,
+these pathnames are all specified in
+.BR /etc/sendmail.cf .
+Thus, these pathnames are only approximations.
+.PD 0
+.TP 20
+.B /etc/aliases
+raw data for alias names
+.TP
+.B /etc/aliases.dir
+.TP
+.B /etc/aliases.pag
+data base of alias names
+.TP
+.B /etc/sendmail.cf
+configuration file
+.TP
+.B /etc/sendmail.fc
+frozen configuration
+.TP
+.B /etc/sendmail.st
+collected statistics
+.TP
+.B /usr/bin/mail
+to deliver local mail
+.TP
+.B /usr/bin/uux
+to deliver uucp mail
+.TP
+.B /usr/lib/mailhosts
+list of hosts to which mail can be sent directly
+.TP
+.B /usr/lib/sendmail.hf
+help file
+.TP
+.B /var/spool/mqueue/*
+temp files and queued mail
+.TP
+.B ~/.forward
+list of recipients for forwarding messages
+.PD
+.SH SEE ALSO
+.BR biff (1),
+.BR bin-mail (1),
+.BR mail (1),
+.BR aliases (5)
+.BR newaliases (8),
+.LP
+.TX ADMIN
+.LP
+Su, Zaw-Sing, and Jon Postel,
+.IR "The Domain Naming Convention for Internet User Applications" ,
+.SM RFC
+819,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+August 1982.
+.LP
+Postel, Jon,
+.IR "Simple Mail Transfer Protocol" ,
+.SM RFC
+821,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+August 1982.
+.LP
+Crocker, Dave,
+.I Standard for the Format of
+.I
+.SM ARPA\s0-Internet
+.IR "Text Messages" ,
+.SM RFC
+822,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+August 1982.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

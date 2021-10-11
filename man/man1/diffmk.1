@@ -1,0 +1,110 @@
+.\"	@(#)diffmk.1 1.1 92/07/30 SMI; from S5R2 6.2 83/09/02
+.TH DIFFMK 1 "18 January 1988"
+.SH NAME
+diffmk \- mark differences between versions of a troff input file
+.SH SYNOPSIS
+.B diffmk
+.I oldfile newfile markedfile
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "diffmk command"  ""  "\fLdiffmk\fP \(em add change marks to documents"
+.IX  "document production"  diffmk  ""  "\fLdiffmk\fP \(em add change marks"
+.LP
+.B diffmk
+compares two versions of a file and creates a
+third version that includes \*(lqchange mark\*(rq
+.RB ( .mc )
+commands for
+.BR nroff (1)
+and 
+.BR troff (1).
+.I oldfile
+and
+.I newfile
+are the old and new versions of the file.
+.B diffmk
+generates
+.IR markedfile ,
+which, contains the text from
+.I newfile
+with 
+.BR troff (1)
+\*(lqchange mark\*(rq requests
+.RB ( .mc )
+inserted where 
+.I newfile
+differs from 
+.IR oldfile .
+When
+.I markedfile
+is formatted,
+changed or inserted text is shown by 
+.B |
+at the right margin of each line.
+The position of deleted text is shown by a single
+.BR * .
+.LP
+.B diffmk
+can also be used in conjunction with the proper 
+.B troff
+requests to produce program listings with marked changes.
+In the following command line:
+.IP
+.ft B
+diffmk old.c new.c marked.c ; nroff reqs marked.c | pr
+.ft R
+.LP 
+the file
+.B reqs
+contains the following
+.B troff
+requests:
+.RS
+.ft B
+.nf
+\&.pl \|1
+\&.ll \|77
+\&.nf
+\&.eo
+\&.nh
+.ft R
+.fi
+.RE
+.LP
+which eliminate page breaks, adjust the line length, set no-fill
+mode, ignore escape characters, and turn off hyphenation,
+respectively.
+.LP
+If the characters 
+.B | 
+and
+.B *
+are inappropriate, you might run 
+.I markedfile 
+through 
+.BR sed (1V)
+to globally change them.
+.SH SEE ALSO
+.BR diff (1),
+.BR nroff (1),
+.BR sed (1V),
+.BR troff (1)
+.SH BUGS
+.LP
+Aesthetic considerations may dictate
+manual adjustment of some output.
+File differences involving only formatting
+requests may produce undesirable
+output, that is, replacing
+.B \&.sp
+by
+.B \&.sp 2
+will
+produce a \*(lqchange mark\*(rq on the preceding
+or following line of output.

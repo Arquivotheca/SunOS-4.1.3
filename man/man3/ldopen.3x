@@ -1,0 +1,162 @@
+.\" @(#)ldopen.3x 1.1 92/07/30 SMI; from SVID
+.TH LDOPEN 3X "19 February 1988"
+.SH NAME
+ldopen, ldaopen \- open a COFF file for reading
+.SH SYNOPSIS
+.nf
+.ft3
+.ta \w'\s-1LDFILE\s+1\ \ \ 'u
+.B #include <stdio.h>
+.B #include <filehdr.h>
+.B #include <ldfcn.h>
+.LP
+.B \s-1LDFILE\s+1 \(**ldopen (filename, ldptr)
+.B char \(**filename;
+.B \s-1LDFILE\s+1 \(**ldptr;
+.LP
+.B \s-1LDFILE\s+1 \(**ldaopen (filename, oldptr)
+.B char \(**filename;
+.B \s-1LDFILE\s+1 \(**oldptr;
+.ft1
+.fi
+.DT
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldopen()" "" "\fLldopen()\fP function"
+.IX "ldaopen()" "" "\fLldaopen()\fP function"
+.LP
+.B ldopen(\|)
+and
+.BR ldclose (3X)
+are designed to provide uniform access to both simple object files and
+object files that are members of archive files.  Thus an archive of
+.SM COFF
+files can be processed as if it were a series of simple
+.SM COFF
+files.
+.LP
+If 
+.I ldptr
+has the value
+.SM NULL\s0,
+then 
+.B ldopen(\|)
+will open
+.I filename
+and allocate and initialize the
+.B \s-1LDFILE\s+1
+structure, and return a pointer to
+the structure to the calling program.
+.LP
+If
+.I ldptr
+is valid and if
+.BI \s-1TYPE\s+1( ldptr )
+is the archive magic number,
+.B ldopen(\|)
+will reinitialize the
+.BR \s-1LDFILE\s+1 " structure"
+for the next archive member of
+.IR filename .
+.LP
+.B ldopen(\|)
+and
+.BR ldclose (3X)
+are designed to work in concert.
+.I ldclose
+will return
+.B \s-1FAILURE\s+1
+only when
+.BI \s-1TYPE\s+1( ldptr )
+is the archive magic number and there is another file in the archive
+to be processed.
+Only then should
+.B ldopen(\|)
+be called with the current value of
+.IR ldptr .
+In all other cases,
+in particular whenever a new
+.I filename
+is opened,
+.B ldopen(\|)
+should be called with a
+.SM NULL
+.I ldptr
+argument.
+.LP
+The following is a prototype for the use of 
+.B ldopen(\|)
+and
+.BR ldclose (3X) .
+.br
+.ne 12
+.IP
+.nf
+.ft B
+/\(** for each filename to be processed \(**/
+.sp .5
+ldptr = \s-1NULL\s+1;
+do
+{
+	if ( (ldptr = ldopen(filename, ldptr)) != \s-1NULL\s+1 )
+	{
+		/\(** check magic number \(**/
+		/\(** process the file \(**/
+	}
+} while (ldclose(ldptr) == \s-1FAILURE\s+1 );
+.fi
+.ft R
+.LP
+If the value of
+.I oldptr
+is not
+.SM NULL\s0,
+.B ldaopen(\|)
+will open
+.I filename
+anew and allocate and initialize a new
+.B \s-1LDFILE\s+1
+structure, copying the
+.BR \s-1TYPE\s+1 ", " \s-1OFFSET\s+1 ", and " \s-1HEADER\s+1"
+fields from
+.IR oldptr .
+.B ldaopen(\|)
+returns a pointer to the new
+.BR \s-1LDFILE\s+1 " structure."
+This new pointer is independent of the old pointer,
+.IR oldptr .
+The two pointers may be used concurrently to read separate parts of
+the object file.
+For example,
+one pointer may be used to step sequentially through the relocation information,
+while the other is used to read indexed symbol table entries.
+.br
+.ne 5
+.LP
+Both
+.B ldopen(\|)
+and
+.B ldaopen(\|)
+open
+.I filename
+for reading.
+Both functions return
+.SM NULL
+if
+.I filename
+cannot be opened, or if memory for the
+.B \s-1LDFILE\s+1
+structure cannot be allocated.
+A successful open does not insure that the given file is a
+.SM COFF
+file or an archived object file.
+.LP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.SH SEE ALSO
+.BR fopen (3V),
+.BR ldclose (3X),
+.BR ldfcn (3)

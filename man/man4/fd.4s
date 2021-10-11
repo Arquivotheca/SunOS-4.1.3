@@ -1,0 +1,227 @@
+.\" @(#)fd.4s 1.1 92/07/30 SMI;
+.TH FD 4S "7 October 1990"
+.SH NAME
+fd \- disk driver for Floppy Disk Controllers
+.SH "CONFIG \(em Sun386i SYSTEMS"
+.nf
+.ft B
+controller fdc0 at atmem ? csr 0x1000 dmachan 2 irq 6 priority 2
+disk fd0 at fdc0 drive 0 flags 0
+.SH "CONFIG \(em SUN-3/80 SYSTEMS"
+.nf
+.ft B
+controller fdc0 at obio ? csr 0x6e000000 priority 6 vector fdintr 0x5c
+disk fd0 at fdc0 drive 0 flags 0
+.SH "CONFIG \(em Desktop SPARCsystems"
+.nf
+.ft B
+device-driver fd
+.ft R
+.fi
+.SH AVAILABILITY
+.LP
+Sun386i, Sun-3/80, and Desktop \s-1SPARC\s0systems only.
+.SH DESCRIPTION
+.IX  "Sun floppy disk driver"  ""  "Sun floppy disk driver \(em \fLfd\fP"
+.IX  "disk driver"  "Sun floppy"  ""  "\fLfd\fP \(em Sun floppy"
+.LP
+The
+.B fd
+driver provides an interface to floppy disks 
+using the Intel 82072 disk
+controller on Sun386i,
+Sun-3/80 and Desktop \s-1SPARC\s0systems.
+.LP
+The minor device number in files that use the floppy interface encodes the
+unit number as well as the partition.
+The bits of the minor device
+number are defined as
+.B rrruuppp
+where
+.BR r =reserved, 
+.BR u =unit,
+and
+.BR p =partition.
+The unit number selects a particular floppy drive for the controller.
+The partition number picks one of eight partitions
+.RB [ a-h ].
+.LP
+When the floppy is
+first opened the driver looks for a label in logical block 0 of the
+diskette.
+If
+a label is found, the geometry and partition information from the label
+will be used on each access thereafter.
+The driver first assumes high
+density characteristics when it tries to read the label.
+If
+the read fails it will try the read again using low density
+characteristics.
+If both attempts to read the label fail, the open will fail.
+Use the
+.SB FNDELAY
+flag when opening an unformatted diskette as a signal to the
+driver that it should not attempt to access the diskette.
+If block 0 is read successfully, but a label is not found,
+the open will fail for the block interface.
+Using the raw interface, the open will succeed even if the diskette
+is unlabeled.
+Default geometry and partitioning
+are assumed if the diskette is unlabeled.
+.LP
+The default partitions are:
+.RS
+.TP
+.B a
+\-> 0, N-1
+.TP
+.B b
+\-> N-1, N
+.TP
+.B c
+\-> 0, N
+.RE
+where N is the number of cylinders on the diskette.
+.fi
+.LP
+The
+.B fd
+driver supports both block and raw interfaces.
+The block files access the disk using the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.
+There is also a \(lqraw\(rq interface
+that provides for direct transmission between the disk
+and the user's read or write buffer.
+A single
+.BR read (2V)
+or
+.BR write (2V)
+call usually results in one I/O operation;
+therefore raw I/O is considerably more efficient when
+many words are transmitted.
+The names of the raw files conventionally
+begin with an extra
+.RB ` r '.
+.SH "FILES \(em Sun386i SYSTEMS"
+.LP
+1.44 MB Floppy Disk Drives:
+.TP 20
+.B /dev/fd0a
+.PD 0
+block file
+.TP
+.B /dev/fd0c
+block file
+.TP
+.B /dev/rfd0a
+raw file
+.TP
+.B /dev/rfd0c
+raw file
+.PD
+.br
+.ne 8
+.LP
+720 K Floppy Disk Drives:
+.TP 20
+.B /dev/fdl0a
+block file
+.PD 0
+.TP 20
+.B /dev/fdl0c
+block file
+.TP
+.B /dev/rfdl0a
+raw file
+.TP
+.B /dev/rfdl0c
+raw file
+.PD
+.SH "FILES \(em SUN-3/80 and Desktop SPARCsystems"
+.LP
+Note: the
+.B fd
+driver on Sun-3/80 and Desktop \s-1SPARC\s0systems auto-senses the density of the floppy.
+.TP 20
+.B /dev/fd0[a-c]
+.PD 0
+block file
+.TP
+.B /dev/fd0
+block file (same as
+.BR /dev/fd0c )
+.TP
+.B /dev/rfd0[a-c]
+raw file
+.TP
+.B /dev/rfd0
+raw file (same as
+.BR /dev/rfd0c )
+.PD
+.SH SEE ALSO
+.BR read (2V),
+.BR write (2V),
+.BR dkio (4S)
+.SH "DIAGNOSTICS \(em Sun386i SYSTEMS"
+.TP
+.B "fd drv %d, trk %d: %s"
+A command such as read or write encountered a format-related  error condition.
+The value of
+.I %s
+is derived from the error number 
+given by the controller, indicating the nature of the error. 
+The track number is relative to the beginning of the partition involved.
+.TP
+.B "fd drv %d, blk %d: %s"
+A command such as read or write encountered an error condition related to
+I/O.
+The value of
+.I %s
+is derived from the error number returned by the
+controller and indicates the nature of the error. 
+The block number is relative
+to the start of the partition involved.
+.TP
+.B "fd controller: %s"
+An error occurred in the controller.
+The value of 
+.I %s
+is derived from the status returned by the controller
+and specifies the error encountered.
+.TP
+.B "fd(%d):%s please insert"
+I/O was attempted while the floppy drive door was not latched. 
+The value of
+.I %s
+indicates which disk was expected to be in the drive.
+.SH "DIAGNOSTICS \(em SUN-3/80 and Desktop SPARCsystems"
+.TP
+.B "fd%d: %s failed (%x %x %x)"
+The command, %s, failed after several retries on drive %d.
+The three hex values in
+parenthesis are the contents of status register 0, status register 1, and
+status register 2 of the Intel 82072 Floppy Disk Controller on completion
+of the command as documented in the data sheet for that part.
+This error message is usually followed by one of the following, interpreting the
+bits of the status register:
+.TP
+.PD 0
+.B "fd%d: not writable"
+.TP
+.B "fd%d: crc error"
+.TP
+.B "fd%d: overrun/underrun"
+.TP
+.B "fd%d: bad format"
+.TP
+.B "fd%d: timeout"
+.PD
+.SH NOTES
+.LP
+Floppy diskettes have 18 sectors per track, and can cross a track
+(though not a cylinder) boundary without lossing data, so when using
+.BR dd (1)
+to or from a diskette, you should specify
+.B bs=18k
+or multiples thereof.

@@ -1,0 +1,107 @@
+.\" @(#)unix.4f 1.1 92/07/30 SMI;
+.TH UNIX 4F "20 October 1988"
+.SH NAME
+unix \- UNIX domain protocol family
+.SH DESCRIPTION
+.IX "Unix Domain protocol family"
+.LP
+The Unix Domain protocol family provides support for
+socket-based communication between processes running on
+the local host.  While both
+.SB SOCK_STREAM
+and
+.SB SOCK_DGRAM
+types are supported, the
+.SB SOCK_STREAM
+type often provides faster performance.
+Pipes, for instance, are built on Unix Domain
+.SB SOCK_STREAM
+sockets.
+.LP
+Unix Domain
+.B SOCK_DGRAM
+sockets (also called datagram sockets)
+exist primarily for reasons of orthogonality under the
+.SM BSD
+socket model.  However,
+the overhead of reading or writing data is higher for the
+(connectionless) datagram sockets.
+.LP
+Unix Domain addresses are pathnames.  In other words, two
+independent processes can communicate by specifying the same
+pathname as their communications rendezvous point.
+The
+.BR  bind (2)
+operation creates a special entry in the file system
+of type socket.  If that pathname already exists (as a socket
+from a previous
+.B  bind(\|)
+operation, or as some other file system type),
+.B bind(\|)
+will fail.
+.LP
+Sockets in the Unix domain protocol family  use  the  following
+addressing structure:
+.LP
+.RS
+.ft B
+.nf
+struct sockaddr_un {
+	short	sun_family;
+	u_short	sun_path[108];
+};
+.fi
+.ft
+.RE
+.LP
+To create or reference a Unix Domain socket, the
+.B sun_family
+field should be set to
+.SB AF_UNIX
+and the
+.B sun_path
+array should contain the path name of a rendezvous point.
+.LP
+Although Unix Domain sockets are faster than Internet Domain sockets
+for communication between local processes, the
+advantage of the additional flexibility afforded by the latter
+may outweigh performance issues.  Where
+inter-process communication thoughput is critical, a shared memory
+approach may be preferred.
+.LP
+Since there are no protocol families associated with
+Unix Domain sockets, the protocol argument to
+.BR socket (2)
+should be zero.
+.LP
+When setting up a Unix Domain socket,
+the
+.I length
+argument to the
+.B  bind(\|)
+call is the amount of space within the
+.B sockaddr_un
+structure, not including the pathname delimiter.  One way to specify
+the length is:
+.IP
+.BI sizeof( addr.sun_family ") + strlen(" path )
+where
+.I addr
+is a structure of type
+.BR sockaddr_un ,
+and
+.I path
+is a pointer to the pathname.
+.LP
+The limit of 108 characters is an artifact of the implementation.
+.LP
+Since closing a Unix Domain socket does not make the file system
+entry go away, an application should remove the entry using
+.BR unlink (2V),
+when finished.
+.SH "SEE ALSO"
+.BR bind (2),
+.BR socket (2),
+.BR unlink (2V)
+.LP
+.TX NETP

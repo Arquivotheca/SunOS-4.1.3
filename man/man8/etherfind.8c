@@ -1,0 +1,347 @@
+.\" @(#)etherfind.8c 1.1 92/07/30 SMI;
+.TH ETHERFIND 8C "16 June 1989"
+.SH NAME
+etherfind \- find packets on Ethernet
+.SH SYNOPSIS
+.B etherfind
+[
+.B \-d
+] [
+.B \-n
+] [
+.B \-p
+] [
+.B \-r
+] [
+.B \-t
+] [
+.B \-u
+] [
+.B \-v
+]
+.if n .ti +5n
+[
+.B \-x
+] [
+.B \-c
+.I count
+] [
+.B \-i
+.I interface
+] [
+.B \-l
+.I length
+]
+.if n .ti +5n
+.if t .ti +.5i
+.I expression
+.SH AVAILABILITY
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX etherfind "" "\fLetherfind\fR \(em find packets on the Ethernet"
+.IX Ethernet "find packets \(em \fLetherfind\fR"
+.LP
+.B etherfind
+prints out the information about packets on the ethernet that
+match the boolean
+.IR expression .
+The short display, without the 
+.B \-v
+option, displays only the destination and src (with port numbers).
+When an Internet packet is
+fragmented into more than one ethernet packet, all fragments
+except the first are marked with an asterisk.
+With the
+.B \-v
+option, the display is much more verbose, giving a trace that is suitable
+for analyzing many network problems.
+You must be root to invoke
+.BR etherfind .
+.SH OPTIONS
+.TP
+.B \-d
+Print the number of dropped packets.  Not necessarily reliable.
+.TP
+.B \-n
+Do not convert host addresses and port numbers to names.
+.TP
+.B \-p
+Normally, the selected interface is put
+into promiscuous mode, so that
+.B etherfind 
+has access to
+all packets on the ethernet.  However, when the
+.B \-p
+flag
+is used, the interface will not go promiscuous.
+.TP
+.B \-r
+.SM RPC
+mode: treat each packet as an
+.SM RPC
+message, printing
+the program and procedure numbers. Routing packets are also
+more fully decoded using this option, and 
+Network Information Service
+(\s-1NIS\s0)
+and
+.SM NFS
+requests have their arguments printed.
+.TP
+.B \-t
+Timestamps: precede each packet listing with a time value in seconds
+and hundredths of seconds since the first packet.
+.TP
+.B \-u
+Make the output line buffered.
+.TP
+.B \-v
+Verbose mode: print out some of the fields of
+.SM TCP
+and
+.SM UDP
+packets.
+.TP
+.B \-x
+Dump the packet in hex, in addition to the line
+printed for each packet by default.
+Use the 
+.B \-l
+option to limit this printout.
+.TP
+.BI \-c " count"
+Exit after receiving
+.I count
+packets.
+This is sometimes useful for dumping a sample of ethernet
+traffic to a file for later analysis.
+.TP
+.BI \-i " interface"
+.B etherfind
+listens on
+.IR interface .
+The program
+.BR netstat (8C)
+when invoked with the
+.B \-i
+flag lists all the interfaces
+that a machine has.
+.TP
+.BI \-l " length"
+Use with the 
+.B \-x 
+option to limit the number of bytes printed out.
+.TP
+.I expression
+.RS
+The syntax of
+.I expression
+is similar to that used by
+.BR find (1).
+Here are the allowable primaries.
+.TP
+.BI dst  " destination"
+True if the destination field of the packet is
+.IR destination ,
+which may be either an address or a name.
+.TP
+.BI src  " source"
+True if the source field of the packet is
+.IR source ,
+which may be either an address or a name.
+.br
+.ne 5
+.TP
+.BI host  " name"
+True if either the source or the destination of the packet is
+.IR name .
+.TP
+.BI between  " host1 host2"
+True if either the source of the packet is
+.I host1
+and the destination
+.IR host2 ,
+or the source is
+.I host2
+and the destination
+.IR host1 .
+.TP
+.BI dstnet  " destination"
+True if the destination field of the packet has a network
+part of
+.IR destination ,
+which may be either an address or a name.
+.TP
+.BI srcnet " source"
+True if the source field of the packet has a network
+part of
+.IR source ,
+which may be either an address or a name.
+.br
+.ne 5
+.TP
+.BI srcport " port"
+True if the packet has a source port value of
+.IR port .
+This will check the source port value of either
+.SM UDP
+or
+.SM TCP
+packets
+(see
+.BR tcp (4P)),
+and
+.BR udp (4P)).
+The
+.I port
+can be a number or a name used in
+.BR /etc/services .
+.TP
+.BI dstport " port"
+True if the packet has a destination port value of
+.IR port .
+The
+.I port
+can be a number or a name.
+.TP
+.BI less " length"
+True if the packet has a length less than or equal to
+.IR length .
+.TP
+.BI greater " length"
+True if the packet has a length greater than or equal to
+.IR length .
+.TP
+.BI \-proto " protocol"
+True if the packet is an
+.SM IP
+packet (see
+.BR ip (4P))
+of protocol type
+.IR protocol .
+.I Protocol
+can be a number or one of the
+names
+.BR icmp ,
+.BR udp ,
+.BR nd ,
+or
+.BR tcp .
+.TP
+.BI byte " byte op value"
+True if byte number
+.I byte
+of the packet is in relation
+.I op
+to
+.IR value .
+Legal values for
+.I op
+are
+.BR \+ ,
+.BR \< ,
+.BR \> ,
+.BR & ,
+and
+.BR | .
+Thus
+.B 4=6
+is true if the fourth byte of the
+packet has the value 6, and
+.B 20&0xf
+is true if byte twenty
+has one of its four low order bits nonzero.
+.TP
+.B broadcast
+True if the packet is a broadcast packet.
+.TP
+.B arp
+True if the packet is an
+.SM ARP
+packet (see
+.BR arp (4P)).
+.TP
+.B rarp
+True if the packet is a rarp packet.
+.TP
+.B \-ip
+True if the packet is an
+.SM IP
+packet.
+.TP
+.B \-decnet
+True if the packet is a
+.SM DECNET
+packet.
+.TP
+.B \-apple
+True if the packet is an AppleTalk protocol packet.
+.RE
+.LP
+The primaries may be combined using the following operators
+(in order of decreasing precedence):
+.IP
+A parenthesized group of primaries and operators
+(parentheses are special to the Shell and must be escaped).
+.IP
+The negation of a primary
+.RB (` not '
+is the unary
+.I not
+operator).
+.br
+.ne 8
+.IP
+Concatenation of primaries (the
+.I and
+operation is implied by the juxtaposition of two primaries, or can
+be specified with
+.RB ` and ').
+.IP
+Alternation of primaries
+.RB (` or "' is the"
+.I or
+operator).
+.SH EXAMPLE
+.LP
+To find all packets arriving at or departing from the host
+.BR sundown ,
+or that are
+.SM ICMP
+packets:
+.RS
+.sp .5
+.ft B
+.nf
+example%  etherfind host sundown or proto icmp
+.ft R
+.fi
+.RE
+.LP
+.ft R
+.SH "SEE ALSO"
+.BR find (1),
+.BR traffic (1C),
+.BR arp (4P),
+.BR ip (4P),
+.BR nit (4P)
+.BR tcp (4P),
+.BR udp (4P),
+.BR netstat (8C)
+.SH BUGS
+.LP
+The syntax is painful.
+.\" Yup.
+.\" But not so bad now that I removed the dashes in 4.1  - WIN
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

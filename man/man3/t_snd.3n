@@ -1,0 +1,188 @@
+.\" @(#)t_snd.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_SND 3N "21 January 1990"
+.SH NAME
+t_snd \- send normal or expedited data over a connection
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_snd(fd, buf, nbytes, flags)
+int fd;
+char *buf;
+unsigned nbytes;
+int flags;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_snd()" "" "\fLt_snd()\fR \(em send normal or expedited data over a connection" ""
+.IX transport "send normal or expedited data over a connection"
+.IX send "normal or expedited data over a connection"
+.LP
+.B t_snd(\|)
+sends either normal or expedited data.
+.I fd
+identifies the local transport endpoint over which data should be sent,
+.I buf
+points to the user data,
+.I nbytes
+specifies the number of user data bytes to be sent, and
+.I flags
+specifies any optional flags described below.
+.LP
+By default,
+.B t_snd(\|)
+operates synchronously and
+may wait if flow control restrictions prevents data acceptance
+by the local transport provider when 
+the call is made.
+However, if
+.SB O_NDELAY
+is set (using
+.BR t_open (3N)
+or
+.BR fcntl(\|) ),
+.B t_snd(\|)
+executes asynchronously,
+and fails immediately if there are flow control restrictions.
+.LP
+On success,
+.B t_snd(\|)
+returns the byte total accepted by the transport provider.
+This normally equals the bytes total specified in
+.IR nbytes .
+If
+.SB O_NDELAY
+is set, it is possible that the transport provider
+will accept only part of the data.
+In this case,
+.B t_snd(\|)
+will set
+.SB T_MORE
+for the data that was sent (see below)
+and returns a value less than
+.IR nbytes .
+If
+.I nbytes
+is zero, no data is passed to
+the provider;
+.B t_snd(\|)
+returns zero.
+.LP
+If
+.SB T_EXPEDITED
+is set in
+.IR flags ,
+the data is sent as expedited data, subject to the
+interpretations of the transport provider.
+.LP
+.SB T_MORE
+indicates to the transport provider that the transport service
+data unit
+(\s-1TSDU\s0),
+or expedited transport service data unit
+(\s-1ETSDU\s0),
+is being sent through multiple
+.B t_snd(\|)
+calls.
+In these calls, the
+.SB T_MORE
+flag indicates another
+.B t_snd(\|)
+is to follow;
+the end of
+.SM TSDU
+(or
+.SM ETSDU\s0)
+is identified by a
+.B t_snd(\|)
+call without the
+.SB T_MORE
+flag.
+.SB T_MORE
+allows the sender to break up large logical data units, while
+preserving their boundaries at the other end.
+The flag does not imply how the data is
+packaged for transfer below the transport interface.
+If the transport provider does not support the concept of a
+.SM TSDU
+as indicated in the
+.I info
+argument on return from
+.BR t_open (3N)
+or
+.BR t_getinfo (3N),
+the
+.SB T_MORE
+flag is meaningless.
+.LP
+The size of each
+.SM TSDU
+or
+.SM ETSDU
+must not exceed the 
+transport provider limits as returned by
+.BR t_open (3N)
+or
+.BR t_getinfo (3N).
+Failure to comply results in protocol error
+.SM EPROTO\s0.
+See
+.SM TSYSERR
+below.
+.LP
+If
+.B t_snd(\|)
+is issued from the
+.SB T_IDLE
+state,
+the provider may silently discard the data.
+If
+.B t_snd(\|)
+is issued from any state other than
+.SB T_DATAXFER
+or
+.SB T_IDLE
+the provider generates a
+.SM EPROTO
+error.
+.SH RETURN VALUES
+.LP
+On success,
+.B t_snd(\|)
+returns the number of bytes accepted by the transport provider.
+On failure,
+it returns
+\-1
+and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TFLOW
+.SB O_NDELAY
+was set, but
+the flow control mechanism prevented the transport provider from
+accepting data at this time.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR t_open (3N),
+.BR t_rcv (3N)
+.LP
+.TX NETP

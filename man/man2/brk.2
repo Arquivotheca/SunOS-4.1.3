@@ -1,0 +1,139 @@
+.\" 1008444
+.\" @(#)brk.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH BRK 2 "21 January 1990"
+.SH NAME
+brk, sbrk \- change data segment size
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.LP
+.ft B
+int brk(addr)
+caddr_t addr;
+.LP
+.ft B
+caddr_t sbrk(incr)
+int incr;
+.fi
+.IX  brk()  ""  "\fLbrk()\fP \(em set data segment break"
+.IX  "memory management"  brk()  ""  "\fLbrk()\fP \(em set data segment break"
+.IX  sbrk()  ""  "\fLsbrk()\fP \(em change data segment size"
+.IX  "memory management"  sbrk()  ""  "\fLsbrk()\fP \(em change data segment size"
+.IX  "change" "data segment size \(em \fLsbrk()\fR"
+.IX  "data segment size, change \(em \fLsbrk()\fR"
+.SH DESCRIPTION
+.LP
+.B brk(\|)
+sets the system's idea of the lowest data segment
+location not used by the program (called the 
+.IR break )
+to
+.I addr
+(rounded up to the next multiple of the system's page size).
+.LP
+In the alternate function
+.BR sbrk(\|) ,
+.I incr
+more bytes are added to the
+program's data space and a pointer to the
+start of the new area is returned.
+.LP
+When a program begins execution using
+.B execve(\|)
+the break is set at the
+highest location defined by the program
+and data storage areas.
+.LP
+The
+.BR getrlimit (2)
+system call may be used to determine
+the maximum permissible size of the
+.I data
+segment; it will not be possible to set the break beyond the
+.B rlim_max
+value returned from a call to
+.BR getrlimit(\|) ,
+that is to say, \*(lq\fBetext + rlim.rlim_max\fR.\*(rq
+(See
+.BR end (3)
+for the definition of
+.BR etext(\|) .)
+.SH RETURN VALUES
+.LP
+.B brk(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.LP
+.B sbrk(\|)
+returns
+the old break value
+on success.
+On failure,
+it returns
+.BR (caddr_t) " \-1"
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.B brk(\|)
+and
+.B sbrk(\|)
+will fail and no additional memory will be allocated if
+one of the following occurs:
+.TP 15
+.SM ENOMEM
+The data segment size limit, as set by
+.B setrlimit(\|)
+(see
+.BR getrlimit (2)),
+would be exceeded.
+.IP
+The maximum possible size of a data segment (compiled into the
+system) would be exceeded.
+.IP
+Insufficient space exists in the swap area
+to support the expansion.
+.IP
+Out of address space;
+the new break value would extend into an area of the address
+space defined by some previously established
+mapping (see
+.BR mmap (2)).
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR mmap (2),
+.BR getrlimit (2),
+.BR malloc (3V),
+.BR end (3)
+.SH WARNINGS
+Programs combining the
+.B brk(\|)
+and
+.B sbrk(\|)
+system calls and
+.B malloc(\|)
+will not work.
+Many library routines use 
+.B malloc(\|)
+internally, so use
+.B brk(\|)
+and
+.B sbrk(\|) 
+only when you know that
+.B malloc(\|)
+definitely will not be used by any library routine.
+.SH BUGS
+.LP
+Setting the break may fail due to a temporary lack of
+swap space.  It is not possible to distinguish this
+from a failure caused by exceeding the maximum size of
+the data segment without consulting
+.BR getrlimit(\|) .

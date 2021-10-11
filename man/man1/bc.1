@@ -1,0 +1,248 @@
+.\" @(#)bc.1 1.1 92/07/30 SMI; 
+.TH BC 1 "24 September 1987"
+.SH NAME
+bc \- arbitrary-precision arithmetic language
+.SH SYNOPSIS
+.B bc
+[
+.B \-c
+] [
+.B \-l
+] [
+.IR filename .\|.\|.\
+]
+.SH DESCRIPTION
+.IX  bc  ""  "\fLbc\fP \(em calculator language"
+.IX  "programming tools"  "bc command"  ""  "\fLbc\fP \(em calculator language"
+.LP
+.B bc
+is an interactive processor for a language which resembles C but provides
+unlimited precision arithmetic.
+.B bc
+takes input from any files given, then reads the standard input.
+.SH OPTIONS
+.TP
+.B \-c
+Compile only.
+.B bc
+is actually a preprocessor for
+.BR dc (1),
+which it invokes automatically, unless the
+.B \-c
+(compile only) option is present.  In this case the
+.B dc
+input is sent to the standard output instead.
+.TP
+.B \-l
+Is the name of an arbitrary precision math library.
+.SH USAGE
+.SS Comments
+.LP
+Enclosed in
+.BR /\|* " and " *\|/ .
+.SS Names
+.LP
+Simple variables:
+.IR l ,
+where,
+.I l
+is a lower-case letter.
+.br
+Array elements:
+.IR l [ expression ],
+where,
+.I expression
+is a legal
+.B bc
+expression.
+.br
+The words
+.BR ibase ,
+.BR obase ,
+and 
+.BR scale.
+.SS Other Operands
+Arbitrarily long numbers with optional sign and decimal point.
+.PD 0
+.RS
+.TP 20
+.BI ( expression )
+.TP
+.BI "sqrt (" expression )
+.TP
+.BI "length (" expression )
+Number of significant decimal digits
+.TP
+.BI "scale ("  expression )
+Number of digits right of decimal point
+.TP
+.IB l ( expression ,
+.RB \|.\|.\|. ,
+.IB expression ) 
+.PD
+.RE
+.SS Operators
+.RS
+.PD 0
+.TP 20
+.B
++  \-  *  /  %  ^
+.RB ( %
+is remainder; 
+.B ^
+is exponent)
+.TP
+.B
+++   \-\-
+(prefix and postfix; apply to names)
+.TP
+.B
+==  <=  >=  !=  <  >
+.TP
+.B
+=  +=  \-=  *=  /=  %=  ^=
+.PD
+.RE
+.SS Statements
+.RS
+.PD 0
+.TP
+.I expression
+.HP 20
+.BI { statement \|;
+.RB \|.\|.\|. \|;
+.IB statement }
+.br
+where,
+.I statement
+is a legal
+.B bc
+statement.
+.TP
+.BI "if (" expression ) statement
+.TP
+.BI while " ( " expression " ) " statement
+.TP
+\fBfor (\fI expression \fB\|; \fI expression \fB\|; \fIexpression \fB)\fI statement\fR
+.TP
+.B "null statement"
+.TP
+.B break
+.TP
+.B quit
+.PD
+.RE
+.SS Function Definitions
+.RS
+.PD 0
+.TP
+.B define
+.IB l " ( " l \|,\|.\|.\|.\|, \|l " ) {"
+.br
+.BI "auto " l " ,\|.\|.\|.\|, " l
+.br
+.IB "statement" " ;\|.\|.\|. " statement
+.br
+.BI "return ( " expression " ) }"
+.PD
+.RE
+.br
+.ne 10
+.SS "Functions in \-l Math Library"
+.RS
+.PD 0
+.TP "\w'The words ibase,obase, and scale.\ \ \ \ \  'u"
+.BI s( \|x\| )
+sine
+.TP
+.BI c( \|x\| )
+cosine
+.TP
+.BI e( \|x\| )
+exponential
+.TP
+.BI l( \|x\| )
+log
+.TP
+.BI a( \|x\| )
+arctangent
+.TP
+.BI j( \|n , \|x )
+Bessel function
+.PD
+.RE
+.LP
+All function arguments are passed by value.
+.LP
+The value of a statement that is an expression is printed
+unless the main operator is an assignment.
+Either semicolons or newlines may separate statements.  Assignment to
+.B scale
+influences the number of digits to be retained on arithmetic
+operations in the manner of
+.BR dc (1).
+Assignments to
+.B ibase
+or
+.B obase
+set the input and output number radix respectively.
+.LP
+The same letter may be used as an array, a function,
+and a simple variable simultaneously.
+All variables are global to the program.
+`Auto' variables are pushed down during function calls.
+When using arrays as function arguments
+or defining them as automatic variables
+empty square brackets must follow the array name.
+.SH EXAMPLES
+.LP
+Define a function to compute an approximate value of the exponential function:
+.nf
+.ft B
+scale = 20
+define
+e(x){
+	auto a, b, c, i, s
+	a = 1
+	b = 1
+	s = 1
+	for(i=1; 1==1; i++){
+		a = a*x
+		b = b*i
+		c = a/b
+		if(c == 0) return(s)
+		s = s+c
+	}
+}
+.ft R
+.fi
+.LP
+Print approximate values of the exponential
+function of the first ten integers:
+.LP
+.nf
+.ft B
+	for(i=1; i<=10; i++) e(i)
+.fi
+.ft R
+.LP
+.SH FILES
+.TP 20
+.B /usr/lib/lib.b
+mathematical library
+.TP
+.BR dc (1)
+desk calculator proper
+.SH "SEE ALSO"
+.BR dc (1)
+.\".LP
+.\".TX GDBG
+.SH BUGS
+.\"No &&, \(or\|\(or, or ! operators.
+.br
+.B for
+statement must have all three
+.IR expression 's.
+.br
+.B quit
+is interpreted when read, not when executed.

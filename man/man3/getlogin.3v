@@ -1,0 +1,69 @@
+.\" @(#)getlogin.3v 1.1 92/07/30 SMI; from UCB 4.3 and S5
+.TH GETLOGIN 3V "21 January 1990"
+.SH NAME
+getlogin \- get login name
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+char *getlogin(\|)
+.ft
+.fi
+.IX  "getlogin()"  ""  "\fLgetlogin()\fP \(em get login name"
+.IX  get "login name \(em \fLgetlogin()\fP"
+.IX  "login name, get \(em \fLgetlogin()\fP"
+.SH DESCRIPTION
+.LP
+.B getlogin(\|)
+returns a pointer to the login name as found in
+.BR /etc/utmp .
+It may be used in conjunction with
+.B getpwnam(\|)
+to locate the correct password file entry when the same user ID
+is shared by several login names.
+.LP
+If
+.B getlogin(\|)
+is called within a process that is not attached to a
+terminal, or if there is no entry in
+.B /etc/utmp
+for the process's terminal, it returns a
+.SM NULL
+pointer.
+The correct procedure
+for determining the login name
+is to call
+.BR cuserid(\|) ,
+or to call
+.B getlogin(\|)
+and, if it fails, to call
+.BR getpwuid ( getuid (\|)).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+.PD
+.SH "SEE ALSO"
+.BR cuserid (3v),
+.BR getpwent (3v),
+.BR utmp (5V)
+.SH RETURN VALUES
+.LP
+.B getlogin(\|)
+returns a pointer to the login name
+on success.
+If the name is not found,
+it returns
+.SM NULL\s0.
+.SH BUGS
+.LP
+The return values point to static data whose content is
+overwritten by each call.
+.LP
+.B getlogin(\|)
+does not work for processes running under a
+.B pty
+(for example, emacs shell buffers, or shell tools)
+unless the program ``fakes'' the login name in the
+.B /etc/utmp
+file.

@@ -1,0 +1,187 @@
+.\" @(#)lockscreen.1 1.1 92/07/30 SMI;
+.TH LOCKSCREEN 1 "7 October 1990"
+.SH NAME
+lockscreen, lockscreen_default \- maintain SunView context and prevent casual access
+.SH SYNOPSIS
+.B lockscreen
+[
+.B \-enr
+]
+[
+.B \-b
+.I program
+]
+[
+.B \-t
+.I seconds
+]
+.if n .ti +.5n
+[
+.I gfx-program
+[
+.I gfx-program-arguments
+] ]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information about installing optional software.
+.SH DESCRIPTION
+.IX  "lockscreen command"  ""  "\fLlockscreen\fP \(em save window context"
+.IX  "window, save context \(em \fLlockscreen\fP"
+.IX  login  "save window context"  ""  "save window context \(em \fLlockscreen\fP"
+.LP
+.B lockscreen
+is a SunView utility that locks the screen against casual access
+while preserving the state of the SunView display.
+It clears the workstation screen to black, and then runs
+.IR gfx-program ,
+which typically provides a moving graphics display to reduce phosphor
+burn.
+When no
+.I gfx-program
+is provided, a suitable default program is run.
+.LP
+.B lockscreen
+requires the user's password before restoring the window context.
+When any keyboard or mouse button is pressed, the graphics screen
+is replaced by a password screen that displays the user name, a small
+box with a bouncing logo, and a prompt for the user's password.  If
+the user has no password, or if the
+.B \-n
+option is used, the window context is simply restored.
+.LP
+When the password screen appears:
+.RS
+.TP 4
+\(bu
+Restore the window context by entering the user's password followed by a
+.SM RETURN
+(this password is not echoed on the screen) or,
+.TP
+\(bu
+Point to the black box and click the left button to return to
+the graphics display.
+.RE
+.LP
+If neither of the above actions is taken,
+.I gfx_program
+resumes execution after the interval specified with the
+.B \-t
+option.
+.SH OPTIONS
+.TP
+.B \-e
+Add the
+.B Exit Desktop
+choice to the password screen.
+If pointed to and clicked, the SunView
+environment is exited and the current user is logged out.
+This option is unreliable and can be a security hole,
+its use is strongly discouraged.
+See
+.SM BUGS\s0.
+.TP
+.B \-n
+Require no password to reenter the window environment.
+.TP
+.B \-r
+Allow the use of the user name
+.B root
+in the
+.RB ` Name: '
+field of the password screen.  Normally,
+.B root
+is not accepted as a valid user name.
+.TP
+.BI \-b " program"
+Allow an additional program to be run as a child process of
+.BR lockscreen .
+This background process could be a compile server or some other useful program
+that the user wants run while lockscreen is running.  No arguments are
+passed to this program.
+.TP
+.BI \-t " seconds"
+After
+.I seconds
+seconds, clear the password screen and restart
+.IR gfx-program .
+The default is 5 minutes (300 seconds).
+.TP
+.RI [ \ gfx-program "\ ] [ " gfx-program-arguments \ ]
+Run this program after clearing the screen to black.
+When no
+.I program
+argument is present,
+.B lockscreen
+tries to run
+.B lockscreen_default
+if it is in the standard search
+path; otherwise, a bouncing Sun logo appears.
+When
+.I gfx-program-arguments
+are specified and the
+.I gfx-program
+is not, the arguments are passed to
+.BR lockscreen_default .
+.B lockscreen_default
+is typically a non-interactive graphics program
+(see
+.BR graphics_demos (6)).
+.B lockscreen
+does not search for
+.B lockscreen_default
+when the
+.I gfx-program
+is specified explicitly as an empty argument (an adjacent pair
+of quote-marks).
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/bin/lockscreen_default
+Default
+.IR gfx-program .
+This displays a series of
+.BR life (6)
+patterns.
+If a file named
+.B lockscreen_default
+appears earlier in the search path, that file is used instead.
+.PD
+.SH SEE ALSO
+.BR login (1),
+.BR sunview (1)
+.SH BUGS
+.LP
+.B lockscreen 
+is more secure when
+.I gfx-program
+are not specified and when
+.B lockscreen_default
+is not in the search path.
+To improve security, enter the following command
+as root, or start
+.B lockscreen
+with an empty argument (see
+.SM OPTIONS\s0,
+above).
+.LP
+.RS
+.nf
+.ft B
+example# mv\ \ /usr/bin/lockscreen_default\ \ /usr/bin/lockscreen_default-
+.fi
+.RE
+.LP
+The
+.B \-e
+option does not consistently log the current user out by clicking on the
+.B Exit Desktop
+button.
+Occassionally, users will be returned to the shell or
+the Desktop
+.IR "without requiring a password" .
+This option is unreliable, and its use could allow unsecure access to
+the system.

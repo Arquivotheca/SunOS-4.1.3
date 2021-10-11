@@ -1,0 +1,63 @@
+.\" @(#)vsyslog.3 1.1 92/07/30 SMI
+.TH VSYSLOG 3 "10 October 1987"
+.SH NAME
+vsyslog \- log message with a varargs argument list
+.SH SYNOPSIS
+.nf
+.B "#include <syslog.h>"
+.B "#include <varargs.h>"
+.LP
+.B "int vsyslog(priority, message, ap)
+.B "char \(**message;"
+.B "va_list ap;
+.fi
+.SH DESCRIPTION
+.IX vsyslog() "" "\fLvsyslog()\fR \(em log message with variable argument list"
+.LP
+.B vsyslog(\|)
+is the same as
+.BR syslog (3)
+except that instead of being called with a variable number of
+arguments, it is called with an argument list as defined by
+.BR varargs (3).
+.SH EXAMPLE
+The following demonstrates how
+.B vsyslog(\|)
+could be used to write an error routine.
+.RS
+.nf
+.ft B
+#include <syslog.h>
+#include <varargs.h>
+\&.\|.\|.
+	/\(**\ \ error should be called like:
+	\(**	error(pri, function_name, format, arg1, arg2.\|.\|.);
+	\(**\ \ Note that pri, function_name, and format cannot be declared
+	\(**\ \ separately because of the definition of varargs.
+	\(**/
+.sp .5v
+/\(**\s-1VARARGS\s00\(**/
+void
+error(va_alist)
+	va_dcl;	
+{
+	va_list args;
+	int pri;
+	char \(**message;
+
+	va_start(args);
+	pri = va_arg(args, int);
+		/\(** log name of function causing error \(**/
+	(void) syslog(pri, "\s-1ERROR\s0 in %s", va_arg(args, char \(**));
+	message = va_arg(args, char \(**);
+		/\(** log remainder of message \(**/
+	(void) vsyslog(pri, fmt, args);
+	va_end(args);
+	(void) abort(\|);
+}
+.fi
+.ft R
+.RE
+.SH SEE ALSO
+.BR syslog (3),
+.BR varargs (3)

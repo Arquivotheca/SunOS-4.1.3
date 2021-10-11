@@ -1,0 +1,98 @@
+.\" @(#)audit.log.5 1.1 92/07/30 SMI;
+.TH AUDIT.LOG 5 "19 October 1987"
+.SH NAME
+audit.log \- the security audit trail file
+.SH SYNOPSIS
+.nf
+.B #include <sys/label.h>
+.B #include <sys/audit.h>
+.B #include <sys/user.h>
+.fi
+.SH DESCRIPTION
+.IX  "audit file"  ""  "\fLaudit\fP \(em audit trail file"
+.LP
+The
+.B audit.log
+file begins with a header record consisting of an
+.B audit_header
+structure followed by the previous audit file name.
+When the audit daemon is started (usually only at boot time),
+the previous audit file name is
+.SM NULL\s0.
+.RS
+.LP
+.nf
+.ft B
+struct audit_header {
+	int	ah_magic;	/* magic number */
+	time_t	ah_time;  	/* the time */
+	short	ah_namelen;	/* length of file name */
+};
+typedef struct audit_header audit_header_t;
+.fi
+.ft R
+.RE
+.LP
+The file may end with a trailer record consisting of an
+.B audit_trailer
+structure followed by the name of the next audit file.
+.RS
+.LP
+.nf
+.ft B
+struct audit_trailer {
+	short	at_record_size;		/* size of this */
+	short	at_record_type;		/* its type, a trailer */
+	time_t	at_time;   		/* the time */
+	short	at_namelen;		/* length of file name */
+};
+typedef struct audit_trailer audit_trailer_t;
+.fi
+.ft R
+.RE
+.LP
+The
+.B audit.log
+file contains audit records in their raw form.
+The records are of varying size depending on the record type.
+Each record has a header which is an
+.B audit_record
+structure.
+.RS
+.LP
+.nf
+.ft B
+struct audit_record {
+	short		au_record_size;		/* size of this */
+	short		au_record_type;		/* its type */
+	time_t		au_time;  		/* the time */
+	short		au_uid;			/* real uid */
+	short		au_auid;  		/* audit uid */
+	short		au_euid;  		/* effective */
+	short		au_gid;			/* real group */
+	short		au_pid;			/* effective */
+	int		au_errno;		/* error code */
+	int		au_return;		/* a return value */
+	blabel_t       	au_label;		/* also ... */
+	short		au_param_count;		/* # of parameters */
+};
+typedef struct audit_record audit_record_t;
+.fi
+.ft R
+.RE
+.LP
+Immediately following the header is a set of two byte integers, the number
+of which exist for a given record is contained in the
+.B au_param_count
+field.
+These numbers are the lengths of the additional data items.
+The additional data items follow the list of lengths, the first
+length describing the first data item.
+Interpretation of this data is left to the program accessing it.
+.br
+.ne 8
+.SH "SEE ALSO"
+.BR audit (2),
+.BR audit (8)
+.LP
+.TX SECUR

@@ -1,0 +1,230 @@
+;
+;      @(#)rendering_pipeline.hasm 1.1 92/07/30 17:41:54
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+#include "ewsi_cmds.h"
+;
+
+	flush_rendering_pipe
+
+; set SI loopback
+#include "i_setloopback.hasm"
+
+; render test primitives
+
+;
+;******************************************************************
+;       post rp pipe test
+;
+;	This file contains the commands that will be sent down the
+;	pipe to test the EW, and SI for power on selftest.
+;
+;	The commands will be:
+;	dots.
+;	anti-alias dots.
+;	x_major vector.
+;	y_major vector.
+;	anit-alias x_major vector.
+;	flat shaded triangle.
+;	gouraud shaded triangle.
+;	anti-aliased triangle.
+;*****************************************************************
+
+        set_attribute   hk_view         ; Throw in some perspective
+        .fword          0.0,  0.0,  1.0,  1.0
+        .matrix_pair \
+                < < 1.0, 0.0, 0.0, 0.0 > , \
+                  < 0.0, 1.0, 0.0, 0.0 > , \
+                  < 0.0, 0.0, 1.0, 0.0 > , \
+                  < 0.0, 0.0, 0.0, 1.0 > >
+
+	set_attribute   hk_z_buffer_compare
+        .word           TRUE
+        set_attribute   hk_z_buffer_update
+        .word           HK_Z_UPDATE_NONE
+
+;
+	set_attribute   hk_marker_type
+        .word           NULL            ; Dots
+        set_attribute   hk_marker_color
+        .rgb            <1.0, 0.5, 1.0>
+
+	set_attribute   hk_marker_antialiasing
+        .word          	TRUE 
+
+	set_attribute   hk_marker_geom_format
+        .word           HK_LINE_XYZ
+        polymarker 4                    ; Draw 4 dot
+        .xyz    <0.0, 0.025, 0.05>
+        .xyz    <-0.025, 0.0, 0.05>
+        .xyz    <0.0, -0.025, 0.05>
+        .xyz    <0.025, 0.0, 0.05>
+
+	set_attribute   hk_marker_antialiasing
+        .word           TRUE
+
+;*******************************************************
+;	x major vector
+;*******************************************************
+	
+
+;****************************************************************
+;       x_major rgb triange command test with anti-aliasing
+;
+;****************************************************************
+
+	set_attribute   hk_line_antialiasing
+        .word           TRUE
+
+;	set_attribute   hk_line_color
+;        .rgb            < 1.0, 0.0, 0.0 >
+;        set_attribute   hk_line_geom_format
+;        .word           HK_LINE_XYZ
+;        polyline        2
+;        .xyz            < -1.0,  1.0,  0.9 >
+;        .xyz            <  1.0, -1.0, -0.9 >
+
+	set_attribute   hk_line_geom_format
+	.word           HK_LINE_XYZ_RGB
+	polyline        2
+	.xyz            < -1.0,  1.0,  -1.0 >
+	.rgb    	< 1.0, 0.0, 0.0 >
+	.xyz            <  1.0,-1.0, -1.0 >
+	.rgb    	< 1.0, 0.0, 0.0 >
+
+	polyline        2
+	.xyz            < -0.95,  1.0,  0.0 >
+	.rgb    	< 0.0, 1.0, 0.0 >
+	.xyz            <  1.0,-0.95, 0.0 >
+	.rgb    	< 0.0, 1.0, 0.0 >
+
+;        polyline        2
+;        .xyz            < -0.90,  1.0,  0.95 >
+;	.rgb    	< 0.0, 0.0, 1.0 >
+;        .xyz            <  1.0,-0.90, 0.95 >
+;	.rgb    	< 0.0, 0.0, 1.0 >
+
+	polyline        2
+	.xyz            < -1.00,  0.95,  1.0 >
+	.rgb    	< 0.0, 1.0, 0.0 >
+	.xyz            <  0.95, -1.0, -1.0 >
+	.rgb    	< 0.0, 1.0, 0.0 >
+
+;*******************************************************
+;       y major vector  with color
+;*******************************************************
+	set_attribute   hk_line_antialiasing
+        .word          	FALSE 
+
+	set_attribute   hk_line_geom_format 
+        .word           HK_LINE_XYZ_RGB   
+        polyline        2 
+        .xyz            <  1.0,  1.0,  0.9 > 
+	.rgb		< 1.0, 0.0, 0.0 >
+        .xyz            < -1.0, -1.0, -0.9 > 
+	.rgb		< 0.0, 0.0, 1.0 >
+
+        polyline        2 
+        .xyz            < 0.95, 1.0, -0.9 > 
+	.rgb		< 1.0, 0.0, 0.0 >
+        .xyz            <  -1.0,  -0.95,  0.9 > 
+	.rgb		< 0.0, 0.0, 1.0 >
+
+        polyline        2 
+        .xyz            <  1.0,  0.95,  0.9 > 
+	.rgb		< 1.0, 0.0, 0.0 >
+        .xyz            < -0.95, -1.0, -0.9 > 
+	.rgb		< 0.0, 0.0, 1.0 >
+;****************************************************************
+;       flat shaded triangle command test
+;
+;       draw a flat shaded triangle
+;****************************************************************
+	
+	set_attribute   hk_tri_geom_format
+        .word           HK_TRI_XYZ_VNORMAL_VCOLOR
+        triangle_list   3
+        .tri_start
+        .xyz    <-0.277, 0.8, 0.0 >
+        .norm   < 0, 0, -1 >
+	.rgb	< 0.0, 1.0, 0.0 >
+        .tri_r2
+        .xyz    < 0.277, 0.8, 0.0 >
+        .norm   < 0, 0, -1 >
+	.rgb	< 0.0, 1.0, 0.0 >
+        .tri_r2
+        .xyz    < 0.0, 0.2, 0.0 >
+        .norm   < 0, 0, -1 >
+	.rgb	< 0.0, 1.0, 0.0 >
+
+;****************************************************************
+;       gouraud shaded triangle command test
+;
+;       draw a gouraud shaded triangle with alpha
+;****************************************************************
+
+	set_attribute   hk_tri_geom_format
+        .word           HK_TRI_XYZ_VNORMAL_VCOLOR
+        triangle_list   3
+        .tri_start
+        .xyz    < 0.68, 0.346, 0.0 >
+        .norm   < 0, 0, -1 >
+        .rgb    < 0.0, 1.0, 0.0 >
+        .tri_r2  
+        .xyz    < 0.68, -0.346, 0.0 >
+        .norm   < 0, 0, -1 >
+        .rgb    < 1.0, 0.0, 0.0 >
+        .tri_r2  
+        .xyz    < 0.2, 0.0, 0.0 >
+        .norm   < 0, 0, -1 >
+        .rgb    < 0.0, 0.0, 1.0 >
+
+;****************************************************************
+;       gouraud shaded triangle command test
+;
+;       draw a gouraud shaded triangle with anti-aliasing 
+;****************************************************************
+	set_attribute   hk_line_antialiasing
+        .word          	TRUE 
+	
+	pass_to_su      1               ; set anti aliasing on
+        .word           HK_EW_SET_AA
+
+	triangle_list   3
+        .tri_start
+        .xyz    < -0.277, -0.8, 0.0 >
+        .norm   < 0, 0, -1 >
+        .rgb    < 1.0, 0.0, 0.0 >
+        .tri_r2
+        .xyz    < 0.277, -0.8, 0.0 >
+        .norm   < 0, 0, -1 >
+        .rgb    < 0.0, 1.0, 0.0 >
+        .tri_r2
+        .xyz    < 0.0,-0.2, 0.0 >
+        .norm   < 0, 0, -1 >
+        .rgb    < 0.0, 0.0, 1.0 >
+
+	triangle_list   3 
+        .tri_start 
+        .xyz    < -0.68, 0.346, 0.0 > 
+        .norm   < 0, 0, -1 > 
+        .rgb    < 1.0, 0.0, 0.0 > 
+        .tri_r2  
+        .xyz    < -0.68, -0.346, 0.0 > 
+        .norm   < 0, 0, -1 > 
+        .rgb    < 0.0, 1.0, 0.0 > 
+        .tri_r2 
+        .xyz    < -0.2,0.0, 0.0 >
+        .norm   < 0, 0, -1 > 
+        .rgb    < 0.0, 0.0, 1.0 >
+	
+
+; verify result then reset SI loopback control bit
+#include "i_rendering_pipeline.hasm"
+
+
+	trap 0
+

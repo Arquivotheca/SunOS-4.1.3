@@ -1,0 +1,339 @@
+'\' t
+.\" @(#)sccs-prs.1 1.1 92/07/30 SMI;
+.TH SCCS-PRS 1 "29 June 1988"
+.SH NAME
+sccs-prs, prs \- display selected portions of an SCCS history
+.SH SYNOPSIS
+.B /usr/sccs/prs
+[
+.B \-ael
+] [
+.BI \-c date-time
+] [
+.BI \-d dataspec
+]
+.if n .ti +0.5i
+[
+.BI \-r sid
+]
+.I s.filename
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  "prs command"  ""  "\fLprs\fP \(em display SCCS history"
+.IX  "SCCS commands"  "prs command"  ""  "\fLcdc\fP \(em display SCCS history"
+.LP
+.B prs
+displays part or all of the
+.SM SCCS
+file (see
+.BR sccsfile (5))
+in a user supplied format.
+.LP
+If a directory name is used in place of the
+.IR s.filename
+argument,
+the
+.B prs
+command applies to all
+.BR s. files
+in that directory.
+Unreadable
+.BR s. files
+produce an error; processing continues with the next file (if
+any).
+The
+use of
+.RB ` \- '
+as the
+.I s.filename
+argument indicates that the names of files are to be read from the
+standard input, one
+.BR s. file
+per line.
+.SH OPTIONS
+.LP
+In the absence of options,
+.B prs
+displays the delta table (version log).  In the absence of
+.BR \-d ,
+or
+.BR \-l ,
+.B prs
+displays the entry for each delta indicated by the other options.
+.TP
+.B \-a
+Include all deltas, including those marked as removed (see
+.BR sccs-rmdel (1)).
+.TP
+.B \-e
+Request information for all deltas created
+.I earlier
+than, and including, the delta indicated with
+.BR \-r
+or
+.BR \-c .
+.TP
+.B \-l
+Request information for all deltas created
+.I later
+than, and including, the delta indicated with
+.B \-r
+or
+.BR \-c .
+.TP
+.BI \-c date-time
+Display information on the latest delta checked in prior to the date and time
+indicated by the
+.I date-time
+argument.
+.I date-time
+takes the form:
+.IP
+\fIyy\fR[\fImm\fR[\fIdd\fR[\fIhh\fR[\fImm\fR[\fIss\fR]\|]\|]\|]\|].
+.LP
+Units omitted from the indicated date and time default to their
+maximum possible values; that is
+.B \-c7502
+is equivalent to
+.BR \-c750228235959 .
+Any number of non-numeric characters may separate
+the various 2 digit components.  If white-space characters
+occur, the
+.I date-time
+specification must be quoted.
+.TP
+.BI \-d dataspec
+Produce a report according to the indicated data specification.
+.I dataspec
+consists of a (quoted) text string that includes embedded data
+keywords of the form:
+`\fB:\fIkey\fB:\fR'
+(see
+.IR "Data Keywords" ,
+below).
+.B prs
+expands these keywords in the output it produces.
+To specify a
+.SM TAB
+character in the output, use
+.BR \et ;
+to specify a
+.SM NEWLINE
+in the output, use
+.BR \en .
+.TP
+.BI \-r sid
+Specify the
+.SM SCCS
+delta
+.SM ID
+(\s-1SID\s0)
+of the delta for which information is desired.
+If no 
+.SM SID 
+is specified, the most recently created delta is used.
+.SH "USAGE"
+.SS Data Keywords
+Data keywords specify which parts of an
+.SM SCCS
+file are to be retrieved.  All parts of an
+.SM SCCS
+file (see
+.BR sccsfile (5))
+have an associated data keyword.
+A data keyword may appear any number of times in a data
+specification argument to
+.BR \-d .
+These data keywords are listed in the table below:
+.\" ================== begin nroff version ===========
+.if t .ig IG
+.cs R 20
+.LP
+.nf
+.ta +5 +28 +6 +20
+Key-	        Data Item	File	     Value	Format\u**\d
+word		Sect.\u*\d		
+.sp .5
+.ne 10
+:A:	format for the \fBwhat\fR string:	N/A	\fB:Z::Y: :M: :I::Z:\fR	     S
+:B:	branch number	D	nnnn	     S
+:BD:	body	B	text	     M
+:BF:	branch flag	F	\fByes\fR or \fBno\fR	     S
+:CB:	ceiling boundary	F	\fB:R:\fR	     S
+:C:	comments for delta	D	text	     M
+:D:	date delta created	D	\fB:Dy:/:Dm:/:Dd:\fR	     S
+:Dd:	day delta created	D	nn	     S
+.br
+.ne 3
+:Dg:	deltas ignored (seq #)	D	\fB:DS: :DS:\fR\|.\|.\|.	     S
+:DI:	seq-no. of deltas included,	D	\fB:Dn:/:Dx:/:Dg:\fR	     S
+\^	excluded, ignored	\^	\^	\^
+:DL:	delta line statistics	D	\fB:Li:/:Ld:/:Lu:\fR	     S
+:Dm:	month delta created	D	nn	     S
+:Dn:	deltas included (seq #)	D	\fB:DS: :DS:\fR\|.\|.\|.	     S
+:DP:	predecessor delta seq-no. 	D	nnnn	     S
+:Ds:	default SID	F	\fB:I:\fR	     S
+:DS:	delta sequence number	D	nnnn	     S
+:Dt:	delta information	D 	\fB:DT:\|:I:\|:D:\|:T:\|:P:\|:DS:\|:DP:\fR	 S
+:DT:	delta type	D	\fBD\fR or \fBR\fR	     S
+:Dx:	deltas excluded (seq #)	D	\fB:DS:\fR \|.\|.\|.	     S
+:Dy:	year delta created	D	nn	     S
+:F:	\fBs.\fRfile name	N/A	text	     S
+:FB:	floor boundary	F	\fB:R:\fR	     S
+:FD:	file descriptive text	C	text	     M
+:FL:	flag list	F	text	     M
+:GB:	gotten body	B	text	     M
+:I:	SCCS delta ID (SID)	D	\fB:R:.:L:.:B:.:S:\fR	     S
+:J:	joint edit flag	F	\fByes\fR or \fBno\fR	     S
+:KF:	keyword error/warning flag	F	\fByes\fR or \fBno\fR	     S
+:L:	level number	D	nnnn	     S
+:Ld:	lines deleted by delta	D	nnnnn	     S
+:Li:	lines inserted by delta	D	nnnnn	     S
+:LK:	locked releases	F	\fB:R:\fR\|.\|.\|.	     S
+:Lu:	lines unchanged by delta	D	nnnnn	     S
+:M:	module name	F	text	     S
+:MF:	MR validation flag	F	\fByes\fR or \fBno\fR	     S
+:MP:	MR validation program	F	text	     S
+:MR:	MR numbers for delta	D	text	     M
+:ND:	null delta flag	F	\fByes\fR or \fBno\fR	     S
+:Q:	user defined keyword	F	text	     S
+:P:	user who created delta	D	username	     S
+:PN:	\fBs.\fRfile's pathname	N/A	text	     S
+:R:	release number	D	nnnn	     S
+:S:	sequence number	D	nnnn	     S
+:T:	time delta created	D	\fB:Th:::Tm:::Ts:\fR	     S
+:Th:	hour delta created	D	nn	     S
+:Tm:	minutes delta created	D	nn	     S
+:Ts:	seconds delta created	D	nn	     S
+:UN:	user names	U	text	     M
+:W:	a form of \fBwhat\fP string	N/A	\fB:Z::M:\et:I:\fR	     S
+:Y:	module type flag	F	text	     S
+:Z:	\fBwhat\fP string delimiter	N/A	\fB@(#)\fR	     S
+	\u*\dB = body, D = delta table, F = flags, U = user names
+	\u**\dS = simple format, M = multi-line format
+.fi
+.cs R
+.DT
+.IG
+.\" ================= end nroff version ============
+.\" =============== begin troff version ===================
+.if n .ig IG
+.if t .ps -1
+.if t .vs -1
+.nf
+.sp .5
+.TS
+;
+cfI cfI cfI cfI cfI 
+cfI cfI cfI cfI cfI 
+lfB lfR cfR lfI cfR .
+Keyword	Data Item	File 	Value	Format\u\s-2**\s0\d
+\^	\^	Section\u\s-2*\s0\d	\^	\^
+.sp .5
+:A:	a format for the \fBwhat\fR string:	N/A	\fB:Z::Y: :M: :I::Z:\fR	     S
+:B:	branch number	D	nnnn	     S
+:BD:	body	B	text	     M
+:BF:	branch flag	F	\fByes\fR or \fBno\fR	     S
+:CB:	ceiling boundary	F	\fB:R:\fR	     S
+:C:	comments for delta	D	text	     M
+:D:	date delta created	D	\fB:Dy:/:Dm:/:Dd:\fR	     S
+:Dd:	day delta created	D	nn	     S
+:Dg:	deltas ignored (seq #)	D	\fB:DS: :DS:\fR\|.\|.\|.	     S
+.br
+.ne 3
+:DI:	seq-no. of deltas included,	D	\fB:Dn:/:Dx:/:Dg:\fR	     S
+	excluded, ignored	\^	\^	\^
+.\"\^	excluded, ignored	\^	\^	\^
+:DL:	delta line statistics	D	\fB:Li:/:Ld:/:Lu:\fR	     S
+:Dm:	month delta created	D	nn	     S
+:Dn:	deltas included (seq #)	D	\fB:DS: :DS:\fR\|.\|.\|.	     S
+:DP:	predecessor delta seq-no. 	D	nnnn	     S
+:Ds:	default \s-1SID\s0	F	\fB:I:\fR	     S
+:DS:	delta sequence number	D	nnnn	     S
+:Dt:	delta information	D 	\fB:DT: :I: :D: :T: :P: :DS: :DP:\fR	     S
+:DT:	delta type	D	\fBD\fR or \fBR\fR	     S
+:Dx:	deltas excluded (seq #)	D	\fB:DS:\fR \|.\|.\|.	     S
+:Dy:	year delta created	D	nn	     S
+:F:	\fBs.\fRfile name	N/A	text	     S
+:FB:	floor boundary	F	\fB:R:\fR	     S
+:FD:	file descriptive text	C	text	     M
+:FL:	flag list	F	text	     M
+:GB:	gotten body	B	text	     M
+:I:	\s-1SCCS\s0 delta \s-1ID\s0 (\s-1SID\s0)	D	\fB:R:.:L:.:B:.:S:\fR	     S
+:J:	joint edit flag	F	\fByes\fR or \fBno\fR	     S
+:KF:	keyword error/warning flag	F	\fByes\fR or \fBno\fR	     S
+:L:	level number	D	nnnn	     S
+:Ld:	lines deleted by delta	D	nnnnn	     S
+:Li:	lines inserted by delta	D	nnnnn	     S
+:LK:	locked releases	F	\fB:R:\fR\|.\|.\|.	     S
+:Lu:	lines unchanged by delta	D	nnnnn	     S
+:M:	module name	F	text	     S
+:MF:	MR validation flag	F	\fByes\fR or \fBno\fR	     S
+:MP:	MR validation program	F	text	     S
+:MR:	MR numbers for delta	D	text	     M
+:ND:	null delta flag	F	\fByes\fR or \fBno\fR	     S
+:Q:	user defined keyword	F	text	     S
+:P:	user who created delta	D	username	     S
+:PN:	\fBs.\fRfile's pathname	N/A	text	     S
+:R:	release number	D	nnnn	     S
+:S:	sequence number	D	nnnn	     S
+:T:	time delta created	D	\fB:Th:::Tm:::Ts:\fR	     S
+:Th:	hour delta created	D	nn	     S
+:Tm:	minutes delta created	D	nn	     S
+:Ts:	seconds delta created	D	nn	     S
+:UN:	user names	U	text	     M
+:W:	a form of \fBwhat\fP string	N/A	\fB:Z::M:\et:I:\fR	     S
+:Y:	module type flag	F	text	     S
+:Z:	\fBwhat\fP string delimiter	N/A	\fB@(#)\fR	     S
+.TE
+	\u\s-2*\s0\dB = body, D = delta table, F = flags, U = user names
+	\u\s-2**\s0\dS = simple format, M = multi-line format
+.fi
+.if t .ps +1
+.if t .vs +1p
+.IG
+.br
+.ne 10
+.SH EXAMPLES
+.LP
+The command:
+.IP
+.ft B
+/usr/sccs/prs \-e \-d":I:\et:P:" program.c
+.ft R
+.LP
+produces:
+.RS
+.nf
+.ft B
+1.6	username
+1.5	username
+\fR\&.\|.\|.\fP
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp/pr?????
+temporary file
+.PD 
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-cdc (1),
+.BR sccs-delta (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR sccs-prt (1),
+.BR sccs-sact (1),
+.BR sccs-sccsdiff (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH DIAGNOSTICS
+Use the
+.SM SCCS
+.B help
+command for explanations
+.RB ( sccs-help (1)).

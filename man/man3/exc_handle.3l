@@ -1,0 +1,409 @@
+.\" @(#)exc_handle.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH EXC_HANDLE 3L "21 January 1990"
+.SH NAME
+exc_handle, exc_unhandle, exc_bound, exc_notify, exc_raise, exc_on_exit, exc_uniqpatt \- LWP exception handling
+.SH SYNOPSIS
+.B #include <lwp/lwp.h>
+.LP
+.nf
+.ft B
+int exc_handle(pattern, func, arg)
+int pattern;
+caddr_t (*func)(\|);
+caddr_t arg;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int exc_raise(pattern)
+int pattern;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int exc_unhandle(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+caddr_t (*exc_bound(pattern, arg))(\|)
+int pattern;
+caddr_t *arg;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int exc_notify(pattern)
+int pattern;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int exc_on_exit(func, arg)
+void (*func)(\|);
+caddr_t arg;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int exc_uniqpatt(\|)
+.ft
+.fi
+.SH DESCRIPTION
+.IX "exc_handle()" "" "\fLexc_handle()\fP function"
+.IX "exc_raise()" "" "\fLexc_raise()\fP function"
+.IX "exc_unhandle()" "" "\fLexc_unhandle()\fP function"
+.IX "exc_bound()" "" "\fLexc_bound()\fP function"
+.IX "exc_notify()" "" "\fLexc_notify()\fP function"
+.IX "exc_on_exit()" "" "\fLexc_on_exit()\fP function"
+.IX "exc_on_exit()" "" "\fLexc_on_exit()\fP function"
+.LP
+These primitives can be used to manage exceptional conditions
+in a thread.
+Basically, raising an exception is a more
+general form of non-local goto or
+.IR longjmp ,
+but the invocation is pattern-based.
+It is also possible to
+.I notify
+an exception handler whereby a function supplied by
+the exception handler is invoked and control
+is returned to the raiser of the exception.
+Finally, one can establish a handler which is always invoked upon
+procedure exit, regardless of whether the procedure exits using a
+.I return
+or an exception raised to a handler established
+prior
+to the invocation of the exiting procedure.
+.LP
+.B exc_handle(\|)
+is used to establish an exception handler.
+.B exc_handle(\|)
+returns 0 to indicate that a handler has
+been established.
+A return of \-1 indicates an error in trying to
+establish the exception handler.
+If it returns something else, an exception has occurred
+and any procedure calls deeper than the one containing the handler
+have disappeared.
+All exception handlers established by a procedure are automatically
+discarded when the procedure terminates.
+.LP
+.B exc_handle(\|)
+binds a
+.I pattern
+to the handler,
+where a pattern is an integer, and two patterns
+.I match
+if their values are equal.
+When an exception is raised with
+.BR exc_raise(\|) ,
+the most recent handler
+that has established a matching pattern will catch the exception.
+A special pattern (\s-1CATCHALL\s0) is provided which matches any
+.B exc_raise(\|)
+pattern.
+This is useful for handlers which know that there is no chance
+the resources allocated in a routine can be reclaimed
+by previous routines in the call chain.
+.LP
+The other two arguments to
+.B exc_handle(\|)
+are a function and an argument to that function.
+.B exc_bound(\|)
+retrieves these arguments from an
+.B exc_handle(\|)
+call made by the specified thread.  By using
+.B exc_bound(\|)
+to retrieve and call
+a function bound by the exception handler, a procedure can raise a
+.I notification exception
+which allows control to return to
+the raiser of the exception after the exception is handled.
+.br
+.ne 10
+.LP
+.B exc_raise(\|)
+allows the caller to transfer control
+(do a non-local goto) to the matching
+.BR exc_handle(\|) .
+This matching exception handler is destroyed after the control transfer.
+At this time, it behaves as if
+.B exc_handle(\|)
+returns with the
+.I pattern
+from
+.B exc_raise(\|)
+as the return value.  Note:
+.I func
+of
+.B exc_handle(\|)
+is not called using
+.B exc_raise(\|)
+\(em it is only there for notification exceptions.
+Because the exception handler returns the pattern that invoked it,
+it is possible for a handler that matches the
+.SM CATCHALL
+pattern to
+.I reraise
+the exact exception it caught by using
+.B exc_raise(\|)
+on the caught pattern.
+It is illegal to handle or raise the pattern 0
+or the pattern \-1.
+Handlers are searched for pattern matches in the reverse execution order
+that they are set (i.e., the most recently established handler is
+searched first).
+.LP
+.B exc_unhandle(\|)
+destroys the most recently established
+exception handler set by the current thread.
+It is an error to destroy an exit-handler set up by
+.BR exc_on_exit(\|) .
+When a procedure exits, all handlers and exit handlers set in the
+procedure are automatically deallocated.
+.LP
+.B exc_notify(\|)
+is a convenient way to use
+.BR exc_bound .
+The function which is bound to
+.I pattern
+is retrieved.
+If the function is not
+.SM NULL\s0,
+the function is called with
+the associated argument and the result is returned.
+If the function is
+.SM NULL\s0,
+.BI exc_raise( pattern )
+is returned.
+.LP
+.B exc_on_exit(\|)
+specifies an exit procedure and argument
+to be passed to the exit procedure, which is called when the procedure
+which sets an exit handler using
+.B exc_on_exit(\|)
+exits.  The exit procedures (more than one may
+be set) will be called regardless if the
+setting procedure is exited using a
+.I return
+or an
+.BR exc_raise(\|) .
+Because the exit procedure is called as if the handling
+procedure had returned, the argument
+passed to it should not contain
+addresses on the handler's stack.
+However, any value returned by the procedure which established
+the exit procedure is
+preserved no matter what the exit procedure returns.
+This primitive is used in the
+.SM MONITOR
+macro to enforce the monitor discipline on procedures.
+.\" no exc_off_exit; don't want a way to screw
+.\" .SM MONITOR
+.\" inadvertently (easier to prove/understand things about programs this way).
+.LP
+Some
+signals can be considered to be synchronous traps.
+They are usually the starred (*) signals in the
+.BR signal (3V)
+man pages.
+These are:
+.B \s-1SIGSYS\s0,
+.B \s-1SIGBUS\s0,
+.B \s-1SIGEMT\s0,
+.B \s-1SIGFPE\s0,
+.B \s-1SIGILL\s0,
+.B \s-1SIGTRAP\s0,
+.B \s-1SIGSEGV\s0.
+If an
+event is marked as a trap using
+.B agt_trap(\|)
+(see
+.BR agt_create (3L))
+the event will generate exceptions instead of agent messages.
+This mapping is per-pod, not per-thread.
+A thread which handles the signal number of one of these as the
+pattern for
+.B exc_handle(\|)
+will catch such a signal as an exception.
+The exception will be raised as an
+.B exc_notify(\|)
+so either escape or
+notification style exceptions can be used, depending on what the matching
+.B exc_handle(\|)
+provides.
+If the exception is not handled, the thread will terminate.
+Note: it can be dangerous to supply an exception handler to treat
+stack overflow since the client's stack is used in raising the exception.
+.\" if we allow only escape exceptions there could be a way around this
+.\" since the stack could be asserted to be valid at the time of the exc_handle.
+.\" Then, a trap simply causes a change in context to the point of the exc_handle.
+.LP
+.B exc_uniqpatt(\|)
+returns an exception pattern that is not any of
+the
+pre-defined patterns (any of the synchronous exceptions or \-1 or
+.SM CATCHALL\s0).
+Each call to
+.B exc_uniqpatt(\|)
+results in a different pattern.  If
+.B exc_uniqpatt(\|)
+cannot guarantee uniqueness, \-1 is returned instead the
+.I first
+time this happens.
+Subsequent calls after this error result in patterns which may be duplicates.
+.SH RETURN VALUES
+.LP
+.B exc_uniqpatt(\|)
+returns
+a unique pattern
+on success.
+The
+.I first
+time it fails,
+.B exc_uniqpatt(\|)
+returns
+\-1.
+.LP
+.B exc_handle(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+When
+.B exc_handle(\|)
+returns because of a matching call to
+.BR exc_raise(\|) ,
+it returns the
+.I pattern
+raised by
+.BR exc_raise(\|) .
+.LP
+On success,
+.B exc_raise(\|)
+transfers control to the matching
+.B exc_handle(\|)
+and does not return.
+On failure,
+it returns
+\-1.
+.LP
+.B exc_unhandle(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+.B exc_bound(\|)
+returns
+a pointer to a function
+on success.
+On failure,
+it returns
+.SM NULL\s0.
+.LP
+On success,
+.B exc_notify(\|)
+returns the return value
+of a function, or transfers control to a matching
+.B exc_handle(\|)
+and does not return.
+On failure,
+it returns
+\-1.
+.LP
+.B exc_on_exit(\|)
+returns 0.
+.br
+.ne 5
+.SH ERRORS
+.LP
+.B exc_unhandle(\|)
+will fail if one or more of the following is true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to remove a non-existent handler.
+.IP
+Attempt to remove an exit handler.
+.LP
+.B exc_raise(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INVALIDARG
+Attempt to raise an illegal pattern (\-1 or 0).
+.TP
+.SM LE_NONEXIST
+No context found to raise an exception to.
+.LP
+.B exc_handle(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INVALIDARG
+Attempt to handle an illegal pattern (\-1 or 0).
+.LP
+.B exc_uniqpatt(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_REUSE
+Possible reuse of existing object.
+.SEE ALSO
+.BR agt_create (3L),
+.BR signal (3V)
+.SH BUGS
+.LP
+The stack may not contain useful information after
+an exception has been caught so post-exception debugging
+can be difficult.
+The reason for this is that a given handler
+may call procedures that trash the stack before reraising
+an exception.
+.LP
+.\" Traps now require exceptions to be part of nugget
+The distinction between traps and interrupts can be problematical.
+.\" for instance,
+.\" .SM FP
+.\" coprocessor that gets ahead of
+.\" .SM CPU
+.\" should be interrupt.
+.LP
+The environment restored on
+.B exc_raise(\|)
+consists of the registers at the time of the
+.BR exc_handle(\|) .
+As a result, modifications to register variables between the times of
+.B exc_handle(\|)
+and
+.B exc_raise(\|)
+will not be seen.
+This problem does not occur in the sun4 implementation.
+.\" not true on risc and not needed to be true on vax
+.\" still have scope problem in that the environment you see on
+.\" excraise looks different than the one you save.
+.SH WARNINGS
+.LP
+.B exc_on_exit(\|)
+passes a simple type as an argument to the exit
+routine. If you need to pass a complex type, such as
+.BR thread_t ,
+.BR mon_t ,
+or
+.BR cv_t ,
+pass a pointer to the object instead.
+.\" could provide extra args, for instance, a union of these types in addition to arg

@@ -1,0 +1,139 @@
+.\" @(#)eject.1 1.1 92/07/30 SMI;
+.TH EJECT 1 "29 May 1992"
+.SH NAME
+eject \- eject media device from drive
+.SH SYNOPSIS
+.B eject
+[
+.B \-dfnq
+] [
+.I device
+|
+.I nickname
+]
+.SH AVAILABILITY
+.LP
+This command is not available on
+Sun 386\fIi\fR systems.
+.SH DESCRIPTION
+.IX eject "" "\fLeject\fR \(em eject floppy diskette"
+.IX "floppy diskette, eject with \(em \fLeject\fR"
+.IX "diskette, eject with \(em \fLeject\fR"
+.LP
+.B eject
+is used for those removable media devices that do not have
+a manual eject button.
+The device may be specified by its name or by a nickname; 
+if no device is specified the default device is used.
+.LP
+Only devices that support
+.B eject
+under program control respond to this command.
+.LP
+It is not recommended to physically eject media from a device 
+which contains mounted filesystems.
+.B eject
+automatically searches for any mounted
+filesystems which reside on the device and attempts to
+.B umount
+them prior to ejecting the media
+(see
+.BR mount (8)).
+If the unmount operation fails, 
+.B eject
+prints a warning message and exits.
+The 
+.B \-f
+flag may be used to specify an eject
+.I even
+if the device contains mounted partitions.
+.LP
+.B eject
+can also display its default device and a list of nicknames.
+.SH OPTIONS
+.TP 12
+.B \-d
+Display the name of the default device to be ejected.
+.TP
+.B \-f
+Force the device to eject even if it is busy.
+.TP
+.B \-n
+Display the nickname to device name translation table.
+.TP
+.B \-q
+Query to see if the media is present.
+.TP
+.I device
+Specify which device to
+.BR eject ,
+by the name as it appears in the directory
+.BR /dev .
+.TP
+.I nickname
+Specify which device to
+.BR eject ,
+by its nickname as known to this command.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rfd0c
+.TP
+.B /dev/rsr0
+raw files
+.TP
+.B /dev/sr0
+block files
+.PD
+.SH "SEE ALSO"
+.LP
+.BR fd (4S),
+.BR sr (4S),
+.BR mount (8)
+.SH EXIT STATUS
+.LP
+.B eject
+returns the following exit codes:
+.RS
+.TP
+0
+If the operation was successful or, with the
+.B \-q
+option, if the media
+.I is
+in the drive.
+.TP
+1
+If the operation was 
+unsuccessful
+or, with the
+.B \-q
+option, if the media is
+.I not
+in the drive.
+.TP
+2
+If invalid flags were specified.
+.TP
+3
+If an
+.B ioctl(\|)
+request failed.
+.RE
+.SH DIAGNOSTICS
+.LP
+A short help message is printed if an unknown flag is specified.
+A diagnostic is printed
+if the device name cannot be opened or does not support
+.BR eject .
+.LP
+.B "Device Busy:"
+An attempt was made to eject
+a device that has a mounted filesystem.
+A warning message is printed when doing a forced eject of a mounted device. However, if a device is doing a format, "eject -f" will not have any effect.
+.SH BUGS
+.LP
+There should be a way to change the default on a per-user basis.
+.\"
+.\" FUTURES - add whatever devices, ie certain SCSI tapes, CDROMs
+.\"

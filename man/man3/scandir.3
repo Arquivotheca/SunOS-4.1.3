@@ -1,0 +1,58 @@
+.\" @(#)scandir.3 1.1 92/07/30 SMI; from UCB 4.2
+.TH SCANDIR 3  "6 October 1987"
+.SH NAME
+scandir, alphasort \- scan a directory
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <sys/dir.h>
+.LP
+.B scandir(dirname, &namelist, select, compar)
+.B char *dirname;
+.B struct direct **namelist;
+.B int (*select)(\|);
+.B int (*compar)(\|);
+.LP
+.B alphasort(d1, d2)
+.B struct direct **d1, **d2;
+.fi
+.IX  "scandir()"  ""  "\fLscandir()\fR \(em scan directory"
+.IX  "alphasort()"  ""  "\fLalphasort()\fR \(em sort directory"
+.IX  "scan directory" "scandir" "" "\fLscandir()\fR"
+.IX  "scan directory" "alphasort" "" "\fLalphasort()\fR"
+.IX  directory  scan
+.SH DESCRIPTION
+.LP
+.B scandir(\|)
+reads the directory
+.B dirname
+and builds an array of pointers to directory entries using
+.BR malloc (3V).
+The second parameter is a pointer to an array of structure pointers.
+The third parameter is a pointer to a routine which is called with a
+pointer to a directory entry and should return a non zero
+value if the directory entry should be included in the array.
+If this pointer is
+.SM NULL\s0,
+then all the directory entries will be included.
+The last argument is a pointer to a routine which is passed to
+.BR qsort (3)
+to sort the completed array. If this pointer is
+.SM NULL\s0,
+the array is not sorted.
+.B alphasort(\|)
+is a routine which will sort the array alphabetically.
+.LP
+.B scandir(\|)
+returns the number of entries in the array and a pointer to the
+array through the parameter
+.I namelist.
+.SH "SEE ALSO"
+.BR directory (3V),
+.BR malloc (3V),
+.BR qsort (3)
+.SH DIAGNOSTICS
+.LP
+Returns \-1 if the directory cannot be opened for reading or if
+.BR malloc (3V)
+cannot allocate enough memory to hold all the data structures.

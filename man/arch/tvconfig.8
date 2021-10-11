@@ -1,0 +1,90 @@
+.\" @(#)tvconfig.8 1.1 92/07/30 SMI;
+.TH TVCONFIG 8 "31 May 1989"
+.SH NAME
+tvconfig \- initialize and bind the SunVideo display board
+.SH SYOPNSIS
+.B /usr/etc/tvconfig
+[
+.B \-f
+]
+.I tvunit
+.IR fbunit
+.SH DESCRIPTION
+.IX "tvconfig init" "" "\fLtvconfig\fP \(em initialize and bind SunVideo display board"
+.IX SunVideo "initialize and bind display board"
+.IX initialize "and bind SunVideo display board"
+.LP
+.B tvconfig
+binds a cg frame buffer to the SunVideo display board.
+For example, the command line:
+.LP
+.IP
+.B /usr/etc/tvconfig tvone0 cgtwo0
+.LP
+will bind the frame buffer board
+.B cgtwo0
+to the SunVideo display board
+.BR tvone0 .
+The device
+.B /dev/tvone0
+will then refer to the combination of
+.B tvone0
+and
+.B cgtwo0
+.LP
+Only one frame buffer can be bound at a time.
+.LP
+In the file
+.BR /etc/rc.local ,
+the following command line:
+.IP
+.B "/usr/etc/tvconfig \-f tvone0 cgtwo0"
+.LP
+will bind
+.B tvone0
+and
+.B cgtwo0
+as
+.BR tvone0 ,
+and redirect
+.B /dev/fb
+to be
+.BR /dev/tvone0 .
+If another configuration is desired, edit the command line in
+.B /etc/rc.local
+appropriately.
+.LP
+It is inadvisable to run the
+.B tvconfig
+command while the frame buffer or the SunVideo display board
+is being used.
+Unpredictable results may occur.
+If it is necessary to change
+the frame buffer bindings, exit Sunview first.
+.SH OPTIONS
+.TP
+.TP
+.B \-f
+Redirect
+.B /dev/fb
+to the device formed by binding
+.I tvunit
+with
+.BR fbunit .
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/cgtwo[0-9]
+.TP
+.B /dev/cgfour
+.TP
+.B /dev/fb
+.TP
+.B /dev/tvone0
+.TP
+.B /etc/rc.local
+.PD
+.SH "SEE ALSO"
+.BR cgtwo (4S),
+.BR tvone (4S),
+.BR cgfour (4S)

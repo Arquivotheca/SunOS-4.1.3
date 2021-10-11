@@ -1,0 +1,731 @@
+#!/bin/sh
+#
+#       @(#)upgrade_client	1.4 8/28/91 SMI
+#
+# Copyright (c) 1990 Sun Microsystems, Inc.
+#
+########################################################################
+#
+# variables
+#
+INSDIR=/etc/install
+EXP_KVM_DIR=/export/exec/kvm
+
+KARCH1=sun4
+OLD_RELEASE_STR1=$AARCH.$KARCH1.sunos.$FROM_RELEASE
+NEW_RELEASE_STR1=$AARCH.$KARCH1.sunos.$TO_RELEASE
+SOFT_INFO1=$INSDIR/soft_info.$NEW_RELEASE_STR1
+SOFT_INFO_OLD1=$INSDIR/soft_info.$OLD_RELEASE_STR1
+[ -s $SOFT_INFO_OLD1 ] && \
+KVMPATH1=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO_OLD1`
+EXP_KVM_DIR_K1=$EXP_KVM_DIR/$KARCH1
+
+KARCH2=sun4c
+OLD_RELEASE_STR2=$AARCH.$KARCH2.sunos.$FROM_RELEASE
+NEW_RELEASE_STR2=$AARCH.$KARCH2.sunos.$TO_RELEASE
+SOFT_INFO2=$INSDIR/soft_info.$NEW_RELEASE_STR2
+SOFT_INFO_OLD2=$INSDIR/soft_info.$OLD_RELEASE_STR2
+[ -s $SOFT_INFO_OLD2 ] && \
+KVMPATH2=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO_OLD2`
+EXP_KVM_DIR_K2=$EXP_KVM_DIR/$KARCH2
+
+KARCH3=sun4m
+OLD_RELEASE_STR3=$AARCH.$KARCH3.sunos.$FROM_RELEASE
+NEW_RELEASE_STR3=$AARCH.$KARCH3.sunos.$TO_RELEASE
+SOFT_INFO3=$INSDIR/soft_info.$NEW_RELEASE_STR3
+SOFT_INFO_OLD3=$INSDIR/soft_info.$OLD_RELEASE_STR3
+[ -s $SOFT_INFO_OLD3 ] && \
+KVMPATH3=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO_OLD3`
+EXP_KVM_DIR_K3=$EXP_KVM_DIR/$KARCH3
+CANDS=/tmp/clients$$
+
+########################################################################
+#
+# utility functions
+#
+#
+# find_root client_name
+#
+find_root() {
+    $NAWK -F= '{if ($1 == "root_path") print $2}' < $INSDIR/client.$1
+}
+
+#
+# fix_kernel kernel_path root_directory
+#
+fix_kernel(){
+    
+    if $VERBOSE; then
+	log_tab; log_echo "Installing $2/vmunix"
+    fi
+    if $DUMMY ; then 
+	return
+    fi
+    if [ ! -s $1 ]; then
+	log_echo "Can't find vmunix in $1!"
+	return
+    fi
+    [ -f $2/vmunix ] && \
+	[ ! -s $2/vmunix.orig ] && \
+	  $BACKUP && \
+	        $MV $2/vmunix $2/vmunix.orig
+    sum1=`$SUM $1`
+    for i in 1 2; do
+	$CP -p $1 $2/vmunix
+	$SYNC; $SYNC
+	sum2=`$SUM $2/vmunix`
+	[ "$sum1" = "$sum2" ] && break
+	if [ "$i" = 2 ]; then
+            log_echo "Unable to install new kernel in $2!"
+            [ ! -f $2/vmunix.orig ] && break
+            log_echo "Restoring original kernel in $2"
+            $MV $2/vmunix.orig $2/vmunix
+            $SYNC; $SYNC
+        fi
+    done
+}
+
+#
+# fix_kadb kadb_path root_directory
+#
+fix_kadb(){
+    if $VERBOSE; then
+	log_tab; log_echo "Copy $1 to $2/kadb"
+    fi
+    if $DUMMY ; then 
+	return
+    fi
+    $CP $1 $2/kadb
+}
+
+#
+# fix_fstab 
+# Parameters: root_directory kvm_path
+# Replace the /usr/kvm mountpoint and add the pcfs line if not present.
+#
+fix_fstab() {
+    FSTAB=$1/etc/fstab
+    old_suffix=".`echo $2 | $SED "s/\.//g" | $TR '[A-Z]' '[a-z]'`"
+    if [ x_$old_suffix = "x_" ]; then
+	old_suffix=$OLD_SUFFIX
+    fi
+    if $VERBOSE; then
+	log_tab; log_echo "$FSTAB SAVED TO"
+	log_tab; log_echo "$FSTAB$old_suffix"
+    fi
+    if $DUMMY ; then 
+	return
+    fi
+    if [ ! -s $FSTAB ]; then
+        log_echo "No $FSTAB ?"
+        return 1
+    fi
+    echo $FSTAB >> $COALESCE_LIST
+    $MV $FSTAB $FSTAB$old_suffix
+    $SED "s@sunos.$2@sunos.$TO_RELEASE@" \
+				$FSTAB$old_suffix > $FSTAB
+}
+
+#
+# fix_tftpboot client_name client_karch
+#
+fix_tftpboot() {
+    client_name=$1
+    client_karch=$2
+    CLIENT_KARCH=`echo $client_karch | $TR '[a-z]' '[A-Z]'`
+
+    INET=`$NAWK ' {if (substr($1, 1, 1) != "#") if ($2 == "'$client_name'") print $1}' /etc/hosts |\
+    $NAWK -F. '{printf("%02x%02x%02x%02x\n", $1, $2, $3, $4);}' |\
+    $TR '[a-z]' '[A-Z]'`
+    if [ -z "$INET" ]; then
+	log_echo "Unable to fix tftpboot for the $client_name."
+	return 1;
+    fi
+    BOOT=`echo boot.$client_karch.sunos.$TO_RELEASE`
+    INET_CLIENT_KARCH=$INET.$CLIENT_KARCH
+    if $VERBOSE; then
+	log_tab; log_echo "client : $1 ($2)"
+	log_tab; log_echo "BOOT : $BOOT"
+	log_tab; log_echo "INET : $INET_CLIENT_KARCH"
+    fi
+    if $DUMMY ; then 
+	return
+    fi
+    $RM -f /tftpboot/$INET /tftpboot/$INET_CLIENT_KARCH
+    $LN -s $BOOT /tftpboot/$INET
+    $LN -s $BOOT /tftpboot/$INET_CLIENT_KARCH
+}
+
+#
+# fix_installfiles client_name
+#
+fix_installfiles() {
+    $DUMMY && return
+    client_name=$1
+    kvmpath=$2
+    new_release_str=$3
+    $MV $INSDIR/client.$client_name $TMP
+    $SED "s@^kvm_path.*@kvm_path=${kvmpath}@" $TMP |\
+    $SED "s@^arch_str.*@arch_str=${new_release_str}@" >\
+                                 $INSDIR/client.$client_name
+    $RM $TMP
+}
+
+fix_again()
+{
+    $DUMMY && return
+    client_name=$1
+    new_release_str=`$ECHO $2 | \
+	 $NAWK -F. '{rel=""; for (i=3; i<NF; i++) rel=rel $i"."; rel=rel $NF; print rel}'`
+    $MV $INSDIR/client.$client_name $TMP
+    $SED "s@sunos.4.1.*@${new_release_str}@" $TMP > \
+				$INSDIR/client.$client_name
+    $RM $TMP
+} 
+
+
+get_yn() {
+while true; do
+    log_echo -n $*' ?  [yes] '
+    read answer
+    case $answer in
+        y | yes) log_echo yes;	return 0;;
+        "")			return 0;;
+        n | no)  log_echo no;	return 1;;
+        *)       log_echo $answer
+		 log_echo "Acceptable answers are: y/yes/n/no. Default is \"yes\". Retype, please." ;;
+    esac
+done
+}
+#
+# what_karch client
+#
+what_karch(){
+    client=$1
+    arch_file=$INSDIR/client.$client
+    arch_str0=`$CAT $arch_file | $GREP "^arch_str="`
+    arch_str=`$EXPR $arch_str0 : 'arch_str=\(.*\)' '|' "1"`
+    client_karch=`echo $arch_str | $NAWK -F. '{print $2}'`
+    echo $client_karch
+}
+#
+# what_release client
+#
+what_release(){
+    client=$1
+    arch_file=$INSDIR/client.$client
+    arch_str0=`$CAT $arch_file | $GREP "^arch_str="`
+    arch_str=`$EXPR $arch_str0 : 'arch_str=\(.*\)' '|' "1"` 
+    client_release=`echo $arch_str | $NAWK -F. '{rel=""; for (i=4; i<NF; i++) rel=rel $i"."; rel=rel $NF; print rel}'`
+    echo $client_release
+}
+########################################################################
+#
+# body of program
+#
+#INTERACTIVE=true
+#ALL=false
+ALL=true
+
+
+# Find all the candidates. Take the union of
+#    /etc/install/client_list.sun4.sun4.sunos.4.1.1*
+#    /etc/install/client_list.sun4.sun4c.sunos.4.1.1*
+#    /etc/install/client_list.sun4.sun4m.sunos.4.1.1*
+#    /etc/install/client_list.sun4.sun4.sunos.4.1.2*
+#    /etc/install/client_list.sun4.sun4c.sunos.4.1.2*
+#    /etc/install/client_list.sun4.sun4m.sunos.4.1.2*
+#
+FROM_RELEASE_LIST=`$SORT -u $INSDIR/client_list.sun4.sun4*.sunos.4.1.* 2>/dev/null`
+for cand in $FROM_RELEASE_LIST; do
+    client_file=$INSDIR/client.$cand
+    if [ -f $client_file ]; then
+
+        echo $cand
+    fi
+done | $SORT -u > $CANDS
+
+#
+# Are there any candidates?
+#
+if [ `wc -l < $CANDS` -eq 0 ]; then
+        log_echo "No clients to upgrade."
+fi
+
+#
+# Unless told otherwise, ask which ones we should do.
+#
+while $INTERACTIVE; do
+    CLIENTS=""
+    log_echo; log_echo "Upgrade the following clients to $TO_RELEASE?"
+    for cand in `$CAT $CANDS`; do
+        if get_yn $cand; then
+            CLIENTS="$CLIENTS $cand"
+        fi
+    done
+    if [ -z "$CLIENTS" ]; then
+	$RM $CANDS 
+	exit 0
+    fi
+    log_echo 
+    log_echo "These clients will be upgraded:"
+    log_tab; log_echo "    " $CLIENTS
+    if get_yn Is this acceptable; then
+        break
+    fi
+done
+#
+# If ALL, do all of them.
+#
+if $ALL; then
+    CLIENTS=`$CAT $CANDS`
+fi
+$RM $CANDS
+
+# Fix the kvm and sys
+NEED1=false
+NEED2=false
+NEED3=false
+
+if [ -s $CLIENT_UPGRADE_CANDIDATES ]; then
+$GREP "$AARCH:$KARCH1:4.1" $CLIENT_UPGRADE_CANDIDATES | $NAWK -F: '{print $NF}' | $SORT -u > $sun4_RELEASE_LST
+fi 
+if [ -s $sun4_RELEASE_LST ]; then
+   NEED1=true
+   $GREP "$FROM_RELEASE$" $sun4_RELEASE_LST > /dev/null
+   rc=$?
+   if [ $rc = 0 ]; then
+    SUN4_RELEASE=$FROM_RELEASE
+    if [ ! -s $SOFT_INFO_OLD1 ]; then
+        log_echo "$SOFT_INFO_OLD1 is missing."
+	cleanup 20
+    fi
+   else
+    SUN4_RELEASE=`$NAWK '{if (! one) {print $0; one=1}}' $sun4_RELEASE_LST`
+    OLD_RELEASE_STR1_ADD="$KARCH1.sunos.$SUN4_RELEASE"
+    SOFT_INFO_OLD1_ADD="$INSDIR/soft_info.$AARCH.$OLD_RELEASE_STR1_ADD"
+    if [ ! -s $SOFT_INFO_OLD1_ADD ]; then
+       log_echo "$SOFT_INFO_OLD1_ADD is missing."
+       cleanup 20
+    fi 
+    KVMPATH1=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO_OLD1_ADD`
+    EXP_KVM_DIR_K1=$EXP_KVM_DIR/$OLD_RELEASE_STR1_ADD
+    OLD_RELEASE_STR1="$AARCH.$OLD_RELEASE_STR1_ADD"
+   fi
+   $GREP -v "$SUN4_RELEASE$" $sun4_RELEASE_LST > $SUN4_REMOVE_LST
+fi
+ 
+if [ -s $CLIENT_UPGRADE_CANDIDATES ]; then
+$GREP "$AARCH:$KARCH2:4.1" $CLIENT_UPGRADE_CANDIDATES | $NAWK -F: '{print $NF}' | $SORT -u > $sun4c_RELEASE_LST
+fi 
+if [ -s $sun4c_RELEASE_LST ]; then
+   NEED2=true
+   $GREP "$FROM_RELEASE$" $sun4c_RELEASE_LST > /dev/null
+   rc=$?
+   if [ $rc = 0 ]; then
+    SUN4C_RELEASE=$FROM_RELEASE
+    if [ ! -s $SOFT_INFO_OLD2 ]; then
+        log_echo "$SOFT_INFO_OLD2 is missing."
+	cleanup 20
+    fi
+   else
+    SUN4C_RELEASE=`$NAWK '{if (! one) {print $0; one=1}}' $sun4c_RELEASE_LST`
+    OLD_RELEASE_STR2_ADD="$KARCH2.sunos.$SUN4C_RELEASE"
+    SOFT_INFO_OLD2_ADD="$INSDIR/soft_info.$AARCH.$OLD_RELEASE_STR2_ADD"
+    if [ ! -s $SOFT_INFO_OLD2_ADD ]; then
+       log_echo "$SOFT_INFO_OLD2_ADD is missing."
+       cleanup 20
+    fi 
+    KVMPATH2=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO_OLD2_ADD`
+    EXP_KVM_DIR_K2=$EXP_KVM_DIR/$OLD_RELEASE_STR2_ADD
+    OLD_RELEASE_STR2="$AARCH.$OLD_RELEASE_STR2_ADD"
+   fi
+    $GREP -v "$SUN4C_RELEASE$" $sun4c_RELEASE_LST > $SUN4C_REMOVE_LST
+fi
+if [ -s $CLIENT_UPGRADE_CANDIDATES ]; then
+$GREP "$AARCH:$KARCH3:4.1" $CLIENT_UPGRADE_CANDIDATES | $NAWK -F: '{print $NF}' | $SORT -u > $sun4m_RELEASE_LST
+fi 
+if [ -s $sun4m_RELEASE_LST ]; then
+   NEED3=true
+   $GREP "$FROM_RELEASE$" $sun4m_RELEASE_LST > /dev/null
+   rc=$?
+   if [ $rc = 0 ]; then
+    SUN4M_RELEASE=$FROM_RELEASE
+    if [ ! -s $SOFT_INFO_OLD3 ]; then
+        log_echo "$SOFT_INFO_OLD3 is missing."
+	cleanup 20
+    fi
+   else
+    SUN4M_RELEASE=`$NAWK '{if (! one) {print $0; one=1}}' $sun4m_RELEASE_LST`
+    OLD_RELEASE_STR3_ADD="$KARCH3.sunos.$SUN4M_RELEASE"
+    SOFT_INFO_OLD3_ADD="$INSDIR/soft_info.$AARCH.$OLD_RELEASE_STR3_ADD"
+    if [ ! -s $SOFT_INFO_OLD3_ADD ]; then
+       log_echo "$SOFT_INFO_OLD3_ADD is missing."
+       cleanup 20
+    fi 
+    KVMPATH3=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO_OLD3_ADD`
+    EXP_KVM_DIR_K3=$EXP_KVM_DIR/$OLD_RELEASE_STR3_ADD
+    OLD_RELEASE_STR3="$AARCH.$OLD_RELEASE_STR3_ADD"
+   fi
+   $GREP -v "$SUN4M_RELEASE$" $sun4m_RELEASE_LST > $SUN4M_REMOVE_LST
+fi
+
+$CAT $sun4_RELEASE_LST $sun4c_RELEASE_LST $sun4m_RELEASE_LST | $SORT -u > $RELEASE_LST
+
+if $NEED1 ; then
+# Upgrade the $KARCH1 kvm &sys 
+
+    if [ $KVMPATH1 = "/usr/kvm" ]; then
+	K1_SAVE=$KVMPATH1
+	K1_FILE=$sun4_RELEASE_LST
+    elif [ $KARCH1 = $KARCH ]; then
+	K1_SAVE="/usr/kvm"
+	K1_FILE=$sun4_RELEASE_LST
+	KVMPATH1=$EXP_KVM_DIR/$KARCH1.sunos.$TO_RELEASE
+    else
+	log_echo "Upgrade kvm and sys files for the $KARCH1"
+	upgrade_package kvm $EXP_KVM_DIR_K1 $KARCH1 $SUN4_RELEASE
+	is_sys_loaded \
+	    $INSDIR/media_file.$OLD_RELEASE_STR1
+	if  [ $? = 0 ] ; then
+	    upgrade_package sys $EXP_KVM_DIR_K1 $KARCH1 $SUN4_RELEASE
+	elif [ -s $SUN4_REMOVE_LST ]; then
+	    for str in `$CAT $SUN4_REMOVE_LST`; do
+		is_sys_loaded \
+		    $INSDIR/media_file.$AARCH.$KARCH1.sunos.$str
+		if [ $? = 0 ]; then
+		    get_package sys $EXP_KVM_DIR_K1 $KARCH1
+		    add_sys $INSDIR/media_file.$AARCH.$KARCH1.sunos.$SUN4_RELEASE
+		    break
+		fi
+            done
+	fi
+	K1_SAVE=$EXP_KVM_DIR_K1
+	K1_FILE=$SUN4_REMOVE_LST
+	KVMPATH1=$EXP_KVM_DIR/$KARCH1.sunos.$TO_RELEASE
+    fi
+
+    if [ -s $K1_FILE ]; then
+      for str in `$CAT $K1_FILE`; do
+          OLD_RELEASE="$AARCH.$KARCH1.sunos.$str"
+	  SOFT_INFO=$INSDIR/soft_info.$OLD_RELEASE
+	  [ -s $SOFT_INFO ] && \
+	  KVMPATH_K1=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO`
+	  if [ $KVMPATH_K1 = "/usr/kvm" ]; then
+	       :
+	  else 
+             EXP_KVM=$EXP_KVM_DIR/$KARCH1.sunos.$str
+             upgrade_save kvm $EXP_KVM $KARCH1 $str $K1_SAVE
+             is_sys_loaded \
+                $INSDIR/media_file.$OLD_RELEASE
+             if  [ $? = 0 ] ; then
+                 upgrade_save sys $EXP_KVM $KARCH1 $str $K1_SAVE
+             fi
+	  fi
+      done
+    fi
+fi
+if $NEED2 ; then
+# Upgrade the $KARCH2 kvm &sys
+
+    if [ $KVMPATH2 = "/usr/kvm" ]; then
+	K2_SAVE=$KVMPATH2
+	K2_FILE=$sun4c_RELEASE_LST
+    elif [ $KARCH2 = $KARCH ]; then
+	K2_SAVE="/usr/kvm"
+	K2_FILE=$sun4c_RELEASE_LST
+	KVMPATH2=$EXP_KVM_DIR/$KARCH2.sunos.$TO_RELEASE
+    else
+	log_echo "Upgrade kvm and sys files for the $KARCH2"
+	upgrade_package kvm $EXP_KVM_DIR_K2 $KARCH2 $SUN4C_RELEASE 
+	is_sys_loaded \
+	    $INSDIR/media_file.$OLD_RELEASE_STR2
+	if  [ $? = 0 ] ; then
+	    upgrade_package sys $EXP_KVM_DIR_K2 $KARCH2 $SUN4C_RELEASE
+        elif [ -s $SUN4C_REMOVE_LST ]; then
+	    for str in `$CAT $SUN4C_REMOVE_LST`; do
+		is_sys_loaded \
+		    $INSDIR/media_file.$AARCH.$KARCH2.sunos.$str
+		if [ $? = 0 ]; then
+		    get_package sys $EXP_KVM_DIR_K2 $KARCH2
+		    add_sys $INSDIR/media_file.$AARCH.$KARCH2.sunos.$SUN4C_RELEASE
+		    break
+		fi
+            done
+	fi
+	K2_SAVE=$EXP_KVM_DIR_K2
+	K2_FILE=$SUN4C_REMOVE_LST
+	KVMPATH2=$EXP_KVM_DIR/$KARCH2.sunos.$TO_RELEASE
+    fi
+    if [ -s $K2_FILE ]; then
+       for str in `$CAT $K2_FILE`; do
+           OLD_RELEASE="$AARCH.$KARCH2.sunos.$str"
+	   SOFT_INFO=$INSDIR/soft_info.$OLD_RELEASE
+	   [ -s $SOFT_INFO ] && \
+	   KVMPATH_K2=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO`
+	   if [ $KVMPATH_K2 = "/usr/kvm" ]; then
+	       :
+	   else 
+             EXP_KVM=$EXP_KVM_DIR/$KARCH2.sunos.$str
+             upgrade_save kvm $EXP_KVM $KARCH2 $str $K2_SAVE
+             is_sys_loaded \
+                $INSDIR/media_file.$OLD_RELEASE
+             if  [ $? = 0 ] ; then
+                 upgrade_save sys $EXP_KVM $KARCH2 $str $K2_SAVE
+             fi
+	  fi
+       done
+    fi
+fi
+if $NEED3 ; then
+# Upgrade the $KARCH3 kvm &sys on 4.1.1
+
+    if [ $KVMPATH3 = "/usr/kvm" ]; then
+	K3_SAVE=$KVMPATH3
+	K3_FILE=$sun4m_RELEASE_LST
+    elif [ $KARCH3 = $KARCH ]; then
+	K3_SAVE="/usr/kvm"
+	K3_FILE=$sun4m_RELEASE_LST
+	KVMPATH3=$EXP_KVM_DIR/$KARCH3.sunos.$TO_RELEASE
+    else
+	log_echo "Upgrade kvm and sys files for the $KARCH3"
+	upgrade_package kvm $EXP_KVM_DIR_K3 $KARCH3 $SUN4M_RELEASE
+	is_sys_loaded \
+	    $INSDIR/media_file.$OLD_RELEASE_STR3
+	if  [ $? = 0 ] ; then
+	    upgrade_package sys $EXP_KVM_DIR_K3 $KARCH3 $SUN4M_RELEASE
+        elif [ -s $SUN4M_REMOVE_LST ]; then
+	    for str in `$CAT $SUN4M_REMOVE_LST`; do
+		is_sys_loaded \
+		    $INSDIR/media_file.$AARCH.$KARCH3.sunos.$str
+		if [ $? = 0 ]; then
+		    get_package sys $EXP_KVM_DIR_K3 $KARCH3
+		    add_sys $INSDIR/media_file.$AARCH.$KARCH3.sunos.$SUN4M_RELEASE
+		    break
+		fi
+            done
+	fi
+	K3_SAVE=$EXP_KVM_DIR_K3
+	K3_FILE=$SUN4M_REMOVE_LST
+	KVMPATH3=$EXP_KVM_DIR/$KARCH3.sunos.$TO_RELEASE
+    fi
+    if [ -s $K3_FILE ]; then
+        for str in `$CAT $K3_FILE`; do
+            OLD_RELEASE="$AARCH.$KARCH3.sunos.$str"
+	    SOFT_INFO=$INSDIR/soft_info.$OLD_RELEASE
+	    [ -s $SOFT_INFO ] && \
+	    KVMPATH_K3=`$NAWK -F= ' {if ($1 == "kvm_path") print $2}' $SOFT_INFO`
+	    if [ $KVMPATH_K3 = "/usr/kvm" ]; then
+	       :
+	    else 
+             EXP_KVM=$EXP_KVM_DIR/$KARCH3.sunos.$str
+             upgrade_save kvm $EXP_KVM $KARCH3 $str $K3_SAVE
+             is_sys_loaded \
+                $INSDIR/media_file.$OLD_RELEASE
+             if  [ $? = 0 ] ; then
+                 upgrade_save sys $EXP_KVM $KARCH3 $str $K3_SAVE
+             fi
+	    fi
+        done
+    fi
+fi
+#
+# Upgrade and rename /export/exec/proto.root.sunos.4.1.1 (or 4.1.2) 
+# to		     /export/exec/proto.root.sunos.$TO_RELEASE
+#
+RENAMED=false
+r_str=""
+if [ -d /export/exec/proto.root.sunos.$TO_RELEASE ]; then
+    RENAMED=true
+    r_str=$TO_RELEASE
+fi
+if [ $RENAMED = false ] && [ -d /export/exec/proto.root.sunos.$FROM_RELEASE ]; then
+    upgrade_package root /export/exec/proto.root.sunos.$FROM_RELEASE
+    log_echo "Rename /export/exec/proto.root.sunos.$FROM_RELEASE to\
+		/export/exec/proto.root.sunos.$TO_RELEASE"
+    r_str=$FROM_RELEASE
+    RENAMED=true
+    if $DUMMY ; then
+	:
+    else
+	$MV /export/exec/proto.root.sunos.$FROM_RELEASE \
+	    /export/exec/proto.root.sunos.$TO_RELEASE
+    fi
+fi
+if [ -s $RELEASE_LST ]; then
+for str in `$CAT $RELEASE_LST` ; do
+if $RENAMED && [ -d /export/exec/proto.root.sunos.$str ] && [ $str != $r_str ]; then
+    upgrade_save root /export/exec/proto.root.sunos.$str $KARCH $str /export/exec/proto.root.sunos.$TO_RELEASE
+    log_echo "Remove /export/exec/proto.root.sunos.$str"
+    if $DUMMY ; then
+	:
+    else
+	$RM -rf /export/exec/proto.root.sunos.$str
+    fi
+elif [ $RENAMED = false ] && [ -d /export/exec/proto.root.sunos.$str ]; then
+    upgrade_package root /export/exec/proto.root.sunos.$str $KARCH $str
+    log_echo "Rename /export/exec/proto.root.sunos.$str to\
+                     /export/exec/proto.root.sunos.$TO_RELEASE"
+    r_str=$str
+    RENAMED=true
+    if $DUMMY ; then
+        :
+    else 
+        $MV  /export/exec/proto.root.sunos.$str \
+            /export/exec/proto.root.sunos.$TO_RELEASE
+    fi
+fi
+done
+fi
+# All systems go: we have a list of clients and a valid kernel.
+# Do it to it.
+#
+for client in $CLIENTS; do
+    log_echo
+    log_echo Upgrading client $client ...
+    THE_KARCH=`what_karch $client`
+    THE_RELEASE=`what_release $client`
+    ROOT=`find_root $client`
+    upgrade_package root $ROOT $THE_KARCH $THE_RELEASE
+    if [ $THE_KARCH = $KARCH1 ]; then
+        KVMPATH=$KVMPATH1
+	NEW_RELEASE_STR=$NEW_RELEASE_STR1
+    elif [ $THE_KARCH = $KARCH2 ]; then
+        KVMPATH=$KVMPATH2
+	NEW_RELEASE_STR=$NEW_RELEASE_STR2
+    elif [ $THE_KARCH = $KARCH3 ]; then
+        KVMPATH=$KVMPATH3
+	NEW_RELEASE_STR=$NEW_RELEASE_STR3
+    else
+	log_echo "Unknown arch $THE_KARCH"
+    fi
+    log_tab; log_echo 'Updating fstab'
+    fix_fstab $ROOT $THE_RELEASE
+    log_tab; log_echo 'Updating /tftpboot links'
+    fix_tftpboot $client $THE_KARCH
+    log_tab; log_echo 'Updating installation records'
+    fix_installfiles $client $KVMPATH $NEW_RELEASE_STR
+    fix_again $client $NEW_RELEASE_STR
+done
+#
+# Fix client_list.sun4.sun4.sunos.4.1.1 (or 4.1.2)
+# and client_list.sun4.sun4c.sunos.4.1.1 (or 4.1.2)
+# and client_list.sun4.sun4m.sunos.4.1.1 (or 4.1.2)
+#
+for ckarch in $KARCH1 $KARCH2 $KARCH3; do   
+RENAMED=false
+r_str=""
+if [ -f $INSDIR/client_list.sun4.$ckarch.sunos.$TO_RELEASE ]; then
+	RENAMED=true
+	r_str=$TO_RELEASE
+fi
+[ $ckarch = $KARCH1 ] && filename=$sun4_RELEASE_LST
+[ $ckarch = $KARCH2 ] && filename=$sun4c_RELEASE_LST
+[ $ckarch = $KARCH3 ] && filename=$sun4m_RELEASE_LST
+if [ $RENAMED = false ] && [ -f $INSDIR/client_list.sun4.$ckarch.sunos.$FROM_RELEASE ]; then
+    log_echo "Rename $INSDIR/client_list.sun4.$ckarch.sunos.$FROM_RELEASE to \
+  		$INSDIR/client_list.sun4.$ckarch.sunos.$TO_RELEASE"
+    r_str=$FROM_RELEASE
+    RENAMED=true
+    if $DUMMY ; then
+ 	:
+    else
+	$MV $INSDIR/client_list.sun4.$ckarch.sunos.$FROM_RELEASE \
+	    $INSDIR/client_list.sun4.$ckarch.sunos.$TO_RELEASE 2>/dev/null
+    fi
+fi
+if [ -s $filename ]; then	
+for strng in `$CAT $filename`; do
+if [ $strng != $TO_RELEASE ]; then
+if [ $RENAMED = false ] && [ -f $INSDIR/client_list.sun4.$ckarch.sunos.$strng ] ; then
+    log_echo "Rename $INSDIR/client_list.sun4.$ckarch.sunos.$strng to\
+		     $INSDIR/client_list.sun4.$ckarch.sunos.$TO_RELEASE"
+    r_str=$strng
+    RENAMED=true
+    if $DUMMY ; then
+	:
+    else
+        $MV $INSDIR/client_list.sun4.$ckarch.sunos.$strng \
+            $INSDIR/client_list.sun4.$ckarch.sunos.$TO_RELEASE 2>/dev/null
+    fi
+elif $RENAMED && [ -f $INSDIR/client_list.sun4.$ckarch.sunos.$strng ] \
+&& [ $strng != $r_str ]; then
+    log_echo "Cat and then remove $INSDIR/client_list.sun4.$ckarch.sunos.$strng"
+    if $DUMMY ; then
+	:
+    else
+	$CAT $INSDIR/client_list.sun4.$ckarch.sunos.$strng >> \
+            $INSDIR/client_list.sun4.$ckarch.sunos.$TO_RELEASE 2>/dev/null
+        $RM -rf $INSDIR/client_list.sun4.$ckarch.sunos.$strng
+    fi
+fi
+fi
+done
+fi
+done
+#
+# upgrade_bootblocks will be called after all kvm upgrade
+#
+upgrade_bootblocks(){
+log_echo "Create the /tftpboot/boot.$KARCH.sunos.$TO_RELEASE for $KARCH"
+    if $DUMMY ; then
+        :
+    else
+       $CP /export/exec/kvm/$KARCH/stand/boot.$KARCH \
+             /tftpboot/boot.$KARCH.sunos.$TO_RELEASE
+       if [ $? = 0 ]; then
+	  $RM /tftpboot/boot.$KARCH.sunos.$FROM_RELEASE
+       fi
+    fi
+if $NEED1 ; then
+# Upgrade the  /tftpboot/boot.$KARCH1.sunos.$*_RELEASE
+    log_echo "Create the /tftpboot/boot.$KARCH1.sunos.$TO_RELEASE for the $KARCH1 clients"
+    if $DUMMY ; then
+	:
+    else
+	$CP /export/exec/kvm/$KARCH1/stand/boot.$KARCH1 \
+	    /tftpboot/boot.$KARCH1.sunos.$TO_RELEASE
+   	if [ $? = 0 ] && [ -s $sun4_RELEASE_LST ]; then
+	    for strng in `$CAT $sun4_RELEASE_LST`; do
+	    if [ -f /tftpboot/boot.$KARCH1.sunos.$strng ] && [ $strng != $TO_RELEASE ]; then
+	        $RM /tftpboot/boot.$KARCH1.sunos.$strng
+	    fi
+	    done
+        fi
+    fi
+fi
+if $NEED2 ; then
+# Upgrade the  /tftpboot/boot.$KARCH2.sunos.$*_RELEASE
+    log_echo "Create the /tftpboot/boot.$KARCH2.sunos.$TO_RELEASE for the $KARCH2 clients"
+    if $DUMMY ; then
+	:
+    else
+        $CP /export/exec/kvm/$KARCH2/stand/boot.$KARCH2 \
+	     /tftpboot/boot.$KARCH2.sunos.$TO_RELEASE 
+   	if [ $? = 0 ] && [ -s $sun4c_RELEASE_LST ]; then
+	    for strng in `$CAT $sun4c_RELEASE_LST`; do
+	    if [ -f /tftpboot/boot.$KARCH2.sunos.$strng ] && [ $strng != $TO_RELEASE ]; then
+	        $RM /tftpboot/boot.$KARCH2.sunos.$strng
+	    fi
+	    done
+	fi
+    fi
+fi
+if $NEED3 ; then
+# Upgrade the  /tftpboot/boot.$KARCH3.sunos.$*_RELEASE
+    log_echo "Create the /tftpboot/boot.$KARCH3.sunos.$TO_RELEASE for the $KARCH3 clients"
+    if $DUMMY ; then
+	:
+    else
+	$CP /export/exec/kvm/$KARCH3/stand/boot.$KARCH3 \
+	    /tftpboot/boot.$KARCH3.sunos.$TO_RELEASE 
+        if [ $? = 0 ] && [ -s $sun4m_RELEASE_LST ]; then
+	    for strng in `$CAT $sun4m_RELEASE_LST`; do
+	    if [ -f /tftpboot/boot.$KARCH3.sunos.$strng ] && [ $strng != $TO_RELEASE ]; then
+	        $RM /tftpboot/boot.$KARCH3.sunos.$strng
+	    fi
+	    done
+	fi
+    fi
+fi
+}

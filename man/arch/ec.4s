@@ -1,0 +1,63 @@
+.\" @(#)ec.4s 1.1 92/07/30 SMI;
+.TH EC 4S "9 October 1987"
+.SH NAME
+ec \- 3Com 10 Mb/s Ethernet interface
+.SH "CONFIG \(em SUN-2 SYSTEM"
+.ft B
+.nf
+device ec0 at mbmem ? csr 0xe0000 priority 3
+device ec1 at mbmem ? csr 0xe2000 priority 3
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "ec device"  ""  "\fLec\fP \(em 3Com 10 Mb/s Ethernet interface"  ""  PAGE START
+.IX  "3Com 10 Mb/s Ethernet interface ec"  ""  "3Com 10 Mb/s Ethernet interface \(em \fLec\fP"  ""  PAGE START
+.IX  "10 Mb/s 3Com Ethernet interface ec"  ""  "10 Mb/s 3Com Ethernet interface \(em \fLec\fP"  ""  PAGE START
+.IX  "Ethernet controller"  "ec"  ""  "\fLec\fP \(em 10 Mb/s 3Com Ethernet interface"  PAGE START
+.LP
+The
+.B ec
+interface provides access to a 10 Mb/s Ethernet
+network through a 3\s-1COM\s0 controller.
+For a general description of network interfaces see
+.BR if (4N).
+.LP
+The hardware consumes 8 kilobytes of Multibus memory space.
+This memory is used for internal buffering by the board.
+The board starts at standard addresses 0xE0000 or 0xE2000.  The board
+must be configured for interrupt level 3.
+.LP
+The interface software implements an exponential backoff algorithm
+when notified of a collision on the cable.
+.LP
+The interface handles the Internet protocol family,
+with the interface address maintained in Internet format.
+The Address Resolution Protocol
+.BR arp (4P)
+is used to map 32-bit Internet addresses used in
+.BR inet (4F)
+to the 48-bit addresses used on the Ethernet.
+.SH DIAGNOSTICS
+.TP 10
+.B ec%d: Ethernet jammed
+After 16 failed transmissions and
+backoffs using the
+exponential backoff algorithm, the packet was dropped.
+.TP
+.B ec%d: can't handle af%d
+The interface was handed a message with
+addresses formatted in an unsuitable address
+family; the packet was dropped.
+.SH SEE ALSO
+.BR arp (4P),
+.BR if (4N),
+.BR inet (4F)
+.\".br
+.\"3COM 3C400 Multibus Ethernet Controller Reference Manual (Sun 800-0398)
+.SH BUGS
+The interface hardware is not capable of talking to itself, making
+diagnosis more difficult.
+.IX  "ec device"  ""  "\fLec\fP \(em 3Com 10 Mb/s Ethernet interface"  ""  PAGE END
+.IX  "3Com 10 Mb/s Ethernet interface ec"  ""  "3Com 10 Mb/s Ethernet interface \(em \fLec\fP"  ""  PAGE END
+.IX  "10 Mb/s 3Com Ethernet interface ec"  ""  "10 Mb/s 3Com Ethernet interface \(em \fLec\fP"  ""  PAGE END
+.IX  "Ethernet controller"  "ec"  ""  "\fLec\fP \(em 10 Mb/s 3Com Ethernet interface"  PAGE END

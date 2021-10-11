@@ -1,0 +1,260 @@
+.\" @(#)routed.8c 1.1 92/07/30 SMI; from UCB 4.2
+.TH ROUTED 8C "9 September 1987"
+.SH NAME
+routed, in.routed \- network routing daemon
+.SH SYNOPSIS
+.B /usr/etc/in.routed
+[
+.B \-qstv
+] [
+.I logfile
+]
+.SH DESCRIPTION
+.IX  "routed command"  ""  "\fLrouted\fP \(em network routing daemon"
+.IX  "network routing daemon"  ""  "network routing daemon \(em \fLrouted\fP"
+.LP
+.B routed
+is invoked at boot time to manage the network routing tables.
+The routing daemon uses a variant of the Xerox
+.SM NS
+Routing Information Protocol in maintaining up to date kernel routing
+table entries.
+.LP
+In normal operation
+.B routed
+listens on
+.BR udp (4P)
+socket 520 (decimal)
+for routing information packets.
+If the host is an internetwork router, it periodically supplies copies
+of its routing tables to any directly connected hosts
+and networks.
+.LP
+When
+.B routed
+is started, it uses the
+.SB SIOCGIFCONF
+.B ioctl(\|)
+(see
+.BR ioctl (2))
+to find those
+directly connected interfaces configured into the
+system and marked \*(lqup\*(rq (the software loopback interface
+is ignored). 
+If multiple interfaces
+are present, it is assumed the host will forward packets
+between networks.
+.B routed
+then transmits a
+.I request
+packet on each interface (using a broadcast packet if
+the interface supports it) and enters a loop, listening
+for
+.I request
+and
+.I response
+packets from other hosts.
+.LP
+When a
+.I request
+packet is received,
+.B routed
+formulates a reply based on the information maintained in its
+internal tables.
+The
+.I response
+packet generated contains a list of known routes, each marked
+with a \*(lqhop count\*(rq metric (a count of 16, or greater, is
+considered \*(lqinfinite\*(rq).
+The metric associated with each
+route returned provides a metric
+.IR "relative to the sender" .
+.LP
+.I request
+packets received by
+.B routed
+are used to update the routing tables if one of the following
+conditions is satisfied:
+.TP
+\(bu
+No routing table entry exists for the destination network
+or host, and the metric indicates the destination is
+\*(lqreachable\*(rq
+(that is, the hop count is not infinite).
+.TP
+\(bu
+The source host of the packet is the same as the router in the
+existing routing table entry.
+That is, updated information is
+being received from the very internetwork router through which
+packets for the destination are being routed.
+.TP
+\(bu
+The existing entry in the routing table has not been updated for
+some time (defined to be 90 seconds) and the route is at least
+as cost effective as the current route.
+.TP
+\(bu
+The new route describes a shorter route to the destination than
+the one currently stored in the routing tables; the metric of
+the new route is compared against the one stored in the table
+to decide this.
+.LP
+When an update is applied,
+.B routed
+records the change in its internal tables and generates a
+.I response
+packet to all directly connected hosts and networks.
+.B routed
+waits a short period
+of time (no more than 30 seconds) before modifying the kernel's
+routing tables to allow possible unstable situations to settle.
+.LP
+In addition to processing incoming packets,
+.B routed
+also periodically checks the routing table entries.
+If an entry has not been updated for 3 minutes, the entry's metric
+is set to infinity and marked for deletion.
+Deletions are delayed
+an additional 60 seconds to insure the invalidation is propagated
+throughout the internet.
+.LP
+Hosts acting as internetwork routers gratuitously supply their
+routing tables every 30 seconds to all directly connected hosts
+and networks.
+.LP
+In addition to the facilities described above,
+.B routed
+supports the notion of \*(lqdistant\*(rq
+.I passive
+and
+.I active
+gateways.
+When
+.B routed
+is started up, it reads the file
+.B /etc/gateways
+to find gateways which may not be identified using
+the
+.SB SIOGIFCONF
+.BR ioctl(\|) .
+Gateways specified in this manner should be marked passive
+if they are not expected to exchange routing information,
+while gateways marked active
+should be willing to exchange routing information (that is,
+they should have a
+.B routed
+process running on the machine).
+Passive gateways are maintained in the
+routing tables forever and information
+regarding their existence is included in
+any routing information transmitted.
+Active gateways are treated equally to network
+interfaces.
+Routing information is distributed
+to the gateway and if no routing information is
+received for a period of the time, the associated
+route is deleted.
+.LP
+The
+.B /etc/gateways
+is comprised of a series of lines, each in
+the following format:
+.IP
+.BI "< net | host > " filename1 " gateway " filename2 " metric " value
+.B < passive | active >
+.LP
+The
+.B net
+or
+.B host
+keyword indicates if the route is to a network or specific host.
+.LP
+.I filename1
+is the name of the destination network or host.
+This may be a
+symbolic name located in
+.B /etc/networks
+or
+.BR /etc/hosts ,
+or an Internet address specified in \*(lqdot\*(rq notation; see
+.BR inet (3N).
+.LP
+.I filename2
+is the name or address of the gateway to which messages should
+be forwarded.
+.LP
+.I value
+is a metric indicating the hop count to the destination host
+or network.
+.LP
+The keyword
+.B passive
+or
+.B active
+indicates if the gateway should be treated as
+passive or active
+(as described above).
+.SH OPTIONS
+.TP
+.B \-s
+Force
+.B routed
+to supply routing information whether
+it is acting as an internetwork router or not.
+.TP
+.B \-q
+Opposite of the
+.B \-s
+option.
+.TP
+.B \-t
+All packets sent or received are
+printed on the standard output.
+In addition,
+.B routed
+will not divorce itself from the controlling terminal
+so that interrupts from the keyboard will kill the process.
+.TP
+.B \-v
+Allow a logfile to be created showing the
+changes made to the routing tables with a timestamp.
+.TP
+.I logfile
+Specify a file in which
+.B routed 
+records any changes to the routing tables and a history of
+recent messages sent and received which are related to
+the changed route.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/gateways
+for distant gateways
+.TP
+.B /etc/networks
+.TP
+.B /etc/hosts
+.PD
+.SH "SEE ALSO"
+.BR ioctl (2),
+.BR inet (3N),
+.BR udp (4P)
+.\".LP
+.\"Internet Transport Protocols, XSIS 028112, Xerox System Integration
+.\"Standard.  (Sun 800-1066-01)
+.SH BUGS
+.LP
+The kernel's routing tables may not correspond to those of
+.B routed
+for short periods of time while processes utilizing existing
+routes exit; the only remedy for this is to place the routing
+process in the kernel.
+.LP
+.B routed
+should listen to intelligent interfaces, such as an
+.SM IMP\s0,
+and
+to error protocols, such as
+.SM ICMP\s0,
+to gather more information.

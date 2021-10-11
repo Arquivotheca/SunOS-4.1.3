@@ -1,0 +1,80 @@
+.\" @(#)ar.4s 1.1 92/07/30 SMI;
+.TH AR 4S "18 February 1988"
+.SH NAME
+ar \- Archive 1/4 inch Streaming Tape Drive
+.SH AVAILABILITY
+Sun-3 and Sun-4 systems only.
+.SH DESCRIPTION
+.IX  "ar device"  ""  "\fLar\fP \(em Archive 1/4-inch Streaming Tape Drive"  ""  PAGE START
+.IX  "1/4-inch tape drive"  ar  ""  "\fLar\fP \(em Archive 1/4-inch Streaming Tape Drive"  PAGE START
+.IX  "streaming 1/4-inch tape drive"  ""  "streaming 1/4-inch tape drive \(em \fLar\fP"  ""  PAGE START
+.IX  "tape drive, 1/4-inch"  "ar"  ""  "\fLar\fP \(em Archive 1/4-inch Streaming Tape Drive"  PAGE START
+.LP
+The Archive tape controller is a Sun `\s-1QIC\s0-II'
+interface to an Archive streaming tape drive.
+It provides a standard tape interface to the device, see
+.BR mtio (4),
+with some deficiencies listed under
+.SM BUGS
+below.
+.LP
+The maximum blocksize for the raw device is limited only by
+available memory.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rar*
+.TP
+.B /dev/nrar*
+non-rewinding
+.PD
+.SH "SEE ALSO
+.BR mtio (4)
+.SH DIAGNOSTICS
+.TP
+.B ar*: would not initialize
+.TP
+.B ar*: already open
+The tape can be opened by only one process at a time
+.LP
+.B ar*: no such drive
+.LP
+.B ar*: no cartridge in drive
+.LP
+.B ar*: cartridge is write protected
+.LP
+.B ar: interrupt from unitialized controller %x
+.LP
+.B ar*: many retries, consider retiring this tape
+.LP
+.B ar*: %b error at block # %d punted
+.LP
+.B ar*: %b error at block # %d
+.LP
+.B ar: giving up on Rdy, try again
+.SH BUGS
+The tape cannot reverse direction so the
+.SB BSF
+and
+.SB BSR
+ioctls are not supported.
+.LP
+The
+.SB FSR
+ioctl is not supported.
+.LP
+The system will hang if the tape is removed while running.
+.LP
+When using the raw device, the number of bytes in any given transfer must be
+a multiple of 512 bytes.  If it is not, the device driver returns an error.
+.LP
+The driver will only write an
+.SM EOF
+mark on close if the last
+operation was a write, without regard for the mode used when opening the
+file.  This delete empty files on a raw tape copy
+operation.
+.IX  "ar device"  ""  "\fLar\fP \(em Archive 1/4-inch Streaming Tape Drive"  ""  PAGE END
+.IX  "1/4-inch tape drive"  ar  ""  "\fLar\fP \(em Archive 1/4-inch Streaming Tape Drive"  PAGE END
+.IX  "streaming 1/4-inch tape drive"  ""  "streaming 1/4-inch tape drive \(em \fLar\fP"  ""  PAGE END
+.IX  "tape drive, 1/4-inch"  "ar"  ""  "\fLar\fP \(em Archive 1/4-inch Streaming Tape Drive"  PAGE END

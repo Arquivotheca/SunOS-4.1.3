@@ -1,0 +1,112 @@
+.\" @(#)pwdauth.3 1.1 92/07/30 SMI
+.TH PWDAUTH 3 "14 December 1987"
+.SH NAME
+pwdauth, grpauth \- password authentication routines
+.SH SYNOPSIS
+.LP
+.nf
+.B int pwdauth(user, password)
+.B char *user;
+.B char *password;
+.fi
+.LP
+.nf
+.B int grpauth(group, password)
+.B char *group;
+.B char *password;
+.fi
+.SH DESCRIPTION
+.IX "pwdauth()" "" "\fLpwdauth()\fP \(em password authentication function"
+.IX "grpauth()" "" "\fLgrpauth()\fP \(em password authentication function"
+.LP
+.B pwdauth(\|)
+and
+.B grpauth(\|)
+determine whether the given guess at a
+.I password
+is valid for the given
+.I user
+or
+.IR group .
+If the
+.I password
+is valid, the functions return 0.
+.LP
+A
+.I password
+is valid if the password when encrypted matches the
+encrypted password in the appropriate file.  For
+.BR pwdauth(\|) ,
+if the
+.B password.adjunct
+file exists, the encrypted password will be in
+either the local or the 
+Network Information Service
+(\s-1NIS\s0)
+version of that file.
+Otherwise, either the local or
+.SM NIS
+.B passwd
+file will be used.
+For
+.BR grpauth(\|) ,
+the
+.B group.adjunct
+file (if it exists) or the
+.B group
+file (otherwise) will be checked on the local machine
+and then using the
+.SM NIS
+service.
+In all cases, the local files will be checked before the
+.SM NIS
+files.
+Also, if the adjunct files exist, the main file will never
+be used for authentication even if they include encrypted passwords.
+.LP
+Both
+.B pwdauth(\|)
+and
+.B grpauth(\|)
+interface to the authentication daemon,
+.BR rpc.pwdauthd ,
+to do the checking of the adjunct files.
+This daemon must be running on any system that
+provides password authentication.
+.SH FILES
+.PD 0
+.TP 20
+.\" .B /etc/security/passwd.adjunct
+.\" .TP
+.\" .BI /var/yp/ domainname /passwd.adjunct.byname
+.\" .TP
+.B /etc/passwd
+.\" .TP
+.\" .BI /var/yp/ domainname /passwd.byname
+.\" .TP
+.\" .BI /var/yp/ domainname /passwd.byuid
+.\" .TP
+.\" .B /etc/security/group.adjunct
+.\" .TP
+.\" .BI /var/yp/ domainname /group.adjunct.byname
+.TP
+.B /etc/group
+.\" .TP
+.\" .BI /var/yp/ domainname /group.byname
+.\" .TP
+.\" .BI /var/yp/ domainname /group.byuid
+.PD
+.SH "SEE ALSO"
+.BR getgraent (3),
+.BR getgrent (3V),
+.BR getpwaent (3),
+.BR getpwent (3V),
+.BR pwdauthd (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

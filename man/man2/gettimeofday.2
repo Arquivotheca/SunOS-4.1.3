@@ -1,0 +1,216 @@
+.\" @(#)gettimeofday.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.hw gettimeofday
+.TH GETTIMEOFDAY 2 "21 January 1990"
+.SH NAME
+gettimeofday, settimeofday \- get or set the date and time
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+.LP
+.ft B
+int gettimeofday(tp, tzp)
+struct timeval \(**tp;
+struct timezone \(**tzp;
+.LP
+.ft B
+int settimeofday(tp, tzp)
+struct timeval \(**tp;
+struct timezone \(**tzp;
+.fi
+.IX  gettimeofday()  ""  \fLgettimeofday()\fR
+.IX  "timing and statistics"  gettimeofday()  ""  \fLgettimeofday()\fR
+.IX  "get date and time"
+.IX  "time and date" "set \(em \fLsettimeofday()\fR"
+.IX  "date and time" "set \(em \fLsettimeofday()\fR"
+.IX  "time and date" "get \(em \fLgettimeofday()\fR"
+.IX  "date and time" "get \(em \fLgettimeofday()\fR"
+.IX  settimeofday  ""  \fLsettimeofday()\fR
+.IX  "timing and statistics"  settimeofday()  ""  \fLsettimeofday()\fR
+.IX  set "date and time \(em \fLgettimeofday()\fR"
+.SH DESCRIPTION
+.LP
+The system's notion of the current Greenwich time and
+the current time zone is obtained with the
+.B gettimeofday(\|)
+call, and set with the
+.B settimeofday(\|)
+call.
+The current time is expressed in elapsed seconds and microseconds
+since 00:00
+.SM GMT\s0,
+January 1, 1970 (zero hour).  The resolution of the system
+clock is hardware dependent; the time may be updated continuously,
+or in \*(lqticks.\*(rq
+.LP
+.I tp
+points to a
+.B timeval
+structure, which includes the following members:
+.LP
+.RS
+.nf
+.ft B
+.ta +\w'long\0'u +\w'tv_usec;\0'u
+long	tv_sec;	/\(** seconds since Jan. 1, 1970 \(**/
+long	tv_usec;	/\(** and microseconds \(**/
+.ft R
+.fi
+.DT
+.RE
+.LP
+If
+.I tp
+is a
+.SM NULL
+pointer, the current time information is not returned or set.
+.LP
+.I tzp
+points to a
+.B timezone(\|)
+structure, which includes the following members:
+.LP
+.RS
+.nf
+.ft B
+.ta +\w'int\0'u +\w'tz_minuteswest;\0'u
+int	tz_minuteswest;	/\(** of Greenwich \(**/
+int	tz_dsttime;	/\(** type of dst correction to apply \(**/
+.ft R
+.fi
+.DT
+.RE
+.LP
+The
+.B timezone(\|)
+structure indicates the local time zone (measured in minutes
+westward from Greenwich), and a flag that indicates the type of
+Daylight Saving Time correction to apply.  Note: this flag
+does
+.I not
+indicate whether Daylight Saving Time is currently in effect.
+.LP
+Also note that the offset of
+the local time zone from
+.SM GMT
+may change over time, as may the rules
+for Daylight Saving Time correction.  The
+.B localtime(\|)
+routine
+(see
+.BR ctime (3V))
+obtains this information from a file rather than from
+.BR gettimeofday(\|) .
+Programs should use
+.B localtime(\|)
+to convert dates and times; the
+.B timezone(\|)
+structure is filled in by
+.B gettimeofday(\|)
+for backward compatibility with existing programs.
+.LP
+The flag indicating the type of Daylight Saving Time correction
+should have one of the following values (as defined in
+.BR <sys/time.h> ):
+.RS
+.TP
+0
+.PD 0
+\fB\s-1DST_NONE\s0\fR:
+Daylight Savings Time not observed
+.TP
+1
+\fB\s-1DST_USA\s0\fR:
+United States
+.SM DST
+.TP
+2
+\fB\s-1DST_AUST\s0\fR:
+Australian
+.SM DST
+.TP
+3
+\fB\s-1DST_WET\s0\fR:
+Western European
+.SM DST
+.TP
+4
+\fB\s-1DST_MET\s0\fR:
+Middle European
+.SM DST
+.TP
+5
+\fB\s-1DST_EET\s0\fR:
+Eastern European
+.SM DST
+.TP
+6
+\fB\s-1DST_CAN\s0\fR:
+Canadian
+.SM DST
+.TP
+7
+\fB\s-1DST_GB\s0\fR:
+Great Britain and Eire
+.SM DST
+.TP
+8
+\fB\s-1DST_RUM\s0\fR:
+Rumanian
+.SM DST
+.TP
+9
+\fB\s-1DST_TUR\s0\fR:
+Turkish
+.SM DST
+.TP
+10
+\fB\s-1DST_AUSTALT\s0\fR:
+Australian-style
+.SM DST
+with shift in 1986
+.PD
+.RE
+.LP
+If
+.I tzp
+is a
+.SM NULL
+pointer, the time zone information is not returned or set.
+.LP
+Only the super-user may set the time of day or the time zone.
+.br
+.ne 7
+.SH RETURN VALUES
+.B gettimeofday(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+An argument address referenced invalid memory.
+.TP
+.SM EPERM
+A user other than the super-user attempted to set the time or time
+zone.
+.SH "SEE ALSO"
+.BR date (1V),
+.BR adjtime (2),
+.BR ctime (3V)
+.SH BUGS
+.LP
+Time is never correct enough to believe the microsecond
+values.  There should a mechanism by which, at least,
+local clusters of systems might synchronize their clocks
+to millisecond granularity.

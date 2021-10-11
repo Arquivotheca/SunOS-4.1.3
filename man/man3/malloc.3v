@@ -1,0 +1,845 @@
+.\" @(#)malloc.3v 1.1 92/07/30 SMI; from UCB 4.2
+.TH MALLOC 3V "24 January 1990"
+.SH NAME
+malloc, free, realloc, calloc, cfree, memalign, valloc, mallocmap, mallopt, mallinfo, malloc_debug, malloc_verify, alloca \- memory allocator
+.SH SYNOPSIS
+.LP
+.IX  "memory management"  ""  ""  ""  PAGE START
+.IX  "storage allocation"  ""  ""  ""  PAGE START
+.IX  "storage management"  ""  ""  ""  PAGE START
+.IX  "memory management debugging"  ""  ""  ""  PAGE START
+.IX  "memory allocation debugging"  ""  ""  ""  PAGE START
+.IX  "storage management debugging"  ""  ""  ""  PAGE START
+.IX  "debugging memory management"  ""  ""  ""  PAGE START
+.nf
+.ft B
+#include <malloc.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *malloc(size)
+unsigned size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int free(ptr)
+char *ptr;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *realloc(ptr, size)
+char *ptr;
+unsigned size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *calloc(nelem, elsize)
+unsigned nelem, elsize;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cfree(ptr)
+char *ptr;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *memalign(alignment, size)
+unsigned alignment;
+unsigned size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *valloc(size)
+unsigned size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void mallocmap(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mallopt(cmd, value)
+int cmd, value;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct mallinfo mallinfo(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <alloca.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *alloca(size)
+int size;
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.LP
+.nf
+.ft B
+#include <malloc.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+void *malloc(size)
+size_t size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void free(ptr)
+void *ptr;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void *realloc(ptr, size)
+void *ptr;
+size_t size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void *calloc(nelem, elsize)
+size_t nelem;
+size_t elsize;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void *memalign(alignment, size)
+size_t alignment;
+size_t size;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void *valloc(size)
+size_t size;
+.ft
+.fi
+.LP
+The
+.SM XPG2
+versions of the functions listed in this section are declared as they are
+in
+.SB SYNOPSIS
+above, except
+.BR free(\|) ,
+which is declared as:
+.LP
+.nf
+.ft B
+void free(ptr)
+char *ptr;
+.ft
+.fi
+.SH DESCRIPTION
+.LP
+These routines provide a general-purpose memory allocation package.
+They maintain a table of free blocks for efficient allocation and
+coalescing of free storage.
+When there is no suitable space already free,
+the allocation routines call
+.B sbrk(\|)
+(see
+.BR brk (2))
+to get more memory from the system.
+.LP
+Each of the allocation routines returns a pointer
+to space suitably aligned for storage of any type of object. 
+Each returns a
+.SM NULL
+pointer if the request cannot be completed (see
+.BR \s-1DIAGNOSTICS\s0 ).
+.LP
+.IX  "memory management"  "malloc()"  ""  "\fLmalloc()\fP \(em allocate memory"  PAGE MAJOR
+.IX  "storage allocation"  "malloc()"  ""  "\fLmalloc()\fP \(em allocate memory"  PAGE MAJOR
+.IX  "malloc()"  ""  "\fLmalloc()\fP \(em allocate memory"  ""  PAGE MAJOR
+.IX  "allocate memory" "malloc()" "" "\fLmalloc()\fP"  ""  PAGE MAJOR
+.LP
+.B malloc(\|)
+returns a pointer to a block of at least
+.I size
+bytes, which is appropriately aligned.
+.\"A
+.\".SM NULL
+.\"(0)
+.\"pointer is returned if
+.\".I size
+.\"is 0 or
+.\"if
+.\".I size
+.\"bytes of memory cannot be allocated.
+.IX  "memory management"  "free()"  ""  "\fLfree()\fP \(em free memory"  PAGE MAJOR
+.IX  "storage allocation"  "free()"  ""  "\fLfree()\fP \(em free memory"  PAGE MAJOR
+.IX  "free()"  ""  "\fLfree()\fP \(em free memory"  ""  PAGE MAJOR
+.IX  "free memory free()"  ""  "free memory \(em \fLfree()\fP"  ""  PAGE MAJOR
+.LP
+.B free(\|)
+releases a previously allocated block.
+Its argument is a pointer to a block previously
+allocated by
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR malloc(\|) ,
+or
+.BR memalign(\|) .
+.IX  "memory management"  "realloc()"  ""  "\fLrealloc()\fP \(em reallocate memory"  PAGE MAJOR
+.IX  "storage allocation"  "realloc()"  ""  "\fLrealloc()\fP \(em reallocate memory"  PAGE MAJOR
+.IX  "realloc()"  ""  "\fLrealloc()\fP \(em reallocate memory"  ""  PAGE MAJOR
+.IX  "reallocate memory realloc()"  ""  "reallocate memory \(em \fLrealloc()\fP"  ""  PAGE MAJOR
+.LP
+.B realloc(\|)
+changes the size of the block referenced by
+.I ptr
+to
+.I size
+bytes and returns a pointer to the (possibly moved) block.
+The contents will be unchanged
+up to the lesser of the new and old sizes.
+If unable to honor a reallocation request,
+.B realloc(\|) 
+leaves its first argument unaltered.
+For backwards compatibility,
+.B realloc(\|)
+accepts a pointer to a block freed since
+the most recent call to
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+or
+.BR memalign(\|) .
+Note: using
+.B realloc(\|)
+with a block freed
+.I before
+the most recent call to
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+or
+.BR memalign(\|)
+is an error.
+.IX  "memory management"  "calloc()"  ""  "\fLcalloc()\fP \(em allocate memory"  PAGE MAJOR
+.IX  "storage allocation"  "calloc()"  ""  "\fLcalloc()\fP \(em allocate memory"  PAGE MAJOR
+.IX  "calloc()"  ""  "\fLcalloc()\fP \(em allocate memory"  ""  PAGE MAJOR
+.IX  "allocate memory" "calloc()" "" "\fLcalloc()\fP"  ""  PAGE MAJOR
+.LP
+.B calloc(\|)
+uses
+.B malloc(\|)
+to allocate space for an array of
+.I nelem
+elements of size
+.IR elsize ,
+initializes the space to zeros, and
+returns a pointer to the
+initialized block.
+The block can be freed with
+.B free(\|)
+or
+.BR cfree(\|) .
+.IX  "memory management"  "cfree()"  ""  "\fLcfree()\fP \(em free memory"  PAGE MAJOR
+.IX  "storage allocation"  "cfree()"  ""  "\fLcfree()\fP \(em free memory"  PAGE MAJOR
+.IX  "cfree()"  ""  "\fLcfree()\fP \(em free memory"  ""  PAGE MAJOR
+.IX  "free memory cfree()"  ""  "free memory \(em \fLcfree()\fP"  ""  PAGE MAJOR
+.LP
+.IX  "memory management"  "memalign()"  ""  "\fLmemalign()\fP \(em allocate aligned memory"  PAGE MAJOR
+.IX  "storage allocation"  "memalign()"  ""  "\fLmemalign()\fP \(em allocate aligned memory"  PAGE MAJOR
+.IX  "memalign()"  ""  "\fLmemalign()\fP \(em allocate aligned memory"  ""  PAGE MAJOR
+.IX  "allocate aligned memory" "memalign()"  ""  "\fLmemalign()\fP"  ""  PAGE MAJOR
+.LP
+.B memalign(\|)
+allocates
+.I size
+bytes on a specified alignment boundary,
+and returns a pointer to the allocated block.
+The value of the returned address is guaranteed to be
+an even multiple of
+.IR alignment .
+Note: the value of
+.I alignment
+must be a power of two, and must be greater than
+or equal to the size of a word.
+.IX  "memory management"  "valloc()"  ""  "\fLvalloc()\fP \(em allocate aligned memory"  PAGE MAJOR
+.IX  "storage allocation"  "valloc()"  ""  "\fLvalloc()\fP \(em allocate aligned memory"  PAGE MAJOR
+.IX  "valloc()"  ""  "\fLvalloc()\fP \(em allocate aligned memory"  ""  PAGE MAJOR
+.IX  "allocate aligned memory" "valloc()"  ""  "\fLvalloc()\fP"  ""  PAGE MAJOR
+.LP
+.BI valloc( size )
+is equivalent to
+.BI "memalign(getpagesize(\|), " size )\fR.
+.LP
+.B mallocmap(\|)
+prints a map of the heap to the standard output.
+.B mallocmap(\|)
+prints each block's address,
+size (in bytes) and status (free or busy).
+A block must have a size that is no larger than the current
+extent of the heap.
+.IX "mallopt" "" "\fLmallopt()\fR \(em quick allocation of small blocks"
+.LP
+.B mallopt(\|)
+allows quick allocation of small blocks of memory.
+.B mallopt(\|)
+tells subsequent calls to
+.B malloc(\|)
+to allocate
+.I holding blocks
+containing small blocks.
+Under this small block algorithm,
+a request to
+.B malloc(\|)
+for a small block of memory
+returns a pointer to one of the pre-allocated small blocks.
+Different holding blocks are created as needed for different sizes
+of small blocks.
+.LP
+.I cmd
+may be one of the following values, defined in
+.BR <malloc.h> :
+.TP 15
+.SB M_MXFAST
+Set the maximum size of blocks to be allocated using the small block
+algorithm
+.RI ( maxfast )
+to
+.IR value .
+The algorithm allocates all blocks smaller than
+.I maxfast
+in large groups and then doles them out very quickly.
+Initially,
+.I maxfast
+is 0 and the small block algorithm is disabled.
+.TP
+.SB M_NLBLKS
+Set 
+the number of small blocks in a holding block
+.RI ( numlblks )
+to 
+.IR value .
+The holding blocks each contain
+.I numlblks
+blocks.  
+.I numlblks
+must be greater than 1.
+The default value for 
+.I numlblks
+is 100.
+.TP
+.SB M_GRAIN
+Set 
+the granularity for small block requests
+.RI ( grain )
+to
+.IR value .
+The sizes of all blocks smaller than
+.I maxfast
+are rounded up to the nearest multiple of 
+.IR grain .
+.I grain
+must be greater than 0.
+The default value of 
+.I grain
+is the smallest number of bytes
+which will allow alignment of any data type.
+When
+.I grain
+is set,
+.I value
+is rounded up to a multiple of this default.
+.br
+.ne 5
+.TP
+.SB M_KEEP
+Preserve data in a freed block until the next
+.BR malloc(\|) ,
+.BR realloc(\|) ,
+or
+.BR calloc(\|) .
+This option is provided only for compatibility with the old
+version of 
+.B malloc(\|)
+and is not recommended.
+.LP
+.B mallopt(\|)
+may be called repeatedly, but may not be called after
+the first small block is allocated.
+.IX "mallinfo" "" "\fLmallinfo()\fR \(em dynamic memory usage information"
+.LP
+.B mallinfo(\|)
+can be used during program development to determine the best settings
+for the parameters set by
+.BR mallopt(\|) .
+Do not call
+.B mallinfo(\|)
+until after a call to
+.BR malloc(\|) .
+.B mallinfo(\|)
+provides information describing space usage.
+It returns a
+.B mallinfo
+structure, defined in
+.B <malloc.h>
+as:
+.LP
+.RS
+.nf
+.ft B
+struct mallinfo {
+.ft
+.RS
+.ft B
+int arena;	/* total space in arena */
+int ordblks;	/* number of ordinary blocks */
+int smblks;	/* number of small blocks */
+int hblks;	/* number of holding blocks */
+int hblkhd;	/* space in holding block headers */
+int usmblks;	/* space in small blocks in use */
+int fsmblks;	/* space in free small blocks */
+int uordblks;	/* space in ordinary blocks in use */
+int fordblks;	/* space in free ordinary blocks */
+int keepcost;	/* cost of enabling keep option */
+.sp
+int mxfast;	/* max size of small blocks */
+int nlblks;	/* number of small blocks in a holding block */
+int grain;	/* small block rounding factor */
+int uordbytes;	/* space (including overhead) allocated in ord. blks */
+int allocated;	/* number of ordinary blocks allocated */
+int treeoverhead;	/* bytes used in maintaining the free tree */
+.ft
+.RE
+.ft B
+};
+.ft
+.fi
+.RE
+.IX  "memory management"  "alloca()"  ""  "\fLalloca()\fP \(em allocate on stack"  PAGE MAJOR
+.IX  "storage allocation"  "alloca()"  ""  "\fLalloca()\fP \(em allocate on stack"  PAGE MAJOR
+.IX  "alloca()"  ""  "\fLalloca()\fP \(em allocate on stack"  ""  PAGE MAJOR
+.IX  "allocate on stack alloca()"  ""  "allocate on stack \(em \fLalloca()\fP"  ""  PAGE MAJOR
+.LP
+.B alloca(\|)
+allocates
+.I size
+bytes of space in the stack frame of the caller,
+and returns a pointer to the allocated block.
+This temporary space is automatically freed
+when the caller returns.
+Note that if the allocated block is beyond the current stack limit,
+the resulting behavior is undefined.
+.LP
+.BR malloc(\|) ,
+.BR realloc(\|) ,
+.B memalign(\|)
+and
+.B valloc(\|)
+return a
+non-\s-1NULL\s0
+pointer if
+.I size
+is 0, and
+.B calloc(\|)
+returns a
+non-\s-1NULL\s0
+pointer if
+.I nelem
+or
+.I elsize
+is 0,
+but these pointers should
+.I not
+be dereferenced.
+.LP
+Note:
+Always cast the value returned by
+.BR malloc(\|) ,
+.BR realloc(\|) ,
+.BR calloc(\|) ,
+.BR memalign(\|),
+.B valloc(\|)
+or
+.BR alloca(\|) .
+.SH SYSTEM V DESCRIPTION
+.LP
+The
+.SM XPG2
+versions of
+.BR malloc(\|) ,
+.BR realloc(\|) ,
+.B memalign(\|)
+and
+.B valloc(\|)
+return
+.SM NULL
+if
+.I size
+is 0.
+The
+.SM XPG2
+version of
+.B calloc(\|)
+returns
+.SM NULL
+if
+.I nelem
+or
+.I elsize
+is 0.
+.SH RETURN VALUES
+.LP
+On success,
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR memalign(\|) ,
+.B valloc(\|)
+and
+.B alloca(\|)
+return a pointer
+to space suitably aligned for storage of any type of object.
+On failure,
+they return
+.SM NULL\s0.
+.LP
+.B free(\|)
+and
+.B cfree(\|)
+return:
+.TP
+1
+on success.
+.TP
+0
+on failure and set
+.B errno
+to indicate the error.
+.LP
+.B mallopt(\|)
+returns
+0
+on success.
+If
+.B mallopt(\|)
+is called after the allocation of a small block,
+or if
+.I cmd
+or
+.I value
+is invalid,
+it returns a non-zero value.
+.LP
+.B mallinfo(\|)
+returns a
+.BR "struct mallinfo" .
+.br
+.ne 8
+.SH SYSTEM V RETURN VALUES
+.LP
+If
+.I size
+is 0,
+the
+.SM XPG2
+versions of
+.BR malloc(\|) ,
+.BR realloc(\|) ,
+.B memalign(\|)
+and
+.B valloc(\|)
+return
+.SM NULL\s0.
+.LP
+If
+.I nelem
+or
+.I elsize
+is 0,
+the
+.SM XPG2
+version of
+.B calloc(\|)
+returns
+.SM NULL\s0.
+.LP
+.B free(\|)
+does not return a value.
+.br
+.ne 20
+.SH ERRORS
+.LP
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+.BR memalign(\|) ,
+.BR cfree(\|) ,
+and
+.B free(\|)
+will each fail if one or more of the following are true:
+.TP 15
+.SM EINVAL
+An invalid argument was specified.
+.IP
+The value of
+.I ptr
+passed to
+.BR free(\|) ,
+.BR cfree(\|) ,
+or
+.B realloc(\|)
+was not a pointer to a block previously allocated by
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+or
+.BR memalign(\|) .
+.IP
+The allocation heap is found to have been
+corrupted.
+More detailed information
+may be obtained by enabling range checks using
+.BR malloc_debug(\|) .
+.TP
+.SM ENOMEM
+.I size
+bytes of memory could not be allocated.
+.SH FILES
+.PD 0
+.TP 25
+.B /usr/lib/debug/malloc.o
+diagnostic versions of
+.B malloc(\|)
+routines.
+.TP
+.B /usr/lib/debug/mallocmap.o
+routines to print a map of the heap.
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR ld (1),
+.BR brk (2),
+.BR getrlimit (2),
+.BR sigvec (2),
+.BR sigstack (2)
+.LP
+Stephenson, C.J.,
+.IR "Fast Fits" ,
+in
+.IR "Proceedings of the \s-1ACM\s0 9th Symposium on Operating Systems" ,
+.BI \s-1SIGOPS\s0 " Operating Systems Review"\fR,
+vol. 17, no. 5, October 1983.
+.br
+.IR "Core Wars" ,
+in
+.IR "Scientific American" ,
+May 1984.
+.SH DIAGNOSTICS
+.LP
+More detailed diagnostics can be made available to programs using
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+.BR memalign(\|) ,
+.BR cfree(\|) ,
+and
+.BR free(\|) ,
+by including a special relocatable object file at link time
+(see
+.SM FILES\s0).
+This file also provides routines for control
+of error handling and diagnosis, as defined below.
+Note: these routines are
+.I not
+defined in the standard library.
+.LP
+.RS
+.nf
+.ft B
+int malloc_debug(level)
+int level;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int malloc_verify(\|)
+.ft
+.fi
+.RE
+.IX  "memory management"  "malloc_debug()"  ""  "\fLmalloc_debug()\fP \(em set debug level"  PAGE MAJOR
+.IX  "storage allocation"  "malloc_debug()"  ""  "\fLmalloc_debug()\fP \(em set debug level"  PAGE MAJOR
+.IX  "debugging memory management"  "malloc_debug()"  ""  "\fLmalloc_debug()\fP \(em set debug level"  PAGE MAJOR
+.IX  "malloc_debug()"  ""  "\fLmalloc_debug()\fP \(em set debug level"  ""  PAGE MAJOR
+.IX  set "memory management debug level \(em \fLmalloc_debug()\fP"  "" ""  PAGE MAJOR
+.LP
+.B malloc_debug(\|)
+sets the level of error diagnosis and reporting
+during subsequent calls to
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+.BR memalign(\|) ,
+.BR cfree(\|) ,
+and
+.BR free(\|) .
+The value of
+.I level
+is interpreted as follows:
+.TP 20
+Level 0
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+.BR memalign(\|) ,
+.BR cfree(\|) ,
+and
+.B free(\|)
+behave the same as in the standard library.
+.TP
+Level 1
+The routines abort with a message to the standard error
+if errors are detected in arguments or in the heap.
+If a bad block is encountered,
+its address and size are included in the message.
+.TP
+Level 2
+Same as level 1, except that the entire heap is
+examined on every call to the above routines.
+.LP
+.B malloc_debug(\|)
+returns the previous error diagnostic level.
+The default level is 1.
+.IX  "memory management"  "malloc_verify()"  ""  "\fLmalloc_verify()\fP \(em verify heap"  PAGE MAJOR
+.IX  "storage allocation"  "malloc_verify()"  ""  "\fLmalloc_verify()\fP \(em verify heap"  PAGE MAJOR
+.IX  "debugging memory management"  "malloc_verify()"  ""  "\fLmalloc_verify()\fP \(em verify heap"  PAGE MAJOR
+.IX  "malloc_verify()"  ""  "\fLmalloc_verify()\fP \(em verify heap"  ""  PAGE MAJOR
+.IX  "verify heap malloc_verify()"  ""  "verify heap \(em \fLmalloc_verify()\fP"  ""  PAGE MAJOR
+.IX  "check heap malloc_verify()"  ""  "check heap \(em \fLmalloc_verify()\fP"  ""  PAGE MAJOR
+.LP
+.B malloc_verify(\|)
+attempts to determine if the heap has been corrupted.
+It scans all blocks in the heap (both free and allocated)
+looking for strange addresses or absurd sizes,
+and also checks for inconsistencies in the free
+space table.
+.B malloc_verify(\|)
+returns 1 if all checks pass without error, and otherwise
+returns 0. 
+The checks can take a significant
+amount of time, so it should not be used
+indiscriminately.
+.SH WARNINGS
+.B alloca(\|)
+is machine-,
+compiler-,
+and most of all,
+system-dependent.
+Its use is strongly discouraged.
+See
+.BR getrlimit (2),
+.BR sigvec (2),
+.BR sigstack (2),
+.BR csh (1),
+and
+.BR ld (1).
+.br
+.ne 15
+.SH NOTES
+.LP
+Because
+.BR malloc(\|) ,
+.BR realloc(\|) ,
+.B memalign(\|)
+and
+.B valloc(\|)
+return a
+non-\s-1NULL\s0
+pointer if
+.I size
+is 0, and
+.B calloc(\|)
+returns a
+non-\s-1NULL\s0
+pointer if
+.I nelem
+or
+.I elsize
+is 0,
+a zero size need not be treated
+as a special case if it should be passed to these functions unpredictably.
+Also, the pointer returned by these functions
+may be passed to subsequent invocations of
+.BR realloc(\|) .
+.SH SYSTEM V NOTES
+The
+.SM XPG2
+versions of the allocation routines return
+.SM NULL
+when passed a zero size (see
+.SB SYSTEM V DESCRIPTION
+above).
+.SH BUGS
+.LP
+Since
+.B realloc(\|)
+accepts a pointer to a block freed since the last call to
+.BR malloc(\|) ,
+.BR calloc(\|) ,
+.BR realloc(\|) ,
+.BR valloc(\|) ,
+or
+.BR memalign(\|) ,
+a degradation of performance results.
+The semantics of
+.B free(\|)
+should be changed so that the contents of a
+previously freed block are undefined.
+.IX  "memory management debugging"  ""  ""  ""  PAGE END
+.IX  "memory allocation debugging"  ""  ""  ""  PAGE END
+.IX  "storage management debugging"  ""  ""  ""  PAGE END
+.IX  "debugging memory management"  ""  ""  ""  PAGE END
+.IX  "memory management"  ""  ""  ""  PAGE END
+.IX  "storage allocation"  ""  ""  ""  PAGE END
+.IX  "storage management"  ""  ""  ""  PAGE END

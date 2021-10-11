@@ -1,0 +1,180 @@
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)tftp.1c 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\"
+.TH TFTP 1C "26 February 1988"
+.SH NAME
+tftp \- trivial file transfer program
+.SH SYNOPSIS
+.B tftp
+[
+.I host
+]
+.SH AVAILABILITY
+This command is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "tftp command" "" "\fLtftp\fR command"  
+.IX files  transfer
+.IX "file transfer protocol"  "trivial, \fLtftp\fP command" 
+.LP
+.B tftp
+is the user interface to the Internet
+.SM TFTP
+(Trivial File Transfer Protocol),
+which allows users to transfer files to and from a remote machine.
+The remote
+.I host
+may be specified on the command line, in which case
+.B tftp
+uses
+.I host
+as the default host for future transfers (see the
+.B connect
+command below).
+.SH USAGE
+.SS Commands
+Once
+.B tftp
+is running, it issues the prompt:
+.B tftp>
+and recognizes the following commands:
+.TP
+.BI connect " host-name " [ " port " ]
+Set the
+.I host
+(and optionally
+.IR port )
+for transfers.
+Note: the
+.SM TFTP
+protocol, unlike the
+.SM FTP
+protocol, does not maintain connections between transfers; thus, the
+.B connect
+command does not actually create a connection,
+but merely remembers what host is to be used for transfers.
+You do not have to use the
+.B connect
+command; the remote host can be specified as part of the
+.B get
+or
+.B put
+commands.
+.TP
+.BI mode " transfer-mode"
+Set the mode for transfers;
+.I transfer-mode
+may be one of
+.BR ascii
+or
+.BR binary .
+The default is
+.BR ascii .
+.TP
+.BI put " filename"
+.PD 0
+.TP
+.BI put " localfile remotefile"
+.TP
+.PD
+\fBput\fP \fIfilename1 filename2 .\|.\|. filenameN remote-directory\fP
+Transfer a file, or a set of files, to the specified
+remote file or directory.  The destination
+can be in one of two forms:
+a filename on the remote host if the host has already been specified,
+or a string of the form
+.RS
+.IP
+.IB host : filename
+.RE
+.IP
+to specify both a host and filename at the same time.
+If the latter form is used,
+the specified host becomes the default for future transfers.
+If the remote-directory form is used, the remote host is
+assumed to be running the
+.SM UNIX
+system.
+.PD 0
+.TP
+.BI get " filename"
+.TP
+.BI get " remotename localname"
+.TP
+.PD
+\fBget\fP \fIfilename1 filename2\fP .\|.\|. \fI filenameN\fR
+Get a file or set of files from the specified remote
+.IR sources .
+.I source
+can be in one of two forms:
+a filename on the remote host if the host has already been specified,
+or a string of the form
+.RS
+.IP
+.IB host : filename
+.RE
+.IP
+to specify both a host and filename at the same time.
+If the latter form is used,
+the last host specified becomes the default for future transfers.
+.TP
+.B quit
+Exit
+.BR tftp .
+An
+.SM EOF
+also exits.
+.TP
+.B verbose
+Toggle verbose mode.
+.TP
+.B trace
+Toggle packet tracing.
+.TP
+.B status
+Show current status.
+.TP
+.BI rexmt " retransmission-timeout"
+Set the per-packet retransmission timeout, in seconds.
+.br
+.ne 5
+.TP
+.BI timeout " total-transmission-timeout"
+Set the total transmission timeout, in seconds.
+.TP
+.B ascii
+Shorthand for
+.BR "mode ascii" .
+.TP
+.B binary
+Shorthand for
+.BR "mode binary" .
+.TP
+.BI "? [ " command-name " .\|.\|. ]"
+Print help information.
+.SH WARNING
+.LP
+The default
+.I transfer-mode
+is
+.BR ascii .
+This differs from pre-4.0 Sun (and pre-4.3
+.SM BSD\s0)
+releases, so explicit action must now be taken
+when transferring non-\c
+\s-2ASCII\s0
+files such as executable commands.
+.SH BUGS
+.LP
+Because there is no user-login or validation within
+the
+.SM TFTP
+protocol, many remote sites restrict file access in various ways.
+Approved methods for file access are specific to each site, and
+therefore cannot be documented here.

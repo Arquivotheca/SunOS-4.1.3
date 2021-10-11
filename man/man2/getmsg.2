@@ -1,0 +1,279 @@
+.\" @(#)getmsg.2 1.1 92/07/30 SMI; from S5R3
+.TH GETMSG 2 "21 January 1990"
+.SH NAME
+getmsg \- get next message from a stream
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stropts.h>
+.ft
+.LP
+.ft B
+.nf
+int getmsg(fd, ctlptr, dataptr, flags)
+int fd;
+struct strbuf *ctlptr;
+struct strbuf *dataptr;
+int *flags;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "getmsg()" "" "\fLgetmsg()\fP \(em get next message from stream"
+.LP
+.B getmsg(\|)
+retrieves the contents of a message
+(see
+.BR intro (2))
+located at the
+.B stream head
+read queue from a
+.SM STREAMS
+file,
+and places the contents into user specified buffer(s).
+The message must contain either a data part, a control part or both.
+The data and control parts of the message are placed into separate buffers, as described below.
+The semantics of each part is defined by the
+.SM STREAMS
+module that generated the message.
+.LP
+.I fd
+specifies a file descriptor referencing an open
+.BR stream .
+.I ctlptr
+and
+.I dataptr
+each point to a
+.B strbuf
+structure that contains the following members:
+.LP
+.RS
+.nf
+.ft B
+.ta 1i 1.7i 2.5i
+int maxlen;	/* maximum buffer length */
+int len;  	/* length of data */
+char *buf;	/* ptr to buffer */
+.ft R
+.fi
+.DT
+.RE
+.LP
+where
+.B buf
+points to a buffer in which the data or control information
+is to be placed, and
+.B maxlen
+indicates the maximum number of bytes
+this buffer can hold.  On return,
+.B len
+contains the number of bytes of data or control
+information actually received,
+or is 0 if there is a zero-length control or data part,
+or is \-1 if no data or control information is present in the message.
+.I flags
+may be set to the values 0 or
+.SB RS_HIPRI
+and is used as described below.
+.LP
+.I ctlptr
+is used to hold the control part from the message
+and
+.I dataptr
+is used to hold the data part from the
+message.
+If
+.I ctlptr
+(or
+.IR dataptr )
+is a
+.SM NULL
+pointer or the
+.B maxlen
+field is \-1, the control (or data) part of the message is
+not
+processed and is left on the
+.B stream head
+read queue and
+.B len
+is set to \-1.  If the
+.B maxlen
+field is set to 0 and there is a zero-length control
+(or data) part, that zero-length part is removed from the read queue and
+.B len
+is set to 0.  If the
+.I maxlen
+field is set to 0 and there are more than zero bytes of
+control (or data) information,
+that information is left on the read queue and
+.B len
+is set to 0.  If the
+.I maxlen
+field in
+.I ctlptr
+or
+.I dataptr
+is less than,
+respectively, the control or data part of the message,
+.I maxlen
+bytes are retrieved.
+In this case, the remainder of the message is left on the
+.B stream head
+read queue and a non-zero return value is provided, as described below under
+.SM RETURN VALUES\s0.
+If information is retrieved from a
+.B priority
+message,
+.I flags
+is set to
+.SB RS_HIPRI
+on return.
+.LP
+By default,
+.B getmsg(\|)
+processes the first priority or non-priority message
+available on the
+.B stream head
+read queue.
+However, a process may choose to retrieve only priority messages by setting
+.I flags
+to
+.SM
+.BR RS_HIPRI \s0.
+In this case,
+.B getmsg(\|)
+will only process the next message if it is a
+priority message.
+.LP
+If
+.SB O_NDELAY
+has not been set,
+.B getmsg(\|)
+blocks until a message,
+of the type(s) specified by
+.I flags
+(priority or either), is available
+on the
+.B stream head
+read queue.
+If
+.SB O_NDELAY
+has been set and a message of the specified type(s) is
+not present on the read queue,
+.B getmsg(\|)
+fails and sets
+.B errno
+to
+.SM EAGAIN\s0.
+.LP
+If a hangup occurs on the
+.B stream
+from which messages are to be retrieved,
+.B getmsg(\|)
+will continue to operate normally, as described above,
+until the
+.B stream head
+read queue is empty.
+Thereafter, it will return 0 in the
+.B len
+fields of
+.I ctlptr
+and
+.IR dataptr .
+.br
+.ne 20
+.SH RETURN VALUES
+.LP
+.B getmsg(\|)
+returns
+a non-negative value
+on success:
+.RS
+.TP 25
+0
+A full message was read successfully.
+.TP
+.SM MORECTL
+More control information is waiting for retrieval.
+Subsequent
+.B getmsg(\|)
+calls will retrieve the rest of the message.
+.TP
+.SM MOREDATA
+More data are waiting for retrieval.
+Subsequent
+.B getmsg(\|)
+calls will retrieve the rest of the message.
+.TP
+\s-1MORECTL\s0 | \s-1MOREDATA\s0
+Both types of information remain.
+.RE
+.LP
+On failure,
+.B getmsg(\|)
+returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+The
+.SB O_NDELAY
+flag is set, and no messages are available.
+.TP
+.SM EBADF
+.I fd
+is not a valid file descriptor open for
+reading.
+.TP
+.SM EBADMSG
+The queued message to be read is not valid for
+.BR getmsg(\|) .
+.TP
+.SM EFAULT
+.IR ctlptr ,
+.IR dataptr ,
+or
+.I flags
+points to a location
+outside the allocated address space.
+.TP
+.SM EINTR
+A signal was caught during the
+.B getmsg(\|)
+system call.
+.TP
+.SM EINVAL
+An illegal value was specified in
+.IR flags .
+.IP
+The
+.B stream
+referenced by
+.I fd
+is linked under a multiplexor.
+.TP
+.SM ENOSTR
+A
+\fBstream\fP is not associated with
+.IR fd .
+.LP
+A
+.B getmsg(\|)
+can also fail if a
+.SM STREAMS
+error message had been
+received at the
+.B stream head
+before the call to
+.BR getmsg(\|) .
+The error returned is the value contained in the
+.SM STREAMS
+error message.
+.SH "SEE ALSO"
+.BR intro (2),
+.BR poll (2),
+.BR putmsg (2),
+.BR read (2V),
+.BR write (2V)

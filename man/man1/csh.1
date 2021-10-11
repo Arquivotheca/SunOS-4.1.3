@@ -1,0 +1,3158 @@
+.\" @(#)csh.1 1.1 92/07/30 SMI; from UCB 4.3
+.ds ~ \u\(ap\d
+.ds ^ \d\s+2^\s0\u
+.ds ' \s+2\(fm\s0
+.if n .ds _ _
+.if t .ds _ __
+.\"	csh_built-ins, strip all but Built-Ins section
+.if \n(zZ=1 .ig zZ
+.TH CSH 1 "2 October 1989"
+.SH NAME
+csh \- a shell (command interpreter) with a C-like syntax and advanced interactive features
+.SH SYNOPSIS
+.B csh
+[
+.B \-bcefinstvVxX
+]
+[
+.IR argument .\|.\|.
+]
+.SH DESCRIPTION
+.IX csh  ""  "\fLcsh\fR, C shell"  ""
+.LP
+.BR csh ,
+the C shell, is a command interpreter with a syntax reminiscent of C.
+It provides a number of convenient features for interactive use
+that are not available with the standard (Bourne) shell, including
+filename completion, command aliasing, history substitution, job
+control, and a number of built-in commands.
+As with the standard shell, the C shell provides variable, command and
+filename substitution.
+.SS Initialization and Termination
+.IX "files" "cshrc" "" "\fL.cshrc\fR and the C shell"
+.IX "files" "login" "" "\fL.login\fR and the C shell"
+.IX "files" "logout" "" "\fL.logout\fR and the C shell"
+.IX "C shell" "cshrc file" "" "\fL.cshrc\fR file"
+.IX "C shell" "login file" "" "\fL.login\fR file"
+.IX "C shell" "logout file" "" "\fL.logout\fR file"
+.IX "cshrc file" "" "\fL.cshrc\fR file"
+.IX "login file" "" "\fL.login\fR file"
+.IX "logout file" "" "\fL.logout\fR file"
+.LP
+When first started, the C shell normally performs commands from the
+.B \&.cshrc
+file in your home directory,
+provided that it is readable and you either own it or your real
+group
+.SM ID
+matches its group
+.SM ID\s0.
+If the shell is invoked with a name that starts with
+.RB  ` \-  ',
+as when started by
+.BR login (1),
+the shell runs as a
+.I login
+shell.  In this case,
+after executing commands from the
+.B \&.cshrc
+file, the shell executes commands from the
+.B \&.login
+file in your home directory;
+the same permission checks as those for
+.B \&.cshrc
+are applied to this file.
+Typically, the
+.B \&.login
+file contains commands to specify the terminal type and
+environment.
+.LP
+As a login shell terminates, it performs commands from the
+.B \&.logout
+file in your home directory;
+the same permission checks as those for
+.B \&.cshrc
+are applied to this file.
+.SS Interactive Operation
+.LP
+After startup processing is complete, an interactive C shell
+begins reading commands from the terminal, prompting with
+.IB hostname %
+(or
+.IB hostname #
+for the super-user).
+The shell then repeatedly performs the following actions:
+a line of command input is read and broken into
+.IR words .
+This sequence of words is placed on the history list and
+then parsed, as described under
+.SM USAGE\s0,
+below.  Finally, the shell executes each command in the current line.
+.SS Noninteractive Operation
+.LP
+When running noninteractively, the shell does not prompt for
+input from the terminal.  A noninteractive C shell can
+execute a command supplied as an
+.I argument
+on its command line, or interpret commands from a script.
+.SH OPTIONS
+.IX  "argument list processing \(em in C shell"
+.IX  "C shell" "argument list processing"
+.TP
+.B \-b
+Force a \*(lqbreak\*(rq from option processing. 
+Subsequent command-line arguments are not interpreted as C shell options.
+This allows the passing of options to a script without confusion.
+The shell does not run a set-user-\s-1ID\s0 script unless this option
+is present.
+.TP
+.B \-c
+Read commands from the first filename
+.I argument
+(which must be present).  Remaining arguments are placed in
+.BR argv ,
+the argument-list variable.
+.TP
+.B \-e
+Exit if a command terminates abnormally or yields a nonzero exit
+status.
+.TP
+.B \-f
+Fast start. 
+Read neither the
+.B \&.cshrc
+file, nor the
+.B \&.login
+file (if a login shell) upon startup.
+.TP
+.B \-i
+Forced interactive. 
+Prompt for command-line input, even if the standard
+input does not appear to be a terminal (character-special device).
+.TP
+.B \-n
+Parse (interpret), but do not execute commands.
+This option can be used to check C shell scripts for syntax errors.
+.TP
+.B \-s
+Take commands from the standard input.
+.TP
+.B \-t
+Read and execute a single command line. 
+A 
+.RB ` \e '
+(backslash) can be used to escape each
+.SM NEWLINE
+for continuation of the command line onto subsequent input lines.
+.TP
+.B \-v
+Verbose. 
+Set the
+.B verbose
+predefined variable; command input is
+echoed after history substitution (but before other substitutions) and
+before execution.
+.TP
+.B \-V
+Set
+.B verbose
+before reading
+.BR \&.cshrc .
+.br
+.ne 5
+.TP
+.B \-x
+Echo.  Set the
+.B echo
+variable; echo commands after all substitutions and just before
+execution.
+.TP
+.B \-X
+Set
+.B echo
+before reading
+.BR \&.cshrc .
+.LP
+Except with the options
+.BR \-c ,
+.BR \-i ,
+.BR \-s
+or
+.BR \-t,
+the first nonoption
+.I argument
+is taken to be the name of a command or script.
+It is passed as argument zero, and subsequent arguments are added to the
+argument list for that command or script.
+.SH USAGE
+Refer to
+.TX DMBG
+for tutorial information on how to use the various features of the
+C shell.
+.SS "Filename Completion"
+.IX "C shell" "filename completion"
+.IX "filename completion, C shell"
+.LP
+When enabled by setting the variable
+.BR filec ,
+an interactive
+C shell can complete a partially typed filename or user name.
+When an unambiguous partial filename is followed by an
+.SM ESC
+character on the terminal input line, the shell fills in the remaining
+characters of a matching filename from the working directory.
+.LP
+If a partial filename is followed by the
+.SM EOF
+character (usually typed as
+\s-1CTRL-D\s0),
+the shell lists all filenames that match.  It then prompts once again,
+supplying the incomplete command line typed in so far.
+.LP
+When the last (partial) word begins with a tilde
+.RB ( \(ap ),
+the shell attempts completion with a user name, rather than
+a file in the working directory.
+.LP
+The terminal bell signals errors or multiple matches;
+this can be inhibited by setting the variable
+.BR nobeep .
+You can exclude files with certain suffixes by listing those
+suffixes in the variable
+.BR fignore .
+If, however, the only possible completion includes a suffix in
+the list, it is not ignored. 
+.B fignore
+does not affect the
+listing of filenames by the
+.SM EOF
+character.
+.SS Lexical Structure
+.IX "C shell" "lexical structure"
+.IX "lexical analysis, C shell"
+.IX "C shell" "escape character, quotes and comments"
+.IX "escape character, quotes and comments, C shell"
+.IX \e "" "\fL\e\fR escape character"
+.IX \*(rq "" "\fL\s+2\*(rq\s0\fR quote character"
+.IX ' "" "\fL\s+2'\s0\fR quote character"
+.IX "C shell metacharacters"
+.IX "metacharacters in C shell"
+.LP
+The shell splits input lines into words at
+.SM SPACE
+and
+.SM TAB
+characters, except as noted below.
+The characters
+.BR & ,
+.BR | ,
+.BR ; ,
+.BR < ,
+.BR > ,
+.BR ( ,
+and
+.B )
+form separate words; if paired, the pairs form single words.
+These shell metacharacters can be made part of other words, and
+their special meaning can be suppressed by preceding them with a
+.RB ` \e '
+(backslash).
+A
+.SM NEWLINE
+preceded by a
+.B \e
+is equivalent to a
+.SM SPACE
+character.
+.LP
+In addition, a string enclosed in matched pairs of single-quotes
+.RB (\| \' \|),
+double-quotes
+(\|\fB"\fR\|),
+or backquotes
+.RB (\| \` \|),
+forms a partial word; metacharacters in such a string, including any
+.SM SPACE
+or
+.SM TAB
+characters, do not form separate words.
+Within pairs of backquote
+.RB (\|\` \|)
+or double-quote
+(\|\fB"\fR\|) characters, a
+.SM NEWLINE
+preceded by a
+.RB ` \e '
+(backslash) gives a true
+.SM NEWLINE
+character.
+Additional functions of each type of quote are
+described, below, under
+.BR "Variable Substitution" ,
+.BR "Command Substitution" ,
+and
+.BR "Filename Substitution" .
+.LP
+When the shell's input is not a terminal, the character
+.B #
+introduces a comment that continues to the end of the input line.
+Its special meaning is suppressed when preceded by a
+.B \e
+or enclosed in matching quotes.
+.SS Command Line Parsing
+.IX & "run command in background" "\fL&\fR"
+.IX | "pipe standard output" "\fL|\fR"
+.IX |& "" "\fL|&\fR\ \ \ \(em pipe standard output and standard error \(em \fLcsh\fR"
+.IX "pipeline, C shell"
+.IX "C shell" pipeline
+.IX "C shell" "parentheses \(em command grouping"
+.IX "(  )" "command grouping \(em \fLcsh\fR" "\fL(  )\fR"
+.IX command "grouping in the C shell \(em \fL(  )\fR"
+.IX "parentheses, C shell command grouping"
+.IX "grouping commands in the C shell"
+.IX "C shell" "conditional execution \(em \fL&&\fR"
+.IX "C shell" "conditional execution \(em \fL||\fR"
+.IX && "execute on success \(em \fLcsh\fR" "\fL&&\fR"
+.IX || "execute on failure \(em \fLcsh\fR" "\fL||\fR"
+.IX ; "" "\fL;\fR\ \ \ \(em command separation"
+.LP
+A
+.I simple command
+is composed of a sequence of words.  The first word
+(that is not part of an I/O redirection) specifies the command to be
+executed.  A simple command, or a set of simple commands separated by
+.B |
+or
+.B |&
+characters, forms a
+.IR pipeline .
+With
+.BR | ,
+the standard output of the preceding command is redirected to the
+standard input of the command that follows.   With
+.BR |\|& ,
+both the standard error and the standard output are redirected through
+the pipeline.
+.LP
+Pipelines can be separated by semicolons
+.RB (\| ; \|),
+in which case they are executed sequentially. 
+Pipelines that are separated by
+.B &&
+or
+.B |\||
+form conditional sequences in which the execution of pipelines
+on the right depends upon the success or failure, respectively,
+of the pipeline on the left.
+.LP
+A pipeline or sequence can be enclosed within parentheses
+.RB ` "( )" '
+to form a simple command that can be a component in a pipeline or
+sequence.
+.LP
+A sequence of pipelines can be executed asynchronously, or
+\*(lqin the background\*(rq by appending an
+.RB ` & ';
+rather than waiting for the sequence to finish before issuing
+a prompt, the shell displays the job number (see
+.BR "Job Control" ,
+below) and associated process
+.SM ID\s0s,
+and prompts immediately.
+.SS History Substitution
+.IX "history substitution \(em in C shell"
+.IX "C shell" "history substitution"
+.IX ! "history substitution \(em \fLcsh\fR" "\fL!\fR"
+.LP
+History substitution allows you to use words from previous command
+lines in the command line you are typing.  This simplifies spelling
+corrections and the repetition of complicated commands or arguments.
+Command lines are saved in the history list, the size of which
+is controlled by the
+.B history
+variable.  The most recent command is retained in any case.
+A history substitution begins with a
+.B !
+(although you can change this with the
+.B histchars
+variable) and may occur anywhere on the command line; history
+substitutions do not nest.  The
+.B !
+can be escaped with
+.B \e
+to suppress its special meaning.
+.LP
+Input lines containing history substitutions are echoed on the
+terminal after being expanded, but before any other
+substitutions take place or the command gets executed.
+.SS \fIEvent Designators\fP
+.LP
+An event designator is a reference to a command-line entry in
+the history list.
+.RS
+.PD 0
+.TP
+.B !
+Start a history substitution, except when followed by a
+.SM SPACE
+character,
+.SM TAB\s0,
+.SM NEWLINE\s0,
+.B =
+or
+.BR ( .
+.TP
+.B !!
+Refer to the previous command. 
+By itself, this substitution
+repeats the previous command.
+.TP
+.BI ! n
+Refer to command-line
+.IR n .
+.TP
+.BI ! \-n
+Refer to the current command-line minus
+.IR n .
+.TP
+.BI  ! str
+Refer to the most recent command starting with
+.IR str .
+.TP
+.BI  !? str\fR[\fP ? \fR]\fP
+Refer to the most recent command containing
+.IR str .
+.TP
+.BR !{ .\|.\|. }
+Insulate a history reference from adjacent characters (if necessary).
+.PD
+.RE
+.SS \fIWord Designators\fR
+.LP
+A
+.RB ` : '
+(colon)
+separates the event specification from the word designator. 
+It can be omitted if the word designator begins with a
+.BR \*^ ,
+.BR $ ,
+.BR * ,
+.B \-
+or
+.BR % .
+If the word is to be selected from the previous command, the second
+.B !
+character can be omitted from the event specification.  For instance,
+.B !!:1
+and
+.B !:1
+both refer to the first word of the previous command, while
+.B !!$
+and
+.B !$
+both refer to the last word in the previous command. 
+Word designators include:
+.RS
+.TP
+.B #
+The entire command line typed so far.
+.PD 0
+.TP
+.B 0
+The first input word (command).
+.TP
+.I n
+The
+.IR n 'th
+argument.
+.TP
+.B \*^
+The first argument, that is,
+.BR 1 .
+.TP
+.B $
+The last argument.
+.TP
+.B %
+The word matched by (the most recent)
+.BI ? s
+search.
+.TP
+.IB x \- y
+A range of words;
+.BI \- y
+abbreviates
+.BI 0\- y\fR.
+.TP
+.B *
+All the arguments, or a null value if there is just
+one word in the event.
+.TP
+.IB x *
+Abbreviates
+.IB x \-$ .
+.TP
+.IB x \-
+Like
+.I x*
+but omitting word
+.BR $ .
+.PD
+.RE
+.SS \fIModifiers\fR
+.IX "history substitution modifiers"
+.IX ": modifiers" "" "\fL:\fR modifiers \(em history substitution \(em \fLcsh\fR"
+.LP
+After the optional word designator, you can add
+a sequence of one or more of the following modifiers,
+each preceded by a
+.BR : .
+.RS
+.TP
+.B h
+Remove a trailing pathname component, leaving the head.
+.PD 0
+.TP
+.B r
+Remove a trailing suffix of the form
+.RB ` "\&.\fIxxx" ',
+leaving the basename.
+.TP
+.B e
+Remove all but the suffix.
+.TP
+.BI s/ l / r\fR[\fP / \fR]\fP
+Substitute
+.I r
+for
+.IR l .
+.TP
+.B t
+Remove all leading pathname components, leaving the tail.
+.TP
+.B &
+Repeat the previous substitution.
+.TP
+.B g
+Apply the change to the first occurrence of a match in each word,
+by prefixing the above (for example,
+.BR g& ).
+.TP
+.B p
+Print the new command but do not execute it.
+.TP
+.B q
+Quote the substituted words, escaping further substitutions.
+.TP
+.B x
+Like
+.BR q ,
+but break into words at each
+.SM SPACE
+character,
+.SM TAB
+or
+.SM NEWLINE\s0.
+.PD
+.RE
+.LP
+Unless preceded by a
+.BR g ,
+the modification is applied only to the
+first string that matches
+.IR l ;
+an error results if no string matches.
+.LP
+The left-hand side of substitutions are not regular expressions,
+but character strings.
+Any character can be used as the delimiter in place of
+.BR / .
+A backslash quotes the delimiter character.
+The character
+.BR & ,
+in the right hand side, is replaced by the text
+from the left-hand-side. 
+The
+.B &
+can be quoted with a backslash. 
+A null
+.I l
+uses the previous string either from a
+.I l
+or from a contextual scan string
+.I s
+from
+.BI !? s\fR.
+You can omit the rightmost delimiter if a
+.SM NEWLINE
+immediately follows
+.IR r ;
+the rightmost
+.B ?
+in a context scan can similarly be omitted.
+.LP
+Without an event specification, a history reference refers either to the
+previous command, or to a previous history reference on the command line
+(if any).
+.SS \fIQuick Substitution\fR
+.IX "quick substitution \(em in C shell"
+.IX ^ "quick substitution \(em \fLcsh\fR" "\fL\s+2^\s0\fR"
+.IX "C shell" "quick substitution"
+.LP
+.TP
+.BI \*^ l \*^ r\fR[\fP \*^ \fR]\fP
+This is equivalent to the history substitution:
+.BI !:s\*^ l \*^ r\c
+.RB [ \*^ ].
+.SS Aliases
+.IX  "alias substitution \(em in C shell"
+.IX "C shell" "alias substitution"
+.LP
+The C shell maintains a list of aliases that you can create, display,
+and modify using the
+.B alias
+and
+.B unalias
+commands.
+The shell checks the first word in each command to see if it matches
+the name of an existing alias.
+If it does, the command is reprocessed
+with the alias definition replacing its name; the history
+substitution mechanism is made available as though that command
+were the previous input line.
+This allows history substitutions,
+escaped with a backslash in the definition, to be replaced with
+actual command-line arguments when the alias is used.
+If no
+history substitution is called for, the arguments remain unchanged.
+.LP
+Aliases can be nested. 
+That is, an alias definition can contain
+the name of another alias.
+Nested aliases are expanded before any
+history substitutions is applied. 
+This is useful in pipelines such as
+.IX \e!* "" "\fL\e!*\fR\ \ \ \(em alias substitution, include command-line arguments \(em \fLcsh\fR"
+.IP
+.ft B
+alias \ lm \'ls \ \-l \ \e!* \ | \ more\'
+.ft R
+.LP
+which when called, pipes the output of
+.BR ls (1V)
+through
+.BR more (1).
+.LP
+Except for the first word, the name of the alias may not appear in its
+definition, nor in any alias referred to by its definition. 
+Such loops are detected, and cause an error message.
+.SS I/O Redirection
+.IX "I/O redirection in the C shell"
+.IX "C shell" "I/O redirection"
+.IX < "redirect standard input" "\fL<\fR"
+.IX > "redirect standard output" "\fL>\fR"
+.IX >& "" "\fL>&\fR\ \ \ \(em redirect standard output and standard error \(em \fLcsh\fR"
+.IX >> "append standard output" "\fL>>\fR"
+.IX >>& "" "\fL>>&\fR\ \ \ \(em append standard output and standard error \(em \fLcsh\fR"
+.IX << "parse and pass input to command" "\fL<<\fR"
+The following metacharacters indicate that the subsequent word
+is the name of a file to which the command's standard input, standard
+output, or standard error is redirected; this word is variable,
+command, and filename expanded separately from the rest of the command.
+.TP 15
+.B <
+Redirect the standard input.
+.TP
+.BI <\|< \|word
+Read the standard input, up to a line that is identical
+with
+.IR word ,
+and place the resulting lines in a temporary file.
+Unless
+.I word
+is escaped or quoted, variable and command substitutions are performed
+on these lines.
+Then, invoke the pipeline with the temporary file as
+its standard input.
+.I word
+is not subjected to variable, filename or command substitution,
+and each line is compared to it before any substitutions are
+performed by the shell.
+.TP
+\fB>\fR\ \ \ \fB>!\fR\ \ \ \fB>&\fR\ \ \ \fB>&!\fR
+Redirect the standard output to a file.
+If the file does not exist, it is created.  If it does
+exist, it is overwritten; its previous contents are lost.
+.IP
+When set, the variable
+.B noclobber
+prevents destruction of existing
+files.  It also prevents redirection to terminals and
+.BR /dev/null ,
+unless one of the
+.B !
+forms is used.
+The
+.B &
+forms redirect both standard output and the standard
+error (diagnostic output) to the file.
+.TP
+\fB>\|>\fR\ \ \ \fB>\|>&\fR\ \ \ \fB>\|>!\fR\ \ \ \fB>\|>&!\fR
+Append the standard output.
+Like
+.BR > ,
+but places output at the end of the file rather
+than overwriting it.  If
+.B noclobber
+is set, it is an error for the file not to exist, unless
+one of the
+.B !
+forms is used.
+The
+.B &
+forms append both the standard error and standard output to the
+file.
+.br
+.ne 5
+.SS "Variable Substitution"
+.IX  "variable substitution, in C shell"
+.IX "C shell" "variable substitution"
+.IX $ "" "\fL$\fR\ \ \ \(em variable substitution"
+.LP
+The C shell maintains a set of
+.IR variables ,
+each of which is composed of a
+.I name
+and a
+.IR value .
+A variable name consists of up to 20 letters and digits,
+and starts with a letter (the underscore is considered a letter).
+A variable's value is a space-separated list of zero or more words.
+.LP
+To refer to a variable's value, precede its name with a
+.RB ` $ '.
+Certain references (described below) can be used to select specific
+words from the
+value, or to display other information about the variable.  Braces can
+be used to insulate the reference from other characters in an input-line
+word.
+.LP
+Variable substitution takes place after
+the input line is analyzed, aliases are resolved, and I/O
+redirections are applied.
+Exceptions to this are variable references in I/O redirections
+(substituted at the time the redirection is made), and backquoted
+strings (see
+.BR "Command Substitution" ).
+.LP
+Variable substitution can be suppressed by preceding the
+.B $
+with a
+.BR \e ,
+except within double-quotes where it always occurs. 
+Variable substitution is suppressed inside of single-quotes.
+A
+.B $
+is escaped if followed by a
+.SM SPACE
+character,
+.SM TAB
+or
+.SM NEWLINE\s0.
+.LP
+Variables can be created, displayed, or destroyed using the
+.B set
+and
+.B unset
+commands. 
+Some variables are maintained or used by the shell.
+For instance, the
+.B argv
+variable contains an image of the shell's argument list.
+Of the variables used by the shell, a number are toggles;
+the shell does not care what their value is,
+only whether they are set or not.
+.LP
+Numerical values can be operated on as numbers (as with the
+.B @
+built-in).  With numeric operations, an empty value
+is considered to be zero; the second and subsequent words of
+multiword values are ignored.  For instance, when the
+.B verbose
+variable is set to any value (including an empty value), command
+input is echoed on the terminal.
+.LP
+Command and filename substitution is subsequently applied to the words
+that result from the variable substitution, except when suppressed by
+double-quotes, when
+.B noglob
+is set (suppressing filename substitution), or when the reference is
+quoted with the
+.BR :q
+modifier.
+Within double-quotes, a reference is expanded to form (a portion
+of) a quoted string; multiword values are expanded to a string with
+embedded
+.SM SPACE
+characters.
+When the
+.B :q
+modifier is applied to the reference, it is expanded to a list
+of space-separated words, each of which is quoted
+to prevent subsequent command or filename substitutions.
+.LP
+Except as noted below, it is an error to refer to a variable that is
+not set.
+.TP 15
+.BI $ var
+.PD 0
+.TP
+.BI ${ var }
+.PD
+These are replaced by words from the value of
+.IR var ,
+each separated by a
+.SM SPACE
+character.
+If
+.I var
+is an environment variable, its
+value is returned (but
+.RB ` : '
+modifiers and the other forms
+given below are not available).
+.TP
+.BI $ var \fR[\fI index \fR]\fP
+.PD 0
+.TP
+.BI ${ var [ index ]}
+.PD
+These select only the indicated words from the value of
+.IR var .
+Variable substitution is applied to
+.IR index \|,
+which may
+consist of (or result in) a either single number, two numbers
+separated by a
+.RB ` \- ',
+or an asterisk.
+Words are indexed starting from 1; a
+.RB ` * '
+selects all words.
+If the first number of a range is omitted (as with
+.BR $argv[\-2] ),
+it defaults to 1.  If the last number of a range is omitted
+(as with
+.BR $argv[1\-] ),
+it defaults to
+.BI $# var
+(the word count).
+.IX $# "" "\fL$#\fR\ \ \ \(em word count for variable"
+It is not an error for a range to be empty if the second argument is
+omitted (or within range).
+.TP
+.BI $# name
+.PD 0
+.TP
+.BI ${# name }
+.PD
+These give the number of words in the variable.
+.TP
+.B $0
+This substitutes the name of the file from which command input is
+being read.  An error occurs if the name is not known.
+.br
+.ne 5
+.TP
+.BI $ n
+.PD 0
+.TP
+.BI ${ n }
+.PD
+Equivalent to
+.BI $argv[ n ] .
+.TP
+.B $*
+Equivalent to
+.BR $argv[*] .
+.LP
+The modifiers
+.BR :e ,
+.BR :h ,
+.BR :q ,
+.BR :r ,
+.B :t
+and
+.B :x
+can be applied (see
+.BR "History Substitution" ),
+as can
+.BR :gh ,
+.B :gt
+and
+.BR :gr .
+If
+.B   {\|}
+(braces) are used, then the modifiers must appear within the braces.
+The current implementation allows only one such modifier per
+expansion.
+.LP
+The following references may not be modified with
+.B :
+modifiers.
+.TP
+.BI $? var
+.PD 0
+.TP
+.BI ${? var }
+.PD
+.IX $? "" "\fL$?\fR\ \ \ \(em variable set inquiry \(em \fLcsh\fR"
+Substitutes the string 1 if
+.I var
+is set or 0 if it is not set.
+.TP
+.B $?0
+Substitutes 1 if the current input filename is known, or 0 if it is not.
+.TP
+.B $$
+.IX $$ "" "\fL$$\fR\ \ \ \(em process number of shell"
+Substitute the process number of the (parent) shell.
+.TP
+.B $<
+.IX $< "" "\fL$<\fR\ \ \ \(em read value from terminal \(em \fLcsh\fR"
+Substitutes a line from the standard
+input, with no further interpretation thereafter.  It can be used
+to read from the keyboard in a C shell script.
+.SS "Command and Filename Substitutions"
+.LP
+Command and filename substitutions are applied selectively to
+the arguments of built-in commands.  Portions of expressions that are
+not evaluated are not expanded.
+For non-built-in commands, filename expansion of the command name is
+done separately from that of the argument list; expansion occurs
+in a subshell, after I/O redirection is performed.
+.SS Command Substitution
+.IX  command substitution
+.IX  "C shell" "command substitution"
+.IX ` "" "\fL`\fR\ \ \ \(em command substitution"
+.IX "backquote substitution"
+.LP
+A command enclosed by backquotes
+.RB (\| \` \|.\|.\|.\| \` \|)
+is performed by a subshell. 
+Its standard output is broken into separate words at each
+.SM SPACE
+character,
+.SM TAB
+and
+.SM NEWLINE\s0;
+null words are discarded.
+This text replaces the backquoted
+string on the current command line. 
+Within double-quotes, only
+.SM NEWLINE
+characters force new words;
+.SM SPACE
+and
+.SM TAB
+characters are preserved.  However, a final
+.SM NEWLINE
+is ignored.
+It is therefore possible for a command substitution
+to yield a partial word.
+.SS "Filename Substitution"
+.IX  "filename substitution"
+.IX  "C shell" "filename substitution"
+.IX * "filename wild card, zero or more of any characters" "\fL*\fR"
+.IX ? "" "\fL?\fR\ \ \ \(em filename wild card, any single characters"
+.IX "[ ]" "" "\fL[ ]\fR\ \ \ \(em filename substitution, any character in list or range"
+.IX "{ }" "" "\fL{ }\fR\ \ \ \(em filename substitution, successive strings in enclosed list"
+.IX ~ "filename substitution, home directory" "\fL\(ap\fR"
+.LP
+Unquoted words containing any of the characters
+.BR * ,
+.BR ? ,
+.B [
+or
+.BR { ,
+or that begin with
+.BR \*~ ,
+are expanded (also known as
+.IR globbing )
+to an alphabetically sorted list of filenames, as follows:
+.TP 15
+.B *
+Match any (zero or more) characters.
+.TP
+.B ?
+Match any single character.
+.TP
+.BR [ " .\|.\|. " ]
+Match any single character in the enclosed list(s) or range(s).
+A list is a string of characters. 
+A range is two characters separated by a minus-sign
+.RB ( \- ),
+and includes all the characters in between in the
+.SM ASCII
+collating sequence (see
+.BR ascii (7)).
+.HP
+.B {
+.IB str ,
+.IB str ,
+\&.\|.\|.
+.B }
+.br
+Expand to each string (or filename-matching pattern) in the
+comma-separated list.
+Unlike the pattern-matching expressions above, the expansion of this
+construct is not sorted.
+For instance,
+.B {b,a}
+expands to
+.RB ` b '
+.RB ` a ',
+(not
+.RB ` a '
+.RB ` b ').
+As special cases, the characters
+.BR {
+and
+.BR } ,
+along with the string
+.BR {\|} ,
+are passed undisturbed.
+.TP
+.BR \*~ [
+.I user
+]
+Your home directory, as indicated by the value of the variable
+.BR home ,
+or that of
+.IR user ,
+as indicated by the password entry for
+.IR user .
+.LP
+Only the patterns
+.BR * , " ?"
+and
+.BR [ .\|.\|. ]
+imply pattern matching; an error results if
+no filename matches a pattern that contains them.
+The
+.RB ` . '
+(dot character),
+when it is the first character in a filename or pathname
+component, must be matched explicitly.
+The
+.B /
+(slash)
+must also be matched explicitly.
+.SS Expressions and Operators
+.IX "C shell" "expressions"
+.IX "C shell" "operators"
+.IX "expressions \(em in C shell"
+.IX "(  )" "group operators \(em \fLcsh\fR" "\fL(  )\fR"
+.IX ~ "one's complement operator \(em \fLcsh\fR" "\fL\(ap\fR"
+.IX ! "logical negation operator \(em \fLcsh\fR" "\fL!\fR"
+.IX * "integer multiplication operator \(em \fLcsh\fR" "\fL*\fR"
+.IX / "" "\fL/\fR\ \ \ \(em integer division operator \(em \fLcsh\fR"
+.IX % "modular division operator \(em \fLcsh\fR" "\fL%\fR"
+.IX + "" "\fL+\fR\ \ \ \(em integer addition operator \(em \fLcsh\fR"
+.IX - "" "\fL-\fR\ \ \ \(em integer subtraction operator \(em \fLcsh\fR"
+.IX >> "bitwise shift right \(em \fLcsh\fR" "\fL>>\fR"
+.IX << "bitwise shift left \(em \fLcsh\fR" "\fL<<\fR"
+.IX < "less than operator \(em \fLcsh\fR" "\fL<\fR"
+.IX > "greater than operator \(em \fLcsh\fR" "\fL>\fR"
+.IX <= "" "\fL<=\fR\ \ \ \(em less than or equal to operator \(em \fLcsh\fR"
+.IX >= "" "\fL>=\fR\ \ \ \(em greater than or equal to operator \(em \fLcsh\fR"
+.IX == "" "\fL==\fR\ \ \ \(em is equal to operator \(em \fLcsh\fR"
+.IX != "" "\fL!=\fR\ \ \ \(em not equal to operator \(em \fLcsh\fR"
+.IX =~ "" "\fL=\(ap\fR\ \ \ \(em globbing pattern match operator \(em \fLcsh\fR"
+.IX !~ "" "\fL!\(ap\fR\ \ \  globbing pattern mismatch operator \(em \fLcsh\fR"
+.IX & "bitwise \s-1AND\s0 operator \(em \fLcsh\fR" "\fL&\fR"
+.IX ^ "bitwise \s-1XOR\s0 operator \(em \fLcsh\fR" "\fL\s+2^\s0\fR"
+.IX | "bitwise \s-1OR\s0 operator \(em \fLcsh\fR" "\fL|\fR"
+.IX && "logical \s-1AND\s0 operator \(em \fLcsh\fR" "\fL&&\fR"
+.IX || "logical \s-1OR\s0 operator \(em \fLcsh\fR" "\fL||\fR"
+.LP
+A number of C shell built-in commands accept expressions, in which the
+operators are similar to those of C
+and have the same precedence.
+These expressions typically appear in the
+.BR @ ,
+.BR exit ,
+.BR if  ,
+.B set
+and
+.B while
+commands, and are often used to regulate the flow of control for
+executing commands.
+Components of an expression are separated by white space.
+.LP
+Null or missing values are considered 0.  The result of all
+expressions are strings, which may represent decimal numbers.
+.LP
+The following C shell operators are grouped in order of precedence:
+.RS
+.TP 20
+.BR (\| .\|.\|.\| \|)
+grouping
+.PD  0
+.TP
+.B \(ap
+one's complement
+.TP
+.B !
+logical negation
+.TP
+.B "*   /   %"
+multiplication, division, remainder (These are right associative,
+which can lead to unexpected results.  Group combinations
+explicitly with parentheses.)
+.TP
+.B "+   \-"
+addition, subtraction (also right associative)
+.TP
+.B "<<   >>"
+bitwise shift left, bitwise shift right
+.TP
+.B "<   >   <=   >="
+less than, greater than, less than or equal to, greater than or equal to
+.TP
+.B "==   !=   =\(ap   !\(ap"
+equal to, not equal to, filename-substitution pattern match
+(described below),
+filename-substitution pattern mismatch
+.TP
+.B &
+bitwise
+.SM AND
+.TP
+.B \*^
+bitwise
+.SM XOR
+(exclusive or)
+.TP
+.B |
+bitwise inclusive
+.SM OR
+.TP
+.B &&
+logical
+.SM AND
+.TP
+.B |\|\||
+logical
+.SM OR
+.PD
+.RE
+.LP
+The operators:
+.BR == ,
+.BR != ,
+.BR =\(ap ,
+and
+.B !\(ap
+compare their arguments as strings; other operators use numbers.
+The operators
+.B =\(ap
+and
+.B !\(ap
+each check whether or not a string to the left matches a filename
+substitution pattern on the right.  This reduces the need for
+.B switch
+statements when pattern-matching between strings is all that is
+required.
+.LP
+Also available are file inquiries:
+.IX "C shell" "file inquries"
+.IX "file inquries \(em in C shell"
+.IX r "" "\fL\-r\fR\ \ \ C shell file inquiry \(em read accessible"
+.IX w "" "\fL\-w\fR\ \ \ C shell file inquiry \(em write accessible"
+.IX x "" "\fL\-x\fR\ \ \ C shell file inquiry \(em execute accessible"
+.IX o "" "\fL\-o\fR\ \ \ C shell file inquiry \(em ownership"
+.IX e "" "\fL\-e\fR\ \ \ C shell file inquiry \(em file exists"
+.IX z "" "\fL\-z\fR\ \ \ C shell file inquiry \(em zero length"
+.IX d "" "\fL\-d\fR\ \ \ C shell file inquiry \(em directory"
+.IX f "" "\fL\-f\fR\ \ \ C shell file inquiry \(em plain file"
+.RS
+.PD 0
+.TP 10
+.BI \-r " filename"
+Return true, or 1 if the user has read access. 
+Otherwise it returns false, or 0.
+.TP
+.BI \-w " filename"
+True if the user has write access.
+.TP
+.BI \-x " filename"
+True if the user has execute permission (or search permission on
+a directory).
+.TP
+.BI \-e " filename"
+True if
+.I file
+exists.
+.TP
+.BI \-o " filename"
+True if the user owns
+.IR file .
+.TP
+.BI \-z " filename"
+True if
+.I file
+is of zero length (empty).
+.TP
+.BI \-f " filename"
+True if
+.I file
+is a plain file.
+.TP
+.BI \-d " filename"
+True if
+.I file
+is a directory.
+.PD
+.RE
+.LP
+If
+.I file
+does not exist or is inaccessible, then all inquiries return false.
+.LP
+An inquiry as to the success of a command is also available:
+.IX "C shell" "command inquiry"
+.IX command "inquiry, in C shell"
+.IX "{ }" "" "\fL{ }\fR\ \ \ C shell command inquiry"
+.RS
+.TP 10
+.BI "{ " command " }"
+If
+.I command
+runs successfully, the expression evaluates to true, 1.
+Otherwise it evaluates to false 0.  (Note that, conversely,
+.I command
+itself typically returns 0 when it runs successfully,
+or some other value if it encounters a problem.  If you want to get at
+the status directly, use the value of the
+.B status
+variable rather than this expression).
+.RE
+.SS Control Flow
+.IX "control flow \(em in C shell"
+.IX "C shell" "branch"
+.IX "C shell" "loop"
+.IX "branch, C shell control flow"
+.IX "loop, C shell control flow"
+.LP
+The shell contains a number of commands to regulate the flow of
+control in scripts, and within limits, from the terminal.
+These commands operate by forcing the shell either to reread
+input (to
+.IR loop ),
+or to skip input under certain conditions (to
+.IR branch ).
+.LP
+Each occurrence of a
+.BR foreach ,
+.BR switch ,
+.BR while ,
+.BR if ".\|.\|." then
+and
+.B else
+built-in must appear as the first word on its own input line.
+.LP
+If the shell's input is not seekable and a loop is being read, that
+input is buffered.  The shell performs seeks within the internal
+buffer to accomplish the rereading implied by the loop.  (To the
+extent that this allows, backward
+.B goto
+commands will succeed on nonseekable inputs.)
+.SS Command Execution
+.IX "C shell" "command execution"
+.IX "C shell" "and Bourne shell scripts"
+.IX  command "execution in C shell"
+.IX  "executing commands in C shell"
+.IX #! "" "\fL#!\fR\ \ \ invoke shell to process script"
+.LP
+If the command is a C shell built-in, the shell executes it directly.
+Otherwise, the shell searches for a file by that name with
+execute access.
+If the command-name contains a
+.BR / ,
+the shell takes it as a pathname, and searches for it.
+If the command-name does not contain a
+.BR / ,
+the shell attempts to resolve it to a pathname, searching each
+directory in the
+.B path
+variable for the command.  To speed the search, the shell uses its
+hash table (see the
+.B rehash
+built-in) to eliminate directories that have no applicable files.
+This hashing can be disabled with the
+.B \-c
+or
+.BR \-t ,
+options, or the
+.B unhash
+built-in.
+.LP
+As a special case, if there is no
+.BR /
+in the name of the script and there is an alias for the word
+.BR shell ,
+the expansion of the
+.B shell
+alias is prepended (without modification), to the command line. 
+The system attempts to execute the first word of this special
+(late-occurring) alias, which should be a full pathname.
+Remaining words of the alias's definition, along with the text of the
+input line, are treated as arguments.
+.LP
+When a pathname is found that has proper execute permissions,
+the shell forks a new process and passes it, along with its
+arguments to the kernel (using the
+.BR execve (2V)
+system call).  The kernel then attempts to overlay the new process
+with the desired program.  If the file is an executable binary (in
+.BR a.out (5)
+format)
+the kernel succeeds, and begins executing the new process.  If the file
+is a text file, and the first line begins with
+.BR #! ,
+the next word is taken to be the pathname of a shell (or command) to
+interpret that script.  Subsequent words on the first line are taken as
+options for that shell.  The kernel invokes (overlays) the indicated
+shell, using the name of the script as an argument.
+.LP
+If neither of the above conditions holds, the kernel cannot overlay
+the file (the
+.BR execve (2V)
+call fails); the C shell then attempts to execute the file by spawning
+a new shell, as follows:
+.TP 3
+\(bu
+If the first character of the file is a
+.BR  # ,
+a C shell is invoked.
+.TP
+\(bu
+Otherwise, a standard (Bourne) shell is invoked.
+.SS Signal Handling
+.IX  "signal handling, in C shell"
+.IX  "C shell" "signal handling"
+.LP
+The shell normally ignores
+.SM QUIT
+signals.
+Background jobs are immune to signals generated from the
+keyboard, including
+hangups
+(\s-1HUP\s0).
+Other signals have the values that the
+C shell inherited from its environment.
+The shell's handling of interrupt and terminate signals
+within scripts can be controlled by the
+.B onintr
+built-in.
+Login shells catch the
+.SM TERM
+signal; otherwise this signal is passed on to child processes.
+In no case are interrupts allowed when a login shell is reading the
+.B \&.logout
+file.
+.SS "Job Control"
+.IX "C shell" "job control"
+.IX "job control \(em \fLcsh\fR"
+.IX % "job control, reference to current job \(em \fLcsh\fR" "\fL%\fR"
+.LP
+The shell associates a numbered
+.I job
+with each command sequence, to keep track of those commands that are
+running in the background or have been stopped with
+.SM TSTP
+signals (typically
+\s-1CTRL-Z\s0).
+When a command, or command sequence (semicolon separated list), is
+started in the background using the
+.B &
+metacharacter, the shell displays a line with the job number in
+brackets, and a list of associated process numbers:
+.IP
+.B "[1] 1234"
+.LP
+To see the current list of jobs, use the
+.B jobs
+built-in command.
+The job most recently stopped (or put into the
+background if none are stopped) is referred to as the
+.I current
+job, and is indicated with a
+.RB ` + '.
+The previous job is indicated with a
+.RB ` \- ';
+when the current job is terminated or moved to the foreground,
+this job takes its place (becomes the new current job).
+.LP
+To manipulate jobs, refer to the
+.BR bg ,
+.BR fg ,
+.BR kill ,
+.BR stop
+and
+.BR %
+built-ins.
+.LP
+A reference to a job begins with a
+.RB ` % '.
+By itself, the percent-sign refers to the current job.
+.TP 15
+.BR % "\ \ \ " %+ "\ \ \ " %%
+The current job.
+.PD 0
+.TP
+.B %\-
+The previous job.
+.TP
+.BI % j
+Refer to job
+.I j
+as in:
+.RB ` "kill \-9 %\fIj" '.
+.I  j
+can be a job number, or a string that
+uniquely specifies the command-line by which it was started;
+.RB ` "fg %vi" '
+might bring a stopped
+.B vi
+job to the foreground, for instance.
+.TP
+.BI %? string
+Specify the job for which the command-line uniquely contains
+.IR string .
+.PD
+.LP
+A job running in the background stops when it attempts to read
+from the terminal.  Background jobs can normally produce output,
+but this can be suppressed using the
+.RB ` "stty tostop" '
+command.
+.SS Status Reporting
+.LP
+While running interactively, the shell tracks the status of each job
+and reports whenever a finishes or becomes blocked.  It normally
+displays a message to this effect as it issues a prompt, so as to avoid
+disturbing the appearance of your input.  When set, the
+.B notify
+variable indicates that the shell is to report status changes
+immediately.  By default, the
+.B notify
+command marks the current process; after starting a background job, type
+.B notify
+to mark it.
+.SS "Built-In Commands"
+.\" start of csh_built-ins
+.zZ
+.IX "C shell" "commands" "" "" PAGE START
+.LP
+Built-in commands are executed within the C shell.
+If a built-in command occurs as any component of a pipeline
+except the last, it is executed in a subshell.
+.TP 10
+.B :
+.IX   "C shell commands"  ":"  ""  "\fL:\fR\ \ \ \(em null command"
+.IX ": command" "" "\fL:\fR command"
+Null command.  This command is interpreted, but performs no action.
+.HP
+.B alias
+[
+.I name
+[
+.I def
+] ]
+.br
+.IX   "C shell commands"  "alias"  ""  "\fLalias\fR \(em shell macros"
+.IX "alias command" "" "\fLalias\fR command"
+Assign
+.I def
+to the alias
+.IR name .
+.I def
+is a list of words that may contain escaped history-substitution
+metasyntax.
+.I name
+is not allowed to be
+.B alias
+or
+.BR unalias .
+If
+.I def
+is omitted, the alias
+.I name
+is displayed along with its current definition.  If both
+.I name
+and
+.I def
+are omitted, all aliases are displayed.
+.HP
+.B bg
+.RB [ %\c
+.IR job "] .\|.\|."
+.br
+.IX   "C shell commands"  "bg"  ""  "\fLbg\fR \(em job to background"
+.IX "bg command" "" "\fLbg\fR command"
+Run the current or specified jobs in the background.
+.TP
+.B break
+.IX   "C shell commands"  "break"  ""  "\fLbreak\fR \(em exit loop"
+.IX "break command" "" "\fLbreak\fR command"
+Resume execution after the
+.B end
+of the nearest enclosing
+.B foreach
+or
+.B while
+loop.
+The remaining commands on the current line
+are executed.  This allows multilevel breaks to be written as a
+list of
+.B break
+commands, all on one line.
+.TP
+.B breaksw
+.IX   "C shell commands"  "breaksw"  ""  "\fLbreaksw\fR \(em exit switch"
+.IX "breaksw command" "" "\fLbreaksw\fR command"
+Break from a
+.BR switch ,
+resuming after the
+.BR endsw .
+.TP
+.BI case " label" :
+.IX   "C shell commands"  "case"  ""  "\fLcase\fR \(em selector in switch"
+.IX "case command" "" "\fLcase\fR command"
+A label in a
+.B switch
+statement.
+.HP
+.B cd
+[
+.I dir
+]
+.br
+.PD 0
+.HP
+.B chdir
+[
+.I dir
+]
+.br
+.IX   "C shell commands"  "cd"  ""  "\fLcd\fR \(em change directory"
+.IX "cd command" "" "\fLcd\fR command"
+.IX   "C shell commands"  "chdir"  ""  "\fLchdir\fR \(em change directory"
+.IX "chdir command" "" "\fLchdir\fR command"
+Change the shell's working directory to directory
+.IR dir .
+If no argument is given, change to the home directory of the user.
+If
+.I dir
+is a relative pathname not found in the current directory, check for
+it in those directories listed in the
+.B cdpath
+variable.  If
+.I dir
+is the name of a shell variable whose value starts with a
+.BR / ,
+change to the directory named by that value.
+.PD
+.TP
+.B continue
+.IX   "C shell commands"  "continue"  ""  "\fLcontinue\fR \(em cycle loop"
+.IX "continue command" "" "\fLcontinue\fR command"
+Continue execution of the nearest enclosing
+.B while
+or
+.BR foreach .
+.TP
+.B default:
+.IX   "C shell commands"  "default"  ""  "\fLdefault\fR \(em catchall in switch"
+.IX "default command" "" "\fLdefault\fR command"
+Labels the default case in a
+.B switch
+statement.
+The default should come after all
+.B case
+labels.
+Any remaining commands on the command line are first executed.
+.HP
+.B dirs
+[
+.B \-l
+]
+.br
+.IX   "C shell commands"  "dirs"  ""  "\fLdirs\fR \(em print directory stack"
+.IX "dirs command" "" "\fLdirs\fR command"
+Print the directory stack, most recent to the left;
+the first directory shown is the current directory.
+With the
+.B \-l
+argument, produce an unabbreviated printout; use of the
+.B \*~
+notation is suppressed.
+.HP
+.B echo
+[
+.B \-n
+]
+.I list
+.br
+.IX   "C shell commands"  "echo"  ""  "\fLecho\fR \(em echo arguments"
+The words in
+.I list
+are written to the shell's standard output, separated by
+.SM SPACE
+characters.
+The output is terminated with a
+.SM NEWLINE
+unless the
+.B \-n
+option is used.
+.TP
+\fBeval \fI argument\fR .\|.\|.
+.IX   "C shell commands"  "eval"  ""  "\fLeval\fR \(em re-evaluate shell data"
+.IX "eval command" "" "\fLeval\fR command"
+Reads the arguments as input to the shell, and executes the resulting
+command(s).  This is usually used to execute commands
+generated as the result of command or variable substitution, since
+parsing occurs before these substitutions.  See
+.BR tset (1)
+for an example of how to use
+.BR eval .
+.TP
+.BI exec " command"
+.IX   "C shell commands"  "exec"  ""  "\fLexec\fR \(em execute command"
+.IX "exec command" "" "\fLexec\fR command"
+Execute
+.I command
+in place of the current shell, which terminates.
+.HP
+.B exit
+[
+.BI ( expr )
+]
+.br
+.IX   "C shell commands"  "exit"  ""  "\fLexit\fR \(em exit shell"
+.IX "exit command" "" "\fLexit\fR command"
+The shell exits, either with the value of the \fBstatus\fP
+variable, or with the value of the specified by the expression
+.IR expr .
+.HP
+.B "fg %"
+[
+.I job
+]
+.br
+.IX   "C shell commands"  "fg"  ""  "\fLfg\fR \(em job to foreground"
+.IX "fg command" "" "\fLfg\fR command"
+Bring the current or specified
+.I job
+into the foreground.
+.TP
+.BI foreach " var " ( wordlist )
+.PD 0
+.TP
+\ \ \ \&.\|.\|.
+.TP
+.B end
+.IX   "C shell commands"  "foreach"  ""  "\fLforeach\fR \(em loop on list of names"
+.IX "foreach command" "" "\fLforeach\fR command"
+.IX   "C shell commands"  "end"  ""  "\fLend\fR \(em end loop"
+.IX "end command" "" "\fLend\fR command"
+The variable
+.I var
+is successively set to each member of
+.IR wordlist .
+The sequence of commands between this command and the matching
+.B end
+is executed for each new value of
+.IR var .
+(Both
+.B foreach
+and
+.B end
+must appear alone on separate lines.)
+.PD
+.IP
+The built-in command
+.B continue
+may be used to continue the loop prematurely and the built-in command
+.B break
+to terminate it prematurely.
+When this command is read from the terminal, the loop is read up once
+prompting with
+.B ?
+before any statements in the loop are executed.
+.TP
+.BI glob " wordlist"
+.IX   "C shell commands"  "glob"  ""  "\fLglob\fR \(em filename expand wordlist"
+.IX "glob command" "" "\fLglob\fR command"
+Perform filename expansion on
+.IR wordlist .
+Like
+.BR echo ,
+but no
+.B \e
+escapes are recognized. Words are delimited by
+null
+characters in the output.
+.TP
+.BI goto " label"
+.IX   "C shell commands"  "goto"  ""  "\fLgoto\fR \(em command transfer"
+.IX "goto command" "" "\fLgoto\fR command"
+The specified
+.I label
+is filename and command expanded to yield a label.
+The shell rewinds its input as much as possible
+and searches for a line of the form
+.IB label :
+possibly preceded by
+.SM SPACE
+or
+.SM TAB
+characters.
+Execution continues after the indicated line.
+It is an error to jump to a label that occurs between a
+.B while
+or
+.B for
+built-in, and its corresponding
+.BR end .
+.TP
+.BR hashstat
+.IX   "C shell commands"  "hashstat"  ""  "\fLhashstat\fR \(em display hashing statistics"
+.IX "hashstat command" "" "\fLhashstat\fR command"
+Print a statistics line indicating how effective the internal hash
+table has been at locating commands (and avoiding
+.BR exec s).
+An
+.B exec
+is attempted for each component of the
+.I path
+where the hash function indicates a possible hit, and in each component
+that does not begin with a
+.RB ` / '.
+.HP
+.B history
+[
+.B \-hr
+] [
+.I n
+]
+.br
+.IX   "C shell commands"  "history"  ""  "\fLhistory\fR \(em display history list"
+.IX "history command" "" "\fLhistory\fR command"
+Display the history list; if
+.I n
+is given, display only the
+.I n
+most recent events.
+.RS
+.TP
+.B \-r
+Reverse the order of printout to be most recent first rather than oldest first.
+.PD 0
+.TP
+.B \-h
+Display the history list without leading numbers.
+This is used to produce files suitable for sourcing using the
+.B \-h
+option to
+.IR source .
+.PD
+.RE
+.TP
+.BI "if (" expr ") " command
+.IX   "C shell commands"  "if"  ""  "\fLif\fR \(em conditional statement"
+.IX "if command" "" "\fLif\fR command"
+If the specified expression evaluates to true, the single
+.I command
+with arguments is executed.
+Variable substitution on
+.IR command ""
+happens early, at the same time it does for the rest of the
+.I if
+command.
+.I command
+must be a simple command, not a pipeline, a command list, or a
+parenthesized command list.  Note: I/O redirection occurs even
+if
+.I expr
+is false, when
+.I command
+is
+.I not
+executed (this is a bug).
+.TP
+.BI "if (" expr ") then"
+.PD 0
+.TP
+\&.\|.\|.
+.TP
+.BI "else if (" expr2 ") then"
+.TP
+\&.\|.\|.
+.TP
+.B else
+.TP
+\&.\|.\|.
+.TP
+.B endif
+.IX   "C shell commands"  "else"  ""  "\fLelse\fR \(em alternative commands"
+.IX "else command" "" "\fLelse\fR command"
+.IX   "C shell commands"  "endif"  ""  "\fLendif\fR \(em end conditional"
+.IX "endif command" "" "\fLendif\fR C shell command"
+If
+.IR expr ""
+is true, commands up to the first
+.B else
+are executed.  Otherwise, if
+.I expr2
+is true, the commands between the
+.B else if
+and the second
+.B else
+are executed.  Otherwise, commands between the
+.B else
+and the
+.B endif
+are executed.
+Any number of
+.B else if
+pairs are allowed, but only one
+.BR else .
+Only one
+.B endif
+is needed, but it is required.
+The words
+.B else
+and
+.B endif
+must be the first nonwhite characters on a line.
+The
+.B if
+must appear alone on its input line or after an
+.BR else .)
+.PD
+.TP
+.BR jobs [ " \-l " ]
+.IX   "C shell commands"  "jobs"  ""  "\fLjobs\fR \(em display job list"
+.IX "jobs command" "" "\fLjobs\fR command"
+List the active jobs under job control.
+.RS
+.TP
+.B \-l
+List process
+.SM ID\s0s,
+in addition to the normal information.
+.RE
+.HP
+.B kill
+[
+.BI \- sig
+] [
+.I pid
+] [
+.BI % job
+] .\|.\|.
+.PD 0
+.br
+.TP
+.B kill \-l
+.PD
+.IX   "C shell commands"  "kill"  ""  "\fLkill\fR \(em kill jobs and processes"
+.IX "kill command" "" "\fLkill\fR command"
+Send the
+.SM TERM
+(terminate) signal, by default, or the signal specified, to the
+specified process
+.SM ID\s0,
+the
+.I job
+indicated, or the current
+.IR job .
+Signals are either given by number or by name.
+There is no default.  Typing
+.B kill
+does not send a signal to the current job.
+If the signal being sent is
+.SM TERM
+(terminate) or
+.SM HUP
+(hangup), then the job or process is sent a
+.SM CONT
+(continue) signal as well.
+.RS
+.TP
+.B \-l
+List the signal names that can be sent.
+.RE
+.HP
+.B limit
+[
+.B \-h
+] [
+.I resource
+[
+.I max-use
+] ]
+.br
+.IX   "C shell commands"  "limit"  ""  "\fLlimit\fR \(em alter resource limitations"
+.IX "limit command" "" "\fLlimit\fR command"
+Limit the consumption by the current process or any process it spawns,
+each not to exceed
+.I max-use
+on the specified
+.IR resource .
+If
+.I max-use
+is omitted, print the current limit; if
+.I resource
+is omitted, display all limits.
+.RS
+.TP
+.B \-h
+Use hard limits instead of the current limits.  Hard limits impose a
+ceiling on the values of the current limits.  Only the super-user may
+raise the hard limits.
+.LP
+.I resource
+is one of:
+.RS
+.TP 15
+.B cputime
+Maximum
+.SM CPU
+seconds per process.
+.PD 0
+.TP
+.B filesize
+Largest single file allowed.
+.TP
+.B datasize
+Maximum data size (including stack) for the process.
+.TP
+.B stacksize
+Maximum stack size for the process.
+.TP
+.B coredumpsize
+Maximum size of a core dump (file).
+.TP
+.B descriptors
+Maximum value for a file descriptor.
+.PD
+.RE
+.LP
+.I max-use
+is a number, with an optional scaling factor, as follows:
+.RS
+.TP 15
+.IB n h
+Hours (for
+.BR cputime ).
+.PD 0
+.TP
+.IB n k
+.I n
+kilobytes. 
+This is the default for all but
+.BR cputime .
+.TP
+.IB n m
+.I n
+megabytes or minutes (for
+.BR cputime ).
+.TP
+.IB mm : ss
+Minutes and seconds (for
+.BR cputime ).
+.PD
+.RE
+.RE
+.HP
+.B login
+[
+.IR username \||\c
+.B \-p
+]
+.br
+.IX   "C shell commands"  "login"  ""  "\fLlogin\fR \(em login new user"
+.IX "login command" "" "\fLlogin\fR command"
+Terminate a login shell and invoke
+.BR login (1).
+The
+.B \&.logout
+file is not processed.  If
+.I username
+is omitted,
+.I login
+prompts for the name of a user.
+.RS
+.TP
+.B \-p
+Preserve the current environment (variables).
+.RE
+.TP
+.B logout
+.IX   "C shell commands"  "logout"  ""  "\fLlogout\fR \(em end session"
+.IX "logout command" "" "\fLlogout\fR command"
+Terminate a login shell.
+.HP
+.B nice
+[
+.B +\c
+.IR n \||\c
+.B \-\c
+.I n
+] [
+.I command
+]
+.br
+.IX   "C shell commands"  "nice"  ""  "\fLnice\fR \(em run low priority process"
+.IX "nice command" "" "\fLnice\fR command"
+Increment the process priority value for the shell or for
+.I command
+by
+.IR n .
+The higher the priority value, the lower the priority of a process, and
+the slower it runs.
+When given,
+.I command
+is always run in a subshell, and the restrictions placed on
+commands in simple
+.B if
+commands apply.
+If
+.I command
+is omitted,
+.B nice
+increments the value for the current shell.
+If no increment is specified,
+.B nice
+sets the nice value to 4.  The range of nice values is
+from \-20 through 19.  Values of
+.I n
+outside this range set the value to the lower, or to the higher
+boundary, respectively.
+.RS
+.TP 10
+.BI + n
+Increment the process priority value by
+.IR n .
+.PD 0
+.TP
+.BI \- n
+Decrement by
+.IR n .
+This argument can be used only by the super-user.
+.PD
+.RE
+.HP
+.B nohup
+[
+.I command
+]
+.br
+.IX   "C shell commands"  "nohup"  ""  "\fLnohup\fR \(em run command immune to hangups"
+.IX "nohup command" "" "\fLnohup\fR command"
+Run
+.I command
+with
+.SM HUP\s0s
+ignored.  With no arguments, ignore
+.SM HUP\s0s
+throughout the remainder of a script.
+When given,
+.I command
+is always run in a subshell, and the restrictions placed on
+commands in simple
+.B if
+commands apply.
+All processes detached with
+.B &
+are effectively
+.BR nohup 'd.
+.HP
+.B notify
+[
+.BI % job
+] .\|.\|.
+.br
+.IX   "C shell commands"  "notify"  ""  "\fLnotify\fR \(em request immediate notification"
+.IX "notify command" "" "\fLnotify\fR command"
+Notify the user asynchronously when the status of the current, or of specified
+jobs, changes.
+.HP
+.B onintr
+.RB [ " \- " |
+.IR label ]
+.br
+.IX   "C shell commands"  "onintr"  ""  "\fLonintr\fR \(em handle interrupts in scripts"
+.IX "onintr command" "" "\fLonintr\fR command"
+Control the action of the shell on interrupts.
+With no arguments,
+.B onintr
+restores the default action of the shell on interrupts.
+(The shell terminates shell scripts and returns to the
+terminal command input level).
+With the
+.B \-
+argument, the shell ignores all interrupts.
+With a
+.I label
+argument, the shell executes a
+.BI goto " label"
+when an interrupt is received or a child process terminates because
+it was interrupted.
+.HP
+.B popd
+.RB [ +\c
+.IR n ]
+.br
+.IX   "C shell commands"  "popd"  ""  "\fLpopd\fR \(em pop shell directory stack"
+.IX "popd command" "" "\fLpopd\fR command"
+Pop the directory stack, and
+.BR cd s
+to the new top directory.
+The elements of the directory stack are numbered from 0 starting at the top.
+.RS
+.TP 8
+.BI + n
+Discard the
+.IR n 'th
+entry in the stack.
+.RE
+.HP
+.B pushd
+.RB [ +\c
+.IR n " |"
+.IR dir ]
+.br
+.IX   "C shell commands"  "pushd"  ""  "\fLpushd\fR \(em push shell directory stack"
+.IX "pushd command" "" "\fLpushd\fR command"
+Push a directory onto the directory stack.
+With no arguments, exchange the top two elements.
+.RS
+.TP
+.BI + n
+Rotate the
+.IR n 'th
+entry to the top of the stack and
+.B cd
+to it.
+.PD 0
+.TP
+.I dir
+Push the current working directory onto the stack and change to
+.IR dir .
+.PD
+.RE
+.TP
+.B rehash
+.IX   "C shell commands"  "rehash"  ""  "\fLrehash\fR \(em recompute command hash table"
+.IX "rehash command" "" "\fLrehash\fR command"
+Recompute the internal hash table of the contents of directories listed
+in the
+.I path
+variable to account for new commands added.
+.TP
+.BI repeat " count command"
+.IX   "C shell commands"  "repeat"  ""  "\fLrepeat\fR \(em execute command repeatedly"
+.IX "repeat command" "" "\fLrepeat\fR command"
+Repeat
+.I command
+.I count
+times
+.I command
+is subject to the same restrictions as with the one-line
+.B if
+statement.
+.HP
+.B set
+.RI [ var
+[
+.BI = " value"
+] ]
+.br
+.PD 0
+.HP
+.BI set " var" [ n "] =" " word"
+.br
+.PD
+.IX   "C shell commands"  "set"  ""  "\fLset\fR \(em change value of shell variable"
+.IX "set command" "" "\fLset\fR command"
+With no arguments,
+.B set
+displays the values of all shell variables.  Multiword values
+are displayed as a parenthesized list.  With the
+.I var
+argument alone,
+.B set
+assigns an empty (null) value to the variable
+.IR var .
+With arguments of the form
+.IB var " = " value
+.B set
+assigns
+.I value
+to
+.IR var ,
+where
+.I value
+is one of:
+.RS
+.RS
+.TP 12
+.I word
+A single word (or quoted string).
+.PD 0
+.TP
+.BI ( wordlist )
+A space-separated list of words enclosed in parentheses.
+.PD
+.RE
+.LP
+Values are command and filename expanded before being assigned.
+The form
+.BI set " var" [ n "] =" " word"
+replaces the
+.IR n 'th
+word in a multiword value with
+.IR word .
+.RE
+.HP
+.B setenv
+[
+.SM
+.I VAR
+[
+.I word
+] ]
+.br
+.IX   "C shell commands"  "setenv"  ""  "\fLsetenv\fR \(em set or display variables in environment"
+.IX "setenv command" "" "\fLsetenv\fR command"
+With no arguments,
+.B setenv
+displays all environment variables.
+With the
+.SM
+.I VAR
+argument sets the environment variable
+.SM
+.I VAR
+to have an empty (null) value.  (By convention, environment
+variables are normally given upper-case names.)
+With both
+.SM
+.I VAR
+and
+.I word
+arguments
+.B setenv
+sets the environment variable
+.SB NAME
+to the value
+.IR word ,
+which must be either a single word or a quoted string.
+The most commonly used environment variables,
+.BR \s-1USER\s0 ,
+.BR \s-1TERM\s0 ,
+and
+.BR \s-1PATH\s0 ,
+are automatically imported to and exported from the
+.B csh
+variables
+.BR user ,
+.BR term ,
+and
+.BR path ;
+there is no need to use
+.B setenv
+for these.
+In addition,
+the shell sets the
+.SB PWD
+environment variable from the
+.B csh
+variable
+.B cwd
+whenever the latter changes.
+.HP
+.B shift
+[
+.I variable
+]
+.br
+.IX   "C shell commands"  "shift"  ""  "\fLshift\fR \(em shift argument list"
+.IX "shift command" "" "\fLshift\fR command"
+The components of
+.BR argv ,
+or
+.IR variable ,
+if supplied, are shifted to the left, discarding
+the first component.
+It is an error for the variable not to be set, or to have a null value.
+.HP
+.B source
+[
+.B \-h
+]
+.I name
+.br
+.IX   "C shell commands"  "source"  ""  "\fLsource\fR \(em read commands from file"
+.IX "source command" "" "\fLsource\fR command"
+Reads commands from
+.IR name .
+.B source
+commands may be nested, but if they are nested too deeply the shell may
+run out of file descriptors.
+An error in a sourced file at any level terminates all nested
+.B source
+commands.
+.RS
+.TP  8
+.B \-h
+Place commands from the file
+.I name
+on the history list without executing them.
+.RE
+.HP
+.B stop
+.RB [ %\c
+.IR job "] .\|.\|."
+.br
+.IX   "C shell commands"  "stop"  ""  "\fLstop\fR \(em halt job or process"
+.IX "stop command" "" "\fLstop\fR command"
+Stop the current or specified background job.
+.TP
+.B suspend
+.IX   "C shell commands"  "suspend"  ""  "\fLsuspend\fR \(em suspend shell"
+.IX "suspend command" "" "\fLsuspend\fR command"
+Stop the shell in its tracks, much as if it had been sent a stop
+signal with
+.BR ^Z .
+This is most often used to stop shells started by
+.BR su .
+.TP
+.BI "switch (" string )
+.PD 0
+.TP
+.BI case " label" :
+.TP
+\&.\|.\|.
+.TP
+.B breaksw
+.TP
+\&.\|.\|.
+.TP
+.B default:
+.TP
+\&.\|.\|.
+.TP
+.B breaksw
+.TP
+.B endsw
+.PD
+.IX   "C shell commands"  "switch"  ""  "\fLswitch\fR \(em multi-way branch"
+.IX "switch command" "" "\fLswitch\fR command"
+.IX   "C shell commands"  "endsw"  ""  "\fLendsw\fR \(em end switch"
+.IX "endsw command" "" "\fLendsw\fR command"
+Each
+.I label
+is successively matched, against the specified
+.IR string ,
+which is first command and filename expanded.
+The file metacharacters
+.BR * ,
+.B ?
+and
+.BR [ .\|.\|. ]
+may be used in the case labels, which are variable expanded.
+If none of the labels match before a \*(lqdefault\*(rq label is found,
+execution begins after the default label.
+Each
+.B case
+statement and the
+.B default
+statement must appear at the beginning of a line.
+The command
+.B breaksw
+continues execution after the
+.BR endsw .
+Otherwise control falls through subsequent
+.B case
+and
+.B default
+statements as with C.
+If no label matches and there is no default, execution continues after
+the
+.BR endsw .
+.PD
+.HP
+.B time
+[
+.I command
+]
+.br
+.IX   "C shell commands"  "time"  ""  "\fLtime\fR \(em time command"
+.IX "time command" "" "\fLtime\fR command"
+With no argument, print a summary of time used by
+this C shell and its children.
+With an optional
+.IR command ,
+execute
+.I command
+and print a summary of the time it uses.
+.HP
+.B umask
+[
+.I value
+]
+.br
+.IX   "C shell commands"  "umask"  ""  "\fLumask\fR \(em change/display file creation mask"
+.IX "umask command" "" "\fLumask\fR command"
+Display the file creation mask.
+With
+.I value
+set the file creation mask.
+.I value
+is given in octal, and is
+.SM XOR\*Sed
+with the permissions of 666 for files and 777 for directories to arrive
+at the permissions for new files.
+Common values include 002, giving complete access to the group, and
+read (and directory search) access to others, or 022, giving read
+(and directory search) but not write permission to the group and others.
+.TP
+.BI unalias " pattern"
+.IX   "C shell commands"  "unalias"  ""  "\fLunalias\fR \(em remove aliases"
+.IX "unalias command" "" "\fLunalias\fR command"
+Discard aliases that match (filename substitution)
+.IR pattern .
+All aliases are removed by
+.BR "unalias\ *" .
+.TP
+.BR unhash
+.IX   "C shell commands"  "unhash"  ""  "\fLunhash\fR \(em discard hash table"
+.IX "unhash command" "" "\fLunhash\fR command"
+Disable the internal hash table.
+.HP
+.B unlimit
+[
+.B \-h
+] [
+.I resource
+]
+.br
+.IX   "C shell commands"  "unlimit"  ""  "\fLunlimit\fR \(em remove resource limitations"
+.IX "unlimit command" "" "\fLunlimit\fR command"
+Remove a limitation on
+.IR resource .
+If no
+.I resource
+is specified, then all
+.I resource
+limitations are removed.
+See the description of the
+.B limit
+command for the list of
+.I resource
+names.
+.RS
+.TP 8
+.B \-h
+Remove corresponding hard limits.  Only the super-user may do this.
+.RE
+.TP
+.BI unset " pattern"
+.IX   "C shell commands"  "unset"  ""  "\fLunset\fR \(em discard shell variables"
+.IX "unset command" "" "\fLunset\fR command"
+Remove variables whose names match (filename substitution)
+.IR pattern .
+All variables are removed by
+.RB ` "unset *" ';
+this has noticeably distasteful side-effects.
+.TP
+.BI unsetenv " variable"
+.IX   "C shell commands"  "unsetenv"  ""  "\fLunsetenv\fR \(em remove environment variables"
+.IX "unsetenv command" "" "\fLunsetenv\fR command"
+Remove
+.I variable
+from the environment.
+Pattern matching, as with
+.B unset
+is not performed.
+.TP
+.B wait
+.IX   "C shell commands"  "wait"  ""  "\fLwait\fR \(em wait for background process"
+.IX "wait command" "" "\fLwait\fR command"
+Wait for background jobs to finish (or for an interrupt) before
+prompting.
+.TP
+.BI "while (" expr )
+.PD 0
+.TP
+\&.\|.\|.
+.TP
+.B end
+.PD
+.IX   "while shell command"  ""  "\fLwhile\fP \(em repeat commands \(em \fLcsh\fR"
+.IX "while command" "" "\fLwhile\fR command"
+While
+.I expr
+is true (evaluates to non-zero), repeat commands between the
+.B while
+and the matching
+.B end
+statement.
+.B break
+and
+.B continue
+may be used to terminate or continue the loop prematurely.
+The
+.B while
+and
+.B end
+must appear alone on their input lines.
+If the shell's input is a terminal, it prompts for commands
+with a question-mark until the
+.B end
+command is entered and then performs the commands in the loop.
+.HP
+.B %\c
+[
+.I job
+] [
+.B &
+]
+.br
+.IX % "job to foreground/background \(em \fLcsh\fR" "\fL%\fR"
+.IX   "C shell commands"  "%"  ""  "\fL%\fR\ \ \ \(em job to foreground/background"
+Bring the current or indicated
+.I job
+to the foreground.
+With the ampersand, continue running
+.I job
+in the background.
+.HP
+.B @
+[
+.I var
+.BI = expr
+]
+.PD 0
+.HP
+.B @
+[
+.I var\c
+.BI [ n ]
+.BI = expr
+]
+.br
+.PD
+With no arguments, display the values for all shell variables.
+With arguments,
+the variable
+.IR var ,
+or the
+.IR n 'th
+word in the value of
+.IR var ,
+to the value that
+.I expr
+evaluates to.
+.IX @ ""  "\fL@\fP\ \ \ \(em arithmetic on variables \(em \fLcsh\fR"
+.IX "C shell commands" "@"  ""  "\fL@\fR\ \ \ \(em arithmetic on variables"
+(If
+.BI [ n ]
+is supplied, both
+.I var
+and its
+.IR n 'th
+component must already exist.)
+.IP
+If the expression contains the characters
+.BR > ,
+.BR < ,
+.B &
+or
+.BR | ,
+then at least this part of
+.I expr
+must be placed within parentheses.
+.IP
+The operators
+.BR *= ,
+.BR += ,
+etc., are available as in C.
+The space separating the name from the assignment operator is optional.
+Spaces are, however, mandatory in separating components of
+.I expr
+that would otherwise be single words.
+.IP
+Special postfix operators,
+.B +\|+
+and
+.B \-\|\-
+increment or decrement
+.IR name ,
+respectively.
+.PD
+.IX "C shell" "commands" "" "" PAGE END
+.\"	end of csh_built-ins
+.if \n(zZ=1 .ig zZ
+.SS "Environment Variables and Predefined Shell Variables"
+.IX  "C shell variables"  ""  ""  ""  PAGE START
+.IX  "predefined variables, in C shell"
+.IX  "environment variables \(em in C shell"
+.IX  variables "in C shell"
+.LP
+Unlike the standard shell, the C shell maintains a distinction between
+environment variables,
+which are automatically exported to processes it invokes, and
+shell variables, which are not.
+Both types of variables are treated similarly under variable substitution.
+The shell sets the variables
+.BR argv ,
+.BR cwd ,
+.BR home ,
+.BR path ,
+.BR prompt ,
+.BR shell ,
+and
+.BR status
+upon initialization.
+The shell copies the environment variable
+.SB USER
+into the shell variable
+.BR user ,
+.SB TERM
+into
+.BR term ,
+and
+.SB HOME
+into
+.BR home ,
+and copies each back into the respective environment variable whenever
+the shell variables are reset.
+.SB PATH
+and
+.B path
+are similarly handled.  You need only set
+.B path
+once in the
+.B \&.cshrc
+or
+.B \&.login
+file. 
+The environment variable
+.SB PWD
+is set from
+.B cwd
+whenever the latter changes. 
+The following shell variables have predefined meanings:
+.TP 18
+.B argv
+.IX   "C shell variables"  "argv"  ""  "\fLargv\fR"
+.IX   "C shell" "arguments list \(em \fLargv\fR variable"
+.IX  "argv variable" "" "\fLargv\fR variable"
+Argument list.
+Contains the list of command line arguments
+supplied to the current invocation of the shell.
+This variable
+determines the value of the positional parameters
+.BR $1 ,
+.BR $2 ,
+and so on.
+.TP
+.B cdpath
+.IX   "C shell variables"  "cdpath"  ""  "\fLcdpath\fR"
+.IX  "cdpath variable" "" "\fLcdpath\fR variable"
+Contains a list of directories to be searched by the
+.BR cd ,
+.BR chdir ,
+and
+.BR popd
+commands, if the directory argument each accepts is not a subdirectory
+of the current directory.
+.TP
+.B cwd
+.IX   "C shell variables"  "cwd"  ""  "\fLcwd\fR"
+.IX  "cwd variable" "" "\fLcwd\fR variable"
+The full pathname of the current directory.
+.TP
+.B echo
+.IX   "C shell variables"  "echo"  ""  "\fLecho\fR"
+.IX  "echo" "echo variable" "\fLecho\fP" "echo variable \(em \fLcsh\fP"
+Echo commands (after substitutions), just before execution.
+.TP
+.B fignore
+.IX   "C shell variables"  "fignore" "" "\fLfignore\fR"
+.IX  "fignore variable" "" "\fLfignore\fR variable"
+A list of filename suffixes to ignore when attempting filename
+completion.  Typically the single word
+.RB ` \&.o '.
+.TP
+.B filec
+.IX   "C shell variables"  "filec" "" "\fLfilec\fR"
+.IX  "filec variable" "" "\fLfilec\fR variable"
+Enable filename completion, in which case the
+\s-1CTRL-D\s0
+character
+\s-1CTRL-D\s0)
+and the
+.SM ESC
+character have special significance when typed in at the end of
+a terminal input line:
+.RS
+.TP
+.SM EOT
+Print a list of all filenames that start with the preceding string.
+.PD 0
+.TP
+.SM ESC
+Replace the preceding string with the
+longest unambiguous extension.
+.PD
+.RE
+.TP
+.B hardpaths
+.IX   "C shell variables"  "hardpaths"  ""  "\fLhardpaths\fR"
+.IX  "hardpaths variable" "" "\fLhardpaths\fR variable"
+If set, pathnames in the directory stack are resolved to contain
+no symbolic-link components.
+.TP
+.B histchars
+.IX   "C shell variables"  "histchars"  ""  "\fLhistchars\fR"
+.IX  "histchars variable" "" "\fLhistchars\fR variable"
+A two-character string.  The first character replaces
+.B !
+as the history-substitution character.  The second replaces
+the carat
+.RB ( \*^ )
+for quick substitutions.
+.TP
+.B history
+.IX   "C shell variables"  "history"  ""  "\fLhistory\fR"
+.IX  "history variable" "" "\fLhistory\fR variable"
+The number of lines saved in the history list.
+A very large number may use up all of the C shell's memory.
+If not set, the C shell saves only the most recent command.
+.TP
+.B home
+.IX   "C shell variables"  "home"  ""  "\fLhome\fR"
+.IX  "home variable" "" "\fLhome\fR variable"
+The user's home directory.
+The filename expansion of
+.B \*~
+refers to the value of this variable.
+.TP
+.B ignoreeof
+.IX   "C shell variables"  "ignoreeof"  ""  "\fLignoreeof\fR"
+.IX  "ignoreeof C shell variable" "" "\fLignoreeof\fR C shell variable"
+If set, the shell ignores
+.SM EOF
+from terminals.
+This protects
+against accidentally killing a C shell by typing a
+\s-1CTRL-D\s0.
+.TP
+.B mail
+.IX   "C shell variables"  "mail"  ""  "\fLmail\fR"
+.IX  "mail variable" "" "\fLmail\fR variable"
+A list of files where the C shell checks for mail.
+If the first word of the value is a number, it specifies a mail checking
+interval in seconds (default 5 minutes).
+.TP
+.B nobeep
+.IX   "C shell variables"  "nobeep"  ""  "\fLnobeep\fR"
+.IX  "nobeep variable" "" "\fLnobeep\fR variable"
+Suppress the bell during command completion when asking the C shell to
+extend an ambiguous filename.
+.TP
+.B noclobber
+.IX   "C shell variables"  "noclobber"  ""  "\fLnoclobber\fR"
+.IX  "noclobber variable" "" "\fLnoclobber\fR variable"
+Restrict output redirection so that existing files are not destroyed by
+accident.
+.B >
+redirections can only be made to new files.
+.B >>
+redirections can only be made to existing files.
+.TP
+.B noglob
+.IX   "C shell variables"  "noglob"  ""  "\fLnoglob\fR"
+.IX  "noglob variable" "" "\fLnoglob\fR variable"
+Inhibit filename substitution.
+This is most useful in shell scripts once filenames (if any) are
+obtained and no further expansion is desired.
+.TP
+.B nonomatch
+.IX   "C shell variables"  "nonomatch"  ""  "\fLnonomatch\fR"
+.IX  "nonomatch variable" "" "\fLnonomatch\fR variable"
+Returns the filename substitution pattern, rather than an error, if the
+pattern is not matched.
+Malformed patterns still result in errors.
+.IX   "C shell variables"  "notify"  ""  "\fLnotify\fR"
+.IX  "notify variable" "" "\fLnotify\fR variable"
+.TP
+.B notify
+If set, the shell notifies you immediately as jobs are completed,
+rather than waiting until just before issuing a prompt.
+.TP
+.B path
+.IX   "C shell variables"  "path"  ""  "\fLpath\fR"
+.IX  "path variable" "" "\fLpath\fR variable"
+The list of directories in which to search for commands.
+.B path
+is initialized from the environment variable
+.BR \s-1PATH\s0 ,
+which the C shell updates whenever
+.B path
+changes.
+A null word specifies the current directory. 
+The default is typically:
+.BR "(. /usr/ucb /usr/bin)" .
+If
+.B path
+becomes unset only full pathnames will execute.
+An interactive C shell will normally hash the contents of the
+directories
+listed after reading
+.BR \&.cshrc ,
+and whenever
+.B path
+is reset.
+If new commands are added, use the
+.B rehash
+command to update the table.
+.TP
+.B prompt
+.IX   "C shell variables"  "prompt"  ""  "\fLprompt\fR"
+.IX  "prompt variable" "" "\fLprompt\fR variable"
+The string an interactive C shell prompts with.
+Noninteractive shells leave the
+.B prompt
+variable unset.
+Aliases and other commands in the
+.B \&.cshrc
+file that are only useful interactively, can be placed after the
+following test:
+.RB ` "if ($?prompt == 0) exit" ',
+to reduce startup time for noninteractive shells.
+A
+.B !
+in the
+.B prompt
+string is replaced by the current event number.
+The default prompt is
+.IB hostname %
+for mere mortals, or
+.IB hostname #
+for the super-user.
+.TP
+.B savehist
+.IX   "C shell variables"  "savehist"  ""  "\fLsavehist\fR"
+.IX  "savehist variable" "" "\fLsavehist\fR variable"
+The number of lines from the history list that are saved in
+.B \*~/.history
+when the user logs out.
+Large values for
+.B savehist
+slow down the C shell during startup.
+.TP
+.B shell
+.IX   "C shell variables"  "shell"  ""  "\fLshell\fR"
+.IX  "shell variable" "" "\fLshell\fR variable"
+The file in which the C shell resides.
+This is used in forking shells to interpret files that have execute
+bits set, but that are not executable by the system.
+.TP
+.B status
+.IX   "C shell variables"  "status"  ""  "\fLstatus\fR"
+.IX  "status variable" "" "\fLstatus\fR variable"
+The status returned by the most recent command.
+If that command terminated abnormally, 0200 is added to the status.
+Built-in commands that fail return exit status 1,
+all other built-in commands set status to 0.
+.TP
+.B time
+.IX   "C shell variables"  "time"  ""  "\fLtime\fR"
+.IX  "time variable" "" "\fLtime\fR variable"
+Control automatic timing of commands.  Can be supplied with one or two
+values.  The first is the reporting threshold in
+.SM CPU
+seconds. 
+The second is a string of tags and text indicating which resources
+to report on.
+A tag is a percent sign
+.RB ( \^%\^ )
+followed by a single
+.I upper-case
+letter (unrecognized tags print as text):
+.RS
+.RS
+.TP
+.B %D
+Average amount of unshared data space used in Kilobytes.
+.PD 0
+.TP
+.B %E
+Elapsed (wallclock) time for the command.
+.TP
+.B %F
+Page faults.
+.TP
+.B %I
+Number of block input operations.
+.TP
+.B %K
+Average amount of unshared stack space used in Kilobytes.
+.TP
+.B %M
+Maximum real memory used during execution of the process.
+.TP
+.B %O
+Number of block output operations.
+.TP
+.B %P
+Total
+.SM CPU
+time \(em U (user) plus S (system) \(em as a percentage of
+E (elapsed) time.
+.br
+.ne 5
+.TP
+.B %S
+Number of seconds of
+.SM CPU 
+time consumed by the kernel on behalf of the
+user's process.
+.TP
+.B %U
+Number of seconds of
+.SM CPU
+time devoted to the user's process.
+.TP
+.B %W
+Number of swaps.
+.TP
+.B %X
+Average amount of shared memory used in Kilobytes.
+.RE
+.RE
+.PD
+.IP
+The default summary display outputs from the
+.BR %U ,
+.BR %S ,
+.BR %E ,
+.BR %P ,
+.BR %X ,
+.BR %D ,
+.BR %I ,
+.BR %O ,
+.BR %F
+and
+.BR %W
+tags, in that order.
+.TP
+.B verbose
+.IX   "C shell variables"  "verbose"  ""  "\fLverbose\fR"
+.IX  "verbose variable" "" "\fLverbose\fR variable"
+Display each command after history substitution takes place.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+all command line parsing.
+These variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.IX  "C shell variables"  ""  ""  ""  PAGE END
+.br
+.ne 7
+.SH FILES
+.PD 0
+.TP 20
+.B \*~/.cshrc
+Read at beginning of execution by each shell.
+.TP
+.B \*~/.login
+Read by login shells after
+.B \&.cshrc
+at login.
+.TP
+.B \*~/.logout
+Read by login shells at logout.
+.TP
+.B \*~/.history
+Saved history for use at next login.
+.TP
+.B /tmp/sh*
+Temporary file for
+.RB ` << '.
+.TP
+.B /etc/passwd
+Source of home directories for
+.IR `\*~name' .
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR printenv (1),
+.BR sh (1),
+.BR tset (1),
+.BR access (2V),
+.BR execve (2V),
+.BR fork (2V),
+.BR pipe (2V),
+.BR termio (4),
+.BR a.out (5),
+.BR environ (5V),
+.BR locale (5),
+.BR ascii (7),
+.BR iso_8859_1 (7)
+.LP
+.TX DMBG
+.br
+.TX GSBG
+.SH DIAGNOSTICS
+.TP
+.B "You have stopped jobs."
+You attempted to exit the C shell with stopped jobs under job control.
+An immediate second attempt to exit will succeed, terminating
+the stopped jobs.
+.SH LIMITATIONS
+Words can be no longer than 1024 characters.
+The system limits argument lists to 1,048,576 characters.  However,
+the maximum number of arguments to a command for which filename
+expansion applies is 1706.
+Command substitutions may expand to no more characters than are
+allowed in the argument list.
+To detect looping, the shell restricts the number of
+.B alias
+substitutions on a single line to 20.
+.SH BUGS
+.LP
+When a command is restarted from a stop,
+the shell prints the directory it started in if this is different
+from the current directory; this can be misleading (that is, wrong)
+as the job may have changed directories internally.
+.LP
+Shell built-in functions are not stoppable/restartable.
+Command sequences of the form
+.IB a " ; " b " ; " c
+are also not handled gracefully
+when stopping is attempted.
+If you suspend
+.IR b ,
+the shell never executes
+.IR c .
+This is especially noticeable if the
+expansion results from an alias.
+It can be avoided by
+placing the sequence in parentheses to force it into a subshell.
+.LP
+Control over terminal output after processes are started is primitive;
+use the Sun Window system if you need better output control.
+.LP
+Multiline shell procedures should be provided, as they are with the
+standard (Bourne) shell.
+.br
+.ne 5
+.LP
+Commands within loops, prompted for by
+.BR ? ,
+are not placed in the
+.I history
+list.
+.LP
+Control structures should be parsed rather than being recognized as
+built-in commands.
+This would allow control commands to be placed
+anywhere, to be combined with
+.BR | ,
+and to be used with
+.B &
+and
+.B ;
+metasyntax.
+.br
+.ne 5
+.LP
+It should be possible to use the
+.B :
+modifiers on the output of command substitutions.
+There are two problems with
+.B :
+modifier usage on variable substitutions:
+not all of the modifiers are available, and only one modifier per
+substitution is allowed.
+.LP
+The
+.B g
+(global) flag in history substitutions applies only to the first
+match in each word, rather than all matches in all words. 
+The standard text editors consistently do the latter when given the
+.B g
+flag in a substitution command.
+.LP
+Quoting conventions are confusing.  Overriding the
+escape character to force variable substitutions within double
+quotes is counterintuitive and inconsistent with the Bourne shell.
+.LP
+Symbolic links can fool the shell. 
+Setting the
+.B hardpaths
+variable alleviates this.
+.LP
+.RB ` "set path" '
+should remove duplicate pathnames from the pathname list.
+These often occur because a shell script or a
+.B \&.cshrc
+file does something like
+.RB ` "set path=(/usr/local\ \ /usr/hosts\ \ $path)" '
+to ensure that the named directories are in the pathname list.
+.br
+.ne 3
+.LP
+The only way to direct the standard output and standard error
+separately is by invoking a subshell, as follows:
+.IP
+.ft B
+example% (\|\fIcommand\fP > \fIoutfile\fP\|) >& \fIerrorfile\fP
+.ft R
+.LP
+Although robust enough for general use, adventures into the esoteric
+periphery of the C shell may reveal unexpected quirks.
+.zZ

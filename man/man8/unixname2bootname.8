@@ -1,0 +1,78 @@
+.\" @(#)unixname2bootname.8 1.1 92/07/30 SMI; new for 4.1.1
+.TH UNIXNAME2BOOTNAME 8 "29 April 1992"
+.SH NAME
+unixname2bootname \- convert SunOS device name to boot device name
+.SH SYNOPSIS
+.B /usr/kvm/unixname2bootname
+.I name
+.SH AVAILABILITY
+.LP
+This program is available for desktop \s-1SPARC\s0systems and
+for the \s-1SPARC\s0system 600MP series only.
+.SH DESCRIPTION
+.IX unixname2bootname "" "\fLunixname2bootname\fP \(em convert device name"
+.IX boot "unixname2bootname command" boot "\fLunixname2bootname\fP \(em convert device name"
+.LP
+The
+.B unixname2bootname
+command converts a SunOS
+device name to a boot
+.SM PROM
+device name.
+This is useful for
+.SM OPENPROM
+systems that have more complicated
+(though absolutely general) device names.
+.SH EXAMPLES
+.LP
+On a \s-1SPARC\s0station 1 or a \s-1SPARC\s0station 1+ system,
+.B unixname2bootname
+would act like this:
+.RS
+.ft B
+.nf
+example# /usr/kvm/unixname2bootname sd0b
+sd(0,0,1)
+example#
+.fi
+.ft R
+.RE
+.LP
+On a \s-1SPARC\s0station 2 system or a \s-1SPARC\s0station 10 system,
+.B unixname2bootname
+would act like this:
+.RS
+.ft B
+.nf
+example# /usr/kvm/unixname2bootname sd0b
+/sbus@1,f8000000/esp@0,800000/sd@3,0:b
+example#
+.fi
+.ft R
+.RE
+.LP
+The output of
+.B unixname2bootname
+can be combined using various shell quote mechanisms
+to form arguments for
+.BR reboot (8)
+and other utilities.
+.RS
+.ft B
+.nf
+example# reboot "`/usr/kvm/unixname2bootname sd0b` \-sw"
+.fi
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/openprom
+.PD
+.SH "SEE ALSO"
+.BR openprom (4S),
+.BR boot (8)
+.SH BUGS
+.LP
+.B unixname2bootname
+does not deal with non-disk devices well.

@@ -1,0 +1,125 @@
+.\" @(#)mlock.3 1.1 92/07/30 SMI;
+.TH MLOCK 3 "21 January 1990"
+.SH NAME
+mlock, munlock \- lock (or unlock) pages in memory
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+.ft
+.fi
+int mlock(addr, len)
+caddr_t addr;
+size_t len;
+.LP
+.nf
+.ft B
+int munlock(addr, len)
+caddr_t addr;
+size_t len;
+.ft R
+.fi
+.IX mlock() "" "\fLmlock()\fP \(em lock pages in memory"
+.IX "memory management" mlock() "" \fLmlock()\fP 
+.IX "lock memory pages \(em \fLmlock()\fP"
+.IX munlock() "" "\fLmunlock()\fP \(em unlock pages in memory"
+.IX "memory management" munlock() "" \fLmunlock()\fP
+.IX "unlock memory pages \(em \fLmunlock()\fP"
+.SH DESCRIPTION
+.LP
+.B mlock(\|)
+uses the mappings established for the address range [\fIaddr, addr + len\fP\^)
+to identify memory object pages to be locked in memory.
+If the page identified by a mapping changes, such as occurs when a copy of a
+writable 
+.SB MAP_PRIVATE 
+page is made upon the first store, the lock will be transferred to the
+newly copied private page.
+.LP
+.B munlock(\|)
+removes locks established with
+.BR mlock(\|) .
+.LP
+A given page may be locked multiple times by executing an
+.B mlock(\|)
+through different mappings.  That is, if two different processes lock the same
+page then the page will remain locked until both processes remove their locks.
+However, within a given mapping, page locks do not nest \- multiple 
+.B mlock(\|)
+operations on the same address in the same process will all be removed with a
+single
+.BR munlock(\|) .
+Of course, a page locked in one process and mapped in another (or visible
+through a different mapping in the locking process) is still locked in memory.
+This fact can be used to create applications that do nothing other than
+lock important data
+in memory, thereby avoiding page 
+I/O faults on references from other processes in
+the system.
+.LP
+If the mapping through which an
+.B mlock(\|)
+has been performed is removed, an
+.B munlock(\|)
+is implicitly performed.  An 
+.B munlock(\|)
+is also performed implicitly when a page is deleted through file removal or
+truncation.
+.LP
+Locks established with
+.B mlock(\|)
+are not inherited by a child process after a 
+.BR fork (2V).
+.LP
+Due to the impact on system resources, the use of
+.B mlock(\|)
+and 
+.B munlock(\|)
+is restricted to the super-user. Attempts to 
+.B mlock(\|)
+more memory than a system-specific limit will fail.
+.SH RETURN VALUES
+.LP
+.B mlock(\|)
+and
+.B munlock(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+(\fBmlock(\|)\fP only.)
+Some or all of the memory identified by the range
+[\fIaddr, addr + len\fP\^)
+could not be locked due to insufficient system
+resources.
+.TP
+.SM EINVAL
+.I addr
+is not a multiple of the page size as returned by
+.BR getpagesize (2).
+.TP
+.SM ENOMEM
+Addresses in the range
+[\fIaddr, addr + len\fP\^)
+are invalid for the address space of a process,
+or specify one or more pages which are not mapped.
+.TP
+.SM EPERM
+The process's effective user
+.SM ID
+is not super-user.
+.SH SEE ALSO
+.BR fork (2V),
+.BR mctl (2),
+.BR mlockall (3),
+.BR mmap (2),
+.BR munmap (2)

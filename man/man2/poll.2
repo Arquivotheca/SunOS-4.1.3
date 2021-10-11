@@ -1,0 +1,295 @@
+.\" @(#)poll.2 1.1 92/07/30 SMI; from S5R3
+.TH POLL 2 "21 January 1990"
+.SH NAME
+poll \- I/O multiplexing
+.SH SYNOPSIS
+.nf
+.ft B
+#include <poll.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int poll(fds, nfds, timeout)
+struct pollfd *fds;
+unsigned long nfds;
+int timeout;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "poll()" "" "\fLpoll()\fP \(em I/O multiplexing"
+.LP
+.B poll(\|)
+provides users with a mechanism for multiplexing input/output
+over a set of file descriptors
+(see
+.BR intro (2)).
+.B poll(\|)
+identifies those file descriptors
+on which a user can send or
+receive messages, or on which certain events have occurred.
+A user can receive messages using
+.BR read (2V)
+or
+.BR getmsg (2)
+and can send messages using
+.BR write (2V)
+and
+.BR putmsg (2).
+Certain
+.BR ioctl (2)
+calls, such as
+.SB I_RECVFD
+and
+.SB I_SENDFD
+(see
+.BR streamio (4)),
+can also be used to receive and send messages on streams.
+.LP
+.I fds
+specifies the file descriptors to be examined and the
+events of interest for each file descriptor.
+It is a pointer to an array with one element for each
+open file descriptor of interest.
+The array's elements are
+.B pollfd
+structures which contain
+the following members:
+.LP
+.RS
+.nf
+.ft B
+.ta 1i 1.7i 2.5i
+int fd;   	 	/* file descriptor */
+short events;		/* requested events */
+short revents;		/* returned events */
+.ft R
+.fi
+.DT
+.RE
+.LP
+where
+.B fd
+specifies an open file descriptor and
+.B events
+and
+.B revents
+are bitmasks constructed by
+.SM OR\s0ing
+any combination of the following event flags:
+.TP 15
+.SB POLLIN
+If the file descriptor refers to a stream,
+a non-priority or file descriptor passing message (see
+.SM
+.BR I_RECVFD \s0)
+is present on the
+.B stream head
+read queue.
+This flag is set even if the message is of zero length.
+If the file descriptor is not a stream, the file descriptor is readable.
+In
+.BR revents ,
+this flag is mutually exclusive with
+.SM
+.BR POLLPRI \s0.
+.TP
+.SB POLLPRI
+If the file descriptor is a stream,
+a priority message is present on the
+.B stream head
+read queue.
+This flag is set even if the message is of zero length.
+If the file descriptor is not a stream, some exceptional
+condition has occurred.
+In
+.BR revents ,
+this flag is mutually exclusive with
+.SM
+.BR POLLIN \s0.
+.TP
+.SB POLLOUT
+If the file descriptor is a stream,
+the first downstream write queue in the
+.I stream
+is not full.
+Priority control messages can be sent (see
+.BR putmsg (2))
+at any time.
+If the file descriptor is not a stream, it is writable.
+.TP
+.SB POLLERR
+If the file descriptor is a stream,
+an error message has arrived at the
+.BR "stream head" .
+This flag is only valid in the
+.B revents
+bitmask; it is not used in the
+.B events
+field.
+.TP
+.SB POLLHUP
+If the file descriptor is a stream,
+a hangup has occurred on the
+.IR stream .
+This event and
+.SB POLLOUT
+are mutually exclusive; a
+.I stream
+can never be writable if a hangup has occurred.
+However, this event and
+.SB POLLIN
+or
+.SB POLLPRI
+are not mutually exclusive.
+This flag is only valid in the
+.B revents
+bitmask; it is not used in the
+.I events
+field.
+.br
+.ne 5
+.TP
+.SB POLLNVAL
+The specified
+.B fd
+value does not specify an open file descriptor.
+This flag is only valid in the
+.B revents
+field; it is not used in the
+.B events
+field.
+.LP
+For each element of the array pointed to by
+.IR fds ,
+.B poll(\|)
+examines the given file descriptor for
+the
+.BR event (s)
+specified in
+.BR events .
+The number of file descriptors to be examined is specified by
+.IR nfds .
+If
+.I nfds
+exceeds the system limit of open files
+(see
+.BR getdtablesize (2)),
+.B poll(\|)
+will fail.
+.LP
+If the value
+.B fd
+is less than zero,
+.B events
+is ignored and
+.B revents
+is set to 0 in that entry on return from
+.BR poll(\|) .
+.br
+.ne 6
+.LP
+The results of the
+.B poll(\|)
+query are stored in the
+.B revents
+field in the
+.B pollfd
+structure.  Bits are set in the
+.B revents
+bitmask to indicate
+which of the requested events are true.
+If none are true, none of the specified bits is set in
+.B revents
+when the
+.B poll(\|)
+call returns.
+The event flags
+.SM
+.BR POLLHUP \s0,
+.SM
+.BR POLLERR \s0,
+and
+.SB POLLNVAL
+are always set in
+.B revents
+if the conditions they indicate are true; this
+occurs even though these flags were not present in
+.BR events .
+.LP
+If none of the defined events have occurred on any selected file descriptor,
+.B poll(\|)
+waits at least
+.I timeout
+milliseconds for an event to occur
+on any of the selected file descriptors.
+On a computer where millisecond timing accuracy is not available,
+.I timeout
+is rounded up to the nearest legal value
+available on that system.  If the value
+.I timeout
+is 0,
+.B poll(\|)
+returns immediately.
+If the value of
+.I timeout
+is \-1,
+.B poll(\|)
+blocks until a requested event occurs or
+until the call is interrupted.
+.B poll(\|)
+is not affected by the
+.SB O_NDELAY
+flag.
+.SH RETURN VALUES
+.LP
+.B poll(\|)
+returns
+a non-negative value
+on success.
+A positive value indicates the total number of file descriptors
+that has been selected
+(for instance, file descriptors for which the
+.B revents
+field is non-zero).
+0 indicates
+the call timed out and no file descriptors have been selected.
+On failure,
+.B poll(\|)
+returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+Allocation of internal data structures failed, but the request should
+be attempted again.
+.TP
+.SM EFAULT
+Some argument points outside the allocated address space.
+.TP
+.SM EINTR
+A signal was caught during the
+.B poll(\|)
+system call.
+.TP
+.SM EINVAL
+The argument
+.I nfds
+is less than zero.
+.IP
+.I nfds
+is greater than the system limit of open files.
+.SH "SEE ALSO"
+.BR getdtablesize (2),
+.BR getmsg (2),
+.BR intro (2),
+.BR ioctl (2),
+.BR putmsg (2),
+.BR read (2V),
+.BR select (2),
+.BR write (2V),
+.BR streamio (4)

@@ -1,0 +1,119 @@
+.\" @(#)vmpage.8 1.1 92/07/30 SMI
+.TH VMPAGE 8 "06 April 1988"
+.SH NAME
+vmpage \- report the current physical page usage
+.SH SYNOPSIS
+.B vmpage
+[
+.I namelist
+[
+.I corefile
+] ]
+.SH DESCRIPTION
+.IX "vmpage report" "" "\fLvmpage\fP \(em report current physical page usage"
+.IX page "report current physical page usage"
+.IX report "current physical page usage"
+.IX memory "report current physical page usage"
+.LP
+.B vmpage
+classifies physical memory pages into the following categories.
+.TP
+.BI "physmem " physmem
+Specifies the number of physical pages the kernel manages.
+Usually this is the amount of physical memory on the machine.
+In some systems, a few pages are considered to be managed by the prom
+monitor, and are not included in
+.IR physmem .
+.TP
+.BI "startup " startup
+Specifies the number of pages that the kernel has consumed by one
+intermediate point during startup (startup is also known as kernel
+initialization).  The kernel will always use at least
+.I startup
+pages.
+.TP
+.BI "maxmem " maxmem
+The difference between
+.I physmem
+and
+.IR startup .
+.I maxmem
+Indicates the maximum amount of memory that is
+available for use by user programs at one intermediate point
+during startup.  Since the kernel still needs
+to allocate additional pages,
+there will never actually be
+.I maxmem
+pages available for user processes.
+.TP
+.BI "pageable " pageable
+The sum of cached and free pages (see below).  There are
+.I pageable
+pages readily available for user processes.
+.TP
+.BI "scanned " scanned
+A count of the number of pages scanned.
+Not all pages are scanned, since some pages are known
+to always be in use by the system.
+.TP
+.BI "locked " locked
+Specifies the number of pages that are locked by the kernel.
+The kernel locks pages to prevent them from being changed.
+For example, while the kernel is establishing a page's identity,
+it will lock the page.
+.TP
+.BI "kept " kept
+Specifies the number of pages that are \*(lqkept\*(rq by the kernel.
+The kernel \*(lqkeeps\*(rq pages to prevent them from being removed.
+For example, the kernel will \*(lqkeep\*(rq a page actively involved
+in an I/O operation.
+.TP
+.BI "cached " cached
+Specifies the number of pages holding cached information
+which are available for reuse by user processes.
+.TP
+.BI "free " free
+Specifies the number of pages on the freelist and ready for immediate
+allocation.  Note that the system attempts to keep a certain number of
+pages readily available to reduce allocation latency.
+.SH OPTIONS
+.PD 0
+.TP 10
+.I namelist
+Specifies the location of the system namelist.
+It defaults to
+.BR /vmunix .
+.TP
+.I corefile
+Specifies the location of the system memory image.
+It defaults to
+.BR /dev/kmem .
+.PD
+.SH EXAMPLE
+.LP
+.ft B
+.nf
+example% vmpage
+vmpage: all results in decimal pages
+physmem 510, startup 95, maxmem 415, pageable 320
+scanned 432, locked 17, kept 95, cached 288, free 32
+.ft R
+.fi
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+default system namelist
+.TP
+.B /dev/kmem
+default system memory image
+.PD
+.SH SEE ALSO
+.BR pagesize (1)
+.SH BUGS
+.LP
+.B vmpage
+is not synchronized with the kernel, so page usage can
+change while
+.B vmpage
+is running, leading to (minor) inaccuracies.

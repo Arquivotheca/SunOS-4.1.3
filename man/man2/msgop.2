@@ -1,0 +1,371 @@
+.\" @(#)msgop.2 1.1 92/07/30 SMI; from S5R3
+.TH MSGOP 2 "21 January 1990"
+.SH NAME
+msgop, msgsnd, msgrcv \- message operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msgsnd(msqid, msgp, msgsz, msgflg)
+int msqid;
+struct msgbuf *msgp;
+int msgsz, msgflg;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msgrcv(msqid, msgp, msgsz, msgtyp, msgflg)
+int msqid;
+struct msgbuf *msgp;
+int msgsz;
+long msgtyp;
+int msgflg;
+.ft
+.fi
+.SH DESCRIPTION
+.IX msgsnd()  ""  \fLmsgsnd()\fR
+.IX "message control operations"  msgsnd()  ""  \fLmsgsnd()\fR
+.LP
+.B msgsnd(\|)
+is used to send a message to the queue associated with the message
+queue identifier specified by
+.IR msqid .
+.B [\s-1WRITE\s0]
+(see 
+.BR msgctl (2))
+.I msgp
+points to a structure containing the message.
+This structure is composed of the following members:
+.LP
+.RS
+.ta 8n 20n
+.nf
+.ft B
+long	mtype;	/\(** message type \(**/
+char	mtext[1];	/\(** message text \(**/
+.ft R
+.fi
+.RE
+.LP
+.I mtype
+is a positive integer that can be used by the receiving process for
+message selection (see
+.B msgrcv(\|)
+below).
+.I mtext
+is any text of length
+.I msgsz
+bytes.
+.I msgsz
+can range from 0 to a system-imposed maximum.
+.LP
+.I msgflg
+specifies the action to be taken if one or more of the following are
+true:
+.TP 3
+\(bu
+The number of bytes already on the queue is equal to
+.IR msg_qbytes
+(see
+.BR intro (2)).
+.TP 3
+\(bu
+The total number of messages on all queues system-wide is equal to the
+system-imposed limit.
+.LP
+These actions are as follows:
+.TP 3
+\(bu
+If
+.RB ( msgflg " & "
+.BR \s-1IPC_NOWAIT\s0 )
+is \*(lqtrue\*(rq, the message will not be sent and the calling process will
+return immediately.
+.TP 3
+\(bu
+If
+.RB ( msgflg " & "
+.BR \s-1IPC_NOWAIT\s0 )
+is \*(lqfalse\*(rq,
+the calling process will suspend execution until one of the following occurs:
+.RS
+.TP 3
+\(bu
+The condition responsible for the suspension no longer exists, in which case
+the message is sent.
+.TP 3
+\(bu
+.I msqid
+is removed from the system (see
+.BR msgctl (2)).
+When this occurs,
+.B errno
+is set equal to
+.SM EIDRM\s0,
+and a value of \-1 is returned.
+.TP 3
+\(bu
+The calling process receives a signal that is to be caught.
+In this case the message is not sent and the calling process resumes
+execution in the manner prescribed in
+.BR signal (3V).
+.RE
+.LP
+Upon successful completion, the following actions are taken with respect to
+the data structure associated with
+.IR msqid
+(see
+.BR intro (2)).
+.TP 3
+\(bu
+.I msg_qnum
+is incremented by 1.
+.TP 3
+\(bu
+.I msg_lspid
+is set equal to the process
+.SM ID
+of the calling process.
+.TP 3
+\(bu
+.I msg_stime
+is set equal to the current time.
+.LP
+.B msgrcv(\|)
+reads a message from the queue associated with the message queue identifier
+specified by
+.I msqid
+and places it in the structure pointed to by
+.IR msgp .
+.B [\s-1READ\s0]
+This structure is composed of the following members:
+.LP
+.RS
+.ta 8n 20n
+.nf
+.ft B
+long	mtype;	/\(** message type \(**/
+char	mtext[1];	/\(** message text \(**/
+.ft R
+.fi
+.RE
+.LP
+.I mtype
+is the received message's type as specified by the sending process.
+.I mtext
+is the text of the message.
+.I msgsz
+specifies the size in bytes of
+.IR mtext .
+The received message is truncated to
+.IR msgsz " bytes"
+if it is larger than
+.I msgsz
+and
+.RB ( msgflg " &"
+.BR \s-1MSG_NOERROR\s0 )
+is \*(lqtrue\*(rq.
+The truncated part of the message is lost and no indication of the truncation is
+given to the calling process.
+.LP
+.I msgtyp
+specifies the type of message requested as follows:
+.TP 3
+\(bu
+If
+.I msgtyp
+is equal to 0, the first message on the queue is received.
+.TP 3
+\(bu
+If
+.I msgtyp
+is greater than 0, the first message of type
+.I msgtyp
+is received.
+.TP 3
+\(bu
+If
+.I msgtyp
+is less than 0,
+the first message of the lowest type that is less than or equal
+to the absolute value of
+.I msgtyp
+is received.
+.LP
+.I msgflg
+specifies the action to be taken if a message of the desired type
+is not on the queue.
+These are as follows:
+.TP 3
+\(bu
+If
+.RB ( msgflg " & "
+.BR \s-1IPC_NOWAIT\s0 )
+is \*(lqtrue\*(rq, the calling process will return immediately with a return value
+of \-1 and
+.B errno
+set to
+.SM ENOMSG\s0.
+.TP 3
+\(bu
+If
+.RB ( msgflg " & "
+.BR \s-1IPC_NOWAIT\s0 )
+is \*(lqfalse\*(rq, the calling process will suspend execution until one of the
+following occurs:
+.RS 8
+.TP 3
+\(bu
+A message of the desired type is placed on the queue.
+.TP 3
+\(bu
+.I msqid
+is removed from the system.
+When this occurs,
+.B errno
+is set equal to
+.SM EIDRM\s0,
+and a value of \-1 is returned.
+.TP 3
+\(bu
+The calling process receives a signal that is to be caught.
+In this case a message is not received and the calling process resumes
+execution in the manner prescribed in
+.BR signal (3V).
+.RE
+.LP
+Upon successful completion, the following actions are taken with respect to
+the data structure associated with
+.IR msqid
+(see
+.BR intro (2)).
+.TP 3
+\(bu
+.I msg_qnum
+is decremented by 1.
+.TP 3
+\(bu
+.I msg_lrpid
+is set equal to the process
+.SM ID
+of the calling process.
+.TP 3
+\(bu
+.I msg_rtime
+is set equal to the current time.
+.SH RETURN VALUES
+.LP
+.B msgsnd(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.LP
+.B msgrcv(\|)
+returns
+the number of bytes actually placed into
+.I mtext
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B msgsnd(\|)
+will fail and no message will be sent if one or more of the following are true:
+.TP 15
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM EAGAIN
+The message cannot be sent for one of the reasons cited above and
+.RB ( msgflg " & "
+.BR \s-1IPC_NOWAIT\s0 )
+is \*(lqtrue\*(rq.
+.TP
+.SM EFAULT
+.I msgp
+points to an illegal address.
+.TP
+.SM EIDRM
+The message queue referred to by
+.I msqid
+was removed from the system.
+.TP
+.SM EINTR
+The call was interrupted by the delivery of a signal.
+.br
+.ne 6
+.TP
+.SM EINVAL
+.I msqid
+is not a valid message queue identifier.
+.IP
+.I mtype
+is less than 1.
+.IP
+.I msgsz
+is less than zero or greater than the system-imposed limit.
+.LP
+.B msgrcv(\|)
+will fail and no message will be received if one or more of the following are
+true:
+.TP 15
+.SM E2BIG
+.I mtext
+is greater than
+.I msgsz
+and
+.RB ( msgflg " &"
+.BR MSG_NOERROR\s0 )
+is \*(lqfalse\*(rq.
+.TP
+.SM EACCES
+Operation permission is denied to the calling process.
+.TP
+.SM EFAULT
+.I msgp
+points to an illegal address.
+.TP
+.SM EIDRM
+The message queue referred to by
+.I msqid
+was removed from the system.
+.TP
+.SM EINTR
+The call was interrupted by the delivery of a signal.
+.TP
+.SM EINVAL
+.I msqid
+is not a valid message queue identifier.
+.IP
+.I msgsz
+is less than 0.
+.TP
+.SM ENOMSG
+The queue does not contain a message of the desired type and
+.RB ( msgtyp " & "
+.BR \s-1IPC_NOWAIT\s0 )
+is \*(lqtrue\*(rq.
+.SH SEE ALSO
+.BR intro (2),
+.BR msgctl (2),
+.BR msgget (2),
+.BR signal (3V)

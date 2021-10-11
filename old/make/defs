@@ -1,0 +1,253 @@
+/*	@(#)defs 1.1 92/08/05 SMI; from S5R2 1.2 03/28/83	*/
+
+#include <stdio.h>
+#include <sys/param.h>
+#include <sys/dir.h>
+
+#define NEWLINE	'\n'
+#define CNULL	'\0'
+#define BLANK	' '
+#define TAB	'\t'
+#define DOT	'.'
+#define WIGGLE	'~'
+#define AT	'@'
+#define MINUS	'-'
+#define EQUALS	'='
+#define SLASH	'/'
+#define STAR	'*'
+#define LCURLY	'{'
+#define RCURLY	'}'
+#define LPAREN	'('
+#define RPAREN	')'
+#define LSQUAR	'['
+#define RSQUAR	']'
+#define QUESTN	'?'
+#define KOLON	':'
+#define SKOLON	';'
+#define DOLLAR	'$'
+#define GREATR	'>'
+#define POUND	'#'
+#define BACKSLASH	'\\'
+
+
+/*
+ *	Flags
+ */
+
+#define ALLOC(x) (struct x *) intalloc(sizeof(struct x))
+
+
+#define TURNON(a)	(Mflags |= (a))
+#define TURNOFF(a)	(Mflags &= (~(a)))
+#define IS_ON(a)	(Mflags&(a))
+#define IS_OFF(a)	(!(IS_ON(a)))
+
+#define DBUG	0000001		/* debug flag */
+#define ENVOVER	0000002		/* environ overides file defines */
+#define EXPORT	0000004		/* put current variable in environ */
+#define PRTR	0000010		/* set `-p' flag */
+#define SIL	0000020		/* set `-s' flag */
+#define NOEX	0000040		/* set `-n' flag */
+#define INTRULE	0000100		/* use internal rules */
+#define TOUCH	0000200		/* set `-t' flag */
+#define GET	0000400		/* do a $(GET) if file not found */
+#define QUEST	0001000		/* set `-q' flag */
+#define INARGS	0002000		/* currently reading cmd args */
+#define IGNERR	0004000		/* set `-i' flag */
+#define KEEPGO	0010000		/* set `-k' flag */
+#define GF_KEEP	0020000		/* keep auto get files */
+#define MH_DEP	0040000		/* use old question about whether cmd exists */
+#define MEMMAP	0100000		/* print memory map */
+
+typedef char *CHARSTAR;
+typedef int  *INTSTAR;
+typedef long int TIMETYPE;
+typedef struct gothead *GOTHEAD;
+typedef struct gotf *GOTF;
+typedef struct chain *CHAIN;
+typedef struct opendirectory *OPENDIR;
+typedef struct pattern *PATTERN;
+typedef struct varblock *VARBLOCK;
+typedef struct shblock *SHBLOCK;
+typedef struct depblock *DEPBLOCK;
+typedef struct lineblock *LINEBLOCK;
+typedef struct nameblock *NAMEBLOCK;
+
+extern CHARSTAR *environ;
+extern int Mflags;
+extern FILE *fin;
+extern CHARSTAR *linesptr;
+/*
+ *	flags for get()
+ */
+#define CD	0
+#define NOCD	1
+
+
+#define max(a,b)	((a)>(b)?(a):(b))
+#define SHELLCOM "/bin/sh"
+
+#ifdef unix
+/*  to install metering, add a statement like */
+/*******
+#define METERFILE "/usr/sif/make/Meter"
+******/
+/* to turn metering on, set external variable meteron to 1 */
+#endif
+
+/* define FSTATIC to be static on systems with C compilers
+   supporting file-static; otherwise define it to be null
+*/
+#define FSTATIC static
+
+#define NO 0
+#define YES 1
+
+#define equal(a,b)	(a[0] == b[0] ? !strcmp((a),(b)) : NO )
+#define any(a,b)	strchr( (a), (b) )
+#define HASHSIZE 4096
+#define NLEFTS 512
+#define NCHARS 500
+#define NINTS  250
+#define INMAX 10240
+#define OUTMAX 10240
+#define MAXODIR	10
+
+#define ALLDEPS  1
+#define SOMEDEPS 2
+
+#define META 01
+#define TERMINAL 02
+extern char funny[128];
+
+
+
+#ifdef unix
+extern void (*sigivalue)();
+extern void (*sigqvalue)();
+extern int waitpid;
+#endif
+extern int ndocoms;
+extern int okdel;
+extern CHARSTAR prompt;
+extern char junkname[ ];
+extern char RELEASE[];
+
+
+
+struct nameblock
+{
+	NAMEBLOCK nextname;		/* pointer to next nameblock */
+	NAMEBLOCK backname;		/* pointer to predecessor */
+	CHARSTAR namep;		/* ASCII name string */
+	short	 namelen;	/* name length to speed lookup */
+	CHARSTAR alias;		/* ASCII alias (when namep translates to another
+				 * pathstring.
+				 */
+	LINEBLOCK linep; /* pointer to dependents */
+	int done:3;		/* flag used to tell when finished */
+	int septype:3;		/* distinguishes between single and double : */
+	int rundep:1;		/* flag indicating runtime translation done */
+	TIMETYPE modtime;	/* set by exists() */
+};
+
+
+extern NAMEBLOCK mainname ;
+extern NAMEBLOCK firstname;
+
+struct lineblock
+{
+	LINEBLOCK nextline;
+	DEPBLOCK depp;
+	SHBLOCK shp;
+};
+
+extern LINEBLOCK sufflist;
+
+struct depblock
+{
+	DEPBLOCK nextdep;
+	NAMEBLOCK depname;
+};
+
+struct shblock
+{
+	SHBLOCK nextsh;
+	CHARSTAR shbp;
+};
+
+struct varblock
+{
+	VARBLOCK nextvar;
+	CHARSTAR varname;
+	CHARSTAR varval;
+	int noreset:1;
+	int used:1;
+	int envflg:1;
+	int v_aflg:1;
+};
+
+extern VARBLOCK firstvar;
+
+struct pattern
+{
+	PATTERN nextpattern;
+	CHARSTAR patval;
+};
+
+struct	opendirectory
+{
+	OPENDIR nextopendir;
+	DIR * dirfc;
+	CHARSTAR dirn;
+};
+extern OPENDIR firstod;
+
+
+struct chain
+{
+	CHAIN nextchain;
+	CHARSTAR datap;
+};
+
+/*
+ *	The following two structures are used to cleanup after
+ *	`make' does an automatic get of a file. See get() and
+ *	cleanup().
+ */
+struct gotf			/* list of files */
+{
+	GOTF gnextp;
+	CHARSTAR gnamep;
+};
+
+struct gothead			/* first member of list of files */
+{
+	GOTF gnextp;
+	CHARSTAR gnamep;
+	GOTF endp;
+};
+
+extern char Nullstr[];
+CHARSTAR copys();
+CHARSTAR copstr();
+CHARSTAR concat();
+CHARSTAR colontrans();
+CHARSTAR dftrans();
+CHARSTAR straightrans();
+CHARSTAR mkqlist();
+CHARSTAR findfl();
+void addstars();
+void strshift();
+INTSTAR  intalloc();
+VARBLOCK varptr();
+VARBLOCK srchvar();
+TIMETYPE prestime(), exists();
+DEPBLOCK srchdir();
+NAMEBLOCK srchname(), makename();
+LINEBLOCK runtime();
+CHARSTAR strrchr();
+CHARSTAR strchr();
+CHARSTAR sdot();
+void trysccs();
+CHARSTAR calloc();

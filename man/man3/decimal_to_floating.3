@@ -1,0 +1,126 @@
+.\" @(#)decimal_to_floating.3 1.1 92/07/30 SMI;
+.TH DECIMAL_TO_FLOATING 3 "23 October 1987"
+.SH NAME
+decimal_to_single, decimal_to_double, decimal_to_extended \- convert decimal record to floating-point value
+.SH SYNOPSIS
+.B #include <floatingpoint.h>
+.LP
+.nf
+.B void decimal_to_single(px, pm, pd, ps)
+.B single *px ;
+.B decimal_mode *pm;
+.B decimal_record *pd;
+.B fp_exception_field_type *ps;
+.fi
+.LP
+.nf
+.B void decimal_to_double(px, pm, pd, ps)
+.B double *px ;
+.B decimal_mode *pm;
+.B decimal_record *pd;
+.B fp_exception_field_type *ps;
+.fi
+.LP
+.nf
+.B void decimal_to_extended(px, pm, pd, ps)
+.B extended *px ;
+.B decimal_mode *pm;
+.B decimal_record *pd;
+.B fp_exception_field_type *ps;
+.fi
+.SH DESCRIPTION
+.IX  "decimal_to_single()"  ""  "\fLdecimal_to_single()\fP \(em decimal record to single-precision floating"
+.IX  "decimal record to single-precision floating \(em \fLdecimal_to_single()\fP"
+.IX  "decimal_to_double()"  ""  "\fLdecimal_to_double()\fP \(em decimal record to double-precision floating"
+.IX  "decimal record to double-precision floating \(em \fLdecimal_to_double()\fP"
+.IX  "decimal_to_extended()"  ""  "\fLdecimal_to_extended()\fP \(em decimal record to extended-precision floating"
+.IX  "decimal record to extended-precision floating \(em \fLdecimal_to_extended()\fP"
+.LP
+The
+.B decimal_to_floating(\|)
+functions convert the decimal record at
+.I *pd
+into a floating-point value at
+.IR *px ,
+observing the modes specified in
+.I *pm
+and setting exceptions in
+.IR *ps .
+If there are no
+.SM IEEE
+exceptions,
+.I *ps
+will be zero.
+.LP
+.I pd->sign
+and
+.I pd->fpclass
+are always taken into account.
+.I pd->exponent
+and
+.I pd->ds
+are used when
+.I pd->fpclass
+is
+.I fp_normal
+or
+.IR fp_subnormal .
+In these cases
+.I pd->ds
+must contain one or more ascii digits followed by a
+null character.
+.I *px
+is set to a correctly rounded approximation to
+.IP
+.B (pd->sign)*(pd->ds)*10**(pd->exponent)
+.LP
+Thus if
+.I pd->exponent
+== \-2 and
+.I pd->ds
+== "1234",
+.I *px
+will get 12.34 rounded
+to storage precision.
+.I pd->ds
+cannot have more than
+.SB DECIMAL_STRING_LENGTH-1
+significant digits
+because one character is used to terminate the string with a
+null character.
+If
+.I pd->more != 0
+on input then additional nonzero digits follow those in
+.I pd->ds; fp_inexact
+is set accordingly on output in
+.IR *ps .
+.LP
+.I *px
+is correctly rounded according to the
+.SM IEEE
+rounding modes in
+.IR pm->rd .
+.I *ps
+is set to contain
+.IR fp_inexact ,
+.IR fp_underflow ,
+or
+.I fp_overflow
+if any of these arise.
+.LP
+.IR pd->ndigits ,
+.IR pm->df ,
+and
+.I pm->ndigits
+are not used.
+.LP
+.BR strtod (3),
+.BR scanf (3V),
+.BR fscanf(\|) ,
+and
+.B sscanf(\|)
+all use
+.BR decimal_to_double(\|) .
+.SH SEE ALSO
+.BR scanf (3V),
+.BR strtod (3)

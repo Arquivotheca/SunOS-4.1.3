@@ -1,0 +1,160 @@
+.\" @(#)textedit_filters.1 1.1 92/07/30 SMI;
+.TH TEXTEDIT_FILTERS 1 "19 February 1988"
+.SH NAME
+textedit_filters, align_equals, capitalize, insert_brackets, remove_brackets, shift_lines \- filters provided with textedit(1)
+.SH SYNOPSIS
+.B align_equals
+.LP
+.B capitalize
+.RB [ " \-u"
+.RB | " \-l"
+.RB | " \-c" " ]"
+.LP
+.BI insert_brackets " l  r "
+.LP
+.BI remove_brackets " l r "
+.LP
+.BI shift_lines
+[
+.B \-t
+]
+.I n
+.SH DESCRIPTION
+.IX align_equals "" "\fLalign_equals\fR \(em \fLtextedit\fR selection filter"
+.IX capitalize "" "\fLcapitalize\fR \(em \fLtextedit\fR selection filter"
+.IX insert_brackets "" "\fLinsert_brackets\fR \(em \fLtextedit\fR selection filter"
+.IX remove_brackets "" "\fLremove_brackets\fR \(em \fLtextedit\fR selection filter"
+.IX shift_lines "" "\fLshift_lines\fR \(em \fLtextedit\fR selection filter"
+.LP
+Each of these filters is designed to operate on pending-delete selections in
+text subwindows.
+You can use them from within text subwindows either by
+mapping them to function keys in your
+.B .textswrc
+file or adding them to the text `Extras' menu in your
+.B .text_extras_menu
+file.
+See the
+.TX SVBG
+for details.
+When a filter is used as a command (perhaps in a pipeline),
+it is applied to the standard input and the filtered text appears
+on standard output.
+.LP
+.B align_equals
+lines up the
+.RB ` = '
+(equal signs) in C
+assignment statements.
+Some programmers feel that this makes for improved readability.
+It aligns all equal signs with the rightmost equal sign in the
+selection (or the standard input), by padding with spaces between
+the sign and the previous nonwhite character; it replaces
+the selection with the aligned text (or writes this text to the
+standard output).
+For instance:
+.RS
+.nf
+.ft B
+.cs B 20
+big_long_expression = x;
+shorter_expr = y;
+z += 1;
+.fi
+.cs B
+.ft R
+.RE
+becomes:
+.RS
+.nf
+.ft B
+.cs B 20
+big_long_expression = x;
+shorter_expr        = y;
+z                  += 1;
+.fi
+.cs B
+.ft R
+.RE
+.LP
+.B capitalize
+changes the capitalization of the selection (or the standard input)
+and replaces it (or writes to the standard output).
+The
+.B \-l
+option converts all characters to lower case;
+.B \-c
+converts the first letter of each word to upper case;
+and
+.B \-u
+converts all characters to upper case.
+If no option is specified, then
+.B capitalize
+consults its input to determine what to do.
+If the text is all capitals, it is converted to all lower case.
+If the text is all lower case or of mixed cases and contains no white
+space (such as a
+.SM NEWLINE\s0,
+.SM SPACE\s0,
+or
+.SM TAB\*S),
+it is converted to all capitals.  If there is white space,
+then the case of the first character in each word is inverted.
+.LP
+.B insert_brackets
+surrounds the selection (or the standard input)
+with the specified character sequences.
+.I l
+and
+.I r
+are the left- and right-bracketing characters, respectively.
+.LP
+.B remove_brackets
+removes the left- and right-bracketing characters,
+specified by
+.I l
+and
+.IR r ,
+respectively from the selection (or the standard input).
+.LP
+.B shift_lines
+adjusts indentation of the selection (or the standard input) by
+.I n
+spaces, and replaces the selection with the adjusted text (or
+writes to the standard output).
+.B shift_lines
+adjusts to the left when
+.I n
+is negative.
+If
+.B \-t
+is specified, the lines are shifted left or right by
+.I n
+tab stops.
+The default is 8 spaces per tab stop,
+but if the first line of the selection (or the standard input)
+begins with white space,
+then the tab stops are set to four spaces.
+.br
+.ne 7
+.SH FILES
+.PD 0
+.TP 30
+.BI /tmp/Cap. pid
+temporary file used by
+.B capitalize
+.TP
+.BI /tmp/Ins. pid
+temporary file used by
+.B insert_brackets
+.TP
+.B /usr/lib/.text_extras_menu
+default `Extras' menu
+.TP
+.B /usr/lib/.textswrc
+sample function-key mappings
+.PD
+.SH SEE ALSO
+.BR textedit (1)
+.LP
+.TX SVBG

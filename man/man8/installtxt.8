@@ -1,0 +1,394 @@
+.\" @(#)installtxt.8 1.1 92/07/30 SMI; new for 4.1
+.TH INSTALLTXT 8 "2 February 1990"
+.SH NAME
+installtxt, gencat \- create a message archive 
+.SH SYNOPSIS
+.B /usr/etc/installtxt
+.RB [[ \- ] d\fR\||\\fB\|c\fR\||\fB\|r\fR\||\fB\|t\fR\||\fB\|x\fR\||\fB\|i
+[
+.B ouvs
+]]
+]
+.IR message-archive .\|.\|.
+[
+.I source-message-file
+]
+.LP
+.B /usr/etc/gencat
+.I catfile 
+.IR msgfile .\|.\|.
+.SH DESCRIPTION
+.IX "installtxt" "" "\fLinstalltxt\fP \(em create a message archive" ""
+.IX "gencat" "" "\fLgencat\fP \(em create a message catalog" ""
+.LP
+.B installtxt
+converts each
+.I source-message-file
+into a binary format message archive.
+At the same time, if necessary, 
+.B installtxt
+maintains groups of files (member files) combined into a single message archive.
+.B installtxt
+is normally used to create and update message archives used by the
+run-time message handling facility
+.BR gettext (3).
+.LP
+.B gencat
+performs the same function as 
+.BR installtxt , 
+but supports the X/Open catalog source format. 
+.LP
+.B installtxt
+creates the message archive in 
+.IR message-archive .
+If the message archive
+does not exist, it is created by the
+.B \-c
+option.
+.I source-message-file
+contains source versions of the target strings. 
+On successful completion of an update operation of 
+.BR installtxt ,
+the message archive
+will have been updated with details of the formatted version
+of each
+.IR source-message-file .
+If 
+.I message-archive
+does not contain the full pathname of the run-time location of 
+the message catalog, it will have to be moved 
+to the appropriate locale directory before applications using the 
+archive are activated.
+.LP
+.B gencat 
+merges the message text source files (
+.IR msgfile .\|.\|.)
+into a formatted message catalog
+.I catfile.
+.I catfile 
+is created if it does not already exist. If 
+.I catfile
+does exist,
+its messages are included in the new
+.I catfile.
+If set and message numbers collide,
+the new message-text defined in 
+.I msgfile
+will replace the old message text currently contained in 
+.I catfile.
+The output formats of both 
+.I message_archive
+and
+.I catfile
+are the same. However it should be noted that on a per-application
+basis, it is not intended that the output forms of these two utilities 
+should be mixed, and the consequence of doing so is undefined.
+.SH OPTIONS
+.LP
+The following options and modifiers apply to 
+.B installtxt 
+only.  For 
+.B installtxt 
+you must indicate only one of:
+.BR c ,
+.BR d ,
+.BR r ,
+.BR t ,
+or,
+.BR x ,
+which may be followed by one or more 
+.BR Modifiers ,
+.BR o ,
+.BR u ,
+or ,
+.BR v .
+.LP
+The options are:
+.TP
+.B c
+Create. The member file called 
+.I "source-message-file"
+is being made for the first time in the message archive.
+It should not exist already. 
+.TP
+.B d
+Delete the named member files from 
+.IR "message archive" . 
+Note that individual messages can be deleted by 
+entering an empty value after the message-id selecting the message
+to be deleted.
+With the 
+.B v
+option these deletions are notified on the standard output.
+.TP
+.B r
+Replace the named member files in the message archive. 
+This allows the existing 
+.I message archive 
+to be merged with new versions of messages. 
+No new message will be added to
+the message archive unless each message-tag in the 
+.I source-message-file 
+is unique in the active domain. 
+If the member file contains a message-tag that is not unique within the 
+active domain, 
+.B installtxt 
+will fail and the contents of the active message archive will not be
+altered.
+.TP
+.B t
+Table of contents.
+Produces a list on the standard output of all member files in
+.IR message_archive .
+.TP
+.B x
+Extract. If no names are given, all member files in the message archive
+are extracted into the current directory; if names are given,
+only those files are extracted. In neither case does
+.B x
+alter the 
+message archive.
+The extracted member files will be returned in their original source format.
+It is possible for the 
+.B \-x
+option to lose comments that were contained in the original 
+source message file.
+In addition, overlong lines may be escaped (using \\n)
+at a point that is different from the original source,
+although the end result will logically
+be the same string.
+.br
+.ne 7
+.LP
+.SS Modifiers
+.TP
+.B o
+Old date.
+When member files are extracted with the
+.B x
+option, set the 
+\*(lqlast modified\*(rq date to the date recorded in the message archive.
+.TP
+.B u
+Update.
+Replace only those member files that have changed since they were put in the
+message archive.  Used with the
+.B r
+option.
+.TP
+.B v
+Verbose. When used with the
+.BR c ,
+.BR r ,
+or
+.BR d
+option, give a file-by-file description of the creation of a
+new 
+.I message archive 
+file from the old version and the constituent 
+member files.
+When used with
+.BR x ,
+give a file-by-file description of the extraction of message archive member 
+files.
+When used with
+.BR t ,
+print information about the size and creation date of the message archive,
+as well
+as a count of the number of target strings in the
+message-archive.
+.SH USAGE
+.LP
+.I source-message-file
+consists of one or more lines of text, with each
+line containing either a comment, a directive or a text line. 
+The format of a comment line is:
+.LP
+.RS
+.nf
+.ft B
+            "$ %s", \fIcomment\fP
+.ft R
+.fi
+.RE
+.LP
+A line beginning with a dollar sign ($), followed by a 
+.I blank
+character streated as a comment line.
+The format of directives is:
+.LP
+.RS
+.nf
+.ft B
+            "$%s %s", \fIcontrol-type\fP, \fIvalue\fP
+.ft R
+.fi
+.RE
+.LP
+Directives should be directly preceded by a dollar sign ($),
+and followed by an optional value.
+There is one 
+.I blank
+character between the directive and its value.
+The following directives are recognized:
+.TP 8
+\fB $separator\fP \fIc\fP
+This directive specifies an optional separator character that will subsequently
+be used in the following text lines to separate the message identifier from the
+target string. There is one 
+.I blank
+character between \fBseparator\fP and the separator character itself.
+If this line is 
+absent then the default separator is the 
+.I blank 
+character. Only the first 
+occurrence of
+this character on one text line will be interpreted,
+for example:
+.LP
+.RS
+.nf
+.ft B
+     $separator :
+     12345:Bonjour: Mon ami
+.ft R
+.fi
+.RE
+.IP
+would declare the message identifier to be 12345, the target string would
+contain the second ":".
+.TP 8
+\fB $domain\fP \fIdomain\fP
+This directive states that all following target strings are contained within a domain 
+of the object message file as described by \fIdomain\fP. 
+.I domain
+can be any string of up to {\s-1PATH_MAX\s0}
+bytes in length. 
+.TP 
+\fB$quote\fP \fIc\fP
+This directive specifies an optional quote character \fIc\fP, which can be used to 
+surround both
+.I message_string
+and 
+.I message_identifier .
+By default, or if an empty
+.B $quote
+directive is supplied, no quoting of 
+.I message_string
+will be recognized. If the 
+.B $quote 
+directive is given then all message strings must contain pairs of quotes,
+although quotes around the message_identifier are still optional after the
+directive.
+.LP
+The format of the text line is:
+.LP
+.RS
+.nf
+.ft B
+"%s%s%s", \fImessage_identifier\fP, \fIseparator_character\fP, \fImessage_string\fP 
+.ft R
+.fi
+.RE
+.LP
+Each line defines a message identifier and a target string pair.
+.LP
+Empty lines in a source text file are ignored.
+If a 
+.I message_identifier
+starts with a dollar ($) character, then that dollar character must be
+escaped with a backslash (\\$).
+Any other form of input line syntax is illegal and will cause 
+.B installtxt
+to exit with the error value.
+.br
+.ne 10
+.LP
+Message strings and message identifiers can contain the special characters and 
+escape sequences as defined in the following table:
+.LP
+.ne 18
+.RS
+.TS
+;
+lB lB .
+Description	Symbol
+
+newline	\en
+tab	\et
+vertical-tab	\ev
+backspace	\eb
+carriage-return	\er
+form-feed	\ef
+backslash	\e\e
+bit pattern	\eddd
+.TE
+.RE
+.LP
+The escape sequence 
+.I \eddd 
+consists of backslash followed by 1, 2 or 3 octal digits, 
+which are used to specify the value of the desired character. 
+If 
+.I message_identifier
+contains the separator character then it must be escaped with a backslash (\\) 
+character.
+If the character following a backslash is not one of those specified, 
+the effect is unspecified.
+.LP
+Backslash, \e\|, followed by a 
+.SM NEWLINE
+character
+is used to continue an individual string on the 
+following line. Both 
+.I message_identifier
+and 
+.I message_string 
+may be continued over lines in this way.
+.I message_string 
+is stored in 
+.I object_file
+in an implementation specific way. 
+If 
+.I message_string
+is empty, and 
+.I separator 
+is present, a null string
+is stored in 
+.IR object_file .
+.LP
+.I msgfile 
+must be in the X/Open 
+.B gencat 
+format.
+.SH EXAMPLES
+.nf
+.ft B
+# /bin/sh script      
+# The following creates a message archive in the file messages.general
+installtxt \-cv messages.general input
+#
+.ft R
+.fi
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/locale/\s-1LC_MESSAGES\s0/\fIlocale\fP/\fIdomain\fP
+standard private location for message archive/catalog in locale 
+.I locale
+and domain
+.I domain
+.TP
+.B /usr/share/lib/locale/\s-1LC_MESSAGES\s0
+standard shared location for message archive/catalog in locale 
+.I locale
+and domain
+.I domain
+.PD
+.SH "SEE ALSO"
+.BR catgets (3),
+.BR gettext (3),
+.BR setlocale (3V),
+.BR locale (5) 
+.LP
+.I "X/Open Portability Guide Issue 2"

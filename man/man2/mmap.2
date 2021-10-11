@@ -1,0 +1,330 @@
+.\" @(#)mmap.2 1.1 92/07/30 SMI;
+.TH MMAP 2 "21 January 1990"
+.SH NAME
+mmap \- map pages of memory
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mman.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+caddr_t mmap(addr, len, prot, flags, fd, off)
+caddr_t addr;
+size_t len;
+int prot, flags, fd;
+off_t off;
+.ft R
+.fi
+.IX  mmap()  ""  \fLmmap()\fP
+.IX  "memory management"  mmap()  ""  \fLmmap()\fP
+.IX  "map memory pages \(em \fLmmap()\fP"
+.SH DESCRIPTION
+.LP
+.B mmap(\|)
+establishes a mapping between the process's address space
+at
+an address
+.I pa
+for
+.I len
+bytes to the memory object represented by
+.I fd
+at
+.I off
+for
+.I len
+bytes.  The value of
+.I pa
+is an implementation-dependent function of the parameter
+.I addr
+and values of
+.IR flags ,
+further described below.
+A successful
+.B mmap(\|)
+call returns
+.I pa
+as its result.
+The address ranges covered by
+[\fIpa, pa + len\fP\^)
+and
+[\fIoff, off + len\fP\^)
+must be legitimate for the
+\fIpossible\fP (not necessarily current)
+address space of a process and the object in question, respectively.
+.LP
+The mapping established by
+.B mmap(\|)
+replaces any previous mappings for the
+process's pages in the range
+[\fIpa, pa + len\fP\^).
+.LP
+.BR close (2V)
+does not unmap pages of the object referred to by a descriptor.
+Use
+.BR munmap (2)
+to remove a mapping.
+.LP
+The parameter
+.I prot
+determines whether read, write, execute,
+or some combination of accesses are permitted to the
+pages being mapped. The protection options are defined in
+.B <sys/mman.h>
+as:
+.LP
+.RS
+.ta 25n 35n
+.nf
+.ft B
+#define \s-1PROT_READ\s0	0x1	/* page can be read */
+#define \s-1PROT_WRITE\s0	0x2	/* page can be written */
+#define \s-1PROT_EXEC\s0	0x4	/* page can be executed */
+#define \s-1PROT_NONE\s0	0x0	/* page can not be accessed */
+.ft R
+.fi
+.RE
+.LP
+Not all implementations literally provide all possible combinations.
+.SB PROT_WRITE
+is often implemented as
+.SB PROT_READ\^|\^PROT_WRITE
+and
+.SB PROT_EXEC
+as
+.SB PROT_READ\^|\^PROT_EXEC.
+However, no implementation will permit a write to
+succeed where
+.SB PROT_WRITE
+has not been set.  The behavior of
+.SB PROT_WRITE
+can be influenced by setting
+.SB MAP_PRIVATE
+in the
+.I flags
+parameter, described below.
+.LP
+The parameter
+.I flags
+provides other information about the handling of
+the mapped pages.  The options are defined in
+.B <sys/mman.h>
+as:
+.LP
+.RS
+.ta 25n 35n
+.nf
+.ft B
+#define \s-1MAP_SHARED\s0	1	/* Share changes */
+#define \s-1MAP_PRIVATE\s0	2	/* Changes are private */
+#define \s-1MAP_TYPE\s0	0xf	/* Mask for type of mapping */
+#define \s-1MAP_FIXED\s0	0x10	/* Interpret addr exactly */
+.ft R
+.fi
+.RE
+.LP
+.SB MAP_SHARED
+and
+.SB MAP_PRIVATE
+describe the disposition of write references to
+the memory object.  If
+.SB MAP_SHARED
+is specified, write references will change
+the memory object.  If
+.SB MAP_PRIVATE
+is specified, the initial write reference
+will create a private copy of the memory object page and redirect the
+mapping to the copy.  The mapping type is retained across a
+.BR fork (2V).
+.LP
+.SB MAP_FIXED
+informs the system that the value of
+.I pa
+must be
+.IR addr ,
+exactly.  The use of
+.SB MAP_FIXED
+is discouraged, as it may
+prevent an implementation from making the most effective use of system
+resources.
+.br
+.ne 8
+.LP
+When
+.SB MAP_FIXED
+is not set, the system uses
+.I addr
+as a hint in an
+implementation-defined manner to arrive at
+\fIpa\fP.  The
+.I pa
+so chosen will be an area of the address space which the system deems
+suitable for a mapping of
+.I len
+bytes
+to the specified object.  All implementations interpret
+an
+.I addr
+value of zero as
+granting the system complete freedom in selecting
+.IR pa ,
+subject to constraints described below.  A non-zero value
+of
+.I addr
+is taken to be a suggestion of a process address near which
+the
+mapping should be placed.
+When the system selects a value for
+.IR pa ,
+it will never place a mapping at address 0, nor will it
+replace any extant mapping, nor map into areas considered part of the potential
+data or stack ``segments''.
+.LP
+The parameter
+.I off
+is constrained to be
+aligned and sized according to the value returned by
+\fBgetpagesize\fP (2).
+When
+.SB MAP_FIXED
+is specified, the parameter
+.I addr
+must also meet these constraints.
+The system performs mapping operations over whole pages. 
+Thus, while the parameter
+.I len
+need not meet a size or alignment constraint, the
+system will include in any mapping operation any partial page specified
+by the range
+[\fIpa, pa + len\fP\^).
+.LP
+.B mmap(\|)
+allows
+[\fIpa, pa + len\fP\^)
+to extend beyond the end of the object, both at the time of the
+.B mmap(\|)
+and while the mapping persists, for example if the file was created
+just prior to the
+.B mmap(\|)
+and has no contents, or if the file is truncated.
+Any reference to addresses beyond the end of the object, however, will result
+in the delivery of a
+.SB SIGBUS
+signal.
+.LP
+The system will always zero-fill any partial page
+at the end of an object.  Further, the system will never write out any
+modified portions of the last page of an object which are beyond its end.
+References to whole pages following the end of an object will result in a
+.SB SIGBUS
+signal.
+.SB SIGBUS
+may also be delivered on various
+filesystem conditions, including quota exceeded errors.
+.LP
+If the process calls
+.BR mlockall (3)
+with the
+.SB MCL_FUTURE
+flag, the pages mapped by all future calls to
+.B mmap(\|)
+will be locked in memory.
+In this case, if not enough memory could be locked,
+.B mmap(\|)
+fails and sets
+.B errno
+to
+.SM EAGAIN\s0.
+.SH RETURN VALUES
+.LP
+.B mmap(\|)
+returns
+the address at which the mapping was placed (\fIpa\fP\^)
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+.I fd
+was not open for read and
+.SB PROT_READ
+or
+.SB PROT_EXEC
+were specified.
+.IP
+.I fd
+was not open for write and
+.SB PROT_WRITE
+was specified for a
+.SB MAP_SHARED
+type mapping.
+.TP
+.SM EAGAIN
+Some or all of the mapping could not be locked in memory.
+.TP
+.SM EBADF
+.I fd
+was not open.
+.TP
+.SM EINVAL
+The arguments
+.I addr
+(if
+.SB MAP_FIXED
+was specified)
+and
+.I off
+were not multiples of the
+page size as returned by
+\fBgetpagesize\fP (2).
+.IP
+The
+.SB MAP_TYPE
+field in
+.I flags
+was invalid (neither
+.SB MAP_PRIVATE
+nor
+.SM
+.BR MAP_SHARED \s0).
+.TP
+.SM ENODEV
+.I fd
+refered to an object for which
+.B mmap(\|)
+is meaningless, such as a
+terminal.
+.TP
+.SM ENOMEM
+.SB MAP_FIXED
+was specified, and
+the range
+[\fIaddr, addr + len\fP\^)
+exceeded that allowed for
+the address space of a process.
+.IP
+.SB MAP_FIXED
+was not specified and there was insufficient room in the address space
+to effect the mapping.
+.TP
+.SM ENXIO
+Addresses in the range
+[\fIoff, off + len\fP\^)
+are invalid for
+.IR fd .
+.SH SEE ALSO
+.BR fork (2V),
+.BR getpagesize (2),
+.BR mprotect (2),
+.BR munmap (2),
+.BR mlockall (3)
+.\" 

@@ -1,0 +1,187 @@
+.\" @(#)t_getinfo.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_GETINFO 3N "21 January 1990"
+.SH NAME
+t_getinfo \- get protocol-specific service information
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_getinfo(fd, info)
+int fd;
+struct t_info *info;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_getinfo()" "" "\fLt_getinfo()\fR \(em get protocol-specific service information" ""
+.IX transport "get protocol-specific service information"
+.IX protocol "get transport protocol-specific service information"
+.LP
+.B t_getinfo(\|)
+returns the current characteristics of the underlying
+transport protocol associated with file descriptor
+.IR fd .
+The
+.I info
+structure is used to return the same information returned by
+.BR t_open (3N).
+.B t_getinfo(\|)
+enables a transport user to access this
+information during any phase of communication.
+.LP
+This argument points to a
+.B t_info
+structure which contains the following
+members:
+.RS
+.ft B
+.nf
+long addr;	/* max size of the transport protocol address */
+long options;	/* max number of bytes of protocol-specific options */
+long tsdu;	/* max size of a transport service data unit (\s-1TSDU\s+1) */
+long etsdu;	/* max size of an expedited transport service data unit (\s-1ETSDU\s+1) */
+long connect;	/* max amount of data allowed on connection establishment
+	                functions */
+long discon;	/* max amount of data allowed on \fIt_snddis\fR and \fIt_rcvdis\fB functions */
+long servtype;	/* service type supported by the transport provider */
+.fi
+.ft R
+.RE
+.SH FIELDS
+.LP
+The values of the fields have the following meanings:
+.TP 14
+.I addr
+A value greater than or equal to zero indicates the maximum
+size of a transport protocol address; a value of \-1 specifies
+that there is no limit on the address size; and a value of \-2
+specifies that the transport provider does not provide user
+access to transport protocol addresses.
+.TP
+.I options
+A value greater than or equal to zero indicates the maximum
+number of bytes of protocol-specific options supported by the
+provider; a value of \-1 specifies that there is no limit on the
+option size; and a value of \-2 specifies that the transport provider
+does not support user-settable options.
+.TP
+.B tsdu
+A value greater than zero specifies
+the maximum size of a transport service
+data unit
+(\s-1TSDU\s0);
+a value of zero specifies that the
+transport provider does not support the concept of
+.SM TSDU\s0,
+although it does support the sending of a data stream with no
+logical boundaries preserved across a connection;
+a value of \-1 specifies that there is no limit on the size of a
+.SM TSDU\s0;
+and a value of \-2 specifies that the transfer of normal data is
+not supported by the transport provider.
+.TP
+.B etsdu
+A value greater than zero specifies
+the maximum size of an expedited transport
+service data unit
+(\s-1ETSDU\s0);
+a value of zero specifies that the
+transport provider does not support the concept of
+.SM ETSDU\s0,
+although it does support the sending of an expedited data stream with no
+logical boundaries preserved across a connection;
+a value of \-1 specifies that there is no limit on the size of an
+.SM ETSDU\s0;
+and a value of \-2 specifies that the transfer of expedited data is
+not supported by the transport provider.
+.TP
+.B connect
+A value greater than or equal to zero specifies
+the maximum amount of data that may be associated with
+connection establishment functions;
+a value of \-1 specifies that there is no limit on the amount of data
+sent during connection establishment;
+and a value of \-2 specifies that the transport provider does not
+allow data to be sent with connection establishment functions.
+.br
+.ne 5
+.TP
+.B discon
+A value greater than or equal to zero specifies
+the maximum amount of data that may be associated with the
+.BR t_snddis (3N)
+and
+.BR t_rcvdis (3N)
+functions;
+a value of \-1 specifies that there is no limit on the amount of data
+sent with these abortive release functions;
+and a value of \-2 specifies that the transport provider does not
+allow data to be sent with the abortive release functions.
+.TP
+.B servtype
+This field specifies the service type supported by the transport provider,
+as described below.
+.LE
+.LP
+If a transport user is concerned with protocol independence, the above
+sizes may be accessed to determine how large the buffers must be
+to hold each piece of information.
+Alternatively, the
+.BR t_alloc (3N)
+function may be used to allocate these
+buffers.
+An error will result if a transport user exceeds the allowed
+data size on any function.
+The value of each field may change as a result of option negotiation,
+and
+.B t_getinfo(\|)
+enables a user to retrieve the current characteristics.
+.SH RETURN VALUES
+.LP
+The
+.I servtype
+field of
+.I info
+may specify one of the following values on return:
+.TP 20
+.SB T_COTS
+The transport provider supports a connection-mode service but
+does not support the optional orderly release facility.
+.TP
+.SB T_COTS_ORD
+The transport provider supports a connection-mode service with
+the optional orderly release facility.
+.TP
+.SB T_CLTS
+The transport provider supports a connectionless-mode service.
+For this service type,
+.BR t_open (3N)
+will return \-2 for the
+.BR etsdu ,
+.BR connect ,
+and
+.B discon
+fields.
+.SH RETURN VALUES
+.LP
+.B t_getinfo(\|)
+returns 0 on success and \-1 on failure.
+.SH ERRORS
+.TP 15
+.SM TBADF
+The specified file descriptor does not refer to a transport
+endpoint.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR t_open (3N)
+.LP
+.TX NETP

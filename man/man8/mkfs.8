@@ -1,0 +1,207 @@
+.\" @(#) mkfs.8 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH MKFS 8 "5 July 1990"
+.SH NAME
+mkfs \- construct a file system
+.SH SYNOPSIS
+.B /usr/etc/mkfs
+[
+.B \-N
+]
+.I special size
+.RI [ " nsect " ]
+.RI [ " ntrack " ]
+.if n .ti +0.5i
+.RI [ " blksize " ]
+.RI [ " fragsize " ]
+.RI [ " ncpg " ]
+.RI [ " minfree " ]
+.if n .ti +0.5i
+.if t .ti +0.5i
+.RI [ " rps " ]
+.RI [ " nbpi " ]
+.RI [ " opt " ]
+.RI [ " apc " ]
+.RI [ " rot " ]
+.RI [ " nrpos " ]
+.RI [ " maxcontig " ]
+.SH DESCRIPTION
+.IX  "mkfs command"  ""  "\fLmkfs\fP \(em make file system"
+.IX  make "file system \(em \fLmkfs\fP"
+.IX  "create"  "file system \(em \fLmkfs\fP"
+.IX  "file system"  "make mkfs"  "file system"  "make \(em \fLmkfs\fP"
+.LP
+Note:
+file systems are normally created with the
+.BR newfs (8)
+command.
+.LP
+.B mkfs
+constructs a file system by writing on the special file
+.I special
+unless the
+.B \-N
+flag has been specified.
+.I special
+must be specified as a raw device and disk partition.
+For example, to create a file system on
+.BR sd0 ,
+specify
+.BR /dev/rsd0[a-h] ,
+where
+.B a-h
+is the disk partition.
+.LP
+The numeric
+.I size
+specifies the number of sectors in the file system.
+.B mkfs
+builds a file system with a root directory and a lost+found
+directory (see
+.BR fsck (8)).
+The number of inodes is calculated as a
+function of the file system size.
+No boot program is initialized by
+.B mkfs
+(see
+.BR newfs (8)).
+.LP
+You must be super-user to use this command.
+.SH OPTIONS
+.TP
+.B \-N
+Print out the file system parameters without actually creating the file
+system.
+.LP
+The following arguments allow fine tune control over the
+parameters of the file system.
+.TP
+.I nsect
+The number of sectors per track on the disk.  The default is
+.BR 32 .
+.TP
+.I ntrack
+The number of tracks per cylinder on the disk.  The default is
+.BR 16 .
+.TP
+.I blksize
+The primary block size for files on the file system.
+It must be a power of two, currently selected from
+.B 4096
+or
+.B 8192
+(the default).
+.TP
+.I fragsize
+The fragment size for files on the file system.
+The
+.I fragsize
+represents the smallest amount of disk
+space that will be allocated to a file.
+It must be a power of two currently selected from the range
+.B 512
+to
+.BR 8192 .
+The default is
+.BR 1024 .
+.TP
+.I ncpg
+The number of disk cylinders per cylinder group.
+The default is
+.BR 16 .
+.br
+.ne 5
+.TP
+.I minfree
+The minimum percentage of free disk space allowed.
+Once the file system capacity reaches this threshold, only
+the super-user is allowed to allocate disk blocks.
+The default value is 
+.BR 10% .
+.TP
+.I rps
+The rotational speed of the disk, in revolutions per second.
+The default is
+.BR 60 .
+.TP
+.I nbpi
+The number of bytes for which one inode block is allocated.
+This parameter is
+currently set at 
+.B one
+inode block for every 2048 bytes.
+.TP
+.I opt
+Space or time optimization preference;
+.B s
+specifies optimization for space,
+.B t
+specifies optimization for time.  The default is
+.BR t .
+.TP
+.I apc
+The number of alternates per cylinder (\s-1SCSI\s0 devices only). 
+The default is
+.BR 0 .
+.TP
+.I rot
+The expected time (in milliseconds)
+to service a transfer completion
+interrupt and initiate a new transfer on the same disk.
+It is used to decide how much rotational spacing to place between
+successive blocks in a file.  The default is
+.BR 1 .
+.sp
+.BR Note :
+in earlier releases
+.B mkfs
+tried to guess what the right value for this parameter by querying the 
+controller type.  Since
+.B mkfs
+is a more primitive interface, this query has been moved into 
+.BR newfs .
+.B mkfs 
+now does exactly what you tell it to do.
+.TP
+.I nrpos
+The number of distinguished rotational positions.
+The default is 
+.BR 8 .
+.br
+.ne 6
+.TP
+.I maxcontig
+The maximum number of blocks that will be allocated contiguously before 
+inserting a rotational delay.  The default is 
+.BR 1 .
+.sp
+\fBNote:\fR This parameter also controls
+clustering.  Regardless of the value of \fIrotdelay\fR,
+clustering is enabled only when \fImaxcontig\fR is greater than 1.
+Clustering allows higher I/O rates for sequential
+I/O and is described in
+.BR tunefs (8).
+.LP
+Users with special demands for their file systems are referred to
+the paper cited below for a discussion of the tradeoffs in using
+different configurations.
+.br
+.ne 5
+.SH "SEE ALSO"
+.BR dir (5),
+.BR fs (5),
+.BR fsck (8),
+.BR newfs (8),
+.BR tunefs (8)
+.LP
+.TX ADMIN
+.br
+McKusick, Joy, Leffler;
+.I "A Fast File System for \s-1UNIX\s0"
+.SH NOTES
+.LP
+.BR newfs (8)
+is preferred for most routine uses.

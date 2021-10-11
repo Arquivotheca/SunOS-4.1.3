@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# %Z%%M% %I% %E% SMI 
+#
+echo '0\nquit' | format > /tmp/disks.tmp 2> /dev/null
+cat << XXX | ed -s /tmp/disks.tmp
+1,4d
+\$d
+1,\$s/[     ]*//
+#1,\$s/ cyl [0-9][0-9]*.*\$//
+1,\$s/>//
+1,\$s/ <//
+1,\$s/:/ /
+1,\$s/ .*cyl/ cyl/
+w
+q
+XXX
+#
+read disk_name < /tmp/disk_file
+while read dontcare
+do
+   read diskid junk1 cyl junk2 junk3 junk4 head junk5 sec
+   if [ "$diskid" = "$disk_name" ]
+   then
+      size=`expr $cyl \* $head \* $sec \* 512`
+      echo $size
+      rm /tmp/disk_file
+      rm /tmp/disks.tmp
+      break
+   fi
+done < /tmp/disks.tmp

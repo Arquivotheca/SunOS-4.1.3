@@ -1,0 +1,132 @@
+.\" @(#)acctcon.8 1.1 92/07/30 SMI; from S5R2
+.TH ACCTCON 8 "13 January 1990"
+.SH NAME
+acctcon1, acctcon2 \- connect-time accounting
+.SH SYNOPSIS
+.B /usr/lib/acct/acctcon1
+[
+.B \-pt
+] [
+.BI \-l " file"
+] [
+.BI \-o " file"
+]
+.LP
+.B /usr/lib/acct/acctcon2
+.SH DESCRIPTION
+.SS acctcon1
+.LP
+.B acctcon1
+converts a sequence of login/logoff records read from its standard input
+to a sequence of records, one per login session.
+Its input should normally be redirected from
+.BR /var/adm/wtmp .
+Its output is
+.SM ASCII\*S,
+giving device, user
+.SM ID\*S,
+login name, prime connect time (seconds),
+non-prime connect time (seconds),
+session starting time (numeric),
+and starting date and time.
+.SS acctcon2
+.LP
+.B acctcon2
+expects as input a sequence of login session records and converts them
+into total accounting records
+(see
+.B tacct
+format in
+.BR acct (5)).
+.SH OPTIONS
+.SS acctcon1
+.TP
+.B \-p
+Print input only,
+showing line name,
+login name,
+and time (in both numeric and date/time formats).
+.TP
+.B \-t
+Test mode.
+.B acctcon1
+maintains a list of lines on which users are logged in.
+When it reaches the end of its input,
+it emits a session record for each line that still appears to be active.
+It normally assumes that its input is a current file,
+so that it uses the current time as the ending time for
+each session still in progress.
+The
+.B \-t
+flag causes it to use, instead, the last time found in its input,
+thus assuring reasonable and repeatable numbers for non-current files.
+.TP
+.BI \-l " file"
+.I file
+is created to contain a summary of line usage showing
+line name,
+number of minutes used,
+percentage of total elapsed time used,
+number of sessions charged,
+number of logins,
+and number of logoffs.
+This file helps track line usage,
+identify bad lines,
+and find software and hardware oddities.
+Hang-up, termination of
+.BR login (1)
+and termination of the login shell each generate logoff records,
+so that the number of logoffs is often three to four times the number of sessions.
+See
+.BR init (8)
+and
+.BR utmp (5V).
+.TP
+.BI \-o " file"
+.I file
+is filled with an overall record for the accounting period,
+giving starting time,
+ending time,
+number of reboots,
+and number of date changes.
+.SH EXAMPLES
+.LP
+These commands are typically used as shown below.
+The file
+.B ctmp
+is created only for the use of
+.BR acctprc (8)
+commands:
+.LP
+.ft B
+acctcon1 \-t \-l lineuse \-o reboots <wtmp \(bv sort +1n +2 >ctmp
+.br
+acctcon2 <ctmp \(bv acctmerg >ctacct
+.ft R
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/wtmp
+.PD
+.SH SEE ALSO
+.BR acctcom (1),
+.BR login (1),
+.BR acct (2V),
+.BR acct (5),
+.BR utmp (5V),
+.BR acct (8),
+.BR acctcms (8),
+.BR acctmerg (8),
+.BR acctprc (8),
+.BR acctsh (8),
+.BR fwtmp (8),
+.BR init (8),
+.BR runacct (8)
+.SH BUGS
+.LP
+The line usage report is confused by date changes.
+Use
+.B wtmpfix
+(see
+.BR fwtmp (8))
+to correct this situation.

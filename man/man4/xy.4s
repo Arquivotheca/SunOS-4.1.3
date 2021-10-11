@@ -1,0 +1,192 @@
+.\" @(#)xy.4s 1.1 92/07/30 SMI;
+.TH XY 4S "24 November 1987"
+.SH NAME
+xy \- Disk driver for Xylogics 450 and 451 SMD Disk Controllers
+.SH "CONFIG \(em SUN-3, SUN-3x, SUN-4 SYSTEMS"
+.ft B
+.nf
+controller xyc0 at vme16d16 ? csr 0xee40 priority 2 vector xyintr 0x48
+controller xyc1 at vme16d16 ? csr 0xee48 priority 2 vector xyintr 0x49
+disk xy0 at xyc0 drive 0
+disk xy1 at xyc0 drive 1
+disk xy2 at xyc1 drive 0
+disk xy3 at xyc1 drive 1
+.fi
+.ft R
+.LP
+The two
+.B controller
+lines given in the synopsis sections above specify
+the first and second Xylogics 450 or 451
+.SM SMD
+disk controller in a Sun system.
+.SH DESCRIPTION
+.IX  "xy device"  ""  "\fLxy\fP \(em Xylogics SMD Disk driver"  ""  PAGE START
+.IX  "Xylogics SMD Disk driver"  ""  "Xylogics SMD Disk driver \(em \fLxy\fP"  ""  PAGE START
+.IX  "450 SMD Disk driver"  ""  "450 SMD Disk driver \(em \fLxy\fP"  ""  PAGE START
+.IX  "451 SMD Disk driver"  ""  "451 SMD Disk driver \(em \fLxy\fP"  ""  PAGE START
+.IX  "SMD disk controller"  "Xylogics 450"  ""  "\fLxy\fP \(em Xylogics 450"  PAGE START
+.IX  "SMD disk controller"  "Xylogics 451"  ""  "\fLxy\fP \(em Xylogics 451"  PAGE START
+.IX  "disk driver"  "Xylogics"  ""  "\fLxy\fP \(em Xylogics"  PAGE START
+.LP
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0; minor devices 8 through 15 refer to drive 1, and so on.
+The standard device names begin with
+.B xy
+followed by
+the drive number and then a letter a-h for partitions 0-7 respectively.
+The character
+.RB ` ? '
+stands here for a drive number in the range 0-7.
+.LP
+The block files access the disk using the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.  There is also a \*(lqraw\*(rq interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call usually results in only one I/O operation;
+therefore raw I/O is considerably more efficient when
+many words are transmitted.  The names of the raw files conventionally
+begin with an extra
+.BR r .
+.LP
+When using raw I/O,
+transfer counts should be multiples of 512 bytes (the size of a disk sector).
+Likewise, when using
+.BR lseek (2V)
+to specify block offsets from which to perform raw I/O,
+the logical offset should also be a multiple of 512 bytes.
+.LP
+Due to word ordering differences between the disk controller
+and Sun computers,
+user buffers that are used for raw I/O must not begin on odd byte boundaries.
+.LP
+If
+.B "flags 0x1"
+is specified, the overlapped seeks feature for that drive is turned off.
+Note: to be effective, the flag must be set on all drives for a
+specific controller. This action is necessary for controllers with older
+firmware, which have bugs preventing overlapped seeks from working properly.
+.SH "DISK SUPPORT"
+This driver handles all
+.SM SMD
+drives by reading a label from sector
+0 of the drive which describes the disk geometry and partitioning.
+.LP
+The
+.B xy?a
+partition is normally used for the root file system
+on a disk, the
+.B xy?b
+partition as a paging area,
+and the
+.B xy?c
+partition for pack-pack copying (it normally maps
+the entire disk).  The rest of the disk is normally the
+.B xy?g
+partition.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/xy[0-7][a-h]
+block files
+.TP
+.B /dev/rxy[0-7][a-h]
+raw files
+.PD
+.SH SEE ALSO
+.BR lseek (2V),
+.BR read (2V),
+.BR directory (3V),
+.BR write (2V),
+.BR dkio (4S)
+.SH DIAGNOSTICS
+.TP
+.B xyc\fIn\fP : self test error
+Self test error in controller,
+see the Maintenance and Reference Manual.
+.TP
+.B
+xyc\fIn\fP: \s-1WARNING\s0: \fIn\fP bit addresses
+The controller is strapped incorrectly.  Sun systems use 20-bit addresses
+for Multibus based systems and 24-bit addresses for
+.SM VME\s0bus
+based systems.
+.TP
+.B
+xy\fIn\fP : unable to read bad sector info
+The bad sector forwarding information for the disk could not be read.
+.TP
+.B
+xy\fIn\fP and xy\fIn\fP are of same type (\fIn\fP) with different geometries.
+The 450 and 451 do not support mixing the drive types found on these units
+on a single controller.
+.TP
+.B xy\fIn\fP : initialization failed
+The drive could not be successfully initialized.
+.TP
+.B xy\fIn\fP : unable to read label
+The drive geometry/partition table information could not be read.
+.TP
+.B xy\fIn\fP : Corrupt label
+The geometry/partition label checksum was incorrect.
+.TP
+.B xy\fIn\fP : offline
+A drive ready status is no longer detected, so the unit has been logically
+removed from the system. If the drive ready status is restored, the unit
+will automatically come back online the next time it is accessed.
+.TP
+.B
+xy\fInc\fP: \fIcmd how \fP(\fImsg\|\fP) blk \fI#\fIn\fP \fPabs blk #\fIn\fP
+A command such as read or write encountered an error condition (\fIhow\fP):
+either it
+.IR failed ,
+the controller was
+.IR reset ,
+the unit
+was
+.IR restored ,
+or an operation
+was
+\fIretry\fP'ed.
+The
+.I msg
+is derived from the error number
+given by the controller, indicating a condition such as \*(lqdrive not ready\*(rq,
+\*(lqsector not found\*(rq or \*(lqdisk write protected\*(rq.  The
+.I blk #
+is the
+sector
+in error relative to the beginning of the partition involved.
+The
+.I abs blk #
+is the absolute block number of the sector in error.
+Some fields of the error message may be missing since the information
+is not always available.
+.SH BUGS
+In raw I/O
+.BR read (2V)
+and
+.BR write (2V)
+truncate file offsets to 512-byte block boundaries, and
+.BR write (2V)
+scribbles on the tail of incomplete blocks.
+Thus, in programs that are likely to access raw devices,
+.BR read (2V),
+.BR write (2V)
+and
+.BR lseek (2V)
+should always deal in 512-byte multiples.
+.LP
+Older revisions of the firmware do not properly support overlapped seeks.
+This will only affect systems with multiple disks on a single controller.
+If a large number of \*(lqzero sector count\*(rq errors appear, you should use the
+.B flags
+field to disable overlapped seeks.
+.IX  "xy device"  ""  "\fLxy\fP \(em Xylogics SMD Disk driver"  ""  PAGE END
+.IX  "Xylogics SMD Disk driver"  ""  "Xylogics SMD Disk driver \(em \fLxy\fP"  ""  PAGE END
+.IX  "450 SMD Disk driver"  ""  "450 SMD Disk driver \(em \fLxy\fP"  ""  PAGE END
+.IX  "451 SMD Disk driver"  ""  "451 SMD Disk driver \(em \fLxy\fP"  ""  PAGE END
+.IX  "SMD disk controller"  "Xylogics 450"  ""  "\fLxy\fP \(em Xylogics 450"  PAGE END
+.IX  "SMD disk controller"  "Xylogics 451"  ""  "\fLxy\fP \(em Xylogics 451"  PAGE END
+.IX  "disk driver"  "Xylogics"  ""  "\fLxy\fP \(em Xylogics"  PAGE END

@@ -1,0 +1,101 @@
+.\" @(#)praudit.8 1.1 92/07/30 SMI;
+.TH PRAUDIT 8 "7 September 1988"
+.SH NAME
+praudit \- print contents of an audit trail file
+.SH SYNOPSIS
+.B praudit
+[
+.B \-lrs
+] [
+.BI \-d del
+] [
+.I filename
+\&.\|.\|.
+]
+.IX  praudit  ""  "\fLpraudit\fP \(em display audit trail"
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Security
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.LP
+.B praudit
+reads the listed
+.IR filename s
+(or standard input, if no
+.I filename
+is specified)
+and interprets the data as audit trail records as defined in
+.BR audit_control (5).
+By default, times, security labels, user and group
+.SM ID\s0s
+(\s-1UID\s0s
+and
+.SM GID\s0s,
+respectively)
+are converted to their
+.SM ASCII
+representation.
+Record type and event fields are converted to long
+.SM ASCII
+representation.
+A maximum of 100 audit files can be specified on the command line.
+.SH OPTIONS
+.TP
+.B \-l
+Print records one line per record.
+The record type and event fields are always converted
+to their short
+.SM ASCII
+representation.
+.TP
+.B \-r
+Print records in their raw form.
+Times, security labels,
+.SM UID\s0s,
+.SM GID\s0s,
+record types, and events are displayed as integers. 
+Currently, labels are not
+used and are displayed as zero in this mode.  
+This option and the 
+.B \-s
+option are exclusive.
+If both are used, a format usage error message is output.
+.TP
+.B \-s
+Print records in their short form.
+All numeric fields are converted to
+.SM ASCII
+and displayed.
+The short
+.SM ASCII
+representations for the record type and event fields are used.
+Security labels are displayed in their short representation.
+Again, labels are not currently used.
+This option and the 
+.B \-r
+option are exclusive.
+If both are used, a format usage error message is output.
+.TP
+.BI \-d del
+Use
+.I del 
+as the field delimiter instead of the default delimiter, which is the comma.  
+If
+.I del 
+has special meaning for the shell, it must be quoted.
+The maximum size of a delimiter is four characters.
+.LP
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.PD
+.SH "SEE ALSO"
+.BR audit (2),
+.BR setuseraudit (2),
+.BR getauditflags (3),
+.BR audit_control (5)

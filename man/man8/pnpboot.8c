@@ -1,0 +1,77 @@
+.\" @(#)pnpboot.8c 1.1 92/07/30 SMI; from UCB 4.2
+.TH PNPBOOT 8C "5 December 1987"
+.SH NAME
+pnpboot, pnp.s386 \- pnp diskless boot service
+.SH SYNOPSIS
+.B /tftpboot/pnp.s386
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "pnp.sun3" "" "\fLpnpboot\fP \(em pnp diskless boot service"
+.IX "pnp.s386" "" "\fLpnpboot\fP \(em pnp diskless boot service"
+.IX "pnpboot" "" "\fLpnpboot\fP \(em pnp diskless boot service"
+.LP
+.B pnp.s386
+is a level 2 boot program that requests actions necessary to set up a
+diskless workstation on the network.
+.LP
+The 
+.SM PNP 
+diskless boot service is used by diskless workstations at installation
+time to locate a server that will configure the diskless client.
+.LP
+The last steps of the level 1 boot (from the PROM)
+are to load the level 2 program
+through
+.BR rarpd (8C)
+and 
+.BR tftpd (8C).
+The first step in the boot sequence is
+.SM RARP
+to acquire an IP address.  This is followed by
+.SM TFTP
+service calls to acquire the
+.B pnp.sun*
+program file needed for the client's architecture.  A
+.SB PNP_ACQUIRE
+.SM RPC
+is then broadcast to locate a server willing to configure the diskless
+client.  
+.LP
+A
+.SB PNP_SETUP
+is issued to the server which returns one of three statuses: success,
+failure, or in_progress.  As long as the server responds with a status of
+in_progress the client will periodically issue a
+.SB PNP_POLL
+until the status changes to either success or failure.
+.LP
+The last step is to reboot the client.  This goes through a
+.SM RARP,
+.SM TFTP,
+.SM BOOT
+sequence, with the boot using the normal
+.B boot.sun*
+file and
+.BR bootparamd (8)
+service.
+.LP
+The system will have been set up using the IP address returned in the first
+step and a system name will have been assigned.
+.SH FILES
+.PD 0
+.TP 20
+.B /tftpboot/pnp.sun*
+.PD
+.SH SEE ALSO
+.BR bootparam (3R), 
+.BR bootparams (5)
+.BR boot (8S),
+.BR bootparamd (8), 
+.BR ipallocd (8C),
+.BR netconfig (8C),
+.BR pnpd (8C),
+.BR rarpd (8C),
+.BR tftpd (8C),

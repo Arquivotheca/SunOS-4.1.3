@@ -1,0 +1,129 @@
+.\" @(#)inetd.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH INETD 8C "17 November 1987"
+.SH NAME
+inetd \- Internet services daemon
+.SH SYNOPSIS
+.B /usr/etc/inetd
+[
+.B \-d
+] [ 
+.I configuration-file
+]
+.SH DESCRIPTION
+.IX  "inetd command"  ""  "\fLinetd\fP \(em Internet server daemon"
+.IX  servers  inetd  ""  "\fLinetd\fP \(em Internet server daemon"
+.LP
+.BR inetd ,
+the Internet services daemon, is normally run at boot time by the
+.BR /etc/rc.local
+script.  When started
+.B inetd
+reads its configuration information from
+.IR configuration-file ,
+the default being
+.BR /etc/inetd.conf .
+See
+.BR inetd.conf (5)
+for more information on the format of this file.
+It listens for connections on the Internet addresses of the
+services that its configuration file specifies.
+When a connection is found, it invokes the server daemon specified by
+that configuration file for the service requested. 
+Once a server is finished, 
+.B inetd
+continues to listen on the socket (except in some cases which
+will be described below).
+.LP
+Depending on the value of the \*(lqwait-status\*(rq field
+in the configuration line for the service,
+.B inetd
+will either wait for the server to complete before continuing
+to listen on the socket, or immediately continue to listen on the socket.
+If the server is a \*(lqsingle-threaded\*(rq datagram server (a
+\*(lqwait-status\*(rq field of \*(lqwait\*(rq),
+.B inetd
+must wait.
+That server will handle all datagrams on the socket.
+All other servers (stream and \(multi-threaded\*(rq data-gram, a
+\*(lqwait-status\*(rq field of \*(lqnowait\*(rq) operate on separate
+sockets from the connection request socket, thus freeing the
+listening socket for new connection requests.
+.LP
+Rather than having several daemon
+processes with sparsely distributed requests each running concurrently,
+.B inetd
+reduces the load on the system by invoking Internet servers only as
+they are needed.
+.LP
+.B inetd
+itself provides a number of simple TCP-based services.
+These include 
+.BR echo ,
+.BR discard ,
+.BR chargen
+(character generator),
+.B daytime
+(human readable time), and
+.B time
+(machine readable time, in the form of the number of seconds since
+midnight, January 1, 1900).
+For
+details of these services, consult the appropriate RFC, as listed below,
+from the Network Information Center.
+.PP
+.B inetd
+rereads its configuration file whenever it receives a hangup signal,
+.SM
+.BR SIGHUP \s0.
+New services can be activated, and existing services deleted or modified in
+between whenever the file is reread.
+.SH SEE ALSO
+.BR inetd.conf (5),
+.BR comsat (8C),
+.BR ftpd (8C),
+.BR rexecd (8C),
+.BR rlogind (8C),
+.BR rshd (8C),
+.BR telnetd (8C),
+.BR tftpd (8C)
+.LP
+Postel, Jon,
+.IR "Echo Protocol" ,
+.SM RFC
+862,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+May 1983.
+.LP
+Postel, Jon, 
+.IR "Discard Protocol" ,
+.SM RFC
+863,
+Network Information Center, SRI International, Menlo Park, Calif.,
+May 1983.
+.LP
+Postel, Jon, 
+.IR "Character Generator Protocol" ,
+.SM RFC
+864,
+Network Information Center, SRI International, Menlo Park, Calif.,
+May 1983.
+.LP
+Postel, Jon,
+.IR "Daytime Protocol" ,
+.SM RFC
+867,
+Network Information Center, SRI International, Menlo Park, Calif.,
+May 1983.
+.LP
+Postel, Jon, and Ken Harrenstien,
+.IR "Time Protocol" ,
+.SM RFC
+868,
+Network Information Center, SRI International, Menlo Park, Calif.,
+May 1983.

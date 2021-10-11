@@ -1,0 +1,125 @@
+.\" @(#)auditsvc.2 1.1 92/07/30 SMI;
+.TH AUDITSVC 2 "21 January 1990"
+.SH NAME
+auditsvc \- write audit records to specified file descriptor
+.SH SYNOPSIS
+.nf
+.ft B
+int auditsvc(fd, limit)
+int fd;
+int limit;
+.fi
+.SH DESCRIPTION
+.IX "auditsvc function" "" "\fLauditsvc()\fP function"
+.LP
+The
+.B auditsvc(\|)
+system call specifies the audit log file to the kernel.
+The kernel writes audit records to this file until an exceptional
+condition occurs and then the call returns.
+The parameter
+.I fd
+is a file descriptor that identifies the audit file.
+Programs should open this file for writing before calling
+.BR auditsvc(\|) .
+The parameter
+.I limit
+specifies a value between 0 and 100, instructing
+.B auditsvc(\|)
+to return when the percentage of free disk space
+on the audit filesystem drops below this limit.
+Thus, the invoking program can take action
+to avoid running out of disk space.  The
+.B auditsvc(\|)
+system call does not return until one of
+the following conditions occurs:
+.TP 3
+\(bu
+The process receives a signal that is not blocked or ignored.
+.TP
+\(bu
+An error is encountered writing to the audit log file.
+.TP
+\(bu
+The minimum free space (as specified by
+.IR limit ),
+has been reached.
+.LP
+Only processes with a real or effective user
+.SM ID
+of super-user may execute this call successfully.
+.SH RETURN VALUES
+.LP
+.B auditsvc(\|)
+returns only on an error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+The descriptor referred to a
+.IR stream ,
+was marked for System V-style non-blocking I/O,
+and no data could be written immediately.
+.TP
+.SM EBADF
+.I fd
+is not a valid descriptor open for writing.
+.TP
+.SM EBUSY
+A second process attempted to perform this call.
+.IP
+A second process attempted to perform this call.
+.TP
+.SM EDQUOT
+The user's quota of disk blocks on the file system containing the
+file has been exhausted.
+.IP
+Audit filesystem space is below the specified limit.
+.TP
+.SM EFBIG
+An attempt was made to write a file that exceeds the process's
+file size limit or the maximum file size.
+.TP
+.SM EINTR
+The call is forced to terminate prematurely due to the arrival of a signal whose
+.SB SV_INTERRUPT
+bit in
+.B sv_flags
+is set  (see
+.BR sigvec (2)).
+.BR signal (3V),
+in the System V compatibility library, sets this bit for any signal it catches.
+.TP
+.SM EINVAL
+Auditing is disabled (see
+.BR auditon (2)).
+.IP
+.I fd
+does not refer to a file of an appropriate type.  Regular files are always
+appropriate.
+.TP
+.SM EIO	
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ENOSPC
+There is no free space remaining on the file system containing the file.
+.TP
+.SM ENXIO
+A hangup occurred on the
+.I stream
+being written to.
+.TP
+.SM EPERM
+The process's effective or real user
+.SM ID
+is not super-user.
+.TP
+.SM EWOULDBLOCK
+The file was marked for 4.2\s-1BSD\s0-style non-blocking I/O,
+and no data could be written immediately.
+.SH "SEE ALSO"
+.BR audit (2),
+.BR auditon (2),
+.BR sigvec (2),
+.BR signal (3V),
+.BR audit.log (5),
+.BR auditd (8)

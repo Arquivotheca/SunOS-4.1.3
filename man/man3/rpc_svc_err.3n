@@ -1,0 +1,156 @@
+.\ "@(#)rpc_svc_err.3n 1.1 92/07/30 SMI;
+.TH RPC_SVC_ERR 3N "20 January 1990"
+.SH NAME
+svcerr_auth, svcerr_decode, svcerr_noproc, svcerr_noprog, svcerr_progvers, svcerr_systemerr, svcerr_weakauth \- library routines for server side remote procedure call errors
+.SH DESCRIPTION
+.IX "rpc routines" "svcerr_auth()" "" "\fLsvcerr_auth()\fP \(em server side call errors"
+.IX "rpc routines" "svcerr_decode()" "" "\fLsvcerr_decode()\fP \(em server side call errors"
+.IX "rpc routines" "svcerr_noproc()" "" "\fLsvcerr_noproc()\fP \(em server side call errors"
+.IX "rpc routines" "svcerr_noprog()" "" "\fLsvcerr_noprog()\fP \(em server side call errors"
+.IX "rpc routines" "svcerr_progvers()" "" "\fLsvcerr_progvers()\fP \(em server side call errors"
+.IX "rpc routines" "svcerr_systemerr()" "" "\fLsvcerr_systemerr()\fP \(em server side call errors"
+.IX "rpc routines" "svcerr_weakauth()" "" "\fLsvcerr_weakauth()\fP \(em server side call errors"
+.IX "svcerr_auth()" "" "\fLsvcerr_auth()\fP \(em server side call errors"
+.IX "svcerr_decode()" "" "\fLsvcerr_decode()\fP \(em server side call errors"
+.IX "svcerr_noproc()" "" "\fLsvcerr_noproc()\fP \(em server side call errors"
+.IX "svcerr_noprog()" "" "\fLsvcerr_noprog()\fP \(em server side call errors"
+.IX "svcerr_progvers()" "" "\fLsvcerr_progvers()\fP \(em server side call errors"
+.IX "svcerr_systemerr()" "" "\fLsvcerr_systemerr()\fP \(em server side call errors"
+.IX "svcerr_weakauth()" "" "\fLsvcerr_weakauth()\fP \(em server side call errors"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+These routines can be called by the server side
+dispatch function if there is any error in the
+transaction with the client.
+.SS Routines
+.LP
+The
+.SB SVCXPRT
+data structure is defined in the 
+.SM RPC/XDR
+Library Definitions of the 
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_auth(xprt, why)
+\s-1SVCXPRT\s0 *xprt;
+enum auth_stat why;
+.fi
+.ft R
+.IP
+Called by a service dispatch routine that refuses to perform
+a remote procedure call due to an authentication error.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_decode(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Called by a service dispatch routine that cannot successfully
+decode the remote parameters. See 
+.B svc_getargs(\|) 
+in
+.BR rpc_svc_reg (3N).
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_noproc(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Called by a service dispatch routine that does not implement
+the procedure number that the caller requests.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_noprog(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Called when the desired program is not registered with the
+.SM RPC
+package. Service implementors usually do not need this routine.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_progvers(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Called when the desired version of a program is not registered
+with the
+.SM RPC
+package. Service implementors usually do not need this routine.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_systemerr(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Called by a service dispatch routine when it detects a system
+error
+not covered by any particular protocol.
+For example, if a service can no longer allocate storage,
+it may call this routine.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void svcerr_weakauth(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Called by a service dispatch routine that refuses to perform
+a remote procedure call due to insufficient
+authentication parameters.  The routine calls
+.BR "svcerr_auth(xprt, \s-1AUTH_TOOWEAK\s0)" .
+.SH SEE ALSO
+.BR rpc (3N),
+.BR rpc_svc_calls (3N),
+.BR rpc_svc_create (3N),
+.BR rpc_svc_reg (3N)

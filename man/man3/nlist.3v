@@ -1,0 +1,92 @@
+.\" @(#)nlist.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH NLIST 3V "21 January 1990"
+.SH NAME
+nlist \- get entries from symbol table
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <nlist.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int nlist(filename, nl)
+char *filename;
+struct nlist *nl;
+.ft
+.fi
+.IX  "nlist()"  ""  "\fLnlist()\fP \(em get entries from symbol table"
+.IX  get "entries from symbol table \(em \fLnlist()\fP"
+.IX  "symbol table, get entries from \(em \fLnlist()\fR"
+.SH DESCRIPTION
+.LP
+.B nlist(\|)
+examines the symbol table from the executable image whose name is pointed
+to by
+.IR filename ,
+and selectively extracts a list of values and puts them in the array of
+.B nlist(\|)
+structures pointed to by
+.IR nl .
+The name list pointed to by
+.I nl
+consists of an array of structures containing names,
+types and values.  The
+.I n_name
+field of each such structure is taken to be a pointer to a
+character string representing a symbol name.  The list is terminated
+by an entry with a
+.SM NULL
+pointer (or a pointer to a
+null
+string) in the
+.I n_name
+field.  For each entry in
+.IR nl ,
+if the named symbol is present in the executable image's symbol table,
+its value and type are placed in the
+.I n_value
+and
+.I n_type
+fields.
+If a symbol cannot be located, the corresponding
+.I n_type
+field of
+.I nl
+is set to zero.
+.SH RETURN VALUES
+.LP
+On success,
+.B nlist(\|)
+returns
+the number of symbols that were not located in the symbol table.
+On failure,
+it returns
+\-1
+and sets all of the
+.I n_type
+fields in members of the array pointed to by
+.I nl
+to zero.
+.SH SYSTEM V RETURN VALUES
+.LP
+.B nlist(\|)
+returns 0
+on success.
+.SH SEE ALSO
+.BR a.out (5),
+.BR coff (5)
+.SH NOTES
+.\" Sun386i
+.LP
+On Sun-2, Sun-3, and Sun-4 systems, type entries are set to 0 if 
+the file cannot be read
+or if it does not contain a valid name list.
+.LP
+On Sun386i systems, the type entries may be zero even when the name
+list succeeded, but the value entries will be zero only when the file
+cannot be read or does not contain a valid name list.  Therefore, 
+on Sun386i systems,
+the value entry can be used to determine whether the command succeeded.

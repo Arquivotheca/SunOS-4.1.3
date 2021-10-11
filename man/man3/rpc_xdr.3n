@@ -1,0 +1,258 @@
+.\ "@(#)rpc_xdr.3n 1.1 92/07/30 SMI;
+.TH RPC_XDR 3N "20 January 1990"
+.SH NAME
+xdr_accepted_reply, xdr_authunix_parms, xdr_callhdr, xdr_callmsg, xdr_opaque_auth, xdr_rejected_reply, xdr_replymsg \- XDR library routines for remote procedure calls
+.SH DESCRIPTION
+.IX "rpc routines" "xdr_accepted_reply()" "" "\fLxdr_accepted_reply()\fP \(em XDR routines for RPC"
+.IX "rpc routines" "xdr_authunix_parms()" "" "\fLxdr_authunix_parms()\fP \(em XDR routines for RPC"
+.IX "rpc routines" "xdr_callhdr()" "" "\fLxdr_callhdr()\fP \(em XDR routines for RPC"
+.IX "rpc routines" "xdr_callmsg()" "" "\fLxdr_callmsg()\fP \(em XDR routines for RPC"
+.IX "rpc routines" "xdr_opaque_auth()" "" "\fLxdr_opaque_auth()\fP \(em XDR routines for RPC"
+.IX "rpc routines" "xdr_rejected_reply()" "" "\fLxdr_rejected_reply()\fP \(em XDR routines for RPC"
+.IX "rpc routines" "xdr_replymsg()" "" "\fLxdr_replymsg()\fP \(em XDR routines for RPC"
+.IX "xdr_accepted_reply()" "" "\fLxdr_accepted_reply()\fP \(em XDR routines for RPC"
+.IX "xdr_authunix_parms()" "" "\fLxdr_authunix_parms()\fP \(em XDR routines for RPC"
+.IX "xdr_callhdr()" "" "\fLxdr_callhdr()\fP \(em XDR routines for RPC"
+.IX "xdr_callmsg()" "" "\fLxdr_callmsg()\fP \(em XDR routines for RPC"
+.IX "xdr_opaque_auth()" "" "\fLxdr_opaque_auth()\fP \(em XDR routines for RPC"
+.IX "xdr_rejected_reply()" "" "\fLxdr_rejected_reply()\fP \(em XDR routines for RPC"
+.IX "xdr_replymsg()" "" "\fLxdr_replymsg()\fP \(em XDR routines for RPC"
+.LP
+These routines are used for describing the
+.SM RPC
+messages in
+.SM XDR
+language.
+They should normally be used by those who do not
+want to use the
+.SM RPC
+package.
+.SS Routines
+.LP
+The
+.SB XDR
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions
+of the
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_accepted_reply(xdrs, arp)
+\s-1XDR\s0 *xdrs;
+struct accepted_reply *arp;
+.fi
+.ft R
+.IP
+Used for encoding
+.SM RPC
+reply messages.
+It encodes the status of the
+.SM RPC 
+call in the
+.SM XDR
+language format and in the case of success, it encodes the call results
+as well.
+This routine is useful for users who
+wish to generate
+.SM RPC\s0-style
+messages without using the
+.SM RPC
+package. This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_authunix_parms(xdrs, aup)
+\s-1XDR\s0 *xdrs;
+struct authunix_parms *aup;
+.fi
+.ft R
+.IP
+Used for describing
+.SM UNIX
+credentials. 
+It encludes machine name, user
+.SM ID\s0,
+group
+.SM ID
+list,
+etc.
+This routine is useful for users
+who wish to generate these credentials without using the
+.SM RPC
+authentication package.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void xdr_callhdr(xdrs, chdrp)
+\s-1XDR\s0 *xdrs;
+struct rpc_msg *chdrp;
+.fi
+.ft R
+.IP
+Used for describing
+.SM RPC
+call header messages.
+It encodes the static part of the call message header
+in the
+.SM XDR
+language format.
+It includes information such as transaction
+.SM ID\s0,
+.SM RPC
+version number,
+program number, and version number.
+This routine is useful for users who wish to generate
+.SM RPC\s0-style
+messages without using the
+.SM RPC
+package.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_callmsg(xdrs, cmsgp)
+\s-1XDR\s0 *xdrs;
+struct rpc_msg *cmsgp;
+.fi
+.ft R
+.IP
+Used for describing
+.SM RPC
+call messages.
+It includes all the
+.SM RPC
+call information such as transaction
+.SM ID\s0,
+.SM RPC
+version number, program number, version number,
+authentication information, etc.
+This routine is useful for users who wish to generate
+.SM RPC\s0-style
+messages without using the
+.SM RPC
+package.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_opaque_auth(xdrs, ap)
+\s-1XDR\s0 *xdrs;
+struct opaque_auth *ap;
+.fi
+.ft R
+.IP
+Used for describing
+.SM RPC
+authentication information messages.
+This routine is useful for users who wish to generate
+.SM RPC\s0-style
+messages without using the
+.SM RPC
+package.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_rejected_reply(xdrs, rrp)
+\s-1XDR\s0 *xdrs;
+struct rejected_reply *rrp;
+.fi
+.ft R
+.IP
+Used for describing
+.SM RPC
+reply messages.
+It encodes the rejected
+.SM RPC
+message in the
+.SM XDR
+language format.
+The message is rejected either because of version number
+mismatch or because of authentication errors.
+This routine is useful for users who wish to generate
+.SM RPC\s0-style
+messages without using the
+.SM RPC
+package.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_replymsg(xdrs, rmsgp)
+\s-1XDR\s0 *xdrs;
+struct rpc_msg *rmsgp;
+.fi
+.ft R
+.IP
+Used for describing
+.SM RPC
+reply messages.
+It encodes the
+.SM RPC
+reply message in the
+.SM XDR 
+language format.
+This reply could be an acceptance, rejection, or
+.SM NULL\s0.
+This routine is useful for users who wish to generate
+.SM RPC
+style messages without using the
+.SM RPC
+package.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.SH SEE ALSO
+.BR rpc (3N)

@@ -1,0 +1,226 @@
+.\" @(#)fspec.5 1.1 92/07/30 SMI; from S5R3
+.TH FSPEC 5 "7 January 1988"
+.SH NAME
+fspec \- format specification in text files
+.SH DESCRIPTION
+.IX fspec "" "\fLfspec\fR text file tabstop specifications"
+.IX tabstops "" "tabstop specifications in text files \(em \fLfspec\fR"
+.LP
+It is sometimes convenient to
+maintain text files on the
+operating system with non-standard tab stop settings, (that is,
+tab stops that are not set at every eighth column).
+Such files must generally be converted
+to a standard format,
+frequently by replacing all
+.SM TAB
+characters with the appropriate number of
+.SM SPACE
+characters, before they can be processed by
+operating system commands.
+A format specification
+occurring in the first line of a text file
+specifies how
+.SM TAB
+characters are to be expanded in the remainder of the file.
+.LP
+A format specification consists of a sequence of parameters
+separated by blanks and surrounded by the brackets
+.B <:
+and
+.BR :> .
+Each parameter consists of a keyletter,
+possibly followed immediately by a value.
+The following parameters are recognized:
+.LP
+.TP
+.BI t \|tabs
+The
+.B t
+parameter specifies
+the tab stop settings for the file.
+The value of
+.I tabs
+must be one of the following:
+.RS
+.TP 3
+\(bu
+A list of column numbers separated by commas,
+indicating tab stops set at the specified columns;
+.TP
+\(bu
+A
+.RB ` \- '
+followed immediately by an integer
+.IR n ,
+indicating tab stops set at intervals of
+.I n
+columns, that is, at
+.RI 1+ n ,
+.RI 1+2* n ,
+and so on;
+.TP
+\(bu
+A
+.RB ` \- '
+followed by the name of a ``canned'' tab stop specification.
+.RE
+.LP
+Up to 40 numbers are allowed in a comma-separated list of tab stop settings.
+If any number (except the first one) is preceded by a plus sign, it is taken
+as an increment to be added to the previous value.
+Thus, the formats
+.B "t1, 10, 20, 30"
+and
+.B "t1, 10, +10, +10"
+are considered identical.
+.LP
+Standard tab stops are specified by
+.BR t\-8 ,
+or equivalently,
+.BR "t1, 9, 17, 25, " etc.
+This is the tab stop setting that most operating system utilities assume, and
+is the most likely setting to be found at a terminal.
+The specification
+.B t\-0
+specifies no tab stops at all.
+.LP
+The ``canned'' tab stops specifications that are recognized are as follows:
+.RS
+.TP 10
+.B a
+1, 10, 16, 36, 72
+.br
+Assembler,
+.SM IBM
+S/370, first format
+.TP
+.B a2
+1, 10, 16, 40, 72
+.br
+Assembler,
+.SM IBM
+S/370, second format
+.TP
+.B c
+1, 8, 12, 16, 20, 55
+.br
+.SM COBOL\s0,
+normal format
+.TP
+.B c2
+1, 6, 10, 14, 49
+.br
+.SM COBOL\s0
+compact format (columns 1-6 omitted).
+Using this code, the first typed
+character corresponds to card column 7,
+one space gets you to column 8, and a
+.SM TAB
+reaches column 12.  Files using this tab stop
+setup should include a format specification
+as follows:
+.RS
+.RS
+.B "<:t\-c2 \|m6 \|s66 \|d:>"
+.RE
+.RE
+.TP
+.B c3
+1, 6, 10, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50, 54, 58, 62, 67
+.br
+.SM COBOL\s0
+compact format (columns 1-6 omitted), with more tab stops than
+.BR c2 .
+This is the recommended format for
+.SM COBOL\s0.
+The appropriate format specification is:
+.RS
+.RS
+.B "<:t\-c3 \|m6 \|s66 \|d:>"
+.RE
+.RE
+.TP
+.B f
+1, 7, 11, 15, 19, 23
+.br
+.SM FORTRAN
+.TP
+.B p
+1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61
+.br
+.SM PL/I
+.TP
+.B s
+1, 10, 55
+.br
+.SM SNOBOL
+.TP
+.B u
+1, 12, 20, 44
+.br
+.SM UNIVAC
+1100
+Assembler
+.RE
+.TP
+.BI s \|size
+The
+.B s
+parameter specifies a maximum line size.
+The value of
+.B size
+must be an integer.
+Size checking is performed after
+.SM TAB
+characters have been expanded,
+but before the margin is prepended.
+.TP
+.BI m \|margin
+The
+.B m
+parameter specifies a number of
+.SM SPACE
+characters to be prepended to each line.
+The value of
+.I margin
+must be an integer.
+.TP
+.B d
+The
+.B d
+parameter takes no value.
+Its presence indicates that the line containing the format specification
+is to be deleted from the converted file.
+.TP
+.B e
+The
+.B e
+parameter takes no value.
+Its presence indicates that the current format is to prevail
+only until another format specification
+is encountered in the file.
+.LP
+Default values, which are assumed for parameters not supplied,
+are
+.B t\-8
+and
+.BR m0 .
+If the
+.B s
+parameter is not specified, no size checking is performed.
+If the first line of a file does not contain a format specification,
+the above defaults are assumed for the entire file.
+The following is an example of a line containing a format specification:
+.LP
+.RS
+.B \(** <:t5,10,15 s72:> \(**
+.RE
+.LP
+If a format specification can be disguised as a comment,
+it is not necessary to code the
+.B d
+parameter.
+.SH SEE ALSO
+.BR ed (1),
+.BR tabs (1V)

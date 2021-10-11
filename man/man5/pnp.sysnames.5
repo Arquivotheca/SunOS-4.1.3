@@ -1,0 +1,113 @@
+.\" @(#)pnp.sysnames.5	1.1
+.TH PNP.SYSNAMES 5 "25 September 1989"
+.SH NAME
+pnp.sysnames \- file used to allocate system names
+.SH SYNOPSIS
+.B /etc/pnp.sysnames
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX  "pnp.sysnames file"  ""  "\fLfstab\fP \(em system name allocation file"
+.LP
+The
+.B /etc/pnp.sysnames
+file contains system names that may be allocated on demand,
+typically as part of Automatic System Installation.
+.LP
+The system names should be legal system names,
+one per line.
+Legal names are up to 31 characters long,
+and consist of lowercase alphanumeric characters, dashes,
+and underscores.
+The first character must be alphabetic, and the last
+character should be alphanumeric.
+Blank lines are allowed in the file, but comments
+are not.
+.LP
+When a system name needs to be allocated, the first
+unused system name is taken from
+.BR /etc/pnp.sysnames .
+If all the system names there are in use,
+unused names are allocated from the list
+.IR system-1 ,
+.IR system-2 ", .\|.\|.\|;"
+the default prefix 
+.I system
+may be changed in the
+.B /var/yp/updaters
+makefile.
+A system name is \*(lqused\*(rq if there is already a
+matching entry in the
+Network Information Service
+(\s-1NIS\s0)
+.I hosts.byname
+map, the
+.I ethers.byname
+map, or there is a netgroup with that name.
+Names are allocated to correspond to a given Ethernet
+address.
+There is no concept of \*(lqtransient\*(rq name allocation;
+part of allocating a system name includes updating the
+.I ethers.byname
+and
+.I ethers.byaddr
+.SM NIS
+maps to persistently associate the name with that
+Ethernet address.
+.LP
+One way to allocate a system name is to issue a
+.BR ypupdate (3N)
+call to update the
+.I ethers.byaddr
+map.
+The key is the Ethernet address (or general
+.SM IEEE
+802.2 48 bit address,
+used also with
+.SM FDDI
+and Token Ring standards) of the system
+whose name is being allocated.
+The data is a line formatted according to the format specified in
+.BR ethers (5).
+A name is allocated if the name passed is
+.RB ` * '
+(a single asterisk).
+Updating this
+.SM NIS
+map using
+.BR ypupdate (3N)
+is a privileged operation, and may be performed only by
+users in the
+.I networks
+group (with group
+.SM ID
+12), or boot servers (listed in the
+.I ypservers
+.SM NIS
+map).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/pnp.sysnames
+.TP 20
+.B /usr/etc/yp/upd.systems
+.TP 20
+.B /var/yp/updaters
+.SH SEE ALSO
+.BR ypupdate (3N),
+.BR ethers (5),
+.BR group (5),
+.BR hosts (5),
+.BR netgroup (5),
+.BR updaters (5),
+.BR pnpd (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

@@ -1,0 +1,122 @@
+.\" @(#)auditd.8 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH AUDITD 8 "7 September 1988"
+.SH NAME
+auditd \- audit daemon
+.SH SYNOPSIS
+.B /usr/etc/auditd
+.SH DESCRIPTION
+.IX "auditd daemon" "" "\fLauditd\fP daemon"
+The audit daemon controls the generation and location of audit trail files.
+If the function
+.BR issecure (3)
+returns false, the only action that
+.B auditd
+takes is to disable the auditing system;
+otherwise, auditing is set up and started.
+If auditing is desired,
+.B auditd
+reads the
+.BR audit_control (5)
+file to get a list of directories into which audit files can be written
+and the percentage limit for how much space to reserve on each filesystem
+before changing to the next directory.
+.LP
+If
+.B auditd
+receives the signal
+.SM
+.BR SIGUSR1 ,
+the current audit file is closed and another is opened.
+If
+.SB SIGHUP
+is received, the current audit trail is closed, the
+.B audit_control
+file reread, and a new trail is opened.
+If
+.SB SIGTERM
+is received, the audit trail is closed and auditing is
+terminated.
+The program
+.BR audit (8)
+sends these signals and is recommended for this purpose.
+.LP
+Each time the audit daemon opens a new audit trail file, it updates
+the file
+.BR audit_data (5)
+to include the correct name.
+.SS Auditing Conditions
+.LP
+The audit daemon invokes the program
+.BR audit_warn  (8) 
+under the following conditions with the indicated options:
+.LP
+.BI "audit_warn soft " pathname
+.IP
+The file system upon which
+.I pathname
+resides has exceeded the minimum free space limit defined in
+.BR audit_control (5).
+A new audit trail has been opened on another file system.
+.TP
+.B "audit_warn allsoft"
+All available file systems have been filled beyond the 
+minimum free space limit.
+A new audit trail has been opened anyway.
+.TP
+.BI "audit_warn hard " pathname
+The file system upon which
+.I pathname
+resides has filled or for some reason become unavailable.
+A new audit trail has been opened on another file system.
+.TP
+.BI "audit_warn allhard " count
+All available file systems have been filled or
+for some reason become unavailable.
+The audit daemon will repeat this call to
+.B audit_warn
+every twenty seconds until space becomes available.
+.I count
+is the number of times that
+.B audit_warn
+has been called since the problem arose.
+.TP
+.B "audit_warn ebusy"
+There is already an audit daemon running.
+.TP
+.B "audit_warn tmpfile"
+The file
+.B /etc/security/audit/audit_tmp
+exists, indicating a fatal error.
+.TP
+.B "audit_warn nostart"
+The internal system audit condition is
+.SM
+.BR AUC_FCHDONE .
+Auditing cannot be started without rebooting the system.
+.TP
+.B "audit_warn auditoff"
+The internal system audit condition has been changed to not be
+.SB AUC_AUDITING
+by someone other than the audit daemon.  This causes the audit daemon to
+exit.
+.TP
+.B "audit_warn postsigterm"
+An error occurred during the orderly shutdown of the auditing system.
+.TP
+.B "audit_warn getacdir"
+There is a problem getting the directory list from
+.BR /etc/security/audit/audit_control .
+.IP
+The audit daemon will hang in a sleep loop until this file
+is fixed.
+.SH FILES
+.nf
+.B /etc/security/audit/audit_control
+.B /etc/security/audit/audit_data
+.fi
+.SH "SEE ALSO"
+.BR auditsvc (2),
+.BR audit_control (5),
+.BR audit.log (5),
+.BR audit (8),
+.BR audit_warn (8)

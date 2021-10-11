@@ -1,0 +1,57 @@
+.\" @(#)on_exit.3 1.1 92/07/30 SMI; from UCB 4.2
+.TH ON_EXIT 3 "7 September 1988"
+.SH NAME
+on_exit \- name termination handler
+.SH SYNOPSIS
+.nf
+.B
+int on_exit(procp, arg)
+.B void (*procp)(\|);
+.B caddr_t arg;
+.fi
+.IX  "on_exit()"  ""  "\fLon_exit()\fP \(em name termination handler"
+.IX  "name termination handler"  ""  "name termination handler \(em \fLon_exit()\fP"
+.IX  "termination handler, name \(em \fLon_exit()\fP"
+.SH DESCRIPTION
+.LP
+.B on_exit(\|)
+names a routine to be called after a program calls
+.BR exit (3)
+or returns normally, and before its process terminates.  The routine named is called as
+.RS
+.nf
+.B (*procp)(status, arg);
+.fi
+.RE
+where
+.I status
+is the argument with which
+.B exit(\|)
+was called, or zero if
+.I main
+returns.  Typically,
+.I arg
+is the address of an argument vector to
+.BI (* procp )\fR,
+but may be an integer value.
+Several calls may be made to
+.BR on_exit ,
+specifying several termination handlers.
+The order in which
+they are called is the reverse of that
+in which they were given to
+.BR on_exit .
+.SH "SEE ALSO"
+.BR gprof (1),
+.BR tcov (1),
+.BR exit (3)
+.SH DIAGNOSTICS
+.LP
+.B on_exit(\|)
+returns zero normally, or nonzero if the procedure name could not be stored.
+.SH NOTES
+.LP
+This call is specific to the Sun\s-1OS\s0 operating system
+and should not be used if portability is a concern.
+.LP
+Standard I/O exit processing is always done last.

@@ -1,0 +1,121 @@
+.\" @(#)reboot.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH REBOOT 8 "4 July 1990"
+.SH NAME
+reboot \- restart the operating system
+.SH SYNOPSIS
+.B /usr/etc/reboot
+[
+.B \-dnq
+]
+[
+.I "boot arguments"
+]
+.SH DESCRIPTION
+.IX  "reboot command"  ""  "\fLreboot\fP \(em system startup procedures"
+.IX  "bootstrap procedures"  ""  "bootstrap procedures \(em \fLreboot\fP"
+.IX  "autoboot procedures"  ""  "autoboot procedures \(em \fLreboot\fP"
+.IX  "startup procedures"  ""  "startup procedures \(em \fLreboot\fP"
+.LP
+.B reboot
+executes the
+.BR reboot (2)
+system call to restart the kernel.
+The kernel is loaded into memory by the
+.SM PROM
+monitor, which transfers control to it.
+See
+.BR boot (8S)
+for details.
+.LP
+Although
+.B reboot
+can be run by the super-user at any time,
+.BR shutdown (8)
+is normally used first to warn all users logged in of the
+impending loss of service.
+See
+.BR shutdown (8)
+for details.
+.LP
+.B reboot
+performs a
+.BR sync (1)
+operation on the disks, and then a multiuser
+.B reboot
+is initiated.
+See
+.BR init (8)
+for details.
+.LP
+.B reboot
+normally logs the reboot to the system log daemon,
+.BR syslogd (8),
+and places a shutdown record in the login accounting file
+.BR /var/adm/wtmp .
+These actions are inhibited if the
+.B \-n
+or
+.B \-q
+options are present.
+.SS "Power Fail and Crash Recovery"
+Normally, the system will reboot itself at power-up or after crashes.
+.SH OPTIONS
+.TP
+.B \-d
+Dump system core before rebooting.
+.TP
+.B \-n
+Avoid the
+.BR sync (1).
+It can be used if a disk or the processor is on fire.
+.TP
+.B \-q
+Quick.
+Reboots quickly and ungracefully, without first shutting down
+running processes.
+.SS "Boot Arguments"
+.LP
+If a boot argument string is given, it is passed to
+the boot command in the 
+.SM PROM 
+monitor.
+The string must be quoted if it contains spaces or other characters
+that could be interpreted by the shell.
+If the first character of the boot argument string is a minus sign 
+.RB ` \- '
+the string must be preceded by an option terminator string 
+.RB ` \-\|\- '
+For example:
+.RS
+.B reboot \-\|\- \-s
+.RE
+to reboot and come up single user,
+.RS
+.B "reboot vmunix.test"
+.RE
+to reboot to a new kernel.
+See
+.BR boot (8S)
+for details.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/wtmp
+login accounting file
+.PD
+.SH "SEE ALSO"
+.BR sync (1),
+.BR reboot (2),
+.BR boot (8S),
+.BR fastboot (8),
+.BR fasthalt (8),
+.BR fsck (8),
+.BR halt (8),
+.BR init (8),
+.BR panic (8S),
+.BR shutdown (8),
+.BR syslogd (8)

@@ -1,0 +1,19 @@
+#
+# This script pulls out the NAME line of each manual page
+# in a given section.  The NAME line is then massaged with
+# the sed script.  The sed script removes any point size 
+# changes (lines 1-3), changes the \- into a colon (line 4),
+# adds a period at the end of the line (line 5), and 
+# removes the .TH macro (line 6).
+# This yeilds lines of the form:
+#   name(section): description
+# 
+cd /usr/man/man$1
+/usr/lib/getNAME -t *.* | \
+sed -e 's/.s[-+][0-9]//g' \
+    -e 's/.s0//g' \
+    -e 's/.f[BIRP]//g' \
+    -e 's/  *\.-  */: /' \
+    -e 's/$/./' \
+    -e 's/\.TH.*	//' \
+	> /usr/src/man/man0/tocx$1

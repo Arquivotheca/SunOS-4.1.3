@@ -1,0 +1,185 @@
+.\" @(#)chmod.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH CHMOD 2V "21 January 1990"
+.SH NAME
+chmod, fchmod \- change mode of file
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/stat.h>
+.LP
+.ft B
+int chmod(path, mode)
+char *path;
+mode_t mode;
+.LP
+.ft B
+int fchmod(fd, mode)
+int fd, mode;
+.fi
+.IX  chmod()  ""  \fLchmod()\fP
+.IX  "file system"  chmod()  ""  \fLchmod()\fP
+.IX  fchmod()  ""  \fLfchmod()\fP
+.IX  "file system"  fchmod()  ""  \fLfchmod()\fP
+.IX  "change" "file mode \(em \fLchmod()\fR"
+.IX  "sticky bit \(em \fLchmod()\fP"
+.SH DESCRIPTION
+.LP
+.B chmod(\|)
+sets the mode of the file referred to by
+.I path
+or the descriptor
+.I fd
+according to
+.IR mode .
+.I mode
+is the inclusive OR of the file mode bits
+(see
+.BR stat (2V)
+for a description of these bits).
+.\" This may not be good enough.  Many things seem to refer here for
+.\" a discussion of the bits (not that this was very helpful heretofore)
+.LP
+The effective user
+.SM ID
+of the process must match the owner of the file or be
+super-user to change the mode of a file.
+.LP
+If the effective user
+.SM ID
+of the process is not super-user and the process
+attempts to set the set group
+.SM ID
+bit on a file owned by a group
+which is not in its supplementary group \s-1ID\s0s, the
+.SB S_ISGID
+bit (set group
+.SM ID
+on execution) is cleared.
+.LP
+If the
+.SB S_ISVTX
+(sticky)
+bit is set on a directory,
+an unprivileged user may not delete or rename
+files of other users in that directory.
+.LP
+If a user other than the super-user writes to a file, the set user
+.SM ID
+and set group
+.SM ID
+bits are turned off.  This makes the system somewhat more secure
+by protecting set-user-\s-1ID\s0
+(set-group-\s-1ID\s0)
+files from remaining set-user-\s-1ID\s0
+(set-group-\s-1ID\s0)
+if they are modified, at the expense of a degree of
+compatibility.
+.SH RETURN VALUES
+.LP
+.B chmod(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B chmod(\|)
+will fail and the file mode will be unchanged if:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EINVAL
+.I fd
+refers to a socket, not to a file.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect (see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM EPERM
+The effective user
+.SM ID
+does not match the owner of the file and
+the effective user
+.SM ID
+is not the super-user.
+.TP
+.SM EROFS
+The file referred to by
+.I path
+resides on a read-only file system.
+.LP
+.B fchmod(\|)
+will fail if:
+.TP 20
+.SM EBADF
+The descriptor is not valid.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM EPERM
+The effective user
+.SM ID
+does not match the owner of the file and the
+effective user
+.SM ID
+is not the super-user.
+.TP
+.SM EROFS
+The file referred to by
+.I fd
+resides on a read-only file system.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to a null pathname.
+.SH "SEE ALSO"
+.BR chown (2V),
+.BR open (2V),
+.BR stat (2V),
+.BR sticky (8)
+.SH BUGS
+.LP
+\fB\s-1S_ISVTX\s0\fP,
+the \*(lqsticky bit\*(rq,
+is a misnomer, and is overloaded to mean different things for different
+file types.

@@ -1,0 +1,262 @@
+;
+;      @(#)pick_detect.hasm 1.1 92/07/30 17:41:44
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+
+#define LOOP_COUNT	50
+
+
+	jmpl	start, r2
+
+result_lines:
+	.word	0
+
+result_triangles:
+	.word	0
+
+result_outside:
+	.word	0
+
+prb_lines:
+        .word   50                   ; 50 are expected
+        .word   0		     ; Circular writes (boolean)
+prb_lines_hits:
+        .word   0		     ; detected hits
+        .res    50 * 4               ; 50 * 4
+
+prb_triangles:
+        .word   50                   ; 50 are expected
+        .word   0                    ; Circular writes (boolean)
+prb_triangles_hits:
+        .word   0		     ; detected hits
+        .res    50 * 4               ; 50 * 4
+
+prb_outside:
+        .word   50                   ; 50 reserved, nothing expected
+        .word   0                    ; Circular writes (boolean)
+prb_outside_hits:
+        .word   0                    ; detected hits
+        .res    50 * 4               ; 50 * 4
+
+cenumber:
+	.word	1		     ; cen number of primitives,
+				     ; starting with 1
+
+name_1:
+/* Delete from name_set */
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+.word		0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+/* Add to name_set */
+.word		1, 0, 0, 0, 0, 0, 0, 0
+.word		0, 0, 0, 0, 0, 0, 0, 0
+.word		0, 0, 0, 0, 0, 0, 0, 0
+.word		0, 0, 0, 0, 0, 0, 0, 0
+
+
+
+start:
+
+/* Enable z buffer comparison */
+	set_attribute   hk_z_buffer_compare
+	.word		TRUE
+
+	set_attribute	hk_pick_filter
+	/* Inclusion filter */
+	.word		0xFFFFFFFF, 0, 0, 0, 0, 0, 0, 0
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	/* Exclusion filter */
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+
+
+	/* Draw a box slightly bigger than pick box */
+        set_attribute hk_line_color
+        .rgb            < 1.0, 0.2, 0.2 >
+        set_attribute hk_line_geom_format, #HK_LINE_XYZ
+        polyline        5
+        .xyz            <  0.260,  0.260, 0.0 >
+        .xyz            <  0.260, -0.260, 0.0 >
+        .xyz            < -0.260, -0.260, 0.0 >
+        .xyz            < -0.260,  0.260, 0.0 >
+        .xyz            <  0.260,  0.260, 0.0 >
+	
+	set_attribute	hk_pick_box
+	.xyz		< -0.25, -0.25,  -1.0 >
+	.xyz		<  0.25,  0.25, 1.0 >
+
+	set_attribute	hk_name_set, @name_1
+
+	set_attribute	hk_traversal_mode
+	.word           HK_PICK_WHILE_RENDER
+
+
+	jmpl		draw, r6
+
+	trap 0
+
+draw:
+	; Do the lines:
+
+	flush_rendering_pipe
+	flush_context
+
+	set_attribute	hk_pick_results_buffer, #prb_lines
+	set_attribute	hk_clear_pick_results
+        set_attribute hk_line_geom_format, #HK_LINE_XYZ
+
+	ld		#LOOP_COUNT, r4
+
+pick_lines_loop:
+	set_attribute   hk_line_color
+	.rgb		<1.0, 0.0, 0.0>
+
+        set_attribute   hk_cen, @cenumber
+
+        polyline        2
+        .xyz    <-0.2, -0.2, 0.0>
+        .xyz    <0.2, 0.2, 0.0>
+
+	;increment cen for next primitive
+	ld		@cenumber, r3
+	addi		#1, r3
+	st		r3, @cenumber
+
+	subi		#1, r4
+	bleg		r4, pick_triangles, pick_triangles, pick_lines_loop
+	
+	;Do the triangles
+
+pick_triangles:
+	flush_rendering_pipe
+	flush_context
+
+	set_attribute	hk_pick_results_buffer, #prb_triangles
+	set_attribute	hk_clear_pick_results
+
+        set_attribute hk_tri_geom_format, #HK_TRI_XYZ_VNORMAL
+
+	ld		#LOOP_COUNT, r4
+
+pick_triangles_loop:
+	set_attribute   hk_front_surface_color
+	.rgb		<0.0, 1.0, 0.0>
+
+        set_attribute   hk_cen, @cenumber
+
+	triangle_list	#3
+
+	.word	HK_TRI_START_CCW
+	.xyz	<0.14749, 0.017713, 0.257500>
+	.normal	<0.288802, 0.165172, 0.943033>
+
+	.word	0x8000000
+	.xyz	<0.121734, -0.171231, 0.657500>
+	.normal	<0.527349, 0.113822, 0.841990>
+
+	.word	0x8000000
+	.xyz	<-0.247487, -0.196985, 0.757500>
+	.normal	<0.095011, 0.440186, 0.892866>
+
+	;increment cen for next primitive
+	ld		@cenumber, r3
+	addi		#1, r3
+	st		r3, @cenumber
+
+	subi		#1, r4
+	bleg		r4, pick_line_outside, pick_line_outside, pick_triangles_loop
+	
+	;Draw lines outside of the pickbox
+pick_line_outside:
+
+	flush_rendering_pipe
+	flush_context
+
+	set_attribute	hk_pick_results_buffer, #prb_outside
+	set_attribute	hk_clear_pick_results
+
+	set_attribute	hk_traversal_mode
+	.word           HK_PICK_WHILE_RENDER
+
+	ld		#LOOP_COUNT/2, r4
+
+pick_line_outside_loop:
+	set_attribute   hk_line_color
+	.rgb		<0.0, 0.0, 1.0>
+
+        set_attribute   hk_cen, @cenumber
+
+        polyline        2
+        .xyz    <-0.3, -0.3, 0.0>
+        .xyz    <-0.6, -0.7, 0.0>
+
+	;increment cen for next primitive
+	ld		@cenumber, r3
+	addi		#1, r3
+	st		r3, @cenumber
+
+	subi		#1, r4
+	bleg		r4, pick_triangle_outside, pick_triangle_outside, pick_line_outside_loop
+	
+	;Draw triangles outside of the pickbox
+
+
+pick_triangle_outside:
+
+	flush_rendering_pipe
+	flush_context
+
+	ld		#LOOP_COUNT/2, r4
+
+pick_triangle_outside_loop:
+	set_attribute   hk_front_surface_color
+	.rgb		<1.0, 1.0, 0.0>
+
+        set_attribute   hk_cen, @cenumber
+
+	triangle_list	#3
+
+	.word	HK_TRI_START_CCW
+	.xyz	<0.24749, 0.717713, 0.357500>
+	.normal	<0.288802, 0.165172, 0.943033>
+
+	.word	0x8000000
+	.xyz	<0.321734, 0.371231, 0.657500>
+	.normal	<0.527349, 0.113822, 0.841990>
+
+	.word	0x8000000
+	.xyz	<0.347487, 0.496985, 0.757500>
+	.normal	<0.095011, 0.440186, 0.892866>
+
+	;increment cen for next primitive
+	ld		@cenumber, r3
+	addi		#1, r3
+	st		r3, @cenumber
+
+	subi		#1, r4
+	bleg		r4, done_drawing, done_drawing, pick_triangle_outside_loop
+	
+done_drawing:
+
+	ld		@prb_lines_hits, r4
+	st		r4, @result_lines
+
+	ld		@prb_triangles_hits, r4
+	st		r4, @result_triangles
+
+	ld		@prb_outside_hits, r4
+	st		r4, @result_outside
+
+	jmpl	(r6+0), r6

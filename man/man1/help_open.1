@@ -1,0 +1,161 @@
+.\" @(#)help_open.1	1.1 92/07/30 SMI;
+.TH HELP_OPEN 1 "21 January 1990"
+.SH NAME
+help_open \- use help_viewer to open a file
+.SH SYNOPSIS
+.B help_open
+[
+.B \-a
+]
+[
+.I filename
+[
+.I page_number
+] ]
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "help_open command"  ""  "\fLhelp_open\fP \(em open help_viewer file"
+.IX "commands"  "help_open command"  ""  "\fLhelp_open\fP \(em open help_viewer file"
+.LP
+.B help_open
+is used to cause a running 
+.BR help_viewer (1)
+to open a file.
+.I filename
+is typically the name of a 
+.B help_viewer 
+file.  A call is made to 
+.B help_viewer
+using the same 
+.SM RPC
+mechanism as is used by Spot Help.
+.LP
+If
+.I filename
+is relative, 
+.B help_viewer 
+looks for it relative to the default help directory (as defined 
+in the user's
+.B \&.defaults
+database).  Otherwise, 
+.B help_viewer 
+treats
+.I filename
+as an absolute pathname.
+.LP
+If the 
+.SM RPC
+call to 
+.B help_viewer
+fails, 
+.B help_open
+attempts to spawn 
+.BR  help_viewer , 
+with
+.I filename
+as a command line argument.  If the 
+.B \-a
+command line option was given, then
+.I filename
+is first converted to an absolute pathname, as described in
+.SM OPTIONS\s0, 
+below.
+.SH OPTIONS
+.TP
+.B \-a
+Convert
+.I filename
+to an absolute pathname.
+This option causes 
+.B help_open 
+to get the current working directory and append it to the front of
+.I filename
+(thus creating an absolute pathname) before passing
+.I filename
+on to
+.BR help_viewer . 
+This allows
+.B  help_open
+to be used with other processes, such as Sun Organizer (see
+.BR organizer (1)),
+which deal in relative pathnames.  The 
+.B \-a 
+option has no effect if
+.I filename
+begins with the character '/'.
+.SH EXAMPLES
+.LP
+In the first example,
+.B help_viewer
+opens the file
+.BR  help/Help_Basics .
+This file is located relative to the default help
+directory (as defined in the user's
+.B \&.defaults
+database).
+If the default help directory is set to
+.BR /vol/help/language/\s-1USA\s0-English ,
+this is 
+.BR /vol/help/language/\s-1USA\s0-English/help/Help_Basics .
+.RS
+.PP
+.nf
+.B example% help_open help/Help_Basics
+.B example%
+.fi
+.RE
+.PP
+The second example is the same as the first, but it opens 
+.B Help_Basics
+to page 3.
+.RS
+.PP
+.nf
+.B example% help_open \(lqhelp/Help_Basics 3\(rq
+.B example%
+.fi
+.RE
+.PP
+In the next example, 
+.B help_viewer
+opens
+.B somefile
+using the absolute pathname,
+.BR /home/mtravis/somefile .
+.RS
+.PP
+.nf
+.B example% help_open /home/mtravis/somefile
+.B example%
+.fi
+.RE
+.PP
+In the last example, 
+.B help_viewer 
+opens
+.BR /home/ahinkle/anotherfile .
+.RS
+.PP
+.nf
+.B example% cd /home/ahinkle
+.B example% help_open \-a anotherfile
+.B example%
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/help/*
+.PD
+.SH SEE ALSO
+.BR help_viewer (1),
+.BR organizer (1),
+.BR help (5),
+.BR help_viewer (5)
+.LP
+.I Sun386i User's Guide
+.br
+.I Sun386i Developer's Guide

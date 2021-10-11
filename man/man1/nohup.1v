@@ -1,0 +1,160 @@
+.\" @(#)nohup.1v 1.1 92/07/30 SMI; from S5R2
+.TH NOHUP 1V "10 January 1988"
+.SH NAME
+nohup \- run a command immune to hangups and quits
+.SH SYNOPSIS
+.B /usr/bin/nohup
+.I command
+.RI [ " arguments " ]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/nohup
+.I command
+.RI [ " arguments " ]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLnohup\fR"
+.IX  "nohup command"  ""  "\fLnohup\fP \(em run command immune to hangup"
+.IX  command   "run immune to hangup"  ""  "run immune to hangup \(em \fLnohup\fP"
+There are three distinct versions of
+.BR nohup :
+it is built in to the C shell, and is an executable program
+available in
+.B /usr/bin/nohup
+and
+.B /usr/5bin/nohup
+when using the Bourne shell.
+.LP
+The Bourne shell version of
+.B nohup
+executes
+.I command
+such that it is immune to
+.SM HUP
+(hangup)
+and
+.SM TERM
+(terminate)
+signals.
+If the standard output is a terminal, it is redirected to the file
+.BR nohup.out .
+The standard error is redirected to follow the standard output.
+.LP
+The priority is incremented by 5.
+.B nohup
+should be invoked from the shell with
+.RB ` & '
+in order to
+prevent it from responding to interrupts
+or input from the next user.
+.SH SYSTEM V DESCRIPTON
+Processes run by
+.B nohup
+are immune to
+.SM HUP 
+(hangup)
+and 
+.SM QUIT
+(quit)
+signals;
+.B nohup
+does not arrange to make them immune to a
+.SM TERM
+(terminate) signal, so unless they arrange to be immune to a
+.SM TERM
+signal, or the shell makes them immune to a
+.SM TERM
+signal, they will receive that signal.
+If
+.B nohup.out
+is not writable in the current directory,
+output is redirected to
+.BR $\s-1HOME\s+1/nohup.out .
+If the standard error is a terminal,
+it is redirected to the standard output, otherwise it is not redirected.
+The priority of the process run by
+.B nohup
+is not altered.
+.SH EXAMPLE
+It is frequently desirable to apply
+.B nohup
+to pipelines or lists of commands.
+This can be done only by placing pipelines
+and command lists in a
+single file, called a shell script.
+The command
+.IP
+.B example% nohup sh script
+.LP
+applies to everything in
+.BR script .
+(If the script is to be executed often,
+then the need to type
+.IR sh
+can be eliminated by giving
+.BR script
+execute permission).  Add an ampersand and the contents of
+.B script
+are run in the background with interrupts also ignored (see
+.BR sh (1)):
+.IP
+.B example% nohup script &
+.SH FILES
+.PD 0
+.TP 20
+.B nohup.out
+.TP
+.B $\s-1HOME\s0/nohup.out
+.PD
+.SH SEE ALSO
+.BR chmod (1V),
+.BR csh (1),
+.BR nice (1),
+.BR sh (1),
+.BR signal (3V)
+.SH BUGS
+If you use
+.BR csh (1),
+then commands executed with
+.RB ` & '
+are automatically immune to
+.SM HUP
+signals while in the background.
+.LP
+There is a C shell built-in command
+.B nohup
+that provides immunity from terminate, but does not
+redirect output to
+.BR nohup.out .
+.br
+.ne 8
+.LP
+.B nohup
+does not recognize command sequences. For instance,
+.IP
+.BI nohup " command1" ; " command2"
+.LP
+applies only to
+.IR command1
+and the command:
+.IP
+.BI "nohup (" command1 "; " command2 )
+.LP
+is syntactically incorrect.
+.LP
+Be careful of where the standard error is redirected.
+The following command may put error messages on tape,
+making it unreadable:
+.IP
+.B "nohup cpio \-o <\| list >\| /dev/rmt/1m&"
+.LP
+while
+.IP
+.B "nohup cpio \-o <\| list >\| /dev/rmt/1m 2>errors&"
+.LP
+puts the error messages into the file
+.BR errors .

@@ -1,0 +1,500 @@
+.\" @(#)sccs-admin.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH SCCS-ADMIN 1 "19 December 1989"
+.SH NAME
+sccs-admin, admin \- create and administer SCCS history files
+.SH SYNOPSIS
+.B /usr/sccs/admin
+[
+.B \-bhnz
+] [
+.BI \-a username\c
+.RI | groupid
+] \&.\|.\|.
+.if n .ti +0.5i
+[
+.BI \-d flag
+] \&.\|.\|.
+[
+.BI \-e username\c
+.RI | groupid
+] \&.\|.\|.
+.if t .ti +0.5i
+.if n .ti +0.5i
+[
+.BI \-f flag
+[
+.I value
+]\|] \&.\|.\|.
+[
+.B \-i
+[
+.I filename
+]\|]
+.if n .ti +0.5i
+[
+.BR "\-l a" |\c
+.IR release [\c
+.BI , release\c
+\&.\|.\|.\|]
+] [
+.B \-m
+.I mr-list
+]
+.if n .ti +0.5i
+[
+.BI \-r release
+]
+.if t .ti +.5i
+[
+.B \-t
+[
+.I description-file
+]\|]
+.if n .ti +0.5i
+[
+.B \-y\c
+.RI [ comment ]\|]
+.I s.filename
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  admin  ""  "\fLadmin\fP \(em administer SCCS"
+.IX  "SCCS commands"  "admin command"  ""  "\fLadmin\fP \(em administer SCCS"
+.IX  create  "SCCS data bases"
+.LP
+.B admin
+creates or modifies the flags and other parameters of
+.SM SCCS
+history files.  Filenames of
+.SM SCCS
+history files begin with the
+.RB ` s. '
+prefix, and are referred to as
+.BR s. files ,
+or ``history'' files.
+.LP
+The named
+.BR s. file
+is created if it does not exist already.
+Its parameters are initialized or modified according to the
+options you specify.  Parameters not specified are given default
+values when the file is initialized, otherwise they remain unchanged.
+.LP
+If a directory name is used in place of the
+.IR s.filename
+argument,
+the
+.B admin
+command applies to all
+.BR s. files
+in that directory.  Unreadable
+.BR s. files
+produce an error.  The use of
+.RB ` \- '
+as the
+.I s.filename
+argument indicates that the names of files are to be read from the
+standard input, one
+.BR s. file 
+per line.  
+.SH OPTIONS
+.TP
+.B \-b
+Force encoding of binary data.  Files that
+contain
+.SM ASCII NUL
+or other control characters, or that do not end with a
+.SM NEWLINE,
+are recognized as binary data files.  The contents of such files are
+stored in the history file in encoded form.  See
+.BR uuencode (1C)
+for details about the encoding.  This option
+is normally used in conjunction with
+.BR \-i
+to force
+.B admin
+to encode initial versions not recognized as containing binary data.
+.TP
+.B \-h
+Check the structure of an existing
+.BR s. file
+(see
+.BR sccsfile (5)),
+and compare a newly computed check-sum with one stored
+in the first line of that file.
+.B \-h
+inhibits writing on the file; and so nullifies the effect of any
+other options.
+.TP
+.B \-n
+Create a new 
+.SM SCCS
+history file.
+.TP
+.B \-z
+Recompute the file check-sum and store it in the first
+line of the
+.BR s. file.
+Caution:  it is important to verify the contents of the
+history file (see
+.BR sccs-val (1),
+and the
+.B print
+subcommand in
+.BR sccs (1)),
+since using
+.B \-z
+on a truly corrupted file may prevent detection of the error.
+.HP
+.BI \-a username\c
+.RI | groupid
+.br
+Add a user name, or a numerical group
+.SM ID\s0,
+to the list of users who may check deltas in or out.
+If the list is empty, any user is allowed to do so.
+.TP
+.BI \-d flag
+Delete the indicated
+.I flag
+from the
+.SM SCCS
+file.  The
+.B \-d
+option may be specified only for existing s.files.
+See
+.B \-f
+for the list of recognized flags.
+.HP
+.BI \-e username\c
+.RI | groupid
+.br
+Erase a user name or group
+.SM ID
+from the list of users allowed to make
+deltas.
+.HP
+.BI \-f flag
+.RI [ value ]
+.br
+Set the indicated
+.IR flag
+to the (optional)
+.I value
+specified.  The following flags are recognized:
+.RS
+.RS
+.TP
+.B b
+Enable branch deltas.  When
+.B b
+is set, branches can be created using the
+.B \-b
+option of the
+.SM SCCS
+.B get
+command
+(see
+.BR sccs-get (1)).
+.TP
+.BI c ceil
+Set a ceiling on the releases that can be checked out.
+.I ceil
+is a number less than or equal to 9999.
+If
+.B c
+is not set, the ceiling is 9999.
+.TP
+.BI f floor
+Set a floor on the releases that can be checked out.
+The floor is a number greater than 0 but less than
+9999.  If
+.B f
+is not set, the floor is 1.
+.TP
+.BI d sid
+The default delta number, or 
+.SM SID,
+to be used by an
+.SM SCCS
+.BR get
+command.
+.br
+.ne 5
+.TP
+.B i
+Treat the
+.RB ` "No id keywords (ge6)" '
+message issued by an
+.SM SCCS
+.BR get
+or
+.BR delta
+command as an error rather than a warning.
+.TP
+.B j
+Allow concurrent updates.
+.TP
+.B la
+.PD 0
+.HP
+.B l\c
+.I release\c
+.RB [ ,\c
+.IR release \|.\|.\|.\|]
+.br
+.PD
+Lock the indicated list of releases against deltas.  If
+.B a
+is used, lock out deltas to all releases.
+An
+.SM SCCS
+.RB ` "get \-e" '
+command fails when applied against a locked release.
+.TP
+.B n
+Create
+empty releases when releases are skipped.  These null (empty) deltas
+serve as anchor points for branch deltas.
+.TP
+.BI q value
+Supply a 
+.I value
+to which the
+.B %\&Q%
+keyword is to expand when a read-only version is retrieved with the
+.SM SCCS
+.BR get
+command.
+.TP
+.BI m module
+Supply a value for the module name to which the
+.B %\&M%
+keyword is to expand.
+If the
+.B m
+flag is not specified, the value
+assigned is the name of the SCCS file with the leading
+.B s.
+removed.
+.TP
+.BI t type
+Supply a value for the module type
+to which the
+.B %\&Y%
+keyword is to expand.
+.TP
+.BI v\fR\|[ \|program\fR\|]
+Specify a validation
+.I program
+for the
+.SM MR
+numbers associated with a new delta.
+The optional
+.I program
+specifies the name of an
+.SM MR
+number validity checking
+.IR program .
+If this flag is set when creating an
+.SM SCCS
+file, the
+.B \-m
+option must also be used, in which case the list of
+.SM MRs
+may be empty.
+.RE
+.RE
+.TP
+.BI \-i\fR\|[\fP filename\fR]
+Initialize the history file with text from the indicated file.
+This text constitutes the initial delta, or set of checked-in
+changes.
+If
+.I filename
+is omitted, the initial text is obtained from the standard input.
+Omitting the
+.B \-i
+option altogether creates an empty
+.BR s. file.
+You can only initialize one
+.BR s. file
+with text using
+.BR \-i .
+This option implies the
+.B \-n
+option.
+.TP
+.BR "\-la"
+.PD 0
+.HP
+.B \-l\c
+.IR release [\c
+.BI , release\c
+\&.\|.\|.\|]
+.br
+Unlock the specified releases so that deltas can be checked in.  If
+.B a
+is specified, allow deltas to be checked in for all releases.
+.PD
+.TP
+.BI \-m\fR\|[\| mr-list\fR\|]
+Insert the indicated Modification Request (\s-1MR\s0) numbers into the
+commentary for the initial version.
+When specifying more than one MR number on the command line,
+.I mr-list
+takes the form of a quoted, space-separated list.
+A warning results if the
+.B v
+flag is not set or the
+.SM MR
+validation fails.
+.TP
+.BI \-r release
+Specify the release for the initial delta.
+.B \-r
+may be used only in conjunction with
+.BR \-i .
+The initial delta is inserted into release 1 if this option is
+omitted.  The level of the initial delta is always 1;
+initial deltas are named 1.1 by default.
+.TP
+.BI \-t\fR\|[\fP description-file\fR]
+Insert descriptive text from the file
+.IR description-file .
+When 
+.B \-t
+is used in conjunction with
+.BR \-n ,
+or
+.BR \-i
+to initialize a new s.file, the
+.I description-file
+must be supplied.
+When modifying the description for an existing file:
+a
+.B \-t
+option without a
+.I description-file
+removes the descriptive text, if any;
+a
+.B \-t
+option with a
+.I description-file
+replaces the existing text.
+.TP
+.BI \-y\fR\|[\|\fP comment\fR\|]
+Insert the indicated
+.I comment
+in the ``Comments:''
+field for the initial delta.  Valid only in conjunction with
+.B \-i
+or
+.BR \-n .
+If
+.B \-y
+option is omitted, a default
+comment line is inserted that notes the date and time the
+history file was created.
+.SH FILES
+.PD 0
+.TP 20
+.B s.*
+history file
+.TP
+.B \s-1SCCS\s0/s.*
+history file in
+.SM SCCS
+subdirectory
+.TP
+.B z.*
+temporary lock file
+.PD
+.SH WARNINGS
+The last component of all 
+.SM SCCS
+filenames must have the
+.RB ` s. '
+prefix.
+New 
+.SM SCCS
+files are given mode 444 (see
+.BR chmod (1V)).
+All writing done by
+.B admin
+is to a temporary file with an
+.B x.
+prefix, created with mode 444 for a new
+.SM SCCS
+file, or with the same mode as an existing
+.SM SCCS
+file.  After successful execution of
+.BR admin ,
+the existing
+.B s.
+file is removed and replaced with the 
+.BR x. file.
+This ensures that changes are made to the 
+.SM SCCS
+file only when no errors have occurred.
+.LP
+It is recommended that directories containing 
+.SM SCCS
+files have permission mode 755,
+and that the 
+.BR s. files
+themselves have mode 444.
+The  mode for directories allows only the owner to modify the
+.SM SCCS
+files contained in the directories, while
+the mode of the 
+.BR s. files
+prevents all modifications except those performed using
+.SM SCCS
+commands.
+.LP
+If it should be necessary to patch an 
+.SM SCCS
+file for any reason,
+the mode may be changed to 644 by the owner to allow use of a text
+editor.  However, extreme care must be taken when doing this.
+The edited file should
+.I always
+be processed by an
+.RB ` "admin \-h" '
+to check for corruption, followed by an
+.RB ` "admin \-z" '
+to generate a proper check-sum.  Another
+.RB ` "admin \-h" '
+is recommended to ensure that the resulting
+.BR s. file
+is valid.
+.LP
+.B admin
+also uses a temporary lock
+.BR s. file,
+starting with the
+.RB ` z. '
+prefix, to prevent simultaneous updates to the
+.BR s. file.
+See
+.BR sccs-get (1)
+for further information about the
+.RB ` z. file'.
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-cdc (1),
+.BR sccs-delta (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR sccs-rmdel (1),
+.BR sccs-val (1),
+.BR sccsfile (5)
+.LP
+.TX PUL .
+.SH DIAGNOSTICS
+.LP
+Use the
+.SM SCCS
+.B help
+command for explanations (see
+.BR sccs-help (1)).

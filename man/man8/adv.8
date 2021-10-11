@@ -1,0 +1,237 @@
+.\" @(#)adv.8 1.1 92/07/30 SMI; from S5R3
+.TH ADV 8 "30 June 1988"
+.SH NAME
+adv \- advertise a directory for remote access with RFS
+.SH SYNOPSIS
+.B adv
+.br
+.B adv
+[
+.B \-r
+] [
+.B \-d
+.I description
+]
+.I resource
+.I pathname
+[
+.I clients
+\&.\|.\|.\|]
+.br
+.B adv
+.B \-m
+.I resource
+.B \-d
+.IR description \||
+[
+.I clients.\|.\|.
+]
+.br
+.B adv
+.B \-m
+.I resource
+[
+.B \-d
+.I description
+] |
+.I clients
+\&.\|.\|.
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "adv advertise" "" "\fLadv\fR \(em advertise directory for remote \s-1RFS\s0 access" ""
+.IX RFS "advertise directory for access" "\s-1RFS\s0" "advertise directory for access" 
+.IX directory "advertise for RFS access" "directory" "advertise for \s-1RFS\s0 access"
+.IX server "advertise directory for RFS access" "server" "advertise directory for RFS access" 
+.LP
+.B adv
+makes a resource from one system available for use
+on other systems.
+The machine that advertises the resource is called the
+server, while systems that mount and use the
+resource are
+.BR clients .
+See
+.BR mount (8).
+.I resource
+represents a directory, which could contain
+files, subdirectories, named pipes and devices.
+.LP
+Remote File Sharing
+(\s-1RFS\s0)
+must be running before
+.B adv
+can be used to advertise or modify a resource entry.
+.LP
+When used with no options,
+.B adv
+displays all local resources that have been advertised;
+this includes the resource name, the pathname,
+the description, the read-write
+status, and the list of authorized clients.
+The resource field has a fixed length of 14 characters;
+all others are of variable length.
+Fields are separated by two 
+.SM SPACE
+characters and double quotes
+(\fB"\fR)
+surround the description.
+.LP
+This command may be used without options by any user;
+otherwise it is restricted to the super-user.
+.LP
+There are three ways
+.B adv
+is used:
+.RS
+.TP 3
+\(bu
+To print a list of all
+locally-advertised resources,
+as shown by the first synopsis.
+.TP
+\(bu
+To advertise the directory
+.I pathname
+under the name
+.I resource
+so it is available to
+.SM RFS
+.IR clients ,
+as shown by the second synopsis.
+.TP
+\(bu
+To modify
+.I client
+and
+.I description
+fields for currently advertised resources,
+as shown by the third and fourth synopses.
+.RE
+.LP
+If any of the following are true,
+an error message will be sent to standard error.
+.RS
+.TP 3
+\(bu
+The network is not up and running.
+.TP
+\(bu
+.I pathname
+is not a directory.
+.TP
+\(bu
+.I pathname
+is not on a file system mounted locally.
+.TP
+\(bu
+There is at least one entry in the
+.I clients
+field but none are syntactically valid.
+.RE
+.SH OPTIONS
+.TP 15
+.B \-r
+Restrict access to the resource to a read-only basis.
+The default is read-write access.
+.TP
+.BI \-d " description"
+Provide brief textual information about the advertised resource.
+.I description
+is a single argument surrounded by double quotes
+(\fB"\fP\fIargument\fP\fB"\fP)
+and has a maximum length of 32 characters.
+.TP
+.BI \-m " resource"
+Modify information for a resource that has already been
+advertised.
+The resource is identified by a
+.I resource
+name.
+Only the
+.I clients
+and
+.I description
+fields can be modified. 
+To change the
+.IR pathname ,
+.I resource
+name, or read/write permissions, you must
+unadvertise and re-advertise the resource.
+.TP
+.I resource
+This is the symbolic name used by the server
+and all authorized clients to identify the resource.
+It is limited to a maximum of 14 characters and must be
+different from every other resource name in the domain.
+All characters must be printable
+.SM ASCII
+characters, but must not include
+.RB ` . '
+(periods),
+.RB ` / '
+(slashes),
+or white space.
+.br
+.ne 4
+.TP
+.I pathname
+This is the local pathname of the advertised resource.
+It is limited to a maximum of 64 characters.
+This pathname cannot be the mount point of a remote resource and it
+can only be advertised under one resource name.
+.TP
+.I clients
+These are the names of all clients that are authorized to remotely
+mount the resource.
+The default is that all machines that can connect to the server are
+authorized to access the resource.
+Valid input is of the form
+.IR nodename ,
+.IR domain.nodename ,
+.IR domain\f3. ,
+or an alias that represents a list of client names.
+A domain name must be followed by a
+.RB ` . '
+to distinguish it from a host name.
+The aliases are defined in
+.B /etc/host.alias
+and must conform to the alias capability in
+.BR mail (1).
+.SH EXAMPLES
+.LP
+The following example displays the local resources that have
+been advertised:
+.RS
+.ft B
+.nf
+example% adv
+\s-1LOCAL_SUN3\s0      /export/local/sun3  ""  read-only unrestricted
+\s-1LOCAL_SUN4\s0      /export/local/sun4  ""  read-only unrestricted
+\s-1LOCAL_SHARE\s0     /export/local/share  ""  read-only unrestricted
+.fi
+.ft R
+.RE
+.SH "EXIT STATUS"
+.LP
+If there is at least one syntactically valid entry in the
+.I clients
+field,
+a warning will be issued for each invalid entry and the command will return
+a successful exit status.
+A non-zero exit status will be returned if the command fails.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/host.alias
+.PD
+.SH "SEE ALSO"
+.BR mount (8),
+.BR rfstart (8),
+.BR unadv (8)

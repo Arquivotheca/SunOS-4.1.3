@@ -1,0 +1,393 @@
+/*	@(#)fpu.c 1.1 92/07/30 SMI;	*/
+#include <sys/types.h>
+#include <machine/reg.h>
+#include <machine/psl.h>
+#include <machine/buserr.h>
+#include <machine/trap.h>
+#include <sun/fault.h>
+#include <sys/param.h>
+#include <sys/systm.h>
+#include <sys/time.h>
+#include <sys/file.h>
+#include <sys/proc.h>
+#include <sys/map.h>
+#include <sys/user.h>
+#include <sys/core.h>
+#include <sys/ptrace.h>
+#include <machine/fpu/fpu_simulator.h>
+#include <machine/fpu/globals.h>
+
+/*
+ * the global pointer to the current floating point context
+ */
+
+#ifdef MULTIPROCESSOR
+extern struct fpu *fp_ctxp;
+#else MULTIPROCESSOR
+struct fpu *fp_ctxp = (struct fpu *)0;
+#endif MULTIPROCESSOR
+
+struct fpu *
+fpu_ctxalloc()
+{
+	register struct fpu *fp;
+	register int i;
+
+	fp = (struct fpu *)new_kmem_alloc(sizeof (*fp), KMEM_SLEEP);
+	fp->fpu_fsr = 0;	/* zero fsr */
+	i = -1;
+	fp->fpu_regs[0] = i;	/* initialize registers to NAN */
+	fp->fpu_regs[1] = i;
+	fp->fpu_regs[2] = i;
+	fp->fpu_regs[3] = i;
+	fp->fpu_regs[4] = i;
+	fp->fpu_regs[5] = i;
+	fp->fpu_regs[6] = i;
+	fp->fpu_regs[7] = i;
+	fp->fpu_regs[8] = i;
+	fp->fpu_regs[9] = i;
+	fp->fpu_regs[10] = i;
+	fp->fpu_regs[11] = i;
+	fp->fpu_regs[12] = i;
+	fp->fpu_regs[13] = i;
+	fp->fpu_regs[14] = i;
+	fp->fpu_regs[15] = i;
+	fp->fpu_regs[16] = i;
+	fp->fpu_regs[17] = i;
+	fp->fpu_regs[18] = i;
+	fp->fpu_regs[19] = i;
+	fp->fpu_regs[20] = i;
+	fp->fpu_regs[21] = i;
+	fp->fpu_regs[22] = i;
+	fp->fpu_regs[23] = i;
+	fp->fpu_regs[24] = i;
+	fp->fpu_regs[25] = i;
+	fp->fpu_regs[26] = i;
+	fp->fpu_regs[27] = i;
+	fp->fpu_regs[28] = i;
+	fp->fpu_regs[29] = i;
+	fp->fpu_regs[30] = i;
+	fp->fpu_regs[31] = i;
+	return (fp);
+}
+
+fpu_ctxfree()
+{
+	register struct pcb *pcb;
+
+	pcb = &u.u_pcb;
+	if (pcb->pcb_fpctxp) {
+		if (fp_ctxp == pcb->pcb_fpctxp)
+			fp_ctxp = 0;
+		kmem_free((caddr_t)pcb->pcb_fpctxp, sizeof (struct fpu));
+		pcb->pcb_fpctxp = (struct fpu *) 0;
+	}
+}
+
+/* ARGSUSED */
+fpu_fork_context(p2, nfp, new_context)
+struct proc *p2;
+struct file **nfp;
+int *new_context;
+{
+	register struct fpu *fp;
+	register struct pcb *pcb;
+
+	/*
+	 * if the current process is using the fpu,
+	 * allocate a new fp context and initialize it
+	 * with the current fp context state.
+	 *
+	 */
+	pcb = &u.u_pcb;
+
+	if (pcb->pcb_fpctxp) 
+	{
+	 	/* we are forking fpu context due to users fork() call.
+		 * At this time the fpu chip registers belong to the 
+		 * parent. First dump the registers to the fpu context.
+		 * then copy the context to the child's context.
+		 * 
+	 	 * Child runs first and therefore the fp_ctxp should
+		 * point to childs fp context. However, the child may not
+		 * started due to other errors during the rest of the fork.
+		 * therefore shutoff PSR_EF for the parent and this will be
+		 * copied to the child in fork(). THen make fp_ctxp 0.
+		 * This will ensure the child and parent have different 
+		 * fpu contexts. 
+		 */
+
+		fp_dumpregs((caddr_t)pcb->pcb_fpctxp);	
+		fp = fpu_ctxalloc();
+		*new_context = (int)fp;
+		bcopy((caddr_t)pcb->pcb_fpctxp, (caddr_t)fp, sizeof *fp);
+		u.u_ar0[PS] = u.u_ar0[PS] & ~PSR_EF;
+		fp_ctxp = 0;	/* current loaded context does not belong
+				 * to anyone.
+				 */
+	}
+	return (1);
+}
+
+fpu_ofile()
+{
+}
+
+/* ARGSUSED */
+fpu_newproc(nfp, new_context, childu)
+struct file *nfp;
+int new_context;
+struct user *childu;
+{
+	/*
+	 * initialize the fp context pointer in the new procs
+	 * uarea, it was allocated above in fpu_fork_context
+	 */
+	childu->u_pcb.pcb_fpctxp = (struct fpu *)new_context;
+}
+
+fpu_core(corep)
+struct core *corep;
+{
+	if (u.u_pcb.pcb_fpctxp)
+		bcopy((caddr_t)u.u_pcb.pcb_fpctxp, (caddr_t)&corep->c_fpu,
+			sizeof (struct fpu));
+}
+
+fpu_ptrace(req, p, ipc)
+enum ptracereq req;
+struct proc *p;
+struct ipc *ipc;
+{
+
+	switch (req) {
+	case PTRACE_GETFPREGS:
+		runchild(p);
+		if (copyout((caddr_t)&(ipc->ip_fpu), ipc->ip_addr,
+		    sizeof (struct fpu)) != 0) {
+			ipc->ip_error = 1;
+		}
+		break;
+
+	case PTRACE_SETFPREGS:
+		if (copyin(ipc->ip_addr, (caddr_t)&ipc->ip_fpu,
+		    sizeof (struct fpu)) != 0) {
+			ipc->ip_error = 1;
+		}
+		runchild(p);
+		break;
+	}
+}
+
+fpu_procxmt(req, ipc)
+enum ptracereq req;
+struct ipc *ipc;
+{
+	register struct pcb *pcb = &u.u_pcb;
+	extern int fpu_exists;
+	extern struct fpu *fpu_ctxalloc();
+
+	switch (req) {
+	case PTRACE_GETFPREGS:
+		if (pcb->pcb_fpctxp)
+			bcopy((caddr_t)pcb->pcb_fpctxp, (caddr_t)&ipc->ip_fpu,
+				sizeof (struct fpu));
+		break;
+
+	case PTRACE_SETFPREGS:
+		if (fpu_exists && pcb->pcb_fpctxp) {
+			register u_int i;
+			for (i = 0; i < 32; i++) {
+				_fp_write_pfreg((FPU_REGS_TYPE *)&ipc->ip_fpu.fpu_regs[i], i);
+			}
+			_fp_write_pfsr(&ipc->ip_fpu.fpu_fsr);
+		} else {
+			if (pcb->pcb_fpctxp == (struct fpu *) 0) {
+				pcb->pcb_fpctxp = fpu_ctxalloc();
+			}
+			bcopy((caddr_t)&ipc->ip_fpu, (caddr_t)pcb->pcb_fpctxp,
+				sizeof (struct fpu));
+			pcb->pcb_fpflags &= ~FP_UNINITIALIZED;
+			if (!fpu_exists)
+				pcb->pcb_fpflags |= FP_DISABLE;
+		}
+		break;
+	default:
+		return (-1);
+	}
+	return (1);
+}
+/*
+ * Handle floaing point traps generated by simulation/emulation.
+ */
+void
+fp_traps(pfpsd, ftt, rp)
+	fp_simd_type	*pfpsd;		/* Pointer to simulator data */
+	register enum ftt_type ftt;	/* trap type */
+	register struct regs *rp;	/* ptr to regs fro trap */
+{
+	extern void trap();
+	extern u_int beval;		/* beval is set in trap.c for 
+					   specific architectures  */
+
+	struct regs *saved_fptraprp = 0;
+
+	/*
+	 * If we take a user's exception in kernel mode, we want to trap
+	 * with the user's registers.  Clear fptraprp in case we don't
+	 * return from trap.
+	 */
+	saved_fptraprp = fptraprp;
+	if (fptraprp != 0) {
+		rp = fptraprp;
+		fptraprp = 0;
+	}
+
+	switch (ftt) {
+	case ftt_ieee:
+		trap(T_FP_EXCEPTION, rp, pfpsd->fp_trapaddr,
+		    pfpsd->fp_trapcode, 0);
+		break;
+	case ftt_fault:
+		trap(T_DATA_FAULT, rp, pfpsd->fp_trapaddr, beval, pfpsd->fp_traprw);
+		break;
+	case ftt_alignment:
+		trap(T_ALIGNMENT, rp, pfpsd->fp_trapaddr, 0, 0);
+		break;
+	case ftt_unimplemented:
+		trap(T_UNIMP_INSTR, rp, pfpsd->fp_trapaddr, 0, 0);
+		break;
+	default:
+		/*
+		 * We don't expect any of the other types here.
+		 */
+		panic("fp_traps: bad ftt");
+	}
+	fptraprp = saved_fptraprp;
+
+}
+
+/*
+ * floating point unit disabled:
+ * One of two possibilities
+ *	1. There is no fpu in the confguration. If so, emulate in SW.
+ * 	2. THere is a FPU in config., however, this is the first time the
+ *   	   process doing a fp op. If so, allocate a fpu context and 
+ *	   turn on the EF bit in the PSR and let the proc go.
+ */
+
+fp_is_disabled(rp)
+
+struct regs *rp;
+{
+     struct fpu *fp;
+     enum ftt_type ftt;
+     
+     if (u.u_pcb.pcb_fpctxp == 0) {
+	  fp = fpu_ctxalloc();	       /* allocate a fpu context */
+	  uunix->u_pcb.pcb_fpctxp = fp;
+     }
+     else 
+	fp = uunix->u_pcb.pcb_fpctxp;
+
+     fp_ctxp = fp;
+     
+     if (fpu_exists) {	/* there is a fpu, go ahead and enable the fpu */
+	  if (rp->r_psr&PSR_EF) {
+	       panic("fp_disabled: no FPU but EF bit set");
+	       /* NOT REACHED */
+	  }
+	  else  {	
+		/* turn on enable fpu bit in the PSR and let the proc go */
+		rp->r_psr |= PSR_EF;
+		fp_enable(fp);
+	  }
+     } else {		/* no fpu, emulate the instruction */
+	  fp_simd_type fpsd;
+	  
+	  flush_user_windows_to_stack();
+
+	  if (ftt = fp_emulator(&fpsd, (fp_inst_type *)rp->r_pc,
+				rp, (struct rwindow *)rp->r_sp,
+				(struct fpu *) &fp->fpu_regs[0]))
+	       fp_traps(&fpsd, ftt, rp);
+     }
+}
+
+
+/*
+ * Process the floating point queue
+ *
+ * Each entry in the floating point queue is processed in turn.
+ * If processing an entry results in an exception fp_traps() is called to
+ * handle the exception - this usually results in the generation of a signal
+ * to be delivered to the user. There are 2 possible outcomes to this (note
+ * that hardware generated signals cannot be held!):
+ *
+ *   1. If the signal is being ignored we continue to process the rest
+ *	of the entries in the queue.
+ *
+ *   2. If arrangements have been made for return to a user signal handler,
+ *	sendsig() will have copied the floating point queue onto the user's
+ *	signal stack and zero'ed the queue count in the u_pcb. Note that
+ *	this has the side effect of terminating fp_runq's processing loop.
+ *	We will re-run the floating point queue on return from the user
+ *	signal handler if necessary as part of normal setcontext processing.
+ */
+void
+fp_runq(rp)
+	register struct regs *rp;	/* ptr to regs for trap */
+{
+	register struct fpu *fp =	u.u_pcb.pcb_fpctxp;
+	register struct fq *fqp =	fp->fpu_q;
+	fp_simd_type			fpsd;
+	extern int 			fpu_exists;
+
+	/*
+	 * don't preempt while manipulating the queue
+	 */
+
+	while (fp->fpu_qcnt) {
+		enum ftt_type fptrap;
+
+		fptrap = fpu_simulator((fp_simd_type *)&fpsd,
+					(fp_inst_type *)fqp->FQu.fpq.addr,
+					(fsr_type *)&fp->fpu_fsr,
+					fqp->FQu.fpq.instr);
+		if (fptrap) {
+			/*
+			 * fpu_simulator uses the fp registers directly but it
+			 * uses the software copy of the fsr. We need to write
+			 * that back to fpu so that fpu's state is current for
+			 * ucontext.
+			 */
+			if (fpu_exists)
+				_fp_write_pfsr(&fp->fpu_fsr);
+
+			/* post signal */
+			fp_traps(&fpsd, fptrap, rp);
+
+			/*
+			 * Break from loop to allow signal to be sent.
+			 */
+			break;
+		}
+		fp->fpu_qcnt--;
+		fqp++;
+	}
+
+	/*
+	 * fpu_simulator uses the fp registers directly, so we have
+	 * to update the pcb copies to keep current, but it uses the
+	 * software copy of the fsr, so we write that back to fpu
+	 */
+	if (fpu_exists) {
+		register u_int i;
+
+		for (i = 0; i < 32; i++)
+			_fp_read_pfreg((FPU_REGS_TYPE *)&fp->fpu_regs[i], i);
+		_fp_write_pfsr((FPU_FSR_TYPE *)&fp->fpu_fsr);
+	}
+
+}
+

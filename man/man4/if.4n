@@ -1,0 +1,165 @@
+.\" @(#)if.4n 1.1 92/07/30 SMI;
+.TH IF 4N "9 October 1987"
+.SH NAME
+if \- general properties of network interfaces
+.SH DESCRIPTION
+.IX  "if device"  ""  "\fLif\fP \(em network interface general properties"  ""  PAGE START
+.LP
+Each network interface in a system corresponds to a
+path through which messages may be sent and received.  A network
+interface usually has a hardware device associated with it, though
+certain interfaces such as the loopback interface,
+.BR lo (4),
+do not.
+.LP
+At boot time, each interface with underlying hardware support
+makes itself known to the system during the autoconfiguration
+process.  Once the interface has acquired its address, it is
+expected to install a routing table entry so that messages can
+be routed through it.  Most interfaces require some part of
+their address specified with an
+.SB SIOCSIFADDR
+.SM IOCTL
+before they
+will allow traffic to flow through them.  On interfaces where
+the network-link layer address mapping is static, only the
+network number is taken from the ioctl; the remainder is found
+in a hardware specific manner.  On interfaces which provide
+dynamic network-link layer address mapping facilities (for example,
+10Mb/s Ethernets using
+.BR arp (4P)),
+the entire address specified in the ioctl is used.
+.LP
+The following
+.B ioctl
+calls may be used to manipulate network interfaces.  Unless
+specified otherwise, the request takes an
+.B ifreq
+structure as its parameter.  This structure has the form
+.RS
+.nf
+.ft B
+struct	ifreq {
+	char	ifr_name[16];		/* name of interface (e.g. "ec0") */
+	union {
+		struct	sockaddr ifru_addr;
+		struct	sockaddr ifru_dstaddr;
+		short	ifru_flags;
+	} ifr_ifru;
+#define	ifr_addr		ifr_ifru.ifru_addr	/* address */
+#define	ifr_dstaddr	ifr_ifru.ifru_dstaddr	/* other end of p-to-p link */
+#define	ifr_flags		ifr_ifru.ifru_flags	/* flags */
+};
+.ft R
+.fi
+.RE
+.TP 20
+.SB SIOCSIFADDR
+.IX  "ioctls for sockets"  "SIOCSIFADDR"  "\fLioctl\fP's for sockets"  "\fLSIOCSIFADDR\fP \(em set ifnet address"
+.IX  "SIOCSIFADDR set ifnet address"  ""  "\fLSIOCSIFADDR\fP \(em set ifnet address"
+.IX  set "ifnet address ioctl \(em \fLSIOCSIFADDR\fP"
+.IX  "network interface ioctls"  SIOCSIFADDR  "network interface \fLioctl\fP's" "\fLSIOCSIFADDR\fP \(em set ifnet address"
+Set interface address.  Following the address
+assignment, the ``initialization'' routine for
+the interface is called.
+.TP
+.SB SIOCGIFADDR
+.IX  "ioctls for sockets"  "SIOCGIFADDR"  "\fLioctl\fP's for sockets"  "\fLSIOCGIFADDR\fP \(em get ifnet address"
+.IX  "SIOCGIFADDR get ifnet address"  ""  "\fLSIOCGIFADDR\fP \(em get ifnet address"
+.IX  get "ifnet address \fLioctl\fP \(em \fLSIOCGIFADDR\fP"
+.IX  "network interface ioctls"  SIOCGIFADDR  "network interface \fLioctl\fP's" "\fLSIOCGIFADDR\fP \(em get ifnet address"
+Get interface address.
+.TP
+.SB SIOCSIFDSTADDR
+.IX  "ioctls for sockets"  "SIOCSIFDSTADDR"  "\fLioctl\fP's for sockets"  "\fLSIOCSIFDSTADDR\fP \(em set p-p address"
+.IX  "SIOCSIFDSTADDR set p-p address"  ""  "\fLSIOCSIFDSTADDR\fP \(em set p-p address"
+.IX  set "p-p address ioctl \(em \fLSIOCSIFDSTADDR\fP"
+.IX  "network interface ioctls"  SIOCSIFDSTADDR  "network interface \fLioctl\fP's" "\fLSIOCSIFDSTADDR\fP \(em set p-p address"
+Set point to point address for interface.
+.TP
+.SB SIOCGIFDSTADDR
+.IX  "ioctls for sockets"  "SIOCGIFDSTADDR"  "\fLioctl\fP's for sockets"  "\fLSIOCGIFDSTADDR\fP \(em get p-p address"
+.IX  "SIOCGIFDSTADDR get p-p address"  ""  "\fLSIOCGIFDSTADDR\fP \(em get p-p address"
+.IX  get "p-p address \fLioctl\fP \(em \fLSIOCGIFDSTADDR\fP"
+.IX  "network interface ioctls"  SIOCGIFDSTADDR  "network interface \fLioctl\fP's" "\fLSIOCGIFDSTADDR\fP \(em get p-p address"
+Get point to point address for interface.
+.TP
+.SB SIOCSIFFLAGS
+.IX  "ioctls for sockets"  "SIOCSIFFLAGS"  "\fLioctl\fP's for sockets"  "\fLSIOCSIFFLAGS\fP \(em set ifnet flags"
+.IX  "SIOCSIFFLAGS set ifnet flags"  ""  "\fLSIOCSIFFLAGS\fP \(em set ifnet flags"
+.IX  set "ifnet flags ioctl \(em \fLSIOCSIFFLAGS\fP"
+.IX  "network interface ioctls"  SIOCSIFFLAGS  "network interface \fLioctl\fP's" "\fLSIOCSIFFLAGS\fP \(em set ifnet flags"
+Set interface flags field.  If the interface is marked down,
+any processes currently routing packets through the interface
+are notified.
+.TP
+.SB SIOCGIFFLAGS
+.IX  "ioctls for sockets"  "SIOCGIFFLAGS"  "\fLioctl\fP's for sockets"  "\fLSIOCGIFFLAGS\fP \(em get ifnet flags"
+.IX  "SIOCGIFFLAGS get ifnet flags"  ""  "\fLSIOCGIFFLAGS\fP \(em get ifnet flags"
+.IX  get "ifnet flags \fLioctl\fP \(em \fLSIOCGIFFLAGS\fP"
+.IX  "network interface ioctls"  SIOCGIFFLAGS  "network interface \fLioctl\fP's" "\fLSIOCGIFFLAGS\fP \(em get ifnet flags"
+Get interface flags.
+.TP
+.SB SIOCGIFCONF
+.IX  "ioctls for sockets"  "SIOCGIFCONF"  "\fLioctl\fP's for sockets"  "\fLSIOCGIFCONF\fP \(em get ifnet list"
+.IX  "SIOCGIFCONF get ifnet list"  ""  "\fLSIOCGIFCONF\fP \(em get ifnet list"
+.IX  get "ifnet list \fLioctl\fP \(em \fLSIOCGIFCONF\fP"
+.IX  "network interface ioctls"  SIOCGIFCONF  "network interface \fLioctl\fP's" "\fLSIOCGIFCONF\fP \(em get ifnet list"
+Get interface configuration list.  This request takes an
+.B ifconf
+structure (see below) as a value-result parameter.  The
+.B ifc_len
+field should be initially set to the size of the buffer
+pointed to by
+.BR ifc_buf .
+On return it will contain the length, in bytes, of the
+configuration list.
+.br
+.ne 20
+.RS
+.ft B
+.nf
+/*
+* Structure used in \s-1SIOCGIFCONF\s0 request.
+* Used to retrieve interface configuration
+* for machine (useful for programs which
+* must know all networks accessible).
+*/
+struct	ifconf {
+	int	ifc_len;		/* size of associated buffer */
+	union {
+		caddr_t	ifcu_buf;
+		struct	ifreq *ifcu_req;
+	} ifc_ifcu;
+#define	ifc_buf	ifc_ifcu.ifcu_buf	/* buffer address */
+#define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
+};
+.ft R
+.fi
+.RE
+.TP
+.SB SIOCADDMULTI
+.IX  "ioctls for sockets"  "SIOCADDMULTI"  "\fLioctl\fP's for sockets"  "\fLSIOCADDMULTI\fP \(em set m/c address"
+.IX  "SIOCADDMULTI set m/c address"  ""  "\fLSIOCADDMULTI\fP \(em set m/c address"
+.IX  set "m/c address ioctl \(em \fLSIOCADDMULTI\fP"
+.IX  "network interface ioctls"  SIOCADDMULTI  "network interface \fLioctl\fP's" "\fLSIOCADDMULTI\fP \(em set m/c address"
+Enable a multicast address for the interface.  A maximum of 64 multicast
+addresses may be enabled for any given interface.
+.TP
+.SB SIOCDELMULTI
+.IX  "ioctls for sockets"  "SIOCDELMULTI"  "\fLioctl\fP's for sockets"  "\fLSIOCDELMULTI\fP \(em delete m/c address"
+.IX  "SIOCDELMULTI delete m/c address"  ""  "\fLSIOCDELMULTI\fP \(em delete m/c address"
+.IX  delete "m/c address ioctl \(em \fLSIOCDELMULTI\fP"
+.IX  "network interface ioctls"  SIOCDELMULTI  "network interface \fLioctl\fP's" "\fLSIOCDELMULTI\fP \(em delete m/c address"
+Disable a previously set multicast address.
+.TP
+.SB SIOCSPROMISC
+Toggle promiscuous mode.
+.IX  "ioctls for sockets"  "SIOCSPROMISC"  "\fLioctl\fP's for sockets"  "\fLSIOCSPROMISC\fP \(em toggle promiscuous mode"
+.IX  "SIOCSPROMISC toggle promiscuous"  ""  "\fLSIOCSPROMISC\fP \(em toggle promiscuous mode"
+.IX  "toggle promiscuous mode ioctl \(em \fLSIOCSPROMISC\fP"
+.IX  "network interface ioctls"  SIOCSPROMISC  "network interface \fLioctl\fP's" "\fLSIOCSPROMISC\fP toggle promiscuous mode"
+.IX  "if device"  ""  "\fLif\fP \(em network interface general properties"  ""  PAGE END
+.SH "SEE ALSO
+.BR arp (4P),
+.BR lo (4)

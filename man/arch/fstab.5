@@ -1,0 +1,269 @@
+.\" @(#)fstab.5 1.1 92/07/30 SMI;
+.TH FSTAB 5 "23 September 1985"
+.SH NAME
+fstab \- static information about filesystems
+.SH SYNOPSIS
+.B #include <mntent.h>
+.\".SH NOTE    
+.\"This file is obsolete and exists only for compatability.
+.\"New programs should use
+.\".IR mntent (5)
+.\"instead.     
+.\"The routines for accessing
+.\".I /etc/fstab
+.\"are now in   
+.\".IR getmntent (3).
+.SH DESCRIPTION
+.IX  "fstab file"  ""  "\fLfstab\fP \(em fileystem static information"
+.IX  "fileystem static information"  ""  "fileystem static information \(em \fLfstab\fP"
+The file
+.I /etc/fstab
+describes the filesystems and swapping partitions used by the local machine.
+The system administrator can modify it with a text editor.
+It is read by commands that mount, unmount, dump, restore,
+and check the consistency of filesystems;
+also by the system when providing swap space.
+The file consists of a number of lines of the form:
+.nf
+.sp .5
+	\fIfsname dir type opts freq passno\fR
+.sp .5
+for example:
+.sp .5v
+	/dev/xy0a / 4.2 rw,noquota 1 2
+.sp .5v
+.fi
+.LP
+The entries from this file are accessed using the routines in
+.IR getmntent (3),
+which returns a structure of the following form:
+.LP
+.RS
+.ta \w'#define'u +\w'char\0\0'u +\w'*mnt_fsname;\0\0'u
+.nf
+struct mntent {
+	char	*mnt_fsname;	/* filesystem name */
+	char	*mnt_dir;	/* filesystem path prefix */
+	char	*mnt_type;	/* 4.2, nfs, swap, or ignore */
+	char	*mnt_opts;	/* rw, ro, noquota, quota, hard, soft */
+	int	mnt_freq;	/* dump frequency, in days */
+	int	mnt_passno;	/* pass number on parallel fsck */
+};
+.fi
+.RE
+.LP
+Fields are separated by white space;
+a `#' as the first non-white character indicates a comment.
+.LP
+The 
+.I mnt_dir
+fields is the full path name of the directory to be mounted on.
+.LP
+The
+.I mnt_type
+field determines how the 
+.I mnt_fsname
+and 
+.I mnt_opts
+fields will be interpreted.
+Here is a list of the filesystem types currently supported,
+and the way each of them interprets these fields:
+.ta \w'mnt_fsname\0\0'u
+.TP 10
+.B 4.2
+\fImnt_fsname\fR	Must be a block special device.
+.\".br
+.\"\fImnt_opts\fR	valid options are:
+.\".BI ro , 
+.\".BI rw , 
+.\".BI quota , 
+.\"and
+.\".BI noquota .
+.TP 10
+.B nfs
+\fImnt_fsname\fR	the path on the server of the directory to be served.
+.\".br
+.\"\fImnt_opts\fR	valid options are:
+.\".BI ro , 
+.\".BI rw , 
+.\".BI quota , 
+.\".BI noquota , 
+.\".BI hard , 
+.\"and
+.\".BI soft .
+.TP 10
+.B swap
+\fImnt_fsname\fR	must be a block special device swap partition.
+.\".br
+.\"\fImnt_opts\fR	are ignored.
+.LP
+If the
+.I mnt_type
+is specified as
+.B ignore
+then the entry is ignored.
+This is useful to show disk partitions not currently used.
+.LP
+The 
+.I mnt_opts
+field contains a list of comma-separated option words.  Some
+.I mnt_opts
+are valid for all filesystem types, while others apply to a
+specific type only:
+.sp .5
+.IP 
+.I mnt_opts
+valid on 
+.I all 
+file systems (the default is
+.BR rw,suid ):
+.RS
+.IP \fBrw\fR .75i
+read/write.
+.IP \fBro\fR
+read-only.
+.IP \fBsuid\fR
+set-uid execution allowed.
+.IP \fBnosuid\fR
+set-uid execution not allowed.
+.RE
+.sp .5
+.IP
+.I mnt_opts 
+specific to
+.B 4.2
+file systems (the default is
+.BR noquota ).
+.RS
+.IP \fBquota\fR .75i
+usage limits enforced.
+.IP \fBnoquota\fR
+usage limits not enforced.
+.RE
+.sp .5
+.IP
+.I mnt_opts
+specific to 
+.B nfs
+(NFS) file systems (the defaults are:
+.sp .5
+.B \0\0\0\0\0fg,retry=1,timeo=7,retrans=4,port=NFS_PORT,hard\fR
+.sp .5
+with defaults for 
+.I rsize 
+and 
+.I wsize 
+set by the kernel):
+.RS
+.IP \fBbg\fR 1i
+if the first attempt fails, retry in the background.
+.IP \fBfg\fR
+retry in foreground.
+.IP \fBretry=\fIn\fR
+set number of failure retries to 
+.I n.
+.IP \fBrsize=\fIn\fR
+set read buffer size to 
+.I n 
+bytes.
+.IP \fBwsize=\fIn\fR
+set write buffer size to 
+.I 
+n bytes.
+.IP \fBtimeo=\fIn\fR
+set NFS timeout to 
+.I n 
+tenths of a second.
+.IP \fBretrans=\fIn\fR
+set number of NFS retransmissions to 
+.I n.
+.IP \fBport=\fIn\fR
+set server IP port number to 
+.I n.
+.IP \fBsoft\fR
+return error if server doesn't respond.
+.IP \fBhard\fR
+retry request until server responds.
+.RE
+.IP
+The
+.B bg
+option causes 
+.I mount
+to run in the background if the server's
+.IR mountd (8)
+does not respond.  
+.I mount 
+attempts each request
+.BI retry= n
+times before giving up.  Once the filesystem is mounted,
+each 
+.B nfs 
+request made in the kernel waits
+.BI timeo= n
+tenths of a second for a response.  If no response arrives, the
+time-out is multiplied by 
+.B 2 
+and the request is retransmitted.  When
+.BI retrans= n
+retransmissions have been sent with no reply a
+.B soft
+mounted filesystem returns an error on the request and a
+.B hard
+mounted filesystem retries the request.
+The number of bytes in a read or write request can be set with the
+.B rsize
+and
+.B wsize
+options.
+.LP
+The field
+.I mnt_freq
+indicates how often each partition should be dumped by the
+.IR dump (8)
+command (and triggers that command's
+.B w
+option, which determines what filesystems should be dumped).
+Most systems set the
+.I mnt_freq
+field to 1, indicating that filesystems are dumped each day.
+.LP
+The final field,
+.IR mnt_passno ,
+is used by the consistency checking program
+.IR fsck (8)
+to allow overlapped checking of filesystems during a reboot.
+All filesystems with
+.I mnt_passno
+of 
+.B 1 
+are checked first simultaneously, then all filesystems with
+.I mnt_passno
+of 
+.BR 2 , 
+and so on.  It is usual to make the
+.I mnt_passno
+of the root filesystem have the value 
+.BR 1 ,
+and then check one filesystem on each available disk drive
+in each subsequent pass, until all filesystem partitions are checked.
+.LP
+The
+.I /etc/fstab
+file is read only by programs and never written;
+the system administrator must maintain it manually.
+The order of records in
+.I /etc/fstab
+is important because
+.I fsck,
+.I mount,
+and
+.I umount
+process the file sequentially;
+filesystems must appear 
+.I after 
+filesystems they are mounted within.
+.SH FILES
+/etc/fstab
+.SH SEE ALSO
+getmntent(3), fsck(8), mount(8), quotacheck(8), quotaon(8)

@@ -1,0 +1,167 @@
+.TH MV 1 "23 September 1985"
+.\" @(#)mv.1 1.1 92/07/30 SMI;
+.SH NAME
+mv \- move or rename files
+.SH SYNOPSIS
+.B mv
+[
+.B \-
+]
+[
+.B \-f\|i
+]
+.I filename1
+.I filename2
+.br
+.B mv
+[
+.B \-
+]
+[
+.B \-f\|i
+]
+.I directory1
+.I directory2
+.br
+.B mv
+[
+.B \-
+]
+[
+.B \-f\|i
+]
+.I filename
+\&.\|.\|.
+.I directory
+.SH DESCRIPTION
+.IX  "mv command"  ""  "\fLmv\fP \(em move or rename files or directory"
+.IX  "move file"  ""  "move file \(em \fLmv\fP"
+.IX  "move directory"  ""  "move directory \(em \fLmv\fP"
+.IX  "rename file"  ""  "rename file \(em \fLmv\fP"
+.IX  "rename directory"  ""  "rename directory \(em \fLmv\fP"
+.IX  "change"  "name of file or directory \(em \fLmv\fP"
+.IX  file  rename  ""  "rename \(em \fLmv\fP"
+.IX  directory  rename  ""  "rename \(em \fLmv\fP"
+.IX  file  move  ""  "move \(em \fLmv\fP"
+.IX  directory  move  ""  "move \(em \fLmv\fP"
+.IX  file  "change name of"  ""  "change name of \(em \fLmv\fP"
+.IX  directory  "change name of"  ""  "change name of \(em \fLmv\fP"
+.LP
+.B mv
+moves files and directories around in the file
+system.  A side effect of
+.B mv
+is to rename a file or directory.  The
+three major forms of
+.B mv
+are shown in the synopsis above.
+.LP
+The first form of
+.B mv
+moves (changes the name of)
+.I filename1
+to
+.IR filename2 .
+If
+.I filename2
+already exists, it is removed before
+.I filename1
+is moved.  If
+\fIfilename2\fP has a mode which forbids writing,
+.B mv
+prints the mode (see
+.BR chmod (2V))
+and reads the standard input to obtain a line;
+if the line begins with
+.BR y ,
+the move takes place, otherwise
+.B mv
+exits.
+.LP
+The second form of
+.B mv
+moves (changes the name of)
+.I directory1
+to
+.IR directory2 ,
+.I only
+if
+.I directory2
+does not already exist \(em if it
+does, the third form applies.
+.LP
+The third form of
+.B mv
+moves one or more
+.IR filename s
+(may also be directories)
+with their original names, into the last
+.I directory
+in the list.
+.LP
+.B mv
+refuses to move a file or directory onto
+itself.
+.SH OPTIONS
+.TP
+.B \-
+Interpret all the following arguments to
+.B mv
+as file names.  This allows file names starting with minus.
+.TP
+.B \-f
+Force. Override any mode restrictions and the
+.B \-i
+option.  The
+.B \-f
+option also suppresses any warning messages about modes
+which would potentially restrict overwriting.
+.TP
+.B \-i
+Interactive mode.
+.B mv
+displays the name of the file or directory
+followed by a question mark whenever a move
+would replace an existing file
+or directory.  If you type
+a line starting with
+.BR y ,
+.B mv
+moves the specified file or
+directory, otherwise
+.B mv
+does nothing with that file or directory.
+.SH "SEE ALSO"
+.BR cp (1),
+.BR ln (1V),
+.BR chmod (2V),
+.BR rename (2V)
+.SH DIAGNOSTICS
+.TP 12
+.BI "mv: " pathname ": rename: Permission denied"
+Attempted to move 
+.I pathname
+into a directory that did not have write permission.
+.SH BUGS
+.LP
+If
+.I filename1
+and
+.I filename2
+are on different file systems, then
+.B mv
+must copy the file and delete the original.
+In this case the owner name becomes that
+of the copying process and any
+linking relationship with other files is lost.
+.LP
+Modification times may be different than expected when
+.B mv
+must copy the file's data, rather than simply updating a
+directory entry.
+.LP
+.B mv
+will not move a directory from one file system to another.
+Use
+.BR cp (1)
+instead.

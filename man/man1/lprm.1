@@ -1,0 +1,127 @@
+.\" @(#)lprm.1 1.1 92/07/30 SMI; from UCB 4.3 BSD 6.1
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH LPRM 1 "7 September 1988"
+.UC 5
+.SH NAME
+lprm \- remove jobs from the printer queue
+.SH SYNOPSIS
+.B lprm
+[
+.BI \-P printer
+] [
+.B \-
+] [
+\fIjob #\fR .\|.\|.
+] [
+.I username
+\&.\|.\|.
+]
+.SH DESCRIPTION
+.IX  "lprm command"  ""  "\fLlprm\fP \(em remove print jobs"
+.IX  remove "print jobs \(em \fLlprm\fP"
+.IX  delete "print jobs \(em \fLlprm\fP"
+.IX  printer  "remove jobs from queue"  ""  "remove jobs from queue \(em \fLlprm\fP"
+.IX  queue  "remove jobs from printer"  ""  "remove jobs from printer \(em \fLlprm\fP"
+.B lprm
+removes a job or jobs from a printer's spooling queue.
+Since the spool directory is protected from users, using
+.B lprm
+is normally the only method by which a user can remove a job.
+.LP
+Without any arguments,
+.BR lprm
+deletes the job that is currently active, provided that the user who
+invoked
+.BR lprm
+owns that job.
+.LP
+When the super-user specifies a
+.IR username ,
+.B lprm
+removes all jobs belonging to that user.
+.LP
+You can remove a specific job by supplying its job number as an
+argument, which you can obtain using
+.BR lpq (1).
+For example:
+.LP
+.nf
+.RS
+.ta\w'active'u+2n +\w'wendy'u+2n +\w'385'u+2n +\w'standard input'u+16n
+.B example% lpq  \-Phost
+.B host is ready and printing
+.B Rank	Owner	Job	Files	Total Size
+.B active	wendy	385	standard input	35501 bytes
+.B example% lprm \-Phost 385
+.in -0.5i
+.fi
+.RE
+.LP
+.B lprm
+reports the names of any files it removes, and is
+silent if there are no applicable jobs to remove.
+.LP
+.B lprm
+kills the active printer daemon, if necessary, before removing
+spooled jobs; it restarts the daemon when through.
+.SH OPTIONS
+.TP 15
+.BI \-P printer
+Specify the queue associated with a specific
+printer.  Otherwise the value of the
+.SB PRINTER
+variable in the environment is used.  If this variable is unset,
+the queue for the default printer is used.
+.TP
+.B \-
+Remove all jobs owned by you.  If invoked by the super-user, all
+jobs in the spool are removed.  (Job ownership is determined by the
+user's login name and host name on the machine where the
+.B lpr
+command was invoked).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/printcap
+printer characteristics file
+.TP
+.B /var/spool/*
+spooling directories
+.TP
+.B /var/spool/l*/lock
+lock file used to obtain the pid of the current
+daemon and the job number of the currently active job
+.PD
+.SH "SEE ALSO"
+.BR lpr (1),
+.BR lpq (1),
+.BR lpd (8)
+.SH DIAGNOSTICS
+.TP
+.B lprm: \fIprinter\fP\|: cannot restart printer daemon
+The connection to
+.B lpd
+on the local machine failed.
+This usually means the printer server started at
+boot time has died or is hung.  If it is hung, the master
+.BR lpd (8)
+daemon may have to be killed and a new one started.
+.SH BUGS
+Since race conditions are possible when updating the lock file,
+an active job may be incorrectly identified for removal by an
+.B lprm
+command issued with no arguments.  During the interval between an
+.BR lpq (1)
+command and the execution of
+.BR lprm ,
+the next job in line may have become active; that job
+may be removed unintentionally if it is owned by you.
+To avoid this, supply
+.B lprm
+with the job number to remove when a critical job that
+you own is next in line.
+.LP
+Only the super-user can remove print jobs submitted from another host.

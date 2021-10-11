@@ -1,0 +1,133 @@
+.\" @(#)iostat.8 1.1 92/07/30 SMI;
+.TH IOSTAT 8 "7 October 1990"
+.SH NAME
+iostat \- report I/O statistics
+.SH SYNOPSIS
+.B iostat
+[
+.B \-cdDIt
+]
+[
+.BI "\-l " n
+]
+[
+.IR disk " .\|.\|."
+]
+[
+.I interval
+[
+.I count
+] ]
+.SH DESCRIPTION
+.IX  "iostat command"  ""  "\fLiostat\fP \(em report I/O statistics"
+.IX  statistics  "I/O"  ""  "I/O \(em \fLiostat\fP"
+.IX  "I/O statistics report iostat"  ""  "I/O statistics report \(em \fLiostat\fP"
+.LP
+.B iostat
+can iteratively report
+terminal and disk I/O activity, as well as
+.SM CPU
+utilization.
+The first report is for  all time since a reboot and each
+subsequent report is for the prior interval only.
+.LP
+In order to compute this information,
+the kernel maintains a number of counters.
+For each disk, seeks and data transfer completions
+and number of words transferred are counted;
+for terminals collectively, the number
+of input and output characters are counted.
+Also, at each clock tick, the state of each disk is examined
+and a tally is made if the disk is active.
+The kernel also provides approximate
+transfer rates of the devices.
+.SH OPTIONS
+.LP
+.BR iostat 's
+activity class options default to
+.B tdc
+(terminal, disk, and
+.SM CPU\s0).
+If any activity class options are specified,
+the default is completely overridden.  Therefore, if only
+.B \-d
+is specified, neither terminal nor
+.SM CPU
+statistics will be reported.
+The last disk option specified
+(either
+.B \-d
+or
+.BR \-D )
+is the only one that is used.
+.TP
+.B \-c
+Report the percentage of time the system has
+spent in user mode, in user mode running
+low priority processes,
+see
+.BR nice (1),
+in system mode, and idling.
+.TP
+.B \-d
+For each disk, report the number of kilobytes transferred per second,
+the number of transfers per second, and
+the milliseconds per average seek (see
+.SM BUGS
+below).
+.TP
+.B \-D
+For each disk, report the reads per second, writes per second,
+and percentage disk utilization.
+.TP
+.B \-I
+Report the counts in each interval,
+rather than reporting rates.
+.TP
+.B \-t
+Report the number of characters
+read and written to terminals.
+.TP
+.BI "\-l " n
+Limit the number of disks included in the report to
+.IR n ;
+the disk limit defaults to 4.  Note: disks explicitly
+requested (see 
+.I disk
+below) are not subject to this disk limit.
+.TP
+.I disk
+Explicitly specify the disks to be reported; in addition
+to any explicit disks, any active disks up to
+the disk limit (see
+.B \-l
+above) will also be reported.
+.TP
+.I interval
+Report once each
+.I interval
+seconds.
+.TP
+.I count
+Only print
+.I count
+reports.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/kmem
+.TP
+.B /vmunix
+.PD
+.SH SEE ALSO
+.BR vmstat (8)
+.SH BUGS
+.LP
+Milliseconds per average seek is an approximation
+based on the disk (not the controller) transfer rate.
+Therefore, the seek time will be over-estimated in systems
+with slower controllers.
+.LP
+.B iostat
+only provides statistics on the first ten
+disk drives, all others are ignored.

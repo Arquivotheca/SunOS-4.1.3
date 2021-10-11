@@ -1,0 +1,100 @@
+.\" @(#)realpath.3 1.1 92/07/30 SMI;
+.TH REALPATH 3  "21 January 1990"
+.SH NAME
+realpath \- return the canonicalized absolute pathname
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/param.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *realpath(path, resolved_path)
+char *path;
+char resolved_path[\s-1MAXPATHLEN\s0];
+.ft
+.fi
+.SH DESCRIPTION
+.IX "realpath()" "" "\fLrealpath()\fP \(em return absolute pathname"
+.LP
+.B realpath(\|)
+expands all symbolic links and resolves references to '/./', '/.\|./'
+and extra '/' characters in the null terminated string named by
+.I path
+and stores the canonicalized absolute pathname in the buffer named by
+.IR resolved_path .
+The resulting path will have no symbolic links components, nor
+any '/./' or '/.\|./' components.
+.SH RETURN VALUES
+.LP
+.B realpath(\|)
+returns
+a pointer to the
+.I resolved_path
+on success.
+On failure,
+it returns
+.SM NULL\s0,
+sets
+.B errno
+to indicate the error,
+and places in
+.I resolved_path
+the absolute pathname of the
+.I path
+component which could not be resolved.
+.SH ERRORS
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.SM EFAULT
+.I resolved_path
+extends outside the process's allocated address space.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM EINVAL
+.I path
+or
+.I resolved_path
+was
+.SM NULL\s0.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The named file does not exist.
+.SH SEE ALSO
+.BR readlink (2),
+.BR getwd (3)
+.SH WARNINGS
+.LP
+It indirectly invokes the
+.BR readlink(2)
+system call and
+.BR getwd(3)
+library call
+(for relative path names), and hence inherits the possibility of hanging due
+to inaccessible file system resources.

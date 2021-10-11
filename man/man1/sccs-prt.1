@@ -1,0 +1,274 @@
+.\" @(#)sccs-prt.1 1.1 92/07/30 SMI;
+.TH SCCS-PRT 1 "30 June 1988"
+.SH NAME
+sccs-prt, prt \- display delta table information from an SCCS file
+.SH SYNOPSIS
+.B /usr/sccs/prt
+.RB [ "\-abdefistu" ]
+[
+.BI \-c date-time
+] [
+.BI \-r date-time
+] [
+.BI \-y sid
+]
+.I s.filename .\|.\|.
+.SH DESCRIPTION
+.IX "prt command" "" "\fLprt\fP \(em display SCCS history"
+.IX "SCCS commands" "prt command" "" "\fLprt\fP \(em display SCCS history"
+.LP
+.B prt
+prints selected portions of an
+.SM SCCS
+file.  By default, it prints the delta table (version log).
+.LP
+If a directory name is used in place of the
+.IR s.filename
+argument, the
+.B prt
+command applies to all
+.BR s. files
+in that directory.
+Unreadable
+.BR s. files
+produce an error; processing continues with the next file (if
+any).
+The
+use of
+.RB ` \- '
+as the
+.I s.filename
+argument indicates that the names of files are to be read from
+the
+standard input, one
+.BR s. file
+per line.
+.SH OPTIONS
+.LP
+If any option other than
+.BR \-y ,
+.BR \-c ,
+or
+.B \-r
+is supplied, the name of each file being processed (preceded by one
+.SM NEWLINE
+and followed by two
+.SM NEWLINE
+characters) appears above its contents.
+.LP
+If none of the
+.BR \-u ,
+.BR \-f ,
+.BR \-t ,
+or
+.B \-b
+options are used,
+.B \-d
+is assumed.
+.BR \-s ,
+.BR \-i
+are mutually exclusive, as are
+.B \-c
+and
+.BR \-r .
+.TP
+.B \-a
+Display log entries for all deltas, including those marked as removed.
+.TP
+.B \-b
+Print the body of the
+.BR s. file.
+.TP
+.B \-d
+Print delta table entries.  This is the default.
+.TP
+.B \-e
+Everything.  This option implies
+.BR \-d ,
+.BR \-i ,
+.BR \-u ,
+.BR \-f ,
+and
+.BR \-t .
+.TP
+.B \-f
+Print the flags of each named
+.BR s. file.
+.TP
+.B \-i
+Print the serial numbers of included,
+excluded, and ignored deltas.
+.TP
+.B \-s
+Print only the first line of the delta table entries;
+that is, only up to the statistics.
+.TP
+.B \-t
+Print the descriptive text contained in the
+.BR s. file.
+.TP
+.B \-u
+Print the user-names and/or numerical group
+.SM ID\s0s
+of users allowed to make deltas.
+.TP
+.BI \-c date-time
+Exclude delta table entries
+that are specified cutoff date and time.
+Each entry is printed as a single line, preceded by the name of the
+.SM SCCS
+file.  This format (also produced by
+.B \-r ,
+and
+.BR \-y  )
+makes it easy to sort multiple delta tables in chronological order.
+When both
+.B \-y
+and
+.BR \-c ,
+or
+.B \-y
+and
+.B \-r
+are supplied,
+.B prt
+stops printing when the first of the two conditions is met.
+.TP
+.BI \-r date-time
+Exclude delta table entries
+that are newer than the specified cutoff date and time.
+.TP
+.BI \-y sid
+Exclude delta table entries made prior to the
+.SM SID
+specified.  If no delta in the table has the specified
+\s-1SID\s0,
+the entire table is printed.  If no
+.SM SID
+is specified, the most recent delta is printed.
+.SH USAGE
+.SS Output Format
+.LP
+The following format is used to print those portions of the
+.BR s. file
+that are specified by the various options.
+.RS
+.PD 0v
+.TP 3
+\(bu
+.SM NEWLINE
+.TP
+\(bu
+Type of delta
+.RB ( D
+or
+\fBR\fP)
+.TP
+\(bu
+.SM SPACE\s0
+.TP
+\(bu
+.SM SCCS
+delta 
+.SM ID
+(\s-1SID\s0)
+.TP
+\(bu
+.SM TAB\s0
+.TP
+\(bu
+Date and time of creation in the form:
+.IB yy / mm / dd
+.IB hh / mm / ss
+.TP
+\(bu
+.SM SPACE\s0
+.TP
+\(bu
+Username the delta's creator
+.TP
+\(bu
+.SM TAB\s0
+.TP
+\(bu
+Serial number of the delta
+.TP
+\(bu
+.SM SPACE\s0
+.TP
+\(bu
+Predecessor delta's serial number
+.TP
+\(bu
+.SM TAB\s0
+.TP
+\(bu
+Line-by-line change statistics in the form:
+.IB inserted / deleted / unchanged
+.TP
+\(bu
+.SM NEWLINE\s0
+.TP
+\(bu
+List of included deltas, followed by a
+.SM NEWLINE
+(only if there were any such deltas and the
+.B \-i
+options was used)
+.TP
+\(bu
+List of excluded deltas, followed by a
+.SM NEWLINE
+(only if there were any such deltas and the
+.B \-i
+options was used)
+.TP
+\(bu
+List of ignored deltas, followed by a
+.SM NEWLINE
+(only if there were any such deltas and the
+.B \-i
+options was used)
+.TP
+\(bu
+List of
+modification requests
+(\s-1MR\0s), followed by a
+.SM NEWLINE
+(only if any
+.SM MR
+numbers were supplied).
+.TP
+\(bu
+Lines of the delta commentary (if any), followed by a
+.SM NEWLINE\s0.
+.PD
+.RE
+.SH EXAMPLES
+The command:
+.IP
+.B /usr/sccs/prt \-y program.c
+.LP
+produces a one-line display of the delta table entry for the most
+recent version:
+.IP
+.BR "s.program.c:  D 1.6   88/07/06 21:39:39 username   5 4 00159/00080/00636" " .\|.\|.
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-cdc (1),
+.BR sccs-delta (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-sact (1),
+.BR sccs-sccsdiff (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH DIAGNOSTICS
+Use the
+.SM SCCS
+.B help
+command for explanations
+.RB ( sccs-help (1)).

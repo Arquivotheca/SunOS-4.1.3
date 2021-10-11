@@ -1,0 +1,768 @@
+.\" @(#)cpp.1 1.1 92/07/30 SMI; from S5R3
+.TH CPP 1 "25 January 1988"
+.SH NAME
+cpp \- the C language preprocessor
+.SH SYNOPSIS
+.B /usr/lib/cpp 
+[
+.B \-BCHMpPRT
+] [
+.B \-undef
+] [
+.BI \-D name
+]
+.if n .ti +5
+[
+.BI \-D name = def
+] [
+.BI \-I directory
+] [
+.BI \-U name
+]
+.if n .ti +5
+.if t .ti +.5i
+[
+.BI \-Y directory
+] [
+.I input-file
+[
+.I output-file
+] ]
+.SH DESCRIPTION
+.IX "compiler preprocessors" cpp "" "\fLcpp\fR \(em C preprocessor"
+.IX  cpp  ""  "\fLcpp\fP \(em C preprocessor"
+.IX  "programming languages"  "cpp command"  ""  "\fLcpp\fP \(em C preprocessor"
+.IX  "languages"  "cpp command"  ""  "\fLcpp\fP \(em C preprocessor"
+.IX  "C programming language"  "cpp command"  ""  "\fLcpp\fP \(em C preprocessor"
+.LP
+.B cpp
+is the C language preprocessor.
+It is invoked as the first pass of
+any C compilation started with the
+.BR cc (1V)
+command; however,
+.B cpp
+can also be used as a first-pass preprocessor for other Sun compilers.
+.LP
+Although 
+.B cpp
+can be used as a macro processor, this is not normally
+recommended, as its output is geared toward that which would be
+acceptable as input to a compiler's second pass.
+Thus, the preferred way to invoke
+.B cpp
+is through the 
+.BR cc (1V)
+command, or some other compilation command.
+For general-purpose macro-processing, see
+.BR m4 (1V),
+and the chapter on 
+.B m4
+in
+.TX PUL .
+.LP
+.B cpp
+optionally accepts two filenames as arguments.
+.I input-file
+and
+.I output-file
+are, respectively, the input and output files for the preprocessor.
+They default to the standard input and the standard output.
+.SH OPTIONS
+.TP
+.B \-B
+Support the C++ comment indicator
+.RB ` /\|/ '.
+With this indicator everything on the line after the
+.B /\|/
+is treated as a comment.
+.TP
+.B \-C
+Pass all comments (except those that appear on 
+.B cpp
+directive lines) through the preprocessor.
+By default,
+.B cpp
+strips out C-style comments.
+.TP
+.B \-H
+Print the pathnames of included files, one per line on the standard
+error.
+.TP
+.B \-M
+Generate a list of makefile dependencies and write them to the
+standard output.
+This list indicates that the object file which would be generated from the
+input file depends on the input file as well as the include files
+referenced.
+.TP
+.B \-p
+Use only the first eight characters to distinguish preprocessor
+symbols, and issue a warning if extra tokens appear at the end of a
+line containing a directive.
+.TP
+.B \-P
+Preprocess the input without producing the line control
+information used by the next pass of the C compiler.
+.TP
+.B \-R
+Allow recursive macros.
+.TP
+.B \-T
+Use only the first eight characters for distinguishing
+different preprocessor names.
+This option is included for backward
+compatibility with systems which always use only the first eight characters.
+.TP
+.B \-undef
+Remove initial definitions for all predefined symbols.
+.TP
+.BI \-D name
+Define
+.I name
+as 1 (one). 
+This is the same as if a
+.BI \-D name =1
+option appeared on the 
+.B cpp
+command line, or as if a
+.RS
+.IP
+.BI #define " name " 1
+.RE
+.IP
+line appeared in the source file that 
+.B cpp
+is processing.
+.TP
+.BI \-D name = def
+Define
+.I name
+as if by a
+.B #define
+directive.
+This is the same as if a
+.RS
+.IP
+.BI #define " name " def
+.RE
+.IP
+line appeared in the source file that 
+.B cpp
+is processing.
+The
+.B \-D
+option has lower precedence than the
+.B \-U
+option.
+That is, if the same name is used in both a
+.B \-U
+option and a
+.B \-D
+option, the name will be undefined regardless of the order of the options.
+.PD
+.br
+.ne 8
+.TP
+.BI \-I directory
+Insert 
+.I directory
+into the search path for
+.B #include
+files with names not beginning with
+.RB  ` / '.
+.I directory
+is inserted ahead of the
+standard list of ``include'' directories.
+Thus,
+.B #include
+files with names enclosed in
+double-quotes (\fB"\fR)
+are searched for first in the directory of the file with the
+.B #include
+line, then in directories named with
+.B \-I
+options, and lastly, in directories from the standard list.
+For
+.B #include
+files with names enclosed in angle-brackets
+.RB  ( <\|> ),
+the directory of the file with the
+.B #include
+line is not searched.
+See
+.B Details
+below for exact details of this search order.
+.TP
+.BI \-U name
+Remove any initial definition of
+.IR name ,
+where
+.I name
+is a symbol that is predefined by a particular preprocessor.
+Here is a partial list of symbols that may be predefined, depending upon 
+the architecture of the system:
+.RS
+.RS
+.TP 20
+Operating System:
+.PD 0
+.BR ibm , 
+.BR gcos ,
+.BR os ,
+.BR tss 
+and
+.BR unix
+.TP 20
+Hardware:
+.BR interdata ,
+.BR pdp11 ,
+.BR u370 ,
+.BR u3b ,
+.BR u3b2 ,
+.BR u3b5 ,
+.BR u3b15 ,
+.BR u3b20d ,
+.BR vax ,
+.\".B m68k 
+.\"(or alternatively,
+.\".BR mc68000 ),
+.\".B M68010
+.\"(or
+.\".BR mc68010 ),
+.\".B M68020
+.\"(or
+.\".BR mc68020 ),
+.BR ns32000 ,
+.BR i\s-1APX\s0286 ,
+.BR i386 ,
+.B sparc ,
+and
+.BR sun
+.TP 20
+.SM UNIX\s0 system variant:
+.BR \s-1RES\s0 ,
+and
+.B RT
+.TP 20
+.RB The " lint" "(1V) command:"
+.B lint
+.PD
+.RE
+.RE
+.IP
+The symbols 
+.B sun
+and
+.B unix
+are defined for all Sun systems, as is the value returned by the
+.B mach
+command.
+For Sun-4 systems, this value would be
+.BR sparc .
+.\"In addition,
+.\".B .\"mc68000
+.\"is defined for Sun-2 and Sun-3 systems.
+.TP
+.BI \-Y directory
+Use directory
+.I directory
+in place of the standard list of directories when searching for
+.B #include
+files.
+.SH USAGE
+.SS Directives
+.LP
+All
+.B cpp
+directives start with a hash symbol
+.RB ( # )
+as the first character on a line.
+White space 
+(\s-1SPACE\s0
+or
+.SM TAB
+characters) can appear after the initial
+.B #
+for proper indentation.
+.
+.TP
+.BI #define " name token-string"
+Replace subsequent instances of
+.I name
+with
+.IR token-string .
+.
+.HP
+.B #define
+.IB name ( argument
+.RB [ , 
+.IR argument "] .\|.\|."
+.BI ) " token-string"
+.br
+There can be no space between
+.I name
+and the 
+.RB ` ( '.
+Replace subsequent instances of
+.IR name ,
+followed by a parenthesized list of arguments, with
+.IR token-string ,
+where each occurrence of an
+.I argument
+in the
+.I token-string
+is replaced by the corresponding token in the comma-separated list.
+When a macro with arguments is expanded, the arguments are placed
+into the expanded
+.I token-string
+unchanged.
+After the entire
+.I token-string
+has been expanded,
+.B cpp
+re-starts its scan for names to expand at the beginning of the newly
+created
+.IR token-string .
+.TP
+.BI #undef " name"
+Remove any definition for the symbol
+.IR name .
+No additional tokens are permitted on the directive line after
+.IR name .
+.TP
+\fB#include "\fIfilename\|\fB"\fR
+.PD 0
+.TP
+.BI #include " " < filename >
+.PD
+Read in the contents of
+.I filename 
+at this location.
+This data is processed by
+.BR cpp 
+as if it were part of the current file.
+When the
+.BI < filename >
+notation is used,
+.I filename
+is only searched for in the standard ``include'' directories.
+See the
+.B \-I
+and
+.B \-Y
+options above for more detail.
+No additional tokens are permitted on the directive line after the final
+`\fB"\fR' or
+.RB ` > '.
+.
+.br
+.ne 8
+.TP
+\fB#line\fI integer-constant\fB "\fIfilename\fB"\fR
+Generate line control information for the next pass of the C compiler.
+.I integer-constant
+is interpreted as the line number of the next line and
+.I filename
+is interpreted as the file from where it comes.
+If \fB"\fIfilename\fB"\fR is not given, the current filename is unchanged.
+No additional tokens are permitted on the directive line after
+the optional
+.IR filename .
+.br
+.ne 8
+.TP
+.BI #if " constant-expression"
+Subsequent lines up to the matching
+.BR #else ,
+.B #elif ,
+or
+.B #endif
+directive, appear in the output only if
+.I constant-expression
+yields a nonzero value.
+All binary non-assignment C operators, including 
+.RB ` && ',
+.RB ` |\|| ',
+and
+.RB ` , ',
+are legal in
+.IR constant-expression .
+The
+.RB ` ?: '
+operator, and the unary
+.RB ` \- ',
+.RB ` ! ',
+and
+.RB ` \s+2~\s0 '
+operators, are also legal in
+.IR constant-expression .
+.IP
+The precedence of these operators is the same as that for C.
+In addition, the unary operator
+.BR defined ,
+can be used in
+.I constant-expression
+in these two forms:
+.RB ` "defined"
+.BI ( " name " )\fR'
+or
+.RB ` defined
+.IR name '.
+This allows the effect of
+.BR #ifdef " and " #ifndef
+directives (described below) in the
+.B #if
+directive.
+Only these operators, integer constants, and names that
+are known by
+.B cpp
+should be used within
+.IR constant-expression .
+In particular, the
+.B size of
+operator is not available.
+.
+.TP
+.BI #ifdef " name"
+Subsequent lines up to the matching
+.BR #else ,
+.BR #elif ,
+or
+.B #endif
+appear in the output only if
+.I name
+has been defined, either with a
+.B #define
+directive or a
+.B \-D
+option, and in the absence of an intervening
+.BR #undef 
+directive.
+No additional tokens are permitted on the directive line after
+.IR name .
+.
+.TP
+.BI #ifndef " name"
+Subsequent lines up to the matching
+.BR #else ,
+.BR #elif ,
+or
+.BR #endif
+appear in the output only if
+.I name
+has
+.I not
+been defined, or if its definition has been removed with an
+.B #undef
+directive.
+No additional tokens are permitted on the directive line after
+.I name .
+.
+.TP
+.BI #elif " constant-expression"
+Any number of
+.B #elif
+directives may appear between an
+.BR #if ,
+.BR #ifdef ,
+or
+.B #ifndef
+directive and a matching
+.B #else
+or
+.B #endif
+directive.  The lines following the
+.B #elif
+directive appear in the output only if all of the
+following conditions hold:
+.RS
+.RS
+.TP 3
+\(bu
+.PD 0
+The
+.I constant-expression
+in the preceding
+.B #if
+directive evaluated to zero, the
+.I name
+in the preceding
+.B #ifdef
+is not defined, or the
+.I name
+in the preceding
+.B #ifndef
+directive
+.I was
+defined.
+.TP
+\(bu
+The
+.I constant-expression
+in all intervening
+.B #elif
+directives evaluated to zero.
+.TP
+\(bu
+The current
+.I constant-expression
+evaluates to non-zero.
+.PD
+.RE
+.RE
+.IP
+If the
+.I constant-expression
+evaluates to non-zero, subsequent
+.B #elif
+and
+.B #else
+directives are ignored up to the matching
+.BR #endif .
+Any
+.I constant-expression
+allowed in an
+.B #if
+directive is allowed in an
+.B #elif
+directive.
+.
+.TP
+.BI #else
+This inverts the sense of the conditional directive
+otherwise in effect.  If the preceding conditional
+would indicate that lines are to be included, then lines between the 
+.B #else
+and the matching
+.B #endif
+are ignored.  If the preceding conditional indicates that lines
+would be ignored, subsequent lines are included in the output.
+Conditional directives and corresponding
+.B #else
+directives can be nested.
+.TP
+.B #endif
+End a section of lines begun by one of the conditional directives
+.BR  #if ,
+.BR #ifdef ,
+or
+.BR #ifndef .
+Each such directive must have a matching
+.BR #endif .
+.SS Macros
+.LP
+Formal parameters for macros are recognized in 
+.B #define 
+directive bodies,
+even when they occur inside character constants and quoted strings.
+For instance, the output from:
+.RS
+.sp .5v
+.nf
+.B #define abc(a)\0|\|\e\|a|
+.B abc(xyz)
+.fi
+.RE
+.LP
+is the seven characters
+.RB `` \0|\|`xyz\|| ''
+(\s-1SPACE\s0,
+vertical-bar, backquote, x, y, z, vertical-bar).  Macro names are not
+recognized within character constants or quoted strings during the
+regular scan.  Thus:
+.RS
+.sp .5v
+.nf
+.B #define abc\0xyz
+\fBprintf("abc");\fR
+.fi
+.RE
+.LP
+does not expand
+.B abc
+in the second line, since it is inside
+a quoted string that is not part of a 
+.B #define 
+macro definition.
+.LP
+Macros are not expanded while processing a 
+.B #define 
+or
+.BR #undef .  
+Thus:
+.RS
+.sp .5v
+.nf
+.B #define abc zingo
+.B #define xyz abc
+.B #undef abc
+.B xyz
+.fi
+.RE
+.LP
+produces 
+.BR abc .
+The token appearing immediately after an
+.B #ifdef
+or 
+.B #ifndef
+is not expanded.
+.LP
+Macros are not expanded during the scan which determines
+the actual parameters to another macro call.  Thus:
+.RS
+.sp .5v
+.nf
+.B #define reverse(first,second)second first
+.B #define greeting hello
+.B reverse(greeting,
+.B #define greeting goodbye
+.B )
+.fi
+.RE
+.LP
+produces 
+.RB `` " #define hello goodbye  hello" ''.
+.SS Output
+.LP
+Output consists of a copy of the input file, with modifications, plus
+lines of the form:
+.IP
+\fB#\fIlineno\ \fB"\ \fIfilename\|\fB"\ \fB"\fIlevel\fB\|" \fR
+.LP
+indicating the original source line number and filename of the following
+output line and whether this is the first such line after an include file
+has been entered
+.RB (\fIlevel\fP= 1 ),
+the first such line after an include
+file has been exited
+.RB (\fIlevel\fP= 2 ),
+or any other such line
+.RI ( level
+is empty).
+.SS Details
+.SS "\fIDirectory Search Order\fP"
+.LP
+.B #include 
+files is:
+.RS
+.TP 4
+1.
+The directory of the file that contains the 
+.B #include 
+request (that is, 
+.B #include 
+is relative to the file being scanned when the request is made).
+.TP
+2.
+The directories specified by
+.B \-I
+options, in left-to-right order.
+.TP
+3.
+The standard directory(s)
+.RB ( /usr/include
+on
+.SM UNIX 
+systems).
+.RE
+.SS "\fISpecial Names\fR"
+.LP
+Two special names are understood by
+.BR cpp .
+The name
+.B _\|\|_\s-1LINE\s+1_\|\|_
+is defined as the current line number (a decimal integer) as known by
+.BR cpp ,
+and
+.B _\|\|_\s-1FILE\s+1_\|\|_
+is defined as the current filename (a C string) as known by
+.BR cpp .
+They can be used anywhere (including in macros) just as any other defined name.
+.SS "\fINewline Characters\fR"
+.LP
+A 
+.SM NEWLINE
+character terminates a character constant or quoted string.
+An escaped
+.SM NEWLINE
+(that is, a backslash immediately
+followed by a 
+.SM NEWLINE\s0)
+may be used in the body of a 
+.B #define 
+statement to continue
+the definition onto the next line.  The escaped
+.SM NEWLINE
+is not included in the macro value.
+.SS \fIComments\fR
+.LP
+Comments are removed (unless the
+.B \-C
+option is used on the command line).
+Comments are also ignored, except that a comment terminates a token.
+.\".SH FILES
+.\".PD 0
+.\".TP 20
+.\".B /usr/include
+.\"standard directory for
+.\".B #include
+.\"files
+.\".PD
+.SH SEE ALSO
+.BR cc (1V),
+.BR m4 (1V)
+.LP
+.TX PUL
+.br
+.ne 5
+.SH DIAGNOSTICS
+.LP
+The error messages produced by
+.B cpp
+are intended to be self-explanatory.  The line number and filename
+where the error occurred are printed along with the diagnostic.
+.SH NOTES
+.LP
+When
+.SM NEWLINE
+characters were found in argument lists for macros
+to be expanded, some previous versions of
+.B cpp
+put out the
+.SM NEWLINE
+characters as they were found and expanded.
+The current version of
+.B cpp
+replaces them with 
+.SM SPACE
+characters.
+.br
+.ne 5
+.LP
+Because the standard directory for included files
+may be different in different environments,
+this form of
+.B #include
+directive:
+.IP
+.B #include <file.h>
+.LP
+should be used, rather than one with an absolute path,
+like:
+.IP
+\fB#include "/usr/include/file.h"\fR
+.LP
+.B cpp
+warns about the use of the absolute pathname.
+.br
+.ne 5
+.LP
+While the compiler allows 8-bit strings and comments,
+8-bits are not allowed anywhere else.
+See
+.BR cc (1V)
+for an explanation about why
+.B cc
+is not 8-bit clean.

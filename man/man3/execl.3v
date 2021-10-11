@@ -1,0 +1,307 @@
+.\" @(#)execl.3v 1.1 92/07/30 SMI; from UCB 4.2
+.TH EXECL 3V "21 January 1990"
+.SH NAME
+execl, execv, execle, execlp, execvp \- execute a file
+.SH SYNOPSIS
+.LP
+.BR "int execl(path, arg0" " [" " , arg1," \|.\|.\|.
+.BR ", argn" " ]" " (char *)0)"
+.nf
+.ft B
+char *path, *arg0, *arg1, .\|.\|.\|, *argn;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int execv(path, argv)
+char *path, *argv[ ];
+.ft
+.fi
+.LP
+.BR "int execle(path, arg0" " [" " , arg1," \|.\|.\|.
+.BR ", argn" " ]" " (char *)0, envp)"
+.nf
+.ft B
+char *path, *arg0, *arg1, .\|.\|.\|, *argn, *envp[ ];
+.ft
+.fi
+.LP
+.BR "int execlp(file, arg0" " [" " , arg1," \|.\|.\|.
+.BR ", argn" " ]" " (char *)0)"
+.nf
+.ft B
+char *file, *arg0, *arg1, .\|.\|.\|, *argn;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int execvp(file, argv)
+char *file, *argv[ ];
+.ft
+.fi
+.LP
+.nf
+.ft B
+extern char **environ;
+.ft
+.fi
+.IX  "execl()"  ""  "\fLexecl()\fP \(em execute file"
+.IX  "execute file"  "execl() function"  ""  \fLexecl()\fP
+.IX  "execv()"  ""  "\fLexecv()\fP \(em execute file"
+.IX  "execute file"  "execv() function"  ""  \fLexecv()\fP
+.IX  "execle()"  ""  "\fLexecle()\fP \(em execute file"
+.IX  "execute file"  "execle() function"  ""  \fLexecle()\fP
+.IX  "execlp()"  ""  "\fLexeclp()\fP \(em execute file"
+.IX  "execute file"  "execlp() function"  ""  \fLexeclp()\fP
+.IX  "execvp()"  ""  "\fLexecvp()\fP \(em execute file"
+.IX  "execute file"  "execvp() function"  ""  \fLexecvp()\fP
+.IX  "environ()"  ""  "\fLenviron()\fP \(em execute file"
+.IX  "execute file"  "environ() function"  ""  \fLenviron()\fP
+.IX  "execute file"
+.SH DESCRIPTION
+.LP
+These routines provide various interfaces to the
+.B execve(\|)
+system call.  Refer to
+.BR execve (2V)
+for a description of their properties; only
+brief descriptions are provided here.
+.LP
+.B exec(\|)
+in all its forms overlays the calling process with the named file, then
+transfers to the entry point of the core image of the file.  There can
+be no return from a successful
+.BR exec(\|) ;
+the calling core image is lost.
+.LP
+The
+.I filename
+argument is a pointer to the name of the file to be executed.  The
+pointers
+.IR arg [0],
+.IR arg [1]\|.\|.\|.
+address null-terminated strings.
+Conventionally
+.IR arg [0]
+is the name of the file.
+.LP
+Two interfaces are available.
+.B execl(\|)
+is useful when a known file with known arguments is being called; the
+arguments to
+.B execl(\|)
+are the character strings constituting the file and the arguments; the
+first argument is conventionally the same as the file name (or its last
+component).  A 
+.B (char *)0
+argument must end the argument list.  The cast to type
+.B char *
+insures portability.
+.LP
+The
+.B execv(\|)
+version is useful when the number of arguments is unknown in advance;
+the arguments to
+.B execv(\|)
+are the name of the file to be executed and a vector of strings
+containing the arguments.  The last argument string must be followed by
+a 0 pointer.
+.LP
+When a C program is executed,
+it is called as follows:
+.RS
+.LP
+.nf
+.ft B
+main(argc, argv, envp)
+int argc;
+char **argv, **envp;
+.ft R
+.fi
+.RE
+.LP
+where
+.I argc
+is the argument count and
+.I argv
+is an array of character pointers to the arguments themselves.  As
+indicated,
+.I argc
+is conventionally at least one and the first member of the array points
+to a string containing the name of the file.
+.LP
+.I argv
+is directly usable in another
+.B execv(\|)
+because
+.IR argv [ argc ]
+is 0.
+.LP
+.I envp
+is a pointer to an array of strings that constitute the
+.I environment
+of the process.  Each string consists of a name, an
+.RB ` = ',
+and a
+null-terminated
+value.  The array of pointers is terminated by a
+.SM NULL
+pointer.  The shell
+.BR sh (1)
+passes an environment entry for each global shell variable defined when
+the program is called.  See
+.BR environ (5V)
+for some conventionally used names.  The C run-time start-off routine
+places a copy of
+.I envp
+in the global cell
+.IR environ ,
+which is used by
+.B execv(\|)
+and
+.B execl(\|)
+to pass the environment to any subprograms executed by the current
+program.
+.LP
+.B execlp(\|)
+and
+.B execvp(\|)
+are called with the same arguments as
+.B execl(\|)
+and
+.BR execv(\|) ,
+but duplicate the shell's actions in searching for an executable
+.I file
+in a list of directories.  The directory list is obtained from the
+environment.
+.SH RETURN VALUES
+.LP
+These functions return to the calling process only
+on failure.
+They return
+\-1
+and set
+.B errno
+to indicate the error
+if
+.I path
+or
+.I file
+cannot be found, if it is not executable, if it does not
+start with a valid magic number (see
+.BR a.out (5)),
+if maximum memory is exceeded, or if the arguments require too much
+space.
+Even for the super-user, at least one of the execute-permission bits
+must be set for a file to be executed.
+.SH ERRORS
+.LP
+If any of the following conditions occur,
+these functions will return and set
+.B errno
+to one of the following:
+.TP 20
+.SM E2BIG
+The number of bytes used by the new process image's
+argument list and environment list is greater than
+.SM {ARG_MAX}
+bytes
+(see
+.BR sysconf (2V)).
+.TP
+.SM EACCES
+Search permission is denied for a directory listed in the
+new process image file's path prefix.
+.IP
+The new process image
+file denies execution permission.
+.IP
+The new process image
+file is not a regular file.
+.TP
+.SM ENAMETOOLONG
+The length of the
+.I path
+or
+.IR file ,
+or an element of the environment variable
+.SB PATH
+prefixed to a file,
+exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect for that file
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+One or more components of the new process image file's pathname 
+do not exist.
+.TP
+.SM ENOTDIR
+A component of the new process image file's path prefix is not a directory.
+.LP
+if the following condition occurs,
+.BR execl(\|) ,
+.BR execv(\|) ,
+and
+.B execle(\|)
+set
+.B errno
+to:
+.TP 20
+.SM ENOEXEC
+The new process image file has the appropriate access
+permission, but is not in the proper format.
+.LP
+If the following condition is detected,
+the exec functions set
+.B errno
+to:
+.TP 20
+.SM ENOMEM
+The new process image requires more memory than there is swap
+space available.
+.IP
+On Sun-3 systems, the new process image requires more than
+2\s-1\u31\d\s0 bytes.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, if the following condition occurs,
+the exec functions set
+.B errno
+to:
+.TP 20
+.SM ENOENT
+.I path
+or
+.I file
+points to a null pathname.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/bin/sh
+shell, invoked if command
+.I file
+found by
+.B execlp(\|)
+or
+.B execvp(\|)
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR sh (1),
+.BR execve (2V),
+.BR fork (2V),
+.BR pathconf (2V),
+.BR sysconf (2V),
+.BR a.out (5),
+.BR environ (5V)
+.LP
+.TX PUL

@@ -1,0 +1,46 @@
+.\" @(#)publickey.3r 1.1 92/07/30 SMI;
+.TH PUBLICKEY 3R  "20 January 1990"
+.SH NAME
+publickey, getpublickey, getsecretkey \- get public or secret key
+.SH SYNOPSIS
+.nf
+.B #include <rpc/rpc.h>
+.B #include <rpc/key_prot.h>
+.LP
+.B getpublickey(netname, publickey)
+.B char netname[\s-1MAXNETNAMELEN\s0+1];
+.B char publickey[\s-1HEXKEYBYTES\s0+1];
+.LP
+.B getsecretkey(netname, secretkey, passwd)
+.B char netname[\s-1MAXNETNAMELEN\s0+1];
+.B char secretkey[\s-1HEXKEYBYTES\s0+1];
+.B char *passwd;
+.fi
+.SH DESCRIPTION
+.IX "publickey" "" "\fLpublickey\fP \( get public or secret key" ""
+.IX "getpublickey()" "" "\fLgetpublickey()\fP \(em get public key" ""
+.IX "getsecretkey()" "" "\fLgetsecretkey()\fP \(em get secret key" ""
+.LP
+These routines are used to get public and secret keys from the
+.SM YP
+database.
+.B getsecretkey(\|)
+has an extra argument,
+.IR passwd ,
+which is used to decrypt the encrypted secret key stored in the database.
+Both routines return 1 if they are successful in finding the key, 0 otherwise.
+The keys are returned as
+.SM NULL\s0-terminated,
+hexadecimal strings. If the password supplied to
+.B getsecretkey(\|)
+fails to decrypt the secret key, the routine will return 1 but the
+.I secretkey
+argument will be a
+.SM NULL
+string.
+.SH "SEE ALSO"
+.BR publickey (5)
+.LP
+.I \s-1RPC\s0 Programmer's Manual
+in
+.TX NETP

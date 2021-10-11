@@ -1,0 +1,161 @@
+.\" @(#)dorfs.8 1.1 92/07/30 SMI;
+.TH DORFS 8 "30 September 1988"
+.SH NAME
+dorfs \- initialize, start and stop RFS automatically
+.SH SYNOPSIS
+.B dorfs
+.B init
+.I domain\ \ netspec
+.RI [ address ]
+.br
+.B dorfs
+.BR start
+[
+.B \-v
+]
+.br
+.B dorfs
+.B stop
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "dorfs initialize" "" "\fLdorfs\fR \(em start and stop RFS automatically" ""
+.IX RFS "start and stop automatically" "\fBRFS\fR" "start and stop automatically"
+.IX start "RFS automatically" "start" "\s-1RFS\s0 automatically"
+.IX stop "RFS automatically" stop "\s-1RFS\s0 automatically"
+.IX initialize RFS initialize \s-1RFS\s0
+.LP
+.B dorfs 
+sets up necessary environment to run 
+Remote File Sharing
+(\s-1RFS\s0).
+You can also use it to start or stop
+.SM RFS 
+automatically,
+after its environment is initialized.
+The environment only needs to be set up once and
+.BR /usr/nserve/rfmaster
+must exist before the environment is initialized.
+Descriptions of 
+.BR /usr/nserve/rfmaster 
+are in
+.BR rfmaster (5).
+You must be the super-user to run this command.
+.SH USAGE
+.SS Subcommands
+.HP
+.B init
+.IR "\ domain\ \ netspec" [\| address \|]  	
+.br
+.I domain 
+is the name of the
+.SM RFS
+domain.
+.I netspec 
+is the name of a device file in the
+.B /dev 
+directory which represents the 
+streams-based transport provider on which
+.SM RFS
+will run.
+Currently,
+.B tcp
+is the only accepted value for this field.
+.I address
+is the optional
+.B tcp
+port number on which the listener will listen.
+If unspecified, it defaults to
+.BR 0x1450 .
+This subcommand only needs to be run once to
+initialize the environment.
+You do not need to rerun
+.B dorfs
+with the
+.B init  
+argument, unless you want to change
+.IR  netspec .
+.BR /usr/nserve/rfmaster 
+must exists before you run
+this command to initialize the environment.
+To reinitialize the environment, you need to remove 
+.BR /usr/nserve/\fIdomain ,
+.BR /usr/nserve/\fInetspec ,
+.BI /var/net/nls/ netspec / address
+and 
+.BI /var/net/nls/ netspec /dbf
+beforehand.
+.HP 
+.B start
+[
+.B \-v
+]
+.br
+Start
+.SM RFS
+automatically.
+.\"If the 
+.\".I netspec 
+.\"is 
+.\".BR tcp , 
+.\"it starts 
+.\".BR listener ,
+.\".BR in.named , 
+.\".B rfudaemon 
+.\"and 
+.\".BR rfstart . 
+It also automatically 
+advertises resources that are stored in 
+.B /etc/rstab 
+and mounts 
+.SM RFS 
+resources that are stored in 
+.BR /etc/fstab . 
+.RS
+.RS
+.TP
+.B \-v
+Verify clients on mounts (see
+.RB ` "rfstart \-v" ').
+.RE
+.RE
+.TP
+.B stop	
+Takes down 
+.SM RFS 
+by forced unmounting of all advertised resources, umounting 
+all remotely mounted resources, executing 
+.BR rfstop ,
+and stopping
+.BR listener .
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/advtab
+.TP
+.B /etc/rstab
+.TP
+.B /var/net/nls/tcp/addr
+.TP
+.B /var/net/nls/tcp/dbf
+.TP
+.B /usr/nserve/domain
+.TP
+.B /usr/nserve/netspec
+.TP
+.B /usr/nserve/rfmaster
+.PD
+.SH "SEE ALSO"
+.BR rfmaster (5),
+.BR dname (8),
+.BR fumount (8),
+.BR mount (8),
+.BR nlsadmin (8),
+.BR rfstart (8),
+.BR rfstop (8)

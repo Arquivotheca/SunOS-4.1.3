@@ -1,0 +1,195 @@
+.\" @(#)nit_buf.4m 1.1 92/07/30 SMI;
+.TH NIT_BUF 4M "29 December 1987"
+.SH NAME
+nit_buf \- STREAMS NIT buffering module
+.SH CONFIG
+.B
+pseudo-device	nbuf
+.SH SYNOPSIS
+.nf
+.B
+#include <sys/ioctl.h>
+.B
+#include <net/nit_buf.h>
+.B
+ioctl(fd, \|\s-1I_PUSH\s0, \|"nbuf");
+.fi
+.SH DESCRIPTION
+.IX "nit_buf module" "" "\fLnit_buf\fP, \s-1NIT\s0 buffering module"
+.IX STREAMS nit_buf "" "\fLnit_buf\fP, \s-1NIT\s0 buffering module"
+.LP
+.B nit_buf
+is a
+.SM STREAMS
+module that buffers incoming messages,
+thereby reducing the number of system calls and associated overhead
+required to read and process them.
+Although designed to be used in conjunction
+with the other components of
+.SM NIT
+(see
+.BR nit (4P)),
+.B nit_buf
+is a general-purpose module and can be used
+anywhere
+.SM STREAMS
+input buffering is required.
+.SS "Read-side Behavior"
+.B nit_buf
+collects incoming
+.SB M_DATA
+and
+.SB M_PROTO
+messages into
+.IR chunks ,
+passing each chunk upward when either the chunk becomes full
+or the current read timeout expires.
+When a message arrives,
+it is processed in two steps.
+First,
+the message is prepared for inclusion in a chunk,
+and then it is added to the current chunk.
+The following paragraphs discuss each step in turn.
+.LP
+Upon receiving a message from below,
+.B nit_buf
+immediately converts all leading
+.SB M_PROTO
+blocks in the message to
+.SB M_DATA
+blocks,
+altering only the message type field and leaving the contents alone.
+It then prepends a header to the converted message.
+This header is defined as follows.
+.RS
+.ft B
+.nf
+struct nit_bufhdr {
+	u_int	nhb_msglen;
+	u_int	nhb_totlen;
+};
+.fi
+.ft R
+.RE
+The first field of this header gives the length in bytes
+of the converted message.
+The second field gives the distance in bytes
+from the start of the message in the current chunk
+(described below)
+to the start of the next message in the chunk;
+the value reflects any padding necessary to insure
+correct data alignment for the host machine
+and includes the length of the header itself.
+.LP
+After preparing a message,
+.B nit_buf
+attempts to add it to the end of the current chunk,
+using the chunk size and timeout values to govern the addition.
+(The chunk size and timeout values are set and inspected
+using the
+.B ioctl
+calls described below.)
+If adding the new message would make the current chunk grow
+larger than the chunk size,
+.B nit_buf
+closes off the current chunk,
+passing it up to the next module in line,
+and starts a new chunk,
+seeding it with a zero-length message.
+If adding the message would still make
+the current chunk overflow,
+the module passes it upward in an over-size chunk of its own.
+Otherwise,
+the module concatenates the message to the end of the current chunk.
+.LP
+To ensure that messages do not languish forever
+in an accumulating chunk,
+.B nit_buf
+maintains a read timeout.
+Whenever this timeout expires,
+the module closes off the current chunk,
+regardless of its length,
+and passes it upward;
+if no incoming messages have arrived,
+the chunk passed upward will have zero length.
+Whenever the module passes a chunk upward,
+it restarts the timeout period.
+These two rules insure that
+.B nit_buf
+minimizes the number of chunks it produces
+during periods of intense message activity
+and that it periodically disposes of all messages
+during slack intervals.
+.LP
+.B nit_buf
+handles other message types as follows.
+Upon receiving an
+.SB M_FLUSH
+message specifying that the read queue be flushed,
+the module does so,
+clearing the currently accumulating chunk as well,
+and passes the message on to the module or driver above.
+It passes all other messages through unaltered to its upper neighbor.
+.SS "Write-side Behavior"
+.B nit_buf
+intercepts
+.SB M_IOCTL
+messages for the
+.IR ioctl s
+described below.
+Upon receiving an
+.SB M_FLUSH
+message specifying that the write queue be flushed,
+the module does so and
+passes the message on to the module or driver below.
+The module passes all other messages through unaltered
+to its lower neighbor.
+.SH IOCTLS
+.B nit_buf
+responds to the following
+.IR ioctl s.
+.nr Xx \w'\s-1NIOCSCHUK\s0'u+3nu
+.TP \n(Xxu
+.SB NIOCSTIME
+Set the read timeout value to the value referred to by the
+.I "struct timeval"
+pointer given as argument.
+Setting the timeout value to zero
+has the side-effect of forcing the chunk size to zero as well,
+so that the module will pass all incoming messages upward
+immediately upon arrival.
+.TP
+.SB NIOCGTIME
+Return the read timeout in the
+.I "struct timeval"
+pointed to by the argument.
+If the timeout has been cleared with the
+.SB NIOCCTIME
+.IR ioctl ,
+return with an
+.SM ERANGE
+error.
+.TP
+.SB NIOCCTIME
+Clear the read timeout,
+effectively setting its value to infinity.
+.TP
+.SB NIOCSCHUNK
+Set the chunk size to the value referred to by the
+.I u_int
+pointer given as argument.
+.TP
+.SB NIOCGCHUNK
+Return the chunk size in the
+.I u_int
+pointed to by the argument.
+.SH WARNING
+The module name ``nbuf''
+used in the system configuration file and as argument to the
+.SB I_PUSH
+.B ioctl
+is provisional and subject to change.
+.SH "SEE ALSO"
+.BR nit (4P),
+.BR nit_if (4M),
+.BR nit_pf (4M)

@@ -1,0 +1,121 @@
+.\" @(#)frexp.3m 1.1 92/07/30 SMI
+.TH FREXP 3M "21 January 1988"
+.SH NAME
+frexp, modf, ldexp \- traditional UNIX functions
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.LP
+.B double frexp(value, eptr)
+.B double value;
+.B int \(**eptr;
+.LP
+.B double ldexp(x,n)
+.B double x;
+.B int n;
+.LP
+.B double modf(value, iptr)
+.B double value, \(**iptr;
+.fi
+.IX  "frexp()"  ""  "\fLfrexp()\fP \(em split into significant and exponent"
+.IX  "modf()"  ""  "\fLmodf()\fP \(em split into integer part and fraction part"
+.IX  "split into significant and exponent \(em \fLfrexp()\fR"
+.IX  "significant and exponent, split into \(em \fLfrexp()\fR"
+.IX  "exponent and significant, split into \(em \fLfrexp()\fR"
+.SH DESCRIPTION
+.LP
+These functions are provided for compatibility with other
+.SM UNIX
+system implementations.  They are not used internally in
+.B libm
+or
+.BR libc .
+Better ways to accomplish similar ends may be found in
+.BR ieee_functions (3M)
+and
+.BR rint (3M).
+.LP
+.BI ldexp( x , n )
+returns 
+.I x * 2**n 
+computed by exponent manipulation rather than by actually
+performing an exponentiation or a multiplication.
+Note:
+.BI ldexp( x , n )
+differs from
+.BI scalbn( x , n )\fR,
+defined in
+.BR ieee_functions (3M),
+only that in the event of
+.SM IEEE
+overflow and underflow,
+.BI ldexp( x , n )
+sets
+.B errno
+to
+.SM ERANGE\s0.
+.LP
+Every non-zero number can be written uniquely as
+.IR "x * 2**n" ,
+where the significant
+.I x
+is in the range
+.I 0.5 <= |x| < 1.0
+and the exponent
+.I n
+is an integer.  The function
+.B frexp(\|)
+returns the significant of a double
+.I value
+as a double quantity,
+.IR x ,
+and stores the exponent
+.IR n ,
+indirectly through
+.IR eptr .
+If
+.I value
+== 0, both results returned by
+.B frexp(\|)
+are 0.
+.LP
+.B modf(\|)
+returns the fractional part of
+.I value
+and stores the integral part indirectly
+through
+.IR iptr .
+Thus the argument
+.I value
+and the returned values
+.B modf(\|)
+and
+.I *iptr
+satisfy
+.IP
+(*\fIiptr\fP + \fImodf\fP) ==
+.I value
+.LP
+and both results
+have the same sign as
+.IR value .
+The definition of
+.B modf(\|)
+varies among
+.SM UNIX
+system implementations, so avoid
+.B modf(\|)
+in portable code.
+.LP
+The results of
+.B frexp(\|)
+and
+.B modf(\|)
+are not defined when
+.I value
+is an
+.SM IEEE
+infinity or NaN.
+.SH "SEE ALSO"
+.BR ieee_functions (3M),
+.BR rint (3M)

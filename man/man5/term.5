@@ -1,0 +1,476 @@
+'\" t
+.\" @(#)term.5 1.1 92/07/30 SMI; from Usenet
+.TH TERM 5 "16 February 1988"
+.SH NAME
+term \- terminal driving tables for nroff
+.SH SYNOPSIS
+.BI /usr/lib/term/tab name
+.SH DESCRIPTION
+.IX  "term file"  ""  "\fLterm\fP \(em terminal driving tables"
+.LP
+.BR nroff (1)
+uses driving tables to customize its output for various types of
+output devices, such as terminals, line printers, daisy-wheel printers,
+or special output filter programs.  These driving tables are written
+as C programs, compiled, and installed in the directory
+.BR /usr/lib/term .
+The
+.I name
+of the output device is specified with the
+.B \-T
+option of
+.BR nroff .
+The structure of the terminal table is as follows:
+.LP
+.RS
+.nf
+.ft B
+.ta 5m 10m 15m 20m 25m 30m 35m 40m 45m 50m 55m 60m
+#define	\s-1INCH\s0	240
+.sp .5
+struct {
+	int bset;
+	int breset;
+	int Hor;
+	int Vert;
+	int Newline;
+	int Char;
+	int Em;
+	int Halfline;
+	int Adj;
+	char *twinit;
+	char *twrest;
+	char *twnl;
+	char *hlr;
+	char *hlf;
+	char *flr;
+	char *bdon;
+	char *bdoff;
+	char *ploton;
+	char *plotoff;
+	char *up;
+	char *down;
+	char *right;
+	char *left;
+	char *codetab[256\-32];
+	char *zzz;
+} t;
+.ft R
+.fi
+.RE
+.LP
+The meanings of the various fields are as follows:
+.TP 10
+.B bset
+Bits to set in the
+.B sg_flags
+field of the
+.B sgtty
+structure before output; see
+.BR ttcompat (4M).
+.TP
+.B breset
+Bits to reset in the
+.B sg_flags
+field of the
+.B sgtty
+structure after output; see
+.BR ttcompat (4M).
+.TP
+.B Hor
+Horizontal resolution in fractions of an inch.
+.TP
+.B Vert
+Vertical resolution in fractions of an inch.
+.TP
+.B Newline
+Space moved by a
+.SM NEWLINE
+(\s-1LINEFEED\s0) character in fractions
+of an inch.
+.TP
+.B Char
+Quantum of character sizes, in fractions of an inch
+(that is, a character is a multiple of
+.B Char
+units wide).
+.TP
+.B Em
+Size of an em in fractions of an inch.
+.TP
+.B Halfline
+Space moved by a half-\s-1LINEFEED\s0
+(or half-reverse-\s-1LINEFEED\s0)
+character in fractions of an inch.
+.TP
+.B Adj
+Quantum of white space, in fractions of an inch.
+(that is, white spaces are a multiple of
+.B Adj
+units wide)
+.IP
+Note: if this is less than the size of the
+.SM SPACE
+character (in units of
+.BR Char ;
+see below for how the sizes of characters are defined),
+.B nroff
+will output
+fractional
+.SM SPACE
+characters using plot mode.  Also, if the
+.B \-e
+switch to
+.B nroff
+is used,
+.B Adj
+is set equal to
+.B Hor
+by
+.BR nroff .
+.TP
+.B twinit
+Set of characters used to initialize the terminal
+in a mode suitable for
+.BR nroff .
+.TP
+.B twrest
+Set of characters used to restore the terminal to
+normal mode.
+.TP
+.B twnl
+Set of characters used to move down one line.
+.TP
+.B hlr
+Set of characters used to move up one-half line.
+.TP
+.B hlf
+Set of characters used to move down one-half line.
+.TP
+.B flr
+Set of characters used to move up one line.
+.TP
+.B bdon
+Set of characters used to turn on hardware boldface mode,
+if any.
+.TP
+.B bdoff
+Set of characters used to turn off hardware boldface mode,
+if any.
+.TP
+.B ploton
+Set of characters used to turn on hardware plot mode
+(for Diablo type mechanisms), if any.
+.TP
+.B plotoff
+Set of characters used to turn off hardware plot mode
+(for Diablo type mechanisms), if any.
+.TP
+.B up
+Set of characters used to move up one resolution unit
+.RB ( Vert )
+in plot mode, if any.
+.TP
+.B down
+Set of characters used to move down one resolution unit
+.RB ( Vert )
+in plot mode, if any.
+.TP
+.B right
+Set of characters used to move right one resolution unit
+.RB ( Hor )
+in plot mode, if any.
+.TP
+.B left
+Set of characters used to move left one resolution unit
+.RB ( Hor )
+in plot mode, if any.
+.TP
+.B codetab
+Definition of characters needed to print an
+.B nroff
+character
+on the terminal.
+The first byte is the number of character units
+.RB ( Char )
+needed to hold the
+character; that is,
+.B \e001
+is one unit wide,
+.B \e002
+is two units wide, etc.  The high-order bit (0200) is on if
+the character is to be underlined in underline mode
+.RB ( \&.ul ).
+The rest of the bytes are the characters used to produce the character in
+question.  If the character has the sign (0200) bit on,
+it is a code to move the terminal in plot mode.  It is
+encoded as:
+.RS
+.RS
+.TP 12
+0100 bit on
+vertical motion.
+.TP
+0100 bit off
+horizontal motion.
+.TP
+040 bit on
+negative (up or left) motion.
+.TP
+040 bit off
+positive (down or right) motion.
+.TP
+037 bits
+number of such motions to make.
+.RE
+.RE
+.TP
+.B zzz
+A zero terminator at the end.
+.LP
+All quantities which are in units of fractions of an inch should
+be expressed as
+.BI `\s-1INCH\s0* num / denom ',
+where
+.I num
+and
+.I denom
+are respectively the numerator and denominator of the fraction; that is,
+1/48 of an inch would be written as
+.RB ` \s-1INCH\s0/48 '.
+.LP
+If any sequence of characters does not pertain to the output device,
+that sequence should be given as a null string.
+.LP
+The following is a sample
+.B codetab
+encoding.
+.IP
+.TS
+lfB lfB .
+.\" by Bill Tuthill, 15dec82
+"\e001 ",	/*space*/
+"\e001!",	/*!*/
+"\e001\e"",	/*"*/
+"\e001#",	/*#*/
+"\e001$",	/*$*/
+"\e001%",	/*%*/
+"\e001&",	/*&*/
+"\e001'",	/*'*/
+"\e001(",	/*(*/
+"\e001)",	/*)*/
+"\e001*",	/***/
+"\e001+",	/*+*/
+"\e001,",	/*,*/
+"\e001-",	/*-*/
+"\e001.",	/*.*/
+"\e001/",	/*/*/
+"\e2010",	/*0*/
+"\e2011",	/*1*/
+"\e2012",	/*2*/
+"\e2013",	/*3*/
+"\e2014",	/*4*/
+"\e2015",	/*5*/
+"\e2016",	/*6*/
+"\e2017",	/*7*/
+"\e2018",	/*8*/
+"\e2019",	/*9*/
+"\e001:",	/*:*/
+"\e001;",	/*;*/
+"\e001<",	/*<*/
+"\e001=",	/*=*/
+"\e001>",	/*>*/
+"\e001?",	/*?*/
+"\e001@",	/*@*/
+"\e201A",	/*A*/
+"\e201B",	/*B*/
+"\e201C",	/*C*/
+"\e201D",	/*D*/
+"\e201E",	/*E*/
+"\e201F",	/*F*/
+"\e201G",	/*G*/
+"\e201H",	/*H*/
+"\e201I",	/*I*/
+"\e201J",	/*J*/
+"\e201K",	/*K*/
+"\e201L",	/*L*/
+"\e201M",	/*M*/
+"\e201N",	/*N*/
+"\e201O",	/*O*/
+"\e201P",	/*P*/
+"\e201Q",	/*Q*/
+"\e201R",	/*R*/
+"\e201S",	/*S*/
+"\e201T",	/*T*/
+"\e201U",	/*U*/
+"\e201V",	/*V*/
+"\e201W",	/*W*/
+"\e201X",	/*X*/
+"\e201Y",	/*Y*/
+"\e201Z",	/*Z*/
+"\e001[",	/*[*/
+"\e001\e\e",	/*\e*/
+"\e001]",	/*]*/
+"\e001^",	/*^*/
+"\e001_",	/*_*/
+"\e001`",	/*`*/
+"\e201a",	/*a*/
+"\e201b",	/*b*/
+"\e201c",	/*c*/
+"\e201d",	/*d*/
+"\e201e",	/*e*/
+"\e201f",	/*f*/
+"\e201g",	/*g*/
+"\e201h",	/*h*/
+"\e201i",	/*i*/
+"\e201j",	/*j*/
+"\e201k",	/*k*/
+"\e201l",	/*l*/
+"\e201m",	/*m*/
+"\e201n",	/*n*/
+"\e201o",	/*o*/
+"\e201p",	/*p*/
+"\e201q",	/*q*/
+"\e201r",	/*r*/
+"\e201s",	/*s*/
+"\e201t",	/*t*/
+"\e201u",	/*u*/
+"\e201v",	/*v*/
+"\e201w",	/*w*/
+"\e201x",	/*x*/
+"\e201y",	/*y*/
+"\e201z",	/*z*/
+"\e001{",	/*{*/
+"\e001|",	/*|*/
+"\e001}",	/*}*/
+"\e001~",	/*~*/
+"\e000\e0",	/*narrow sp*/
+"\e001-",	/*hyphen*/
+"\e001\e016Z\e017",	/*bullet*/
+"\e002[]",	/*square*/
+"\e002--",	/*3/4 em dash*/
+"\e001_",	/*rule*/
+"\e0031/4",	/*1/4*/
+"\e0031/2",	/*1/2*/
+"\e0033/4",	/*3/4*/
+"\e001-",	/*minus*/
+"\e202fi",	/*fi*/
+"\e202fl",	/*fl*/
+"\e202ff",	/*ff*/
+"\e203ffi",	/*ffi*/
+"\e203ffl",	/*ffl*/
+"\e001\e016p\e017",	/*degree*/
+"\e001|\eb\e342-\e302",	/*dagger*/
+"\e001\e301s\e343s\e302",	/*section*/
+"\e001'",	/*foot mark*/
+"\e001\e033Z",	/*acute accent*/
+"\e001`",	/*grave accent*/
+"\e001_",	/*underrule*/
+"\e001/",	/*long slash*/
+"\e000\e0",	/*half narrow space*/
+"\e001 ",	/*unpaddable space*/
+"\e001\e016A\e017",	/*alpha*/
+"\e001\e016B\e017",	/*beta*/
+"\e001\e016C\e017",	/*gamma*/
+"\e001\e016D\e017",	/*delta*/
+"\e001\e016E\e017",	/*epsilon*/
+"\e001\e016F\e017",	/*zeta*/
+"\e001\e016G\e017",	/*eta*/
+"\e001\e016H\e017",	/*theta*/
+"\e001\e016I\e017",	/*iota*/
+"\e001\e016J\e017",	/*kappa*/
+"\e001\e016K\e017",	/*lambda*/
+"\e001\e016L\e017",	/*mu*/
+"\e001\e016M\e017",	/*nu*/
+"\e001\e016N\e017",	/*xi*/
+"\e001\e016O\e017",	/*omicron*/
+"\e001\e016P\e017",	/*pi*/
+"\e001\e016Q\e017",	/*rho*/
+"\e001\e016R\e017",	/*sigma*/
+"\e001\e016S\e017",	/*tau*/
+"\e001\e016T\e017",	/*upsilon*/
+"\e001\e016U\e017",	/*phi*/
+"\e001\e016V\e017",	/*chi*/
+"\e001\e016W\e017",	/*psi*/
+"\e001\e016X\e017",	/*omega*/
+"\e001\e016#\e017",	/*Gamma*/
+"\e001\e016$\e017",	/*Delta*/
+"\e001\e016(\e017",	/*Theta*/
+"\e001\e016+\e017",	/*Lambda*/
+"\e001\e016.\e017",	/*Xi*/
+"\e001\e0160\e017",	/*Pi*/
+"\e001\e0169\e017",	/*Sigma*/
+"\e000",	/**/
+"\e001\e0164\e017",	/*Upsilon*/
+"\e001\e0165\e017",	/*Phi*/
+"\e001\e0167\e017",	/*Psi*/
+"\e001\e0168\e017",	/*Omega*/
+"\e001\e016[\e017",	/*square root*/
+"\e001\e016Y\e017",	/*\e(ts yields script-l*/
+"\e001\e016k\e017",	/*root en*/
+"\e001>\eb_",	/*>=*/
+"\e001<\eb_",	/*<=*/
+"\e001=\eb_",	/*identically equal*/
+"\e001-",	/*equation minus*/
+"\e001\e016o\e017",	/*approx =*/
+"\e001\e016n\e017",	/*approximates*/
+"\e001=\eb/",	/*not equal*/
+"\e002-\e242-\e202>",	/*right arrow*/
+"\e002<\eb\e202-\e242\e200-",	/*left arrow*/
+"\e001|\eb^",	/*up arrow*/
+"\e001|\eb\e302v\e342",	/*down arrow*/
+"\e001=",	/*equation equal*/
+"\e001\e016|\e017",	/*multiply*/
+"\e001\e016}\e017",	/*divide*/
+"\e001\e016j\e017",	/*plus-minus*/
+"\e001\e243|\e203_\e203|\e243",	/*cup (union)*/
+"\e001\e243|\e203\e351_\e311\e203|\e243",	/*cap (intersection)*/
+"\e001\e243(\e203\e302-\e345-\e303",	/*subset of*/
+"\e001\e302-\e345-\e303\e203)\e243",	/*superset of*/
+"\e001_\eb\e243(\e203\e302-\e345-\e303",	/*improper subset*/
+"\e001_\eb\e302-\e345-\e303\e203)\e243",	/*improper superset*/
+"\e001\e016~\e017",	/*infinity*/
+"\e001\e200o\e201\e301`\e241\e341`\e241\e341`\e201\e301",	/*partial derivative*/
+"\e001\e016:\e017",	/*gradient*/
+"\e001\e200-\e202\e341,\e301\e242",	/*not*/
+"\e001\e016?\e017",	/*integral sign*/
+"\e002o\e242c\e202",	/*proportional to*/
+"\e001O\eb/",	/*empty set*/
+"\e001<\eb\e341-\e302",	/*member of*/
+"\e001+",	/*equation plus*/
+"\e003(R)",	/*registered*/
+"\e003(C)",	/*copyright*/
+"\e001|",	/*box rule */
+"\e001\e033Y",	/*cent sign*/
+"\e001|\eb\e342=\e302",	/*double dagger*/
+"\e002=>",	/*right hand*/
+"\e002<=",	/*left hand*/
+"\e001*",	/*math * */
+"\e001\e0162\e017",	/*\e(bs yields small sigma*/
+"\e001|",	/*or (was star)*/
+"\e001O",	/*circle*/
+"\e001|",	/*left top of big brace*/
+"\e001|",	/*left bot of big brace*/
+"\e001|",	/*right top of big brace*/
+"\e001|",	/*right bot of big brace*/
+"\e001\e016]\e017",	/*left center of big brace*/
+"\e001\e016\e\e\e017",	/*right center of big brace*/
+"\e001|",	/*bold vertical*/
+"\e001|",	/*left floor (lb of big bracket)*/
+"\e001|",	/*right floor (rb of big bracket)*/
+"\e001|",	/*left ceiling (lt of big bracket)*/
+"\e001|"	/*right ceiling (rt of big bracket)*/
+.TE
+.SH FILES
+.PD 0
+.TP 25
+.BI /usr/lib/term/tab name
+driving tables
+.TP
+.B /usr/lib/term/README
+list of terminals supported by
+.BR nroff (1) 
+.PD
+.SH SEE ALSO
+.BR nroff (1),
+.BR ttcompat (4M)

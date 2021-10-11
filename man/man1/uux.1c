@@ -1,0 +1,337 @@
+.\" @(#)uux.1c 1.1 92/07/30 SMI; from S5R3
+.TH UUX 1C "8 June 1988"
+.SH NAME
+uux \- remote system command execution
+.SH SYNOPSIS
+.B uux
+[
+.B \-
+] [
+.B \-bcCjnprz
+] [
+.BI \-a name
+] [
+.BI \-g grade
+]
+.if n .ti +5
+[
+.BI \-x " debug_level"
+]
+.I command-string
+.IX  "uux command"  ""  "\fLuux\fP \(em system to system command execution"
+.IX  "system to system command execution"  ""  "system to system command execution \(em \fLuux\fP"
+.IX  communications  uux  ""  "\fLuux\fP \(em system to system command execution"
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I uucp
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.LP
+.B uux
+will gather 0 or more files from various systems,
+execute a command on a specified system
+and send the standard output to a file on a specified
+system.
+.LP
+For security reasons, most installations
+limit the list of
+commands executable on behalf of an incoming request from
+.BR uux ,
+permitting only the receipt of mail (see
+.BR mail (1)).
+Remote execution permissions are defined in
+.BR /etc/uucp/Permissions .
+.LP
+The
+.I command-string
+is made up of one or more arguments that look
+like a shell command line,
+except that the command and file names
+may be prefixed by
+.RI ` "system-name\fB!\fP" '.
+A null
+.I system-name
+is interpreted as the local system.
+.LP
+Path names may be one of:
+.RS
+.TP 4
+\(bu
+a full pathname;
+.TP
+\(bu
+a pathname preceded by
+.BI ~ username /\fR;
+.I username
+is interpreted as a username on the specified system
+and is replaced by that user's login directory on that system;
+.TP
+\(bu
+a pathname preceded by
+.BI ~/ destination /\fR;
+the
+.B ~/
+is replaced by the \*(lqpublic \s-1UUCP\s0\*(rq
+directory on the remote machine
+Note: this destination will be treated as a file name unless
+more than one file is being transferred by this request or
+the destination is already a directory.
+To ensure that it is a directory, follow the destination with a
+.RB ' / '.
+For example
+.B ~/dan/
+as the destination will make the directory
+.B /usr/spool/uucppublic/dan
+if it does not exist and put the requested file(s) in that directory;
+.TP
+\(bu
+a partial pathname, which is prefixed by the pathname of current directory.
+.RE
+.LP
+The
+.RB ` \- '
+option sends the standard input to the
+.B uux
+command as the standard input to the
+.IR command-string .
+.LP
+Any special shell characters such as
+.BR <\|> ,
+.BR ; ,
+and
+.B |
+should be quoted either by quoting the entire
+.IR command-string ,
+or by quoting the special
+characters as individual arguments.
+.LP
+.B uux
+will attempt to get all files to the execution system.
+For files that are output files, the file name must be escaped using
+parentheses.
+For example, the command
+.IP
+.ft B
+uux a!cut \-f1 b!/usr/file \\(c!/usr/file\\)
+.ft R
+.LP
+gets
+.B /usr/file
+from system 
+.B b
+and sends it to system 
+.BR a ,
+performs a
+.B cut
+command on that file and sends the result of the 
+.B cut
+command to system
+.BR c .
+.LP
+.B uux
+will notify you if the requested command on the remote
+system was disallowed, or if the command fails (that is,
+returns a non-zero exit status).
+This notification can be turned off by the
+.B \-n
+option.
+The response comes by remote mail from the remote machine.
+.SH OPTIONS
+.TP
+.BI \-b
+Return whatever standard input was provided to the
+.B uux
+command if the job fails (that is, returns a non-zero exit status).
+.TP
+.BI \-c
+Do not copy local file to the spool directory for transfer to the remote
+machine.  This is the default.
+.TP
+.BI \-C
+Force the copy of local files to the spool directory for transfer.
+.TP
+.BI \-j
+Output the jobid
+.SM ASCII
+string on the standard output which is the job identification.
+This job identification can be used by
+.BR uustat (1C)
+to obtain the status or terminate a job.
+.TP
+.B \-n
+Do not return any indication by
+.BR mail (1)
+of success or failure of the job.
+.TP
+.B \-p
+Same as
+.RB ` \- ':
+the standard input to
+.B uux
+is made the standard input to the
+.IR command-string .
+.TP
+.B \-r
+Do not start
+.BR uucico (8C),
+just queue the job.
+.TP
+.B \-z
+Return an indication by
+.B mail
+even if the job succeeds (that is, returns a zero exit status).
+.TP
+.BI \-a name
+Use
+.I name
+as the user identification replacing the initiator user
+.SM ID\s0.
+Notification will be returned to the user.
+.TP
+.BI \-g grade
+.I grade
+is a single letter or number, from
+.B 0
+to
+.BR 9 ,
+.B A
+to
+.BR Z ,
+or
+.B a
+to
+.BR z ;
+.B 0
+is the highest grade, and
+.B z
+is the lowest grade.
+Lower grades will transmit the job
+earlier during a particular conversation. 
+The default
+.I grade
+is
+.BR A .
+.TP
+.BI \-x " debug_level"
+Produce debugging output on the standard output.
+.I debug_level
+is a number between 0 and 9; higher numbers give more detailed information.
+5, 7, and 9 are good numbers to try;
+they give increasing amounts of detail.
+.SH EXAMPLE
+.LP
+The command
+.IP
+.ft B
+uux "!diff usg!/usr/dan/file1 pwba!/a4/dan/file2 > !~/dan/file.diff"
+.ft R
+.LP
+will get the
+.B file1
+and
+.B file2
+files from the
+.B usg
+and
+.B pwba
+machines, execute a
+.BR diff (1)
+command and put the results in
+.B file.diff
+in the local
+.B \s-1PUBDIR\s0/dan
+directory.
+.SH FILES
+.PD 0
+.TP 25
+.B /var/spool/uucp
+spool directories
+.TP
+.B /etc/uucp/Permissions
+remote execution permissions
+.TP
+.B /etc/uucp/\(**
+other data
+.TP
+.B /usr/lib/uucp/\(**
+other programs
+.PD
+.SH SEE ALSO
+.BR mail (1),
+.BR uucp (1C),
+.BR uustat (1C),
+.BR uucico (8C)
+.LP
+.TX ADMIN
+.SH WARNINGS
+.LP
+Only the first command of a shell pipeline may
+have a
+.RI ` "system-name\fB!\fP" '.
+All other commands are executed on the system of the first
+command.
+.LP
+The use of the shell metacharacter
+.B \(**
+will probably not do what you want it to do.
+.LP
+The shell tokens
+.B <<
+and
+.B >>
+are not implemented.
+.br
+.ne 10
+.LP
+The execution of commands on remote systems takes place in an
+execution directory known to the
+.SM UUCP
+system.
+All files required for the execution will be put into this
+directory unless they already reside on that machine.
+Therefore, the simple file name (without path or machine
+reference) must be unique within the
+.B uux
+request.
+The following command will
+.SM NOT
+work:
+.IP
+.ft B
+uux "a!diff b!/usr/dan/xyz c!/usr/dan/xyz > !xyz.diff"
+.ft R
+.LP
+but the command
+.IP
+.ft B
+uux "a!diff a!/usr/dan/xyz c!/usr/dan/xyz > !xyz.diff"
+.ft R
+.LP
+will work
+(if
+.B diff
+is a permitted command).
+.LP
+When invoking
+.B uux
+from
+.BR csh (1),
+the
+.B !
+character must be prefixed by the
+.B \e
+escape to inhibit
+.BR csh 's
+history mechanism. Quotes are not sufficient.
+.br
+.ne 6
+.SH BUGS
+.LP
+Protected files and files that are in protected directories that are owned
+by the requestor can be sent in commands using
+.BR uux .
+However, if the requestor is root, and the directory is not searchable
+by \*(lqother\*(rq, the request will fail.

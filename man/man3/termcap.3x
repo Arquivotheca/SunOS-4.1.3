@@ -1,0 +1,213 @@
+.\" @(#)termcap.3x 1.1 92/07/30 SMI; from UCB 4.2
+.TH TERMCAP 3X "6 October 1987"
+.SH NAME
+termcap, tgetent, tgetnum, tgetflag, tgetstr, tgoto, tputs \- terminal independent operation routines
+.SH SYNOPSIS
+.nf
+.ft B
+char \s-1PC\s0;
+char *\s-1BC\s0;
+char *\s-1UP\s0;
+short ospeed;
+.LP
+.ft B
+tgetent(bp, name)
+char *bp, *name;
+.LP
+.ft B
+tgetnum (id)
+char *id;
+.LP
+.ft B
+tgetflag (id)
+char *id;
+.LP
+.ft B
+char *
+tgetstr(id, area)
+char *id, **area;
+.LP
+.ft B
+char *
+tgoto(cm, destcol, destline)
+char *cm;
+.LP
+.ft B
+tputs(cp, affcnt, outc)
+register char *cp;
+int affcnt;
+int (*outc)(\|);
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "tgetent()"  ""  "\fLtgetent()\fP \(em get entry for terminal"
+.IX  "terminal independent operations"  tgetent()  ""  \fLtgetent()\fP
+.IX  "tgetnum()"  ""  "\fLtgetnum()\fP \(em get numeric capability"
+.IX  "terminal independent operations"  tgetnum()  ""  \fLtgetnum()\fP
+.IX  "tgetflag()"  ""  "\fLtgetflag()\fP \(em get Boolean capability"
+.IX  "terminal independent operations"  tgetflag()  ""  \fLtgetflag()\fP
+.IX  "tgetstr()"  ""  "\fLtgetstr()\fP \(em get string capability"
+.IX  "terminal independent operations"  tgetstr()  ""  \fLtgetstr()\fP
+.IX  "tgoto()"  ""  "\fLtgoto()\fP \(em go to position"
+.IX  "terminal independent operations"  tgoto()  ""  \fLtgoto()\fP
+.IX  "tputs()"  ""  "\fLtputs()\fP \(em decode padding information"
+.IX  "terminal independent operations"  tputs()  ""  \fLtputs()\fP
+.LP
+These functions extract and use capabilities
+from the terminal capability data base
+.BR termcap (5).
+These are low level routines; see
+.BR curses (3V)
+for a higher level package.
+.LP
+.B tgetent(\|)
+extracts the entry for terminal
+.I name
+into the
+.I bp
+buffer, with the current size of the tty
+(usually a window).  This allows pre-SunWindows
+programs to run in a window of arbitrary size.
+.I bp
+should be a character buffer of size
+1024 and must be retained through all subsequent calls to
+.BR tgetnum(\|) ,
+.BR tgetflag(\|) ,
+and
+.BR tgetstr(\|) .
+.B tgetent(\|)
+returns \-1 if it cannot open the
+.B termcap(\|)
+file, 0 if the terminal name given does not have
+an entry, and 1 if all goes well.
+It will look in the environment for a
+.SB TERMCAP
+variable.
+If found, and the value does not begin with a slash,
+and the terminal type
+.I name
+is the same as the environment string
+.BR \s-1TERM\s0 ,
+the
+.SB TERMCAP
+string is used instead of reading the termcap file.
+If it does begin with a slash, the string is
+used as a path name rather than
+.BR /etc/termcap .
+This can speed up entry into programs that call
+.BR tgetent ,
+as well as to help debug new terminal descriptions
+or to make one for your terminal if you cannot
+write the file
+.BR /etc/termcap .
+Note: if the window size changes,
+the ``lines'' and ``columns'' entries in
+.I bp
+are no longer correct.  See the
+.TX SVPG
+for details regarding [how to handle] this.
+.LP
+.B tgetnum(\|)
+gets the numeric value of capability
+.BR \s-1ID\s0 ,
+returning \-1 if is not given for the terminal.
+.B tgetflag(\|)
+returns 1 if the specified capability is present in
+the terminal's entry, 0 if it is not.
+.B tgetstr(\|)
+gets the string value of capability
+.BR \s-1ID\s0 ,
+placing it in the buffer at
+.IR area ,
+advancing the
+.I area
+pointer.
+It decodes the abbreviations for this field described in
+.BR termcap (5),
+except for cursor addressing and padding information.
+.B tgetstr(\|)
+returns the string pointer if successful.
+Otherwise it returns zero.
+.br
+.ne 10
+.LP
+.B tgoto(\|)
+returns a cursor addressing string decoded from
+.I cm
+to go to column
+.I destcol
+in line
+.IR destline .
+It uses the external variables
+.SB UP
+(from the
+.B up
+capability) and
+.SB BC
+(if
+.B bc
+is given rather than
+.BR bs )
+if necessary to avoid placing
+.BR \en ,
+.B ^D
+or
+.B ^@
+in the returned string.
+(Programs which call
+.B tgoto(\|)
+should be sure to turn off the
+.SB XTABS
+.BR bit (s), since
+.B tgoto(\|)
+may now output a tab.
+Note: programs using
+.B termcap(\|)
+should in general turn off
+.SB XTABS
+anyway since some terminals use
+.B ^I
+(\s-1CTRL-I\s0)
+for other functions, such as nondestructive space.)
+If a
+.B %
+sequence is given which is not understood, then
+.B tgoto(\|)
+returns
+.BR \s-1OOPS\s0 .
+.LP
+.B tputs(\|)
+decodes the leading padding information of the string
+.IR cp ;
+.I affcnt
+gives the number of lines affected by the operation,
+or 1 if this is not applicable,
+.I outc
+is a routine which is called with each character in turn.
+The external variable
+.I ospeed
+should contain the encoded output speed of
+the terminal as described in
+.BR tty (4).
+The external variable
+.SB PC
+should contain a pad character to be used (from the
+.B pc
+capability) if a
+.SM NULL
+.BR  (\fB^@\fR)
+is inappropriate.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/libtermcap.a
+\-ltermcap library
+.TP
+.B /etc/termcap
+data base
+.PD
+.SH SEE ALSO
+.BR ex (1),
+.BR curses (3V),
+.BR tty (4),
+.BR termcap (5)

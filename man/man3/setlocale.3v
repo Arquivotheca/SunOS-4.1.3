@@ -1,0 +1,344 @@
+.\"@(#)setlocale.3v 1.1 92/07/30 SMI; new for 4.1
+.\" "ProposalV2.1" "/usr/group Internationalization"
+.TH SETLOCALE 3V "21 January 1990" 
+.SH NAME
+setlocale, nl_init \- set international environment
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <locale.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *setlocale(category, locale)
+int category;
+char *locale;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int nl_init(lang)
+char *lang;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "setlocale() set" "" "\fLsetlocale()\fR \(em set international environment" ""
+.IX "international" "set international environment"
+.IX LC_ALL "setlocale() category" "\s-1LC_ALL\s0" "\fLsetlocale()\fR category"
+.IX LC_CTYPE "setlocale() category" "\s-1LC_CTYPE\s0" "\fLsetlocale()\fR category"
+.IX LC_COLLATE "setlocale() category" "\s-1LC_COLLATE\s0" "\fLsetlocale()\fR category"
+.IX LC_TIME "setlocale() category" "\s-1LC_TIME\s0" "\fLsetlocale()\fR category"
+.IX LC_NUMERIC "setlocale() category" "\s-1LC_NUMERIC\s0" "\fLsetlocale()\fR category"
+.IX LC_MONETARY "setlocale() category" "\s-1LC_MONETARY\s0" "\fLsetlocale()\fR category"
+.IX LC_MESSAGES "setlocale() category" "\s-1LC_MESSAGES\s0" "\fLsetlocale()\fR category"
+.LP
+.B setlocale(\|)
+selects the appropriate piece of the program's locale as 
+specified by
+.IR category ,
+and may be used to change or query the program's international 
+environment.
+The entire locale may be changed by calling
+.B setlocale(\|)
+with
+.I category
+set to 
+.BR \s-1LC_ALL\s0 .
+The other possible values for 
+.I category
+query or change only a part of the program's complete international locale:
+.TP
+.SB LC_CTYPE
+Affects the behavior of the character classification and conversion functions.
+See
+.BR ctype (3V),
+and
+.BR mblen (3).
+.TP 
+.SB LC_COLLATE
+Affects the behavior of the string collation functions
+.B strcoll (3)
+and 
+.BR strxfrm (3V).
+.TP
+.SB LC_TIME
+Affects the behavior of the 
+time conversion functions.
+See 
+.BR printf (3V),
+.BR scanf (3V),
+.BR strtod (3),
+and
+.BR ctime (3V)
+for
+.BR strftime(\|) ,
+.BR strptime(\|) ,
+and
+.BR ctime(\|) .
+.TP 
+.SB LC_NUMERIC
+Affects the radix character for the formatted input/output
+functions and the string conversion functions,
+.BR gcvt (3V),
+.BR printf (3V),
+.BR strtod (3),
+.BR gconvert(\|) ,
+.B sgconvert(\|)
+(see
+.BR econvert (3)),
+.BR file_to_decimal(\|) ,
+and
+.BR func_to_decimal(\|)
+(see
+.BR string_to_decimal (3)).
+Also affects the non-monetary formatting information
+returned by the 
+.B localeconv(\|)
+function.
+.TP
+.SB LC_MONETARY
+Affects the monetary formatting information
+returned by the
+.B localeconv(\|)
+function.
+.TP
+.SB LC_MESSAGES
+Affects the behavior of functions that present messages, namely
+.BR gettext(\|) ,
+and 
+.BR textdomain(\|) .
+.LP
+The 
+.I locale 
+argument is a pointer to a character string containing the required setting of 
+.IR category .
+The following preset values of 
+.I locale
+are defined for all settings of 
+.IR category :
+.TP
+\fB"C"\fP
+Specifies the minimal environment for C translation. 
+If 
+.B setlocale(\|)
+is not invoked, the 
+\fB"C"\fP
+locale is the default.
+Operational behavior within the 
+\fB"C"\fP
+locale is defined separately for each interface function.
+.LP
+At program startup, the equivalent of: 
+.TP
+\fB""\fP
+In this case, 
+.B setlocale(\|)
+will first check the value of the corresponding environment variable
+(for example,
+.SB LC_CTYPE
+for the
+.SB LC_CTYPE
+category) and if valid (that is, points to the name
+of a valid locale), 
+.B setlocale(\|)
+sets the specified category of the international environment
+to that value and returns the string corresponding
+to the locale set (that is, the value of the environment variable, not
+\fB""\fR).
+If the 
+value is invalid,
+.B setlocale(\|)
+returns a
+.SM NULL
+pointer and the international environment is not changed by this call.
+.IP
+If the environment variable corresponding to the specified category is not 
+set or is set to the empty string, 
+.B setlocale(\|)
+will examine the
+.SB LANG
+environment variable.
+If both the
+.SB LANG
+environment variable,
+and the environment variable corresponding to the specified category 
+are not set or are set to the empty string, then the
+.B LC_default
+environment variable is examined.
+If this contains a valid setting, then the category is set to the
+value of
+.BR LC_default .
+If the
+.SB LANG
+environment variable is set and valid 
+this will set the category to the corresponding value of 
+.BR \s-1LANG\s0 .
+If
+.B LC_default
+is not set, then
+.B setlocale(\|)
+returns that category to the default
+\fB"C"\fR
+locale.
+.LP
+To set all categories
+in the international environment, 
+.B setlocale(\|)
+is invoked in the following manner:
+.LP 
+.RS
+.ft B
+.nf
+setlocale (\s-1LC_ALL\s0,  "" );
+.fi
+.ft R
+.RE
+.LP
+To satisfy this request, 
+.B setlocale(\|)
+first checks all the relevant environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LC_COLLATE\s0 ,
+.BR \s-1LC_TIME\s0 ,
+.BR \s-1LC_NUMERIC\s0 ,
+.BR \s-1LC_MONETARY\s0 ,
+.BR \s-1LC_MESSAGES\s0 .
+If any one of these relevant environment variables
+is invalid, this call to
+.B setlocale(\|)
+will return a
+.SM NULL
+pointer, and the international environment will
+not be changed.
+If all the relevant environment variables are valid, 
+.B setlocale(\|)
+sets the international environment to reflect the values of the environment 
+variables.
+The categories are set in the following order:
+.LP
+.RS
+.nf
+.SB LC_CTYPE
+.SB LC_COLLATE
+.SB LC_TIME
+.SB LC_NUMERIC
+.SB LC_MONETARY
+.SB LC_MESSAGES
+.fi
+.RE
+.LP
+Using this scheme, the categories corresponding to the environment variables
+will override the value of the 
+.SB LANG
+and
+.B LC_default
+environment variables for a particular
+category.
+.LP
+.B nl_init(\|)
+is equivalent to
+.LP
+.RS
+.nf
+.ft B
+setlocale(\s-1LC_ALL\s0, "");
+.ft
+.fi
+.RE
+.LP
+and is supplied for compatibility with X/Open
+.SM XPG2\s0.
+.SH RETURN VALUES
+.LP
+If a valid string is given for the 
+.I locale
+parameter, and the selection can be honored, 
+.B setlocale(\|)
+returns the string associated with the specified
+.I category
+for the new locale.
+If the selection cannot be honored, 
+.B setlocale(\|)
+returns a null pointer and the program's locale
+is not changed.
+.LP
+A
+.SM NULL
+pointer for 
+.I locale
+causes 
+.B setlocale(\|)
+to return the string associated with the 
+.I category
+for the program's current locale; the program's 
+locale is not changed.
+The string contains information relating to each
+piece part of the whole international environment.
+This inquiry can fail by returning a null pointer if any 
+.I category
+is invalid.
+.LP
+The string returned by such a  
+.B setlocale(\|)
+call is such that a subsequent call with the string and its associated 
+category will restore that part of the program's locale.
+The string returned by:
+.LP
+.RS
+.ft B
+ptr = setlocale(\s-1LC_ALL\s0, (char *) 0);
+.ft R
+.RE
+.LP
+is such that in a subsequent call:
+.LP
+.RS
+.ft B
+setlocale(\s-1LC_ALL\s0, ptr);
+.ft R
+.RE
+.LP
+will reset each and every category to the state when the string 
+was first returned.
+The string returned must not be modified by the program,
+but will be overwritten by a subsequent call to 
+.BR setlocale(\|) .
+.SH "FILES"
+.PD 0
+.TP 20
+.B /etc/locale/\f2locale\fP/\f2category\fP
+.I locale
+is the directory that contains numerous files
+.RI ( categories ),
+each relating to a single category of a valid
+.I locale 
+as selected by category argument to 
+.BR setlocale(\|) .
+Generally this is classed as a private directory.
+This directory is searched by 
+.BR setlocale(\|) , 
+prior to searching:
+.TP 20
+.B /usr/share/lib/locale/\f2locale\fP/\f2category\fP
+.I locale
+is the directory that contains numerous files
+.RI ( categories ),
+each relating to a single category of a valid
+.I locale 
+as selected by category argument to 
+.BR setlocale(\|) .
+Generally this data is classed as global and sharable.
+.PD
+.SH DIAGNOSTICS
+.LP
+.B setlocale(\|)
+returns a null pointer if a relevant environment variable
+has an invalid setting.
+.B setlocale(\|)
+also returns a null pointer if
+.I category
+is invalid.

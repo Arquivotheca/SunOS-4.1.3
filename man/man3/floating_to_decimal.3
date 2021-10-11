@@ -1,0 +1,192 @@
+.\" @(#)floating_to_decimal.3 1.1 92/07/30 SMI;
+.TH FLOATING_TO_DECIMAL 3 "23 October 1987"
+.SH NAME
+single_to_decimal, double_to_decimal, extended_to_decimal \- convert floating-point value to decimal record
+.SH SYNOPSIS
+.B #include <floatingpoint.h>
+.LP
+.nf
+.B void single_to_decimal(px, pm, pd, ps)
+.B single *px ;
+.B decimal_mode *pm;
+.B decimal_record *pd;
+.B fp_exception_field_type *ps;
+.fi
+.LP
+.nf
+.B void double_to_decimal(px, pm, pd, ps)
+.B double *px ;
+.B decimal_mode *pm;
+.B decimal_record *pd;
+.B fp_exception_field_type *ps;
+.fi
+.LP
+.nf
+.B void extended_to_decimal(px, pm, pd, ps)
+.B extended *px ;
+.B decimal_mode *pm;
+.B decimal_record *pd;
+.B fp_exception_field_type *ps;
+.fi
+.SH DESCRIPTION
+.IX  "single_to_decimal()"  ""  "\fLsingle_to_decimal()\fR \(em decimal record from single-precision floating"
+.IX  "decimal record from single-precision floating \(em \fLsingle_to_decimal()\fR"
+.IX  "double_to_decimal()"  ""  "\fLdouble_to_decimal()\fR \(em decimal record from double-precision floating"
+.IX  "decimal record from double-precision floating \(em \fLdouble_to_decimal()\fR"
+.IX  "extended_to_decimal()"  ""  "\fLextended_to_decimal()\fR \(em decimal record from extended-precision floating"
+.IX  "decimal record to extended-precision floating \(em \fLextended_to_decimal()\fR"
+.LP
+The
+.B floating_to_decimal(\|)
+functions convert the floating-point value at
+.I *px
+into a decimal record at
+.IR *pd ,
+observing the modes specified in
+.I *pm
+and setting exceptions in
+.IR *ps .
+If there are no
+.SM IEEE
+exceptions,
+.I *ps
+will be zero.
+.LP
+If
+.I *px
+is zero, infinity, or NaN, then only
+.I pd->sign
+and
+.I pd->fpclass
+are set.
+Otherwise
+.I pd->exponent
+and
+.I pd->ds
+are also set so that
+.IP
+.B (pd->sign)*(pd->ds)*10**(pd->exponent)
+.LP
+is a correctly rounded approximation to
+.I *px.
+.I pd->ds
+has at least one and no more than
+.SB  DECIMAL_STRING_LENGTH\-1
+significant digits
+because one character is used to terminate the string with a
+null character.
+.LP
+.I pd->ds
+is correctly rounded according to the
+.SM IEEE
+rounding modes in
+.IR pm->rd .
+.I *ps
+has
+.I fp_inexact
+set if the result was inexact, and has
+.I fp_overflow
+set if the string result does not fit in
+.I pd->ds
+because of the limitation
+.BR \s-1DECIMAL_STRING_LENGTH\s0 .
+.LP
+If
+.IR "pm->df == floating_form" ,
+then
+.I pd->ds
+always contains
+.I pm->ndigits
+significant digits.  Thus if
+.I *px
+== 12.34 and
+.I pm->ndigits
+== 8, then
+.I pd->ds
+will contain 12340000 and
+.I pd->exponent
+will contain \-6.
+.LP
+If
+.I pm->df == fixed_form
+and
+.I pm->ndigits
+>= 0, then
+.I pd->ds
+always contains
+.I pm->ndigits
+after the point and as many digits as necessary before the point.  Since
+the latter is not known in advance, the total number of digits required
+is returned in
+.IR pd->ndigits ;
+if that number >=
+.BR \s-1DECIMAL_STRING_LENGTH\s0 ,
+then
+.I ds
+is undefined.
+.I pd->exponent
+always gets
+.IR \-pm->ndigits .
+Thus if
+.I *px
+== 12.34 and
+.I pm->ndigits
+== 1,
+then
+.I pd->ds
+gets 123,
+.I pd->exponent
+gets \-1, and
+.I pd->ndigits
+gets 3.
+.LP
+If
+.I pm->df == fixed_form
+and
+.I pm->ndigits
+< 0, then
+.I pm->ds
+always contains
+.I \-pm->ndigits
+trailing zeros; in other words, rounding occurs
+.I \-pm->ndigits
+to
+the left of the decimal point, but the digits rounded away are retained
+as zeros.  The total number of digits required is in
+.IR pd->ndigits .
+.I pd->exponent
+always gets 0.  Thus if
+.I *px
+== 12.34 and
+.I pm->ndigits
+== \-1,
+then
+.I pd->ds
+gets 10,
+.I pd->exponent
+gets 0, and
+.I pd->ndigits
+gets 2.
+.br
+.ne 5
+.LP
+.I pd->more
+is not used.
+.LP
+.BR econvert(\|) ,
+.B fconvert(\|)
+and
+.B gconvert(\|)
+(see
+.BR econvert (3)),
+and
+.B printf(\|)
+and
+.B sprintf(\|)
+(see
+.BR printf (3V))
+all use
+.BR double_to_decimal(\|) .
+.SH SEE ALSO
+.BR econvert (3),
+.BR printf (3V)

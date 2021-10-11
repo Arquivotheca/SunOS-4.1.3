@@ -1,0 +1,157 @@
+.\" @(#)ptx.1 1.1 92/07/30 SMI;
+.TH PTX 1 "21 December 1987"
+.SH NAME
+ptx \- generate a permuted index
+.SH SYNOPSIS
+.B ptx
+[
+.B \-f
+] [
+.B \-t
+] [
+.B \-w
+.I n
+] [
+.BI \-g
+.I n
+] [
+.BI \-o
+.I only
+] [
+.BI \-i
+.I ignore
+]
+.if n .ti +0.5i
+[
+.BI \-b
+.I break] [
+.B \-r
+] [
+.I input
+[
+.I output
+] ]
+.SH AVAILABILITY
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "ptx command"  ""  "\fLptx\fP \(em generate permuted index"
+.IX  generate "permuted index \(em \fLptx\fP"
+.IX  "create" "permuted index \(em \fLptx\fP"
+.IX  "document production"  ptx  ""  "\fLptx\fP \(em generate permuted index"
+.IX  "permuted index, generate \(em \fLptx\fP"
+.IX  "indexing, generate permuted index \(em \fLptx\fR"
+.B ptx
+generates a permuted index of the contents of file
+.I input
+onto file
+.I output
+(defaults are standard input and output).
+.B ptx
+has three phases: the first does the permutation,
+generating
+one line for each keyword in an input line.
+The keyword is rotated to the front.
+The permuted file is then sorted.
+Finally, the sorted lines are rotated so the keyword
+comes at the middle of the page.
+.B ptx
+produces output in the form:
+.IP
+\&\fB.\fIxx\fB "\fItail\fB" "\fIbefore keyword\fB" "\fIkeyword and after\fB" "\fIhead\fB"
+.LP
+where
+.I xx
+may be an
+.BR nroff (1)
+or
+.BR troff (1)
+macro for user-defined formatting.  The
+.I before keyword
+and
+.I keyword and after
+fields incorporate as much of the line as will fit
+around the keyword when it is printed at the middle of the page.
+.I tail
+and
+.IR head ,
+at least one of which is an empty string
+.BR \*(lq\|\*(rq ,
+are wrapped-around pieces small enough to fit
+in the unused space at the opposite end of the line.
+When original text must be discarded,
+.RB ` / '
+marks the spot.
+.SH OPTIONS
+.TP 15
+.BR \-f
+Fold upper and lower case letters for sorting.
+.TP
+.BR \-t
+Prepare the output for the phototypesetter;
+the default line length is 100 characters.
+.TP
+.BI \-w " n"
+Use the next argument,
+.I n,
+as the width of the output line.
+The default line length is 72 characters.
+.TP
+.BI \-g " n"
+Use the next argument,
+.IR n ,
+as the number of characters to allow for
+each gap among the four parts of the line as finally printed.
+The default gap is 3 characters.
+.TP
+.BI \-o " only"
+Use as keywords only the words given in the
+.I only
+file.
+.TP
+.BI \-i " ignore"
+Do not use as keywords any words given in the
+.I ignore
+file.
+If the
+\fB\-i\fR
+and
+\fB\-o\fR
+options are missing, use
+.B /usr/lib/eign
+as the
+.I ignore
+file.
+.TP
+.BI \-b " break"
+Use the characters in the
+.I break
+file to separate words.
+In any case,
+.SM TAB\s0,
+.SM NEWLINE\s0,
+and
+.SM SPACE
+characters are always used as
+break characters.
+.TP
+.BR \-r
+Take any leading nonblank characters of each input line to
+be a reference identifier (as to a page or chapter)
+separate from the text of the line.
+Attach that identifier as a 5th field on each output line.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/eign
+.PD
+.SH SEE ALSO
+.BR nroff (1),
+.BR sort (1V),
+.BR troff (1)
+.SH BUGS
+Line length counts do not account for overstriking
+or proportional spacing.

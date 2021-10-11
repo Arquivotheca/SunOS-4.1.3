@@ -1,0 +1,574 @@
+.\" @(#)rdist.1 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH RDIST 1 "18 December 1989"
+.SH NAME
+rdist \- remote file distribution program
+.SH SYNOPSIS
+.B rdist
+[
+.B \-b
+]
+[
+.B \-h
+]
+[
+.B \-i
+]
+[
+.B \-n
+]
+[
+.B \-q
+]
+[
+.B \-R
+]
+[
+.B \-v
+]
+.if n .ti +5n
+[
+.B \-w
+]
+[
+.B \-y
+]
+[
+.BI \-d " macro = value"
+]
+.if t .ti +.5i
+[
+.BI \-f " distfile"
+]
+.if n .ti +5n
+[
+.BI \-m " host"
+] .\|.\|. [
+.I package
+\&.\|.\|.
+]
+.LP
+.B rdist
+[
+.B \-b
+]
+[
+.B \-h
+]
+[
+.B \-i
+]
+[
+.B \-n
+]
+[
+.B \-q
+]
+[
+.B \-R
+]
+[
+.B \-v
+]
+.if n .ti +5n
+[
+.B \-w
+]
+[
+.B \-y
+]
+.if t .ti +.5i
+.B \-c
+.IR pathname " .\|.\|."
+.if n .ti +5n
+[\fIlogin\|\fB@\fR]\fIhostname\fR[\fB:\fIdestpath\|\fR]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Networking
+software installation option.
+See
+.TX INSTALL
+for information about installing optional software.
+.SH DESCRIPTION
+.IX "rdist command" "" "\fLrdist\fP \(em remote file distribution"
+.B rdist
+maintains copies of files on multiple hosts.
+It preserves the owner, group, mode, and modification time of the
+master copies, and can update programs that are executing.
+Normally, a copy on a remote host is updated if its size
+or modification time differs from the original on the local host.
+.B rdist
+reads the indicated
+.I distfile
+for instructions on updating files and/or directories.
+If
+.I distfile
+is
+.RB ` \- ',
+the standard input is used.
+If no
+.B \-f
+option is present,
+.B rdist
+first looks in its working directory for
+.BR distfile ,
+and then for
+.BR Distfile ,
+for instructions.
+.LP
+.B rdist
+updates each
+.I package
+specified on the command line; if none are given, all packages
+are updated according to their entries in the
+.IR distfile .
+.SH OPTIONS
+.TP
+.B \-b
+Binary comparison.
+Perform a binary comparison and update files if they differ,
+rather than merely comparing dates and sizes.
+.TP
+.B \-h
+Follow symbolic links.
+Copy the file that the link points to rather than the link itself.
+.TP
+.B \-i
+Ignore unresolved links.
+.B rdist
+will normally try to maintain the link structure of files being transffered
+and warn the user if all the links cannot be found.
+.TP
+.B \-n
+Print the commands without executing them.
+This option is useful for debugging a distfile.
+.TP
+.B \-q
+Quiet mode.  Do not display the files being updated on the standard output.
+.TP
+.B \-R
+Remove extraneous files.
+If a directory is being updated, remove files on the remote host that do not
+correspond to those in the master (local) directory.
+This is useful for maintaining truly identical copies of directories.
+.TP
+.B \-v
+Verify that the files are up to date on all the hosts.
+Any files
+that are out of date are displayed, but no files are updated, nor is
+any mail sent.
+.TP
+.B \-w
+Whole mode.
+The whole file name is appended to the destination directory name.
+Normally, only the last component of a name is used when renaming files.
+This preserves the directory structure of the files being copied, instead
+of flattening the directory structure.
+For instance, renaming a list of files such as
+.B "( dir1/f1 dir2/f2 )"
+to
+.B dir3
+would create files
+.B dir3/dir1/f1
+and
+.B dir3/dir2/f2
+instead of
+.B dir3/f1
+and
+.BR dir3/f2 .
+When the
+.B \-w
+option is used with a filename that begins with
+.BR ~ ,
+everything except the home directory is appended to the destination name.
+.TP
+.B \-y
+Younger mode.
+Do not update remote copies that are younger than the master copy, but
+issue a warning message instead.
+.TP
+.BI \-d " macro" = value
+Define
+.I macro
+to have
+.IR value .
+This option is used to define or override macro definitions in the distfile.
+.I value
+can be the empty string, one name, or a list of names surrounded by
+parentheses and separated by white space.
+.br
+.ne 5
+.HP
+.B \-c
+.IR pathname " .\|.\|."
+[\fIlogin\|\fB@\fR]\fIhostname\fR[\fB:\fIdestpath\|\fR]
+.br
+Update each
+.I pathname
+on the named host. (Relative filenames are taken as relative to your
+home directory.)
+If the
+\fR`\fIlogin\fB\|@\fR'
+prefix is given, the update is performed with the user ID of 
+.IR login .  
+If the
+\fR`\fB:\fIdestpath\fR'
+is  given, the remote file is installed as that pathname.
+.br
+.ne 5
+.TP
+.BI \-f " distfile"
+Use the description file
+.IR distfile .
+A
+.RB ` \- '
+as the
+.I distfile
+argument denotes the standard input.
+.TP
+.BI \-m " host"
+Limit which machines are to be updated.
+Multiple
+.B \-m
+arguments can be given to limit updates to a subset of the hosts
+listed in the distfile.
+.SH USAGE
+.SS Packages
+A typical package begins with a label composed of the package
+name followed by a colon:
+.IP
+.IB package :
+.LP
+This label allows you to group any number of file-to-host and
+file-to-timestamp mappings into a single distribution package.
+If no package label appears in the distfile, the default package
+includes all mappings in the file.
+.LP
+A file-to-host mapping specifies a list of files or directories
+to distribute, their destination host(s), and any
+.B rdist
+primitives to use in performing the update.  A mapping of this
+sort takes the form:
+.IP
+.BI ( " pathname .\|.\|. " )
+.B \->
+.BI ( " hostname .\|.\|. " )
+.I primitive
+.B ;
+.RI [ primitive
+.BR ; ]\|.\|.\|.
+.LP
+In this case, each
+.I pathname
+is the full pathname of a local file or directory to distribute; each
+.I hostname
+is the name of a remote host on which those files are to be copied,
+and
+.I primitive
+is one of the
+.B rdist
+primitive listed under
+.IR Primitives ,
+below.  If there is only one 
+.I pathname
+or 
+.IR hostname ,
+the surrounding parentheses can be omitted.  A
+.I hostname
+can also take the form:
+.IP
+.IB login @ hostname
+.LP
+in which case the update is performed as the user named
+.IR login .
+.LP
+A file-to-timestamp mapping is used to monitor which local files are
+updated with respect to a local \*(lqtimestamp\*(rq file.  This mapping
+takes the form:
+.IP
+.BI ( " filename .\|.\|. " )
+.B ::
+.I timestamp-file
+.I primitive
+.B ;
+.RI [ primitive
+.BR ; ]\|.\|.\|.
+.LP
+In this case,
+.I timestamp-file
+is the name of a file, the modification time of which is compared with
+each named file on the local host.  If a file is newer than
+.IR time-stamp-file ,
+.B rdist
+displays a message to that effect.  If there is only one
+.IR filename ,
+the parentheses can be omitted.
+.SS White Space Characters
+.LP
+.SM NEWLINE\s0,
+.SM TAB\s0,
+and
+.SM SPACE
+characters are all treated as white space; a mapping
+continues across input lines until the start of the next mapping:
+either a single
+.I filename
+followed by a
+.RB ` \-> '
+or the opening parenthesis of a filename list.
+.SS Comments
+Comments begin with
+.B #
+and end with a
+.SM NEWLINE\s0.
+.SS Macros
+.LP
+.B rdist
+has a limited macro facility.  Macros are only expanded in filename or
+hostname lists, and in the argument lists of certain primitives.  Macros
+cannot be used to stand for primitives or their options, or the
+.BR ` \-> '
+or
+.BR ` :: '
+symbols.
+.LP
+A macro definition is a line of the form:
+.IP
+.IB macro " = " value
+.br
+.ne 6
+.LP
+A macro reference is a string of the form:
+.IP
+.BI ${ macro }
+.LP
+although (as with
+.BR make (1))
+the braces can be omitted if the macro name consists of just one
+character.
+.br
+.ne 7
+.SS Metacharacters
+.LP
+The shell meta-characters:
+.BR [ ,
+.BR ] ,
+.BR { ,
+.BR } ,
+.B *
+and
+.B ?
+are recognized and expanded (on the local host only) just as
+they are with 
+.BR csh (1).
+Metacharacters can be escaped by prepending a backslash.
+.LP
+The
+.B ~
+character is also expanded in the same way as with
+.BR csh ,
+however, it is expanded separately on the local and destination hosts.
+.SS Filenames
+.LP
+File names that do not begin with
+.B /
+or
+.B ~
+are taken to be relative to user's home directory on each
+destination host.  Note that they are
+.I not
+relative to the current working directory.
+.SS Primitives
+The following primitives can be used to specify actions
+.B rdist
+is to take when updating remote copies of each file.
+.HP
+.B install 
+[
+.B \-b
+]
+[
+.B \-h
+]
+[
+.B \-i
+]
+[
+.B \-R
+]
+[
+.B \-v
+]
+[
+.B \-w
+]
+[
+.B \-y
+]
+.RI [ newname ]
+.br
+Copy out-of-date files and directories (recursively).
+If no
+.B install
+primitive appears in the package entry, or if
+no
+.I newname
+option is given, the name of the local file is given to the
+remote host's copy.
+If absent from the remote host, parent directories in a
+filename's path are created.
+To help prevent disasters, a non-empty directory on a target host is
+not replaced with a regular file or a symbolic link by
+.BR rdist .
+However, when using the
+.B \-R
+option, a non-empty directory is removed if the corresponding filename
+is completely absent on the master host.
+The options for
+.B install
+have the same semantics as
+their command line counterparts, but are limited
+in scope to a particular map.
+The login name used on the destination host is the same as the local host
+unless the destination name is of the format
+.IB login @ host\fR.
+In that case, the update is performed under the username
+.IR login .
+.TP
+.BI notify " address \&.\|.\|."
+Send mail to the indicated
+.SM TCP/IP
+.I address
+of the form:
+.IP
+.IB user @ host
+.LP
+that lists the files updated and any errors that may have occurred.
+If an address does not contain a
+\fR`\fB@\fIhost\|\fR'
+suffix,
+.B rdist
+uses the name of the destination host to complete the address.
+.TP
+.BI except " filename .\|.\|."
+Omit from updates the files named as arguments.
+.TP
+.BI except_pat "pattern .\|.\|."
+Omit from updates the filenames that match each regular-expression
+.I pattern
+(see
+.BR ed (1)
+for more information on regular expressions.
+Note that 
+.B \e
+and 
+.B $
+characters must be escaped in the distfile.
+Shell variables can also be used within a pattern, however
+shell filename expansion is not supported.
+.HP
+.B special
+.RI [ filename "] .\|.\|."
+\fB"\fIcommand-line\|\fB"\fR
+.br
+Specify a Bourne shell,
+.BR sh (1)
+command line to execute on the remote host after each named file is updated.
+If no
+.I filename
+argument is present, the 
+.I command-line
+is performed for every updated file, with the shell variable
+.SB FILE
+set to the file's name on the local host.  The quotation marks allow 
+.I command-line
+to span input lines in the distfile; multiple shell commands must be
+separated by semicolons
+.RB ( ; ).
+.IP
+The default working directory for the shell executing each
+.I command-line
+is the user's home directory on the remote host.
+.br
+.ne 11
+.SH EXAMPLES
+The following sample distfile instructs
+.B rdist
+to maintain identical copies of a shared
+library, a shared-library initialized data file, several
+include files, and a directory, on hosts named
+.B hermes
+and
+.BR magus .
+On
+.BR magus ,
+commands are executed as root.
+.B rdist
+notifies 
+.B merlin@druid
+whenever it discovers that a local file has changed relative to
+a timestamp file.
+.br
+.ne 5
+.IP
+.ft B
+.nf
+\s-1HOSTS\s0 = ( hermes root@magus )
+.sp
+\s-1FILES\s0 = ( /usr/local/lib/libcant.so.1.1
+	/usrlocal/lib/libcant.sa.1.1 /usr/local/include/{*.h}
+	/usr/local/bin )
+.sp
+${\s-1FILES\s0} \-> ${\s-1HOSTS\s0}
+	install \-R ;
+${\s-1FILES\s0} :: /usr/local/lib/timestamp
+	notify merlin@druid ;
+.fi
+.ft R
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp/rdist*
+temporary file for update lists
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR ed (1),
+.BR sh (1),
+.BR stat (2V)
+.SH DIAGNOSTICS
+.LP
+A complaint about mismatch of
+.B rdist
+version numbers may really stem
+from some problem with starting your shell,
+for example, you are in too many groups.
+.SH BUGS
+.LP
+Source files must reside or be mounted on the local host.
+.LP
+There is no easy way to have a special command executed only once after
+all files in a directory have been updated.
+.LP
+Variable expansion only works for name lists;
+there should be a general macro facility.
+.LP
+.B rdist
+aborts on files that have a negative modification time (before Jan 1, 1970).
+.LP
+There should be a \*(lqforce\*(rq option to allow replacement of
+non-empty directories by regular files or symlinks.
+A means of updating file modes and owners
+of otherwise identical files is also needed.
+.SH WARNINGS
+.LP
+.B root
+does not have its accustomed access privileges on NFS mounted 
+file systems.  Using
+.B rdist
+to copy to such a file system may fail, or the copies may be
+owned by user \*(lqnobody.\*(rq

@@ -1,0 +1,870 @@
+.\" @(#)st.4s 1.1 92/07/30 SMI;
+.TH ST 4S "26 June 1991"
+.SH NAME
+st \- driver for SCSI tape devices
+.SH "CONFIG \(em SUN-3, SUN-3/400, SUN-4, SPARCsystem 400 SERIES"
+.ft B
+.nf
+controller si0 at vme24d16 ? csr 0x200000 priority 2 vector siintr 0x40
+controller si1 at vme24d16 ? csr 0x204000 priority 2 vector siintr 0x41
+controller si0 at obio ? csr 0x140000 priority 2
+tape st0 at si0 drive 040 flags 1
+tape st1 at si0 drive 050 flags 1
+tape st2 at si0 drive 030 flags 1
+tape st3 at si0 drive 020 flags 1
+tape st4 at si1 drive 040 flags 1
+tape st5 at si1 drive 050 flags 1
+tape st6 at si1 drive 030 flags 1
+tape st7 at si1 drive 020 flags 1
+
+controller sc0 at vme24d16 ? csr 0x200000 priority 2 vector scintr 0x40
+tape st0 at sc0 drive 040 flags 1
+tape st1 at sc0 drive 050 flags 1
+.ft R
+.fi
+.LP
+The first two
+.B controller
+lines above specify the first and second 
+.SM SCSI
+host adapters for Sun-3, Sun-3/400, Sun-4,
+and \s-1SPARC\s0system 400
+.SM VME
+systems.  The third
+.B controller
+line specifies the first and only
+.SM SCSI
+host adapter on Sun-3/50 and Sun-3/60 systems.
+.LP
+Following the
+.B controller
+specification lines are eight lines which define the available 
+.B tape
+devices,
+.BR st0 \- st7 .
+The first four
+.B tape
+devices,
+.BR st0 \- st3
+are on the first
+.BR controller ,
+.BR si0 .
+The next four 
+.B tape
+devices,
+.BR st4 \- st7
+are on the second
+.BR controller ,
+.BR si1 .
+For small configurations, only the first controller,
+.BR si0 ,
+is used.  For larger configurations, a second controller,
+.BR si1 ,
+is added.
+.LP
+The
+.B flags
+field is used to specify the
+.SM SCSI
+device type to the host adapter.  The
+.B flags
+field must be set to 1 to identify
+.B tape
+devices.
+.LP
+The
+.B drive
+value is calculated using the formula:
+.SM SCSI
+bus, to select a specific target and logical unit number.
+The value to enter in the
+.B drive
+field of the configuration line is calculated using the formula:
+.LP
+.RS
+.RI 8\|*\| target\ \|+\|\ lun
+.RE
+.LP
+where
+.I target
+is the
+.SM SCSI
+target, and
+.I lun
+is the
+.SM SCSI
+logical unit number.
+Note the drive number is displayed in octal and not decimal as was
+done in earlier releases.
+For boot proms, this unit number must be specified in hex rather than decimal;
+for example, 
+.B st4 
+is unit 20, not 32 (decimal) or 040 (octal).
+.LP
+The next configuration block, following
+.B si0
+and
+.B si1
+above, describes
+the older
+.B sc0
+host adapter configuration.
+It follows the
+same configuration description as the
+.B si0
+host adapter.
+.SH "CONFIG \(em SPARCsystem 300 SERIES"
+.ft B
+.nf
+controller sm0 at obio ? csr 0x66000000 priority 2
+controller si1 at vme24d16 ? csr 0x204000 priority 2 vector siintr 0x41
+tape st0 at sm0 drive 040 flags 1
+tape st1 at sm0 drive 050 flags 1
+tape st2 at sm0 drive 030 flags 1
+tape st3 at sm0 drive 020 flags 1
+tape st4 at si1 drive 040 flags 1
+tape st5 at si1 drive 050 flags 1
+tape st6 at si1 drive 030 flags 1
+tape st7 at si1 drive 020 flags 1
+.ft R
+.fi
+.LP
+For small configurations, only the on-board controller,
+.BR sm0 ,
+is used.  For larger configurations, a second controller,
+.BR si1 ,
+is added.
+This configuration follows the same rules described above in 
+the first
+.SM CONFIG
+section.
+.SH "CONFIG \(em Desktop SPARCsystems"
+.ft B
+.nf
+scsibus0 at esp
+scsibus1 at esp
+tape st0 at scsibus0 target 4 lun 0
+tape st1 at scsibus0 target 5 lun 0
+tape st2 at scsibus1 target 4 lun 0
+tape st3 at scsibus1 target 5 lun 0
+.ft R
+.fi
+.LP
+The desktop \s-1SPARC\s0systems configuration files specify a device driver,
+.BR esp ,
+and the
+.SM SCSI
+buses attached to that device driver.
+The first and second tape devices
+.RB ( st0
+and
+.BR st1 )
+are attached on
+.BR scsibus0 ,
+and the second and third tape devices
+.RB ( st2
+and
+.BR st3 )
+are attached on
+.BR scsibus1 .
+These devices are attached at the
+Target and Logical Unit addresses specified.
+.SH "CONFIG \(em SPARCsystem 600MP SERIES"
+.ft B
+.nf
+scsibus0 at esp
+tape st0 at scsibus0 target 4 lun 0
+tape st1 at scsibus0 target 5 lun 0
+tape st2 at scsibus0 target 1 lun 0
+tape st3 at scsibus0 target 0 lun 0
+
+scsibus1 at esp
+tape st4 at scsibus1 target 4 lun 0
+tape st5 at scsibus1 target 5 lun 0
+
+scsibus2 at esp
+
+scsibus3 at esp
+tape st6 at scsibus3 target 4 lun 0
+tape st7 at scsibus3 target 5 lun 0
+
+scsibus4 at esp
+.ft R
+.fi
+.LP
+Like the desktop \s-1SPARC\s0systems, the \s-1SPARC\s0system 600MP
+series configuration files specify a device driver,
+.BR esp ,
+and the
+.SM SCSI
+buses attached to that device driver.
+The first through fourth tape devices
+(\fBst0\fP, \fBst1\fP, \fBst2\fP, and \fBst3\fP)
+are attached on
+.BR scsibus0 ,
+the fifth and sixth tape devices
+(\fBst4\fP and \fBst5\fP)
+are attached on
+.BR scsibus1 ,
+and the seventh and eighth tape devices
+(\fBst6\fP and \fBst7\fP)
+are attached on
+.BR scsibus3 .
+These devices are attached at the
+Target and Logical Unit addresses specified.
+.SH "CONFIG \(em SUN\-3/80 SYSTEMS"
+.ft B
+.nf
+controller sm0 at obio ? csr 0x66000000 priority 2
+tape st0 at sm0 drive 040 flags 1
+tape st1 at sm0 drive 050 flags 1
+tape st3 at sm0 drive 030 flags 1
+tape st4 at sm0 drive 020 flags 1
+.ft R
+.fi
+.LP
+Sun-3/80 systems use an on-board 
+.SM SCSI
+host adapter,
+.BR sm0 ,
+which follows the same rules described above
+in the first
+.SM CONFIG
+section.
+.SH "CONFIG \(em SUN\-4/110 SYSTEMS"
+.ft B
+.nf
+controller sw0 at obio 2 csr 0xa000000 priority 2
+tape st0 at sw0 drive 040 flags 1
+tape st1 at sw0 drive 050 flags 1
+.ft R
+.fi
+.LP
+The Sun-4/110 uses an on-board
+.SM SCSI
+host adapter,
+.BR sw0 ,
+which follows the rules described
+above in the first
+.SM CONFIG
+section.
+.SH "CONFIG \(em SUN\-3/E SYSTEMS"
+.ft B
+.nf
+controller se0 at vme24d16 ? csr 0x300000 priority 2 vector se_intr 0x40
+tape st0 at se0 drive 040 flags 1
+tape st1 at se0 drive 050 flags 1
+.ft R
+.fi
+.LP
+The Sun-3/E uses a \s-1VME\s0-based
+.SM SCSI
+host adapter,
+.BR se0 ,
+which follows the rules described above for
+the first
+.SM CONFIG
+section.
+.br
+.ne 4
+.SH CONFIG \(em Sun386i SYSTEMS
+.ft B
+.nf
+controller wds0 at obmem ? csr 0xFB000000 dmachan 7 irq 16 priority 2
+tape st0 at wds0 drive 32 flags 1
+.ft R
+.fi
+.LP
+The Sun386\fIi\fP configuration follows the rules described
+above in the first
+.SM CONFIG
+section.
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "st driver" "" "\fLst\fP \(em driver for \s-1SCSI\s0 tape devices"
+.IX "driver" "SCSI tape devices" "driver" "\s-1SCSI\s0 tape devices"
+.IX SCSI "driver for SCSI tape devices" "\s-1SCSI\s+1" "driver for \s-1SCSI\s0 tape devices"
+.LP
+The
+.B st
+device driver is an interface to various
+.SM SCSI
+tape devices.
+Supported 1/4\*(rq cartridge devices include
+the Archive Viper
+.SM QIC\s0\-150
+streaming tape drive, the Emulex
+.SM MT\s0\-02
+tape controller,
+and the Sysgen
+.SM SC\s04000
+tape controller
+(except on desktop \s-1SPARC\s0systems and \s-1SPARC\s0system 600MP
+series machines).
+Supported 1/2\*(rq and 8mm devices include
+the
+.SM HP\s0\-88780
+1/2\*(rq tape drive
+and
+the Exabyte EXB-8200/8500 8mm cartridge tape subsystem.
+.B st
+provides a standard interface to these various devices; see 
+.BR mtio (4)
+for details.
+.LP
+The driver can be opened with either rewind on close
+.RB ( /dev/rst* )
+or no rewind on close
+.RB ( /dev/nrst* )
+options. 
+A maximum of four tape formats per device are supported
+(see
+.SM FILES
+below).
+The tape format is specified using the device name.
+The four rewind on close formats for
+.BR st0 ,
+for example, are
+.BR /dev/rst0 ,
+.BR /dev/rst8 ,
+.BR /dev/rst16 ,
+and
+.BR /dev/rst24 .
+.br
+.ne 5
+.SS Read Operation
+.LP
+If the driver is opened for reading in a different format than the
+tape is written in,
+the driver overrides
+the user selected format.
+For example, if a 1/4\*(rq cartridge tape
+is written in
+.SM QIC\s0-24
+format and opened for reading in
+.SM QIC\s0\-11,
+the driver will detect a read failure on the first read and
+automatically switch to
+.SM QIC\s0\-24
+to recover the data.
+.br
+.ne 5
+.LP
+Note: if the
+.B /dev/*st[0\-7]
+format is used, no indication is given that the driver has
+overridden the user selected format.
+Other formats issue a warning message 
+to inform the user of an overridden format selection.
+Some devices automatically perform
+this function and do not require driver support
+(1/2\*(rq reel and
+.SM QIC\s0\-150
+tape drives, for example).  
+.SS Write Operation
+.LP
+Writing from the beginning of tape is performed
+in the user-specified format.
+The original tape format is used for appending onto
+previously written tapes.
+A warning message is
+issued if the driver has to override the user-specified
+format.
+.SS EOT Handling
+.LP
+The Emulex and Sysgen drives have only a physical end of tape (\s-1PEOT\s0);
+thus it is not possible to write past \s-1EOT\s0.
+All other drives have a logical end of tape (\s-1LEOT\s0) before
+.SM PEOT
+to guarantee flushing the data onto the tape.
+The amount of storage between 
+.SM LEOT 
+and 
+.SM PEOT
+varies from less than a megabyte to about 20 megabytes depending on the tape
+drive.  Further writing, except for trailer records, is inhibited to
+prevent running off the end of the reel.
+.LP
+If
+.SM EOT
+is encountered while writing an Emulex or Sysgen tape,
+no error is reported but the number of bytes
+transferred is zero and no further writing is allowed.
+On all other drives, the current transfer is completed,
+returning the number of bytes written.
+The next write will return zero,
+at which time it is possible to write trailer records
+after first writing an \s-1EOF\s0.
+.LP
+The Desktop SPARCsystems tape driver differs in EOT handling and
+supports writing trailer records without first writing an \s-1EOF\s0. 
+The first write that encounters EOT will return a short count or zero.
+If a short count is returned, then the next write will return zero. 
+After a zero count is returned, the next write returns a full count or
+short count. A following write will return zero again.
+.LP
+It is important that the number and size of trailer records be kept as
+small as possible to prevent data loss.  For this reason,
+this practice is not recommended.
+.LP
+Reading past logical
+.SM EOT 
+is transparent to the user.  Reading is only stopped by reading \s-1EOF\s0's.
+For 1/2\*(rq reel devices, it is possible to read off the end of the reel
+if you read past the two file marks which mark the end of recorded media.
+All other devices have safeguards to eliminate this problem. 
+.SS Ioctls
+.LP
+The behavior of
+.SM SCSI
+tape positioning ioctls
+is the same across all devices which support them.
+However, not all devices support all ioctls.
+The driver returns an 
+.SM ENOTTY 
+error on unsupported ioctls.
+.LP
+The retension ioctl only applies to 1/4\*(rq cartridge tape devices.
+It is used to restore tape tension, thus improving the tape's soft error rate
+after extensive start-stop operations
+or long-term storage.
+.LP
+Note: the error status is reset by the 
+.SB MTIOCGET 
+get status ioctl call or
+the next read, write, or other ioctl operation.
+If no error has occurred (sense key is zero), the current
+file and record position is returned.
+.SH ERRORS 
+.TP 12
+.SM EACCES
+The driver is opened for write access and the tape is
+write protected.  For writing with
+.SM QIC\s0\-150 
+tape drives, this error is also reported if the wrong tape media
+is used for writing.
+.TP
+.SM EBUSY
+The tape driver is in use by another process.  Only one process
+can use the tape drive at a time.  The driver will allow  a
+grace period of two minutes for the other process to finish before
+reporting this error.
+.TP
+.SM EINVAL
+The number of bytes read or written is not a multiple
+of the physical record size (fixed-length tape
+devices only).
+.TP
+.SM EIO\ \ 
+During opening, the tape device is not ready because either
+no tape is in the drive, or the drive is not on-line.  Once open,
+this error is returned if the requested I/O
+transfer could not be completed.
+.TP
+.SM ENOTTY
+This indicates that the tape device does not support the
+requested ioctl function.
+.TP
+.SM ENXIO
+During opening, the tape device does not exist.
+.br
+.ne 4
+.TP
+.SM EPERM
+Another system has reserved the tape drive for its use.  The tape
+drive cannot be used until the other system releases it.
+.br
+.ne 7
+.SH FILES
+.LP 
+For 1/2\*(rq reel tape devices (\s-1HP\s0-88780):
+.PD 0
+.TP 20
+.B /dev/rst[0\-7]\ \ 	
+800 \s-1BPI\s0 density
+.TP
+.B /dev/rst[8\-15]\ 	
+1600 \s-1BPI\s0 density
+.TP
+.B /dev/rst[16\-23]	
+6250 \s-1BPI\s0 density
+.TP
+.B /dev/rst[24\-31]	
+data compression
+.TP
+.B /dev/nrst[0\-7] 	
+non\-rewinding 800 \s-1BPI\s0 density
+.TP
+.B /dev/nrst[8\-15]	
+non\-rewinding 1600 \s-1BPI\s0 density
+.TP
+.B /dev/nrst[16\-23]	
+non\-rewinding 6250 density
+.TP
+.B /dev/nrst[24\-31]	
+non\-rewinding data compression
+.sp .5
+.LP
+For helical-scan tape devices (Exabyte): 
+.TP 20
+.B /dev/rst[0\-7]\    	
+Standard EXB-8200 (2GB) Format
+.TP
+.B /dev/rst[8\-15] 	
+EXB-8500 (5GB) Format
+.TP
+.B /dev/rst[16\-23]	
+Compressed Format (EXB-8500 only)
+.TP
+.B /dev/rst[24\-31]	
+Compressed Format (EXB-8500 only)
+.TP
+.B /dev/nrst[0\-7] 	
+non-rewinding Standard  EXB-8200 (2GB)Format
+.TP
+.B /dev/nrst[8\-15]	
+non-rewinding EXB-8500 (5GB) Format
+.TP
+.B /dev/nrst[16\-23]	
+non-rewinding Compressed Format (EXB-8500 only)
+.TP
+.B /dev/nrst[24\-31]	
+non-rewinding Compressed Format (EXB-8500 only)
+.sp .5
+.LP
+For \s-1QIC\s0\-150 tape devices (Archive Viper):
+.TP 20
+.B /dev/rst[0\-7]\    	
+\s-1QIC\s0\-150 Format
+.TP
+.B /dev/rst[8\-15] 	
+\s-1QIC\s0\-150 Format
+.TP
+.B /dev/rst[16\-23]	
+\s-1QIC\s0\-150 Format
+.TP
+.B /dev/rst[24\-31]	
+\s-1QIC\s0\-150 Format
+.TP
+.B /dev/nrst[0\-7] 	
+non-rewinding \s-1QIC\s0\-150 Format
+.TP
+.B /dev/nrst[8\-15]	
+non-rewinding \s-1QIC\s0\-150 Format
+.TP
+.B /dev/nrst[16\-23]	
+non-rewinding \s-1QIC\s0\-150 Format
+.TP
+.B /dev/nrst[24\-31]	
+non-rewinding \s-1QIC\s0\-150 Format
+.sp .2
+.LP
+Note: The drive will automatically read both \s-1QIC\s0\-11 and
+\s-1QIC\s0\-24 formats too.
+.sp .5
+.LP
+For \s-1QIC\s0\-24 tape devices (Emulex \s-1MT\s0\-02 and Sysgen \s-1SC\s04000):
+.TP 20
+.B /dev/rst[0\-7]\    	
+\s-1QIC\s0\-11 Format
+.TP
+.B /dev/rst[8\-15] 	
+\s-1QIC\s0\-24 Format
+.TP
+.B /dev/rst[16\-23]	
+\s-1QIC\s0\-24 Format
+.TP
+.B /dev/rst[24\-31]	
+\s-1QIC\s0\-24 Format
+.TP
+.B /dev/nrst[0\-7] 	
+non-rewinding \s-1QIC\s0\-11 Format
+.TP
+.B /dev/nrst[8\-15]	
+non-rewinding \s-1QIC\s0\-24 Format
+.TP
+.B /dev/nrst[16\-23]	
+non-rewinding \s-1QIC\s0\-24 Format
+.TP
+.B /dev/nrst[24\-31]	
+non-rewinding \s-1QIC\s0\-24 Format
+.sp .2
+.LP
+Note:  
+.SM QIC\s0\-24
+is the preferred format for all systems except Sun-2's.
+For Sun-2 systems, 
+.SM QIC\s0\-11 is preferred.
+.sp 1
+.LP
+Note:  Only four tape devices were supported in SunOS4.1.  Thus only
+the first four device names above can be used if you are running this
+release.  Releases following 4.1 PSR A (inclusive) support all device
+names.
+.PD
+.SH SEE ALSO
+.BR cpio (1),
+.BR mt (1), 
+.BR tar (1), 
+.BR mtio (4), 
+.BR dump (8), 
+.BR restore (8) 
+.br
+.ne 6
+.SH DIAGNOSTICS
+.LP
+.nf
+.ft B
+st?:  \s-1I/O\s0 request timeout
+.fi
+.ft R
+.in +5m
+A tape I/O
+operation has taken too long to complete.  A
+device or host adapter failure may have occurred.
+.LP
+.nf
+.ft B
+st?:  warning, unknown tape drive found
+.ft R
+.fi
+.in +5m
+The driver does not recognize the tape device.  Only the
+default tape density is used; block size
+is set to the value specified by the tape drive.
+.LP
+.nf
+.ft B
+st?:  write protected
+.ft R
+.fi
+.in +5m
+The tape is write protected.
+.LP
+.sp .5
+.nf
+.ft B
+st?:  wrong tape media for writing, use \s-1DC\s06150 tape (or equivalent)
+.ft R
+.fi
+.in +5m
+For
+.SM QIC\s0\-150
+tape drives, this indicates that the user is trying to write on a
+.SM DC\s0\-300XL
+(or equivalent) tape.  Only
+.SM DC\s0\-6150
+(or equivalent) tapes can be used for writing.
+.br
+Note: \s-1DC\s0\-6150 was formerly known as \s-1DC\s0\-600\s-1XTD\s+1.
+.LP
+.nf
+.ft B
+st?:  warning, rewinding tape
+.ft R
+.fi
+.in +5m
+The driver is rewinding tape in order to set the tape format.
+.LP
+.nf
+.ft B
+st?:  warning, using alternate tape format
+.ft R
+.fi
+.in +5m
+The driver is overriding the user-selected tape format and using
+the previously used format.
+.LP
+.nf
+.ft B
+st?:  warning, tape rewound
+.ft R
+.fi
+.in +5m
+For Sysgen tape controllers, the tape may be rewound as a result
+of getting sense data.
+.LP
+.nf
+.ft B
+st?:  format change failed
+.ft R
+.fi
+.in +5m
+The specified tape density or format is not supported by the tape
+drive.  This is detected by the tape drive rejecting the mode select
+command to change the tape density/format.
+.LP
+.nf
+.ft B
+st?:  warning, The tape may be wearing out or the head may need cleaning.
+.ft R
+.fi
+.in +5m
+The number of allowable records re-read or re-written
+(e.g. soft errors) has exceeded the specified limit for
+the tape media.  This indicates the tape media is 
+wearing out.  No data loss has occurred on the tape yet.  This
+message is an early warning that continued usage will result
+in unrecoverable errors.  Continued usage of this
+tape is not recommended.
+.LP
+.in +5m
+This error message can also be issued if the tape heads
+are dirty.  Tape oxide buildup on the head interferes with
+reading and writing data.  If the head has not been
+cleaned recently, it should be cleaned and the tape retested
+to determine the source of this error.
+.LP
+.in +5m
+If this error message is persistent over different known
+good tapes, this is indicative of a tape drive hardware
+problem.
+.LP
+.nf
+.ft B
+st?:  read retries= count (rate %), file= %d, block= %d
+st?:  write  retries= count (rate %), file= %d, block= %d
+.ft R
+.fi
+.in +5m
+These messages display the measured soft error rate of
+the tape at the time the driver is closed.  The
+.BR count
+indicates the number of soft errors.  The number of
+soft errors as a percentage of total blocks transferred is
+.BR rate .
+The
+.BR rate
+should remain relatively constant across the tape.  Sudden
+jumps indicate worn spots on the tape.  The retry
+.BR count
+is reset every time the tape is rewound.
+.LP
+.in +5m
+Ballpark upper limits for read retries is 3%.  For write retries,
+the upper limit is 10%.  The exact specifications depend on
+the tape device in use.
+.LP
+.nf
+.ft B
+st?:  <cmd> failed
+st? error:  sense key(0x%x): %s error, code(0x%x): %s
+.ft R
+.fi
+.in +5m
+An error has occurred.  The first line identifies the command
+name,
+.BR <cmd> .
+The second line reports the sense key error code and message
+string.  In addition, the error code and message string may
+be reported depending on whether this extension is supported
+by the tape drive.  This information is intended for diagnostic
+purposes.
+.LP
+.nf
+.ft B
+st?:  stread: not modulo %d block size
+st?:  stwrite: not modulo %d block size
+.ft R
+.fi
+.in +5m
+The read or write request size must be a multiple of the
+.B %d
+physical block size.  Typically, this means a read or write
+of less than 512 bytes was requested.  Note:  the block size can
+vary with the tape drive in use.
+.LP
+.nf
+.ft B
+st?:  file positioning error
+st?:  block positioning error
+.ft R
+.fi
+.in +5m
+The driver was unable to position the tape to the desired file or block
+(record).  This is probably caused by a damaged tape.
+.LP
+.nf
+.ft B
+st?:  tape synchronization lost
+.ft R
+.fi
+.in +5m
+The user hit 
+.SM CTRL\-C 
+while a tape operation was in progress, causing the tape position
+to be lost.  The tape will be rewound on the next open to
+resynchronize.  Note:  other signals may also have a similar
+effect.
+.LP
+.nf
+.ft B
+st?:  no iopb space for buffer
+.ft R
+.fi
+.in +5m
+The driver could not allocate space for its internal
+working buffer because the kernel is out of resources;
+too many devices were configured into the system.
+.LP
+.SS Additional SPARCsystem Diagnostics
+.LP
+The diagnostics for desktop \s-1SPARC\s0systems and the
+< \s-1SPARC\s0system 600 series are much like those described above.
+The following diagnostics are unique to
+these systems:
+.sp
+.ft B
+.nf
+st?:  SCSI transport failed: reason 'xxxx': {retrying|giving up}
+.fi
+.ft R
+.in +5m
+The host adapter has failed to transport a command to the target for
+the reason stated. The driver will either retry the command or, ultimately,
+give up.
+.SH BUGS
+.LP
+Foreign tape devices which do not return a
+.SM BUSY
+status during tape
+loading prevent user commands from being held
+until the device is ready.  The user must delay
+issuing any tape operations until the tape device is 
+ready.  This is not a problem for Sun-supplied tape
+devices.
+.LP
+Foreign tape devices which do not report a blank check
+error at the end of recorded media cause
+file positioning operations to fail.
+Some tape drives, for example, mistakenly report media error
+instead of blank check error. 
+.LP
+Systems using the older
+.B sc0
+host adapter or the
+Sysgen
+.SM SC\s04000
+tape controller prevent disk I/O
+over the 
+.SM SCSI
+bus while the tape is in use (during a rewind, for example).
+This problem is caused by the fact that they do not
+support disconnect/reconnect to free the
+.SM SCSI
+bus.  Newer tape devices, like the Emulex
+.SM MT\s0\-02,
+and host adapters, like
+.BR si0 ,
+eliminate this problem.
+.LP
+Some older Sysgen drives support only the
+.SM QIC\s0\-11
+format.  This can be determined using
+.BR mt (1).
+.SH WARNINGS
+.LP
+The Sysgen 
+.SM SC\s04000 
+tape controller is being obsoleted.

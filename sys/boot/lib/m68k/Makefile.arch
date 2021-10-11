@@ -1,0 +1,33 @@
+#
+# @(#)Makefile.arch 1.1 92/07/30 SMI
+#
+# Sun-2/3 standalone library makefile
+#
+# Certain symbols must be defined before this Makefile may be included:
+#
+#       ARCH                    Target architecture (eg, "sun4")
+#       MODEL                   as flags for specific model (eg, "-DSUN3_60")
+
+MACHDIR= ../m68k
+MACHOBJ= probe.o ldivt.o lmodt.o setjmp.o stubs.o
+
+CPPFLAGS= $(CPPOPTS) $(MODEL) -DLOCORE -DKERNEL
+ARFLAGS= rv
+
+$$(LIB)(%.o): $(ARCHDIR)/%.s
+	/lib/cpp $(CPPFLAGS) $< > tmp.i
+	$(AS) -o $% tmp.i
+	ar $(ARFLAGS) $@ $%; $(RM) $%
+
+$$(LIB)(%.o): $(ARCHDIR)/%.c
+	$(CC) $(CFLAGS) -c $<
+	ar $(ARFLAGS) $@ $%; $(RM) $%
+
+$$(LIB)(%.o): $(MACHDIR)/%.s
+	/lib/cpp $(CPPFLAGS) $< > tmp.i
+	$(AS) -o $% tmp.i
+	ar $(ARFLAGS) $@ $%; $(RM) $%
+
+$$(LIB)(%.o): $(MACHDIR)/%.c
+	$(CC) $(CFLAGS) -c $<
+	ar $(ARFLAGS) $@ $%; $(RM) $%

@@ -1,0 +1,31 @@
+#
+# This script takes the output of 'gettocx' and creates
+# table of contents entries for a given section.
+# The input is of the form:
+#	name(section): description
+#
+# The output is of the form:
+#	.xx "name" "description"
+#
+# The 'grep' and the first 3 lines of the 'sed' script 
+# move the intro section to the beginning of the file.
+# The rest of the 'sed' script removes the colon between
+# the name and description (line 4), removes the period
+# at the end of the line (line 5), removes the section
+# numbers (line 6), puts quotes around the name and description
+# (lines 6, 7), inserts the '.xx' macro at the beginning of
+# each line (line 7), and removes and lines with a null
+# name or description (line 8).
+#
+grep '^intro' tocx$1 > ptx.toc.$$
+sed \
+	-e '2,${' \
+	-e '/^intro/d' \
+	-e '}' \
+	-e 's/ .*://' \
+	-e 's/.$//' \
+	-e 's/([^)]*) / " "/' \
+	-e 's/.*/.xx "&"/' \
+	-e '/""/d' \
+	ptx.toc.$$ tocx$1 > toc$1
+rm ptx.toc.$$

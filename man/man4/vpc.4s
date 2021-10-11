@@ -1,0 +1,97 @@
+.\" @(#)vpc.4s 1.1 92/07/30 SMI;
+.TH VPC 4S "9 October 1987"
+.SH NAME
+vpc \- Systech VPC-2200 Versatec printer/plotter and Centronics printer interface
+.SH CONFIG
+.ft B
+.nf
+device	vpc0 at vme16d16 ? csr 0x480 priority 2 vector vpcintr 0x80
+device	vpc1 at vme16d16 ? csr 0x500 priority 2 vector vpcintr 0x81
+.ft R
+.fi
+.SH AVAILABILITY
+.LP
+Sun-3, Sun-3/80 and Sun-4 systems only.
+.SH DESCRIPTION
+.IX  "vpc device"  ""  "\fLvpc\fP \(em Systech VPC-2200 Versatec/Centronics interface"  ""  PAGE START
+.IX  "Systech VPC-2200 interface"  ""  "Systech VPC-2200 interface \(em \fLvpc\fP"  ""  PAGE START
+.IX  "printer interface"  "vpc"  ""  "\fLvpc\fP \(em Systech VPC-2200 Versatec/Centronics interface"  PAGE START
+.LP
+This Sun interface to the Versatec printer/plotter and to Centronics
+printers is supported by the Systech parallel interface board,
+an output-only byte-wide
+.SM DMA
+device.
+The device has one channel for Versatec devices and one channel for Centronics
+devices, with an optional long lines interface for Versatec devices.
+.LP
+Devices attached to this interface are normally handled by the line
+printer spooling system and should not be accessed by the user directly.
+.LP
+Opening the device
+.B /dev/vpc0
+or
+.B /dev/lp0
+may yield one of two errors:
+.SM ENXIO
+indicates that the device is already in use;
+.SM EIO
+indicates that the device is offline.
+.LP
+The Versatec printer/plotter operates in either print or plot mode.
+To set the printer into plot mode you should include
+.B <sys/vcmd.h>
+and use the
+.BR ioctl (2)
+call:
+.LP
+.RS
+.B ioctl(f, \s-1VSETSTATE\s0, plotmd);
+.RE
+.LP
+where
+.I plotmd
+is defined to be
+.LP
+.RS
+.B
+int plotmd[\|] = { \s-1VPLOT\s0, 0, 0 };
+.RE
+.LP
+When going back into print mode from plot mode you normally eject
+paper by sending it an
+.SM EOT
+after putting into print mode:
+.LP
+.RS
+.nf
+.ft B
+int prtmd[\|] = { \s-1VPRINT\s0, 0, 0 };
+\&.\|.\|.
+fflush (vpc);
+f = fileno(vpc);
+ioctl(f, \s-1VSETSTATE\s0, prtmd);
+write(f, "\e04", 1);
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/vpc0
+.TP
+.B /dev/lp0
+.PD
+.SH SEE ALSO
+.BR ioctl (2),
+.BR setbuf (3V)
+.SH BUGS
+.LP
+If you use the standard I/O library on the Versatec, be sure to explicitly
+set a buffer using
+.BR setbuf (3V),
+since the library will not use
+buffered output by default, and will run very slowly.
+.IX  "vpc device"  ""  "\fLvpc\fP \(em Systech VPC-2200 Versatec/Centronics interface"  ""  PAGE END
+.IX  "Systech VPC-2200 interface"  ""  "Systech VPC-2200 interface \(em \fLvpc\fP"  ""  PAGE END
+.IX  "printer interface"  "vpc"  ""  "\fLvpc\fP \(em Systech VPC-2200 Versatec/Centronics interface"  PAGE END

@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# usage:  tape2dir sun_dir 
+#         where sun_dir defines if this is a sun3 or sun4 release tape,
+#         and creates the appropriate directory. 
+# 
+# This script dd the 2nd, 3rd and 4th files off an OpenWindows release tape  
+# and put them in /openwin_files/"sun_dir"/misc/temp1, 
+# /openwin_files/"sun_dir"/data1/temp2, and
+# /openwin_files/"sun_dir"/data2/temp3 respectively.
+# Temp1, temp2, and temp3 are all in TAR format;
+# Temp1 is actually used in this script to get the initial subset lists from
+# the tape, while temp2 and temp3 are to be used by sundist/Makefile to build
+# appropriate OW files in the proto area.
+#
+# For now, this script only takes input from /dev/nrst0.
+#
+#
+DEVICE="/dev/nrst0"
+PATH_ROOT="/openwin_files"
+PATH_MISC="misc"
+PATH_DATA1="data1"
+PATH_DATA2="data2"
+OPTIONS="xpf"
+
+if [ $# -ge 1 ]
+then
+	case $1 in
+	sun3|SUN3)	ARCH_TYPE=sun3
+				;;
+	sun4|SUN4)	ARCH_TYPE=sun4
+				;;
+	*)			echo "Unknown architecture type"
+				exit 1
+	esac
+else
+	ARCH_TYPE=`arch`
+fi
+#
+#
+if [ ! -d $PATH_ROOT ]
+then
+	mkdir $PATH_ROOT
+	chmod 777 $PATH_ROOT
+	cd $PATH_ROOT
+	mkdir $ARCH_TYPE
+	chmod 777 $ARCH_TYPE
+fi
+cd $PATH_ROOT
+if [ ! -d $ARCH_TYPE ]
+then
+	mkdir $ARCH_TYPE 
+	chmod 777 $ARCH_TYPE
+fi
+mt -f $DEVICE rew
+#
+# skip first file (we don't care for the copyright file)
+#
+mt -f $DEVICE fsf 1
+cd $PATH_ROOT/$ARCH_TYPE
+PATH_ALL="$PATH_MISC $PATH_DATA1 $PATH_DATA2"
+for i in $PATH_ALL
+	do
+		if [ ! -d $i ]
+			then
+			mkdir $i
+			chmod 777 $i
+		fi
+	done
+cd $PATH_MISC
+rm -fr *
+dd if=$DEVICE of=temp1
+cd ../$PATH_DATA1
+rm -fr *
+dd if=$DEVICE of=temp2
+cd ../$PATH_DATA2
+rm -fr *
+dd if=$DEVICE of=temp3
+cd $PATH_ROOT/$ARCH_TYPE
+tar $OPTIONS $PATH_ROOT/$ARCH_TYPE/$PATH_MISC/temp1

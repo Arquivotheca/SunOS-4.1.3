@@ -1,0 +1,45 @@
+#
+# @(#)Make_all 1.1 92/07/30 SMI
+#
+
+SUNDIAG_DIR= /usr/diag/sundiag
+BINDIR= ./bin
+DIRS= main int_test sb_test sundiag
+
+#commands
+
+SCCS=		/usr/ucb/sccs
+
+all lint clean install info depend: FRC
+	@if [ ! -d bin ] ; then \
+	    echo "creating directory \"bin\""; mkdir bin; \
+	fi; \
+	for i in $(DIRS); do \
+		if [ ! -d $$i ] ; then \
+		    echo "creating directory \"$$i\""; mkdir $$i; \
+		    cd $$i; ln -s ../SCCS; cd .. ; \
+		fi; \
+		cd $$i ; echo "cd $$i"; case $$i in \
+			main)\
+				$(MAKE) -f Make_main $@;\
+				cd ..\
+				;;\
+			sundiag)\
+				$(MAKE) -f Make_sundiag $@;\
+				cd ../..\
+				;;\
+			int_test)\
+				$(MAKE) -f Make_int $@;\
+				cd ..\
+				;;\
+			sb_test)\
+				$(MAKE) -f Make_sb $@;\
+				cd ..\
+				;;\
+			*)\
+				;;\
+		esac;\
+	done
+
+FRC:
+

@@ -1,0 +1,153 @@
+.\" @(#)fpa_download.8 1.1 92/07/30 SMI; from _source_
+.TH FPA_DOWNLOAD 8 "31 January 1990"
+.SH NAME
+fpa_download \- download to the Floating Point Accelerator
+.SH SYNOPSIS
+.B fpa_download
+[
+.B \-d
+]
+[
+.B \-r
+]
+[
+.B \-v
+]
+.if n .ti +5n
+[
+.B \-u
+.I ufile
+]
+[
+.B \-m
+.I mfile
+]
+[
+.B \-c
+.I cfile
+]
+.if t .ti +.5i
+.SH AVAILABILITY
+.LP
+.B fpa_download
+applies to Sun-3 and Sun-3x systems
+equipped with either an
+.SM FPA
+or
+.SM FPA\s0+.
+.SH DESCRIPTION
+.IX "FPA+" "" "FPA+ \(em download to the FPA"
+.LP
+.B fpa_download
+writes microcode, map, and constants files to
+.SM FPA
+and
+.SM FPA\s0+
+boards.
+.SM FPA
+requires a map file;
+.SM FPA\s0+
+does not.
+.LP
+Root execution level is required to download (d,u,m and c options).
+.B fpa_download
+is called from
+.B /etc/rc.local
+when
+.B /dev/fpa
+exists.
+.LP
+Given no arguments,
+.B fpa_download
+prints whether an
+.SM FPA\s0,
+or
+.SM FPA\s0+
+is installed.
+.SH OPTIONS
+.TP 10
+.B \-d
+Download microcode, constants, and map files.
+Enable default file names.
+.TP
+.B \-r
+Print microcode and constant revision.
+.TP
+.B \-v
+Verbose mode.
+.TP
+.BI \-u " ufile"
+Download microcode from
+.I ufile.
+.TP
+.BI \-m " mfile"
+Download map from
+.I mfile
+(\s-1FPA\s0 only).
+.TP
+.BI \-c " cfile"
+Download constants from 
+.I cfile.
+.SH FILES
+.PD 0
+.TP 25
+.B /dev/fpa
+device file for both
+.SM FPA
+and
+.SM FPA\s0+.
+.TP
+.B /usr/etc/fpa/fpa_micro_bin
+default microcode file
+.RI ( ufile )
+for
+.SM FPA\s0.
+.TP
+.B /usr/etc/fpa/fpa_constants
+default constants file (cfile) for
+.SM FPA
+.TP
+.B /usr/etc/fpa/fpa_micro_map
+default map file (mfile) for
+.SM FPA
+.TP
+.B /usr/etc/fpa/fpa_micro_bin+
+default microcode file (ufile) for
+.SM FPA\s0+
+.TP
+.B /usr/etc/fpa/fpa_constants+
+default constants file (cfile) for
+.SM FPA\s0+
+.PD
+.SH "SEE ALSO"
+.BR fpa (4)
+.SH DIAGNOSTICS
+.LP
+The following diagnostics are printed when
+.B fpa_download
+encounters a serious error and asks the kernel to disable the
+.SM FPA\s0.
+This might occur if the microcode, map, or constants files
+are corrupted, or if there is an
+.SM FPA
+or system hardware problem.
+.TP
+.B "\s-1FPA\s0 Download Failed - \s-1FPA\s0 ioctl failed"
+An ioctl() on
+.B /dev/fpa
+failed, possibly due to a hung
+.SM FPA
+pipe.
+.TP
+.B "\s-1FPA\s0 Failed Download - \s-1FPA\s0 Bus Error"
+Received a
+.SM SIGFPE\s0.
+.TP
+.B "\s-1FPA\s0 Failed Download - Upload mismatch"
+After each file is written to the
+.SM FPA/FPA\s0+,
+.B fpa_download
+uploads the contents of
+.SM FPA
+memory and compares it
+with the source.  They should always match.

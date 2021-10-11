@@ -1,0 +1,225 @@
+.\" @(#)select.2 1.1 92/07/30 SMI; from UCB 4.2
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SELECT 2 "21 January 1990"
+.SH NAME
+select \- synchronous I/O multiplexing
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/time.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int select (width, readfds, writefds, exceptfds, timeout)
+int width;
+fd_set *readfds, *writefds, *exceptfds;
+struct timeval *timeout;
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1FD_SET\s0 (fd, &fdset)	
+\s-1FD_CLR\s0 (fd, &fdset)	
+\s-1FD_ISSET\s0 (fd, &fdset)	
+\s-1FD_ZERO\s0 (&fdset)	
+int fd;
+fd_set fdset;
+.fi
+.ft
+.IX  select()  ""  \fLselect()\fP
+.IX  descriptors  select()  ""  \fLselect()\fP
+.IX  "synchronous I/O multiplexing"
+.SH DESCRIPTION
+.B select(\|)
+examines the I/O descriptor sets whose addresses are passed in
+.IR readfds ,
+.IR writefds ,
+and
+.I exceptfds
+to see if some of their descriptors
+are ready for reading, ready for writing, or have an exceptional
+condition pending.
+.I width
+is the number of bits to be checked in each bit mask that represent a file
+descriptor;
+the descriptors from 0 through
+.IR width \-1
+in the descriptor sets are examined.
+Typically
+.I width
+has the value returned by
+.BR ulimit (3C)
+for the maximum number of file descriptors.
+On return,
+.B select(\|)
+replaces the given descriptor sets
+with subsets consisting of those descriptors that are ready
+for the requested operation.
+The total number of ready descriptors in all the sets is returned.
+.LP
+The descriptor sets are stored as bit fields in arrays of integers.
+The following macros are provided for manipulating such descriptor sets:
+.SB FD_ZERO
+.RB ( &\fIfdset\fR )
+initializes a descriptor set
+.I fdset
+to the null set.
+.BI \s-1FD_SET\s0( fd,
+.BI & fdset
+) includes a particular
+descriptor
+.I fd
+in
+.IR fdset .
+.BI \s-1FD_CLR\fP\s0( fd,
+.BI & fdset\c
+)
+removes
+.I fd
+from
+.IR fdset .
+.BI \s-1FD_ISSET\fP\s0( fd,
+.BI & fdset\c
+) is nonzero
+if
+.I fd
+is a member of
+.IR fdset ,
+zero otherwise.
+The behavior of these macros is undefined if
+a descriptor value is less than zero or greater than or equal to
+.BR \s-1FD_SETSIZE\s0 ,
+which is normally at least equal
+to the maximum number of descriptors supported by the system.
+.LP
+If
+.I timeout
+is not a
+.SM NULL
+pointer, it specifies a maximum interval to wait for the
+selection to complete.  If
+.I timeout
+is a
+.SM NULL
+pointer, the select blocks indefinitely.  To effect a poll, the
+.I timeout
+argument should be a non-\s-1NULL\s0 pointer, pointing to a zero-valued
+.B timeval
+structure.
+.LP
+Any of
+.IR readfds ,
+.IR writefds ,
+and
+.I exceptfds
+may be given as
+.SM NULL
+pointers if no descriptors are of interest.
+.LP
+Selecting true for reading on a socket descriptor upon which a
+.BR listen (2)
+call has been performed indicates that a subsequent
+.BR accept (2)
+call on that descriptor will not block.
+.SH RETURN VALUES
+.B select(\|)
+returns
+a non-negative value
+on success.
+A positive value indicates
+the number of ready descriptors in
+the descriptor sets.
+0 indicates
+that the time limit referred to by
+.I timeout
+expired.
+On failure,
+.B select(\|)
+returns
+\-1,
+sets
+.B errno
+to indicate the error, and the descriptor sets are not changed.
+.SH ERRORS
+.TP 15
+.SM EBADF
+One of the descriptor sets specified an invalid descriptor.
+.TP
+.SM EFAULT
+One of the pointers given in the call referred to a non-existent portion
+of the process' address space.
+.TP
+.SM EINTR
+A signal was delivered before any of the selected
+events occurred, or before the time limit expired.
+.TP
+.SM EINVAL
+A component of the pointed-to time limit is outside the
+acceptable range:
+.B t_sec
+must be between 0 and
+.if t 10\u\s-38\s0\d,
+.if n 10^8,
+inclusive.  
+.B t_usec
+must be greater than or equal to 0, and less than
+.if t 10\u\s-36\s0\d.
+.if n 10^6.
+.SH SEE ALSO
+.BR accept (2),
+.BR connect (2),
+.BR fcntl (2V),
+.BR ulimit (3C),
+.BR gettimeofday (2),
+.BR listen (2),
+.BR read (2V),
+.BR recv (2),
+.BR send (2),
+.BR write (2V)
+.SH NOTES
+Under rare circumstances,
+.B select(\|)
+may indicate that a descriptor is ready for writing
+when in fact an attempt to write would block.
+This can happen if system resources necessary for a write are
+exhausted or otherwise unavailable.
+If an application deems it critical that writes to a file descriptor
+not block, it should set the descriptor for non-blocking I/O
+using the
+.SB F_SETFL
+request to
+.BR fcntl (2V).
+.SH BUGS
+.LP
+Although the provision of
+.BR ulimit (3C)
+was intended to allow user programs to be written independent
+of the kernel limit on the number of open files, the dimension
+of a sufficiently large bit field for select remains a problem.
+The default size
+.SB FD_SETSIZE
+(currently 256) is somewhat larger than
+the current kernel limit to the number of open files.
+However, in order to accommodate programs which might potentially
+use a larger number of open files with select, it is possible
+to increase this size within a program by providing
+a larger definition of
+.SB FD_SETSIZE
+before the inclusion of
+.BR <sys/types.h> .
+.LP
+.B select(\|)
+should probably return the time remaining from the original timeout,
+if any, by modifying the time value in place.
+This may be implemented in future versions of the system.
+Thus, it is unwise to assume that the timeout pointer will be unmodified
+by the
+.B select(\|)
+call.

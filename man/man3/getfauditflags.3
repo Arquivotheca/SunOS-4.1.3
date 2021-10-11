@@ -1,0 +1,92 @@
+.\" @(#)getfauditflags.3 1.1 92/07/30 SMI;
+.TH GETFAUDITFLAGS 3 "7 September 1988"
+.SH NAME
+getfauditflags \- generates the process audit state
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <sys/audit.h>
+.B #include <sys/label.h>
+.LP
+.B void getfauditflags(usremasks, usrdmasks, lastmasks)
+.B audit_state_t *usremasks;
+.B audit_state_t *usrdmasks;
+.B audit_state_t *lastmasks;
+.fi
+.SH DESCRIPTION
+.IX "getauditflags()" "" "\fLgetauditflags()\fP \(em generate process audit state"
+.LP
+.B getfauditflags
+generates the process audit state from the user audit value as input
+to
+.B getfauditflags
+and the system audit value as specified in the
+.B audit_control
+file.
+.B getfauditflags
+obtains the system audit value by calling
+.BR getacflg .
+The user audit value, pointed to by
+.I usremasks
+and
+.I usrdmasks
+is passed into
+.B getfauditflags.
+.LP
+.I usremasks
+points to
+.B audit_state_t
+fields which contains two values.  The first
+value defines which events are
+.I always
+to be audited when they succeed.
+The second value defines which events are
+always to be audited when they fail.
+.LP
+.I usrdmasks
+also points to
+.B audit_state_t
+fields which contains two values.  The first
+value defines which events are
+.I never
+to be audited when they
+succeed.
+The second value defines which events are
+never to be audited when they fail.
+.LP
+The structures pointed to by
+.I usremasks
+and
+.I usrdmasks
+may be obtained from the
+.B passwd.adjunct
+file by calling
+.B getpwaent(\|)
+which returns a pointer to a strucure containing all
+.B passwd.adjunct
+fields for a user.
+.LP
+.I lastmasks
+points to
+.B audit_state_t
+as well.
+The first value defines which events are to be audited
+when they succeed
+and the second value defines which events are to be
+audited when they fail.
+.LP
+Both
+.I usremasks
+and
+.I usrdmasks
+override the values in the system audit values.
+.SH DIAGNOSTICS
+.SM -1
+is returned on error and
+.SM 0
+on success.
+.SH "SEE ALSO"
+.BR getauditflags (3),
+.BR getacinfo (3),
+.BR audit.log (5),
+.BR audit_control (5)

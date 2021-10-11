@@ -1,0 +1,134 @@
+.\" @(#)nd.8c 1.1 92/07/30 SMI;
+.TH ND 8C "1 February 1985"
+.SH NAME
+nd \- network disk control
+.SH SYNOPSIS
+.B /etc/nd
+[
+.I command
+]
+.SH DESCRIPTION
+.IX  "nd command"  ""  "\fLnd\fP \(em network disk control"
+.IX  "network disk control"  ""  "network disk control \(em \fLnd\fP"
+The
+.I nd
+command controls the network disk service of the kernel as described in
+.IR nd (4P).
+A single command may be given on the command line;
+if none is given then the standard input is read for a list of commands.
+Typically, the file
+.I /etc/nd.local
+is used for input.
+Lines beginning with `#' are considered to be comments.
+.LP
+The available commands are:
+.HP
+.B user
+.I "hostname hisunit mydev myoff mysize mylunit maxpkts"
+.br
+For the client 
+.I hostname
+transform incoming requests for 
+.I hisunit
+into server device 
+.I mydev
+at offset
+.I myoff
+and size 
+.I mysize
+sectors.
+When responding to a read reequest, allow at most
+.I maxpkts
+packets to be outstanding at one time without a reply.
+.RI /dev/ndl mylunit
+provides a local name for this disk ``subpartition''.  If
+.I mysize
+is \-1, then this user unit is equivalent 
+to the entire filesystem partition
+.I mydev
+(no subpartioning is done.)
+If
+.I mylunit
+is \-1 then no local name is needed for this user unit;
+this is usually the case with a swap unit,
+or a unit represented by an entire filesystem.  If
+.I hostname
+is a numeric zero,
+.I hisunit
+refers to a public unit.  Since
+.I nd
+assists diskless clients in booting,
+the files (or their equivalent YP maps)
+.I /etc/hosts
+and
+.I /etc/ethers
+are used to map the users' hostnames to their IP addresses
+and ethernet addresses, respectively.
+If
+.I maxpkts
+is not specified, the default value is 6.
+.HP
+.B version
+.I versionnumber
+.br
+The
+.B version
+command gives the level of configuration of the server.
+Occasionally the need arises to reorganize or
+reload the diskless partitions.  Since the clients will rewrite
+locally cached blocks, they must be kept from writing their
+filesystems until they reboot.
+Before such a reorganization occurs, the system manager should
+warn diskless users to save files and halt their machines.
+Modification of the partitions should occur with the disk server
+off.  After modification is complete,
+.I versionnumber
+should be incremented to force users to reboot.
+.HP
+.B son
+.br
+Starts the network disk server.
+This command should be issued after all
+.BR user ,
+.BR version ,
+and
+.B ether
+commands.
+.HP
+.B soff
+.br
+Stops the disk server until a subsequent 
+.B son
+command.
+.HP
+.B clear
+.br
+Stops the disk server and clears all
+.B user
+and
+.B ether
+information.
+.HP
+.B serverat
+.I hostname
+.br
+Systems with disks may use the
+.B serverat
+command to specify a disk server if they wish to use a network disk
+in addition to their locally attached disk.
+Even then, this command is only necessary
+if they wish to use a public network disk,
+or if they wish to change network disk servers.
+.SH FILES
+.nf
+/etc/nd.local
+/etc/hosts
+/etc/ethers
+.fi
+.IX "files used by programs" "\fL/etc/nd.local\fR \(em \fLnd\fR command file"
+.IX "files used by programs" "\fL/etc/hosts\fR \(em host ID map"
+.IX "files used by programs" "\fL/etc/ethers\fR \(em host ethernet map"
+.SH "SEE ALSO"
+nd(4P)
+.SH BUGS
+No sanity checking of disk partitions is done.

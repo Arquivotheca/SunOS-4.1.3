@@ -1,0 +1,72 @@
+.\" @(#)kbd.4s 1.1 92/07/30 SMI
+.TH KBD 4S "24 November 1987"
+.SH NAME
+kbd \- Sun keyboard
+.SH CONFIG
+None; included in standard system.
+.SH DESCRIPTION
+.IX  "keyboard device"  ""  "\fLkbd\fP \(em Sun keyboard"  ""
+.IX  "Sun keyboard device"  ""  "Sun keyboard device \(em \fLkbd\fP"  ""
+.LP
+The
+.B kbd
+device provides access to the Sun Workstation keyboard.  When
+opened, it provides access to the standard keyboard device for the
+workstation (attached either to a
+.SM CPU
+serial or parallel port).  It
+is a multiplexing driver; a stream referring to the standard keyboard
+device, with the
+.BR kb (4M)
+and
+.BR ttcompat (4M)
+.SM STREAMS
+modules pushed on top of that device, is linked below it.
+Normally, this device passes input to the ``workstation console''
+driver, which is linked above a special minor device of
+.BR kbd ,
+so that keystrokes appear as input on
+.BR /dev/console ;
+the
+.SB KIOCSDIRECT
+.B ioctl
+must be used to direct input towards or away from the
+.B /dev/kbd
+device.
+.SH IOCTLS
+.TP 15
+.SB KIOCSDIRECT
+The argument is a pointer to an
+.BR int .
+If the value in the
+.B int
+pointed to by the argument is 1, subsequent keystrokes typed on the system
+keyboard will sent to
+.BR /dev/kbd ;
+if it is 0, subsequent keystrokes will be sent to the ``workstation console''
+device.  When the last process that has
+.B /dev/kbd
+open closes it, if keystrokes had been sent to
+.B /dev/kbd
+they are redirected back to the ``workstation console'' device.
+.TP
+.SB KIOCGDIRECT
+The argument is a pointer to an
+.BR int .
+If keystrokes are currently being sent to
+.BR /dev/kbd ,
+1 is stored in the
+.B int
+pointed to by the argument; if keystrokes are currently being sent to the
+``workstation console'' device, 0 is stored there.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/kbd
+.PD
+.SH "SEE ALSO
+.BR console (4S),
+.BR kb (4M),
+.BR ttcompat (4M),
+.BR win (4S),
+.BR zs (4S)

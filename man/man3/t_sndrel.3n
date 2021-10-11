@@ -1,0 +1,80 @@
+.\" @(#)t_sndrel.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_SNDREL 3N "21 January 1990"
+.SH NAME
+t_sndrel \- initiate an orderly release
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_sndrel(fd)
+int fd;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_sndrel()" "" "\fLt_sndrel()\fR \(em initiate an orderly release" ""
+.IX "transport" "initiate an orderly release"
+.IX release "transport connection in orderly manner"
+.LP
+.B t_sndrel(\|)
+initiates an orderly release of a transport connection
+and indicates to the transport provider that
+the transport user has no more data to send.
+.I fd
+identifies the local transport endpoint where the connection exists.
+After issuing
+.BR t_sndrel(\|) ,
+the user may not send any more data over the connection.
+However, a user may continue to receive data if an
+orderly release indication has been received.
+.LP
+.B t_sndrel(\|)
+is an optional service of the transport provider,
+and is only supported if the transport provider returned service
+type
+.SB T_COTS_ORD
+on
+.BR t_open (3N)
+or
+.BR t_getinfo (3N).
+.SH RETURN VALUES
+.LP
+.B t_sndrel(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TFLOW
+.SB O_NDELAY
+was set, but
+the flow control mechanism prevented the transport provider from
+accepting the function at this time.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR t_open (3N),
+.BR t_rcvrel (3N)
+.LP
+.TX NETP

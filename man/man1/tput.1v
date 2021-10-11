@@ -1,0 +1,286 @@
+.\" @(#)tput.1v 1.1 92/07/30 SMI; from S5R3
+.TH TPUT 1V "20 January 1988"
+.SH NAME
+tput \- initialize a terminal or query the terminfo database
+.SH "SYNOPSIS"
+.B /usr/5bin/tput
+[
+.BI \-T type
+]
+.I capability
+[
+.I parameter
+\&.\|.\|. ]
+.LP
+.B /usr/5bin/tput
+[
+.BI \-T type
+]
+.BR init
+.LP
+.B /usr/5bin/tput
+[
+.BI \-T type
+]
+.BR longname
+.LP
+.B /usr/5bin/tput
+[
+.BI \-T type
+]
+.B reset
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH "DESCRIPTION"
+.IX "tput command" "" "\fLtput\fR command"  
+.LP
+.B tput
+uses the
+.BR terminfo (5V)
+database to make the values of
+terminal-dependent capabilities and information available to
+the shell, to initialize or reset the terminal,
+or return the long name of the requested terminal type.
+Normally, the terminal type is taken from the environment variable
+.BR \s-1TERM\s0 ;
+if the
+.BI \-T type
+option is specified, the terminal type is taken from that option.
+.LP
+.B tput
+displays a string if the given
+.I capability
+is a string capability, or an integer if it is an integer
+capability; it displays no output if the capability is
+a boolean.
+.LP
+If
+.I capability
+is a boolean,
+.B tput
+returns true (0) if that capability is set, or false (1) otherwise.
+If
+.I capability
+is a string,
+.B tput
+returns true (0)
+if that capability is set, or false (1) otherwise.
+If
+.I capability
+is an integer, a value of true (0) is returned
+.I whether or not
+the capability is set for the terminal.  To determine if an integer
+capability is set, you must examine the standard output.
+.LP
+For a complete list of capabilities and the
+.I capability
+associated with each, see
+.BR terminfo (5V).
+.LP
+If
+.I capability
+is a string capability that takes parameters, the
+.I parameter
+arguments
+are instantiated into the string.
+An all-numeric
+.I parameter
+argument is passed to the attribute as a number.
+.SH OPTIONS
+.TP
+.BI \-T type
+Indicate the
+.I type
+of terminal.
+If this option is supplied, the environment variables
+.SB LINES
+and
+.SB COLUMNS
+are not used.
+.TP
+.B init
+If the
+.B terminfo
+database is present and an entry for the user's terminal
+exists, emit the terminal's initialization strings,
+set up any delays specified, and turn the expansion of
+.SM TAB
+characters on or off, as specified by the terminal's entry in the
+.B terminfo
+database.  If the terminal has a
+.SM TAB
+character, and either has a capability for setting
+.SM TAB
+characters or initially has its
+.SM TAB
+characters set every 8
+.SM SPACE
+characters, expansion of
+.SM TAB
+characters is turned off, otherwise expansion of
+.SM TAB
+characters is turned on.
+If expansion of
+.SM TAB
+characters is turned on, and the terminal has a capability for setting
+.SM TAB
+characters,
+.SM TAB
+stops are set to every eight
+columns.
+If an entry does not contain the information
+needed for any of these actions,
+that action is silently skipped.
+.TP
+.B reset
+Emit the terminal's reset strings, and set up delays and
+.SM TAB
+characters as specified.
+If the reset strings are not present,
+but initialization strings are, the initialization
+strings are used.
+.TP
+.B longname
+If the
+.B terminfo
+database is present and an entry for the user's
+terminal exists, emit the long name of the terminal.
+The long name is the last name in the first line of
+the terminal's description in the
+.B terminfo
+database.
+.br
+.ne 4
+.SH EXIT CODES
+.TP
+0
+The boolean or string capability is set, or the capability is
+an integer type and is present.
+.TP
+1
+The
+.I capability
+is not set.
+.TP
+2
+Usage error.
+.TP
+3
+The terminal is of an unknown type, or the
+.B terminfo
+database is not present.
+.TP
+4
+Unknown
+.B terminfo
+capability.
+.TP
+\-1
+The integer capability is not defined for this terminal type.
+.SH EXAMPLES
+.TP 20 
+.B tput init
+Initialize the terminal according to the
+type of terminal in the environmental variable
+.BR \s-1TERM\s0 .
+This command can be included in a
+.B \&.profile
+or
+.B \&.login
+file.
+.TP
+.B tput \-Tsun reset
+Reset a Sun workstation console,
+.BR shelltool (1)
+window, or
+.BR cmdtool (1)
+window, overriding the type of terminal in the environmental variable
+.BR \s-1TERM\s+1 .
+.TP
+.B tput cup 0 0
+Send the sequence to move the cursor to row
+.BR 0 ,
+column
+.B 0
+(the upper left corner of the screen,
+usually known as the \*(lqhome\*(rq cursor position).
+.TP
+.B tput clear
+Echo the clear-screen sequence for the current terminal.
+.TP
+.B tput cols
+Print the number of columns for the current terminal.
+.TP
+.B tput \-Tsun cols
+Print the number of columns for the Sun workstation console or subwindow.
+.TP
+.B bold=`tput smso`
+.TP
+.B offbold=`tput rmso`
+Set the shell variables
+.BR bold ,
+to begin stand-out mode sequence,
+and
+.BR offbold ,
+to end standout mode sequence,
+for the current terminal.
+This might be followed by a prompt:
+.RS
+.IP
+.ft B
+echo "${bold}Please type in your name: ${offbold}\\c"
+.ft R
+.RE
+.TP
+.B tput hc
+Set exit code to indicate if the current terminal is a hardcopy terminal.
+.TP
+.B tput cup 23 4
+Send the sequence to move the cursor to row 23, column 4.
+.TP
+.B tput longname
+Print the long name from the
+.B terminfo
+database for the type of terminal
+specified in the environmental variable
+.BR \s-1TERM\s0 .
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/share/lib/terminfo/?/\(**
+compiled terminal description database
+.TP
+.B /usr/5include/curses.h
+.BR curses (3V)
+header file
+.TP
+.B /usr/5include/term.h
+.BR terminfo (5V)
+header file
+.TP
+.B /usr/share/lib/tabset/\(**
+.SM TAB
+settings for some terminals, in a format appropriate to be
+output to the terminal (escape sequences that set margins and
+.SM TAB
+characters);
+for more information, see the
+.B Tabs and Initialization
+section of
+.BR terminfo (5V).
+.TP
+.B \&.login
+.TP
+.B \&.profile
+.PD
+.SH "SEE ALSO"
+.BR cmdtool (1),
+.BR shelltool (1),
+.BR stty (1V),
+.BR curses (3V),
+.BR terminfo (5V)

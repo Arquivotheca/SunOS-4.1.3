@@ -1,0 +1,351 @@
+.\" @(#)audio_device.3 1.1 92/07/30 SMI
+.ds Dc 7/30/92
+.TH AUDIO_DEVICE 3 "\*(Dc" "" "Audio Library"
+.SH NAME
+audio_device,
+et al
+\- audio device control functions
+.SH DISCLAIMER
+.LP
+The manual pages, header files, and object library associated with
+.B /usr/demo/SOUND/libaudio.a
+are furnished on an AS IS basis as a preliminary interface to several
+useful audio data-processing capabilities.  A future release of the
+operating system may redefine the syntax or semantics of some of the
+functions described herein.
+.SH SYNOPSIS
+.nf
+.B #include <multimedia/libaudio.h>
+.B #include <multimedia/audio_device.h>
+.LP
+.B int audio_pause_play(fd)
+.B int fd;
+.B ...
+.fi
+.SH DESCRIPTION
+A number of functions are provided to query and control the state of the
+audio device.  By using these functions, applications do not need to
+be concerned with the details of the audio
+.B ioctl
+commands.  This interface layer may be used, in the future, to redirect
+control/status messages to and from an audio server process instead of
+the audio device itself.
+.LP
+The
+.I fd
+argument of the device control functions
+specifies an open file descriptor referring to the audio device.
+In most cases, this descriptor may refer either to the audio i/o device
+(\fB/dev/audio\fP) or the audio control device (\fB/dev/audioctl\fP).
+All of these functions return the value 
+.SB AUDIO_SUCCESS
+if the requested operation succeeded;  otherwise an
+error flag is returned.  Note that, in some cases, successful completion
+does not mean that the requested change of status actually
+altered the state of the device.
+.SH Pause/Resume
+.LP
+The following functions pause and resume audio i/o.  If the requested
+operations failed to take effect (for instance, output may not be paused
+if the device is not open for writing), the value
+.SB AUDIO_ERR_NOEFFECT
+is returned.
+.TP 31
+.BI audio_pause_play( fd )
+pauses audio output, without affecting previously queued data.
+.TP
+.BI audio_pause_record( fd )
+pauses audio input.  All input data that was converted prior
+to pausing is made available to the process.
+.TP
+.BI audio_pause( fd )
+simultaneously pauses both input and output.
+.TP
+.BI audio_resume_play( fd )
+resumes audio output.
+.TP
+.BI audio_resume_record( fd )
+resumes audio input conversion.
+.TP
+.BI audio_resume( fd )
+simultaneously resumes both input and output.
+.SH Flush Queues
+.LP
+The following functions flush the audio
+.SM STREAMS
+buffers.
+.TP 31
+.BI audio_flush_play( fd )
+flushes the output queue.
+.TP
+.BI audio_flush_record( fd )
+flushes the input queue.
+.TP
+.BI audio_flush( fd )
+simultaneously flushes the both the input and output queues.
+.SH Synchronization
+.LP
+The following functions perform operations related to the synchronization
+of output data.
+.TP 31
+.BI audio_drain( fd,sig )
+causes the requesting process to block until all previously queued output
+data has been played.  If the
+.I sig
+argument is
+.SM TRUE\s0,
+the reception of a signal will cause
+.B audio_drain(\|)
+to return immediately with the value
+.SB AUDIO_ERR_INTERRUPTED.
+.TP
+.BI audio_play_eof( fd )
+writes an End-Of-File marker to the specified device.  When this marker
+is synchronously played, the output eof counter in the device information
+structure will be incremented.
+.SH Gain
+.LP
+The following functions manipulate the various gains associated with the
+audio device.  Gain levels are represented by a floating-point
+value between 0. and 1. (where 0. denotes infinite attenuation and
+1. represents the maximum gain level).  In this way, applications may map
+any number of gradations of volume over the full scale of the device.
+The
+.I valp
+argument specifies the address of a floating-point
+.BR double .
+In the case of the
+.I set
+routines, this value is scaled to the device range and the gain level is set.
+Both the
+.I get
+and
+.I set
+routines return the latest gain setting in the address given by
+.IR valp .
+.TP 31
+.BI audio_get_play_gain( fd,valp )
+retrieves the current output gain.
+.TP
+.BI audio_get_record_gain( fd,valp )
+retrieves the current input gain.
+.TP
+.BI audio_get_monitor_gain( fd,valp )
+retrieves the current monitor gain.
+.TP
+.BI audio_set_play_gain( fd,valp )
+sets the output gain and returns the new value.
+.TP
+.BI audio_set_record_gain( fd,valp )
+sets the input gain and returns the new value.
+.TP
+.BI audio_set_monitor_gain( fd,valp )
+sets the monitor gain and returns the new value.
+.SH Device Status
+.LP
+The following functions manipulate the various state flags of the audio
+device.  The
+.I valp
+argument specifies the address of an
+.B unsigned
+integer.
+This value updated with the latest value of the 
+particular state field.
+In the case of the
+.I set
+routines, this value is first set in the appropriate device state field.
+Requests to alter read-only fields or to set values that are inappropriate
+for the particular audio device are ignored.  Applications may check the
+return value in order to ensure that the requested change took place.
+.TP 31
+.BI audio_get_play_port( fd,valp )
+retrieves the current output port configuration.
+.TP
+.BI audio_get_record_port( fd,valp )
+retrieves the current input port configuration.
+.TP
+.BI audio_get_play_samples( fd,valp )
+retrieves the current output sample count.
+.TP
+.BI audio_get_record_samples( fd,valp )
+retrieves the current input sample count.
+.TP
+.BI audio_get_play_error( fd,valp )
+sets
+.I *valp
+.SM TRUE
+if the output underflow indicator is set.
+.TP
+.BI audio_get_record_error( fd,valp )
+sets
+.I *valp
+.SM TRUE
+if the input overflow indicator is set.
+.TP
+.BI audio_get_play_eof( fd,valp )
+retrieves the current output end-of-file counter.
+.TP
+.BI audio_get_play_open( fd,valp )
+sets
+.I *valp
+.S TRUE
+if the device is open for output.
+.TP
+.BI audio_get_record_open( fd,valp )
+sets
+.I *valp
+.S TRUE
+if the device is open for input.
+.TP
+.BI audio_get_play_active( fd,valp )
+sets
+.I *valp
+.S TRUE
+if data output is currently in progress.
+.TP
+.BI audio_get_record_active( fd,valp )
+sets
+.I *valp
+.S TRUE
+if data input is currently in progress.
+.TP
+.BI audio_get_play_waiting( fd,valp )
+sets
+.I *valp
+.S TRUE
+if a process is waiting for write access to the audio device.
+.TP
+.BI audio_get_record_waiting( fd,valp )
+sets
+.I *valp
+.S TRUE
+if a process is waiting for read access to the audio device.
+.TP
+.BI audio_set_play_port( fd,valp )
+sets the output port configuration and returns the new value.
+.TP
+.BI audio_set_record_port( fd,valp )
+sets the input port configuration and returns the new value.
+.TP
+.BI audio_set_play_samples( fd,valp )
+sets the output sample counter.  The value of the output sample counter
+immediately prior to setting the new value is returned.
+.TP
+.BI audio_set_record_samples( fd,valp )
+sets the input sample counter.  The value of the input sample counter
+immediately prior to setting the new value is returned.
+.TP
+.BI audio_set_play_error( fd,valp )
+sets the output error flag.  Ordinarily, applications should only reset this
+flag to zero.  The value of the output error flag immediately prior to
+setting the new value is returned.
+.TP
+.BI audio_set_record_error( fd,valp )
+sets the input error flag.  Ordinarily, applications should only reset this
+flag to zero.  The value of the input error flag immediately prior to
+setting the new value is returned.
+.TP
+.BI audio_set_play_eof( fd,valp )
+sets the output end-of-file counter.  The value of the output eof flag
+immediately prior to setting the new value is returned.
+.TP
+.BI audio_set_play_waiting( fd,valp )
+sets the output waiting flag.  This flag may only be set (it is cleared
+when the device becomes available for output).
+.TP
+.BI audio_set_record_waiting( fd,valp )
+sets the input waiting flag.  This flag may only be set (it is cleared
+when the device becomes available for input).
+.SH Encoding Configuration
+.LP
+The following routines convert the current audio device encoding configuration
+to an
+.B Audio_hdr
+structure whose address is given by the 
+.I hp
+argument.
+.TP
+.BI audio_get_play_config( fd,hp )
+returns the current output configuration.
+.TP
+.BI audio_get_record_config( fd,hp )
+returns the current input configuration.
+.LP
+The following routines attempt to configure the audio device to match the
+encoding specified in the
+.B Audio_hdr
+structure.  Some of the requested fields may be read-only for the device.
+If the device configuration cannot be made to match the requested encoding,
+the value
+.SB AUDIO_ERR_NOEFFECT
+is returned.  In this case, the application should check the particular
+fields of the returned
+.B Audio_hdr
+in order to determine the current state of the device.
+.TP 31
+.BI audio_set_play_config( fd,hp )
+sets the output configuration to match the given
+.BR Audio_hdr .
+The new output configuration is returned.
+.TP
+.BI audio_set_record_config( fd,hp )
+sets the input configuration to match the given
+.BR Audio_hdr .
+The new input configuration is returned.
+.SH Direct Device Control
+.LP
+In some cases, applications may wish to read or modify several device state
+fields atomically.  The following functions are provided for this purpose,
+though their use should be avoided where possible, since they expose the
+audio
+.B ioctl
+interface to applications.  The
+.I ip
+argument specifies the address of an
+.B Audio_info_t
+structure (see
+.BR audio (4))
+that is filled in with the current state of the device.
+.TP 31
+.B #include <sun/audioio.h>
+.TP
+.BI audio_getinfo( fd,ip )
+returns the current device information structure.
+.TP
+.BI audio_setinfo( fd,ip )
+sets the device state from
+.IR *ip
+and updates it to reflect the new state.
+If the
+.SB AUDIO_INITINFO
+macro was used to initialize the information structure, then only
+fields that were subsequently modified will affect the audio device state.
+.SH RETURN VALUE
+These routines return
+.SB AUDIO_SUCCESS
+on successful completion or, if unsuccessful, one of the following error codes:
+.TP 25
+.SM AUDIO_UNIXERROR
+An error occurred while executing a system library function.  The global
+value
+.I errno
+contains the error code.
+.TP
+.SM AUDIO_ERR_BADARG
+A user-supplied argument value was invalid.
+.TP
+.SM AUDIO_ERR_ENCODING
+The device or
+.B Audio_hdr
+encoding contained an invalid or unsupported  format code.
+.TP
+.SM AUDIO_ERR_NOEFFECT
+The requested operation did not entirely take effect.  Partial device
+state changes may have occurred.
+.TP
+.SM AUDIO_ERR_INTERRUPTED
+The requested operation was interrupted by a signal.
+.SH SEE ALSO
+.BR audio_intro (3),
+.BR audio_hdr (3),
+.BR audio (4).

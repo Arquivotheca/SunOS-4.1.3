@@ -1,0 +1,53 @@
+#	@(#)Makefile.master 1.1 92/07/30 SMI;
+#
+#	Master makefile with rules for building the online man pages.
+
+#INITFILES=  `ls SCCS/s.[Ll]ist.* SCCS/s.[Ii]ntro.* | sed "s@.*/s\.@@"`
+
+all: Makefile $(FILES) 
+
+$(FILES):
+	@-sccs get -s -G$@ $@
+	
+.INIT: Makefile Printfile $(INITFILES)
+
+install: all FRC
+	install -m 444 $(FILES) $(DESTDIR)/usr/share/man/$(HERE)
+
+FILES:
+	-@echo FILES= $(FILES) | tr ' ' '\012' | sort -u | fmt | \
+	  sed -e 's/$$/ \\/' -e '$$s/\\//'
+
+FRC:
+
+clean:
+	rm -f $(FILES) \
+		Delete.make Insert.make  Sccs.list Delete.print Insert.print \
+		Show.list Grep.list Sp.list
+
+pclean: 
+	$(MAKE) -f Printfile clean
+
+# make extract now explicitly gets all files in $(FILES), just
+# in case an older version of a file has been extracted.
+
+extract:
+	-sccs get -s $(FILES)
+
+pextract px:
+	@ $(MAKE) -f Printfile extract
+
+check:
+	@( ls -l SCCS/p* 2> /dev/null )
+
+s show:
+	@ echo $(FILES) | tr ' ' '\012' 
+
+sp pshow showp showprint:
+	@ $(MAKE) -f Printfile showprint
+
+collate:
+	@ $(MAKE) -f Printfile collate
+
+update:
+	@ $(MAKE) -f Printfile update

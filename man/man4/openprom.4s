@@ -1,0 +1,148 @@
+.\" @(#)openprom.4s 1.12 91/05/22 SMI;
+.TH OPENPROM 4S "23 June 1992"
+.SH NAME
+openprom \- PROM monitor configuration interface
+.SH CONFIG
+.B pseudo-device openeepr
+.SH SYNOPSIS
+.ft B
+.nf
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sundev/openpromio.h>
+open("/dev/openprom", mode);
+.ft R
+.fi
+.SH AVAILABILITY
+.LP
+Desktop \s-1SPARC\s0systems and
+\s-1SPARC\s0system 600\s-1MP\s0 Series only.
+.SH DESCRIPTION
+.IX "openprom PROM" "" "\fLopenprom\fP \(em \s-1PROM\s0 monitor configuration interface"
+.IX PROM "monitor configuration interface" "\s-1PROM\s+1" ""
+.IX "monitor" "PROM monitor configuration interface" "monitor" "\s-1PROM\s+1 monitor configuration interface"
+.LP
+As with other Sun systems,
+configuration options are stored in an
+.SM EEPROM
+or
+.SM NVRAM
+on
+desktop \s-1SPARC\s0systems and
+\s-1SPARC\s0system 600MP series machines.
+However, unlike other Sun systems, the encoding of these options is
+private to the
+.SM PROM
+monitor.
+The
+.B openprom
+device provides an interface to the
+.SM PROM
+monitor allowing a user program
+to query and set these configuration options through the use of
+.BR ioctl (2)
+requests.
+These requests are defined in
+.BR <sundev/openpromio.h> :
+.LP
+.RS
+.nf
+.ft 3
+struct openpromio {
+        u_int   oprom_size;			/* real size of following array */
+        char    oprom_array[1];		/* For property names and values */
+					/* NB: Adjacent, Null terminated */
+};
+#define OPROMMAXPARAM   1024	/* max size of array */
+
+/*
+ * Note that all OPROM ioctl codes are type void. Since the amount
+ * of data copied in/out may (and does) vary, the openprom driver
+ * handles the copyin/copyout itself.
+ */
+.fi
+.ft 1
+.PD 0
+.TP 30
+.B #define OPROMGETOPT
+.B _IO(O, 1)
+.TP
+.B #define OPROMNXTOPT
+.B _IO(O, 3)
+.TP
+.B #define OPROMSETOPT2
+.B _IO(O, 4)
+.RE
+.LP
+For all
+.B ioctl(\|)
+requests, the third parameter is a pointer to a
+.RB ` "struct openpromio" '.
+All property names and values are null-terminated strings;
+the value of a numeric option is its
+.SM ASCII
+representation.
+.SH IOCTLS
+The
+.SB OPROMGETOPT
+ioctl takes the null-terminated name of a property in the
+.I oprom_array
+and returns its null-terminated value (overlaying its name).
+.I oprom_size
+should be set to the size of
+.IR oprom_array ;
+on return it will contain the size of the returned value.
+If the named property does not exist, or if there is not enough space to
+hold its value, then
+.I oprom_size
+will be set to zero.
+See
+.SM BUGS
+below.
+.LP
+The
+.SB OPROMSETOPT2
+ioctl takes two adjacent strings in
+.IR oprom_array :
+the null-terminated property name followed by the null-terminated
+value.
+.LP
+The
+.SB OPROMNXTOPT
+ioctl is used to retrieve properties sequentially.
+The null-terminated name of a property is placed into
+.I oprom_array
+and on return it is replaced with
+the null-terminated name of the next property in the sequence,
+with
+.I oprom_size
+set to its length.
+A null string on input means return the name of the first property;
+an
+.I oprom_size
+of zero on output means there are no more properties.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+The size value was invalid, or (for
+.BR \s-1OPROMSETOPT\s0 )
+the property does not exist.
+.TP
+.SM ENOMEM
+The kernel could not allocate space to copy the user's structure
+.SH FILES
+.TP 20
+.B /dev/openprom
+PROM monitor configuration interface
+.SH "SEE ALSO"
+.BR mem (4S),
+.BR eeprom (8S),
+.BR monitor (8S),
+.BR openboot (8S)
+.SH BUGS
+.LP
+There should be separate return values for non-existent properties as
+opposed to not enough space for the value.
+.LP
+The driver should be more consistent in its treatment of errors and edge
+conditions.

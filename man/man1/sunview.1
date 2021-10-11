@@ -1,0 +1,1263 @@
+'\" t
+.\" @(#)sunview.1 1.1 92/07/30 SMI;
+.TH SUNVIEW 1 "7 October 1990"
+.\"		following line used to xref generic tool args
+.if \n(zZ .ig zZ
+.SH NAME
+sunview \- the SunView window environment
+.SH SYNOPSIS
+.B sunview
+[
+.B \-i
+]
+[
+.B \-p
+]
+[
+.BR \-B \||\| \-F \||\| \-P
+]
+[
+.B \-S
+]
+[
+.B \-8bit_color_only
+]
+[
+.B \-overlay_only
+]
+[
+.B \-toggle_enable
+]
+.if t .ti +.5i
+[
+.B \-b
+.I red green blue
+] 
+[
+.B \-d
+.I display-device
+] 
+[
+.B \-f
+.I red green blue
+] 
+[
+.B \-k
+.I keyboard-device
+] 
+.if t .ti +.5i
+[
+.B \-m
+.I mouse-device
+] 
+[
+.BR \-n \||\| \-s
+.I startup-filename
+] 
+[
+.B \-background
+.I raster-filename
+] 
+.if t .ti +.5i
+[
+.B \-pattern
+.BR on \||
+.BR off \||
+.BR gray \||
+.I iconedit-filename
+]
+.SH DESCRIPTION
+.IX "SunView" "start up environment"
+.IX  "sunview command"  ""  "\fLsunview\fP \(em Suntools window environment"
+.IX  "window environment"  ""  "window environment \(em \fLsunview\fP"
+.LP
+.B sunview
+starts up the SunView environment and (unless you have specified
+otherwise) a default layout of a few useful \*(lqtools,\*(rq or window-based
+applications.
+.LP
+See
+.B Start-up Processing
+below to learn how to specify your own
+initial layout of tools.
+Some of the behavior of 
+.B sunview
+is controlled by settings in your defaults database; see 
+.B SunView Defaults
+below, and 
+.BR defaultsedit (1)
+for more information.
+.LP
+To exit
+.B sunview
+use the 
+.B Exit SunView
+menu item. In an emergency, type
+.SM CTRL-D 
+then
+.SM CTRL-Q
+(there is no confirmation in this case).
+.SH OPTIONS
+.TP 15
+.B \-i
+Invert the background and foreground colors used on the screen.
+On a monochrome monitor, this option provides a video reversed image.
+On a color monitor, colors that are not used as the background and foreground
+are not affected.
+.TP
+.B \-p
+Print to the standard output the name of the window device used for
+the 
+.B sunview
+background.
+.TP
+.B \-B
+Use the \*(lqbackground color\*(rq
+.RB ( " \-b " )
+for the background.
+.TP
+.B \-F
+Use the \*(lqforeground color\*(rq
+.RB ( " \-f " )
+for the background.
+.TP
+.B \-P
+Use a stipple pattern for the background.
+This option is assumed unless
+.B \-F
+or
+.B \-B
+is specified.
+.TP
+.B \-S
+Set
+.B Click-to-type
+mode, allowing you to select a window by clicking in it.
+Having done so, input is directed to
+that window regardless of the position of the pointer,
+until you click to select some other window.
+.TP
+.B \-8bit_color_only
+For multiple plane group frame buffers, only let windows be created
+in the 8 bit color plane group.
+This frees up the black and white
+overlay plane to have a separate desktop running on it.
+This option is usually used with the 
+.B \-toggle_enable
+option.
+See
+.BR "Multiple Desktops on the Same Screen" ,
+below.
+.TP
+.B \-overlay_only
+For multiple plane group frame buffers, only let windows be created
+in the black and white overlay plane group. 
+This frees up the 8 bit
+color plane group to have a separate desktop running in it.
+This option is usually used with the 
+.B \-toggle_enable
+option.
+See
+.BR "Multiple Desktops on the Same Screen" ,
+below.
+.TP
+.B \-toggle_enable
+For multiple plane group frame buffers, when sliding the pointer
+between different desktops running within different plane groups
+on the same screen, change the enable plane to allow viewing of
+the destination desktop.
+See
+.BR "Multiple Desktops on the Same Screen" ,
+below.
+.br
+.ne 4
+.TP
+.BI \-b " red green blue"
+Specify values for the 
+.IR red ,
+.I green
+and
+.I blue
+components of the background color.
+If this option is not specified,
+each component of the background color is 255 (white).
+Sun 3/110 system users that use this option should use the
+.B \-8bit_color_only
+option as well.
+.br
+.ne 3
+.TP
+.BI \-d " display-device"
+Use 
+.I display-device
+as the output device, rather than
+.B /dev/fb 
+the default frame buffer device.
+.br
+.ne 5
+.TP
+.BI \-f " red green blue"
+Specify values for the 
+.IR red ,
+.I green
+and
+.I blue
+components of the foreground color.
+If this option is not specified,
+each component of the foreground color is 0 (black).
+Sun 3/110 system users that use this option should use the
+.B \-8bit_color_only
+option as well.
+.TP
+.BI \-k " keyboard-device"
+Accept keyboard input from
+.IR keyboard-device ,
+rather than
+.BR /dev/kbd ,
+the default keyboard device.
+.TP
+.BI \-m " mouse-device"
+Use 
+.I mouse-device
+as the system pointing device (locator), rather than
+.BR /dev/mouse ,
+the default mouse device.
+.TP
+.B \-n
+Bypass startup processing by ignoring the 
+.B /usr/lib/.sunview
+and
+.B ~/.sunview
+(and 
+.BR ~/.suntools )
+files.
+.TP
+.BI \-s " startup-filename
+Read startup commands from 
+.I startup-filename
+instead of 
+.B /usr/lib/.sunview
+or 
+.BR ~/.sunview ).
+.TP
+.BI \-background " raster-filename"
+Use the indicated raster file as the image in your background.
+The raster file can be created with
+.BR screendump (1).
+Screen dumps produced on color monitors currently do not work as
+input to this option.
+Small images are centered on the screen.
+.HP
+.BI \-pattern
+.BR on \||
+.BR off \||
+.BR gray \|| 
+.I iconedit-filename
+.br
+Use the indicated \*(lqpattern\*(rq to cover the background.
+.B on
+means to use the default desktop gray pattern.
+.B off
+means to not use the default desktop gray pattern.
+.B gray
+means to use a 50% gray color on color monitors.
+.I iconedit-filename
+is the name of a file produced with
+.BR iconedit (1)
+which contains an image that is to be replicated over the background.
+.SH USAGE
+.SS Windows
+.LP
+The SunView environment always has one window open, 
+referred to as the background, which covers the whole screen.
+A solid color or pattern is its only content.
+Each application is given its own window which lies on top of
+some of the background (and possibly on top of other applications).
+A window obscures any part of another window which lies below it.
+.SS Input to Windows
+.LP
+Mouse input is always directed to the window that the pointer
+is in at the time.
+Keyboard input can follow mouse input or, it can remain within a
+designated window using the
+.B Click-to-Type
+default setting.
+If you are not using
+.BR Click-to-Type ,
+and the pointer is on the background, keyboard input is discarded.
+Input actions (mouse
+motions, button clicks, and keystrokes)
+are synchronized, which
+means that you can \*(lqtype-ahead\*(rq and \*(lqmouse-ahead,\*(rq
+even across windows.
+.SS Mouse Buttons
+.TP 20
+\s-1LEFT\s0 mouse button
+Click to select or choose objects.
+.TP
+\s-1MIDDLE\s0 mouse button
+In text, click once to shorten or lengthen your selection.
+In graphic applications or on the desktop, press
+and hold to move objects.
+.TP
+\s-1RIGHT\s0 mouse button
+Press and hold down to invoke menus.
+.PD
+.SS Menus
+.LP
+.B sunview
+provides pop-up menus.
+There are two styles of pop-up menus:
+an early style, called \*(lqstacking menus,\*(rq and a newer style,
+called \*(lqwalking menus\*(rq (also known as \*(lqpull-right menus\*(rq).
+In the current release, walking menus are the default; stacking
+menus are still available as a defaults option.
+.LP
+Usually, a menu is invoked by pressing and holding the
+.SM RIGHT
+mouse button.
+The menu remains on the screen as long as you hold the
+.SM RIGHT
+mouse button down.
+To choose a menu item,
+move the pointer onto it (it is then highlighted),
+then release the
+.SM RIGHT
+mouse button.
+.LP
+Another available option is \*(lqstay-up menus.\*(rq
+A stay-up menu is invoked by pressing and releasing the
+.SM RIGHT
+mouse button.
+The menu appears on the screen after you release the
+.SM RIGHT
+mouse button.
+To choose a menu item,
+move the pointer onto it (it is then highlighted),
+then press and release the
+.SM RIGHT
+mouse button a second time.
+Stay-up menus are an option in your defaults database; see
+.B SunView Defaults
+below. 
+.LP
+With walking menus, any menu item can have an arrow pointing
+.RB ( \(rh )
+to the right.
+Moving the pointer onto this arrow pops up a \*(lqsub-menu,\*(rq
+with additional items.
+Choosing the item with an arrow (the \*(lqpull-right item\*(rq)
+invokes the first item on the sub-menu.
+.SS The SunView Menu
+.LP
+You can use the default SunView menu to
+start SunView applications and perform
+some useful functions.
+To invoke it, hold down the
+.SM RIGHT
+mouse button
+when the pointer is anywhere in the background.
+.LP
+The default SunView menu is defined in the file
+.BR /usr/lib/.rootmenu .
+It consists of four sub-menus,
+labeled
+.BR Shells ,
+.BR Editors ,
+.BR Tools ,
+and
+.BR Services , 
+along with items for
+.B Remote Login, Redisplay All, Lock Screen
+and 
+.B Exit Sunview.
+These sub-menus contain the following items:
+.RS
+.TP
+.B Shells
+.RS
+.TP 15
+.B Shell Tool
+Bring up a
+.BR shelltool (1),
+an tty-based terminal emulator that supports a shell.
+.TP
+.B Command Tool
+Bring up a 
+.BR cmdtool (1),
+a scrollable window-based terminal emulator that supports a shell.
+.TP
+.B Graphics Tool
+Bring up a
+.BR gfxtool (1),
+for running graphics programs.
+.TP
+.B Console
+Bring up a Console window, a
+.BR cmdtool
+with the
+.B \-C
+flag, to act as the system console.
+Since many system messages
+can be directed to the console, there should always be a console
+window on the screen.
+.RE
+.TP
+.B Remote Login
+This will create a terminal emulator that prompts
+for a machine name and then starts a shell on that
+machine.
+.TP
+.B Editors
+.RS
+.TP 15
+.B Text Editor
+Bring up a
+.BR textedit (1),
+for reading and editing text files.
+.TP
+.B Defaults Editor
+Bring up a
+.BR defaultsedit (1),
+for browsing or changing your defaults settings.
+.TP
+.B Icon Editor
+Bring up a new
+.BR iconedit (1).
+.TP
+.B Font Editor
+Bring up a
+.BR fontedit (1).
+.RE
+.TP
+.B Tools
+.RS
+.TP 15
+.B Mail Tool
+Bring up a
+.BR mailtool (1),
+for reading and sending mail.
+.TP
+.B Dbx (Debug) Tool
+Bring up a
+.BR dbxtool (1),
+a window-based source debugger.
+.br
+.ne 3
+.TP
+.B Performance Meter
+Bring up a
+.BR perfmeter (1)
+to monitor system performance.
+.TP
+.B Clock
+Bring up a new
+.BR clock (1).
+.RE
+.TP
+.B Services
+.RS
+.TP 15
+.B Eject
+There are two items on this submenu,
+"cdrom" and "floppy".
+Use this to eject cdrom or floppy media from the drive.
+.TP
+.B Printing
+There are two items on this submenu, 
+.B "Check Printer Queue"
+and
+.BR "Print Selected Text" .
+.B "Check Printer Queue"
+displays the printer queue in your console;
+.B  "Print Selected Text"
+sends selected text to the standard printer.
+.br
+.ne 5
+.TP
+.B Save Layout
+Writes out a
+.B ~/.sunview
+file that
+.B sunview
+can then use when starting up again. 
+An existing
+.B ~/.sunview
+file is saved as
+.BR ~/.sunview\- .
+.RE
+.TP
+.B Redisplay All
+Redraw the entire screen.
+Use this to repair damage done by processes that wrote to the screen
+without consulting the SunView system. 
+.TP
+.B Lock Screen
+Completely covers the screen with a graphics display, and \*(lqlocks\*(rq
+the workstation until you type your password.
+When you \*(lqunlock\*(rq the workstation, the screen is restored as it was
+when you locked it.
+See
+.BR lockscreen (1)
+for details.
+.TP
+.B Exit SunView
+Exit from
+.BR sunview ,
+including all windows, and kill processes associated with them.
+You return to the shell from which you started
+.BR sunview .
+.RE
+.RE
+.LP
+You can specify your own SunView menu; see 
+.B SunView Defaults
+below for details.
+.SS The Frame Menu
+.LP
+A small set of universal functions are available through the Frame menu.
+There are also accelerators for some of these functions,
+described under
+.BR "Frame Menu Accelerators" ,
+below.
+.LP
+You can invoke the Frame menu when the cursor is over a part of the
+application that does not provide an application-specific menu,
+such as the frame header (broad stripe holding the application's name),
+the border stripes of the window, and the icon.
+.TP 15
+.B Close
+.PD 0
+.TP
+.B Open
+.PD
+Toggle the application between closed (iconic) and open state.
+Icons are placed on the screen according to the icon policy in your
+defaults database; see
+.B SunView Defaults
+below.
+When a window is closed, its underlying processes continue to run.
+.TP
+.B Move
+Moves the application window to another spot on the screen.
+.B Move
+has a sub-menu with two items:
+.B Unconstrained
+and
+.BR Constrained .
+.RS
+.TP 15
+.B Unconstrained
+Move the window both horizontally and vertically.
+.TP
+.B Constrained
+Moves are either vertical or horizontal, but not both.
+.IP
+Choosing
+.B Move
+invokes an
+.B Unconstrained
+move.
+.RE
+.TP
+.B Resize
+Shrink or stretch the size of a window on the screen.
+.B Resize
+has a sub-menu containing:
+.RS
+.TP 15
+.B Unconstrained
+Resize the window both horizontally and vertically.
+.TP
+.B Constrained
+Resize vertically or horizontally, but not both.
+.IP
+Choosing
+.B Resize
+invokes an
+.B Unconstrained
+resize.
+.br
+.ne 3
+.TP
+.B UnZoom
+.TP
+.B Zoom
+.B Zoom
+expands a window vertically to the full height of the screen.
+.B UnZoom
+undoes this.
+.TP
+.B FullScreen
+Make a window the full height and width of the screen.
+.RE
+.TP
+.B Front
+Bring the window to \*(lqthe top of the pile.\*(rq
+The whole window becomes visible, and hides any window it happens to
+overlap on the screen.
+.TP
+.B Back
+Put the window on the \*(lqbottom of the pile\*(rq.
+The window is hidden by any window which overlaps it.
+.TP
+.B Props
+Display the property sheet.
+(Only active for applications that provide a property sheet.)
+.TP
+.B Redisplay
+Redraw the contents of the window.
+.TP
+.B Quit
+Notify the application to terminate gracefully.
+Requires confirmation.
+.br
+.ne 7
+.SS Frame Menu Accelerators
+.LP
+Accelerators are provided for some Frame menu functions.
+You can invoke these functions by pushing a single button
+in the window's frame header or outer border.
+See the
+.B SunView Beginner's Guide
+for more details.
+.TP 18
+.B Open
+Click the
+.SM LEFT
+mouse button when the pointer is over the icon.
+.TP
+.B Move
+Press and hold the
+.SM MIDDLE
+mouse button
+while the pointer is in the frame header or outer border.
+A bounding box that tracks the mouse is displayed while
+you hold the button down.
+When you release the button, the window
+is redisplayed within the bounding box.
+If the pointer is near a corner, the move is
+.BR Unconstrained .
+If it is in the center third of an edge, the move is
+.BR Constrained .
+.TP
+.B Resize
+Hold the
+.SM CTRL
+key and press and hold the
+.SM MIDDLE
+mouse button
+while the pointer is in the frame header or outer border.
+A bounding box is displayed, and one side or corner tracks the mouse.
+If the pointer is near a corner when you press the mouse button,
+the resize is 
+.BR Unconstrained ;
+if in the middle third of an edge, the resize is
+.BR Constrained .
+.TP
+.B Zoom
+.PD 0
+.TP
+.B UnZoom
+.PD
+Hold the
+.SM CTRL
+key and click the
+.SM LEFT
+mouse button
+while the pointer is in the frame header or outer border.
+.TP
+.B Front
+Click the
+.SM LEFT
+mouse button
+while the pointer is on the frame header or outer border.
+.TP
+.B Back
+Hold the 
+.SM SHIFT
+key and click the
+.SM LEFT
+mouse button
+while the pointer is on the frame header or outer border.
+.LP
+In addition, you can use two function keys as even faster accelerators.
+To expose a window that is partially hidden, press the
+.B Front
+function key (normally L5)
+while the pointer is anywhere in that window.
+Or, if the window is completely exposed, use the
+.B Front
+key to hide it.
+Similarly, to close an open window, press the
+.B Open
+key (normally L7) while the pointer is anywhere
+in that window.
+If the window is iconic, use the
+.B Open
+key to open it.
+.LP
+In applications with multiple windows, you can often adjust the border
+between two windows up or down, without changing the overall size
+of the application:
+hold the
+.SM CTRL
+key, press the
+.SM MIDDLE
+mouse button over the boundary
+between the two windows, and adjust
+the size of the (bounded) subwindow as with 
+.BR Resize .
+.SS "Startup Processing:  The .sunview File"
+.LP
+Unless you override it,
+.B sunview
+starts up with a predefined layout of windows.
+The default layout is specified in the file
+.BR /usr/lib/.sunview .
+If there is a file called
+.B \&.sunview
+in your home directory, it is used instead.
+For compatibility with earlier releases, if there is no
+.B \&.sunview
+file in your home directory, but a 
+.B \&.suntools
+file instead, the latter file is used.
+.LP
+.SS SunView Defaults
+.LP
+SunView allows you to customize the behavior of applications and packages
+by setting options in a defaults database (one for each user).
+Use
+.BR defaultsedit (1)
+to browse and edit your defaults database.
+Select the \*(lqSunView\*(rq category to see the following items (and
+some others):
+.TP 18
+.B Walking_menus
+If enabled, the SunView menu, the Frame menu, and many applications
+will use walking menus.
+Applications that have not been converted will still use stacking menus.
+If disabled, applications will use stacking menus.
+The default value is \*(lqEnabled.\*(rq
+.TP
+.B Click_to_Type
+If enabled, keyboard input will stay in a window until you click the
+.SM LEFT
+or
+.SM MIDDLE
+mouse button in another window.
+If disabled, keyboard input will follow the mouse.
+The default value is \*(lqDisabled.\*(rq
+.br
+.ne 7
+.TP
+.B Font
+You can change the SunView default font by giving the full pathname
+of the font you want to use.
+Some alternate fonts are in the directory
+.BR /usr/lib/fonts/fixedwidthfonts .
+The default font from the Sun\s-1OS\s0 2.0 release was
+.BR /usr/lib/fonts/fixedwidthfonts/screen.r.13 .
+The default value is null, which has the same effect as specifying
+.BR /usr/lib/fonts/fixedwidthfonts/screen.r.11 .
+.TP
+.B Rootmenu_filename
+You can change the SunView menu by giving the full pathname
+of a file that specifies your own menu.
+See
+.B The SunView Menu File
+below for details.
+The default value is null, which gives you the menu found in
+.BR /usr/lib/.rootmenu .
+.TP
+.B Icon_gravity
+Determine which edge of the screen (\*(lqNorth\*(rq, \*(lqSouth\*(rq,
+\*(lqEast\*(rq, or \*(lqWest\*(rq) icons will place themselves against.
+The default value is \*(lqNorth.\*(rq
+.TP
+.B Audible_bell
+If enabled, the \*(lqbell\*(rq command will produce a beep.
+The default value is \*(lqEnabled.\*(rq
+.TP
+.B "Visible_bell
+If enabled, the \*(lqbell\*(rq command will cause the screen to flash.
+The default value is \*(lqEnabled.\*(rq
+.TP
+.B Root_Pattern
+Used to specify the \*(lqpattern\*(rq that covers the background.
+\*(lqon\*(rq means to use the default desktop gray pattern.
+\*(lqoff\*(rq means to not use the default desktop gray pattern.
+\*(lqgray\*(rq means to use a 50% gray color on color monitors.
+Anything else is the name of a file produced with
+.BR iconedit (1)
+which contains an image that is replicated all over the background.
+The default value is \*(lqon.\*(rq
+.LP 
+After you have set the options you want in the \*(lqSunView\*(rq category,
+click on the
+.B Save
+button in
+.BR defaultsedit ;
+then exit
+.B sunview
+and restart it.
+.LP
+Select the \*(lqMenu\*(rq category to see the following items (and some others):
+.TP 18
+.B Stay_up
+If enabled, menus are invoked by pressing and releasing the
+.SM RIGHT
+mouse button; the menu appears after you release the
+.SM RIGHT
+mouse button. To choose a menu item, point at it,
+then press and release the
+.SM RIGHT
+mouse button a second time.
+The default value is \*(lqFalse\*(rq.
+.br
+.ne 4
+.TP
+.B Items_in_column_major
+If enabled, menus that have more than one column are presented in
+\*(lqcolumn major\*(rq order (the way
+.BR ls (1V)
+presents file names).
+This may make a large menu easier to read.
+The default value is \*(lqFalse.\*(rq
+.LP
+After you have set the options you want in the \*(lqMenu\*(rq category,
+click on the
+.B Save
+button in
+.BR defaultsedit .
+Any applications you start after saving your changes will be affected by
+your new choices.
+For all defaults categories except for \*(lqSunView\*(rq, you do
+.I not
+need to exit
+.B sunview
+and restart it.
+.SS "The SunView Menu File"
+.LP
+The file called
+.B /usr/lib/.rootmenu
+contains the specification of the default SunView menu.
+You can change the SunView menu by creating your own file and
+giving its name in the
+.B Rootmenu_filename
+item in the SunView Defaults.
+.LP
+Lines in the file have the following format:
+The left side is a menu item to be displayed, and
+the right side is a command to be executed when that menu item
+is chosen.
+You can also include comment lines (beginning with a `\fB#\fP\^')
+and blank lines.
+.LP
+The menu item can be a string, or the
+full pathname of an icon file delimited by angle brackets
+(unless
+.B Walking_menus
+is disabled in the SunView defaults).
+Strings with embedded blanks must be delimited by double quotes.
+.LP
+There are four reserved-word commands that can appear on the right side.
+.RS
+.TP 15
+.SB EXIT
+Exit 
+.BR sunview
+(requires confirmation).
+.TP
+.SB REFRESH
+Redraw the entire screen.
+.TP
+.SB MENU
+This menu item is a pull-right item with a submenu.
+If a full pathname follows the
+.SB MENU
+command, the submenu contents are taken from that file.
+Otherwise, all the lines between a
+.SB MENU
+command and a matching
+.SB END
+command are added to the submenu.
+.TP
+.SB END
+Mark the end of a nested submenu.
+The left side of this line should match the left side of a line
+with a
+.SB MENU
+command.
+.RE
+.LP
+If the command is not one of these four reserved-word commands, it is
+treated as a command line and executed.
+No shell interpretation is done, although you can run a shell as a
+command.
+.LP
+Here is a menu file that demonstrates some of these features:
+.RS
+.TP 24n
+.B Quit
+.SB EXIT
+.\" \f[BP] must be used in the following examples!
+.TP
+\fB"Mail reader"\fP
+.B mailtool
+.TP
+\fB"My\ tools"\fP
+.B \s-1MENU\s0  /home/me/mytools.menu
+.TP
+\fB"Click to type"\fP
+.B swin \-c
+.TP
+\fB"Follow mouse"\fP
+.B swin \-m
+.TP
+\fB"Print selection"\fP
+.B sh \-c get_selection | lpr
+.TP
+\fB"Nested menu"\fP
+.SB MENU
+.RS 5
+.TP 19
+\fB"Command Tool"\fP
+.B cmdtool
+.TP
+\fB"Shell Tool"\fP
+.B shelltool
+.RE
+.TP 24
+\fB"Nested menu"\fP
+.SB END
+.TP
+\fB"Icon menu"\fP
+.SB MENU
+.RS 5
+.LP 
+.B <images/textedit.icon>   	textedit
+.LP
+.B <images/dbxtool.icon>   	dbxtool
+.RE
+.TP 24
+\fB"Icon menu"\fP
+.SB END
+.RE
+.SS "Multiple Screens"
+.LP
+The 
+.B sunview
+program runs on either a monochrome or color screen.
+Each screen on a machine with multiple screens may have a separate
+.B sunview
+running.
+The keyboard and mouse input devices can be shared between
+screens. 
+Using 
+.BR adjacentscreens (1)
+you can set up the pointer to slide from one screen to another
+when you move it off the edge of a screen.
+.LP
+To set up an instance of 
+.B sunview
+on two screens:
+.IP \(bu 4
+Invoke
+.B sunview
+on the first display as you normally would.
+This starts an instance of
+.B sunview
+on the default frame buffer 
+.RB ( /dev/fb ).
+.IP \(bu
+In a 
+.BR shelltool ,
+run: 
+.RS
+.IP
+.B "sunview \-d"
+.I device
+.B &
+.RE
+.IP
+This starts another device. 
+A typical choice might be
+.BR /dev/cgone .
+.IP \(bu
+In that same 
+.BR shelltool ,
+run:
+.RS
+.IP
+.B "adjacentscreens /dev/fb \-r"
+.I device
+.RE
+.IP
+This sets up the cursor to switch between screens as it crosses
+the right or left edge of the respective screens.
+.SS Multiple Desktops on the Same Screen
+.LP
+Machines that support multiple plane groups, such as the Sun-3/110
+system, can support independent
+.B sunview
+processes on each plane group. 
+They can share keyboard and
+mouse input in a manner similar to that for multiple screens.
+To set up two plane groups:
+.IP \(bu 4
+Start
+.B sunview
+in the color plane group by running:
+.RS
+.IP
+.B "sunview \-8bit_color_only \-toggle_enable"
+.RE
+.IP
+This starts 
+.B sunview
+on the default frame buffer named
+.BR /dev/fb ,
+but limits access to the color plane group.
+.IP \(bu
+In a 
+.BR shelltool ,
+run:
+.RS
+.IP
+.B "sunview \-d /dev/bwtwo0 \-toggle_enable \-n &"
+.RE
+.IP
+This starts
+.B sunview
+in the overlay plane accessed by
+.BR /dev/bwtwo0 .
+.IP \(bu
+Run:
+.RS
+.IP
+.B "adjacentscreens \-c /dev/fb \-l /dev/bwtwo0"
+.RE
+.IP
+This sets up the pointer to switch between desktops as it
+crosses the right or left edge of the respective desktops.
+.LP
+Pre-3.2 applications cannot be run on the 
+.B \-8bit_color_only
+desktop, because they do not write to the overlay plane.
+.LP
+.BR switcher (1),
+another application for switching between desktops, uses some amusing
+video wipe animation.
+It can also be used to toggle
+the enable plane.
+See
+.BR switcher (1)
+for details.
+.\"		following line used to xref generic tool args
+.zZ
+.br
+.ne 9
+.SS Generic Tool Arguments
+.LP
+Most window-based tools take the following arguments
+in their command lines:
+.\" ==== troff version ===
+.if n .ig IG
+.TS
+cb cb cb cb
+lb lb l l .
+\s-1FLAG\s0	(\s-1LONG FLAG\s0)	\s-1ARGUMENTS	NOTES\s0
+\-Ww 	(\-width)   	columns
+\-Wh 	(\-height)  	lines
+\-Ws 	(\-size)    	\fIx y\fP	\fIx\fP and \fIy\fP are in pixels
+\-Wp 	(\-position) 	\fIx y\fP	\fIx\fP and \fIy\fP are in pixels
+\-WP 	(\-icon_position)	\fIx y\fP	\fIx\fP and \fIy\fP are in pixels
+\-Wl 	(\-label)   	\fIstring\fP
+\-Wi 	(\-iconic)  		makes the application start iconic (closed)
+\-Wt 	(\-font)	\fIfilename\fP
+\-Wn 	(\-no_name_stripe)
+\-Wf 	(\-foreground_color)	\fBred green blue\fP	0-255 (no color-full color)
+\-Wb 	(\-background_color) 	\fBred green blue\fP	0-255 (no color-full color)
+\-Wg 	(\-set_default_color)		(apply color to subwindows too)
+\-\s-1WI\s0 	(\-icon_image)	\fIfilename\fP	(for applications with non-default icons)
+\-\s-1WL\s0 	(\-icon_label)	\fIstring\fP	(for applications with non-default icons)
+\-\s-1WT\s0 	(\-icon_font)	\fIfilename\fP	(for applications with non-default icons)
+\-\s-1WH\s0	(\-help)		print this table
+.TE
+.IG
+.\" === end troff version ===
+.\" ====  nroff version ===
+.if t .ig IG
+.TS
+cb cb cb cb
+lb lb l l .
+\s-1FLAG\s0	(\s-1LONG FLAG\s0)	\s-1ARGUMENTS	NOTES\s0
+\-Ww 	(\-width)   	columns
+\-Wh 	(\-height)  	lines
+\-Ws 	(\-size)    	\fIx y\fP	\fIx\fP and \fIy\fP are
+			in pixels
+\-Wp 	(\-position) 	\fIx y\fP	\fIx\fP and \fIy\fP are
+			in pixels
+\-WP 	(\-icon_position)	\fIx y\fP	\fIx\fP and \fIy\fP
+			are in pixels
+\-Wl 	(\-label)   	\fIstring\fP
+\-Wi 	(\-iconic)  		makes the
+			application start
+			iconic (closed)
+\-Wt 	(\-font)	\fIfilename\fP
+\-Wn 	(\-no_name_stripe)
+\-Wf 	(\-foreground_color)	\fBred green blue\fP	0-255 (no
+			color-full color)
+\-Wb 	(\-background_color) 	\fBred green blue\fP	0-255 (no
+			color-full color)
+\-Wg 	(\-set_default_color)		(apply color to
+			subwindows too)
+\-\s-1WI\s0 	(\-icon_image)	\fIfilename\fP	(for applications
+			with non-default
+			icons)
+\-\s-1WL\s0 	(\-icon_label)	\fIstring\fP	(for applications
+			with non-default
+			icons)
+\-\s-1WT\s0 	(\-icon_font)	\fIfilename\fP	(for applications
+			with non-default
+			icons)
+\-\s-1WH\s0	(\-help)		print this table
+.TE
+.IG
+.\" === end nroff version ===
+.LP
+Each flag option may be specified in either its short form or its long
+form; the two are completely synonymous.
+.\"             following line used to xref generic tool args
+.if \n(zZ .ig zZ
+.SS SunView Applications
+Some of the applications that run in the SunView environment:
+.IP
+.BR clock (1),
+.BR cmdtool (1),
+.BR dbxtool (1),
+.BR defaultsedit (1),
+.BR fontedit (1),
+.BR gfxtool (1),
+.BR iconedit (1),
+.br
+.BR lockscreen (1),
+.BR mailtool (1),
+.BR overview (1),
+.BR perfmeter (1),
+.BR shelltool (1),
+.br
+.BR tektool (1),
+.BR textedit (1),
+.BR traffic (1C)
+.LP
+Some of the utility programs that run in or with the SunView environment:
+.IP
+.BR adjacentscreens (1),
+.BR clear_functions (1),
+.BR get_selection (1),
+.BR stty_from_defaults (1),
+.br
+.BR swin (1),
+.BR switcher (1),
+.BR toolplaces (1)
+.\" .LP
+.SH ENVIRONMENT
+.TP 20
+.SB DEFAULTS_FILE
+The value of this environment variable indicates the file from which
+SunView defaults are read.
+When it is undefined, defaults are read
+from the
+.B .defaults
+file in your home directory.
+.SH FILES
+.PD 0
+.TP
+.B ~/.sunview
+.TP
+.B /usr/lib/.sunview
+.TP
+.B /usr/lib/.rootmenu
+.TP
+.B /usr/lib/fonts/fixedwidthfonts/*
+.TP
+.B /dev/win\fIx\fP
+.TP
+.B /dev/ptyp\fIx\fP
+.TP
+.B /dev/ttyp\fIx\fP
+.TP
+.B /dev/fb 
+.TP
+.B /dev/kbd 
+.TP
+.B /dev/mouse
+.TP
+.B /etc/utmp
+.PD
+.SH SEE ALSO
+.BR adjacentscreens (1),
+.BR clear_functions (1),
+.BR clock (1),
+.BR cmdtool (1),
+.BR dbxtool (1),
+.BR defaultsedit (1),
+.BR fontedit (1),
+.BR get_selection (1),
+.BR gfxtool (1),
+.BR iconedit (1),
+.BR lockscreen (1),
+.BR mailtool (1),
+.BR overview (1),
+.BR perfmeter (1),
+.BR screendump (1),
+.BR shelltool (1),
+.BR stty_from_defaults (1),
+.BR swin (1),
+.BR switcher (1),
+.BR tektool (1),
+.BR textedit (1),
+.BR toolplaces (1),
+.BR traffic (1C),
+.BR fbtab (5),
+.BR svdtab (5)
+.SH BUGS
+.LP
+Console messages ignore window boundaries unless redirected to a
+console window. 
+This can disrupt the 
+.B sunview
+desktop display.
+The display can be restored using the
+.B Redisplay All
+item on the SunView menu. 
+To prevent this, use the 
+.B Console
+item to start a console window.
+.LP
+With an optical mouse, sometimes the arrow-shaped cursor does not move
+at start-up; moving the mouse in large circles on its pad
+normally brings it to life.
+.LP
+.B sunview
+requires that the
+.B /etc/utmp
+file be given read and write permission for all users.
+.LP
+On a color display, colors may \*(lqgo strange\*(rq when the cursor is in
+certain windows that request a large number of colors.
+.LP
+When running multiple desktops, only one console window can be used.
+.LP
+In
+.B Click-to-type
+mode, it is impossible to exit from 
+.B sunview
+by typing
+.SM CTRL-D
+\s-1CTRL-Q\s0.
+.\"		following line used to xref generic tool args
+.zZ

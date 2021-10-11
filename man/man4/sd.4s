@@ -1,0 +1,574 @@
+.\" @(#)sd.4s 1.1 92/07/30 SMI;
+.TH SD 4S "20 March 1991"
+.SH NAME
+sd \- driver for SCSI disk devices
+.SH "CONFIG \(em SUN-3, SUN-3x, and SUN-4 SYSTEMS"
+.ft B
+.nf
+controller si0 at vme24d16 ? csr 0x200000 priority 2 vector siintr 0x40
+controller si0 at obio ? csr 0x140000 priority 2
+disk sd0 at si0 drive 0 flags 0
+disk sd1 at si0 drive 1 flags 0
+disk sd2 at si0 drive 8 flags 0
+disk sd3 at si0 drive 9 flags 0
+disk sd4 at si0 drive 16 flags 0
+disk sd6 at si0 drive 24 flags 0
+
+controller sc0 at vme24d16 ? csr 0x200000 priority 2 vector scintr 0x40
+disk sd0 at sc0 drive 0 flags 0
+disk sd1 at sc0 drive 1 flags 0
+disk sd2 at sc0 drive 8 flags 0
+disk sd3 at sc0 drive 9 flags 0
+disk sd4 at sc0 drive 16 flags 0
+disk sd6 at sc0 drive 24 flags 0
+.ft R
+.fi
+.LP
+The first two
+.B controller
+lines above specify the first and second 
+.SM SCSI
+host adapters for
+Sun-3, Sun-3x, and Sun-4
+.SM VME
+systems.  The third
+.B controller
+line specifies the first and only
+.SM SCSI
+host adapter on Sun-3/50 and Sun-3/60 systems.
+.LP
+The four lines following the
+.B controller
+specification lines define the available 
+.B disk
+devices,
+.BR sd0 " \- " sd6 .
+.LP
+The
+.B flags
+field is used to specify the
+.SM SCSI
+device type to the host adapter.
+.B flags
+must be set to 0 to identify
+.B disk
+devices.
+.LP
+The
+.B drive
+value is calculated using the formula:
+.RS
+.RI 8\|*\| target\ \|+\|\ lun
+.RE
+where
+.I target
+is the
+.SM SCSI
+target, and
+.I lun
+is the
+.SM SCSI
+logical unit number.
+.LP
+The next configuration block, following
+.B si0
+and
+.B si1
+above, describes
+the configuration for the older
+.B sc0
+host adapter.  It uses the
+same configuration description as the
+.B si0
+host adapter.
+.SH "CONFIG \(em SPARCsystem 330 and SUN-3/80 SYSTEMS"
+.ft B
+.nf
+controller sm0 at obio ? csr 0xfa000000 priority 2
+disk sd0 at sm0 drive 0 flags 0
+disk sd1 at sm0 drive 1 flags 0
+disk sd2 at sm0 drive 8 flags 0
+disk sd3 at sm0 drive 9 flags 0
+disk sd4 at sm0 drive 16 flags 0
+disk sd6 at sm0 drive 24 flags 0
+.ft R
+.fi
+.LP
+The 
+\s-1SPARC\s0system 330 and Sun-3/80 use an on-board
+.SM SCSI
+host adapter,
+.BR sm0 .
+It follows the same rules as described
+above for the 
+Sun-3, Sun-3x, and Sun-4
+section.
+.SH "CONFIG \(em SUN-4/110 SYSTEM"
+.ft B
+.nf
+controller sw0 at obio 2 csr 0xa000000 priority 2
+disk sd0 at sw0 drive 0 flags 0
+disk sd1 at sw0 drive 1 flags 0
+disk sd2 at sw0 drive 8 flags 0
+disk sd3 at sw0 drive 9 flags 0
+disk sd4 at sw0 drive 16 flags 0
+disk sd6 at sw0 drive 24 flags 0
+.ft R
+.fi
+.LP
+The Sun-4/110 uses an on-board
+.SM SCSI
+host adapter,
+.BR sw0 .
+It follows the same rules as described
+above for the 
+Sun-3, Sun-3x, and Sun-4
+section.
+.SH "CONFIG \(em SUN-3/E SYSTEM"
+.ft B
+.nf
+controller se0 at vme24d16 ? csr 0x300000 priority 2 vector se_intr 0x40
+disk sd0 at se0 drive 0 flags 0
+disk sd1 at se0 drive 1 flags 0
+disk sd2 at se0 drive 8 flags 0
+disk sd3 at se0 drive 9 flags 0
+.ft R
+.fi
+.LP
+The Sun-3/E uses a
+.SM VME\s0-based
+.SM SCSI
+host adapter,
+.BR se0 .
+It follows the same rules as described
+above for the
+Sun-3, Sun-3x, and Sun-4
+section.
+.LP
+.\" Sun386i start
+.SH "CONFIG \(em Sun386i"
+.nf
+.ft B
+controller wds0 at obmem ? csr 0xFB000000 dmachan 7 irq 16 priority 2
+disk sd0 at wds0 drive 0 flags 0
+disk sd1 at wds0 drive 8 flags 0
+disk sd2 at wds0 drive 16 flags 0
+.fi
+.ft R
+.LP
+The Sun386i configuration follows the same rules described
+above for the 
+Sun-3, Sun-3x, and Sun-4
+section.
+.SH "CONFIG \(em Desktop SPARCsystems"
+.nf
+.ft B
+device-driver esp
+scsibus0 at esp
+disk sd0 at scsibus0 target 3 lun 0
+disk sd1 at scsibus0 target 1 lun 0
+disk sd2 at scsibus0 target 2 lun 0
+disk sd3 at scsibus0 target 0 lun 0
+.fi
+.ft R
+.LP
+The
+Desktop \s-1SPARC\s0system
+configuration files specify a device
+driver
+.RB ( esp ),
+and a
+.SM SCSI
+bus attached to that device driver,
+and then disks on that
+.SM SCSI
+bus at the
+.SM SCSI
+Target and Logical Unit
+addresses specified.
+.SH "CONFIG \(em SPARCsystem 600MP SERIES"
+.nf
+.ft B
+device-driver esp
+scsibus0 at esp
+disk sd0 at scsibus0 target 3 lun 0
+disk sd1 at scsibus0 target 1 lun 0
+disk sd2 at scsibus0 target 2 lun 0
+disk sd3 at scsibus0 target 0 lun 0
+disk sd16 at scsibus0 target 5 lun 0
+
+scsibus1 at esp
+disk sd4 at scsibus1 target 3 lun 0
+disk sd5 at scsibus1 target 1 lun 0
+disk sd6 at scsibus1 target 2 lun 0
+disk sd7 at scsibus1 target 0 lun 0
+
+scsibus2 at esp
+disk sd8 at scsibus2 target 3 lun 0
+disk sd9 at scsibus2 target 1 lun 0
+disk sd10 at scsibus2 target 2 lun 0
+disk sd11 at scsibus2 target 0 lun 0
+
+scsibus3 at esp
+disk sd12 at scsibus3 target 3 lun 0
+disk sd13 at scsibus3 target 1 lun 0
+disk sd14 at scsibus3 target 2 lun 0
+disk sd15 at scsibus3 target 0 lun 0
+
+scsibus4 at esp
+disk sd16 at scsibus4 target 3 lun 0
+disk sd17 at scsibus4 target 1 lun 0
+disk sd18 at scsibus4 target 2 lun 0
+disk sd19 at scsibus4 target 0 lun 0
+.fi
+.ft R
+.LP
+\s-1SPARC\s0system 600MP series configuration files specify a device
+driver
+.RB ( esp ),
+.SM SCSI
+buses attached to that device driver,
+and then disks on those
+.SM SCSI
+buses at the
+.SM SCSI
+Target and Logical Unit
+addresses specified.
+.SH DESCRIPTION
+.IX "sd driver" "" "\fLsd\fP \(em driver for \s-1SCSI\s+1 disk devices" ""
+.IX driver  "driver for SCSI disk devices" "driver" "driver for \s-1SCSI\s+1 disk devices"
+.IX SCSI "driver for SCSI disk devices" "\s-1SCSI\s+1" "driver for \s-1SCSI\s+1 disk devices"
+.LP
+Files with minor device numbers 0 through 7 refer to various portions
+of drive 0.
+The standard device names begin with 
+\*(lq\fBsd\fP\*(rq 
+followed by the drive number and then a letter a-h for
+partitions 0-7 respectively.
+The character
+.B ?
+stands here for a drive number in the range 0-20.
+.LP
+The block-files access the disk using the system's normal
+buffering mechanism and are read and written without regard to
+physical disk records.  There is also a \*(lqraw\*(rq interface
+that provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call usually results in one I/O operation;
+raw I/O is therefore considerably more efficient when
+many bytes are transmitted.  The names of the raw files conventionally
+begin with an extra
+.RB ` r ".'"
+.LP
+I/O requests (such as 
+.B lseek (2V))
+to the
+.SM SCSI
+disk must have an offset that is a multiple of 512 bytes
+(\s-1DEV_BSIZE\s0), or the driver returns an 
+.SM EINVAL
+error.  If the transfer length is not a multiple of 512 bytes,
+the transfer count is rounded up by the driver.
+.SS "Disk Support"
+.LP
+This driver handles the Adaptec 
+.SM ACB\s0-4000 
+disk controller for
+.SM ST\s0-506
+drives, the Emulex 
+.SM MD\s021 
+disk controller for
+.SM ESDI
+drives, and embedded,  
+.SM CCS\s0-compatible
+.SM SCSI
+disk drives.
+.LP
+On Sun386i and Desktop \s-1SPARC\s0systems, this driver
+supports the 
+.SM CDC 
+Wren
+.SM III
+half-height,
+and Wren
+.SM IV
+full-height
+.SM SCSI
+disk drives.
+The \s-1SPARC\s0system 600MP series also supports the Seagate Elite
+.SM SCSI
+drive.
+.LP
+The type of disk drive is determined using the
+.SM SCSI
+inquiry command and reading the volume label stored
+on block 0 of the drive.
+The volume label describes the disk geometry and partitioning; it must
+be present or the disk cannot be mounted by the system.
+.LP
+The
+.B sd?a 
+partition is normally used for the root file system
+on a disk, the
+.B sd?b
+partition as a paging area (e.g. swap),
+and the
+.B sd?c
+partition for pack-pack copying.
+.B sd?c
+normally maps the entire disk and may also be used
+as the mount point for
+secondary disks in the system.  The rest of the disk is normally the
+.B sd?g
+partition.  For the primary disk, the user file system is located here.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/sd[0-20][a-h]
+block files
+.TP
+.B /dev/rsd[0-20][a-h]
+raw files
+.PD
+.SH SEE ALSO
+.BR dkio (4S),
+.BR directory (3V),
+.BR lseek (2V),
+.BR read (2V),
+.BR write (2V)
+.LP
+Product Specification for Wren IV
+.SM SCSI
+Model 94171
+.br
+Product Specification for Wren III
+.SM SCSI
+Model 94161
+.br
+Product Specification for Wren III
+.SM SCSI
+Model 94211
+.br
+Emulex
+.SM MD\s021
+Disk Controller Programmer Reference Manual
+.br
+Adaptec 
+.SM ACB\s0-4000
+Disk Controller
+.SM OEM
+Manual
+.br
+.SH DIAGNOSTICS
+.nf
+.ft B
+.nf
+sd?:  sdtimer: I/O request timeout
+.fi
+.ft R
+.in +5m
+A tape I/O operation has taken too long to complete.
+A device or host adapter failure may have occurred.
+.LP
+.nf
+.ft B
+.nf
+sd?:  sdtimer: can't abort request
+.fi
+.ft R
+.in +5m
+The driver is unable to find the request in the disconnect queue
+to notify the device driver that it has failed.
+.LP
+.nf
+.ft B
+.nf
+sd?:  no space for inquiry data
+sd?:  no space for disk label
+.fi
+.ft R
+.in +5m
+The driver was unable to get enough space for temporary
+storage.  The driver is unable to open the disk device.
+.LP
+.nf
+.ft B
+.nf
+sd?:  <%s>
+.fi
+.ft R
+.in +5m
+The driver has found a
+.SM SCSI
+disk device and opened it
+for the first time.  The disk label is displayed to 
+notify the user.
+.LP
+.nf
+.ft B
+.nf
+sd?:  \s-1SCSI\s+1 bus failure
+.fi
+.ft R
+.in +5m
+A host adapter error was detected.  The system may need to be rebooted.
+.LP
+.nf
+.ft B
+.nf
+sd?:  single sector I/O failed
+.fi
+.ft R
+.in +5m
+The driver attempted to recover from a transfer by
+writing each sector, one at a time, and failed.
+The disk needs to be reformatted to map out
+the new defect causing this error.
+.LP
+.nf
+.ft B
+.nf
+sd?:  retry failed
+sd?:  rezero failed
+.fi
+.ft R
+.in +5m
+A disk operation failed.  The driver first tries to recover
+by retrying the command; if that fails, the driver rezeros
+the heads to cylinder 0 and repeats the retries.
+A failure of either the retry or rezero operations
+results in these warning messages; the error recovery
+operation continues until the retry count is exhausted.
+At that time a hard error is posted.
+.LP
+.nf
+.ft B
+.nf
+sd?:  request sense failed
+.fi
+.ft R
+.in +5m
+The driver was attempting to determine the cause of an
+I/O failure and was unable to get more information.
+This implies that the disk device may have failed.
+.LP
+.nf
+.ft B
+.nf
+sd?:  warning, abs. block %d has failed %d times
+.fi
+.ft R
+.in +5m
+The driver is warning the user that the specified block has failed
+repeatedly.   
+.LP
+.nf
+.ft B
+.nf
+sd?:  block %d needs mapping
+sd?:  reassigning defective abs. block %d
+.fi
+.ft R
+.in +5m
+The specified block has failed repeatedly and may soon
+become an unrecoverable failure.  If the driver does not
+map out the specified block automatically, it is recommended
+that the user correct the problem.
+.LP
+.nf
+.ft B
+.nf
+sd?:  reassign block failed
+.fi
+.ft R
+.in +5m
+The driver attempted to map out a block having excessive soft
+errors and failed.  The user needs to run format and
+repair the disk.
+.LP
+.nf
+.ft B
+.nf
+sd?%c: cmd how blk %d (rel. blk %d)
+       sense key(0x%x): %s, error code(0x%x): %s
+.fi
+.ft R
+.in +5m
+An I/O operation
+.RB ( cmd ),
+encountered an error condition at absolute block
+.RB ( "blk %d" ),
+partition
+.RB ( sd?%c: ),
+or relative block
+.RB ( "rel. block%d" ).
+The error recovery operation
+.RB ( how )
+indicates whether it
+.IR retry 'ed, 
+.IR restored ,
+or 
+.IR failed .
+The
+.B sense key
+and
+.B error code
+of the error are displayed for diagnostic purposes.
+The absolute
+.B blk
+of the error is used for mapping out the defective
+block.  The 
+.B rel. blk
+is the block (sector) in error, relative to the beginning of
+the partition involved.  This is useful for using
+.BR icheck (8)
+to repair a damaged file structure on the disk.
+.SS "Additional SPARCsystem Diagnostics"
+.LP
+The diagnostics for desktop \s-1SPARC\s0systems and the
+\s-1SPARC\s0system 600MP series are much like those above.
+The following diagnostics are unique to
+these systems:
+.sp
+.ft B
+.nf
+sd?:  SCSI transport failed: reason 'xxxx': {retrying|giving up}
+.fi
+.ft R
+.in +5m
+The host adapter has failed to transport a command to the target for
+the reason stated. The driver will either retry the command or, ultimately,
+give up.
+.LP
+.ft B
+.nf
+sd?:  disk not responding to selection
+.fi
+.ft R
+.in +5m
+The target disk isn't responding. You may have accidently kicked a power
+cord loose.
+.LP
+.ft B
+.nf
+sd?:  disk ok
+.fi
+.ft R
+.in +5m
+The target disk is now responding again.
+.LP
+.ft B
+.nf
+sd?:  disk offline
+.fi
+.ft R
+.in +5m
+The driver has decided that the target disk is no longer there.
+.LP
+.SH BUGS
+These disk drivers assume that you don't have removable media drives, and
+also that in order to operate normally, a valid Sun disk label must be
+in sector zero.
+.sp
+A logical block size of 512 bytes is assumed
+(and enforced on desktop \s-1SPARC\s0systems).

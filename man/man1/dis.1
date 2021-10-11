@@ -1,0 +1,144 @@
+.\" @(#)dis.1 1.1 92/07/30 SMI; from System V
+.TH DIS 1 "19 February 1988"
+.SH NAME
+dis \- object code disassembler for COFF
+.SH SYNOPSIS
+.B dis
+.RB [ " \-o " ]
+.RB [ " \-V " ]
+.RB [ " \-L " ]
+.RB [ " \-d "
+.IR sec " ]"
+.RB [ " \-da "
+.IR sec " ]"
+.RB [ " \-F "
+.IR function " ]"
+.RB [ " \-t "
+.IR sec " ]"
+.RB [ " \-l "
+.IR string " ]"
+.I coff-file .\|.\|.
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "dis command" "" "\fLdis\fR command"
+.LP
+The 
+.B dis
+command
+produces an assembly-language listing
+of
+.IR coff-file ,
+which may be any object file in
+.SM COFF
+format, or an archive of
+.SM COFF
+object files.
+.PP
+The listing includes assembly statements and
+an octal or hexadecimal representation of the binary
+that produced those statements.
+.SH OPTIONS
+.TP
+.B \-o
+Print numbers in octal.  The default is hexadecimal.
+.PP
+.TP
+.B \-V
+Print, on standard error, the version number of the disassembler
+being executed.
+.TP
+.B \-L
+Lookup source labels in the symbol table for
+subsequent printing.
+This option works only if the file was compiled with
+additional debugging information (e.g., the 
+.B \-g
+option of
+.BR cc (1V)).
+.TP
+.BI \-d " sec"
+Disassemble the named section as data,
+printing the offset of the data from the
+beginning of the section.
+.TP
+.BI \-da " sec"
+Disassemble the named section as data,
+printing the actual address of the data.
+.TP
+.BI \-F " function"
+Disassemble only the named function in each object file
+specified on the command line.
+The
+.B \-F
+option may be specified multiple times on the command line.
+.TP
+.BI \-t " sec"
+Disassemble the named section as text.
+.TP
+.BI \-l " string"
+Disassemble the library file specified by
+.IR string .
+For example,
+.B "dis \-l x \-l z"
+disassembles
+.B libx.a
+and
+.BR libz.a .
+All libraries are
+assumed to be in
+.BR /usr/lib .
+.DT
+.br
+.PP
+If the
+.BR \-d ,
+.B \-da
+or
+.BR \-t
+options are specified,
+only those named
+sections from each
+user-supplied file name
+will be disassembled.
+Otherwise, all sections
+containing text will
+be disassembled.
+.PP
+On output, a number enclosed in brackets
+at the beginning of a line,
+such as 
+.BR [5] ,
+represents that the break-pointable line number
+starts with the following instruction.
+These line numbers will be printed only if the file was compiled with
+additional debugging information (e.g., the
+.B \-g
+option of
+.BR cc (1V)).
+An expression such as
+.B <40>
+in the operand field or in the symbolic disassembly,
+following a relative displacement
+for control transfer instructions,
+is the computed address
+within the section to which
+control will be transferred.
+A function name
+will appear in the first column,
+followed by
+.BR (\|) .
+.SH "FILES"
+.B /usr/lib
+.SH "SEE ALSO"
+.BR cc (1V)
+.BR coff (5)
+.SH NOTES
+Because the assembler does not generate or support 8-bit symbol
+names, it is inappropriate to make
+.B dis
+8-bit clean.
+See
+.BR as (1).

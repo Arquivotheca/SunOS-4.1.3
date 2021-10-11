@@ -1,0 +1,332 @@
+.\" @(#)mon_create.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH MON_CREATE 3L "21 January 1990"
+.SH NAME
+mon_create, mon_destroy, mon_enter, mon_exit, mon_enumerate, mon_waiters, mon_cond_enter, mon_break, MONITOR, SAMEMON \- LWP routines to manage critical sections
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <lwp/lwp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_create(mid)
+mon_t *mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_destroy(mid)
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_enter(mid)
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_exit(mid)
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_enumerate(vec, maxsize)
+mon_t vec[\|];	/* list of all monitors */
+int maxsize;	/* max size of vec */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_waiters(mid, owner, vec, maxsize)
+mon_t mid;		/* monitor in question */
+thread_t *owner;	/* which thread owns the monitor */
+thread_t vec[\|];		/* list of blocked threads */
+int maxsize;		/* max size of vec */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_cond_enter(mid)
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mon_break(mid)
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void \s-1MONITOR\s0(mid)
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int \s-1SAMEMON\s0(m1, m2)
+mon_t m1;
+mon_t m2;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "mon_exit()" "" "\fLmon_exit()\fP function"
+.IX "mon_enter()" "" "\fLmon_enter()\fP function"
+.IX "mon_destroy()" "" "\fLmon_destroy()\fP function"
+.IX "mon_create()" "" "\fLmon_create()\fP function"
+.IX "SAMEMON()" "" "\fLSAMEMON()\fP macro"
+.IX "MONITOR()" "" "\fLMONITOR()\fP macro"
+.IX "mon_break()" "" "\fLmon_break()\fP function"
+.IX "mon_cond_enter()" "" "\fLmon_cond_enter()\fP function"
+.IX "mon_waiters()" "" "\fLmon_waiters()\fP function"
+.IX "mon_enumerate()" "" "\fLmon_enumerate()\fP function"
+.LP
+Monitors are used to synchronize access
+to common resources.  Although it is possible
+(on a uniprocessor) to use knowledge of how scheduling
+priorities work to serialize access to a resource,
+monitors (and condition variables) provide a
+general tool to provide the necessary synchronization.
+.LP
+.B mon_create(\|)
+creates a new monitor and returns its identity in
+.IR mid .
+.B mon_destroy(\|)
+destroys a monitor, as well as any
+conditions bound to it (see
+.BR cv_create (3L)).
+Because the lifetime of a monitor can
+transcend the lifetime of the 
+.SM LWP
+that created it,
+monitor destruction is not automatic upon
+.SM LWP
+destruction.
+.LP
+.B mon_enter(\|)
+blocks the calling thread (if the
+monitor is in use) until the monitor
+becomes free by being exited or by waiting on a condition
+(see
+.BR cv_create (3L)).
+Threads unable to gain entry
+into the monitor are queued for monitor service
+by the priority of the thread requesting monitor access,
+.SM FCFS
+within a priority.
+Monitor calls may nest.
+If, while holding monitor M1
+a request for monitor M2 is made,
+M1 will be held until M2 can be acquired.
+.LP
+.B mon_cond_enter(\|)
+will enter the monitor only if the
+monitor is not busy.
+Otherwise, an error is returned.
+.LP
+.B mon_enter(\|)
+and
+.B mon_cond_enter(\|)
+will allow a thread which
+already has the monitor to reenter the monitor.
+In this case, the nesting level of monitor
+entries is returned.  Thus, the first time a
+monitor is entered,
+.B mon_enter(\|)
+returns 0.  The next time the monitor is entered,
+.B mon_enter(\|)
+returns 1.
+.B mon_exit(\|)
+frees the current monitor and allows the next
+thread blocked on
+the monitor (if any) to enter the monitor.
+However, if a monitor is entered more than once,
+.B mon_exit(\|)
+returns the previous monitor nesting level
+without freeing the monitor to other threads.
+Thus, if the monitor was not reentered,
+.B mon_exit(\|)
+returns 0.
+.LP
+.B mon_enumerate(\|)
+lists all the monitors in the system.
+The vector supplied is filled in with the
+.SM ID\s0's
+of the monitors.
+.I maxsize
+is used to avoid exceeding the capacity of the
+list.  If the number of monitors is greater than
+.IR maxsize ,
+only
+.I maxsize
+monitor
+.SM ID\s0's
+are filled in
+.IR vec .
+.LP
+.B mon_waiters(\|)
+puts the thread that currently owns the monitor in
+.I owner
+and all threads blocked on the monitor in
+.I vec
+(subject to the
+.I maxsize
+limitation), and returns
+the number of waiting threads.
+.LP
+.B mon_break(\|)
+forces the release of a monitor lock
+not necessarily held by the invoking thread.
+This enables the next thread blocked on the
+monitor to enter it.
+.LP
+.SB MONITOR
+is a macro that can be used at the start of a
+procedure to indicate that the procedure is a monitor.
+It uses the exception handling mechanism to ensure that
+the monitor is exited automatically when
+the procedure exits.
+Ordinarily, this single macro replaces paired
+.BR mon_enter(\|) -
+.B mon_exit(\|)
+calls in a monitor procedure.
+.\" trouble if mid on stack of procedure doing mon
+.\" (that is, if you
+.\" copied the mid onto a stack var, exc_on_exit could mess it up)
+.LP
+The
+.SB SAMEMON
+macro is a convenient predicate used
+to compare two monitors for equality.
+.LP
+Monitor locks are released automatically
+when the 
+.SM LWP
+holding them dies.  This may have
+implications for the validity of the monitor invariant
+(a condition that is always true \fIoutside\fP of the monitor)
+if a thread unexpectedly terminates.
+.SH RETURN VALUES
+.LP
+.B mon_create(\|)
+returns the
+.SM ID
+of a new monitor.
+.LP
+.B mon_destroy(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+.B mon_enter(\|)
+returns the nesting level of the monitor.
+.LP
+.B mon_exit(\|)
+returns
+the previous nesting level
+on success.
+On failure,
+it returns
+\-1.
+.LP
+.B mon_enumerate(\|)
+returns the total number of monitors.
+.LP
+.B mon_waiters(\|)
+returns the number of threads waiting for the
+monitor.
+.LP
+.B mon_cond_enter(\|)
+returns
+the nesting level of the monitor if the monitor is not busy.
+If the monitor is busy,
+it returns
+\-1.
+.LP
+.B mon_break(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+The macro
+.B SAMEMON(\|)
+returns
+1
+if the monitors specified by
+.I m1
+and
+.I m2
+are equal.
+It returns
+0 otherwise.
+.SH ERRORS
+.LP
+.B mon_break(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to break lock on non-existent monitor.
+.TP
+.SM LE_NOTOWNED
+Attempt to break a monitor lock that is not set.
+.LP
+.B mon_cond_enter(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_INUSE
+The requested monitor is being used by another thread.
+.TP
+.SM LE_NONEXIST
+Attempt to destroy non-existent monitor.
+.LP
+.B mon_destroy(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_INUSE
+Attempt to destroy a monitor that has threads blocked on it.
+.TP
+.SM LE_NONEXIST
+Attempt to destroy non-existent monitor.
+.LP
+.B mon_exit(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_INVALIDARG
+Attempt to exit a monitor that the thread does not own.
+.TP
+.SM LE_NONEXIST
+Attempt to exit non-existent monitor.
+.SH "SEE ALSO"
+.BR cv_create (3L)
+.SH BUGS
+.LP
+There should be language support to enforce
+the monitor enter-exit discipline.

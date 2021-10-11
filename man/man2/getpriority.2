@@ -1,0 +1,186 @@
+.\" @(#)getpriority.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETPRIORITY 2 "21 January 1990"
+.SH NAME
+getpriority, setpriority \- get/set process nice value
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+#include <sys/resource.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getpriority(which, who)
+int which, who;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setpriority(which, who, niceval)
+int which, who, niceval;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  getpriority()  ""  "\fLgetpriority()\fP \(em get process nice value"
+.IX  "process scheduling"  getpriority()  ""  \fLgetpriority()\fP
+.IX  setpriority()  ""  "\fLsetpriority()\fP \(em set process nice value"
+.IX  "process scheduling"  setpriority()  ""  \fLsetpriority()\fP
+.IX  get "scheduling nice value \(em \fLgetpriority()\fR"
+.IX  set "scheduling nice value \(em \fLsetpriority()\fR"
+.IX  "scheduling nice value"  get "" "get \(em getpriority()"
+.IX  "scheduling nice value"  set "" "set \(em setpriority()"
+.IX  "nice value"  get "" "get \(em getpriority()"
+.IX  "nice value"  set "" "set \(em setpriority()"
+.LP
+The
+nice value of a process, process group, or user, as indicated by
+.I which
+and
+.I who
+is obtained with the
+.B getpriority(\|)
+call and set with the
+.B setpriority(\|)
+call.
+Process nice
+values can range from \-20 through 19.  The default nice value is 0;
+lower nice values cause more favorable scheduling.
+.LP
+.I which
+is one of
+.SM
+.BR PRIO_PROCESS \s0,
+.SM
+.BR PRIO_PGRP \s0,
+or
+.SM
+.BR PRIO_USER \s0,
+and
+.I who
+is interpreted relative to
+.I which
+(a process identifier for
+.SM
+.BR PRIO_PROCESS \s0,
+process group identifier for
+.SM
+.BR PRIO_PGRP \s0,
+and a user
+.SM ID
+for
+.SM
+.BR PRIO_USER \s0).
+A zero value of
+.I who
+denotes the current process, process group, or user.
+.LP
+The
+.B getpriority(\|)
+call returns the lowest numerical nice value
+of any of the specified processes.  The
+.B setpriority(\|)
+call sets the nice values of all of the specified processes
+to the value specified by
+.IR niceval .
+If 
+.I niceval
+is less than \-20,
+a value of \-20 is used; if it is greater than 19, a value of 19 is used.
+Only the super-user may use negative nice values.
+.SH RETURN VALUES
+.LP
+Since
+.B getpriority(\|)
+can legitimately return the value \-1, it is necessary
+to clear the external variable
+.B errno
+prior to the
+call, then check it afterward to determine
+if a \-1 is an error or a legitimate value.
+.LP
+.B setpriority(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B getpriority(\|)
+and
+.B setpriority(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+.I which
+was not one of
+.SM
+.BR PRIO_PROCESS \s0,
+.SM
+.BR PRIO_PGRP \s0,
+or
+.SM
+.BR PRIO_USER \s0.
+.TP
+.SM ESRCH
+No process was located using the
+.I which
+and
+.I who
+values specified.
+.LP
+In addition to the errors indicated above,
+.B setpriority(\|)
+may fail with one of the following errors returned:
+.TP 15
+.SM EACCES
+The call to
+.B setpriority(\|)
+would have changed a process' nice value to a value lower than its current
+value, and the effective user
+.SM ID
+of the process executing the call was
+not that of the super-user.
+.TP
+.SM EPERM
+A process was located, but neither its effective nor real user
+.SM ID
+matched the effective user
+.SM ID
+of the caller, and neither the effective
+nor the real user
+.SM ID
+of the process executing
+.B setpriority(\|)
+was super-user.
+.SH "SEE ALSO"
+.BR nice (1),
+.BR ps (1),
+.BR fork (2V),
+.BR nice (3v)
+.BR renice (8)
+.SH BUGS
+.LP
+It is not possible for the process executing
+.B setpriority(\|)
+to lower any other process down to its current nice value, without
+requiring super-user privileges.
+.LP
+These system calls are misnamed.  They get and set the nice value, not
+the kernel scheduling priority.
+.BR nice (1)
+discusses the relationship between nice value and scheduling priority.
+

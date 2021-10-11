@@ -1,0 +1,134 @@
+.\" @(#)whereis.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH WHEREIS 1 "9 September 1987"
+.SH NAME
+whereis \- locate the binary, source, and manual page files for a command
+.SH SYNOPSIS
+.B whereis
+[
+.B \-bmsu
+] [
+.B \-BMS
+.IR directory .\|.\|.
+.B \-f
+]
+\fIfilename\fP\|
+\&.\|.\|.
+.IX  "whereis command"  ""  "\fLwhereis\fP \(em find program"
+.IX  find "program \(em \fLwhereis\fP"
+.IX  "locate program"  ""   "locate program \(em \fLwhereis\fP"
+.IX  command  locate  ""   "locate \(em \fLwhereis\fP"
+.SH DESCRIPTION
+.B whereis
+locates source/binary and manuals sections for specified
+files.
+The supplied names are first stripped of leading pathname components
+and any (single) trailing extension of the form
+.BI . ext,
+for example,
+.BR .c .
+Prefixes of
+.B s.
+resulting from use of source code control are also dealt with.
+.B whereis
+then attempts to locate the desired program in
+a list of standard places:
+.IP
+.nf
+.ft B
+/usr/bin
+/usr/bin
+/usr/5bin
+/usr/games
+/usr/hosts
+/usr/include
+/usr/local
+/usr/etc
+/usr/lib
+/usr/share/man
+/usr/src
+/usr/ucb
+.ft R
+.fi
+.SH OPTIONS
+.TP
+\fB\-b
+Search only for binaries.
+.TP
+.B \-m
+Search only for manual sections.
+.TP
+.B \-s
+Search only for sources.
+.TP
+.B \-u
+Search for unusual entries.  A file is said to be unusual if it does
+not have one entry of each requested type.
+Thus
+.RB ` "whereis\ \ \-m\ \ \-u\ \ *" '
+asks for those files in the current
+directory which have no documentation.
+.TP
+.B \-B
+Change or otherwise limit the places where
+.B whereis
+searches for binaries.
+.TP
+.B \-M
+Change or otherwise limit the places where
+.B whereis
+searches for
+manual sections.
+.TP
+.B \-S
+Change or otherwise limit the places where
+.B whereis
+searches for sources.
+.TP
+.B \-f
+Terminate the last directory list and signals the start of file names,
+and
+.I must
+be used when any of the
+.BR \-B ,
+.BR \-M ,
+or
+.B \-S
+options are used.
+.SH EXAMPLE
+Find all files in
+.B /usr/bin
+which are not documented
+in
+.B /usr/share/man/man1
+with source in
+.BR /usr/src/cmd :
+.IP
+.nf
+.ft B
+example% cd /usr/ucb
+example% whereis \-u \-M /usr/share/man/man1 \-S /usr/src/cmd \-f *
+.fi
+.ft R
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/src/*
+.TP
+.B /usr/{doc,man}/*
+.TP
+.B /etc, /usr/{lib,bin,ucb,old,new,local}
+.PD
+.SH SEE ALSO
+.BR chdir (2V)
+.SH BUGS
+Since
+.B whereis
+uses
+.BR chdir (2V)
+to run faster, pathnames given with the
+.BR \-M ,
+.BR \-S ,
+or
+.B \-B
+must be full; that is, they must begin with a
+.RB ` / '.

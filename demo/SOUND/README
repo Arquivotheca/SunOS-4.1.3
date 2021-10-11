@@ -1,0 +1,110 @@
+README: 1.1 92/07/30
+
+This directory contains the sources for the following audio demo applications
+(manual pages for them are located in section 6: Games and Demos):
+
+soundtool:
+	This is a prototype audio record/playback tool.
+	It demonstrates many of the features of the audio programming
+	interface.  Since it is an XView application, it is written
+	to obey the constraints of the XView Notifier and to issue
+	only asynchronous i/o requests.  Because it also attempts to
+	keep an oscilloscope display synchronized during play and record,
+	it is far more complex than most audio applications need to be.
+	However, it is a good demonstration of the real-time audio
+	capabilities of the SPARCstation.
+
+	Audio file headers, containing a magic number and encoding
+	information, have been introduced in this release.  Audio data
+	recorded by directly reading /dev/audio will not contain
+	the proper audio file headers.  Soundtool will issue a warning
+	when such files are loaded; the store operation will rewrite
+	the file with an audio file header.  Alternatively, the
+	raw2audio program, described below, may be used to convert
+	files to the proper format.
+
+gaintool:
+	This is a prototype audio control panel.  The audio driver
+	enforces exclusive access to /dev/audio, in order to prevent
+	the arbitrary interleaving of multiple data streams.  However,
+	the /dev/audioctl pseudo-device allows multiple processes to
+	query and, in some cases, alter the state of the audio device.
+	In particular, the following fields may be modified:
+	    record gain
+	    playback gain
+	    sidetone gain (controls the feedback from the mic to the output)
+	    output port (speaker vs. headphone jack)
+	    pause/resume (may be set only if /dev/audio is currently open)
+
+	The audio control panel illustrates the ability to control various
+	aspects of the audio configuration outside of particular audio
+	applications.  For instance, since play volume may be controlled
+	from the panel, it is not necessary for all audio applications to
+	provide an output volume control themselves.
+
+	The audio driver sends a SIGPOLL signal to processes that request
+	notification of audio state changes.  In this way, soundtool
+	may be notified when gaintool alters the volume, and vice versa.
+
+	Gaintool also has a status panel (activated by pressing the
+	PROPS <L3> key or by pressing the MENU mouse button over the
+	gaintool panel) that displays complete status information for
+	the audio device.  Normally, this information is updated only
+	when gaintool receives a SIGPOLL signal.  Therefore, the
+	'samples' and 'active' indicators are not generally reliable.
+	However, if 'Continuous' is selected at the bottom of the panel,
+	the status is updated continuously.
+
+play:
+	This is a simple command-oriented program to play audio files.
+	It does not require that the window system be running, although
+	parameters changed by the gaintool panel will affect its behavior.
+
+record:
+	This is a simple command-oriented program to record audio files.
+	It does not require that the window system be running, although
+	parameters changed by the gaintool panel will affect its behavior.
+
+raw2audio:
+	This program reads raw audio data and rewrites it with an
+	audio file header.  It is intended to aid in converting raw
+	audio files, such as those imported from other systems,
+	to the SunOS audio file format.  The -o option allows
+	you to convert the format of audio files that contain other
+	types of audio header information.
+
+
+As a special bonus, the shell script 'cuckoo.clock' is included for fun.
+The command 'crontab -e' may be used to add the following line to your crontab:
+
+	0,30 * * * * /usr/demo/SOUND/cuckoo.clock >/dev/null 2>&1
+
+
+Some sample sound files are located in the 'sounds' subdirectory.
+sample.au contains guidelines in setting the recording gain level.
+The other files include sample sound effects and telephone touchtones
+and control tones.
+
+A preliminary audio programming interface library, libaudio.a, is also
+provided.  Manual pages for the functions in libaudio.a may be found
+in the 'man3' directory.  Header files for libaudio.a are in the 'multimedia'
+directory.
+
+Executing 'make install' in this directory (requires super-user access)
+will install the following files:
+
+        Files			     Installed directory
+    --------------------	-----------------------------
+    libaudio.a 				/usr/lib
+
+    llib-llibaudio.ln			/usr/lib/lint
+
+    multimedia/*			/usr/include/multimedia/*
+
+    man3/*				/usr/share/man/man3/*
+
+    play				/usr/bin
+    record				/usr/bin
+    raw2audio				/usr/bin
+    soundtool				/usr/bin
+    gaintool				/usr/bin

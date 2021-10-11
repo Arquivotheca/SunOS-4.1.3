@@ -1,0 +1,19 @@
+#! /bin/sh
+#
+# %Z%%M% %I% %E% SMI
+#
+
+(IFS_save=$IFS
+#solves problem of read line discarding leading blanks which are necessary
+#for correct interpretation of continuation lines in mail headers
+IFS=
+while read line
+do
+	echo "$line"
+	case $line in
+	"") break ;;
+	esac
+done
+IFS=$IFS_save
+fmt -s -72) | /usr/lib/sendmail "$@"
+

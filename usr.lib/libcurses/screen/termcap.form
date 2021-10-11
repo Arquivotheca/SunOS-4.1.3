@@ -1,0 +1,146 @@
+#ifndef lint
+static	char sccsid[] = "@(#)termcap.form 1.1 92/07/30 SMI"; /* from S5R3 1.3 */
+#endif
+
+/*
+ * Simulation of termcap using terminfo.
+ */
+
+#include "curses.ext"
+
+/*
+ * These are declared so people won't get undefineds if they use
+ * old documentation.  We don't do anything with them.
+ */
+char *UP;
+char *BC;
+char PC;
+short ospeed;
+
+/* ARGSUSED */
+int
+tgetent(bp, name)
+char *bp, *name;
+{
+	int rv;
+
+	if (setupterm(name, 1, &rv) >= 0)
+		/* Leave things as they were (for compatibility) */
+		reset_shell_mode();
+	return rv;
+}
+
+/* Make a 2 letter code into an integer we can switch on easily */
+#define two(s1, s2) (s1 + 256*s2)
+#define twostr(str) two(*str, str[1])
+
+static
+char *
+stripdelays(inbuf, outbuf, size)
+register char *inbuf, *outbuf;
+register int size;
+{
+	char *saveoutbuf = outbuf;
+	
+	if (inbuf == NULL)
+		return 0;
+	else
+		while (size && *inbuf)
+			if (*inbuf == '$' && *(inbuf+1) == '<')
+				while (*inbuf && *inbuf++ != '>')
+					;
+			else {
+				size--;
+				*outbuf++ = *inbuf++;
+			}
+	return saveoutbuf;
+}
+
+int
+tgetflag(id)
+char *id;
+{
+	register int rv;
+	register char *p;
+	char stripped[16];
+
+	switch (twostr(id)) {
+	BOOLS
+	/* Special cases that do not have exact terminfo equivalents */
+	case two('b','s'):
+		/* bs: true if ^H moves the cursor left */
+		p = stripdelays(cursor_left, stripped, 16);
+		rv = p && *p==8 && p[1] == 0;
+		break;
+	case two('p','t'):
+		/* pt: true if terminal has ^I tabs every 8 spaces */
+		p = stripdelays(tab, stripped, 16);
+		rv = p && *p==9 && p[1] == 0;
+		break;
+	case two('n','c'):
+		/* cr: true if ^M doesn't return the cursor */
+		p = stripdelays(carriage_return, stripped, 16);
+		rv = ! (p && *p==13 && p[1] == 0);
+		break;
+	case two('n','s'):
+		/* ns: true if no way to scroll the terminal */
+		rv = scroll_forward == NULL;
+		break;
+	default: rv = 0;
+	}
+	return rv;
+}
+
+int
+tgetnum(id)
+char *id;
+{
+	int rv;
+
+	switch (twostr(id)) {
+	NUMS
+	default: rv = -1;
+	}
+	return rv;
+}
+
+/*
+ * Return the string capability for capability "id".  We also copy
+ * it into *area for upward compatibility with a few programs that
+ * actually expect it to be copied, at a slight cost in speed.
+ */
+char *
+tgetstr(id, area)
+char *id, **area;
+{
+	register char *rv, *p, *p2;
+	register int two_id = twostr(id);
+	char stripped[16], morestripped[16];
+
+	switch (two_id) {
+	STRS
+		case two('b','c'):
+			/* bc: char the moves cursor left */
+			p = stripdelays(cursor_left, stripped, 16);
+			if (p && strcmp(p, "\b") == 0)
+				rv = NULL;
+			else
+				rv = cursor_left;
+			break;
+		case two('n','l'):
+			/* nl: string that does both index and cursor_down */
+			p = stripdelays(cursor_down, stripped, 16);
+			p2 = stripdelays(scroll_forward, morestripped, 16);
+			if (p && p2 && strcmp(p, p2) == 0)
+				rv = cursor_down;
+			else
+				rv = NULL;
+			break;
+		}
+	if (rv && area && *area) {
+		extern char *strcpy();
+		strcpy(*area, rv);
+		*area += strlen(rv) + 1;
+	}
+	return rv;
+}

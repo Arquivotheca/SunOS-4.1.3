@@ -1,0 +1,138 @@
+.\" @(#)icmp.4p 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH ICMP 4P "24 November 1987"
+.SH NAME
+icmp \- Internet Control Message Protocol
+.SH SYNOPSIS
+.nf
+.B #include <sys/socket.h>
+.B #include <netinet/in.h>
+.B #include <netinet/ip_icmp.h>
+.LP
+.B s = socket(\s-1AF_INET\s0, \s-1SOCK_RAW\s0, proto);
+.fi
+.IX  "icmp protocol"  ""  "\fLicmp\fP \(em Internet Control Message Protocol"  ""  PAGE START
+.IX  Internet  "control message protocol icmp"  ""  "control message protocol \(em \fLicmp\fP"  PAGE START
+.SH DESCRIPTION
+.SM ICMP
+is the error and control message protocol used
+by the Internet protocol family.
+It is used by the kernel to handle and report errors
+in protocol processing.
+It may also be accessed
+through a \*(lqraw socket\*(rq for network monitoring
+and diagnostic functions.
+The protocol number for
+.SM ICMP\s0,
+used in the
+.I proto
+parameter to the socket call,
+can be obtained from
+.B getprotobyname
+(see
+.BR getprotoent (3N)).
+.SM ICMP
+sockets are connectionless,
+and are normally used with the
+.I sendto
+and
+.I recvfrom
+calls, though the
+.BR connect (2)
+call may also be used to fix the destination for future
+packets (in which case the
+.BR read (2V)
+or
+.BR recv (2)
+and
+.BR write (2V)
+or
+.BR send (2)
+system calls may be used).
+.LP
+Outgoing packets automatically have an Internet Protocol (\s-1IP\s0)
+header prepended to them.
+Incoming packets are provided to the holder of a raw
+socket with the
+.SM IP
+header and options intact.
+.LP
+.SM ICMP
+is an unreliable datagram protocol layered above
+.SM IP\s0.
+It is used internally by the protcol code
+for various purposes including routing,
+fault isolation,
+and congestion control.
+Receipt of an
+.SM ICMP
+\*(lqredirect\*(rq message will add a new entry in
+the routing table,
+or modify an existing one.
+.SM ICMP
+messages are routinely sent by the protocol code.
+Received
+.SM ICMP
+messages may be reflected back to users
+of higher-level protocols such as
+.SM TCP
+or
+.SM UDP
+as error returns from system calls.
+A copy of all
+.SM ICMP
+message received by the system
+is provided using the
+.SM ICMP
+raw socket.
+.SH ERRORS
+A socket operation may fail with one of the following errors returned:
+.TP 20
+.SM EISCONN
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP
+.SM ENOTCONN
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP
+.SM ENOBUFS
+when the system runs out of memory for
+an internal data structure;
+.TP
+.SM EADDRNOTAVAIL
+when an attempt is made to create a
+socket with a network address for which no network interface
+exists.
+.SH SEE ALSO
+.BR connect (2),
+.BR read (2V),
+.BR recv (2),
+.BR send (2),
+.BR write (2V),
+.BR getprotoent (3N),
+.BR inet (4F),
+.BR ip (4P),
+.BR routing (4N)
+.LP
+Postel, Jon,
+.IR "Internet Control Message Protocol \(em \s-1DARPA\s0 Internet Program Protocol Specification" ,
+.SM RFC
+792, Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+September 1981.  (Sun 800-1064-01)
+.SH BUGS
+.LP
+Replies to
+.SM ICMP
+\*(lqecho\*(rq messages which are source routed
+are not sent back using inverted source routes,
+but rather go back through the normal routing mechanisms.
+.IX  "icmp protocol"  ""  "\fLicmp\fP \(em Internet Control Message Protocol"  ""  PAGE END
+.IX  Internet  "control message protocol icmp"  ""  "control message protocol \(em \fLicmp\fP"  PAGE END

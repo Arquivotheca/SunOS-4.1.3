@@ -1,0 +1,176 @@
+.\" @(#)lpq.1 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH LPQ 1 "9 September 1987"
+.SH NAME
+lpq \- display the queue of printer jobs
+.SH SYNOPSIS
+.B lpq
+[
+.BI \-P printer
+] [
+.B \-l
+] [
+.B +
+[
+.I interval
+] ] [
+.I job#
+\&.\|.\|.
+] [
+.I username
+\&.\|.\|.
+]
+.SH DESCRIPTION
+.IX  "lpq command"  ""  "\fLlpq\fP \(em display printer queue"
+.IX  printer  "display queue"  ""  "\fLlpq\fP \(em display queue"
+.IX  display "printer queue \(em \fLlpq\fP"
+.IX  queue  "display printer"  ""  "\fLlpq\fP \(em display printer"
+.LP
+.B lpq
+displays the contents of a printer queue.  It reports the status of
+jobs specified by
+.IR job# ,
+or all jobs owned by the user specified by
+.IR username .
+.B lpq
+reports on all jobs in the default printer queue when invoked with no
+arguments.
+.LP
+For each print job in the queue,
+.B lpq
+reports the user's name, current position, the names of input
+files comprising the job, the job number (by which it is
+referred to when using
+.BR lprm (1))
+and the total size in bytes.
+Normally, only as much information as will fit on one line
+is displayed.  Jobs are normally queued on a first-in-first-out basis.
+Filenames comprising a job may be unavailable, such as when
+.B lpr
+is used at the end of a pipeline; in such cases the filename field
+indicates ``(standard input)''.
+.LP
+If
+.B lpq
+warns that there is no daemon present
+(that is, due to some malfunction), the
+.BR lpc (8)
+command can be used to restart a printer daemon.
+.SH OPTIONS
+.TP 15
+.BI \-P " printer"
+Display information about the queue for the specified
+.IR printer .
+In the absence of the
+.B \-P
+option, the queue to the printer specified by the
+.SM PRINTER
+variable in the environment is used. If the
+.SM PRINTER
+variable isn't set, the queue for the default printer is used.
+.TP
+.BI \-l
+Display queue information in long format; includes the name of
+the host from which the job originated.
+.HP
+.BR \(pl [
+.I interval
+]
+.br
+Display the spool queue periodically until it empties.  This option
+clears the terminal screen before reporting on the queue.  If an
+.I  interval
+is supplied,
+.B lpq
+sleeps that number of seconds in between reports.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/termcap
+for manipulating the screen for repeated display
+.TP
+.B /etc/printcap
+to determine printer characteristics
+.TP
+.B /var/spool/l*
+spooling directory, as determined from printcap
+.TP
+.B /var/spool/l*/cf*
+control files specifying jobs
+.TP
+.B /var/spool/l*/lock
+lock file to obtain the currently active job
+.PD
+.SH "SEE ALSO"
+.BR lpr (1),
+.BR lprm (1),
+.BR lpc (8),
+.BR lpd (8)
+.SH DIAGNOSTICS
+.TP
+.IB printer " is ready and printing"
+The
+.B lpq
+program checks to see if there is a printer daemon.
+If the daemon is hung, the super-user can
+abort the current daemon and start a new one using
+.BR lpc (8).
+.TP
+.BI "Waiting for " printer " to become ready (offline ?)"
+The daemon could not open the printer device.  The printer may be
+turned off-line.  This message can also occur if a printer is out
+of paper, the paper is jammed, and so on.  Another possible cause is
+that a process, such as an output filter, has exclusive use of the
+device.  The only recourse in this case is to kill the offending
+process and restart the printer with
+.BR lpc .
+.TP
+.BI "waiting for " host " to come up"
+A daemon is trying to connect to the remote machine named
+.IR host ,
+in order to send the files in the local queue.
+If the remote machine is up,
+.B lpd
+on the remote machine is probably dead or
+hung and should be restarted using
+.IR lpc .
+.br
+.ne 5
+.TP
+.BI "sending to " host
+The files are being transferred to the remote
+.IR host ,
+or else the local daemon has hung while trying to transfer the
+files.
+.TP
+.BI "Warning: " printer " is down"
+The printer has been marked as being unavailable with
+.BR lpc .
+.TP
+.B Warning: no daemon present
+The
+.B lpd
+process
+overseeing
+the spooling queue, as indicated in the ``lock'' file
+in that directory, does not exist.  This normally occurs
+only when the daemon has unexpectedly died.  Check the printer's
+error log for a diagnostic from the deceased process; you can
+restart the printer daemon with
+.BR lpc .
+.SH BUGS
+.LP
+.B lpq
+may report unreliably.  The status as
+reported may
+not always reflect the actual state of the printer.
+Under some circumstances,
+.B lpq
+reports that a printer is ready and printing when the daemon is,
+in fact, hung.
+.LP
+Output formatting is sensitive to the line length of the terminal;
+this can result in widely-spaced columns.
+.LP
+.B lpq
+is sometimes unable to open various files when the
+lock file is malformed.

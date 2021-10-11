@@ -1,0 +1,1002 @@
+.\" @(#)tip.1c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH TIP 1C "16 August 1988"
+.SH NAME
+tip \- connect to remote system
+.SH SYNOPSIS
+.B tip
+[
+.B \-v
+]
+[
+.BI \- speed-entry
+]
+.I hostname
+|
+.I phone-number
+.IX  "tip command"  ""  "\fLtip\fP \(em connect to remote system"
+.IX  "connect to remote system"  "\fLtip\fP"
+.IX  "remote system"  "connect to \(em \fLtip\fP"
+.IX  communications  tip  ""  "\fLtip\fP \(em connect to remote system"
+.SH DESCRIPTION
+.LP
+.B tip
+establishes a full-duplex terminal connection to a remote host.
+Once the connection is established, a remote session using 
+.B tip
+behaves like an interactive session on a local terminal.
+.LP
+The
+.I remote
+file (described in the
+.BR remote (5)
+manual page)
+contains entries describing remote systems and line speeds used by
+.BR tip .
+.LP
+Each host has a default baud rate for the connection, or you can
+specify a speed with the
+.BI \- speed-entry
+command line argument.
+.LP
+When
+.I phone-number
+is specified,
+.B tip
+looks for an entry in the
+.I remote
+file of the form:
+.IP
+.BI " tip\ \-" speed-entry
+.LP
+When it finds such an entry, it sets the connection speed
+accordingly.  If it finds no such entry,
+.B tip
+interprets 
+.BI \- speed-entry
+as if it were a system name, resulting in an error message.
+.LP
+If you omit 
+.BI \- speed-entry\fR, 
+.B tip
+uses the
+.B tip0
+entry to set a speed for the connection.
+.LP
+When establishing the connection
+.B tip
+sends a connection message to the remote system.  The default value for
+this message can be found in the 
+.I remote
+file.
+.LP
+When
+.B tip
+attempts to connect to a remote system, it opens the
+associated device with an exclusive-open
+.BR ioctl (2)
+call.  Thus only one user at a time may access a device.
+This is to prevent multiple
+processes from sampling the terminal line.  In addition,
+.B tip
+honors the locking protocol used by
+.BR uucp (1C).
+.LP
+When 
+.B tip
+starts up it reads commands from the file
+.B \&.tiprc
+in your home directory.
+.SH OPTIONS
+.TP
+.B \-v 
+Display commands from the
+.B \&.tiprc
+file as they are executed.
+.SH USAGE
+.LP
+Typed characters are normally transmitted directly to the remote
+machine (which does the echoing as well).
+.LP
+At any time that
+.B tip
+prompts for an argument (for example, during setup of
+a file transfer) the line typed may be edited with the standard
+erase and kill characters.  A null line in response to a prompt,
+or an interrupt, aborts the dialogue and returns you to the remote machine.
+.SS Commands
+.LP
+A tilde (\s+2\|~\|\s0) appearing as the first character of a line is an escape
+signal which directs
+.B tip
+to perform some special action.
+.B tip
+recognizes the following escape sequences:
+.TP
+.PD 0
+.B ~^D
+.TP
+.B ~.
+.PD
+Drop the connection and exit (you may still be logged in on the remote
+machine).
+.HP
+.B ~c
+.RI [ name ]
+.br
+Change directory to
+.I name
+(no argument implies change to your home directory).
+.TP
+.B ~!
+Escape to an interactive shell on the local machine (exiting the shell returns
+you to
+.BR tip ).
+.TP
+.B ~>
+Copy file from local to remote.
+.TP
+.B ~<
+Copy file from remote to local.
+.br
+.ne 10
+.HP
+.BI ~p " from"
+.RI [ " to " ]
+.br
+Send a file to a remote host running the
+.SM UNIX
+system.  When you use the put command, the remote
+system runs the command string
+.RS
+.IP
+.BI "cat > " to
+.RE
+.IP
+while
+.B tip
+sends it the
+.I from
+file.  If the
+.I to
+file is not specified, the
+.I from
+file name is used.  This command is actually a
+.SM UNIX\s0-system-specific
+version of the
+.RB ` ~> '
+command.
+.br
+.ne 10
+.HP
+.BI ~t " from"
+.RI [ " to " ]
+.br
+Take a file from a remote host running the
+.SM UNIX
+system.  As in the put command the
+.I to
+file defaults to the
+.I from
+file name if it is not specified.
+The remote host executes the command string
+.RS
+.IP
+.BI "cat " from "\|;  echo ^A"
+.RE
+.IP
+to send the file to
+.BR tip .
+.TP
+.B ~|
+Pipe the output from a remote command to a local process. 
+The command string sent to the local
+system is processed by the shell.
+.TP
+.B ~C
+Connect a program to the remote machine.
+The command string sent to
+the program is processed by the shell.  The program inherits file
+descriptors 0 as remote line input, 1 as remote line output, and 2 as
+tty standard error.
+.TP
+.B ~$
+Pipe the output from a local process to the remote host.
+The command string sent to the local system is processed by the shell.
+.TP
+.B ~#
+Send a
+.SM BREAK
+to the remote system.
+.TP
+.B ~s
+Set a variable (see the discussion below).
+.TP
+.B ~^Z
+Stop
+.B tip
+(only available when run under a shell that supports job control,
+such as the C shell).
+.TP
+.B ~^Y
+Stop only the \*(lqlocal side\*(rq of
+.B tip
+(only available when run under a shell that supports job control,
+such as the C shell);
+the \*(lqremote side\*(rq of
+.BR tip ,
+the side that displays output from the remote host, is left running.
+.TP
+.B ~?
+Get a summary of the tilde escapes.
+.LP
+Copying files requires some cooperation on the part of the remote host.
+When a
+.B ~>
+or
+.B ~<
+escape is used to send a file,
+.B tip
+prompts for a file name (to be transmitted or received) and a command
+to be sent to the remote system, in case the file is being transferred
+from the remote system.  The default end of transmission string for
+transferring a file from the local system to the remote is specified as the
+.B oe
+capability in the
+.BR remote (5)
+file, but may be changed by the set command.  While
+.B tip
+is transferring a file the number of lines transferred will be continuously
+displayed on the screen. A file transfer may be aborted with an interrupt.
+.SH "AUTO-CALL UNITS"
+.LP
+.B tip
+may be used to dial up remote systems using a number of auto-call unit's
+(\s-1ACU\s0's). 
+When the remote system description contains the
+.B du
+capability,
+.B tip
+uses the call-unit
+.RB ( cu ),
+.SM ACU
+type
+.RB ( at ),
+and phone numbers
+.RB ( pn )
+supplied.  Normally
+.B tip
+displays verbose messages as it dials.  See
+.BR remote (5)
+for details of the remote host specification.
+.br
+.ne 10
+.LP
+Depending on the type of auto-dialer being used to establish a connection
+the remote host may have garbage characters sent to it upon connection.
+The user should never assume that the first characters typed to
+the foreign host are the first ones presented to it.  The recommended
+practice is to immediately type a
+.B kill
+character upon establishing a connection (most
+.SM UNIX
+systems either support
+.B @
+or
+.SM CTRL-U
+as the initial kill character).
+.LP
+.B tip
+currently supports the Ventel
+.SM MD\s0-212+
+modem and
+.SM DC
+Hayes-compatible modems.
+.\"currently supports the
+.\".SM DF\s002,
+.\"and
+.\".SM DF\s003
+.\"interfaces,
+.\"Bizcomp 1031 and 1032 interfaces.
+.br
+.ne 10
+.SH "REMOTE HOST DESCRIPTIONS"
+.LP
+Descriptions of remote hosts are normally located in the system-wide file
+.BR /etc/remote .
+However, a user may maintain personal description files (and phone numbers)
+by defining and exporting the
+.SM REMOTE
+shell variable.  The
+.I remote
+file must be readable by
+.BR tip ,
+but a secondary file describing phone numbers may be maintained readable only
+by the user.  This secondary phone number file is
+.BR /etc/phones ,
+unless the shell variable
+.SM PHONES
+is defined and exported.  As described in
+.BR remote (5),
+the
+.I phones
+file is read when the host description's phone number(s) capability is
+an
+.RB ` @ '.
+The phone number file contains lines of the form:
+.IP
+.I system-name    phone-number
+.LP
+Each phone number found for a system is tried until either a connection
+is established, or an end of file is reached.  Phone numbers are
+constructed from
+.RB ` 0123456789\-=* ',
+where the
+.RB ` = '
+and
+.RB ` * '
+are used to indicate a second dial tone should be waited for
+(\s-1ACU\s0 dependent).
+.br
+.ne 8
+.SH "TIP INTERNAL VARIABLES"
+.LP
+.B tip
+maintains a set of variables which are used in normal operation.
+Some of these variables are read-only to normal users (root is allowed
+to change anything of interest).  Variables may be displayed
+and set through the
+.B ~s
+escape.  The syntax for variables is patterned after
+.BR vi (1)
+and
+.BR mail (1).
+Supplying
+.B all
+as an argument to the
+.B ~s
+escape displays all variables
+that the user can read.  Alternatively, the user may request display of a
+particular variable by attaching a
+.B ?
+to the end.  For example
+.RB ` "~s escape?" '
+displays the current escape character.
+.LP
+Variables are numeric, string, character, or Boolean values.  Boolean
+variables are set merely by specifying their name.  They may be reset
+by prepending a
+.B !
+to the name.  Other variable types are set by appending an
+.B =
+and the value. 
+The entire assignment must not have any blanks in it.
+A single set command may be used to interrogate as
+well as set a number of variables.
+.LP
+Variables may be initialized at run time by placing set commands (without
+the
+.B ~s
+prefix) in a
+.B \&.tiprc
+file in one's home directory.  The
+.B \-v
+option makes
+.B tip
+display the sets as they are made.
+Comments preceded by a
+.B #
+sign can appear in the 
+.B \&.tiprc
+file.
+.LP
+Finally, the variable names must either be completely specified or
+an abbreviation may be given.  The following list details those
+variables known to
+.BR tip .
+.TP
+.B beautify
+(bool) Discard unprintable characters when a session is being scripted;
+abbreviated 
+.BR be .
+If the
+.B nb
+capability is present,
+.B beautify
+is initially set to
+.IR off ;
+otherwise,
+.B beautify
+is initially set to
+.IR on .
+.TP
+.B baudrate
+(num) The baud rate at which the connection was established;
+abbreviated
+.BR ba .
+If a baud rate was specified on the command line,
+.B baudrate
+is initially set to the specified value;
+otherwise, if the
+.B br
+capability is present,
+.B baudrate
+is initially set to the value of that capability; otherwise,
+.B baudrate
+is set to 300 baud.
+Once
+.B tip
+has been started,
+.B baudrate
+can only changed by the super-user.
+.TP
+.B dialtimeout
+(num) When dialing a phone number, the time (in seconds)
+to wait for a connection to be established; abbreviated
+.BR dial .
+.B dialtimeout
+is initially set to 60 seconds, and can only changed by the super-user.
+.TP
+.B disconnect
+(str) The string to send to the remote host to disconnect from it;
+abbreviated
+.BR di .
+If the
+.B di
+capability is present,
+.B disconnect
+is initially set to the value of that capability; otherwise,
+.B disconnect
+is set to a null string (\fB""\fR).
+.br
+.ne 4
+.TP
+.B echocheck
+(bool) Synchronize with the remote host during file transfer by
+waiting for the echo of the last character transmitted; abbreviated
+.BR ec .
+If the
+.B ec
+capability is present,
+.B echocheck
+is initially set to
+.IR on ;
+otherwise,
+.B echocheck
+is initially set to
+.IR off .
+.br
+.ne 5
+.TP
+.B eofread
+(str) The set of characters which signify an end-of-transmission
+during a
+.B ~<
+file transfer command; abbreviated
+.BR eofr .
+If the
+.B ie
+capability is present,
+.B eofread
+is initially set to the value of that capability; otherwise,
+.B eofread
+is set to a null string (\fB""\fR).
+.br
+.ne 5
+.TP
+.B eofwrite
+(str) The string sent to indicate end-of-transmission during a
+.B ~>
+file transfer command; abbreviated
+.BR eofw .
+If the
+.B oe
+capability is present,
+.B eofread
+is initially set to the value of that capability; otherwise,
+.B eofread
+is set to a null string (\fB""\fR).
+.br
+.ne 5
+.TP
+.B eol
+(str) The set of characters which indicate an end-of-line.
+.B tip
+will recognize escape characters only after an end-of-line.
+If the
+.B el
+capability is present,
+.B eol
+is initially set to the value of that capability; otherwise,
+.B eol
+is set to a null string (\fB""\fR).
+.TP
+.B escape
+(char) The command prefix (escape) character; abbreviated
+.BR es .
+If the
+.B es
+capability is present,
+.B escape
+is initially set to the value of that capability; otherwise,
+.B escape
+is set to
+.RB ` \|\s+2~\s0\| '.
+.TP
+.B etimeout
+(num) The amount of time, in seconds, that
+.B tip
+should wait for the echo-check response when
+.B echocheck
+is set; abbreviated
+.BR et .
+If the 
+.B et
+capability is present,
+.B etimeout
+is initially set to the value of that capability; otherwise,
+.B etimeout
+is set to 10 seconds.
+.TP
+.B exceptions
+(str) The set of characters which should not be discarded
+due to the beautification switch; abbreviated
+.BR ex .
+If the
+.B ex
+capability is present,
+.B exceptions
+is initially set to the value of that capability; otherwise,
+.B exceptions
+is set to
+.RB ` \et\en\ef\eb '.
+.TP
+.B force
+(char) The character used to force literal data transmission;
+abbreviated
+.BR fo .
+If the
+.B fo
+capability is present,
+.B force
+is initially set to the value of that capability; otherwise,
+.B force
+is set to
+.B \e377
+(which disables it).
+.TP
+.B framesize
+(num) The amount of data (in bytes) to buffer between file system
+writes when receiving files; abbreviated
+.BR fr .
+If the
+.B fs
+capability is present,
+.B framesize
+is initially set to the value of that capability; otherwise,
+.B framesize
+is set to 1024.
+.TP
+.B halfduplex
+(bool) Do local echoing because the host is half-duplex; abbreviated
+.BR hdx .
+If the
+.B hd
+capability is present,
+.B halfduplex
+is initially set to
+.IR on ;
+otherwise,
+.B halfduplex
+is initially set to
+.IR off .
+.TP
+.B hardwareflow
+(bool)
+Do hardware flow control;
+abbreviated
+.BR hf .
+If the 
+.B hf
+capability is present,
+.B hardwareflow
+is initially set to
+.IR on ;
+otherwise,
+.B hardwareflowcontrol
+is initially set to
+.IR off .
+.TP
+.B host
+(str) The name of the host to which you are connected; abbreviated
+.BR ho .
+.B host
+is permanently set to the name given on the command line or in the
+.SM HOST
+environment variable.
+.br
+.ne 3
+.TP
+.B localecho
+(bool) A synonym for
+.BR halfduplex ;
+abbreviated
+.BR le .
+.TP
+.B log
+(str) The name of the file to which to log information about outgoing phone
+calls.
+.B log
+is initially set to
+.BR /var/adm/aculog ,
+and can only be inspected or
+changed by the super-user.
+.br
+.ne 5
+.TP
+.B parity
+(str) The parity to be generated and checked when talking to the
+remote host; abbreviated
+.BR par .
+The possible values are:
+.RS
+.RS
+.TP
+.PD 0
+.B none
+.TP
+.B zero
+.PD
+Parity is not checked on input, and the parity bit is set to zero on
+output.
+.TP
+.B one
+Parity is not checked on input, and the parity bit is set to one on
+output.
+.br
+.ne 8
+.TP
+.B even
+Even parity is checked for on input and generated on output.
+.TP
+.B odd
+Odd parity is checked for on input and generated on output.
+.RE
+.RE
+.IP
+If the
+.B pa
+capability is present,
+.B parity
+is initially set to the value of that capability; otherwise,
+.B parity
+is set to 
+.BR none .
+.br
+.ne 8
+.TP
+.B phones
+The file in which to find hidden phone numbers.
+If the environment variable
+.SM PHONES
+is set,
+.B phones
+is set to the value of
+.SM PHONES\s0;
+otherwise,
+.B phones
+is set to
+.BR /etc/phones .
+The value of
+.B phones
+cannot be changed from within
+.BR tip .
+.TP
+.B prompt
+(char) The character which indicates an end-of-line on the remote
+host; abbreviated
+.BR pr .
+This value is used to synchronize during data transfers.  The count of
+lines transferred during a file transfer command is based on receipt of
+this character.  If the
+.B pr
+capability is present,
+.B prompt
+is initially set to the value of that capability; otherwise,
+.B prompt
+is set to
+.BR \en .
+.TP
+.B raise
+(bool) Upper case mapping mode; abbreviated 
+.BR ra .
+When this mode is enabled, all lower case letters will be mapped to
+upper case by
+.B tip
+for transmission to the remote machine.
+If the
+.B ra
+capability is present,
+.B raise
+is initially set to
+.IR on ;
+otherwise,
+.B raise
+is initially set to
+.IR off .
+.br
+.ne 5
+.TP
+.B raisechar
+(char) The input character used to toggle upper case mapping mode;
+abbreviated
+.BR rc .
+If the
+.B rc
+capability is present,
+.B raisechar
+is initially set to the value of that capability; otherwise,
+.B raisechar
+is set to
+.B \e377
+(which disables it).
+.TP
+.B rawftp
+(bool) Send all characters during file transfers; do not filter non-printable
+characters, and do not do translations like
+.B \en
+to
+.BR \er .
+Abbreviated
+.BR raw .
+If the
+.B rw
+capability is present,
+.B rawftp
+is initially set to
+.IR on ;
+otherwise,
+.B rawftp
+is initially set to
+.IR off .
+.TP
+.B record
+(str) The name of the file in which a session script is recorded;
+abbreviated
+.BR rec .
+If the
+.B re
+capability is present,
+.B record
+is initially set to the value of that capability; otherwise,
+.B record
+is set to
+.BR tip.record .
+.TP
+.B remote
+The file in which to find descriptions of remote systems.
+If the environment variable
+.SM REMOTE
+is set,
+.B remote
+is set to the value of
+.SM REMOTE\s0;
+otherwise,
+.B remote
+is set to
+.BR /etc/remote .
+The value of
+.B remote
+cannot be changed from within
+.BR tip .
+.TP
+.B script
+(bool) Session scripting mode; abbreviated
+.BR sc .
+When
+.B script
+is 
+.IR on ,
+.B tip
+will record everything transmitted by the remote machine in
+the script record file specified in
+.BR record .
+If the
+.B beautify
+switch is on, only printable
+.SM ASCII
+characters will be included in
+the script file (those characters between 040 and 0177).  The
+variable
+.B exceptions
+is used to indicate characters which are an exception to the normal
+beautification rules.
+If the
+.B sc
+capability is present,
+.B script
+is initially set to
+.IR on ;
+otherwise,
+.B script
+is initially set to
+.IR off .
+.br
+.ne 6
+.TP
+.B tabexpand
+(bool) Expand
+.SM TAB
+characters to
+.SM SPACE
+characters during file transfers; abbreviated
+.BR tab .
+When 
+.B tabexpand
+is
+.IR on ,
+each tab is expanded to 8
+.SM SPACE
+characters.
+If the
+.B tb
+capability is present,
+.B tabexpand
+is initially set to
+.IR on ;
+otherwise,
+.B tabexpand
+is initially set to
+.IR off .
+.br
+.ne 5
+.TP
+.B tandem
+(bool) Use
+.SM XON/XOFF
+flow control to limit the rate that data is sent
+by the remote host; abbreviated
+.BR ta .
+If the 
+.B nt
+capability is present,
+.B tandem
+is initially set to
+.IR off ;
+otherwise,
+.B tandem
+is initially set to
+.IR on .
+.TP
+.B verbose
+(bool) Verbose mode; abbreviated
+.BR verb ;
+When verbose mode is enabled, 
+.B tip
+prints messages while dialing, shows the current number
+of lines transferred during a file transfer operations,
+and more.
+If the
+.B nv
+capability is present,
+.B verbose
+is initially set to
+.IR off ;
+otherwise,
+.B verbose
+is initially set to
+.IR on .
+.TP
+.SB SHELL
+(str) The name of the shell to use for the
+.B ~!
+command; default value is
+.BR /bin/sh ,
+or taken from the environment.
+.TP
+.SB HOME
+(str) The home directory to use for the
+.B ~c 
+command; default
+value is taken from the environment.
+.br
+.ne 20
+.SH EXAMPLES
+.LP
+An example of the dialogue used to transfer files is given below.
+.RS
+.nf
+.ft B
+arpa% tip monet
+[connected]
+\&.\|.\|.\fI(assume we are talking to a \s-1UNIX\s0 system).\|.\|.\fP
+ucbmonet login: sam
+Password:
+monet% cat > sylvester.c
+~> Filename: sylvester.c
+32 lines transferred in 1 minute 3 seconds
+monet%
+monet% ~< Filename: reply.c
+List command for remote host: cat reply.c
+65 lines transferred in 2 minutes
+monet%
+\&.\|.\|.\fI(or, equivalently).\|.\|.\fP
+monet% ~p sylvester.c
+\&.\|.\|.\fI(actually echoes as ~\fR[\fPput\fR]\fP sylvester.c).\|.\|.\fB
+32 lines transferred in 1 minute 3 seconds
+monet%
+monet% ~t reply.c
+\&.\|.\|.\fI(actually echoes as ~\fR[\fPtake\fR]\fP reply.c).\|.\|.\fB
+65 lines transferred in 2 minutes
+monet%
+\&.\|.\|.\fI(to print a file locally).\|.\|.\fB
+monet% ~|Local command: pr \-h sylvester.c | lpr
+List command for remote host: cat sylvester.c
+monet% ~^D
+[\s-1EOT\s0]
+\&.\|.\|.\fI(back on the local system).\|.\|.\fB
+.ft R
+.fi
+.RE
+.SH ENVIRONMENT
+.LP
+The following environment variables are read by
+.BR tip .
+.TP 10
+.SB REMOTE
+The location of the
+.I remote
+file.
+.TP
+.SB PHONES
+The location of the file containing private phone numbers.
+.br
+.ne 3
+.TP
+.SB HOST
+A default host to connect to.
+.TP
+.SB HOME
+One's log-in directory (for chdirs).
+.TP
+.SB SHELL
+The shell to fork on a
+.RB ` ~! '
+escape.
+.SH FILES
+.PD 0
+.TP 25
+.B ~/.tiprc
+initialization file
+.TP
+.B /var/spool/locks/\s-1LCK\0.\|.*
+lock file to avoid conflicts with
+.SM UUCP
+.TP
+.B /var/adm/aculog
+file in which outgoing calls are logged
+.TP
+.B /etc/phones
+.TP
+.B /etc/remote
+.PD
+.br 
+.ne 10
+.SH "SEE ALSO"
+.BR cu (1C),
+.BR mail (1),
+.BR uucp (1C),
+.BR vi (1),
+.BR ioctl (2),
+.BR phones (5),
+.BR remote (5)
+.SH BUGS
+.LP
+There are two additional variables
+.B chardelay
+and 
+.B linedelay
+that are currently not implemented.

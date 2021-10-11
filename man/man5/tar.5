@@ -1,0 +1,156 @@
+.\" @(#)tar.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH TAR 5 "19 October 1987"
+.SH NAME
+tar \- tape archive file format
+.SH DESCRIPTION
+.IX  "tar file"  ""  "\fLtar\fP \(em tape archive file format"
+.LP
+.BR tar ,
+(the tape archive command)
+dumps several files into one, in a medium suitable for transportation.
+.LP
+A ``tar tape'' or file is a series of
+blocks.  Each block is of size
+.SM TBLOCK\s0.
+A file on the tape is represented by a
+header block which describes
+the file, followed by zero or more blocks
+which give the contents of the
+file.  At the end of the tape are two blocks
+filled with binary zeros, as an
+.SM EOF
+indicator.
+.LP
+The blocks are grouped for physical I/O
+operations.  Each group of
+.I n
+blocks (where
+.I n
+is set by the
+.B b
+keyletter on the
+.BR tar (1)
+command line \(em default is 20 blocks) is
+written with a single system call; on nine-track
+tapes, the result of this write is a single tape
+record.  The last group is always written
+at the full size, so blocks after
+the two zero blocks contain random data. 
+On reading, the specified or
+default group size is used for the
+first read, but if that read returns less than
+a full tape block, the reduced
+block size is used for further reads, unless the
+.B B
+keyletter is used.
+.LP
+The header block looks like:
+.RS
+.LP
+.ft B
+.nf
+#define \s-1TBLOCK\s0	512
+#define \s-1NAMSIZ\s0	100
+union hblock {
+	char dummy[\s-1TBLOCK\s0];
+	struct header {
+		char name[\s-1NAMSIZ\s0];
+		char mode[8];
+		char uid[8];
+		char gid[8];
+		char size[12];
+		char mtime[12];
+		char chksum[8];
+		char linkflag;
+		char linkname[\s-1NAMSIZ\s0];
+	} dbuf;
+};
+.ft R
+.fi
+.RE
+.LP
+.IR name
+is a
+null-terminated
+string.  The other fields are zero-filled
+octal numbers in
+.SM ASCII\s0.
+Each field (of width
+.IR w )
+contains w-2 digits, a
+.SM SPACE\s0,
+and a
+null character,
+except
+.IR size
+and
+.IR mtime ,
+which do not contain the trailing
+null.
+.IR name
+is the name of the file, as specified on the
+.B tar
+command line.  Files dumped because they were
+in a directory which was named in the command
+line have the directory name as prefix and
+.I /filename
+as suffix.
+.  \"Whatever format was used in the command line
+.  \"will appear here, such as
+.  \".I \&./yellow
+.  \"or
+.  \".IR \&../../brick/./road/.. .
+.  \"To retrieve a file from a tar tape, an exact prefix match must be specified,
+.  \"including all of the directory prefix information used on the command line
+.  \"that dumped the file (if any).
+.IR mode
+is the file mode, with the top bit masked off.
+.IR uid
+and
+.IR gid
+are the user and group numbers which own the file.
+.IR size
+is the size of the file in bytes.
+Links and symbolic links are dumped
+with this field specified as zero.
+.I mtime
+is the modification time of the file at
+the time it was dumped.
+.I chksum
+is a decimal
+.SM ASCII
+value which represents the sum of all the bytes in the
+header block.  When calculating the checksum, the
+.IR chksum
+field is treated as if it were all blanks.
+.IR linkflag
+is
+.SM ASCII
+`0' if the file is ``normal'' or a special file,
+.SM ASCII
+`1' if it is an hard link, and
+.SM ASCII
+`2' if it is a symbolic link.
+The name linked-to, if any, is in
+.IR linkname ,
+with a trailing
+null character.
+Unused fields of the header are binary
+zeros (and are included in the checksum).
+.LP
+The first time a given inode number is dumped,
+it is dumped as a regular file.  The second and
+subsequent times, it is dumped as a link instead.
+Upon retrieval, if a link entry is retrieved,
+but not the file it was linked to, an error message
+is printed and the tape must be manually
+re-scanned to retrieve the linked-to file.
+.LP
+The encoding of the header is designed to be
+portable across machines.
+.SH "SEE ALSO"
+.BR tar (1)
+.SH BUGS
+Names or linknames longer than
+.SM NAMSIZ
+produce error reports and cannot be dumped.

@@ -1,0 +1,100 @@
+.\" @(#)nice.3v 1.1 92/07/30 SMI; from UCB 4.2
+.TH NICE 3V "21 January 1990"
+.SH NAME
+nice \- change nice value of a process
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int nice(incr)
+.ft
+.fi
+.SH DESCRIPTION
+.IX  "nice()"  ""  "\fLnice()\fP \(em change nice value of a process"
+.IX  process "priority \(em \fLnice()\fP"
+.IX  "priority of process \(em \fLnice()\fP"
+.LP
+The nice value of the process is changed by
+.IR incr .
+Positive nice values get less service than normal.
+See
+.BR nice (1)
+for a discussion of the relationship of nice value and scheduling priority.
+.LP
+A nice value of 10 is recommended to users who wish
+to execute long-running programs without
+undue impact on system performance.
+.LP
+Negative increments are illegal, except when
+specified by the super-user.
+The nice value is limited to the range \-20
+(most urgent) to 19 (least).
+Requests for values above or below these
+limits result in the nice value
+being set to the corresponding limit.
+.LP
+The nice value of a process is passed to a child process by
+.BR fork (2V).
+For a privileged process to return to
+normal nice value from an unknown state,
+.B nice(\|)
+should be called successively with
+arguments \-40 (goes to nice value
+\-20 because of truncation), 20 (to get to 0),
+then 0 (to maintain compatibility with previous
+versions of this call).
+.SH SYSTEM V DESCRIPTION
+.LP
+The maximum allowed value for
+.I incr
+is 40 (least urgent).
+.SH RETURN VALUES
+.LP
+.B nice(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH SYSTEM V RETURN VALUES
+.LP
+.B nice(\|)
+returns
+the new nice value
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+The nice value is not changed if:
+.TP 15
+.SM EACCES
+The value of
+.I incr
+specified was negative, and the effective user
+.SM ID
+is not super-user.
+.SH SYSTEM V ERRORS
+.LP
+The nice value is not changed if:
+.TP 15
+.SM EPERM
+The value of
+.I incr
+specified was negative, or greater than 40,
+and the effective user
+.SM ID
+is not super-user.
+.SH "SEE ALSO"
+.BR nice (1),
+.BR fork (2V),
+.BR getpriority (2),
+.BR pstat (8),
+.BR renice (8)

@@ -1,0 +1,81 @@
+#
+# @(#)Makefile.inter 1.1 92/07/30 SMI
+#
+# Copyright (c) 1987 by Sun Microsystems, Inc.
+#
+# Distributions with international destinations must be purged
+# of des.
+#
+# This should only be run AFTER the domestic libc has been built
+# and installed.
+#
+
+all: international
+
+S5FLAGS = -I/usr/5include -DS5EMUL
+CFLAGS += -O -I. -UCRYPT $(IFLAGS)
+
+VERS-mc68010 = vers-m68k
+VERS-mc68020 = vers-m68k
+VERS-sparc =  vers-sparc
+VERSION = $(VERS$(TARGET_MACH))
+VERSION_42 = `cat $(VERSION)`
+VERSION_S5 = `awk 'BEGIN { FS = "." } { INT = $$1 + 1; DEC = $$2; printf "%d.%d", INT, DEC; }' < $(VERSION)`
+
+international: 
+	rm -rf shared_inter
+	mkdir shared_inter
+	ln shared_4.2/*.o shared_inter
+	rm -rf shared_s5_inter
+	mkdir shared_s5_inter
+	ln shared_s5/*.o shared_s5_inter
+	$(MAKE) -f Makefile.inter $(MFLAGS) IFLAGS="$(IFLAGS) -R" \
+		IDIR=gen/common IFILE=_crypt target
+	$(MAKE) -f Makefile.inter $(MFLAGS) IFLAGS="$(IFLAGS)" \
+		IDIR=des IFILE=des_crypt target
+	$(MAKE) -f Makefile.inter $(MFLAGS) IFLAGS="$(IFLAGS) -R" \
+		IDIR=rpc IFILE=auth_des target
+	$(MAKE) -f Makefile.inter $(MFLAGS) IFLAGS="$(IFLAGS) -R" \
+		IDIR=rpc IFILE=svcauth_des target
+	ranlib $(DESTDIR)/usr/lib/libc.a
+	ranlib $(DESTDIR)/usr/lib/libc_p.a
+	ranlib $(DESTDIR)/usr/5lib/libc.a
+	ranlib $(DESTDIR)/usr/5lib/libc_p.a
+	ranlib $(DESTDIR)/usr/lib/libbsdmalloc.a
+	($(LD) -Bsymbolic=object_globals -assert pure-text \
+	`objsort lorder-sparc shared_inter` -ldl; mv a.out libc.so.inter; \
+	ar rv libc_pic.a shared_inter/*.o; ranlib libc_pic.a; \
+	install -m 644 libc_pic.a $(DESTDIR)/usr/lib/shlib.etc; \
+	install -m 755 libc.so.inter $(DESTDIR)/usr/lib/libc.so.$(VERSION_42))
+	($(LD) -Bsymbolic=object_globals -assert pure-text \
+	`objsort lorder-sparc shared_s5_inter` -ldl; mv a.out libcs5.so.inter; \
+	ar rv libcs5_pic.a shared_s5_inter/*.o; ranlib libcs5_pic.a; \
+	install -m 644 libcs5_pic.a $(DESTDIR)/usr/lib/shlib.etc; \
+	install -m 755 libcs5.so.inter $(DESTDIR)/usr/5lib/libc.so.$(VERSION_S5))
+
+
+target:
+	$(CC) $(CFLAGS) -c $(IDIR)/$(IFILE).c
+	$(LD) -x -r $(LDFLAGS) $(IFILE).o
+	mv a.out $(IFILE).o
+	ar rv $(DESTDIR)/usr/lib/libc.a $(IFILE).o
+	$(CC) $(CFLAGS) -c -p $(IDIR)/$(IFILE).c
+	$(LD) -x -r $(LDFLAGS) $(IFILE).o
+	mv a.out $(IFILE).o
+	ar rv $(DESTDIR)/usr/lib/libc_p.a $(IFILE).o
+	$(CC) $(CFLAGS) -c $(S5FLAGS) $(IDIR)/$(IFILE).c
+	$(LD) -x -r $(LDFLAGS) $(IFILE).o
+	mv a.out $(IFILE).o
+	ar rv $(DESTDIR)/usr/5lib/libc.a $(IFILE).o
+	$(CC) $(CFLAGS) -c -p $(S5FLAGS) $(IDIR)/$(IFILE).c
+	$(LD) -x -r $(LDFLAGS) $(IFILE).o
+	mv a.out $(IFILE).o
+	ar rv $(DESTDIR)/usr/5lib/libc_p.a $(IFILE).o
+	$(CC) $(CFLAGS) -c -pic $(IDIR)/$(IFILE).c
+	mv $(IFILE).o shared_inter
+	$(CC) $(CFLAGS) -c -pic $(S5FLAGS) $(IDIR)/$(IFILE).c
+	mv $(IFILE).o shared_s5_inter
+	$(CC) $(CFLAGS) -c $(IDIR)/$(IFILE).c
+	$(LD) -x -r $(LDFLAGS) $(IFILE).o
+	mv a.out $(IFILE).o
+	ar rv $(DESTDIR)/usr/lib/libbsdmalloc.a $(IFILE).o

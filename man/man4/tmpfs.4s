@@ -1,0 +1,190 @@
+.\" @(#)tmpfs.4s 1.1 92/07/30 SMI; new for 4.1
+.TH TMPFS 4S "7 October 1990"
+.SH NAME
+tmpfs \- memory based filesystem
+.SH CONFIG
+.B options \s-1TMPFS\s0
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/mount.h>
+mount ("tmpfs", dir, \s-1M_NEWTYPE\s0\||\|flags, args);
+.fi
+.ft
+.SH DESCRIPTION
+.IX "tmpfs" "" "\fLtmpfs\fP \(em memory based filesystem"
+.IX "memory based filesystem" "" "memory based filesystem \fLtmpfs\fR"
+.LP
+.B tmpfs
+is a memory based filesystem which uses kernel resources
+relating to the
+.SM VM
+system and page cache as a filesystem.
+Once mounted, a
+.B tmpfs
+filesystem provides standard file operations and semantics.
+.B tmpfs
+is so named because files and directories are not
+preserved across reboot or unmounts,
+all files residing on a 
+.B tmpfs
+filesystem
+that is unmounted will be lost.
+.LP
+.B tmpfs
+filesystems are mounted either with the command:
+.IP
+.BI "mount \-t tmp swap " directory-name
+.LP
+or by placing the line
+.IP
+.B "swap        \fIdirectory-name\fP tmp rw 0 0"
+.LP
+in your
+.B /etc/fstab
+file and using the
+.BR mount (8)
+command as normal.
+The
+.B /etc/rc.local
+file contains commands to mount a
+.B tmpfs
+filesystem on
+.B /tmp
+at multi-user startup time but is by default commented out.
+To mount a 
+.B tmpfs
+filesystem on
+.B /tmp
+(maximizing possible performance improvements),
+add the above line to
+.B /etc/fstab
+and uncomment the following line in
+.BR /etc/rc.local :
+.IP
+.B #mount  /tmp
+.LP
+.B tmpfs
+is designed as a performance enhancement
+which is achieved by cacheing the writes to files residing on a 
+.B tmpfs
+filesystem.
+Performance improvements are most noticeable when a large number of
+short lived files are written and accessed on a
+.B tmpfs
+filesystem.
+Large compilations with
+.B tmpfs
+mounted on
+.B /tmp
+are a good example of this.
+.LP
+Users of
+.B tmpfs
+should be aware of some tradeoffs
+involved in mounting a 
+.B tmpfs
+filesystem.
+The resources used by
+.B tmpfs
+are the same as those
+used when commands are executed
+(for example, swap space allocation).
+This means that a large sized or number of
+.B tmpfs
+files can affect the
+amount of space left over for programs to execute.
+Likewise, programs requiring large amounts of memory use up
+the space available to
+.BR tmpfs .
+Users running into these constraints
+(for example, running out of space on
+.BR tmpfs )
+can allocate more swap space by using the
+.BR swapon (8)
+command.
+.LP
+Normal filesystem writes are scheduled
+to be written to a permanent storage medium along with
+all control information associated with the file
+(for example, modification time, file permissions).
+.B tmpfs
+control information resides only in memory and
+never needs to be written to permanent storage.
+File data remains in core until memory demands are sufficient to
+cause pages associated with
+.B tmpfs
+to be reused at which time they are copied out to swap.
+.SH "SEE ALSO"
+.BR df (1V),
+.BR mount (2V),
+.BR umount (2V),
+.BR fstab (5),
+.BR mount (8),
+.BR swapon (8)
+.LP
+.TX SSO ,
+.br
+.TX ADMIN
+.SH NOTES
+.LP
+.B swapon
+to a
+.B tmpfs
+file is not supported.
+File and record locking is not supported.
+.LP
+.BR df (1V)
+output is of limited accuracy since a
+.B tmpfs
+filesystem size is not static and the space available to
+.B tmpfs
+is dependent on the swap space demands of the entire system.
+.br
+.ne 7
+.SH DIAGNOSTICS
+.LP
+If
+.B tmpfs
+runs out of space,
+one of the following messages will be printed to the console.
+.TP
+.PD 0
+.B "\fIdirectory\fP: file system full, anon reservation exceeded"
+.TP
+.B "\fIdirectory\fP: file system full, anon allocation exceeded"
+A page could not be allocated while writing to a file.
+This can occur if
+.B tmpfs
+is attempting to write more than it is allowed,
+or if currently executing programs
+are using a lot of memory.
+To make more space available,
+remove unneccessary files,
+exit from some programs, or allocate more swap space using
+.BR swapon (8).
+.TP
+.B "\fIdirectory\fP: file system full, kmem_alloc failure"
+.B tmpfs
+ran out of physical memory while attempting to create
+a new file or directory.
+Remove unneccesary files or directories
+or install more physical memory.
+.SH WARNINGS
+.LP
+A 
+.B tmpfs
+filesystem should
+.I not
+be mounted on
+.BR /var/tmp ,
+this directory is used by
+.BR vi (1)
+for preserved files.
+.LP
+Files and directories on a 
+.B tmpfs
+filesystem are not preserved
+across reboots or unmounts.
+Command scripts or programs which count on this
+will not work as expected.

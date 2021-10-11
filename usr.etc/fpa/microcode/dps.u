@@ -1,0 +1,193 @@
+|*
+|*		Nop Instruction
+|*
+routine dp.nop w000000xxxx1 lnop sneg
+	;		;			;		;	;
+	jclr clp idl2;	;			;		;	;
+	call idle1;	;			;		;	;
+|*
+|*		Double Precision Negate Instruction
+|*		Double Precision Absolut Value Instruction
+|*
+routine dp.neg w000001xxxx1 lam dneg
+routine dp.abs w000010xxxx1 lam dabs
+	jclr clp1 idl2;	lalf fmap csla;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;
+dfin.alu:
+	;		;			;		;	;
+dfin.alu2:
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr2;
+	jwerr der2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Fix Instruction (convert to integer)
+|*
+routine dp.fix w000100xxxx1 lam dcvtint
+	jclr clp1 idl2;	lalf dcvtint csla;	opdlsw;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Float Instruction
+|*
+routine dp.float w000011xxxx1 lal dfloat
+	;		lalf fmap csla;		opdmsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;
+	;		;			;		;	;
+	jclr clp idl2;	csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr2;
+	jwerr der2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Convert Instruction
+|*
+routine dp.conv w000101xxxx1 lam dcvts
+	jclr clp1 idl2;	lalf fmap csla;		opdlsw;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Square Instruction
+|*
+routine dp.sqar w000110xxxx1 lam dmul
+	;		lbm cslm;		opdmsw;		;	;
+	jclr clp3 idl2;	lal cslm;		opdlsw;		;	;
+	;		lblf fmap cslm;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;
+dfin.mul:
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr2;
+	jwerr der2 cstat;woem;			dtor;		;	ramwe rcsmsw ptr2;
+	;		woem;			dtor;		;	ramwe rcslsw ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Add Instruction
+|*		Double Precision Subtract Instruction
+|*
+routine dp.add w000111xxxx1 lbm dadd
+routine dp.sub w001000xxxx1 lbm dsub
+	;		lam csla;		reg;		recclk;	rcslsw ptr2;
+	;		lal csla;		reg;		;	;
+	jclr clp1 idl2;	lblf fmap csla;		opdlsw;		;	;
+	;		;			;		;	;
+	call dfin.alu;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr2;
+|	jwerr der2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+|	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Multiply Instruction
+|*
+routine dp.mul w001001xxxx1 lbm dmul
+	;		lam cslm;		reg;		recclk;	rcslsw ptr2;
+	;		lal cslm;		reg;		;	;
+|		Note: the reason we don't do a minimum latency multiply,
+|		is so we can delay idle2 as long as possible
+	jclr clp3 idl2;	lblf fmap cslm;		opdlsw;		;	;
+	;		;			;		;	;
+	call dfin.mul;	;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxm umsw;		;		;	;
+|	;		csuxm ulsw;		;		;	ptr2;
+|	jwerr der2 cstat;woem;			dtor;		;	ramwe rcsmsw ptr2;
+|	;		woem;			dtor;		;	ramwe rcslsw ptr2;
+|	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Divide Instruction
+|*
+routine dp.div w001010xxxx1 lbm ddiv
+	;		lam csla;		reg;		recclk;	rcslsw ptr2;
+	;		lal csla;		reg;		;	;
+	jclr clp56 idl2;lblf fmap csla;		opdlsw;		;	;
+|#				(Note: 26 will cause a delay of 54)
+	;		;			;		;	;	lpreg!26
+	call wait;	;			;		;	;
+	call dfin.alu2;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr2;
+|	jwerr der2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+|	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Backwards Subtract Instruction
+|*
+routine dp.b.sub w001011xxxx1 lam dsub
+	;		lbm csla;		reg;		recclk;	rcslsw ptr2;
+	;		lbl csla;		reg;		;	;
+	jclr clp1 idl2;	lalf fmap csla;		opdlsw;		;	;
+	;		;			;		;	;
+	call dfin.alu;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr2;
+|	jwerr der2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+|	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Backwards Divide Instruction
+|*
+routine dp.div w001100xxxx1 lam ddiv
+	;		lbm csla;		reg;		recclk;	rcslsw ptr2;
+	;		lbl csla;		reg;		;	;
+	jclr clp56 idl2;lalf fmap csla;		opdlsw;		;	;
+|#				(Note: 26 will cause a delay of 54)
+	;		;			;		;	;	lpreg!26
+	call wait;	;			;		;	;
+	call dfin.alu2;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr2;
+|	jwerr der2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+|	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Double Precision Compare With Zero
+|*
+routine dp.eqlzero w001101xxxx1 lam dcmp0
+	jclr clp1 idl2;	lalf fmap csla;		opdlsw;		;	;
+	call dfin.cmp;	;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		;			;		;	;
+|	jwerr werr cstat;woea;			;		;	;
+|	call idle1;	;			;		;	;
+|*
+|*		Double Precision Compare With Reg 1
+|*		Double Precision Compare Magnitude With Reg 1
+|*
+routine dp.eqlreg1 w001110xxxx1 lbm dcmp
+routine dp.cmpreg1 w001111xxxx1 lbm dcmpm
+	;		lam csla;		reg;		;	rcslsw ptr2;
+	;		lal csla;		reg;		;	;
+	jclr clp1 idl2;	lblf fmap csla;		opdlsw;		;	;
+	;		;			;		;	;
+dfin.cmp:
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;woea;			;		;	;
+	call idle1;	;			;		;	;

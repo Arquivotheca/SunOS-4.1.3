@@ -1,0 +1,102 @@
+.\" @(#)ftok.3 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH FTOK 3 "6 October 1987"
+.SH NAME
+ftok \- standard interprocess communication package
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <sys/ipc.h>
+.LP
+.B key_t ftok(path, id)
+.B char \(**path;
+.B char id;
+.fi
+.SH DESCRIPTION
+.IX ftok() "" "\fLftok()\fR \(em interprocess communication routine"
+.IX "interprocess communication" "ftok()" "\fLftok()\fR"
+.LP
+All interprocess communication facilities
+require the user to supply a key
+to be used by the
+.BR msgget (2),
+.BR semget (2),
+and
+.BR shmget (2)
+system calls to obtain interprocess communication identifiers.
+One suggested method for forming a key
+is to use the
+.B ftok(\|)
+subroutine described below.
+Another way to compose keys
+is to include the project
+.SM ID\s0
+in the most significant byte
+and to use the remaining portion as a sequence number.
+There are many other ways to form keys,
+but it is necessary for each system
+to define standards for forming them.
+If some standard is not adhered to,
+it will be possible for unrelated processes
+to unintentionally interfere with
+each other's operation.
+Therefore, it is strongly suggested that
+the most significant byte of a key
+in some sense refer to a project
+so that keys do not conflict across a given system.
+.LP
+.B ftok(\|)
+returns a key based on
+.I path
+and
+.SM ID
+that is usable in subsequent
+.BR msgget ,
+.BR semget ,
+and
+.B shmget(\|)
+system calls.
+.I path
+must be the path name of an existing file
+that is accessible to the process.
+.SM ID
+is a character
+which uniquely identifies
+a project.
+Note:
+.B ftok(\|)
+will return the same key
+for linked files when called with the same
+.SM ID
+and that it will return different keys when
+called with the same file name but different
+.SM ID\s0s.
+.SH "SEE ALSO"
+.BR intro (2),
+.BR msgget (2),
+.BR semget (2),
+.BR shmget (2)
+.SH DIAGNOSTICS
+.B ftok(\|)
+returns
+.B "(key_t) \-1"
+if
+.I path
+does not exist or if it is not accessible
+to the process.
+.SH WARNING
+If the file whose
+.I path
+is passed to
+.B ftok(\|)
+is removed when keys still refer to the file,
+future calls to
+.B ftok(\|)
+with the same
+.I path
+and
+.SM ID
+will return an error.
+If the same file is recreated, then
+.B ftok(\|)
+is likely to return a different key
+than it did the original time it was called.

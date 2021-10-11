@@ -1,0 +1,112 @@
+.\" @(#)audio_intro.3 1.1 92/07/30 SMI
+.ds Dc 7/30/92
+.TH AUDIO_INTRO 3 "\*(Dc" "" "Audio Library"
+.SH NAME
+audio_intro, libaudio.a
+\- audio library functions
+.SH DISCLAIMER
+.LP
+The manual pages, header files, and object library associated with
+.B /usr/demo/SOUND/libaudio.a
+are furnished on an AS IS basis as a preliminary interface to several
+useful audio data-processing capabilities.  A future release of the
+operating system may redefine the syntax or semantics of some of the
+functions described herein.
+.SH SYNOPSIS
+.nf
+.B #include <multimedia/libaudio.h>
+.fi
+.SH DESCRIPTION
+.B libaudio.a
+provides a preliminary interface to many of the common operations
+necessary to access and manipulate audio files and devices.
+By embodying the specifics of file formats and device
+.B ioctl
+commands in library routines, programs may be insulated, in part, from
+future changes to the interface and data storage formats.
+.SH File Header
+.LP
+Audio files contain a header that has a magic number (identifying
+the file as an audio file) and fields that describe
+the encoding format used to store the audio data.
+Immediately following the header is a variable-length information field
+in which, for instance,
+.SM ASCII
+annotation may be stored.
+.LP
+The format of the audio file header is compatible with a subset of the
+NeXT\(tm
+sound file header.  Sun has adopted NeXT's sound file header ideas
+to facilitate the transparent sharing of audio files in a networked
+environment.
+[The NeXT Nested and Indirect sound file types are not currently supported.]
+.LP
+In order that audio files may be successfully shared amongst multiple
+machine architectures, the header and data fields are written using
+.I big-endian
+byte-ordering.  Though this means that byte-swapping may be necessary
+to read and write some data encodings on
+.I little-endian
+machines such as the Sun386i, this overhead is largely overwhelmed
+by all other signal manipulation operations.  The benefits of transparent
+file access far outweigh the costs.
+.LP
+Routines to support the reading and writing of audio file headers
+are documented in the
+.BR audio_filehdr (3)
+manual page.  These routines convert between the file header format used for
+file interchange and the in-core audio header format used by most audio
+applications.
+.SH Audio Header
+.LP
+Audio data is described by an
+.B Audio_hdr
+structure that is similar, but
+.I not
+identical, to the audio file header.  The audio header structure is
+described in the
+.BR audio_hdr (3)
+manual page.
+The
+.BR audio_misc (3)
+manual page describes routines that perform some simple transformations
+based on the contents of the audio header structure.
+.SH Audio Device Control
+.LP
+The
+.BR audio (4)
+manual page describes the direct interface to the audio i/o device
+(\fB/dev/audio\fP) and the audio control pseudo-device (\fB/dev/audioctl\fP).
+For the most part, however, programs may use the routines documented in the
+.BR audio_device (3)
+manual page to access and control the device.
+.SH Audio Data Conversions
+.LP
+The SPARCstation audio device operates on data that has been encoded
+in \(*m-law format, a quasi-logarithmic compression.
+Since most signal-processing algorithms perform arithmetic on linearly
+encoded data, it is convenient to be able to convert to and from a
+linear \s-1PCM\s0 representation.  The
+.BR audio_ulaw2linear (3)
+manual page describes macros that will perform these transformations.
+.SH FUTURE DIRECTIONS
+.LP
+Although access to audio file headers are partly concealed in the file header
+routines, the data formats themselves are not properly hidden.
+Routines to demultiplex interleaved audio channels, and to transparently
+convert between data encodings, should be provided.
+.LP
+Access to many of the audio device status and control fields has been
+concealed in the audio device routines.  As audio server technology emerges,
+these interfaces may remain stable while the underlying implementation changes.
+However, access to the data streams of the audio device should be similarly
+concealed.
+.SH SEE ALSO
+.BR audio_convert (3),
+.BR audio_filehdr (3),
+.BR audio_hdr (3),
+.BR audio_misc (3),
+.BR audio_ulaw2linear (3),
+.BR audio (4).
+.SH NOTES
+NeXT is a trademark of NeXT, Inc.

@@ -1,0 +1,366 @@
+.\" @(#)ipcs.1 1.1 92/07/30 SMI; from System V 6.2
+.TH IPCS 1 "9 September 1987"
+.SH NAME
+ipcs \- report interprocess communication facilities status
+.SH SYNOPSIS
+.B ipcs
+[
+.I primitives
+]
+.SH DESCRIPTION
+.IX  "interprocess communication"  ipcs  ""  \fLipcs\fP
+.IX  "ipcs command" "" "\fLipcs\fR \(em display interprocess communication status"
+.B ipcs
+prints information about active interprocess communication facilities
+as specified by the
+.I primitives
+shown below.
+If no
+.I primitives
+are given,
+information is printed in short format for message queues,
+shared memory,
+and semaphores that are currently active in the system.
+.SS Command \- Line Primitives
+.LP
+If any of the
+.I primitives
+.BR \-m ,
+.BR \-q ,
+or
+.B \-s
+are specified,
+information about only indicated facilities is printed.
+If none of these are specified,
+information about all three is printed.
+.TP 15
+.B \-q
+Print information about active message queues.
+.TP
+.B \-m
+Print information about active shared memory segments.
+.TP
+.B \-s
+Print information about active semaphores.
+.TP
+.B \-b
+Print the currently allowed size information.
+(Maximum number of bytes in messages on queue for message queues,
+size of segments for shared memory,
+and number of semaphores in each set for semaphores.)
+See below for the meaning of columns in a listing.
+.TP
+.B \-c
+Print creator's login name and group name.
+See below.
+.TP
+.B \-o
+Print information on outstanding usage.
+(Number of messages on queue and total number
+of bytes in messages on queue for
+message queues and number of processes
+attached to shared memory segments.)
+.TP
+.B \-p
+Print process number information.
+(Process
+.SM ID
+of last process to send a message and process
+.SM ID
+of last process to receive a message on message queues and process
+.SM ID
+of creating process and process
+.SM ID
+of last process to attach or detach on shared memory segments)\
+See below.
+.TP
+.B \-t
+Print time information.
+(Time of the last control operation that changed the access permissions for
+all facilities.
+Time of last
+.B msgsnd
+and last
+.B msgrcv
+(see
+.BR msgop (2))
+on message queues,
+last
+.B shmat
+and last
+.B shmdt
+(see
+.BR shmop (2))
+on shared memory,
+last
+.BR semop (2)
+on semaphores.)
+See below.
+.TP
+.B \-a
+Use all display
+.IR primitive s.
+(This is a shorthand notation for
+.BR \-b ,
+.BR \-c ,
+.BR \-o ,
+.BR \-p ,
+and
+.BR \-t .)
+.TP
+.BI \-C " corefile"
+Use the file
+.I corefile
+in place of
+.BR /dev/mem .
+.TP
+.BI \-N " namelist"
+The argument will be taken as the name of an alternate
+.I filenamelist
+.RB ( /vmunix
+is the default).
+.PP
+The column headings and the meaning of the columns in an
+.B ipcs
+listing
+are given below; the letters in parentheses indicate the
+.I primitives
+that cause the corresponding heading to appear;
+.B all
+means that the heading
+always appears.
+Note: these
+.I primitives
+only determine
+what information is provided for each facility; they do
+.I not
+determine which facilities will be listed.
+.ta .75i
+.ne 5
+.TP 16
+.SM
+.BR T\*S "	(all)"
+Type of the facility:
+.RS 20
+.PD 0
+.TP 6
+.B q
+message queue
+.TP
+.B m
+shared memory segment
+.TP
+.B s
+semaphore
+.PD
+.RE
+.TP
+.SM
+.BR ID\*S "	(all)"
+The identifier for the facility entry.
+.br
+.ne 5
+.TP
+.SM
+.BR KEY\*S "	(all)"
+The key used as an argument to
+.BR msgget (2),
+.BR semget (2),
+or
+.BR shmget (2)
+to create the facility entry.
+(Note:
+The key of a shared memory segment is changed to
+.SM
+.B IPC_PRIVATE
+when the segment has been removed until all processes attached to the segment
+detach it.)
+.TP
+.SM
+.BR MODE\*S "	(all)"
+The facility access modes and flags:
+The mode consists of 11 characters that are interpreted as follows:
+.ne 4
+.RS
+.IP
+The first two characters are:
+.RS
+.PD 0
+.TP 4
+.B R
+If a process is waiting on a
+.BR msgrcv .
+.TP
+.B S
+If a process is waiting on a
+.BR msgsnd .
+.TP
+.B D
+If the associated shared memory segment has been removed.
+It will disappear when the last process attached to the segment
+detaches it.
+.TP
+.B C
+If the associated shared memory segment is to be cleared when the
+first attach is executed.
+.TP
+.B \-
+If the corresponding special flag is not set.
+.RE
+.PD
+.IP
+The next 9 characters are interpreted as three sets of three bits each.
+The first set refers to the owner's permissions;
+the next to permissions of others in the user-group of the facility entry;
+and the last to all others.
+Within each set, the first character indicates permission to read,
+the second character indicates permission to write
+or alter the facility entry,
+and the last character is currently unused.
+.IP
+The permissions are indicated as follows:
+.RS
+.PD 0
+.TP 4
+.B r
+If read permission is granted.
+.TP
+.B w
+If write permission is granted.
+.TP
+.B a
+If alter permission is granted.
+.TP
+.B \(em
+If the indicated permission is
+.I not
+granted.
+.RE
+.RE
+.PD
+.TP
+.SM
+.BR OWNER\*S "	(all)"
+The login name of the owner of the facility entry.
+.TP
+.SM
+.BR GROUP\*S "	(all)"
+The group name of the group of the owner of the facility entry.
+.TP
+.SM
+.BR CREATOR\*S "	(a,c)"
+The login name of the creator of the facility entry.
+.TP
+.SM
+.BR CGROUP\*S "	(a,c)"
+The group name of the group of the creator of the facility entry.
+.TP
+.SM
+.BR CBYTES\*S "	(a,o)"
+The number of bytes in messages currently outstanding on the associated
+message queue.
+.TP
+.SM
+.BR QNUM\*S "	(a,o)"
+The number of messages currently outstanding on the associated message queue.
+.TP
+.SM
+.BR QBYTES\*S "	(a,b)"
+The maximum number of bytes allowed in messages outstanding on the associated
+message queue.
+.TP
+.SM
+.BR LSPID\*S "	(a,p)"
+The process
+.SM ID
+of the last process to send a message to the associated queue.
+.TP
+.SM
+.BR LRPID\*S "	(a,p)"
+The process
+.SM ID
+of the last process to receive a message from the associated queue.
+.TP
+.SM
+.BR STIME\*S "	(a,t)"
+The time the last message was sent to the associated queue.
+.TP
+.SM
+.BR RTIME\*S "	(a,t)"
+The time the last message was received from the associated queue.
+.TP
+.SM
+.BR CTIME\*S "	(a,t)"
+The time when the associated entry was created or changed.
+.TP
+.SM
+.BR NATTCH\*S "	(a,o)"
+The number of processes attached to the associated shared memory segment.
+.TP
+.SM
+.BR SEGSZ\*S "	(a,b)"
+The size of the associated shared memory segment.
+.TP
+.SM
+.BR CPID\*S "	(a,p)"
+The process
+.SM ID
+of the creator of the shared memory entry.
+.TP
+.SM
+.BR LPID\*S "	(a,p)"
+The process
+.SM ID
+of the last process to attach or detach the shared memory segment.
+.TP
+.SM
+.BR ATIME\*S "	(a,t)"
+The time the last attach was completed to the associated shared memory
+segment.
+.br
+.ne 6
+.TP
+.SM
+.BR DTIME\*S "	(a,t)"
+The time the last detach was completed on the associated shared memory
+segment.
+.TP
+.SM
+.BR NSEMS\*S "	(a,b)"
+The number of semaphores in the set associated with the semaphore entry.
+.TP
+.SM
+.BR OTIME\*S "	(a,t)"
+The time the last semaphore operation was completed on the set associated
+with the semaphore entry.
+.DT
+.PD
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+system namelist
+.TP
+.B /dev/mem
+memory
+.TP
+.B /etc/passwd
+user names
+.TP
+.B /etc/group
+group names
+.PD
+.SH SEE ALSO
+.BR ipcrm (1),
+.BR msgop (2),
+.BR semctl (2),
+.BR semget (2),
+.BR semop (2),
+.BR shmctl (2),
+.BR shmget (2),
+.BR shmop (2)
+.SH BUGS
+Things can change while
+.B ipcs
+is running; the picture it gives is only a close
+approximation to reality.

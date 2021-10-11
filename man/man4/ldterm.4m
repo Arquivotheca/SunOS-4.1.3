@@ -1,0 +1,303 @@
+.\" @(#)ldterm.4m 1.1 92/07/30 SMI
+.TH LDTERM 4M "24 January 1990"
+.SH NAME
+ldterm \- standard terminal STREAMS module
+.SH CONFIG
+None; included by default.
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/stream.h>
+#include <sys/stropts.h>
+
+ioctl(fd, \s-1I_PUSH\s0, "ldterm");
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "ldterm module" "" "\fLldterm\fP, terminal \s-1STREAMS\s0 module"
+.IX STREAMS ldterm "" "\fLldterm\fP terminal module"
+.LP
+.B ldterm
+is a
+.SM STREAMS
+module that provides most of the
+.BR termio (4)
+terminal interface.  This module does not perform the low-level
+device control functions specified by flags in the
+.B c_cflag
+word of the
+.B termios
+structure or by the
+.SM
+.BR IGNBRK\s0 ,
+.SM
+.BR IGNPAR\s0 ,
+.SM
+.BR PARMRK\s0 ,
+or
+.SB INPCK
+flags in the
+.B c_iflag
+word of the
+.B termios
+structure; those functions must be performed by the driver or by
+modules pushed below the
+.B ldterm
+module.
+All other
+.B termio
+functions are performed by
+.BR ldterm ;
+some of them, however, require the cooperation of the driver or
+modules pushed below
+.BR ldterm ,
+and may not be performed in some cases.  These include the
+.SB IXOFF
+flag in the
+.B c_iflag
+word and the delays specified in the
+.B c_oflag
+word.
+.SS "Read-side Behavior"
+Various types of
+.SM STREAMS
+messages are processed as follows:
+.TP \w'\s-1M_HANGUP\s+1'+2n
+.SB M_BREAK
+When this message is received, either an
+interrupt signal is generated, or the message is treated as if it
+were an
+.SB M_DATA
+message containing a single
+.SM ASCII
+.SM NUL
+character, depending on the state of the
+.SB BRKINT
+flag.
+.TP
+.SB M_DATA
+These messages are normally processed using the standard
+.B termio
+input processing.  If the
+.SB ICANON
+flag is set, a single input record (\*(lqline\*(rq) is accumulated in an
+internal buffer, and sent upstream when a line-terminating character
+is received.  If the
+.SB ICANON
+flag is not set, other input processing is performed and the
+processed data is passed upstream.
+.IP
+If output is to be stopped or started as a result of the arrival of
+characters,
+.SB M_STOP
+and
+.SB M_START
+messages are sent downstream, respectively.  If the
+.SB IXOFF
+flag is set, and input is to be
+stopped or started as a result of flow-control considerations,
+.SB M_STOPI
+and
+.SB M_STARTI
+messages are sent downstream, respectively.
+.IP
+.SB M_DATA
+messages are sent downstream, as necessary, to perform echoing.
+.IP
+If a signal is to be generated, a
+.SB M_FLUSH
+message with a flag byte of
+.SB FLUSHR
+is placed on the read queue,
+and if the signal is also to flush output a
+.SB M_FLUSH
+message with a flag byte of
+.SB FLUSHW
+is sent downstream.
+.TP
+.SB M_CTL
+If the first byte of the message is
+.SM
+.BR MC_NOCANON\*S ,
+the input processing normally performed on
+.SB M_DATA
+messages is disabled, and those messages are passed upstream
+unmodified; this is for the use of modules or drivers that perform their own
+input processing, such as a pseudo-terminal in
+.SB TIOCREMOTE
+mode connected to a program that performs this processing.  If the
+first byte of the message is
+.SM
+.BR MC_DOCANON\*S ,
+the input processing is enabled.
+Otherwise, the message is ignored; in any case, the message is passed
+upstream.
+.TP
+.SB M_FLUSH
+The read queue of the module is flushed of all its data messages,
+and all data in the record
+being accumulated is also flushed.  The message is passed upstream.
+.TP
+.SB M_HANGUP
+Data is flushed as it is for a
+.SB M_FLUSH
+message, and
+.SB M_FLUSH
+messages with a flag byte of
+.SB FLUSHRW
+are sent upstream and downstream.
+Then an
+.SB M_PCSIG
+message is sent upstream with a signal of
+.SM
+.BR SIGCONT\*S ,
+followed by the
+.SB M_HANGUP
+message.
+.TP
+.SB M_IOCACK
+The data contained within the message, which is to be returned to the
+process, is augmented if necessary, and the message
+is passed upstream.
+.LP
+All other messages are passed upstream unchanged.
+.SS "Write-side behavior"
+Various types of
+.SM STREAMS
+messages are processed as follows:
+.TP \w'\s-1M_HANGUP\s+1'+2n
+.SB M_FLUSH
+The write queue of the module is flushed of all its data messages,
+and the message is passed downstream.
+.TP
+.SB M_IOCTL
+The function to be performed for this
+.B ioctl(\|)
+request by the
+.B ldterm
+module is performed, and the message is passed downstream in most
+cases.  The
+.SB TCFLSH
+and
+.SB TCXONC
+.B ioctl(\|)
+requests
+can be performed entirely in this module, so the reply is sent
+upstream and the message is not passed downstream.
+.TP
+.SB M_DATA
+If the
+.SB OPOST
+flag is set, or both the
+.SB XCASE
+and
+.SB ICANON
+flags are set, output processing is performed and the processed
+message is passed downstream, along with any
+.SB M_DELAY
+messages generated.  Otherwise, the message is passed downstream
+without change.
+.LP
+All other messages are passed downstream unchanged.
+.SH IOCTLS
+The following
+.B ioctl(\|)
+requests are processed by the
+.B ldterm
+module.  All others are passed downstream.
+.TP 15
+.SB TCGETS
+.PD 0
+.TP
+.SB TCGETA
+The message is passed downstream; if an acknowledgment is seen, the
+data provided by the driver and modules downstream is augmented and
+the acknowledgement is passed upstream.
+.PD
+.TP
+.SB TCSETS
+.PD 0
+.TP
+.SB TCSETSW
+.TP
+.SB TCSETSF
+.TP
+.SB TCSETA
+.TP
+.SB TCSETAW
+.TP
+.SB TCSETAF
+The parameters that control the behavior of the
+.B ldterm
+module are changed.
+If a mode change requires options at the stream head to be changed, a
+.SB M_SETOPT
+message is sent upstream.  If the
+.SB ICANON
+flag is turned on or off, the read mode at the stream head is changed
+to message-nondiscard or byte-stream mode, respectively.  If it is
+turned on, the
+.B vmin
+and
+.B vtime
+values at the stream head are set to 1 and 0, respectively; if it is
+turned on, they are set to the values specified by the
+.B ioctl(\|)
+request.
+The
+.B vmin
+and
+.B vtime
+values are also set if
+.SB ICANON
+is off and the values are changed by the
+.B ioctl(\|)
+request.
+If the
+.SB TOSTOP
+flag is turned on or off, the
+.B tostop
+mode at the stream head is turned on or off, respectively.
+.PD
+.TP
+.SB TCFLSH
+If the argument is 0, an
+.SB M_FLUSH
+message with a flag byte of
+.SB FLUSHR
+is sent downstream and placed on the read queue.
+If the argument is 1, the write queue is flushed of all its data
+messages and a
+.SB M_FLUSH
+message with a flag byte of
+.SB FLUSHW
+is sent upstream and downstream.
+If the argument is 2, the write queue is flushed of all its data
+messages and a
+.SB M_FLUSH
+message with a flag byte of
+.SB FLUSHRW
+is sent downstream and placed on the read queue.
+.TP
+.SB TCXONC
+If the argument is 0, and output is not already stopped, an
+.SB M_STOP
+message is sent downstream.
+If the argument is 1, and output is stopped, an
+.SB M_START
+message is sent downstream.
+If the argument is 2, and input is not already stopped, an
+.SB M_STOPI
+message is sent downstream.
+If the argument is 3, and input is stopped, an
+.SB M_STARTI
+message is sent downstream.
+.SH SEE ALSO
+.BR console (4S),
+.BR mcp (4S),
+.BR mti (4S),
+.BR pty (4),
+.BR termio (4),
+.BR ttcompat (4M),
+.BR zs (4S)

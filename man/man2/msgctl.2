@@ -1,0 +1,219 @@
+.\" @(#)msgctl.2 1.1 92/07/30 SMI; from S5R3
+.TH MSGCTL 2 "21 January 1990"
+.SH NAME
+msgctl \- message control operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msgctl (msqid, cmd, buf)
+int msqid, cmd;
+struct msqid_ds \(**buf;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  msgctl()  ""  \fLmsgctl()\fR
+.IX  "message control operations"  msgctl()  ""  \fLmsgctl()\fR
+.B msgctl(\|)
+provides a variety of message control operations as specified by
+.IR cmd .
+The following
+.IR cmd s
+are available:
+.TP 15
+.SB IPC_STAT
+Place the current value of each member of the data structure associated with
+.I msqid
+into the structure pointed to by
+.IR buf .
+The contents of this structure are defined in
+.BR intro (2).
+.TP
+.SB IPC_SET
+Set the value of the following members of the data structure associated with
+.I msqid
+to the corresponding value found in the structure pointed to by
+.IR buf :
+.RS
+.RS
+.nf
+.ft B
+msg_perm.uid
+msg_perm.gid
+msg_perm.mode /\(** only low 9 bits \(**/
+msg_qbytes
+.ft R
+.fi
+.RE
+.RE
+.IP
+This
+.I cmd
+can only be executed by a process that has an effective user
+.SM ID
+equal to either that of super-user, or to the value of
+.B msg_perm.cuid
+or
+.B msg_perm.uid
+in the data structure associated with
+.IR msqid .
+Only super-user can raise the value of
+.BR msg_qbytes .
+.TP
+.SB IPC_RMID
+Remove the message queue identifier specified by
+.I msqid
+from the system and destroy the message queue and data structure
+associated with it.  This
+.I cmd
+can only be executed by a process that has an effective user
+.SM ID
+equal to either that of super-user, or to the value of
+.B msg_perm.cuid
+or
+.B msg_perm.uid
+in the data structure associated with
+.IR msqid.
+.LP
+In the
+.BR msgop (2)
+and
+.BR msgctl (2)
+system call descriptions, the permission required
+for an operation is given as "[token]", where \*(lqtoken\*(rq is the type
+of permission needed interpreted as follows:
+.LP
+.RS 0.75i
+.PD 0
+.TP 28
+00400
+Read by user
+.TP
+00200
+Write by user
+.TP
+00060
+Read, Write by group
+.TP
+00006
+Read, Write by others
+.RE
+.PD
+.LP
+Read and Write permissions on a msqid are
+granted to a process if one or more of the following are true:
+.IP
+The effective user
+.SM ID
+of the process is super-user.
+.IP
+The effective user
+.SM ID
+of the process matches
+.B msg_perm.[c]uid
+in the data structure associated with
+.I msqid
+and the appropriate bit of the
+\*(lquser\*(rq portion (0600) of
+.B msg_perm.mode
+is set.
+.IP
+The effective user
+.SM ID
+of the process does not match
+.B msg_perm.[c]uid
+and the effective group
+.SM ID
+of the process matches
+.B msg_perm.[c]gid
+and the appropriate bit of the \*(lqgroup\*(rq portion
+(060) of
+.B msg_perm.mode
+is set.
+.IP
+The effective user
+.SM ID
+of the process does not match
+.B msg_perm.[c]uid
+and the effective group
+.SM ID
+of the process does not match
+.B msg_perm.[c]gid
+and the appropriate bit of the \*(lqother\*(rq portion (06) of
+.B msg_perm.mode
+is set.
+.LP
+Otherwise, the corresponding permissions are denied.
+.br
+.ne 8
+.SH RETURN VALUES
+.B msgctl(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+.I cmd
+is equal to
+.SM
+.SB IPC_STAT
+and
+.B [\s-1READ\s0]
+operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM EFAULT
+.I buf
+points to an illegal address.
+.TP
+.SM EINVAL
+.I msqid
+is not a valid message queue identifier.
+.IP
+.I cmd
+is not a valid command.
+.TP
+.SM EPERM
+.I cmd
+is equal to
+.SB IPC_RMID
+or
+.SM
+.BR IPC_SET \s0.
+The effective user
+.SM ID
+of the calling process is neither super-user,
+nor the value of
+.B msg_perm.cuid
+or
+.B msg_perm.uid
+in the data structure associated with
+.IR msqid .
+.IP
+.I cmd
+is equal to
+.SM
+.BR IPC_SET \s0,
+an attempt is being made to increase to the value of
+.BR msg_qbytes ,
+and the effective user
+.SM ID
+of the calling process is not equal to that of super-user.
+.SH SEE ALSO
+.BR intro (2),
+.BR msgget (2),
+.BR msgop (2)

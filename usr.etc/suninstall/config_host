@@ -1,0 +1,166 @@
+#! /bin/sh
+#
+#	config_host	%Z%%M% %I% %E% SMI
+#
+# Some files we access.
+#
+#
+SYS_INFO_FILE="/etc/install/sys_info"
+HOSTS_FILE="/etc/hosts"
+TMP_HOSTS_FILE="/tmp/thosts"
+YP_DIR="/var/yp"
+ZONEINFO_DIR="/usr/lib/zoneinfo"
+DOMAINNAME_FILE="/etc/defaultdomain"
+HOSTNAME_FILE="/etc/hostname"
+
+#
+#	The default values must be non-null.
+#
+DEFAULT_DOMAINNAME="noname"
+DEFAULT_HOSTNAME="noname"
+DEFAULT_IP_ADDR="192.9.200.1"
+DEFAULT_YPTYPE="none"
+DEFAULT_TIMEZONE="Factory"
+
+#
+#	field() Macro to extract field values from sys_info file
+#
+field()
+{
+	(awk -F= "\$1 ~ /${F}\$/ {print \$2}" ${SYS_INFO_FILE})
+}
+
+
+umask 22
+
+#
+#	Test for user = root
+#
+if [ `/usr/ucb/whoami` != "root" ]; then
+	echo	You must be root to run $0
+	exit 1
+fi
+
+#
+#	Get the necessary variables from the sys_info file
+#
+F="hostname"
+hostname=`field`
+
+F="timezone"
+timezone=`field`
+
+F="domainname"
+domainname=`field`
+
+F="ip"
+ip_addr=`field`
+
+F="ether_name"
+ether0=`field`
+
+F="yp_type"
+yptype=`field`
+
+#
+#	Set hostname, domainname, timezone, ip address and networked variables
+#
+yptype=${yptype:=$DEFAULT_YPTYPE}
+
+hostname=${hostname:=$DEFAULT_HOSTNAME}
+
+domainname=${domainname:=$DEFAULT_DOMAINNAME}
+if [ ${yptype} = "none" ]; then
+	domainname=${DEFAULT_DOMAINNAME}
+fi
+
+timezone=${timezone:=$DEFAULT_TIMEZONE}
+
+ip_addr=${ip_addr:=$DEFAULT_IP_ADDR}
+
+networked=$ether0
+
+#
+#	now, print the working variables if debug flag (debug) given
+#
+if [ $1 ]; then
+	if [ $1 = "debug" ]; then
+		echo ""
+		echo "    SYS_INFO_FILE     :  ${SYS_INFO_FILE}"
+		echo "    HOSTS_FILE        :  ${HOSTS_FILE}"
+		echo "    TMP_HOSTS_FILE    :  ${TMP_HOSTS_FILE}"
+		echo "    YP_DIR            :  ${YP_DIR}"
+		echo "    ZONEINFO_DIR      :  ${ZONEINFO_DIR}"
+		echo "    DOMAINNAME_FILE   :  ${DOMAINNAME_FILE}"
+		echo "    HOSTNAME_FILE     :  ${HOSTNAME_FILE}"
+		echo ""
+		echo "    DEFAULT_DOMAINNAME:  ${DEFAULT_DOMAINNAME}"
+		echo "    DEFAULT_HOSTNAME  :  ${DEFAULT_HOSTNAME}"
+		echo "    DEFAULT_IP_ADDR   :  ${DEFAULT_IP_ADDR}"
+		echo "    DEFAULT_TIMEZONE  :  ${DEFAULT_TIMEZONE}"
+		echo "    DEFAULT_YPTYPE    :  ${DEFAULT_YPTYPE}"
+		echo ""
+		echo "    hostname     :  ${hostname}"
+		echo "    ip_addr      :  ${ip_addr}"
+		echo "    ether0       :  ${ether0}"
+		echo "    timezone     :  ${timezone}"
+		echo "    yp_type      :  ${yptype}"
+		echo "    domainname   :  ${domainname}"
+		echo "    networked    :  ${networked}"
+	fi
+fi
+
+#
+#	Set the hostname
+#
+rm -f ${HOSTNAME_FILE}.??0
+if [ ${networked} ]; then
+	echo ${hostname} > ${HOSTNAME_FILE}.${ether0}
+else
+	echo ${hostname} > ${HOSTNAME_FILE}.xx0
+fi
+
+#
+#       Set the domainname.
+#
+echo ${domainname} > ${DOMAINNAME_FILE}
+
+#
+#	Set/unset the NIS
+#
+#	If we unset the NIS, /var/yp is moved to /var/yp- and saved.
+#	We test for existence of /var/yp when unsetting the NIS
+#	because we don't want to blindly remove /var/yp-.  If we did, then
+#	running this script twice would remove /var/yp- and there would be
+#	nothing left to move back to /var/yp.
+#
+if [ ${yptype} = "none" ]; then
+	if [ -d ${YP_DIR} ]; then
+		rm -rf ${YP_DIR}-
+		mv -f ${YP_DIR} ${YP_DIR}- 2>/dev/null
+	fi
+else
+	mv -f ${YP_DIR}- ${YP_DIR} 2>/dev/null
+	mkdir -p ${YP_DIR}/binding
+	#rm -f ${YP_DIR}/binding/*
+	chown bin ${YP_DIR} ${YP_DIR}/binding
+	chgrp staff ${YP_DIR} ${YP_DIR}/binding
+	chmod 2755 ${YP_DIR} ${YP_DIR}/binding
+fi
+
+#
+#	Set timezone
+#
+cwd=`pwd`
+cd ${ZONEINFO_DIR}
+rm -f ${ZONEINFO_DIR}/localtime- 2>/dev/null
+mv -f ${ZONEINFO_DIR}/localtime ${ZONEINFO_DIR}/localtime- 2>/dev/null
+ln ${timezone} localtime 2>/dev/null
+cd ${cwd}
+
+#
+#	DONE
+#
+#echo    "Completed configuration of ${hostname}"
+
+exit 0

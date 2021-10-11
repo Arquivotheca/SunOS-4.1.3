@@ -1,0 +1,358 @@
+.\" @(#)readnews.1 1.1 92/07/30 SMI;
+.TH READNEWS 1 "7 March 1984"
+.SH NAME
+readnews \- read news articles
+.SH SYNOPSIS
+.BR readnews " [ " \-a
+.IR date " ] [ "
+.B \-n
+.IR newsgroups " ] [ "
+.B \-t
+.IR titles " ] [ "
+.BR \-lprxhfuM " ] [ "
+.BR \-c " [ "
+.IR mailer " ] ]"
+.LP
+.B "readnews \-s"
+.SH DESCRIPTION
+.IX  "readnews command"  ""  "\fLreadnews\fP \(em read news articles"
+.IX  "read news articles"  ""  "read news articles \(em \fLreadnews\fP"
+.IX  "network news"  "read articles"  ""  "read articles \(em \fLreadnews\fP"
+.IX  news  "read articles"  ""  "read articles \(em \fLreadnews\fP"
+.I Readnews
+without argument displays unread articles.
+.LP
+.B readnews \-s
+displays the newsgroup subscription list.
+.LP
+.I Readnews
+maintains a
+.BI . newsrc
+file in your home directory that specifies all news articles already read.
+.BI . newsrc
+is updated at the end of each news reading session in which the
+.BR \-x " or " \-l
+options weren't specified.  If the
+.SM NEWSRC
+environment variable
+is present, it should be the path name of a file to be used in place of
+.BI . newsrc.
+.LP
+An options line may be placed in the
+.BI . newsrc
+file.  The options line starts with the word
+.B options
+(left justified) followed by the list of standard options just as
+they would be typed on the
+.I readnews
+command line.  The list of options may include: the
+.B \-n
+flag along with a newsgroup list; a favorite interface to use for
+reading the news; and/or the
+.B \-r
+or
+.B \-t
+flag.  Continuation lines are specified by following lines
+beginning with a space or tab character.
+Similarly, options can be specified in the
+.SM NEWSOPTS
+environment parameter.  Options on the command
+line override options in the
+.BI . newsrc
+file and options in the
+.BI . newsrc
+file override options in the
+.SM NEWSOPTS
+environment parameter.
+.LP
+When you use the reply command of the
+.IR mail (1)
+or 
+.IR /bin/mail (1)
+interfaces,
+.I readnews
+uses the
+.SM MAILER
+environment parameter to determine which mailer to use.  The default is usually
+.IR mail .
+.LP
+You can specify a particular paging program
+for paging through articles.  The
+.SM PAGER
+environment parameter should be set to the name of
+the paging program.  The name of the article is referenced with
+a `%', as in the
+.B \-c
+option.  If no `%' is present, the article is piped to the program.
+Paging may be disabled by setting
+.SM PAGER
+to a null value.
+.SH OPTIONS
+Some of the option flags determine which of the several interfaces you
+can use for reading your news.  The news system has its own interface
+which is used if no other choice is made, otherwise one of
+these options can be used:
+.TP
+.B \-M
+An interface to
+.IR mail (1).
+.TP
+.B \-c
+A
+.IR /bin/mail (1)\-like
+interface.
+.TP
+.BI "\-c " `mailer'
+All selected articles written to a temporary file.  Then the mailer is
+invoked.  The name of the temporary file is referenced with a `%'.
+Thus, `mail \-f %' will invoke mail on a temporary file consisting of all
+selected messages.
+.LP
+Other options govern the behavior of
+.I readnews
+itself, as follows:
+.TP
+.B \-p
+Send all selected articles to the standard output with no questions asked.
+.TP
+.B \-l
+Display only the titles.  Do not update the
+.BI . newsrc
+file.
+.TP
+.B \-r
+display the articles in reverse order.
+.TP
+.B \-f
+Do not display any followup article
+.TP
+.B \-h
+Display articles in a less verbose format (intended for terminals
+running at 300 baud).
+.TP
+.B \-u
+Update the
+.BI . newsrc
+file every 5 minutes, in case of an unreliable system.  Note that if the
+.BI . newsrc
+file is updated, the
+.B x
+command will not restore it to its original contents.
+.LP
+The following flags determine the selection of articles:
+.TP
+.BI "\-n " newsgroups
+Select all articles that belong to
+.IR newsgroups .
+.TP
+.BI "\-t " titles
+Select all articles whose titles contain one of the strings specified by
+.IR titles .
+.TP
+.BI "\-a " "\fR[\fP date \fR]\fP"
+Select all articles that were posted past the given
+.I date
+(in
+.IR mm/dd
+format).
+.TP
+.B \-x
+Ignore
+.BI . newsrc
+file.  That is, select articles that have already been read as well as new ones.
+.SH "COMMANDS"
+.LP
+This section lists the commands you can type to the
+.I readnews
+and
+.I /bin/mail
+interface prompts.  The
+.I readnews
+interface suggests some common commands in brackets.
+Just typing carriage-return is the same as typing the first command.
+For example, `[ynq]' means that the commands `y' (yes), `n' (no),
+and `q' (quit) are common responses, and that `y' is the default.
+Here are the commands and their meanings:
+.IP y
+Yes \(em  displays current article and goes on to next.
+.IP n
+No \(em  goes on to next article without displaying current one.
+In the
+.I /bin/mail
+interface, this means `go on to the next article',
+which has the same effect as `y' or just typing carriage-return.
+.IP q
+Quit \(em the
+.BI . newsrc
+file is updated if \-l or \-x were not on the command line.
+.IP c
+Cancel the article \(em only the author or the super user can do this.
+.IP r
+Reply \(em reply to article's author via mail.
+.I Readnews
+calls up your
+.SM EDITOR
+with a header specifying
+To, Subject, and References lines taken from the message.
+You may change or add headers, as appropriate.
+You add the text of the reply after the blank line, and then exit
+the editor.  The resulting message is mailed to the author of the article.
+.IP rd
+Reply directly \(em
+.I readnews
+calls up the
+.I mail
+program (or the program specified in the
+.SM $MAILER
+environment variable) so that you can reply to the author.
+Type the text of the reply and then control-D.
+.IP "f [\fItitle\fP]"
+Submit a follow up article.
+Normally you should leave off the title, since the system generates
+one for you.
+.I Readnews
+calls up your
+.SM EDITOR
+so that you can compose the text of the followup.
+.IP "fd"
+Followup directly, without edited headers.  This is like
+.IR f ,
+but the headers of the article are not included in the editor buffer.
+.IP "N [\fInewsgroup\fP]"
+Go to the next newsgroup or named
+.IR newsgroup .
+.IP "s [\fIfile\fP]"
+Save \(em the article is appended to the named
+.IR file .
+The default filename is
+.IR Articles .
+If the first character of the filename is `|',
+the rest of the filename is taken as the name of a program,
+which is executed with the text of the article as standard input.
+If the first character of the filename is `/', it is
+taken as a full path name of a file.  If the
+.SM $NEWSBOX
+environment variable is set to a full path name,
+and the filename contains no `/', the file is saved in
+.SM $NEWSBOX,
+otherwise, it is saved relative to
+.SM $HOME.
+.IP #
+Report the name and size of the newsgroup.
+.IP e
+Erase \(em forget that this article was read.
+.IP h
+Print a more verbose header.
+.IP H
+Print a very verbose header, containing all known information about the article.
+.IP U
+Unsubscribe from this newsgroup.  Also goes on to the next newsgroup.
+.IP d
+Read a digest.  Breaks up a digest into separate articles
+so you can read and reply to each piece.
+.IP D [\fInumber\fP]
+Decrypt \(em invokes a Caesar decoding program on the body of the message.
+This is used to decrypt rotated jokes posted to net.jokes.
+Such jokes are usually obscene or otherwise offensive to some
+groups of people, and so are rotated to avoid accidental
+decryption by people who would be offended.
+The title of the joke should indicate the nature of the problem,
+enabling people to decide whether to decrypt it or not.
+.IP
+Normally the Caesar program does a character frequency count on
+each line of the article separately, so that lines which are not
+rotated will be shown in plain text.
+This works well unless the line is short, in which case it sometimes
+gets the wrong rotation.  An explicit
+.I number
+rotation (usually 13) may be given to force a particular shift.
+.IP v
+Print the current version of the news software.
+.IP !
+Shell escape.
+.IP \fInumber\fP
+Go to \fInumber\fP.
+.IP +[\fIn\fP]
+Skip n articles.
+The articles skipped are recorded as `unread' and will be
+offered to you again the next time you read news.
+.IP \-
+Go back to last article.
+This is a toggle, typing it twice returns you to the original article.
+.IP x
+Exit \(em like quit except that
+.BI . newsrc
+is not updated.
+.IP "X \fIsystem\fP"
+Transmit article to the named
+.IR system .
+.LP
+The
+c, f, fd, r, rd, e, h, H, and s commands
+can be followed by \-'s to refer to the previous article.
+Thus, when replying to an article using the
+.I readnews
+interface, you should normally type `r\-' (or `re-') since by the
+time you enter a command, you are being offered the next article.
+.SH EXAMPLES
+.TP
+.B readnews
+Read all unread articles using the
+.IR readnews (1)
+interface.  The
+.BI . newsrc
+file is updated at the end of the session.
+.TP
+.B readnews \-c "ed %" \-l
+Use the
+.IR ed (1)
+text editor on a file containing the titles of all unread articles.  The
+.BI . newsrc
+file is
+.B not
+updated at the end of the session.
+.TP
+.B readnews \-n all !fa.all \-M \-r
+Read all unread articles except articles whose newsgroups begin with
+IB fa .
+via
+.IR mail (1)
+in reverse order.  The
+.BI . newsrc
+file is updated at the end of the session.
+.TP
+.B "readnews \-p \-n all \-a last thursday"
+Print every unread article since last Thursday.  The
+.BI . newsrc
+file is
+updated at the end of the session.
+.TP
+.B "readnews \-p > /dev/null &"
+Discard all unread news.
+This is useful after returning from a long trip.
+.SH FILES
+.PD 0
+.TP 35
+.RI /usr/spool/news/ newsgroup / number
+News articles
+.TP 35
+/usr/lib/news/active
+Active newsgroups and numbers of articles
+.TP 35
+/usr/lib/news/help
+Help file for
+.IR readnews (1)
+interface
+.TP 35
+~/.newsrc
+Options and list of previously read articles
+.PD
+.SH SEE ALSO
+checknews(1),
+inews(1),
+sendnews(8),
+recnews(8),
+uurec(8),
+mail(1),
+news(5),
+newsrc(5)

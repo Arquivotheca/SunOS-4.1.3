@@ -1,0 +1,184 @@
+.\" @(#) audioamd.4 1.1@(#) SMI
+.TH AUDIOAMD 4  "2 June 1992"
+.SH NAME
+audioamd \- telephone quality audio device
+.SH CONFIG 
+.B device-driver audioamd
+.IX "audioamd" "" "\fLaudioamd\fP \(em telephone quality audio device"
+.SH AVAILABILITY
+.LP
+.SM SPARC\s0station
+1 and 2,
+.SM IPC\s0,
+.SM IPX\s0,
+.SM SLC\s0,
+.SM SLX\s0,
+and
+.SM SPARC\s0server
+6xx systems.
+.LP
+Desktop
+.SM SPARC\s0systems
+include a built-in speaker for audio output.
+The audio cable
+.\" (Sun part number #530-1702)
+provides connectors for a microphone
+and external headset.
+The headset output level is adequate to power most headphones,
+but may be too low for some external speakers. Powered
+speakers or an external amplifier may be used.
+.SM SPARC\s0server
+6xx systems do not have an internal speaker, but support an
+external microphone and speaker connected through the audio cable.
+.LP
+The Sun Microphone
+.\" (Sun part number #370-1414)
+is recommended
+for normal desktop audio recording. It contains a battery
+that must be replaced after 210 hours of use. Other microphones
+may be used, but a pre-amplifier circuit may be required to
+achieve a sufficient input signal. Other audio sources
+may be recorded by connecting one channel of the line output
+to the audio cable microphone input. If the input signal
+is distorted, external attenuation may be required
+(audio sources may also be connected from their headphone
+output with the volume turned down).
+.SH DESCRIPTION
+The
+.B audioamd
+device uses the
+.SM AM79C30A
+Digital Subscriber Controller chip to implement the audio device interface.
+This interface is described fully in the
+.BR audio (4)
+manual page.
+.LP
+The
+.SB AUDIO_GETDEV
+.BR ioctl (2V)
+returns
+.SB AUDIO_DEV_AMD
+to identify
+the
+.B audioamd
+device type. The
+.SB AUDIO_SETINFO
+.B ioctl
+controls device configuration parameters.
+.SS Audio Data Formats
+The
+.B audioamd
+device supports the audio formats listed in the following table.
+When the device is open for simultaneous play and record,
+the input and output data formats must match.
+.sp
+.\" === troff version of table ============
+.if n .ig IG
+.ps -1
+.vs -1
+.TS
+center allbox;
+c s s s
+c c c c
+c c c c.
+Supported Audio Data Formats
+Sample Rate	Encoding	Precision	Channels
+8000 Hz	\(*m-law	8	1
+8000 Hz	A-law	8	1
+.TE
+.br
+.ps +1
+.vs +1
+.DT
+.IG
+.\" === end troff version ======
+.\" ====nroff version ==========
+.if t .ig IG
+.cs R 20
+.nf
+.ta 13n +13n +10n +10n
+.RS
+	Supported Audio Data Formats
+.sp
+.RS
+Sample Rate	Encoding	Precision	Channels
+.sp
+8000 Hz	u-law	8	1
+8000 Hz	A-law	8	1
+.cs R
+.RE
+.RE
+.fi
+.DT
+.IG
+.\" === end nroff version ======
+.LP
+Since
+.B audioamd
+supports only single-channel (monaural) audio,
+the
+.I play.balance
+and
+.I record.balance
+fields of the
+.B audio_info
+structure are ignored.
+.SS Audio Ports
+The
+.I record.avail_ports
+and
+.I play.avail_ports
+fields of the
+.B audio_info
+structure report the available input and output ports. The
+.B audioamd
+device supports one input port, selected by setting the
+.I record.port
+field to
+\s-1\fBAUDIO_MICROPHONE\fP\s0.
+The
+.I play.port
+field may be set to either
+.SB AUDIO_SPEAKER
+or
+\s-1\fBAUDIO_HEADPHONE\fP\s0,
+to direct audio output to the built-in speaker or headphone jack,
+respectively. Note that
+.SB AUDIO_SPEAKER
+cannot be enabled for systems that do not include a built-in speaker.
+.SS Sample Granularity
+Since the
+.B audioamd
+device manipulates single samples of audio data, the reported
+input and output sample counts will be very close to the actual
+sample count.  However, some other audio devices report sample
+counts that are approximate, due to buffering constraints.
+Programs should, in general, not rely on absolute accuracy
+of the sample count fields.
+.SH FILES
+.PD 0
+.TP
+.B /dev/audio
+.TP
+.B /dev/audioctl
+.TP
+.B /usr/demo/SOUND
+.PD
+.SH SEE ALSO
+.BR ioctl (2V),
+.BR audio (4),
+.BR streamio (4)
+.LP
+.SM AMD
+data sheet for the
+.SM AM79C30A
+Digital Subscriber Controller,
+Publication number 09893.
+.SH BUGS
+The
+.B audioamd
+device driver does not currently support the
+.I output_muted
+field of the
+.B audio_info
+structure.

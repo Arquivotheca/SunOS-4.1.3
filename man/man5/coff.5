@@ -1,0 +1,485 @@
+.\" @(#)coff.5 1.1 92/07/30 SMI; S5 via ECD
+.TH COFF 5 "19 February 1988"
+.SH NAME
+coff \- common assembler and link editor output
+.SH SYNOPSIS
+.nf
+.ft B
+#include <filehdr.h>
+#include <aouthdr.h>
+#include <scnhdr.h>
+#include <reloc.h>
+#include <linenum.h>
+#include <storclass.h>
+#include <syms.h>
+.ft R
+.fi
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "COFF file" "" "\s-1COFF\s0, Sun386i executable file format"
+.LP
+The output from
+the link editor and the assembler (named
+.B a.out
+by default) is in
+.SM COFF
+format (Common Object File Format) on the Sun386i system.
+.LP
+A common object file consists of a file header, a
+system header (if the file is link editor output),
+a table of section headers, a data section, relocation information,
+(optional) line numbers, a symbol table, and a string table.
+The general format looks like this:
+.LP
+.RS
+.nf
+.ft I
+file-header
+system-header
+section-headers
+data
+relocation
+line-numbers
+symbol-table
+string-table
+.ft
+.fi
+.RE
+.LP
+.I section-headers
+contains a number of section headers:
+.LP
+.RS
+.nf
+.ft I
+section 1 header
+\fR\&.\|.\|.\fP
+section n header
+.ft
+.fi
+.RE
+.LP
+Similarly,
+.IR data ,
+.IR relocation ,
+and
+.I line-numbers
+are each divided into
+.I n
+sections.
+.LP
+The last three parts of an object file (line numbers, symbol table and
+string table) may be missing if the program was linked with the
+.B \-s
+option of
+.BR ld (1)
+or if they were removed by
+.BR strip (1).
+Also note that
+the relocation information will be absent after linking unless the 
+.B \-r
+option of
+.BR ld (1)
+was used.
+The string table exists only if the symbol table contains symbols
+with names longer than eight characters.
+.LP
+The sizes of each section (contained in the header, discussed below)
+are in bytes.
+.LP
+When an
+.B a.out
+file is loaded into memory for execution, three logical segments are
+set up: the text segment, the data segment
+(initialized data followed by uninitialized, the latter actually being
+initialized to all 0's),
+and a stack.  The text segment starts at
+location 0x1000 by default.
+.\" On the \s-13B5\s+1 computer the text segment starts at location 0x80800000.
+.LP
+The
+.B a.out
+file produced by
+.BR ld (1)
+has the magic number 0413 in the first field of the
+system header.  The headers (file header,
+system header, and section headers) are loaded at the
+beginning of the text segment and the text immediately follows the
+headers in the user address space.  The first text address will
+equal 0x1000 plus the size of the headers, and will vary depending upon the
+number of section headers in the
+.B a.out
+file.  In an
+.B a.out
+file with three sections (.text, .data, .bss, and .comment), the first
+text address is at
+0x000010D0. The text segment is not writable by the program;
+if other processes are executing the same
+.B a.out
+file, the processes will share a single text segment.
+.LP
+The data segment starts at the next 4K boundary past the last 
+text address.  The first data address is determined by the following:
+If an
+.B a.out
+file were split into 4K chunks, one of the chunks would contain both
+the end of text and the beginning of data.
+When the
+.B a.out
+file is loaded into memory for execution, that chunk will appear twice; once at the end of text and
+once at the beginning of data (with some unused space in between).
+The duplicated chunk of text that appears at the beginning of data
+is never executed; it is duplicated so that the operating system may
+bring in pieces of the file in multiples of the page size without
+having to realign the beginning of the data section to a page
+boundary.
+Therefore the first data address is the sum of the next
+segment boundary past the end of text plus the remainder of the
+last text address divided by 4K.
+If the last text address is a multiple of 4K no duplication is necessary.
+.LP
+On the Sun386i computer the stack begins at
+location
+.SM 0xFBFFFFFF
+and grows toward lower addresses.
+The stack is automatically extended as required.
+The data segment is extended only as requested by the
+.BR brk (2)
+system call.
+.LP
+For relocatable files the value of a word in the text or data portions that is not
+a reference to an undefined external symbol
+is exactly the value that will appear in memory
+when the file is executed.
+If a word in the text 
+involves a reference to an undefined external symbol,
+there will be a relocation entry for the word,
+the storage class of the symbol-table entry for
+the symbol will be marked as an \*(lqexternal symbol\*(rq, 
+and the value and section number of the symbol-table entry will be
+undefined.
+When the file is processed by the
+link editor and the external symbol becomes
+defined, the value of the symbol will
+be added to the word in the file.
+.br
+.ne 12
+.SS File Header
+The format of the file header is:
+.LP
+.RS
+.ta \w'struct\ \ 'u +\w'unsigned'u +\w'\ short\ \ 'u +\w'f_symptr;\ \ 'u
+.nf
+.lg 0
+.ft B
+struct filehdr
+{
+	unsigned short	f_magic;	/\(** magic number \(**/
+	unsigned short	f_nscns;	/\(** number of sections \(**/
+	long		f_timdat;	/\(** time and date stamp \(**/
+	long		f_symptr;	/\(** file ptr to symtab \(**/
+	long		f_nsyms;	/\(** # symtab entries \(**/
+	unsigned short	f_opthdr;	/\(** sizeof(opt hdr) \(**/
+	unsigned short	f_flags;	/\(** flags \(**/
+};
+.fi
+.ft
+.RE
+.br
+.ne 15
+.SS System Header
+The format of the system header is:
+.LP
+.RS
+.nf
+.lg 0
+.ft B
+typedef struct aouthdr
+{
+	short	magic;		/\(** magic number \(**/
+	short	vstamp;		/\(** version stamp \(**/
+	long	tsize;		/\(** text size in bytes, padded \(**/
+	long	dsize;		/\(** initialized data (.data) \(**/
+	long	bsize;		/\(** uninitialized data (.bss) \(**/
+	long	entry;		/\(** entry point \(**/
+	long	text_start;	/\(** base of text used for this file \(**/
+	long	data_start;	/\(** base of data used for this file \(**/
+} \s-1AOUTHDR\s+1;
+.fi
+.ft
+.lg
+.B
+.RE
+.br
+.ne 14
+.SS Section Header
+The format of the section header is:
+.LP
+.RS
+.ta \w'struct\ \ 'u +\w'unsign'u +\w'ed\ short\ \ 'u +\w's_lnnoptr;\ \ 'u
+.nf
+.lg 0
+.ft B
+struct scnhdr
+{
+	char		s_name[\s-1SYMNMLEN\s+1];/\(** section name \(**/
+	long		s_paddr;	/\(** physical address \(**/
+	long		s_vaddr;	/\(** virtual address \(**/
+	long		s_size;		/\(** section size \(**/
+	long		s_scnptr;	/\(** file ptr to raw data \(**/
+	long		s_relptr;	/\(** file ptr to relocation \(**/
+	long		s_lnnoptr;	/\(** file ptr to line numbers \(**/
+	unsigned short	s_nreloc;	/\(** # reloc entries \(**/
+	unsigned short	s_nlnno;	/\(** # line number entries \(**/
+	long		s_flags;	/\(** flags \(**/
+};
+.fi
+.ft
+.lg
+.RE
+.br
+.ne 12v
+.SS Relocation
+Object files have one relocation entry for each relocatable
+reference in the text or data.
+If relocation information is present, it will be in the
+following format:
+.LP
+.RS
+.ta \w'#define\ \ 'u +\w'R_DIR32S\ \ 'u +\w'r_symndx;\ \ 'u
+.nf
+.lg 0
+.ft B
+struct reloc
+{
+	long	r_vaddr;	/\(** (virtual) address of reference \(**/
+	long	r_symndx;	/\(** index into symbol table \(**/
+	ushort	r_type;		/\(** relocation type \(**/
+};
+.if ''b16' \{\
+#define	R_ABS	0
+#define	R_DIR16	01
+#define	R_REL16	02
+#define	R_IND16	03\}
+.fi 
+.ft
+.DT
+.lg
+.RE
+.LP
+The start of the relocation information is
+.B s_relptr
+from the section
+header.
+If there is no relocation information,
+.B s_relptr
+is 0.
+.SS Line Number
+The 
+.BR cc (1V)
+command generates an entry in the object file for
+each C source line on which a breakpoint is possible (when
+invoked with the
+.BR \-g\f1
+option.
+Users can refer to line numbers when using
+the appropriate debugger, such as
+.BR dbx (1)).
+The structure of these line number entries appears below.
+.LP
+.RS
+.ta \w'struct\ \ 'u +\w'unsigne'u +\w'd\ short\ \ 'u
+.nf
+.lg 0
+.ft B
+struct	lineno
+{
+	union
+	{
+		long	l_symndx ;
+		long	l_paddr ;
+	}		l_addr ;
+	unsigned short	l_lnno ;
+} ;
+.fi
+.lg
+.ft
+.RE
+.LP
+Numbering starts with one at the top of the source file and increments
+independent of transition between functions.
+The initial line number entry for a function has
+.B l_lnno
+equal to zero, and the symbol table index of the function's
+entry is in
+.BR l_symndx .
+Otherwise,
+.B l_lnno
+is non-zero, and
+.B l_paddr
+is the physical address of the code for the referenced line.
+Thus the overall structure is the following:
+.sp
+.RS
+.ft B
+.ta \w'function\ symtab\ index\ \ \ \ 'u
+.nf
+.B l_addr	l_lnno
+.sp
+function symtab index	0
+physical address	line
+physical address	line
+\&.\|.\|.
+function symtab index	0
+physical address	line
+physical address	line
+\&.\|.\|.
+.fi
+.ft
+.sp
+.RE
+.DT
+.SS Symbol Table
+The format of each symbol in the symbol table is described by the 
+syment structure, shown below. This structure is compatible with 
+System V
+.SM COFF,
+but has an added
+.B _n_dbx
+structure which is needed by
+.BR dbx (1).
+.br
+.ne 27v
+.PP
+.RS
+.ta \w'#define\ \ 'u +\w'\s-1SYMNMLEN\s+1\ \ 'u +\w'n_numaux;\ \ 'u
+.nf
+.lg 0
+.ft B
+#define  \s-1SYMNMLEN\s+1	8
+#define  \s-1FILNMLEN\s+1	14
+#define  \s-1DIMNUM\s+1	4
+
+.ds H1 xxxxunsignedxshortxx
+.ds H2 xxxxunsignedxshortxx*_n_nptr[2];xx
+struct syment
+{
+    union\h'|\w'\*(H2'u'/\(** all ways to get a symbol name \(**/
+    {
+        char\h'|\w'\*(H1'u'_n_name[\s-1SYMNMLEN\s+1]; /\(** name of symbol \(**/
+        struct
+        {
+            long\h'|\w'\*(H1'u'_n_zeroes;\h'|\w'\*(H2'u'/\(** == 0L if in string table \(**/
+            long\h'|\w'\*(H1'u'_n_offset;\h'|\w'\*(H2'u'/\(** location in string table \(**/
+        } _n_n;
+        char\h'|\w'\*(H1'u'\(**_n_nptr[2];\h'|\w'\*(H2'u'/\(** allows overlaying \(**/
+        struct
+        {
+            char\h'|\w'\*(H1'u'_n_leading_zero;\h'|\w'\*(H2'u'/\(** null char \(**/
+            char\h'|\w'\*(H1'u'_n_dbx_type;\h'|\w'\*(H2'u'/\(** stab type \(**/
+            short\h'|\w'\*(H1'u'_n_dbx_desc;\h'|\w'\*(H2'u'/\(** value of desc field \(**/
+            long\h'|\w'\*(H1'u'_n_stab_ptr;\h'|\w'\*(H2'u'/\(** table ptr \(**/
+        } _n_dbx;
+    } _n;
+    long\h'|\w'\*(H1'u'n_value;\h'|\w'\*(H2'u'/\(** value of symbol \(**/
+    short\h'|\w'\*(H1'u'n_scnum;\h'|\w'\*(H2'u'/\(** section number \(**/
+    unsigned short\h'|\w'\*(H1'u'n_type;\h'|\w'\*(H2'u'/\(** type and derived type \(**/
+    char\h'|\w'\*(H1'u'n_sclass;\h'|\w'\*(H2'u'/\(** storage class \(**/
+    char\h'|\w'\*(H1'u'n_numaux;\h'|\w'\*(H2'u'/\(** number of aux entries \(**/
+};
+.sp
+#define  n_name	_n._n_name
+#define  n_zeroes	_n._n_n._n_zeroes
+#define  n_offset	_n._n_n._n_offset
+#define  n_nptr	_n._n_nptr[1]
+.fi
+.DT
+.lg
+.ft B
+.RE
+.LP
+The storage class member
+.RB ( n_sclass )
+is set to one of the constants defined in
+.BR <storclass.h> .
+Some symbols require more information than a single
+entry; they are followed by
+.I "auxiliary entries"
+that are the same size as a symbol entry.
+The format follows:
+.br
+.ne 38v
+.LP
+.RS
+.ft B
+.ta \w'struct\ 'u +\w'struct\ 'u +\w'unsigne'u +\w'd\ short\ \ 'u +\w'unsigne'u +\w'd\ short\ \ 'u
+.nf
+.lg 0
+union auxent {
+	struct {
+		long	x_tagndx;
+		union {
+			struct {
+				unsigned short	x_lnno;
+				unsigned short	x_size;
+			} x_lnsz;
+			long	x_fsize;
+		} x_misc;
+		union {
+			struct {
+				long	x_lnnoptr;
+				long	x_endndx;
+			}  x_fcn;
+			struct {
+				unsigned short	x_dimen[\s-1DIMNUM\s+1];
+			} x_ary;
+		} x_fcnary;
+		unsigned short  x_tvndx;
+	} x_sym;
+
+	struct {
+		char	x_fname[\s-1FILNMLEN\s+1];
+	} x_file;
+
+	struct {
+		long	    x_scnlen;	  
+		unsigned short  x_nreloc;  
+		unsigned short  x_nlinno;  
+	} x_scn;
+
+	struct {
+		long		x_tvfill;
+		unsigned short	x_tvlen;
+		unsigned short	x_tvran[2];
+	} x_tv;
+};
+.fi
+.DT
+.lg
+.ft
+.RE
+.LP
+Indexes of symbol table entries begin at
+.IR zero .
+The start of the symbol table is
+.B f_symptr
+(from the file header)
+bytes from the beginning of the file.
+If the symbol table is stripped,
+.B f_symptr
+is 0.
+The string table (if one exists) begins at
+.B f_symptr
++
+.RB ( f_nsyms
+\(** \s-1SYMESZ\s+1)
+bytes from the beginning of the file.
+.SH SEE ALSO
+.BR as (1),
+.BR cc (1V), 
+.BR ld (1), 
+.BR brk( 2),
+.BR ldfcn (3)

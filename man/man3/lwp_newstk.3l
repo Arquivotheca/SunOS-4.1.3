@@ -1,0 +1,296 @@
+.\" @(#)lwp_newstk.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH LWP_NEWSTK 3L "21 January 1990"
+.SH NAME
+lwp_checkstkset, lwp_stkcswset, CHECK, lwp_setstkcache, lwp_newstk, lwp_datastk, STKTOP \- LWP stack management
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <lwp/lwp.h>
+#include <lwp/check.h>
+#include <lwp/lwpmachdep.h>
+#include <lwp/stackdep.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+\s-1CHECK\s0(location, result)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_checkstkset(tid, limit)
+thread_t tid;
+caddr_t limit;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_stkcswset(tid, limit)
+thread_t tid;
+caddr_t limit;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_setstkcache(minstksz, numstks)
+int minstksz;
+int numstks;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+stkalign_t *lwp_newstk(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+stkalign_t *lwp_datastk(data, size, addr)
+caddr_t data;
+int size;
+caddr_t *addr;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+\s-1STKTOP\s0(s)
+.ft
+.fi
+.SH DESCRIPTION
+.IX "lwp_checkstkset()" "" "\fLlwp_checkstkset()\fP function"
+.IX "lwp_stkcswset()" "" "\fLlwp_stkcswset()\fP function"
+.IX "lwp_setstkcache()" "" "\fLlwp_setstkcache()\fP function"
+.IX "lwp_datastk()" "" "\fLlwp_datastk()\fP function"
+.IX "lwp_newstk()" "" "\fLlwp_newstk()\fP function"
+.IX "CHECK()" "" "\fLCHECK()\fP function"
+.IX "MINSTACKSZ()" "" "\fLMINSTACKSZ()\fP function"
+.IX "STKTOP()" "" "\fLSTKTOP()\fP function"
+.LP
+Stacks are problematical with lightweight processes.
+What is desired is that stacks for each thread are red-zone protected
+so that one thread's stack does not
+unexpectedly grow into the stack of another.
+In addition, stacks should be of infinite length, grown as needed.
+The process stack is a maximum-sized segment (see
+.BR getrlimit (2).)
+This stack is redzone protected, and you can even try to extend it beyond
+its initial maximum size in some cases.
+With SunOS
+.RI 4. x ,
+it is possible to efficiently allocate large stacks that
+have red zone protection, and the
+.SM LWP
+library provides some support for this.
+For those systems that do not have flexible memory management,
+the
+.SM LWP
+library provides assistance in dealing with the problems
+of maintaining multiple stacks.
+.LP
+The stack used by
+.B main(\|)
+is the same stack that
+the system allocates for a
+process on
+.BR fork (2V).
+For allocating other thread stacks,
+the client is free to use any statically or dynamically
+allocated memory (using memory from
+.BR main(\|) 's
+stack is subject to the stack resource limit for any
+process created by
+.BR fork(\|) ).
+In addition, the
+.SB LASTRITES
+agent message is available to free allocated resources
+when a thread dies.
+The size of any stack should be at least
+.BR "\s-1MINSTACKSZ\s0 * sizeof (stkalign_t)" ,
+because the
+.SM LWP
+library will use the client stack to execute primitives.
+For very fast dynamically allocated stacks,
+a stack cacheing mechanism is available.
+.B lwp_setstkcache(\|)
+allocates a cache of stacks.
+Each time the cache is empty, it is filled with
+.I numstks
+new stacks, each containing at least
+.I minstksz
+bytes.
+.I minstksz
+will automatically be augmented to take into account
+the stack needs of the
+.SM LWP
+library.
+.B lwp_newstk(\|)
+returns a cached stack that is suitable for use in an
+.B lwp_create(\|)
+call.
+.B lwp_setstkcache(\|)
+must be called (once) prior to any use of
+.BR lwp_newstk .
+If running under SunOS
+.RI 4. x ,
+the stacks allocated by
+.B lwp_newstk(\|)
+will be red-zone protected
+(an attempt to reference below the stack bottom will result in a
+.SB SIGSEGV
+event).
+.LP
+Threads created with stacks from
+.B lwp_newstk(\|)
+should not use the
+.SB NOLASTRITES
+flag.
+If they do, cached stacks will not be returned to the cache
+when a thread dies.
+.LP
+.B lwp_datastk(\|)
+also returns a red-zone protected stack like
+.B lwp_newstk(\|)
+does.
+It copies any amount of data (subject to the size limitations
+imposed by
+.BR lwp_setstkcache )
+onto the stack \fIabove\fP the stack top that it returns.
+.I data
+points to information of
+.I size
+bytes to be copied.
+The exact location where the data is stored is returned
+in the reference parameter
+.IR addr .
+Because
+.B lwp_create(\|)
+only passes simple types to the newly-created thread,
+.B lwp_datastk(\|)
+is useful to pass a more complex argument:
+Call
+.B lwp_datastk(\|)
+to get an initialized stack, and pass the address of the
+data structure
+.RI ( addr )
+as an argument to the new thread.
+.LP
+A
+.I reaper
+thread running at the maximum pod priority is
+created by
+.BR lwp_setstkcache .
+It's action may be delayed by other threads running at that priority,
+so it is suggested that the maximum pod priority not be used for
+client-created threads when
+.B lwp_newstk(\|)
+is being used.
+Altering the maximum pod priority with
+.B pod_setmaxpri(\|)
+will have the side effect of increasing the reaper thread priority as well.
+.LP
+The stack address passed to
+.B lwp_create(\|)
+represents the
+top of the stack: the
+.SM LWP
+library will not use any addresses at or above it.
+Thus, it is safe to store information above the stack top if there
+is room there.
+.LP
+For stacks that are not protected with hardware redzones, some protection
+is still possible.
+For any thread
+.I tid
+with stack boundary
+.I limit
+made part of a special context with
+.BR lwp_checkstkset(\|) ,
+the
+.SB CHECK
+macro may be used.
+This macro, if used at the beginning of each procedure (and before
+local storage is initialized (it is all right to
+.I declare
+locals though)), will
+check that the stack limit has not been violated.
+If it has, the non-local
+.I location
+will be set to
+.I result
+and the procedure will return.
+.SB CHECK
+is not perfect, as it is possible to call a
+procedure with many arguments after
+.SB CHECK
+validates the stack,
+only to have these arguments clobber the stack before the
+new procedure is entered.
+.LP
+.B lwp_stkcswset(\|)
+checks at context-switch time
+the stack belonging to
+thread
+.I tid
+for passing stack boundary
+.IR limit .
+In addition, a checksum at the bottom of the stack is validated to ensure
+that the stack did not temporarily grow beyond its limit.
+This is automated and more efficient than using
+.BR \s-1CHECK\s0 ,
+but by the time a context switch occurs,
+it's too late to do much but
+.BR abort (3)
+if the stack was clobbered.
+.LP
+To portably use statically allocated stacks, the macros in
+.B <lwp/stackdep.h>
+should be used.  Declare a stack
+.I s
+to be an array of
+.BR stkalign_t ,
+and pass the stack to
+.B lwp_create(\|)
+as
+.BR \s-1STKTOP\s0 (s).
+.SH RETURN VALUES
+.LP
+.B lwp_checkstkset(\|)
+and
+.B lwp_stkcswset(\|)
+return 0.
+.LP
+.B lwp_setstkcache(\|)
+returns the actual
+size of the stacks allocated in the cache.
+.LP
+.B lwp_newstk(\|)
+and
+.B lwp_datastk(\|)
+return
+a valid new stack address
+on success.
+On failure,
+they return
+0.
+.SH SEE ALSO
+.BR getrlimit (2),
+.BR abort (3)
+.SH WARNINGS
+.LP
+.B lwp_datastk(\|)
+should not be directly used in a
+.B lwp_create(\|)
+call since C does not guarantee the order in which arguments to a function
+are evaluated.
+.SH BUGS
+.LP
+C should provide support for heap-allocated stacks at procedure entry time.
+The hardware should be segment-based to eliminate the problem altogether.

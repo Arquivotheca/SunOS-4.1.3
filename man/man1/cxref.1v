@@ -1,0 +1,141 @@
+.\"	@(#)cxref.1v 1.1 92/07/30 SMI; from S5R2 6.2 9/2/83
+.TH CXREF 1V "16 September 1989"
+.SH NAME
+cxref \- generate a C program cross-reference
+.SH SYNOPSIS
+.B cxref
+[
+.B \-c
+]
+[
+.B \-w
+[
+.I num
+] ]
+[
+.B \-o
+.I filename
+]
+[
+.B \-t
+]
+.I filenames
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/cxref
+[
+.B \-c
+]
+[
+.B \-w
+[
+.I num
+] ]
+[
+.B \-o
+.I filename
+]
+[
+.B \-t
+]
+.I filenames
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "cxref command"  ""  "\fLcxref\fP \(em cross reference C program"
+.IX  "cross reference C program"  ""  "cross reference C program \(em \fLcxref\fP"
+.IX  "programming languages"  cxref  ""  "\fLcxref\fP \(em cross reference C program"
+.IX  "C programming language"  cxref  ""  "\fLcxref\fP \(em cross reference C program"
+.IX  languages  cxref  ""  "\fLcxref\fP \(em cross reference C program"
+.LP
+.B cxref
+analyzes a collection of C files
+and attempts to build a cross-reference table.
+.B cxref
+utilizes a special option of
+.BR cpp (1)
+to include
+.BR #define 'd
+information in its symbol table.
+It produces a listing on standard output
+of all symbols (auto, static,
+and global) in each file separately, or with the
+.B \-c
+option, in combination.
+Each symbol 
+contains an asterisk
+.B (\(**)
+before the declaring reference.
+.SH SYSTEM V DESCRIPTION
+The System V version of
+.BR cxref ,
+run as
+.BR /usr/5bin/cxref ,
+makes the 
+.B C 
+preprocessor search for include files in
+.B /usr/5include
+before searching for them in
+.BR /usr/include .
+.SH OPTIONS
+In addition to the
+.BR \-D ,
+.B \-I
+and
+.B \-U
+options (which are identical to their interpretation by
+.BR cc (1V)),
+the following options are interpreted by
+.BR cxref :
+.TP  "\w'-w [ num ]\ \ \ \ \ \ 'u"
+.B \-c
+Print a combined cross-reference of all input files.
+.TP
+\fB\-w\fR[\fI num \fR]
+Width option which formats output no wider than
+.I num
+(decimal) columns.
+This option will default to 80 if
+.I num
+is not specified or is less than 51.
+.TP
+.BI \-o " filename"
+Direct output to named
+.IR file .
+.TP
+.B \-s
+Operate silently; does not print input file names.
+.TP
+.BR \-t
+Format listing for 80-column width.
+.SH FILES
+.TP
+.B /usr/tmp/xr*
+temporary files
+.SH SEE ALSO
+.BR cc (1V),
+.BR cpp (1)
+.SH DIAGNOSTICS
+Error messages are unusually cryptic, but usually mean
+that you cannot compile these files, anyway.
+.SH NOTES
+While the compiler allows 8-bit strings and comments,
+8-bits are not allowed anywhere else.
+See
+.BR cc (1V)
+for an explanation about why
+.B cc
+is not 8-bit clean.
+.SH BUGS
+.B cxref
+considers a formal argument in a
+.BR #define
+macro definition to be a declaration of that symbol. For example,
+a program that
+.BR #include s
+.BR ctype.\|h ,
+will contain many declarations of the variable
+.BR c .

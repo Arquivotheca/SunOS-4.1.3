@@ -1,0 +1,74 @@
+.\" @(#)listen.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH LISTEN 2 "21 January 1990"
+.SH NAME
+listen \- listen for connections on a socket
+.SH SYNOPSIS
+.nf
+.ft B
+int listen(s, backlog)
+int s, backlog;
+.ft
+.fi
+.IX  listen()  ""  \fLlisten()\fP
+.IX  "socket operations"  listen()  ""  \fLlisten()\fP
+.IX  "interprocess communication"  listen()  ""  \fLlisten()\fP
+.IX  connection "listen for on socket \(em \fLlisten()\fR"
+.SH DESCRIPTION
+.LP
+To accept connections, a socket
+is first created with
+.BR socket (2),
+a backlog for incoming connections is specified with
+.B listen(\|)
+and then the connections are
+accepted with
+.BR accept (2).
+The
+.B listen(\|)
+call applies only to sockets of type
+.SB SOCK_STREAM
+or
+.SB SOCK_SEQPACKET\s0\fR.
+.LP
+The
+.I backlog
+parameter defines the maximum length the queue of
+pending connections may grow to.
+If a connection
+request arrives with the queue full the client will
+receive an error with an indication of
+\s-1ECONNREFUSED\s0.
+.SH RETURN VALUES
+.LP
+.B listen(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EBADF
+.I s
+is not a valid descriptor.
+.TP
+.SM ENOTSOCK
+.I s
+is not a socket.
+.TP
+.SM EOPNOTSUPP
+The socket is not of a type that supports
+.BR listen(\|) .
+.SH "SEE ALSO"
+.BR accept (2),
+.BR connect (2),
+.BR socket (2)
+.SH BUGS
+.LP
+The
+.I backlog
+is currently limited (silently) to 5.

@@ -1,0 +1,773 @@
+.\" @(#)ttcompat.4m 1.1 92/07/30 SMI;
+.TH TTCOMPAT 4M "16 February 1988"
+.SH NAME
+ttcompat \- V7 and 4BSD STREAMS compatibility module
+.SH CONFIG
+None; included by default.
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/stream.h>
+#include <sys/stropts.h>
+.LP
+.ft B
+ioctl(fd, \s-1I_PUSH\s0, "ttcompat");
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "ttcompat module" "" "\fLttcompat\fP \s-1STREAMS\s0 module"
+.IX STREAMS ttcompat "\s-1STREAMS\s0" "\fLttcompat\fP, V7, BSD compatibility module"
+.LP
+.B ttcompat
+is a
+.SM STREAMS
+module that translates the
+.B ioctl 
+calls
+supported by the older Version 7 and 4\s-1BSD\s0
+terminal drivers into the
+.B ioctl 
+calls
+supported by the
+.BR termio (4)
+interface.  All other messages pass through this module unchanged;
+the behavior of
+.B read
+and
+.B write
+calls is unchanged, as is the behavior of
+.B ioctl
+calls other than the ones supported by
+.BR ttcompat .
+.LP
+Normally, this module is automatically pushed onto a stream when a
+terminal device is opened; it does not have to be explicitly pushed
+onto a stream.  This module requires that the
+.B termio
+interface be supported by the modules and driver downstream.  The
+.BR \s-1TCGETS\s0 ,
+.BR \s-1TCSETS\s0 ,
+and
+.SB TCSETSF
+.B ioctl 
+calls
+must be supported; if any information set or fetched by those
+.B ioctl 
+calls
+is not supported by the modules and driver downstream,
+some of the V7/4\s-1BSD\s0 functions may not be supported.
+For example, if the
+.SB CBAUD
+bits in the
+.B c_cflag
+field are not supported, the functions provided by the
+.B sg_ispeed
+and
+.B sg_ospeed
+fields of the
+.B sgttyb
+structure (see below) will not be supported.
+If the
+.SB TCFLSH
+.B ioctl
+is not supported, the function provided by the
+.SB TIOCFLUSH
+.B ioctl
+will not be supported.
+If the
+.SB TCXONC
+.B ioctl
+is not supported, the functions provided by the
+.SB TIOCSTOP
+and
+.SB TIOCSTART
+.B ioctl 
+calls
+will not be supported.
+If the
+.SB TIOCMBIS
+and
+.SB TIOCMBIC
+.B ioctl 
+calls
+are not supported, the functions provided by the
+.SB TIOCSDTR
+and
+.SB TIOCCDTR
+.B ioctl 
+calls
+will not be supported.
+.LP
+The basic
+.B ioctl 
+calls
+use the
+.B sgttyb
+structure defined by
+.BR <sys/ioctl.h> :
+.RS
+.nf
+.ft B
+.ta .5i 1i
+struct sgttyb {
+	char	sg_ispeed;
+	char	sg_ospeed;
+	char	sg_erase;
+	char	sg_kill;
+	short	sg_flags;
+};
+.ft R
+.fi
+.RE
+.LP
+The
+.B sg_ispeed 
+and 
+.B sg_ospeed
+fields describe the input and output speeds of the
+device, and reflect the values in the
+.B c_cflag
+field of the
+.B termio
+structure.
+The
+.B sg_erase
+and
+.B sg_kill
+fields of the argument structure
+specify the erase and kill characters respectively, and reflect the
+values in the
+.SB VERASE
+and
+.SB VKILL
+members of the
+.B c_cc
+field of the
+.B termio
+structure.
+.LP
+The
+.B sg_flags
+field of the argument structure
+contains several flags that determine the
+system's treatment of the terminal.  They are mapped into flags in
+fields of the terminal state, represented by the
+.B termio
+structure.
+.LP
+Delay type 0 is always mapped into the equivalent delay type 0 in the
+.B c_oflag
+field of the
+.B termio
+structure.  Other delay mappings are performed as follows:
+.RS
+.TP 12
+.B sg_flags
+.B c_oflag
+.sp .5
+.PD 0
+.TP 12
+.SB BS1
+.SB BS1
+.TP
+.SB FF1
+.SB VT1
+.TP
+.SB CR1
+.SB CR2
+.TP
+.SB CR2
+.SB CR3
+.TP
+.SB CR3
+not supported
+.TP
+.SB TAB1
+.SB TAB1
+.TP
+.SB TAB2
+.SB TAB2
+.TP
+.SB XTABS
+.SB TAB3
+.TP
+.SB NL1
+.SB ONLRET|CR1
+.TP
+.SB NL2
+.SB NL1
+.RE
+.PD
+.LP
+If previous
+.SB TIOCLSET
+or
+.SB TIOCLBIS
+.B ioctl 
+calls
+have not selected
+.SB LITOUT
+or
+.SB PASS8
+mode, and if
+.SB RAW
+mode is not selected, the
+.SB ISTRIP
+flag is set in the
+.B c_iflag
+field of the
+.B termio
+structure, and the
+.SB EVENP
+and
+.SB ODDP
+flags control the parity of characters sent to the terminal and
+accepted from the terminal:
+.TP 12
+.SB 0
+Parity is not to be generated on output or checked on input; 
+the character size is set to
+.B CS8
+and the
+.SB PARENB
+flag is cleared in the
+.B c_cflag
+field of the
+.B termio
+structure.
+.TP
+.SB EVENP
+Even parity characters are to be generated on output and accepted on
+input; the
+.SB INPCK
+flag is set in the
+.B c_iflag
+field of the
+.B termio
+structure, the character size is set to
+.B CS7
+and the
+.SB PARENB
+flag is set in the
+.B c_cflag
+field of the
+.B termio
+structure.
+.TP
+.SB ODDP
+Odd parity characters are to be generated on output and accepted on
+input; the
+.SB INPCK
+flag is set in the
+.B c_iflag
+field, the character size is set to
+.B CS7
+and the
+.SB PARENB
+and
+.SB PARODD
+flags are set in the
+.B c_cflag
+field of the
+.B termio
+structure.
+.TP
+.SB EVENP\||\|ODDP
+Even parity characters are to be generated on output
+and characters of either parity are to be accepted on input; the
+.SB INPCK
+flag is cleared in the
+.B c_iflag
+field, the character size is set to
+.B CS7
+and the
+.SB PARENB
+flag is set in the
+.B c_cflag
+field of the
+.B termio
+structure.
+.LP
+The
+.SB RAW
+flag disables all output processing (the
+.SB OPOST
+flag in the
+.B c_oflag
+field, and the
+.SB XCASE
+flag in the
+.B c_lflag
+field, are cleared in the
+.B termio
+structure) and input processing (all flags in the
+.B c_iflag
+field other than the
+.SB IXOFF
+and
+.SB IXANY
+flags are cleared in the
+.B termio
+structure).
+8 bits of data, with no parity bit,
+are accepted on input and generated on output; the character size is
+set to
+.B CS8
+and the
+.SB PARENB
+and
+.SB PARODD
+flags are cleared in the
+.B c_cflag
+field of the
+.B termio
+structure.
+The signal-generating and line-editing control characters are
+disabled by clearing the
+.SB ISIG
+and
+.SB ICANON
+flags in the
+.B c_lflag
+field of the
+.B termio
+structure.
+.LP
+The
+.SB CRMOD
+flag turn input
+.SM RETURN
+characters into
+.SM NEWLINE
+characters, and output and echoed
+.SM NEWLINE
+characters to be output as a
+.SM RETURN
+followed by a
+.SM LINEFEED\s0.
+The
+.SB ICRNL
+flag in the
+.B c_iflag
+field, and the
+.SB OPOST
+and
+.SB ONLCR
+flags in the
+.B c_oflag
+field, are set in the
+.B termio
+structure.
+.LP
+The
+.SB LCASE
+flag maps upper-case letters in the
+.SM ASCII
+character set to their lower-case equivalents on input (the
+.SB IUCLC
+flag is set in the
+.B c_iflag
+field), and maps lower-case letters in the
+.SM ASCII
+character set to their upper-case equivalents on output (the
+.SB OLCUC
+flag is set in the
+.B c_oflag
+field).  Escape sequences are accepted on input, and generated on
+output, to handle certain
+.SM ASCII
+characters not supported by older terminals (the
+.SB XCASE
+flag is set in the
+.B c_lflag
+field).
+.LP
+Other flags are directly mapped to flags in the
+.B termio
+structure:
+.RS
+.TP 12
+.B sg_flags
+flags in
+.B termio
+structure
+.sp .5
+.PD 0
+.TP
+.SB CBREAK
+complement of
+.SB ICANON
+in
+.B c_lflag
+field
+.TP
+.SB ECHO
+.SB ECHO
+in
+.B c_lflag
+field
+.TP
+.SB TANDEM
+.SB IXOFF
+in
+.B c_iflag
+field
+.RE
+.PD
+.LP
+Another structure associated with each terminal specifies
+characters that are special in both the old Version 7
+and the newer 4\s-1BSD\s0 terminal interfaces.
+The following structure is defined by
+.BR <sys/ioctl.h> :
+.RS
+.nf
+.ft B
+.ta .5i 1i 2i 
+struct tchars {
+	char	t_intrc;	/* interrupt */
+	char	t_quitc;	/* quit */
+	char	t_startc;	/* start output */
+	char	t_stopc;	/* stop output */
+	char	t_eofc;		/* end-of-file */
+	char	t_brkc;		/* input delimiter (like nl) */
+};
+.DT
+.fi
+.ft R
+.RE
+.LP
+The characters are mapped to members of the
+.B c_cc
+field of the
+.B termio
+structure as follows:
+.RS
+.TP 12
+.B tchars
+.B c_cc
+index
+.sp .5
+.PD 0
+.TP
+.B t_intrc
+.SB VINTR
+.TP
+.B t_quitc
+.SB VQUIT
+.TP
+.B t_startc
+.SB VSTART
+.TP
+.B t_stopc
+.SB VSTOP
+.TP
+.B t_eofc
+.SB VEOF
+.TP
+.B t_brkc
+.SB VEOL
+.RE
+.PD
+.LP
+Also associated with each terminal is a local flag
+word, specifying flags supported by the new 4\s-1BSD\s0
+terminal interface.
+Most of these flags are directly mapped to flags in the
+.B termio
+structure:
+.RS
+.TP 12
+local flags
+flags in
+.B termio
+structure
+.sp .5
+.PD 0
+.TP
+.SB LCRTBS
+not supported
+.TP
+.SB LPRTERA
+.SB ECHOPRT
+in the
+.B c_lflag
+field
+.TP
+.SB LCRTERA
+.SB ECHOE
+in the
+.B c_lflag
+field
+.TP
+.SB LTILDE
+not supported
+.TP
+.SB LTOSTOP
+.SB TOSTOP
+in the
+.B c_lflag
+field
+.TP
+.SB LFLUSHO
+.SB FLUSHO
+in the
+.B c_lflag
+field
+.TP
+.SB LNOHANG
+.SB CLOCAL
+in the
+.B c_cflag
+field
+.TP
+.SB LCRTKIL
+.SB ECHOKE
+in the
+.B c_lflag
+field
+.TP
+.SB LCTLECH
+.SB CTLECH
+in the
+.B c_lflag
+field
+.TP
+.SB LPENDIN
+.SB PENDIN
+in the
+.B c_lflag
+field
+.TP
+.SB LDECCTQ
+complement of
+.SB IXANY
+in the
+.B c_iflag
+field
+.TP
+.SB LNOFLSH
+.SB NOFLSH
+in the
+.B c_lflag
+field
+.RE
+.PD
+.LP
+Another structure associated with each terminal is the
+.B ltchars
+structure which defines control characters
+for the new 4\s-1BSD\s0 terminal interface.
+Its structure is:
+.RS
+.nf
+.ta .5i 1i 2i
+.ft B
+struct ltchars {
+	char	t_suspc;	/* stop process signal */
+	char	t_dsuspc;	/* delayed stop process signal */
+	char	t_rprntc;	/* reprint line */
+	char	t_flushc;	/* flush output (toggles) */
+	char	t_werasc;	/* word erase */
+	char	t_lnextc;	/* literal next character */
+};
+.ft R
+.fi
+.RE
+.LP
+The characters are mapped to members of the
+.B c_cc
+field of the
+.B termio
+structure as follows:
+.RS
+.TP 12
+.B ltchars
+.B c_cc
+index
+.sp .5
+.PD 0
+.TP
+.B t_suspc
+.SB VSUSP
+.TP
+.B t_dsuspc
+.SB VDSUSP
+.TP
+.B t_rprntc
+.SB VREPRINT
+.TP
+.B t_flushc
+.SB VDISCARD
+.TP
+.B t_werasc
+.SB VWERASE
+.TP
+.B t_lnextc
+.SB VLNEXT
+.RE
+.PD
+.SH IOCTLS
+.LP
+.B ttcompat
+responds to the following
+.B ioctl
+calls.
+All others are passed to the module below.
+.TP 12
+.SB TIOCGETP
+The argument is a pointer to an
+.B sgttyb
+structure.  The current terminal state is fetched; the appropriate
+characters in the terminal state are stored in that structure, as are
+the input and output speeds.  The values of the flags in the
+.B sg_flags
+field are derived from the flags in the terminal state and stored in
+the structure.
+.br
+.ne 5
+.TP
+.SB TIOCSETP
+The argument is a pointer to an
+.B sgttyb
+structure.  The appropriate characters and input and output speeds
+in the terminal state are set from the values in that structure, and
+the flags in the terminal state are set to match the values of the
+flags in the
+.B sg_flags
+field of that structure.  The state is changed with a
+.SB TCSETSF
+.IR ioctl ,
+so that the interface delays until output is quiescent,
+then throws away any unread characters, before changing the modes.
+.TP
+.SB TIOCSETN
+The argument is a pointer to an
+.B sgttyb
+structure.  The terminal state is changed as
+.SB TIOCSETP
+would change it, but a
+.SB TCSETS
+.B ioctl
+is used, so that the interface neither delays nor discards input.
+.TP
+.SB TIOCHPCL
+The argument is ignored.  The
+.SB HUPCL
+flag is set in the
+.B c_cflag
+word of the terminal state.
+.TP
+.SB TIOCFLUSH
+The argument is a pointer to an
+.B int
+variable.
+If its value is zero, all characters waiting in input or output queues are
+flushed.
+Otherwise, the value of the
+.B int
+is treated as the logical
+.SM OR
+of the
+.SB FREAD
+and
+.SB FWRITE
+flags defined by
+.BR <sys/file.h> ;
+if the
+.SB FREAD
+bit is set, all characters waiting in input queues are flushed,
+and if the
+.SB FWRITE
+bit is set, all characters waiting in output queues are flushed.
+.TP
+.SB TIOCSBRK
+The argument is ignored.  The break bit is set for the device.
+.TP
+.SB TIOCCBRK
+The argument is ignored.  The break bit is cleared for the device.
+.TP
+.SB TIOCSDTR 
+The argument is ignored.  The Data Terminal Ready bit is set for the device.
+.TP
+.SB TIOCCDTR
+The argument is ignored.  The Data Terminal Ready bit is cleared for
+the device.
+.TP
+.SB TIOCSTOP
+The argument is ignored.
+Output is stopped as if the
+.SB STOP
+character had been typed.
+.TP
+.SB TIOCSTART
+The argument is ignored.
+Output is restarted as if the
+.SB START
+character had been typed.
+.TP
+.SB TIOCGETC
+The argument is a pointer to an
+.B tchars
+structure.  The current terminal state is fetched, and the appropriate
+characters in the terminal state are stored in that structure.
+.TP
+.SB TIOCSETC
+The argument is a pointer to an
+.B tchars
+structure.  The values of the appropriate characters in the terminal
+state are set from the characters in that structure.
+.TP
+.SB TIOCLGET
+The argument is a pointer to an
+.BR int .
+The current terminal state is fetched,
+and the values of the local flags are derived from the flags in
+the terminal state and stored in the
+.B int
+pointed to by the argument.
+.TP
+.SB TIOCLBIS
+The argument is a pointer to an
+.B int
+whose value is a mask containing flags to be set in the local flags
+word.  The current terminal state is fetched,
+and the values of the local flags are derived from the flags in
+the terminal state; the specified flags are set, and the flags in the
+terminal state are set to match the new value of the local flags
+word.
+.TP
+.SB TIOCLBIC
+The argument is a pointer to an
+.B int
+whose value is a mask containing flags to be cleared in the local flags
+word.  The current terminal state is fetched,
+and the values of the local flags are derived from the flags in
+the terminal state; the specified flags are cleared, and the flags in the
+terminal state are set to match the new value of the local flags
+word.
+.TP
+.SB TIOCLSET
+The argument is a pointer to an
+.B int
+containing a new set of local flags.
+The flags in the terminal state are set to match the new value of the
+local flags word.
+.TP
+.SB TIOCGLTC
+The argument is a pointer to an
+.B ltchars
+structure.  The values of the appropriate characters in the terminal
+state are stored in that structure.
+.br
+.ne 3
+.TP
+.SB TIOCSLTC
+The argument is a pointer to an
+.B ltchars
+structure.  The values of the appropriate characters in the terminal state
+are set from the characters in that structure.
+.SH SEE ALSO
+.BR ioctl (2),
+.BR termio (4)

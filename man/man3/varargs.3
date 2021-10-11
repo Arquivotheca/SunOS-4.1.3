@@ -1,0 +1,189 @@
+.\" @(#)varargs.3 1.1 92/07/30 SMI; from UCB 4.2 and S5
+.TH VARARGS 3  "19 December 1988"
+.SH NAME
+varargs \- handle variable argument list
+.SH SYNOPSIS
+.B #include <varargs.h>
+.LP
+.B function(va_alist) va_dcl
+.LP
+.B va_list pvar;
+.LP
+.B va_start(pvar);
+.LP
+.B f = va_arg(pvar, type);
+.LP
+.B va_end(pvar);
+.IX  "varargs()"  ""  "\fLvarargs()\fP \(em variable argument list"
+.IX  "va_start()"  ""  "\fLva_start()\fP \(em initialize varargs"
+.IX  "va_arg()"  ""  "\fLva_arg()\fP \(em next argument in variable list"
+.IX  "va_end()"  ""  "\fLva_end()\fP \(em finish variable argument list"
+.IX  "va_dcl()"  ""  "\fLva_dcl()\fP \(em variable argument declarations"
+.IX  "va_list()"  ""  "\fLva_list()\fP \(em variable argument declarations"
+.IX  "variable argument list, \(em \fLvarargs()\fR"
+.IX  "argument lists, varying length \(em \fLvarargs()\fR"
+.SH DESCRIPTION
+.LP
+This set of macros provides a means of writing
+portable procedures that
+accept variable argument lists.
+Routines having variable argument lists (such as
+.BR printf (3V))
+but do not use
+.B varargs(\|)
+are inherently nonportable, since different
+machines use different argument passing conventions.
+Routines with variable arguments lists
+.I must
+use
+.B varargs(\|)
+functions in order to run correctly on
+Sun-4 systems.
+.LP
+.B va_alist(\|)
+is used in a function header to declare a variable argument list.
+.LP
+.B va_dcl(\|)
+is a declaration for
+.BR va_alist(\|) .
+No semicolon should follow
+.BR va_dcl(\|) .
+.LP
+.B va_list(\|)
+is a type defined for the variable
+used to traverse the list.
+One such variable must always be declared.
+.LP
+.B va_start\c
+.RI ( pvar )
+is called to initialize
+.I pvar
+to the beginning of the list.
+.LP
+.B va_arg\c
+.RI ( pvar ,
+.IR type )
+will return the next argument in the list pointed to by
+.IR pvar .
+The parameter
+.I type
+is a type name such that the type of a pointer
+to an object that has the specified type can be
+obtained simply by appending a
+.B \(**
+to
+.IR type .
+If
+.I type
+disagrees with the type of the actual next argument
+(as promoted according to the default argument
+promotions), the behavior is undefined.
+.LP
+In standard C, arguments that are
+.B char
+or
+.B short
+are converted to
+.B int
+and should be accessed as
+.BR int ,
+arguments that are
+.B unsigned char
+or
+.B unsigned short
+are converted to
+.B unsigned int
+and should be accessed as
+.BR "unsigned int" ,
+and arguments that are
+.B float
+are converted to
+.B double
+and should be accessed as
+.BR double .
+Different types can be mixed, but it is up
+to the routine to know what type of argument is
+expected, since it cannot be determined at runtime.
+.LP
+.B va_end\c
+.RI ( pvar )
+is used to finish up.
+.LP
+Multiple traversals, each bracketed by
+.B va_start(\|)
+\&.\|.\|.
+.BR va_end(\|) ,
+are possible.
+.LP
+.B va_alist(\|)
+must encompass the entire arguments list.
+This insures that a
+.B #define
+statement can be used to redefine or expand its value.
+.LP
+The argument list (or its remainder)
+can be passed to another
+function using a pointer to a variable of type
+.B va_list(\|)
+\(em in which case a call to
+.B va_arg(\|)
+in the subroutine advances the argument-list pointer with
+respect to the caller as well.
+.br
+.if t .ne 20
+.SH EXAMPLE
+This example is a possible implementation of
+.BR execl (3V).
+.RS
+.nf
+.ft B
+#include <varargs.h>
+#define \s-1MAXARGS\s0	100
+.sp .5
+/\(**	execl is called by
+\(**	execl(file, arg1, arg2, .\|.\|., (char \(**)0);
+\(**/
+execl (va_alist)
+va_dcl
+{
+	va_list ap;
+	char \(**file;
+	char \(**args[\s-1MAXARGS\s0];
+	int argno = 0;
+.sp .5
+	va_start (ap);
+	file = va_arg(ap, char \(**);
+	while ((args[argno++] = va_arg(ap, char \(**)) != (char \(**)0)
+		;
+ 	va_end (ap);
+	return execv(file, args);
+}
+.ft R
+.fi
+.RE
+.SH SEE ALSO
+.BR execl (3V),
+.BR printf (3V)
+.SH BUGS
+.LP
+It is up to the calling routine to specify
+how many arguments there are, since it is not
+possible to determine this from the
+stack frame.  For example,
+.B execl(\|)
+is passed a zero pointer to signal the end of the list.
+.B printf(\|)
+can tell how many arguments are supposed to
+be there by the format.
+.LP
+The macros
+.B va_start(\|)
+and
+.B va_end(\|)
+may be arbitrarily complex; for example,
+.B va_start(\|)
+might contain an opening brace,
+which is closed by a matching brace in
+.BR va_end(\|) .
+Thus, they should only be used where they could
+be placed within a single complex statement.

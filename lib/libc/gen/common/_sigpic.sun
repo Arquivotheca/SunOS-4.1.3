@@ -1,0 +1,23 @@
+#       @(#)_sigpic.sun	1.1     7/30/92
+:   rearrange the siglist.s file to put the array part in text space 
+rm -f sigstrings sigary
+sed '/data2/{
+		g
+		N
+		N
+		w sigstrings
+		d
+	    }' > sigary <$1
+ed - sigary <<'EOF'
+g/\.data/d
+1i
+	.data
+.
+$a
+	.text
+.
+r sigstrings
+w
+q
+EOF
+mv sigary $1

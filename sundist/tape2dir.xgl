@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# usage:  tape2dir sun_dir 
+#         where sun_dir defines if this is a sun3 or sun4 release tape,
+#         and creates the appropriate directory.
+# 
+# This script dd the 3th and 4th tar files off a XGL release tape  
+# for sun3 and sun4 machines and put them in /xgl_file/"sun_dir"/temp
+# respectively.
+#
+# For now, this script only takes input from /dev/nrst0.
+#
+#
+DEVICE="/dev/nrst0"
+PATH_ROOT="/xgl_file"
+ 
+if [ $# -ge 1 ]
+then
+	case $1 in
+	sun3|SUN3)	ARCH_TYPE=sun3
+				;;
+	sun4|SUN4)	ARCH_TYPE=sun4
+				;;
+	*)			echo "Unknown architecture type"
+				exit 1
+	esac
+else
+	ARCH_TYPE=`arch`
+fi
+#
+FSF=2
+if [ $ARCH_TYPE = "sun4" ]
+then
+	FSF=3
+fi
+#
+#
+if [ ! -d $PATH_ROOT ]
+then
+	mkdir $PATH_ROOT
+	chmod 777 $PATH_ROOT
+	cd $PATH_ROOT
+	mkdir $ARCH_TYPE
+	chmod 777 $ARCH_TYPE
+fi
+cd $PATH_ROOT
+if [ ! -d $ARCH_TYPE ]
+then
+	mkdir $ARCH_TYPE
+	chmod 777 $ARCH_TYPE
+fi
+mt -f $DEVICE rew
+#
+# skip first 2 files for sun3 environment and 3 files for sun4. 
+#
+mt -f $DEVICE fsf $FSF 
+cd $PATH_ROOT/$ARCH_TYPE
+rm -fr *
+dd if=$DEVICE of=temp

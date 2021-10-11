@@ -1,0 +1,170 @@
+.\" @(#)getgrent.3v 1.1 92/07/30 SMI; from UCB 4.3 and S5
+.\" TODO
+.TH GETGRENT 3V "21 January 1990"
+.SH NAME
+getgrent, getgrgid, getgrnam, setgrent, endgrent, fgetgrent \- get group file entry
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <grp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group *getgrent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group *getgrgid(gid)
+int gid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group *getgrnam(name)
+char *name;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void setgrent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+void endgrent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group *fgetgrent(f)
+\s-1FILE\s0 *f;
+.ft
+.fi
+.IX  "getgrent()"  ""  "\fLgetgrent()\fP \(em get group file entry"
+.IX  "getgrgid()"  ""  "\fLgetgrgid()\fP \(em get group file entry"
+.IX  "getgrnam()"  ""  "\fLgetgrnam()\fP \(em get group file entry"
+.IX  "setgrent()"  ""  "\fLsetgrent()\fP \(em get group file entry"
+.IX  "endgrent()"  ""  "\fLendgrent()\fP \(em get group file entry"
+.IX  "fgetgrent()"  ""  "\fLfgetgrent()\fP \(em get group file entry"
+.IX  "get group file entry"  "getgrent()"  ""  "\fLgetgrent()\fP"
+.IX  "get group file entry"  "getgrgid()"  ""  "\fLgetgrgid()\fP"
+.IX  "get group file entry"  "getgrnam()"  ""  "\fLgetgrnam()\fP"
+.IX  "get group file entry"  "setgrent()"  ""  "\fLsetgrent()\fP"
+.IX  "get group file entry"  "endgrent()"  ""  "\fLendgrent()\fP"
+.IX  "get group file entry"  "fgetgrent()"  ""  "\fLfgetgrent()\fP"
+.IX  "group file entry \(em \fLgetgrent()\fR"
+.SH DESCRIPTION
+.LP
+.BR getgrent(\|) ,
+.B getgrgid(\|)
+and
+.B getgrnam(\|)
+each return pointers to an object
+with the following structure containing the
+fields of a line in the group file.
+Each line contains a \*(lqgroup\*(rq structure, defined in
+.BR <grp.h> .
+.RS
+.LP
+.nf
+.ft B
+struct	group {
+	char	*gr_name;	/* name of the group */
+	char	*gr_passwd;	/* encrypted password of the group */
+	gid_t	gr_gid;		/* numerical group \s-1ID\s0 */
+	char	**gr_mem;	/* null-terminated array of pointers to the
+					individual member names */
+};
+.ft R
+.fi
+.RE
+.LP
+.B getgrent(\|)
+when first called returns a pointer to the first group structure in the file;
+thereafter, it returns a pointer to the next group structure in the file;
+so, successive calls may be
+used to search the entire file.
+.B getgrgid(\|)
+searches from the beginning of the file until a numerical group
+.SM ID
+matching
+.B gid
+is found and returns a pointer to the particular structure in which
+it was found.
+.B getgrnam(\|)
+searches from the beginning of the file until a group name matching
+.I name
+is found and returns a
+pointer to the particular structure in which it was found.
+If an end-of-file or an error
+is encountered on reading, these functions return a
+.SM NULL
+pointer.
+.LP
+A call to
+.B setgrent(\|)
+has the effect of rewinding the group file to allow
+repeated searches.
+.B endgrent(\|)
+may be called to
+close the group file
+when processing is complete.
+.LP
+.B fgetgrent(\|)
+returns a pointer to the next group structure in the stream
+.IR f ,
+which must refer to an open file in the same format as the group file
+.BR /etc/group .
+.SH RETURN VALUES
+.BR getgrent(\|) ,
+.BR getgrgid(\|) ,
+and
+.B getgrnam(\|)
+return a
+pointer to
+.B struct group
+on success.
+On
+.SM EOF
+or error,
+they return
+.SM NULL\s0.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/group
+.\" .TP
+.\" .BI /var/yp/ domainname /group.byname
+.\" .TP
+.\" .BI /var/yp/ domainname /group.bygid
+.PD
+.SH "SEE ALSO"
+.BR getlogin (3V),
+.BR getpwent (3V),
+.BR group (5),
+.BR ypserv (8)
+.SH BUGS
+.LP
+All information is contained in a static area, so it must be copied if it is
+to be saved.
+.LP
+Unlike the corresponding routines for passwords (see
+.BR getpwent (3v)),
+which always search the entire file, these routines start
+searching from the current file location.
+.SH WARNING
+.LP
+The above routines use
+the standard I/O library,
+which increases the size of programs
+not otherwise using standard I/O more
+than might be expected.

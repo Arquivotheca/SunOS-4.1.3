@@ -1,0 +1,230 @@
+#
+# @(#) GENERIC from master 1.47 91/08/05 SMI
+#
+# This config file describes a generic Sun-4c kernel, including all
+# possible standard devices and software options.
+#
+# The following lines include support for all Sun-4c CPU types.
+# There is little to be gained by removing support for particular
+# CPUs, so you might as well leave them all in.
+#
+machine		"sun4c"
+cpu		"SUN4C_60"	# Sun-4/60  (it's really for all the Sun-4c's)
+
+#
+# Name this kernel GENERIC.
+#
+ident		"GENERIC"
+
+#
+# This kernel supports about 8 users.  Count one user for each
+# timesharing user, one for each window that you typically use, and one
+# for each diskless client you serve.  This is only an approximation used
+# to control the size of various kernel data structures, not a hard limit.
+#
+maxusers	8
+
+#
+# Include all possible software options.
+#
+# The INET option is not really optional; every kernel must include it.
+#
+options	INET		# basic networking support - mandatory
+
+#
+# The following options are all filesystem related.  You only need
+# QUOTA if you have UFS.  You only need UFS if you have a disk.
+# Diskless machines can remove QUOTA, UFS, and NFSSERVER.  LOFS and TFS
+# are only needed if you're using the Sun Network Software Environment.
+# HSFS is only needed if you have a CD-ROM drive and want to access
+# ISO-9660, High Sierra, or Rock Ridge format CD discs.
+#
+options	QUOTA		# disk quotas for local disks
+options	UFS		# filesystem code for local disks
+options	NFSCLIENT	# NFS client side code
+options	NFSSERVER	# NFS server side code
+options	LOFS		# loopback filesystem - needed by NSE
+options	TFS		# translucent filesystem - needed by NSE
+options	TMPFS		# tmp (anonymous memory) file system
+options	HSFS		# High Sierra (ISO 9660) with Rock Ridge extensions CD-ROM file system
+options	PCFS		# Unix access to MS-DOS file system
+
+#
+# The following options are for accounting and auditing.  SYSAUDIT
+# should be removed unless you are using the C2 security features.
+#
+options	SYSACCT		# process accounting, see acct(2) & sa(8)
+options	SYSAUDIT	# C2 auditing for security
+
+#
+# The following options are for various System V IPC facilities.
+# Most standard software does not need them, although they are
+# used by SunGKS and some third-party software.
+#
+options	IPCMESSAGE	# System V IPC message facility
+options	IPCSEMAPHORE	# System V IPC semaphore facility
+options	IPCSHMEM	# System V IPC shared-memory facility
+
+#
+# The following option is only needed if you want to use the trpt
+# command to debug TCP problems.
+#
+options	TCPDEBUG	# TCP debugging, see trpt(8)
+
+#
+# The following option includes the software DES support, needed if
+# you're using secure NFS or secure RPC.
+#
+options	CRYPT		# software encryption
+
+#
+# The following two options are only needed if you want to use RFS.
+#
+options	RFS
+options	VFSSTATS
+
+#
+# The following two options are needed for asynchronous I/O.
+#
+options	LWP		# kernel threads
+options	ASYNCHIO	# asynch I/O (requires LWP)
+
+#
+# The following option adds support for loadable kernel modules.
+#
+options	VDDRV		# loadable modules
+
+#
+# The following option adds support for SunView 1 journaling.
+#
+options	WINSVJ		# SunView 1 journaling support
+
+#
+# Build one kernel based on this basic configuration.
+# It will use the generic swap code so that you can have
+# your root filesystem and swap space on any supported device.
+# Put the kernel configured this way in a file named "vmunix".
+#
+config	vmunix	swap generic
+
+#
+# Include support for all possible pseudo-devices.
+#
+# The first few are mostly concerned with networking.
+# You should probably always leave these in.
+#
+pseudo-device	pty		# pseudo-tty's, also needed for SunView
+pseudo-device	ether		# basic Ethernet support
+pseudo-device	loop		# loopback network - mandatory
+
+#
+# The next few are for SunWindows support, needed to run SunView 1.
+#
+pseudo-device	win128		# window devices, allow 128 windows
+pseudo-device	dtop4		# desktops (screens), allow 4
+pseudo-device	ms		# mouse support
+
+#
+# The following is needed to support the Sun keyboard, with or
+# without the window system.
+#
+pseudo-device	kb		# keyboard support
+
+#
+# The "open EEPROM" pseudo-device is required to support the
+# eeprom command.
+#
+pseudo-device	openeepr	# onboard configuration NVRAM
+
+#
+# The following is needed to support the Sun dialbox.
+#
+pseudo-device	db	# dialbox support
+
+#
+# The following is for the streams pipe device, which is required by RFS.
+#
+pseudo-device	sp		# streams pipe device
+
+#
+# The following are for streams NIT support.  NIT is used by
+# etherfind, traffic, rarpd, and ndbootd.  As a rule of thumb,
+# NIT is almost always needed on a server and almost never
+# needed on a diskless client.
+#
+pseudo-device	snit		# streams NIT
+pseudo-device	pf		# packet filter
+pseudo-device	nbuf		# NIT buffering module
+
+#
+# The following is for the "clone" device, used with streams devices.
+# This is required if you include streams NIT support, RFS, or an audio
+# device.
+#
+pseudo-device	clone		# clone device
+
+#
+# The following is for TLI. Include these if you want to use RFS and/or
+# the TLI library.
+#
+pseudo-device	tim64
+pseudo-device	tirw64
+
+#
+# The following is for the TCP TLI stream head. This provides a TLI-conforming
+# interface on top of which you can run RFS and/or the TLI library. This is
+# required by RFS.
+#
+pseudo-device	tcptli32
+
+#
+# The following section describes which standard device drivers this
+# kernel supports.
+#
+device-driver	sbus		# 'driver' for sbus interface
+device-driver	bwtwo		# monochrome frame buffer
+device-driver	cgthree		# 8-bit color frame buffer
+device-driver	cgsix		# 8-bit accelerated color frame buffer
+device-driver	cgtwelve	# 24-bit accelerated color frame buffer
+device-driver	gt		# double-buffered 24-bit graphics accelerator
+device-driver	dma		# 'driver' for dma engine on sbus interface
+device-driver	esp		# Emulex SCSI interface
+device-driver	fd		# Floppy disk
+device-driver	audioamd	# AMD79C30A sound chip
+device-driver	lebuf		# ethernet buffer
+device-driver	le		# LANCE ethernet
+device-driver	zs		# UARTs
+
+#
+# The following section describes SCSI device unit assignments.
+#
+scsibus0 at esp				# declare first scsi bus
+disk sd0 at scsibus0 target 3 lun 0	# first hard SCSI disk
+disk sd1 at scsibus0 target 1 lun 0	# second hard SCSI disk
+disk sd2 at scsibus0 target 2 lun 0	# third hard SCSI disk
+disk sd3 at scsibus0 target 0 lun 0	# fourth hard SCSI disk
+tape st0 at scsibus0 target 4 lun 0	# first SCSI tape
+tape st1 at scsibus0 target 5 lun 0	# second SCSI tape
+disk sr0 at scsibus0 target 6 lun 0	# CD-ROM device
+
+scsibus1 at esp				# declare second scsi bus
+disk sd4 at scsibus1 target 3 lun 0	# fifth hard SCSI disk
+disk sd5 at scsibus1 target 1 lun 0	# sixth hard SCSI disk
+disk sd6 at scsibus1 target 2 lun 0	# seventh hard SCSI disk
+disk sd7 at scsibus1 target 0 lun 0	# eighth hard SCSI disk
+tape st2 at scsibus1 target 4 lun 0	# third SCSI tape
+tape st3 at scsibus1 target 5 lun 0	# fourth SCSI tape
+disk sr1 at scsibus1 target 6 lun 0	# 2nd CD-ROM device
+
+scsibus2 at esp				# declare third scsi bus
+disk sd8 at scsibus2 target 3 lun 0	# ninth hard SCSI disk
+disk sd9 at scsibus2 target 1 lun 0	# tenth hard SCSI disk
+disk sd10 at scsibus2 target 2 lun 0	# eleventh hard SCSI disk
+disk sd11 at scsibus2 target 0 lun 0	# twelfth hard SCSI disk
+
+scsibus3 at esp				# declare fourth scsi bus
+disk sd12 at scsibus3 target 3 lun 0	# thirteenth hard SCSI disk
+disk sd13 at scsibus3 target 1 lun 0	# fourteenth hard SCSI disk
+disk sd14 at scsibus3 target 2 lun 0	# fifteenth hard SCSI disk
+disk sd15 at scsibus3 target 0 lun 0	# sixteenth hard SCSI disk
+

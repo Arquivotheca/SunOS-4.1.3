@@ -1,0 +1,235 @@
+.\" @(#)fonttool.1 1.1 92/07/30 SMI;
+.TH FONTTOOL 1 "23 September 1985"
+.SH NAME
+.LP
+fonttool \- a \fIvfont\fP screen-font editor
+.SH SYNOPSIS
+.LP
+.B fonttool
+[ \fB\-W\fR[ \fIgeneric_tool_arg\fR ] ]
+[
+.I font_name
+] 
+.SH DESCRIPTION
+.IX "fonttool command"  ""  "\fLfonttool\fP \(em font editor"
+.IX edit  fonts
+.IX "screen fonts"  edit
+.LP
+.I fonttool
+is an editor for fixed-width fonts in \fIvfont\fP\^(5)\fR 
+format whose characters are no taller than 24 pixels 
+(larger characters will not fit completely onto the screen).
+.SH OPTIONS
+.IP \fB\-W\fIgeneric_tool_arg\fR
+\fIfonttool\fP accepts any generic tool argument as described
+in
+.I suntools (1).
+Otherwise, you can manipulate the tool via the Tool Manger Menu.  
+.SH COMMANDS
+.LP
+To edit a font, type `\fBfonttool\fP'.  
+A \fIfont_name\fP may be supplied on the command line or
+may be typed into the option subwindow once the program has started.
+If it exists, the \fIfont_name\fP file must be in \fIvfont\fP\^(5) format.
+.\"The font_name does not have to exist; however,
+.\"if a file called font_name exists, it must be in 
+.\".I VFONT 
+.\"format.
+When the program starts, it displays a single large window containing
+four subwindows.
+.\"(the layout is much like that of \fIicontool\fP\^).
+From top to bottom, the four subwindows are:
+.IP "1)" 4
+A message subwindow which displays messages, prompts, and warnings.
+.IP "2)" 4
+An option subwindow which
+allows you to set global parameters for the entire font and
+specify operations for editing any single character.
+.\"where the user performs actions that effect the whole font.
+.\"Here's a brief explaination of items in the window:
+The options are:
+.RS 
+.IP "\fB(Read)\fP" 10
+Read in the font specified in the file name field.
+The program will warn you if you try to read over a
+modified font.
+.IP "\fB(Save)\fP"
+Write the current font onto disk with the name in file name field.
+.IP "\fB(Exit)\fP"
+Quit the program; warns you if you have modified the font.
+.IP "\fBFont name:\fP"
+The name of the font.
+.IP "\fBMax Width\fP and \fBMax Height\fP:"
+The size, in pixels, of the largest
+character in the font.  If you edit an
+existing font, these parameters are set automatically; you must set
+them if you are creating a new font.  Changing either of these values
+for an existing font may alter the glyph of some characters of
+the font. If the glyph size of a character is larger
+than the new max size, then that character is clipped
+to the new size (its bottom and right edges are moved in). However, if
+a glyph's size is smaller than the new size, the glyph is left alone.
+.IP "\fBCaps Height:\fP"
+The top of a capital letter in the font is this many pixels above the
+baseline.
+.IP "\fBX-Height:\fP"
+The top of a lower case letter (that is, a lower case ``x'') is this
+many pixels above the baseline.
+.IP "\fINote:\fP"
+When an existing font is edited, the values
+of \fBCaps Height\fP and \fBX-Height\fP are estimated by
+\fIfonttool\fP, and may require some adjustment.
+.IP "\fBBaseline:\fP"
+The number of pixels from the top (\fIi.e.\fP, the upper left corner)
+of the character to the baseline. 
+For an existing font, the value of the
+largest baseline distance is used. For a new font, each
+character will have the same baseline distance. If this
+value is changed, then the baseline distance for all characters
+in the font will be the new value. 
+.IP "\fB(Apply)\fP"
+Apply the current values of \fBMax width\fP, \fBMax Height\fP,
+\fBCaps Height\fP, \fBX-Height\fP, and \fBBaseline\fP to the font. 
+That is, changes made to these values
+do not take effect until \fBApply\fP is selected.
+.IP "\fBOperation:\fP"
+This is a list of drawing and editing operations
+that you can perform on a character. For drawing, the
+left mouse button draws in black, and the middle draws
+in white.  Operations are:
+.RS
+.IP "\fBSingle Pt\fP" 10
+Press a mouse button down and a grey cell
+will appear; move the mouse and the
+cell will follow it. Releasing the
+the button will draw.
+.IP "\fBPt Wipe\fP"
+Pressing a button down will draw and
+moving with the button down will 
+continue drawing until the button
+is released.
+.IP "\fBLine\fP"
+Button down marks the end point of a
+line; moving with the button down
+rubber bands a line; releasing button
+draws the line.
+.IP "\fBRect\fP"
+Like \fBLine\fP except draws a rectangle.
+.IP "\fBCut\fP"
+Button down marks one end of rectangle,
+and moving rubber bands the outline of the rectangle. Button up places the
+contents of the rectangle into a buffer and then ``cuts'' (draws in white) 
+the rectangular region from the character.  The \fBPaste\fP operation
+(below) gets the data from the buffer.
+.IP "\fBCopy\fP"
+Like \fBCut\fP except that the region is
+just copied; no change is made to the character. 
+.IP "\fBPaste\fP"
+Button down displays a rectangle the size of the region in the buffer.
+Moving with the button down moves the rectangle. Button up pastes the
+contents of the buffer into the character.
+.IP "\fINote:\fP"
+The contents of the \fBpaste\fP buffer cannot be transferred
+between tools.
+.IP " "
+In \fBCopy\fP or \fBCut\fP mode, holding down the shift key
+while pressing the left or middle mouse button will preform a 
+"\fBPaste\fP" action. For best results, after placing a region
+in the buffer, press down the shift key and hold it down, then
+press down the mouse button. Release the mouse key to paste the 
+region and then release the shift key.
+.RE
+.RE
+.IP "3)" 4
+The third subwindow echoes the characters in the current font as they
+are typed. Note that the cursor must be in this window in order to see
+the characters. Your character delete key will delete the echoed characters.
+.IP "4)" 4
+The bottom subwindow, the editing subwindow, displays eight
+smaller squares at its top; 
+these are called \fBedit buttons\fP. 
+The top section of each of these buttons contains a line of text in the 
+form \fInnn: c\fP, where \fInnn\fP is the
+hexidecimal number of the character and \fIc\fP is the standard ASCII 
+character corresponding to that number.  In the lower section of 
+the button the character of the current font, if it exists, is displayed. 
+.\"Pressing the mouse button down just hi-lights the button; 
+.\"to edit a character, the mouse button must be released over the button.
+Clicking once over an editing button selects its character for editing.
+.RS
+.LP	   
+Just below this row of buttons is a box with the characters 
+``0  9 A  Z a  z'' in it. This box is called a \fBslider\fP
+The slider allows you to scroll around in the font and select
+which section of the font you want displayed in the edit buttons. 
+The black rectangle  near ``a'' is an
+indicator which shows the section of the font that is displayed in 
+the buttons above. To move the indicator, select it by pressing the
+left or middle mouse button down over the indicator
+and then move the mouse to the left or right with
+the button down; the indicator will slide along with the cursor. 
+Releasing the button selects the new section of
+the font.  A faster method of moving about in the font is to 
+just press down and release the mouse button above the area you 
+want without bothering to drag the indicator.
+Another method of scrolling through the characters of the font is
+to press a key on the keyboard when the cursor is in the bottom
+window; that character is the first one displayed in the 
+edit buttons. 
+.RE
+.SH "EDITING CHARACTERS:"
+.LP
+To edit a character, click once over the edit button where the character
+is displayed.  When you do this, an edit pad will appear in the bottom
+subwindow.
+.LP
+The edit pad consists of an editing area bordered by scales, a 
+proof area, and 3 command buttons. 
+The editing area is \fBMax. Width\fP by the \fBMax. Height\fP when the
+pad opens, and displays a magnified view of the selected character.
+Black squares indicate foreground pixels.
+The editing area is surrounded by scales which show the current
+\fBCaps Height\fP, \fBX-Height\fP and \fBBaseline\fP
+in reverse video.
+.LP
+Just outside the scales, on the top, right side, and bottom of the pad,
+are three small boxes with the capital
+letters "R", "B", and "A" in them. These boxes are movable sliders that
+change the right edge, bottom edge, and x-axis advance of the character
+respectively. In a fixed-width font, these
+values are usually the same for all characters; however, in a
+variable-width font these controls can be used to set these properties for
+each character.
+.LP
+To the right of the pad is the proof area
+where the character is displayed at normal (that is, screen)
+resolution and three buttons.  The three buttons are:
+.RS
+.IP "\fBUndo\fP" 7
+Clicking the left or middle mouse button undoes the last operation.
+.IP "\fBSave\fP"
+Stores the current representation of the character in the font.
+.IP "\fBQuit\fP"
+Closes the edit pad.
+.RE
+.LP
+In the bottom subwindow, the right 
+mouse button displays a menu of operations. These operations are the same as
+those in the option subwindow discussed above; you can select the current
+operation by either picking the operation in the option subwindow or by
+selecting the appropriate menu with the left button of the mouse. When the
+cursor is in the other subwindows, the left button displays the standard tool
+menu.  
+.SH FILES
+\fI/usr/lib/fonts/fixedwidthfonts\fP \- Sun-supplied screen
+fonts
+.SH SEE ALSO
+suntools (1), vfont (5), vswap(1)
+.SH BUGS
+.LP
+Results are unpredictable with variable-width fonts.
+The baseline should be greater than 0 or else the font cannot be read in
+by 
+.I fonttool 
+or by
+.IR suntools .

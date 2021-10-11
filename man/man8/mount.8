@@ -1,0 +1,765 @@
+.\" @(#)mount.8 1.1 92/07/30 SMI;
+.TH MOUNT 8 "19 June 1991"
+.SH NAME
+mount, umount \- mount and unmount file systems
+.SH SYNOPSIS
+.B /usr/etc/mount
+[
+.B \-p
+]
+.br
+.B /usr/etc/mount
+.BR \-a
+[
+.B fnv
+]
+[
+.B \-t
+.I type
+]
+.br
+.B /usr/etc/mount
+[
+.B \-fnrv
+] [
+.BI \-t " type"
+] [
+.BI \-o " options"
+]
+.I filesystem
+.I directory
+.br
+.B /usr/etc/mount
+[
+.B \-vfn
+] [
+.BI \-o " options"
+]
+.IR filesystem " | " directory
+.br
+.B /usr/etc/mount
+.BR \-d
+[ 
+.B fnvr
+]
+[
+.BI \-o " options"
+]
+.IR RFS-resource " | " directory
+.LP
+.B /usr/etc/umount
+[
+.BI \-t " type"
+] [
+.BI \-h " host"
+]
+.br
+.B /usr/etc/umount
+.BR \-a
+[
+.B v
+]
+.br
+.B /usr/etc/umount
+[
+.B \-v
+]
+.IR filesystem \||\| directory "  .\|.\|."
+.br
+.B /usr/etc/umount
+[
+.B \-d
+]
+.IR RFS-resource " | " directory "
+.SH DESCRIPTION
+.IX  "mount command"  ""  "\fLmount\fP \(em mount filesystem"
+.IX  "mount file system"  ""  "mount file system \(em \fLmount\fP"
+.IX  "file system"  "mount"  ""  "mount \(em \fLmount\fP"
+.IX  "file system"  "loopback" "" "loopback \(em \fLmount\fP"
+.IX  "loopback file system"  "mount" "" "mount \(em \fLmount\fP"
+.IX  "umount command"  ""  "\fLumount\fP \(em unmount file system"
+.IX  "demount file system"  ""  "demount file system \(em \fLumount\fP"
+.IX  "file system"  "unmount"  ""  "unmount \(em \fLumount\fP"
+.IX  "file system"  "demount"  ""  "demount \(em \fLumount\fP"
+.LP
+.B mount
+attaches a named
+.I filesystem
+to the file system hierarchy at the pathname location
+.IR directory ,
+which must already exist.
+If
+.I directory
+has any contents prior to the
+.B mount
+operation, these remain hidden until the
+.I filesystem
+is once again unmounted.  If
+.I filesystem
+is of the form
+.IB host : pathname\fR,
+it is assumed to be an
+.SM NFS
+file system (type
+.BR nfs ).
+.LP
+.B umount
+unmounts a currently mounted file system, which can be specified
+either as a
+.IR directory
+or a
+.IR filesystem .
+.LP
+.B mount
+and
+.B umount
+maintain a table of mounted file systems in
+.BR /etc/mtab ,
+described in
+.BR fstab (5).
+If invoked without an argument,
+.B mount
+displays the contents of this table. 
+If invoked with either a
+.I filesystem
+or
+.I directory
+only,
+.B mount
+searches the file
+.B /etc/fstab
+for a matching entry, and mounts the file system indicated in
+that entry on the indicated directory.
+.LP
+.B mount
+also allows the creation of new, virtual file systems using
+.BR "loopback mounts" .
+Loopback file systems provide access to existing files using alternate
+pathnames.
+Once a virtual file system is created, other file systems can be
+mounted within it without affecting the original file system.
+File systems that are subsequently mounted onto
+the original file system, however,
+.B are
+visible to the virtual file system, unless or until the corresponding
+mount point in the virtual file system is covered by a file
+system mounted there.
+.LP
+Recursive traversal of loopback mount points is not allowed;
+after the loopback mount of
+.BR /tmp/newroot ,
+the file
+.B /tmp/newroot/tmp/newroot
+does not contain yet another file system hierarchy.
+Rather, it appears just as
+.B /tmp/newroot
+did before the loopback mount was performed (say,
+as an empty directory).
+.LP
+The standard
+.SM RC
+files first perform
+.B 4.2
+mounts, then
+.B nfs
+mounts, during booting.
+On Sun386i systems,
+.B lo
+(loopback) mounts are performed just after
+.B 4.2
+mounts.
+.B /etc/fstab
+files depending on alternate mount orders at
+boot time will
+fail to work as expected.  Manual
+modification of
+.B /etc/rc.local
+will be needed to make such
+mount orders work.
+.LP
+See
+.BR lofs (4S)
+and
+.BR fstab (5)
+for more information and
+.SM WARNINGS
+about loopback mounts.
+.SH OPTIONS
+.SS mount
+.TP
+.B \-p
+Print the list of mounted file systems in a format suitable for use in
+.BR /etc/fstab .
+.TP
+.B \-a
+All.  Attempt to mount all the file systems described in
+.BR /etc/fstab .
+If a
+.I type
+argument is specified with
+.BR \-t ,
+mount all file systems of that type.
+Using
+.BR \-a ,
+.B mount
+builds a dependency tree of mount points in
+.BR /etc/fstab .
+.B mount
+will correctly mount these file systems
+regardless of their order in
+.BR /etc/fstab
+(except loopback
+mounts; see
+.SM WARNINGS
+below).
+.TP
+.B \-f
+Fake an
+.B /etc/mtab
+entry, but do not actually mount any file systems.
+.TP
+.B \-n
+Mount the file system without making an entry in
+.BR /etc/mtab .
+.TP
+.B \-v
+Verbose.
+Display a message indicating each file system being mounted.
+.br
+.ne 4
+.TP
+.BI \-t " type"
+Specify a file system type.
+The accepted types are
+.BR  4.2 ,
+.BR nfs ,
+.BR rfs ,
+.BR lo ,
+.BR hsfs ,
+and
+.BR tmp .
+See
+.BR fstab (5)
+for a description of
+.BR  4.2 ,
+.BR  hsfs ,
+and
+.BR nfs ;
+see
+.BR lofs (4S)
+for a description of
+.BR lo ;
+and see
+.BR tmpfs (4)
+for a description of
+.BR tmp .
+See 
+.TX ADMIN 
+for details on 
+.BR rfs .
+.TP
+.B \-r
+Mount the specified file system read-only, even if the entry in
+.B /etc/fstab
+specifies that it is to be mounted read-write.
+.IP
+Physically write-protected and magnetic-tape
+file systems must be mounted
+read-only. Otherwise errors occur when the system attempts to
+update access times, even if no write operation is attempted.
+.TP
+.B \-d
+Mount an 
+.SM RFS
+file system. This option provides compatibility
+with the System V, Release 3 syntax for 
+.SM RFS
+mounts. Alternatively, the 
+equivalent Sun syntax, 
+.BR "\-t rfs" ,
+may be used.
+.TP
+.BI \-o " options"
+Specify file system
+.IR options ,
+a comma-separated list of words from the list below.
+Some options are valid for all file system types, while others apply
+to a specific type only.
+.RS
+.LP
+.I options
+valid on
+.I all
+file systems:
+.RS
+.TP 14
+.BR rw \||\| ro
+Read/write or read-only.
+.PD 0
+.TP
+.BR suid \||\| nosuid
+Setuid execution allowed or disallowed.
+.TP
+.B grpid
+Create files with 
+.SM BSD 
+semantics for the propagation of
+the group
+.SM ID\s0.
+Under this option, files inherit the 
+.SM GID
+of the directory in which they are created, regardless of the
+directory's set-\s-1GID\s0 bit.
+.br
+.ne 8
+.TP
+.B noauto
+Do not mount this file system that is currently mounted read-only.
+If the file system is not currently mounted, an error results.
+.TP
+.B remount
+If the file system is currently mounted, and if the entry in
+.B /etc/fstab
+specifies that it is to be mounted read-write or
+.B rw
+was specified along with
+.BR remount ,
+remount the file system making it read-write.
+If the entry in
+.B /etc/fstab
+specifies that it is to be mounted read-only and
+.B rw
+was not specified, the file system is not remounted.
+If the file system is currently mounted read-write,
+specifying
+.B ro
+along with
+.B remount
+results in an error.
+If the file system is not currently mounted, an error results.
+.PD
+.LP
+The default is
+.RB ` rw,\|suid '.
+.RE
+.LP
+.I options
+specific to
+.B 4.2
+file systems:
+.RS
+.TP 15
+.BR quota \||\| noquota
+Usage limits are enforced, or are not enforced.
+The default is
+.BR noquota .
+.RE
+.LP
+.I options
+specific to
+.B nfs
+(\s-1NFS\s0) file systems:
+.RS
+.TP 14
+.BR bg \||\| fg
+If the first attempt fails, retry in the background, or,
+in the foreground.
+.PD 0
+.TP
+.BR noquota
+Prevent
+.BR quota (1)
+from checking whether the user is over quota on this file system;
+if the file system has quotas enabled on the server, quotas will still
+be checked for operations on this file system.
+.TP
+.BI retry= n
+The number of times to retry the mount operation.
+.TP
+.BI rsize= n
+Set the read buffer size to
+.I n
+bytes.
+.TP
+.BI wsize= n
+Set the write buffer size to
+.I n
+bytes.
+.TP
+.BI timeo= n
+Set the
+.SM NFS
+timeout to
+.I n
+tenths of a second.
+.TP
+.BI retrans= n
+The number of
+.SM NFS
+retransmissions.
+.TP
+.BI port= n
+The server
+.SM IP
+port number.
+.TP
+.BR soft \||\| hard
+Return an error if the server does not respond, or continue the
+retry request until the server responds.
+.TP
+.B intr
+Allow keyboard interrupts on hard mounts.
+.TP
+.B secure
+Use a more secure protocol for
+.SM NFS
+transactions.
+.TP
+.B posix
+Request 
+.SM POSIX.1
+semantics for the file system.  Requires a mount version 2 
+.BR mountd (8C)
+on the server.
+.TP
+.BI acregmin= n
+Hold cached attributes for at least
+.I n
+seconds after file modification.
+.TP
+.BI acregmax= n
+Hold cached attributes for no more than
+.I n
+seconds after file modification.
+.TP
+.BI acdirmin= n
+Hold cached attributes for at least
+.I n
+seconds after directory update.
+.TP
+.BI acdirmax= n
+Hold cached attributes for no more than
+.I n
+seconds after directory update.
+.TP
+.BI actimeo= n
+Set
+.I min
+and
+.I max
+times for regular files and directories to
+.I n
+seconds.
+.TP
+.B nocto
+Suppress fresh attributes when opening a file.
+.TP
+.B noac
+Suppress attribute and name (lookup) caching.
+.PD
+.LP
+Regular defaults are:
+.RS
+.nf
+.B fg,retry=10000,timeo=7,retrans=3,port=\s-1NFS_PORT\s0,hard,\e
+.B acregmin=3,acregmax=60,acdirmin=30,acdirmax=60
+.fi
+.RE
+.LP
+.B actimeo
+has no default; it sets 
+.BR acregmin ,
+.BR acregmax ,
+.B acdirmin 
+and
+.B acdirmax
+.LP
+Defaults for
+.B rsize
+and
+.B wsize
+are set internally by the system kernel.
+.RE
+.LP
+.I options
+specific to
+.B rfs
+(\fB\s-1RFS\s0\fP)
+file systems:
+.RS
+.TP 14
+.BR bg \||\| fg
+If the first attempt fails, retry in the background, or,
+in the foreground.
+.PD 0
+.TP
+.BI retry= n
+The number of times to retry the mount operation.
+.PD
+.LP
+Defaults are the same as for
+.SM NFS\s0.
+.PD
+.RE
+.LP
+.I options
+specific to
+.B hsfs
+(\fB\s-1HSFS\s0\fP)
+file systems:
+.RS
+.TP 14
+.BR norrip
+Disable processing of Rock Ridge extensions for the file system.
+.PD 
+.LP
+.RE
+.RE
+.SS umount
+.TP
+.BI \-h " host"
+Unmount all file systems listed in
+.B /etc/mtab
+that are remote-mounted from
+.IR host .
+.TP
+.BI \-t " type"
+Unmount all file systems listed in
+.B /etc/mtab
+that are of a given
+.IR type .
+.TP
+.B \-a
+Unmount all file systems currently mounted (as listed in
+.BR /etc/mtab ).
+.TP
+.B \-v
+Verbose.
+Display a message indicating each file system being unmounted.
+.TP
+.B \-d
+Unmount an
+.SM RFS
+file system.
+This option provides compatibility with the
+System V, Release 3 syntax for unmounting an
+.SM RFS
+file system.
+.SH NFS FILESYSTEMS
+.SS Background vs. Foreground
+.LP
+Filesystems mounted with the
+.B bg
+option indicate that
+.B mount
+is to retry in the background if the server's mount daemon
+.BR ( mountd (8C))
+does not respond.
+.B mount
+retries the request up to the count specified in the
+.BI retry= n
+option.  Once the file system is mounted, each
+.SM NFS
+request made in the kernel waits
+.BI timeo= n
+tenths of a second for a response.
+If no response arrives, the
+time-out is multiplied by
+.B 2
+and the request is retransmitted.
+When the number of
+retransmissions has reached the number specified in the
+.BI retrans= n
+option, a file system mounted with the
+.B soft
+option returns an error on the request; one mounted with the
+.B hard
+option prints a warning message and continues to retry the request.
+.SS Read-Write vs. Read-Only
+.LP
+File systems that are mounted
+.B rw
+(read-write) should use the
+.B hard
+option.
+.SS "Interrupting Processes With Pending \s-1NFS\s0 Requests"
+.LP
+The
+.B intr
+option allows keyboard interrupts to kill a process that is hung
+while waiting for a response on a hard-mounted file system.
+.br
+.ne 10
+.SS Quotas
+.LP
+Quota checking on
+.SM NFS
+file systems is performed by the server, not the client; if the file
+system has the
+.B quota
+option on the server, quota checking is performed for both local
+requests and
+.SM NFS
+requests.  When a user logs in,
+.BR login (1)
+runs the
+.BR quota (1)
+program to check whether the user is over their quota on any of the file
+systems mounted on the machine.  This check is performed for
+.SM NFS
+file systems by an
+.SM RPC
+call to the
+.BR rquotad (8C)
+server on the machine from which the file system is mounted.  This can
+be time-consuming, especially if the remote machine is down.  If the
+.B noquota
+option is specified for an
+.SM NFS
+file system,
+.B quota
+will not check whether the user is over their quota on that file system,
+which can speed up the process of logging in.  This does
+.I not
+disable quota checking for operations on that file system; it merely
+disables reporting whether the user is over quota on that file system.
+.SS Secure Filesystems
+.LP
+The
+.B secure
+option must be given if the server requires secure
+mounting for the file system.
+.SS "File Attributes"
+.LP
+The attribute cache retains file attributes on the client.
+Attributes for a file are assigned a time to be flushed. 
+If the file is modified before the flush time, then the
+flush time is extended by the time since the last modification
+(under the assumption that files that changed recently are likely
+to change soon).
+There is a minimum and maximum flush time extension for
+regular files and for directories.
+Setting
+.BI actimeo= n
+extends flush time by
+.I n
+seconds for both regular files and directories.
+.SH SYSTEM V COMPATIBILITY
+.SS "System V File-Creation Semantics"
+.LP
+Ordinarily, when a file is created its 
+.SM GID
+is set to the effective 
+.SM GID
+of the calling process.
+This behavior may be overridden on a per-directory basis,
+by setting the set-\s-1GID\s0 bit of the parent directory;
+in this case, the 
+.SM GID
+is set to the 
+.SM GID
+of the parent directory (see
+.BR open (2V)
+and
+.BR mkdir (2V)).
+Files created on file systems that are mounted with the
+.B grpid
+option will obey 
+.SM BSD 
+semantics;
+that is, the 
+.SM GID
+is unconditionally inherited from that of the parent directory.
+.SH EXAMPLES
+.RS
+.PD 0
+.TP
+To mount a local disk:
+.B mount /dev/xy0g /usr
+.TP
+To fake an entry for \fBnd\fP root:
+.B mount \-ft 4.2 /dev/nd0 /
+.TP
+To mount all 4.2 file systems:
+.B mount \-at 4.2
+.TP
+To mount a remote file system:
+.B mount \-t nfs serv:/usr/src /usr/src
+.TP
+To mount a remote file system:
+.B mount serv:/usr/src /usr/src
+.TP
+To hard mount a remote file system:
+.B mount \-o hard serv:/usr/src /usr/src
+.br
+.ne 2
+.TP
+To mount an \s-1RFS\s0 remote file system, retrying in the background on failure:
+.B mount \-d \-o bg \s-1SRC\s0 /usr/src
+.TP
+To mount an \s-1RFS\s0 remote file system read-only:
+.B mount \-t rfs \-r \s-1SRC\s0 /usr/src
+.TP
+To save current mount state:
+.B mount \-p > /etc/fstab
+.IP
+Note: this is not recommended when running the automounter,
+see
+.BR automount (8).
+.TP
+To loopback mount file systems:
+.B mount \-t lo /export/tmp/localhost /tmp
+.nf
+.B mount \-t lo /export/var/localhost /var lo
+.B mount \-t lo /export/cluster/sun386.sunos4.0.1 /usr/cluster
+.B mount \-t lo /export/local/sun386 /usr/local
+.fi
+.RE
+.PD
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/mtab
+table of mounted file systems
+.TP
+.B /etc/fstab
+table of file systems mounted at boot
+.PD
+.SH WARNINGS
+.LP
+.BR mount
+does not understand the mount order dependencies
+involved in loopback mounting.
+Loopback mounts may be dependent on
+two mounts having been previously performed,
+while
+.B nfs
+and
+.B 4.2
+mounts are dependent only on
+a single previous mount.  As a rule of
+thumb, place loopback mounts at the end of the
+.BR /etc/fstab
+file.
+See
+.BR lofs (4S)
+for a complete description.
+.SH "SEE ALSO"
+.BR mkdir (2V),
+.BR mount (2V),
+.BR open (2V),
+.BR unmount (2V),
+.BR lofs (4S),
+.BR fstab (5),
+.BR mtab (5),
+.BR automount (8),
+.BR mountd (8C),
+.BR nfsd (8)
+.SH BUGS
+.LP
+Mounting file systems full of garbage crashes the system.
+.LP
+If the directory on which a file system is to be mounted is a
+symbolic link, the file system is mounted on
+.I "the directory to which the symbolic link refers,"
+rather than being mounted on top of the symbolic link itself.

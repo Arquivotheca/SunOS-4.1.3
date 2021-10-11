@@ -1,0 +1,66 @@
+.\" @(#)tzsetup.8 1.1 92/07/30 SMI;
+.hw gettimeofday
+.TH TZSETUP 8 "17 November 1987"
+.SH NAME
+tzsetup \- set up old-style time zone information in the kernel
+.SH SYNOPSIS
+.B /usr/etc/tzsetup
+.SH DESCRIPTION
+.IX "tzsetup command" "" "\fLtzsetup\fP command"
+.LP
+.B tzsetup
+attempts to find the offset from GMT and old-style Daylight Savings Time
+correction type (see
+.BR gettimeofday (2))
+that most closely matches the default time zone for the machine, and
+to pass this information to the kernel with a
+.B settimeofday (\|)
+call (see
+.BR gettimeofday (2)).
+This is necessary if programs built under releases
+of Sun\s-1OS\s0 prior to 4.0 are to be run;
+those programs get time zone information from
+the kernel using
+.BR gettimeofday . 
+.LP
+If it cannot find the offset from
+.SM GMT\s0,
+the offset is set to 0; if it
+cannot find the Daylight Savings Time correction type, it is set to
+.SM
+.BR DST_NONE\s0 ,
+indicating that no Daylight Savings Time correction is to be
+performed.
+.SH DIAGNOSTICS
+.TP
+.BI "tzsetup: Can't open /usr/share/lib/zoneinfo/localtime: " reason
+The time zone file for the current time zone could not be opened.
+.TP
+.BI "tzsetup: Error reading /usr/lib/zoneinfo/localtime: " reason
+The time zone file for the current time zone could not be read.
+.TP
+.B "tzsetup: Two or more time zone types are equally valid \(em no \s-1DST\s0 selected"
+There were two or more Daylight Savings Time correction types that
+generated results that were equally close to the correct results.
+None of them was selected.  Programs built under versions of Sun\s-1OS\s0
+prior to 4.0 may not convert dates correctly.
+.TP
+.B "tzsetup: No old-style time zone type is valid \(em no \s-1DST\s0 selected"
+None of the Daylight Savings Time correction types generated results
+that were in any way correct; none of them was selected.
+Programs built under versions of Sun\s-1OS\s0
+prior to 4.0 may not convert dates correctly.
+.TP
+.B "tzsetup: Warning: No old-style time zone type is completely valid"
+None of the Daylight Savings Time correction types generated results
+that were completely correct; the best of them was selected.  Programs built
+under versions of Sun\s-1OS\s0 prior to 4.0 may not convert dates correctly.
+.TP
+.B "tzsetup: Can't set time zone"
+.B tzsetup
+was run by a user other than the super-user; only the super-user may
+change the kernel's notion of the current time zone.
+.SH "SEE ALSO"
+.BR gettimeofday (2),
+.BR tzfile (5),
+.BR zic (8)

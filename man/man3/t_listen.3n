@@ -1,0 +1,160 @@
+.\" @(#)t_listen.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_LISTEN 3N "21 January 1990"
+.SH NAME
+t_listen \- listen for a connect request
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_listen(fd, call)
+int fd;
+struct t_call *call;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_listen()" "" "\fLt_listen()\fR \(em listen for a connect request" ""
+.IX transport "listen for a connect request"
+.LP
+.B t_listen(\|)
+listens for a
+connect request from a calling transport user.
+.I fd
+identifies the local transport endpoint where connect
+indications arrive,
+and on return,
+.I call
+contains information describing the connect indication.
+.I call
+points to a
+.B t_call(\|)
+structure which contains the following members:
+.LP
+.RS
+.ft B
+.nf
+	struct netbuf addr;
+	struct netbuf opt;
+	struct netbuf udata;
+	int sequence;
+.fi
+.ft R
+.RE
+.LP
+The
+.IR maxlen ,
+.IR len ,
+and
+.I buf
+members of the
+.I netbuf
+structure are described in
+.BR t_accept (3N).
+In
+.IR call ,
+.I addr
+returns the protocol address of the calling transport user,
+.I opt
+returns protocol-specific parameters
+associated with the connect request,
+.I udata
+returns any user data sent by the caller on the connect request, and
+.I sequence
+is a number that uniquely identifies the returned connect
+indication.
+The value of
+.I sequence
+enables the user to listen for multiple connect indications
+before responding to any of them.
+.LP
+Since this function returns values for the
+.IR addr ,
+.IR opt ,
+and
+.I udata
+fields of
+.IR call ,
+the
+.I maxlen
+field of each must be set before issuing the
+.B t_listen(\|)
+to indicate the maximum size of the buffer for each.
+.LP
+By default,
+.B t_listen(\|)
+executes in synchronous mode and
+waits for a connect indication to arrive before returning to the user.
+However, if
+.SB T_NDELAY
+is set (using
+.BR t_open (3N)
+or
+.BR fcntl(\|) ),
+.B t_listen(\|)
+executes asynchronously, reducing
+to a
+.BR poll (2)
+for existing connect indications.
+If none are available, it returns \-1 and sets
+.B t_errno
+to
+.SM TNODATA\s0.
+.SH RETURN VALUES
+.LP
+.B t_listen(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBUFOVFLW
+The number of bytes allocated for an incoming argument is not
+sufficient to store the value of that argument.
+The provider's state, as seen by the user, changes to
+.SB T_INCON
+and
+the connect indication information to be returned in
+.I call
+is discarded.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on this transport endpoint and requires
+immediate attention.
+.TP
+.SM TNODATA
+.SB T_NDELAY
+was set, but no connect indications had been queued.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.br
+.ne 5
+.SH SEE ALSO
+.BR intro (3),
+.BR t_accept (3N),
+.BR t_bind (3N),
+.BR t_connect (3N),
+.BR t_open (3N),
+.BR t_rcvconnect (3N)
+.LP
+.TX NETP

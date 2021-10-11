@@ -1,0 +1,301 @@
+|*	@(#)xsp.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Single Precision Add Instruction
+|*		reg1 <-- reg2 + operand
+|*
+routine xs.add 0100110xxxx0 	snop enrb halt;			adtoti;		imm2;
+        ;                       sadd enra halt;                 regtoti;        rcssp imm2;
+        jclr clp idl2;		sadd;				;		;
+	;			sadd;				;		;
+xsfin:
+	jtierr hang cstat;	halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+|*
+|*		Single Precision Subtract Instruction
+|*		reg1 <-- reg2 - operand
+|*
+routine xs.sub 0100111xxxx0 	snop enrb halt;			adtoti;		imm2;
+        ;                       ssub enra halt;                 regtoti;        rcssp imm2;
+        jclr clp idl2;		ssub;				;		;
+	call xsfin;		ssub;				;		;
+|*
+|*              Single Precision Multiply Instruction
+|*              reg1 <-- reg2 * operand
+|*
+routine xs.mul 0101000xxxx0 	snop enrb halt;			adtoti;		imm2;
+        ;                       smul enra halt;                 regtoti;        rcssp imm2;
+        jclr clp idl2;          smul;				;		;
+        call xsfin;             smul;				;		;
+|*
+|*              Single Precision Divide Instruction
+|*              reg1 <-- reg2 / operand 
+|*
+routine xs.div 0101001xxxx0 	enra halt;			regtoti;	rcssp imm2;
+	;			;				;		;
+        ;                       sdiv enrb halt;                 adtoti;       	; 
+|
+|  Delay idle 2 as much as possible
+|
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+        jclr clp idl2;          ;  				;		imm2;
+	call xdivfin;		;				regtotmp;	rcssp imm2;
+xdivfin:
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*              Single Precision Reverse Divide Instruction
+|*              reg1 <-- operand / reg2 
+|*
+routine xs.b.div 0101011xxxx0 	enra halt; 	                adtoti;        	imm2; 
+	;			sdiv enrb halt;			regtoti;	rcssp imm2;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+        jclr clp idl2;          ;  				;		imm2;
+        call xdivfin;		;				regtotmp;	rcssp imm2;
+|*
+|*		Single Precision Reverse Subtract Instruction
+|*		reg1 <-- operand - reg2
+|*
+routine xs.b.sub 0101010xxxx0 	snop enrb halt;			adtoti;		imm2;
+        ;                       srsub enra halt;		regtoti;        rcssp imm2;
+        jclr clp idl2;          srsub; 				;		;
+        call xsfin;             srsub;				;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- reg3 + (reg2 * operand)
+|* 
+routine xs.r3Ar2Mop 0110000xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			smul enra halt;			regtoti;	rcssp imm2;
+	;			;				;		;
+	jclr clp idl2;		;				;		imm3;
+	jtierr hang cstat;	sadd aluamul enrb halt;		regtoti;	rcssp imm3;
+	;			sadd aluamul;			;		;
+xs2fin:
+	jtierr hang cstat;	halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- reg3 - (reg2 * operand)
+|* 
+routine xs.r3Sr2Mop 0110001xxxx0 snop enrb halt;		adtoti;		imm2;
+	;			smul enra halt;			regtoti;	rcssp imm2;
+	;			;				;		;
+	jclr clp idl2;		;				;		imm3;
+	jtierr hang cstat;	srsub aluamul enrb halt;	regtoti;	rcssp imm3;
+	call xs2fin;		srsub aluamul;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- - reg3 + (reg2 * operand)
+|* 
+routine xs.Nr3Ar2Mop 0110010xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			smul enra halt;			regtoti;	rcssp imm2;
+	;			;				;		;
+	jclr clp idl2;		;				;		imm3;
+	jtierr hang cstat;	ssub aluamul enrb halt;		regtoti;	rcssp imm3;
+	call xs2fin;		ssub aluamul;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- reg3 * (reg2 + operand)
+|* 
+routine xs.r3Mr2Aop 0110011xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			sadd enra halt;			regtoti;	rcssp imm2;
+	;			sadd;				;		;
+	jclr clp idl2;		;				;		imm3;
+	jtierr hang cstat;	smul mulaalu enrb halt;		regtoti;	rcssp imm3;
+	call xs2fin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- reg3 * (reg2 - operand)
+|* 
+routine xs.r3Mr2Sop 0110100xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			ssub enra halt;			regtoti;	rcssp imm2;
+	;			ssub;				;		;
+	jclr clp idl2;		;				;		imm3;
+	jtierr hang cstat;	smul mulaalu enrb halt;		regtoti;	rcssp imm3;
+	call xs2fin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- reg3 * ( - reg2 + operand)
+|* 
+routine xs.r3MNr2Aop 0110101xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			srsub enra halt;		regtoti;	rcssp imm2;
+	;			srsub;				;		;
+	jclr clp idl2;		;				;		imm3;
+	jtierr hang cstat;	smul mulaalu enrb halt;		regtoti;	rcssp imm3;
+	call xs2fin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- operand + (reg3 * reg2)
+|*
+routine xs.opAr3Mr2 0110110xxxx0 enra halt;			regtoti;	rcssp imm2;
+	jclr clp idl2;		;				;		imm3;
+	;			smul enrb halt;			regtoti;	rcssp imm3;
+	;			;				;		;
+	jtierr hang cstat;	sadd aluamul enrb halt;		adtoti;		;
+	call xs2fin;		sadd aluamul;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- operand - (reg3 * reg2)
+|*
+routine xs.opSr3Mr2 0110111xxxx0 enra halt;			regtoti;	rcssp imm2;
+	jclr clp idl2;		;				;		imm3;
+	;			smul enrb halt;			regtoti;	rcssp imm3;
+	;			;				;		;
+	jtierr hang cstat;	srsub aluamul enrb halt;	adtoti;		;
+	call xs2fin;		srsub aluamul;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- ( - operand) + (reg3 * reg2)
+|*
+routine xs.NopAr3Mr2 0111000xxxx0 enra halt;			regtoti;	rcssp imm2;
+	jclr clp idl2;		;				;		imm3;
+	;			smul enrb halt;			regtoti;	rcssp imm3;
+	;			;				;		;
+	jtierr hang cstat;	ssub aluamul enrb halt;		adtoti;		;
+	call xs2fin;		ssub aluamul;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- operand * (reg3 + reg2)
+|*
+routine xs.opMr3Ar2 0111001xxxx0	enra halt;		regtoti;	rcssp imm2;
+	jclr clp idl2;		;				;		imm3;
+	;			sadd enrb halt;			regtoti;	rcssp imm3;
+	;			sadd;				;		;
+	jtierr hang cstat;	smul mulaalu enrb halt;		adtoti;		;
+	call xs2fin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- operand * (reg3 - reg2)
+|*
+routine xs.opMr3Sr2 0111010xxxx0 enra halt;			regtoti;	rcssp imm2;
+	jclr clp idl2;		;				;		imm3;
+	;			srsub enrb halt;		regtoti;	rcssp imm3;
+	;			srsub;				;		;
+	jtierr hang cstat;	smul mulaalu enrb halt;		adtoti;		;
+	call xs2fin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- operand2 + (operand1 * reg2)
+|*
+routine xs.linpack1 0100000xxxx0 snop enrb halt;		adtoti;		imm2;
+	;			smul enra halt;			regtoti;	rcssp ptr2;
+	;			smul;				;	;
+	jclr clp2 idl2;		;				;		;
+	jtierr hang cstat;	sadd aluamul enrb halt;		optoti;		;
+	;			sadd aluamul;			;		;
+	jtierr hang cstat;	halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- operand2 - (operand1 * reg2)
+|*
+routine xs.linpack2 0100001xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			smul enra halt;			regtoti;	rcssp imm2;
+	;			smul;				;		;
+	jclr clp2 idl2;		;				;		;
+	jtierr hang cstat;	srsub aluamul enrb halt;	optoti;		;
+	;			srsub aluamul;			;		;
+xslfin:
+	jtierr hang cstat;	halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+|*
+|*		Single Precision Instruction
+|*		reg1 <-- ( - operand2) + (operand1 * reg2)
+|*
+routine xs.linpack3 0100010xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			smul enra halt;			regtoti;	rcssp imm2;
+	;			smul;				;		;
+	jclr clp2 idl2;		;				;		;
+	jtierr hang cstat;	ssub aluamul enrb halt;		optoti;		;
+	call xslfin;		ssub aluamul;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <--  operand2 * (operand1 + reg2)
+|*
+routine xs.linpack4 0100011xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			sadd enra halt;			regtoti;	rcssp imm2;
+	;			sadd;				;		;
+	jclr clp2 idl2;		;				;		;
+	jtierr hang cstat;	smul mulaalu enrb halt;		optoti;		;
+	call xslfin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <--  operand2 * (operand1 - reg2)
+|*
+routine xs.linpack6 0100101xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			srsub enra halt;		regtoti;	rcssp imm2;
+	;			srsub;				;		;
+	jclr clp2 idl2;		;				;		;
+	jtierr hang cstat;	smul mulaalu enrb halt;		optoti;		;
+	call xslfin;		smul mulaalu;			;		;
+|*
+|*		Single Precision Instruction
+|*		reg1 <--  operand2 * (-operand1 + reg2)
+|*
+routine xs.linpack5 0100100xxxx0 	snop enrb halt;		adtoti;		imm2;
+	;			ssub enra halt;			regtoti;	rcssp imm2;
+	;			ssub;				;		;
+	jclr clp2 idl2;		;				;		;
+	jtierr hang cstat;	smul mulaalu enrb halt;		optoti;		;
+	call xslfin;		smul mulaalu;			;		;
+|*
+|*		Extended Instruction
+|*		reg1 <- square root (operand)
+|*		Single Precision
+|*
+routine xs.sqrt 0101100xxxx0 	sqrt enra halt;			adtoti;		;
+	;			;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	jclr clp idl2;		;				;		;
+	;			;				;		;
+	;			;				regtotmp;	rcssp ptr1;
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Extended Instruction
+|*		reg1 <- hypotenuse (reg2, operand)
+|*		Single Precision
+|*
+routine xs.hypot 0101101xxxx0	scvtd enra loaddp halt;		adtoti;		;
+	;			scvtd enra loaddp halt;		adtoti;		;
+	;			dnop;				;		;
+	;			dnop enra enrb tioe timsw loaddp halt;;		;
+	;			dmul enra enrb tioe tilsw loaddp halt;;		;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	jclr clp idl2;		dnop tioe;			;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcssp ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcssp ptr2;
+	;			dnop;				;		;
+	;			dnop enra enrb tioe timsw loaddp halt;;		;
+	;			dmul enra enrb tioe tilsw loaddp halt;;		;
+	;			dmul;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	jtierr hang cstat;	dadd aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop enra tioe timsw loaddp halt;;		;
+	;			dsqrt enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dcvts enra loaddp halt;		tmptoti;	rcslsw;
+	;			dcvts;				;		;
+	jtierr hang cstat;	dnop tioe tisp halt;		;		ptr1;
+	call idle1;		dnop tioe tisp halt;		titoreg;	rcssp ptr1;

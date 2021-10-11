@@ -1,0 +1,304 @@
+.\" @(#)expr.1v 1.1 92/07/30 SMI; from S5R3
+.TH EXPR 1V "5 January 1988"
+.SH NAME
+expr \- evaluate arguments as a logical, arithmetic, or string expression
+.SH SYNOPSIS
+.B /bin/expr
+.IR argument .\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/expr
+.IR argument .\|.\|.
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLexpr\fR"
+.IX "expr command"  ""  "\fLexpr\fP \(em evaluate expressions"
+.IX "expression evaluation"
+.IX "evaluate expressions"
+.LP
+.B expr
+evaluates expressions as specified by its arguments.
+After evaluation, the result is written on the standard output.
+Each token of the expression is a separate argument, so
+terms of the expression must be separated by blanks.
+Characters special to the shell must be escaped.
+Note:
+.B 0
+is returned to indicate a zero value,
+rather than the null string.
+Strings containing blanks or other special characters should be quoted.
+Integer-valued arguments may be preceded by a unary minus sign.
+Internally, integers are treated as 32-bit, two's-complement numbers.
+.LP
+The operators and keywords are listed below.
+Characters that need to be escaped are preceded by
+.RB ` \e '.
+The list is in order of increasing precedence,
+with equal precedence operators grouped within
+.B {\|}
+symbols.
+.TP 
+.IB expr " \e\^\(bv " expr
+Return the first
+.I expr
+if it is neither
+.SM NULL
+nor
+.BR 0 ,
+otherwise returns the second
+.IR expr .
+.TP 
+.IB expr " \e& " expr
+Return the first
+.I expr
+if neither
+.I expr
+is
+.SM NULL
+or
+.BR 0 ,
+otherwise returns
+.BR 0 .
+.HP 
+.IR expr " {"
+.BR =, " \e>" , " \e>= ,
+.BR \e< , " \e<=" , " != " }
+.I expr
+.br
+Return the result of an integer comparison if both arguments are integers,
+otherwise returns the result of a lexical comparison.
+.HP 
+.IR expr " { "
+.BR + , " \- " }
+.I expr
+.br
+Addition or subtraction of integer-valued arguments.
+.HP
+.IR expr " { "
+.BR \e\(** , " /" , " % " }
+.I expr
+.br
+Multiplication, division, or remainder of the integer-valued arguments.
+.TP
+.IB string " : " regular-expression
+.br
+.ns
+.TP
+.BI match " string regular-expression"
+The two forms of the matching operator above are synonymous.  
+The matching operators
+.B :
+and
+.B match
+compare the first argument
+with the second argument which must be a regular expression.
+Regular expression syntax is the same as that of
+.BR ed (1),
+except that all patterns are \*(lqanchored\*(rq (treated
+as if they begin with
+.BR ^ )
+and, therefore,
+.B ^
+is not a special character, in that context.
+Normally, the matching operator returns the number of characters matched
+.RB ( 0
+on failure).  Alternatively, the
+.B \e(\|.\|.\|.\|\e)
+pattern symbols can be used to return a portion of the first argument.
+.TP
+.BI substr " string integer-1 integer-2
+Extract the substring of 
+.I string
+starting at position
+.I integer-1
+and of length
+.I integer-2
+characters.  If
+.I integer-1
+has a value greater than the length of
+.IR string ,
+.B expr
+returns a null string.  If you try to extract more characters than there are in
+.IR string ,
+.B expr
+returns all the remaining characters from
+.IR string .
+Beware of using negative values for either
+.I integer-1
+or
+.I integer-2
+as 
+.B expr
+tends to run forever in these cases.
+.TP
+.BI index " string character-list"
+Report the first position in
+.I string
+at which any one of the characters in
+.I character-list
+matches a character in 
+.IR string .
+.br
+.ne 5
+.TP
+.BI length " string"
+Return the length (that is, the number of characters) of
+.IR string .
+.TP
+.BI (\ expr\ )
+Parentheses may be used for grouping.
+.SH SYSTEM V DESCRIPTION
+The operators
+.BR substr ,
+.BR index ,
+and
+.BR length
+are not supported.
+.SH EXAMPLES
+.TP
+1.
+.B
+a=`expr\| $a\| +\| 1`
+.LP
+.RS
+.RS
+Adds 1 to the shell variable
+.BR a .
+.RE
+.RE
+.TP
+2.
+.B
+\&#  'For $a equal to either "/usr/abc/file" or just "file"'
+.br
+.B
+expr\  $a\  :\  '.\(**/\e(.\(**\e)'\  \e\^\(bv \ $a
+.LP
+.RS
+.RS
+Returns
+the last segment of a path name
+(that is, the filename part).
+Watch out for
+.B /
+alone as an argument:
+.I expr
+will take it as the division operator (see
+.SM BUGS
+below).
+.RE
+.RE
+.ne 6
+.TP
+3.
+.B
+\&# \ A better representation of example 2.
+.br
+.B
+expr\  //$a\  :\  '.\(**/\e(.\(**\e)'
+.LP
+.RS
+.RS
+The addition of the
+.B //
+characters eliminates any ambiguity about the division operator and simplifies
+the whole expression.
+.RE
+.RE
+.TP
+4.
+.B
+expr \ \s-1$VAR\s0 \ : \ '.\(**'
+.LP
+.RS
+.RS
+Returns the number of characters in
+.BR \s-1$VAR\s0 .
+.RE
+.RE
+.SH "SEE ALSO"
+.BR ed (1),
+.BR sh (1),
+.BR test (1V)
+.SH "EXIT CODE"
+.B expr
+returns the following exit codes:
+.RS
+.TP
+0
+if the expression is neither null nor
+.B 0
+.TP
+1
+if the expression
+.I is
+null or
+.B 0
+.TP
+2
+for invalid expressions.
+.RE
+.SH DIAGNOSTICS
+.TP 20
+.B syntax error
+for operator/operand errors
+.TP
+.B non-numeric argument
+if arithmetic is attempted on such a string
+.TP
+.B division by zero
+if an attempt to divide by zero is made
+.SH BUGS
+After argument processing by the shell,
+.B expr
+cannot tell the difference between an operator and an operand
+except by the value.
+If
+.B $a
+is an
+.BR = ,
+the command:
+.IP
+.B "expr \ $a \ = \ '='"
+.LP
+looks like:
+.IP
+.B "expr \ = \ = \ ="
+.LP
+as the arguments are passed to
+.B expr
+(and they will all be taken as the
+.B =
+operator).
+The following works:
+.IP
+.B "expr \ X$a \ = \ X="
+.br
+.ne 5
+.LP
+Note: the
+.BR match ,
+.BR substr ,
+.BR length ,
+and
+.B index
+operators cannot themselves be used as ordinary strings.  That is, the
+expression:
+.RS
+.nf
+.ft B
+example% expr index expurgatorious length
+syntax error
+example%
+.ft R
+.fi
+.RE
+generates the
+.RB ` "syntax error" '
+message as shown instead of the value
+.B 1
+as you might expect.

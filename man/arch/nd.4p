@@ -1,0 +1,296 @@
+.\" @(#)nd.4p 1.1 92/07/30 SMI;
+.TH ND 4P "26 July 1985"
+.SH NAME
+nd \- network disk driver
+.SH SYNOPSIS
+\fBpseudo-device nd\fP
+.SH DESCRIPTION
+.IX  "nd device"  ""  "\fLnd\fP \(em network disk driver"  ""  PAGE START
+The network disk device,
+.I /dev/nd*,
+allows a client workstation to perform disk I/O operations on a 
+server system over the network.
+To the client system, this device looks like any normal disk driver:
+it allows read/write operations at a given block number and byte count.
+Note that this provides a network
+.I "disk block"
+access service rather than a network
+.I file
+access service.
+.LP
+Typically the client system will have no disks at all.
+In this case
+.I /dev/nd0
+contains the client's root file system (including \fI/usr\fP files), and
+.I nd1
+is used as a paging area.
+Client access to these devices is converted to
+.I "net disk protocol"
+requests and sent to the server system over the network.
+The server receives the request, performs the actual disk I/O,
+and sends a response back to the client.
+.LP
+The server contains a table which lists the net address of each of
+his clients and the server disk partition which corresponds to 
+each client unit number (nd0,1,...).
+This table resides in the server kernel in a structure owned by
+the nd device.
+The table is initialized by running the program 
+.I /etc/nd
+with text file
+.I /etc/nd.local
+as its input.
+.I /etc/nd 
+then issues
+.IR ioctl (2)
+functions to load the table into the kernel.
+.LP
+In addition to the read/write units
+.I /dev/nd*,
+there are
+.I public
+read-only units which are named
+.I /dev/ndp*.
+The correspondence to server partitions is specified by the
+.I /etc/nd.local
+text file, in a similar manner to the private partitions.
+The public units can be used to provide shared
+access to binaries or libraries (\fI/bin,\fP \fI/usr/bin,\fP
+\fI/usr/ucb,\fP \fI/usr/lib\fP\^)
+so that each diskless client does not have to consume space in his
+private partitions for these files.
+This is done by providing a public file system at the server
+(\fI/dev/ndp0\fP\^) which is mounted on \fI/pub\fP of each diskless client.
+The clients then use symbolic links to read the public files:
+\fI/bin\fP -> \fI/pub/bin\fP, \fI/usr/ucb\fP -> \fI/pub/usr/ucb\fP.
+One requirement in this case is that the server (who has read/write
+access to this file system) should not perform write activity with
+any public filesystem.
+This is because each client is locally cacheing blocks, and may get out
+of sync with the physical disk image.  In certain cases, the client will
+detect an inconsistency and panic.
+.LP
+One last type of unit is provided for use by the server.
+These are called
+.I local
+units and are named
+.I /dev/ndl*.
+The Sun physical disk sector 0 label only provides a limited
+number of partitions per physical disk (eight).
+Since this number is small and these partitions have somewhat fixed
+meanings, the nd driver itself has a 
+.I subpartitioning
+capability built-in.
+This allows the large server physical disk partition (e.g.
+.I /dev/xy0g
+) to be broken up into any number of diskless client partitions.
+Of course on the client side these would be referenced as
+.I "/dev/nd0,1,..."
+; but the server needs to reference these client partitions from
+time to time, to do 
+.IR mkfs (8)
+and
+.IR fsck (8)
+for example.
+The 
+.I /dev/ndl*
+entries allow the server `local' access to his subpartitions without
+causing any net activity.
+The actual local unit number to client unit number correspondence is
+again recorded in the 
+.I /etc/nd.local
+text file.
+.LP
+The nd device driver is the same on both the client and server sides.
+There are no user level processes associated with
+either side, thus the latency and transfer rates are close
+to maximal.
+.LP
+The minor device and ioctl encoding used is given in file
+.RI < sun/ndio.h >.
+The low six bits of the minor number are the unit number.
+The 0x40 bit indicates a
+.I public
+unit;  the 0x80 bit indicates a 
+.I local
+unit.
+.SH INITIALIZATION
+No special initialization is required on the client side;  he finds the
+server by broadcasting the initial request.  Upon getting a response,
+he locks onto that server address.
+.LP
+At the server, the 
+.IR nd (8C)
+command initializes the network disk service by issuing ioctl's
+to the kernel.
+.SH ERRORS
+Generally physical disk I/O errors detected at the server are returned
+to the client for action.  If the server is down or unaccessable,
+the client will see the console message:
+.RS
+nd:  file server not responding: still trying.
+.RE
+The client continues (forever) making his request until he
+gets positive acknowledgement from the server.
+This means the server can crash or power down and come back up
+without any special action required of the user at the client machine.
+It also means the process performing the I/O to \fInd\fP will block, 
+insensitive to signals, since the process is sleeping inside the
+kernel at PRIBIO.
+.SH "PROTOCOL AND DRIVER INTERNALS"
+The protocol packet is defined in 
+.RI < sun/ndio.h >
+and also included below:
+.LP
+.nf
+/*
+ * `nd' protocol packet format.
+ */
+struct ndpack {
+	struct	ip np_ip;	/* ip header, proto IPPROTO_ND */
+	u_char	np_op;        	/* operation code, see below */
+	u_char	np_min;       	/* minor device */
+	char	np_error;	/* b_error */
+	char	np_ver;      	/* version number */
+	long	np_seq;      	/* sequence number */
+	long	np_blkno;	/* b_blkno, disk block number */
+	long	np_bcount;	/* b_bcount, byte count */
+	long	np_resid;	/* b_resid, residual byte count */
+	long	np_caddr;	/* current byte offset of this packet */
+	long	np_ccount;	/* current byte count of this packet */
+};			/* data follows */
+.sp .5
+.ta \w'#define\0NDOPERROR\0\0'u +\w'63*1024\0\0'u
+/*
+ * np_oe operation codes.
+ */
+#define NDOPREAD	1	/* read */
+#define NDOPWRITE	2	/* write */
+#define NDOPERROR	3	/* error */
+#define NDOPCODE	7	/* op code mask */
+#define NDOPWAIT	010	/* waiting for DONE or next request */
+#define NDOPDONE	020	/* operation done */
+.sp .5
+/*
+ * misc protocol defines.
+ */
+#define NDMAXDATA	1024	/* max data per packet  */
+#define NDMAXIO 	63*1024	/* max np_bcount */
+.fi
+.ft R
+.LP
+IP datagrams were chosen instead of UDP datagrams because only the IP
+header is checksummed, not the entire packet as in UDP.  Also the
+kernel level interface to the IP layer is simpler.
+The 
+.I min,
+.I blkno,
+and
+.I bcount
+fields are copied directly from the client's strategy request.
+The sequence number field
+.I seq
+is incremented on each new client request and is matched with incoming
+server responses.
+The server essentially echos the request header in his responses,
+altering certain fields.
+The
+.I caddr
+and
+.I ccount
+fields show the current byte address and count of the data in this
+packet, or the data expected to be sent by the other side.
+.LP
+The protocol is very simple and driven entirely from the client side.
+As soon as the client ndstrategy routine is called, the request is
+sent to the server;  this allows disk sorting to occur at the
+server as soon as possible.
+Transactions which send data (client writes on the client side,
+client reads on the server side) can only send a set number of
+packets of NDMAXDATA bytes each, before waiting for an acknowledgement.
+The defaults are currently set at 6 packets of 1K bytes each;
+the NDIOCETHER ioctl allows setting this value on the server side.
+This allows the normal 4K byte case to occur with just one
+`transaction'.
+The NDOPWAIT bit is set in the
+.I op
+field by the sender to indicate he will send no more until
+acknowledged (or requested) by the other side.
+The NDOPDONE bit is set by the server side to indicate the
+request operation has completed;  for both the read and write
+cases this means the requested disk I/O has actually occured.
+.LP
+Requests received by the server are entered on an active list which
+is timed out and discarded if not completed within NDXTIMER seconds.
+Requests received by the server allocate a 
+.I bcount
+size buffer to minimize buffer copying.
+Contiguous DMA disk I/O thus occurs in the same size chunks it would
+if requested from a local physical disk.
+.SH BOOTSTRAP
+The Sun workstation has PROM code to perform a net boot using
+this driver.  
+Usually, the boot files are obtained from public device 0 (\fI/dev/ndp0\fP\^)
+on the server with which the client is registered;  this allows
+multiple servers to exist on the same net (even running different
+releases of kernel and boot software).
+If the station you are booting is not registered on any of the servers,
+you will have to specify the hex Internet host number of the server
+in a boot command string like: `bec(0,5,0)vmunix'.
+.LP
+This booting performs exactly the same steps
+involved in a real disk boot:
+.IP 1) 4
+User types `b' to PROM monitor.
+.IP 2)
+PROM loads blocks 1 thru 15 of \fI/dev/ndp0\fP (\fIbootnd\fP\^).
+.IP 3)
+\fIbootnd\fP loads \fI/boot\fP.
+.IP 4)
+\fI/boot\fP loads \fI/vmunix\fP.
+.SH "SEE ALSO"
+ioctl(2), nd(8C)
+.SH BUGS
+The operations described in
+.IR dkio (4)
+are not supported.
+.LP
+The local host's disk buffer cache is not used by network disk
+access. This means that if either a local host or a remote host is
+writing, the changes will be visible at random based on the cache hit
+frequency on the local host. Use \fIsync\fP on the server to force the
+data out to disk.  If both the local and remote hosts are
+writing to the same filesystem, one machine's changes can be randomly
+lost, based again on cache hit and deferred write timings.
+.LP
+If an R/O remote file system is mounted R/W by mistake, it is
+impossible to umount it.
+.IX  "ioctls for network disks"  "NDIOCSON"  "\fLioctl\fP's for network disks"  "\fLNDIOCSON\fP \(em server on"
+.IX  "NDIOCSON server on"  ""  "\fLNDIOCSON\fP \(em server on"
+.IX  "server on ioctl"  ""  "server on \fLioctl\fP \(em \fLNDIOCSON\fP"
+.IX  "network disk ioctls"  "NDIOCSON"  "network disk \fLioctl\fP's"  "\fLNDIOCSON\fP \(em server on"
+.IX  "ioctls for network disks"  "NDIOCSOFF"  "\fLioctl\fP's for network disks"  "\fLNDIOCSOFF\fP \(em server off"
+.IX  "NDIOCSOFF server off"  ""  "\fLNDIOCSOFF\fP \(em server off"
+.IX  "server off ioctl"  ""  "server off \fLioctl\fP \(em \fLNDIOCSOFF\fP"
+.IX  "network disk ioctls"  "NDIOCSOFF"  "network disk \fLioctl\fP's"  "\fLNDIOCSOFF\fP \(em server off"
+.IX  "ioctls for network disks"  "NDIOCUSER"  "\fLioctl\fP's for network disks"  "\fLNDIOCUSER\fP \(em set user parameters"
+.IX  "NDIOCUSER set user parameters"  ""  "\fLNDIOCUSER\fP \(em set user parameters"
+.IX  set "user parameters \fLioctl\fP \(em \fLNDIOCUSER\fP"
+.IX  "network disk ioctls"  "NDIOCUSER"  "network disk \fLioctl\fP's"  "\fLNDIOCUSER\fP \(em set user parameters"
+.IX  "ioctls for network disks"  "NDIOCSAT"  "\fLioctl\fP's for network disks"  "\fLNDIOCSAT\fP \(em server at ipaddress"
+.IX  "NDIOCSAT server at ipaddress"  ""  "\fLNDIOCSAT\fP \(em server at ipaddress"
+.IX  "server at ipaddress ioctl"  ""  "server at ipaddress \fLioctl\fP \(em \fLNDIOCSAT\fP"
+.IX  "network disk ioctls"  "NDIOCSAT"  "network disk \fLioctl\fP's"  "\fLNDIOCSAT\fP \(em server at ipaddress"
+.IX  "ioctls for network disks"  "NDIOCCLEAR"  "\fLioctl\fP's for network disks"  "\fLNDIOCCLEAR\fP \(em clear user table"
+.IX  "NDIOCCLEAR clear user table"  ""  "\fLNDIOCCLEAR\fP \(em clear user table"
+.IX  "clear user table ioctl"  ""  "clear user table \fLioctl\fP \(em \fLNDIOCCLEAR\fP"
+.IX  "network disk ioctls"  "NDIOCCLEAR"  "network disk \fLioctl\fP's"  "\fLNDIOCCLEAR\fP \(em clear user table"
+.IX  "ioctls for network disks"  "NDIOCVER"  "\fLioctl\fP's for network disks"  "\fLNDIOCVER\fP \(em version number"
+.IX  "NDIOCVER version number"  ""  "\fLNDIOCVER\fP \(em version number"
+.IX  "version number ioctl"  ""  "version number \fLioctl\fP \(em \fLNDIOCVER\fP"
+.IX  "network disk ioctls"  "NDIOCVER"  "network disk \fLioctl\fP's"  "\fLNDIOCVER\fP \(em version number"
+.IX  "ioctls for network disks"  "NDIOCETHER"  "\fLioctl\fP's for network disks"  "\fLNDIOCETHER\fP \(em set ether address"
+.IX  "NDIOCETHER set ether address"  ""  "\fLNDIOCETHER\fP \(em set ether address"
+.IX  set "ether address \fLioctl\fP \(em \fLNDIOCETHER\fP"
+.IX  "network disk ioctls"  "NDIOCETHER"  "network disk \fLioctl\fP's"  "\fLNDIOCETHER\fP \(em set ether address"
+.IX  "nd device"  ""  "\fLnd\fP \(em network disk driver"  ""  PAGE END

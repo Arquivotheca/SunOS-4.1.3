@@ -1,0 +1,296 @@
+.\" @(#)agt_create.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH AGT_CREATE 3L "21 January 1990"
+.SH NAME
+agt_create, agt_enumerate, agt_trap \- map LWP events into messages
+.SH SYNOPSIS
+.nf
+.ft B
+#include <lwp/lwp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+thread_t agt_create(agt, event, memory)
+thread_t *agt;
+int event;
+caddr_t memory;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int agt_enumerate(vec, maxsize)
+thread_t vec[\|];
+int maxsize;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int agt_trap(event)
+int event;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "agt_create() function" "" "\fLagt_create()\fP function"
+.IX "agt_enumerate() function" "" "\fLagt_enumerate()\fP function"
+.IX "agt_trap() function" "" "\fLagt_trap()\fP function"
+.LP
+Agents are entities that act like threads sending messages when
+an asynchronous event occurs.
+.B agt_create(\|)
+creates an object called an
+.I agent
+which maps the asynchronous event
+.I event
+into messages that can be received with
+.B msg_recv(\|) 
+(see
+.BR msg_send (3L)).
+.I agt
+stores the handle on this object.
+.I event
+is a
+.SM UNIX
+signal number.
+.LP
+.B agt_trap(\|)
+causes the
+event,
+.IR event ,
+to generate an exception (see
+.BR exc_handle (3L)).
+Once initialized using
+.B agt_create(\|)
+or
+.BR agt_trap(\|) ,
+an event can
+not be remapped to a different style of handling.
+If traps are enabled, an event will cause
+the termination of the
+.I thread
+running at the time of the trap if the trap exception is
+not handled.
+If an exception handler is in place, an exception will be raised.
+If an agent exists for the event, the event is mapped into a message
+for the agent.
+If neither agent nor trap
+mapping is enabled, the default signal action (\c
+.SM SIG_DFL\s0)
+is applied to the
+.IR pod .
+Use of standard
+.SM UNIX
+signal handling facilities will defeat the
+event mapping mechanism.
+.LP
+The message sent by the agent (in the argument buffer) will look
+like any other message with the sender being the agent.
+The receive buffer is
+.SM NULL\s0.
+A message is always sent by an agent to the thread which created the agent.
+.LP
+All messages sent by an agent contain an
+.BR eventinfo_t .
+This structure indicates the thread running at the time the interrupt happened,
+and the particular event that occurred.
+Some agent messages contain more information if the particular event
+warrants it.
+In this case, a struct containing an
+.B eventinfo_t
+as its first element is
+passed as the argument buffer.
+Definitions of these structures are contained in
+.BR <lwp/lwp.h> .
+.\" .SB SIGCHLD
+.\" is included because multiple processes could die but be reported
+.\" as one
+.\" .SB SIGCHLD
+.\" event.
+.\" Any thread using
+.\" .BR wait (2)
+.\" could reap the wrong child and the information
+.\" becomes lost to other threads.
+.\" .SB SIGIO
+.\" is different because
+.\" .BR select (2)
+.\" will always tell you the state
+.\" of a descriptor.
+.LP
+An agent appears to the owning thread just like another thread.
+It must therefore have some memory for
+holding its message, as the sender and receiver must belong to the same
+address space.
+.I memory
+is the space an agent will use to store its
+message.
+Typically, this is on the stack of the thread that created the agent.
+It must be of the correct size for the kind of
+event being created (most events need something
+to store an
+.BR eventinfo_t .
+.SB SIGCHLD
+events need room for a
+.BR sigchldev_t .)
+.LP
+You should reply to an agent (using
+.B msg_reply(\|)
+(see
+.BR msg_send (3L))
+as you would reply to a thread.
+Although agents do not ordinarily lose events,
+the next agent message will not be delivered
+until a reply is sent to the agent.
+Thus, an agent appears to the client as an ordinary thread sending messages.
+An agent will only lose events if the total number of unreplied-to
+events in a pod exceeds
+.SM AGENTMEMORY\s0.
+.LP
+.B lwp_destroy(\|)
+is used to destroy an agent.
+All agents created by a thread automatically
+disappear when that thread dies.
+.B agt_enumerate(\|)
+fills in a list with the
+.SM ID\s0's
+of all existing agents
+and returns the total number of agents.
+This primitive uses
+.I maxsize
+to avoid exceeding the capacity
+of the list.
+If the number of agents is greater than
+.IR maxsize ,
+only
+.I maxsize
+agents
+.SM ID\s0's
+are filled in
+.IR vec .
+If
+.I maxsize
+is zero,
+.B agt_enumerate(\|)
+returns the total number of agents.
+.br
+.ne 7
+.LP
+The special event
+.SB LASTRITES
+is caused by the termination of a thread.  An agent for
+.SB LASTRITES
+will be informed about every thread that terminates,
+regardless of cause.  The
+.B eventinfo_code
+element of this agent will contain the stack
+argument that the dead thread was created with.
+Note: by allocating adjacent space above the thread stack, this
+argument can be used to point to private information about a thread.
+The
+.B eventinfo_victimid
+element will contain the id of the dead thread.
+.\" should agents themselves generate
+.\" .SB LASTRITES
+.\" for cleaning up agt mem?
+.\" not really necessary since mem can be on stack.
+.\" can be used to clean up stack malloc for example
+.\" no synchronous cleanup since need stack to clean up on and
+.\" do not want lwpkill to encounter a for(;;) cleanup handler.
+.\" Since cannot use exception handler to free stack, no other way
+.\" to generally do things on thread termination.
+.SH RETURN VALUES
+.LP
+.B agt_create(\|)
+and
+.B agt_trap(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+.B agt_enumerate(\|)
+returns the total number of agents.
+.SH ERRORS
+.LP
+.B agt_trap(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM LE_INUSE
+Agent in use for this event.
+.TP
+.SM LE_INVALIDARG
+Event specified does not exist.
+.LP
+.B agt_create(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM LE_INUSE
+Trap mapping in use for this event.
+.TP
+.SM LE_INVALIDARG
+Attempt to create agent for non-existent event.
+.SH SEE ALSO
+.BR exc_handle (3L),
+.BR msg_send (3L)
+.SH BUGS
+.LP
+Signal handlers always take the
+.SB SIG_DFL
+action when no agent manages the event.
+.LP
+If a descriptor used by a parent of the
+pod (such as its standard input)
+is marked non-blocking by a thread, it should be reset when
+the pod terminates to prevent the parent from receiving
+.SM EWOULDBLOCK
+errors on the descriptor.
+There is no way to prevent this from happening if a pod is terminated
+with extreme prejudice (for instance, using
+.SM
+.BR SIGKILL ).
+.LP
+If an agent reports that a descriptor has I/O available, there may
+be more than one occurrence of I/O available from that descriptor.
+Thus, being informed that
+.SB SIGIO
+has occurred on socket
+.I s
+may mean
+that there are several messages waiting to be received from
+.IR s .
+Clients should be careful to clean out all I/O from a descriptor before
+going back to sleep.
+.LP
+All system calls should be protected with loops testing for
+.SM EINTR
+(and monitors if multiple threads can try to use system calls concurrently).
+.\" this is mostly an efficiency issue to keep from reissuing the same
+.\" interrupted system call again.
+An
+.B lwp_sleep(\|)
+could result in a hidden clock interrupt for example.
+.\".LP
+.\" a system call may be interrupted by
+.\" .SM
+.\" .BR \s-1SIGALRM\s0 ,
+.\" have the new thread
+.\" do another system call, and the 1st is restarted, but
+.\" that's it. A third one loses all memory.
+.SH WARNINGS
+.LP
+.B agt_trap(\|)
+should not be used for asynchronous events.
+If an unsuspecting thread which has no exception handler
+is running at the time of a trapped
+event, it will be terminated.
+.\" especially a problem if Idle or other service thread is running.
+.\" perhaps these should have exception handlers (that essentially
+.\" ignore all exceptions) just in case
+.LP
+Clients should not normally handle signals themselves since the agent mechanism
+assumes it is the only entity handling signals.

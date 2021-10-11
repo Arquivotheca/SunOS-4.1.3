@@ -1,0 +1,94 @@
+.\" @(#)keyserv.8c 1.1 92/07/30 SMI;
+.TH KEYSERV 8C "9 September 1987"
+.SH NAME
+keyserv \- server for storing public and private keys
+.SH SYNOPSIS
+.B keyserv
+[
+.B \-dkn
+]
+.SH DESCRIPTION
+.IX "keyenvoy server" "" "\fLkeyenvoy\fP server"
+.LP
+.B keyserv
+is a daemon that is used for storing the
+private encryption keys of each
+user logged into the system.
+These encryption keys are used for accessing
+secure network services such as secure
+.SM NFS\s0.
+When a user logs in to the system, the
+.BR login (1)
+program uses the login password to decrypt
+the user's encryption key stored
+in the 
+Network Information Service
+(\s-1NIS\s0),
+and then gives the decrypted key to the
+.B keyserv
+daemon to store away.
+.LP
+Normally, root's key is read from the file
+.B /etc/.rootkey
+when the daemon starts up.
+This is useful during power-failure reboots
+when no one is around to type a password,
+yet you still want the secure network services to operate normally.
+.SH OPTIONS
+.TP
+.B \-d
+Prohibit the use of the default key. 
+If this is used
+then every machine and user should have a publickey.
+New publickeys cannot be created if you do not already have a key.
+This can be done globally for an entire domain by deleting the
+.B nobody
+entry from
+.B /etc/publickey
+on the
+.SM NIS
+master.
+See
+.BR chkey (1)
+.TP
+.B \-k
+Remember keylogins across machine reboots.
+This is only needed if
+.BR at (1)
+is used to schedule jobs that require secure
+.SM RPC\s0.
+Use of this option is not recommended.
+.TP
+.B \-n
+Do not read root's key from
+.BR /etc/.rootkey .
+Instead, prompt the user for the password to decrypt
+.B root 's
+key stored in the 
+.SM NIS
+service
+and then store the decrypted key in
+.B /etc/.rootkey
+for future use.
+This option is useful if the
+.B /etc/.rootkey
+file ever gets out of date or corrupted.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/.rootkey
+.B /etc/keystore
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR keylogin (1),
+.BR keylogout (1),
+.BR publickey (5)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

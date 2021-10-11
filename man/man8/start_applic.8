@@ -1,0 +1,158 @@
+.\" @(#)start_applic.8 1.1 92/07/30 SMI; new from ecd 4.0.x
+.TH START_APPLIC 8 "10 March 1989"
+.SH NAME
+start_applic \- generic application startup procedures
+.SH SYNOPSIS 
+.B /usr/etc/start_applic
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "start_applic" "" "\fLstart_applic\fP \(em Generic Application Startup"
+.LP
+.B start_applic
+is a short generic shell script that
+can be copied or symbolically linked into either
+.BI /vol/local/bin/ application
+or
+.BI /usr/local/bin/ application .
+When invoked as
+.IR application ,
+an application installed as described below will be correctly invoked
+on systems of any supported processor architecture.
+Installing
+.B start_applic
+(or a customized version of it) in one of these locations
+ensures that no user's or system's environment
+needs to be modified just to run the application.
+Applications are stored in a single tree which is 
+not shared with any other applications.
+This tree may be available on different systems in different places; if
+the application needs to reference its distribution tree, this should be
+determined from the
+.IR application _\s-1ROOT\s0
+environment variable.
+.LP
+The application startup script arranges that the
+.SM PATH
+and
+.IR application _\s-1ROOT\s0
+environment variables are set correctly while the application is running.
+If the application's distribution tree (placed into
+.BI /vol/ application
+or
+.BI /usr/local/ application )
+does not have an executable binary with the name of the application
+(for example,
+.BI /vol/ application /bin. arch/application ),
+then
+.B start_applic
+can not be used, and a customized application startup script must be
+used instead.
+Such scripts must also allow users to invoke the application from systems
+of any architecture, without requiring them to customize their own
+environments.
+.LP
+Note that there are two contrasting models of software installation.
+The
+.B heterogeneous model
+assumes general availability of the software,
+and solves the \*(lqwhich binaries to use\*(rq
+problem with no administrative overhead.
+The
+.B homogeneous model
+assumes very limited availability of software, requires
+administrative procedures to ensure that
+.B /usr/local
+only contains binaries of the local architecture, and does not 
+really account for networked installations.
+It is easier to add support for additional
+architectures using a heterogeneous
+network model of software installation from the beginning.
+.SS Heterogeneous Networked Installations
+.LP
+Applications available on the network are available through
+.BI /vol/ application
+and exported either to all systems or just to selected ones,
+as licensing restrictions allow.
+The export point is
+.BI /export/vol/ application ,
+which is a symbolic link to the actual
+installation point, typically the
+.BI /files/vol/ application
+directory.
+All subdirectories not explicitly tagged with a
+processor architecture are
+shared among all processor architectures; thus while the
+.RB .\|.\|. /bin.sun386
+and
+.RB .\|.\|. /lib.sun386
+subdirectories contain, respectively, binaries and libraries executable
+only on systems of the Sun386i architecture, the
+.RB .\|.\|. /bin
+directory contains executables that run on any
+architecture (typically using an interpreter such as
+.BR /bin/sh ),
+and the
+.RB .\|.\|. /etc
+directory only contains sharable configuration files.
+.SS Homogeneous Single Machine Installations
+.LP
+Applications available only on a specific machine and its boot clients
+of the same architecture are installed into
+.BI /usr/local/ application .
+This directory supports only a single architecture, so
+.BI /usr/local/ application /bin
+contains binaries executable only on the local architecture, and
+.BI /usr/local/ application /lib
+contains libraries executable only on the local architecture.
+Any sharable files are grouped in
+.BI /usr/local/ application /share .
+.LP
+To install an application onto a boot server
+to serve boot clients with other architectures,
+place the application in
+.BI /usr/local/ application
+on the clients, as described above.
+The installation point (on the server)
+for application binaries of architecture
+.I arch
+is
+.BI /export/local/ arch/application .
+When the architecture is the server architecture,
+this case is identical with the one above.
+.SS Other Installations
+.LP
+Smaller applications (of only one or two files) may be installed into
+the appropriate
+.BI /vol/local/bin. arch
+directory, or possibly into
+.BI /export/local/ arch /bin .
+These directories are in user's default paths, so the application
+does not need to be registered using
+.BR start_applic .
+.SH FILES
+.PD 0
+.TP 20
+.BI /files<n>/vol/ application
+.TP
+.BI /export/vol/ application
+.TP
+.BI /vol/ application
+.TP
+.BI /vol/ application /bin. arch/ application
+.TP
+.BI /usr/local/ application
+.TP
+.BI /export/local/ arch/application
+.PD
+.SH SEE ALSO
+.BR auto.vol (5), 
+.BR exports (5),
+.BR automount (8), 
+.BR exportfs (8) 
+.LP
+.I Sun386i SNAP Administration
+.LP
+.I Sun386i Advanced Administration

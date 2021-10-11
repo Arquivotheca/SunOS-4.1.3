@@ -1,0 +1,100 @@
+.\" @(#)talk.1 1.1 92/07/30 SMI;
+.TH TALK 1 "9 September 1987"
+.SH NAME
+talk \- talk to another user
+.SH SYNOPSIS
+.B talk
+.I username
+[
+.I ttyname
+]
+.IX  "talk command"  ""  "\fLtalk\fP \(em talk to another user"
+.IX  communications  talk  ""  "\fLtalk\fP \(em talk to another user"
+.IX  user  "talk to another"  ""  "talk to another \(em \fLtalk\fP"
+.SH DESCRIPTION
+.LP
+.B talk
+is a visual communication program which
+copies lines from your terminal
+to that of another user.
+.LP
+If you wish to talk to someone on your own machine, then
+.I username
+is just the person's login name. If you wish to talk to
+a user on another host, then
+.I username
+is one of the following forms :
+.RS
+.nf
+.IB host ! user
+.IB host . user
+.IB host : user
+.IB user @ host
+.fi
+.RE
+though
+.IB user @ host
+is perhaps preferred.
+.LP
+If you want to talk to a user who is logged in more than once, the
+.I ttyname
+argument may be used to indicate the appropriate terminal name.
+.LP
+When first called,
+.B talk
+sends the message:
+.RS
+.IP
+.nf
+.BI "Message from TalkDaemon@" his_machine  at time .\|.\|.
+.BI "talk: connection requested by " "your_name" @ "your_machine" .
+.BI "talk: respond with: talk " your_name @ your_machine
+.fi
+.RE
+to the user you wish to talk to.
+At this point, the recipient of the
+message should reply by typing:
+.IP
+.BI "example% talk " your_name @ your_machine
+.LP
+It does not matter from which machine the
+recipient replies, as long as their login name
+is the same.  Once communication is established, the two
+parties may type simultaneously, with their output appearing in
+separate windows.  Typing
+.SM CTRL\s0\c
+.B \-L
+redraws the screen,
+while your erase, kill, and word kill characters will work in
+.B talk
+as normal.  To exit, just type your interrupt character;
+.B talk
+then moves the cursor to the bottom
+of the screen and restores the terminal.
+.LP
+Permission to talk may be denied or granted by use of the
+.B mesg
+command.  At the outset talking is allowed.
+Certain commands, in particular
+.BR nroff (1)
+and
+.BR pr (1V)
+disallow messages in order to prevent messy output.
+.LP
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/hosts
+to find the recipient's machine
+.TP
+.B /etc/utmp
+to find the recipient's tty
+.PD
+.SH "SEE ALSO"
+.BR mail (1),
+.BR mesg (1),
+.BR nroff (1),
+.BR pr (1V),
+.BR who (1),
+.BR write (1),
+.BR talkd (8C)

@@ -1,0 +1,286 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)lpd.8 1.1 92/07/30 SMI; from UCB 4.3 BSD 6.3
+.\"
+.TH LPD 8 "5 December 1989"
+.SH NAME
+lpd \- printer daemon
+.SH SYNOPSIS
+.B /usr/lib/lpd
+[
+.B \-l
+] [
+.B \-L
+.I logfile
+] [
+.I port#
+]
+.SH DESCRIPTION
+.IX  "lpd command"  ""  "\fLlpd\fP \(em line printer daemon"
+.IX  printer "daemon \(em \fLlpd\fP"
+.IX  "line printer daemon"  ""  "line printer daemon \(em \fLlpd\fP"
+.LP
+.B lpd
+is the line printer daemon (spool area handler).
+It is usually invoked at boot time from the
+.BR rc (8)
+script,  making a single pass through the
+.BR printcap (5)
+file to find out about the existing printers and printing any files
+left after a crash.
+It then accepts requests to print files in a queue,
+transfer files to a spooling area, display a queue's status, or remove
+jobs from a queue.
+In each case, it forks a child process
+for each request, and continues to listen for subsequent requests.
+.LP
+The Internet port number used to communicate
+with other processes is usually obtained with
+.BR getservent (3N),
+but can be specified with the
+.IR port#
+argument.
+.LP
+If a file cannot be opened, an error message is logged using the
+.SB LOG_LPR
+facility of
+.BR syslog (3).
+.B lpd
+will try up to 20 times
+to reopen a file it expects to be there, after which it proceeds
+to the next file or job.
+.SH OPTIONS
+.TP
+.B \-l
+Log valid requests received from the network.
+This can be useful for debugging purposes.
+.TP
+.BI \-L " logfile"
+Change the file used for writing error conditions to
+.I logfile.
+The default is to report a message using the
+.BR syslog (3)
+facility.
+.SH OPERATION
+.SS Access Control
+.LP
+Access control is provided by two means.
+First, all requests must come from
+one of the machines listed in either the file
+.B /etc/hosts.equiv
+or
+.BR /etc/hosts.lpd .
+(This latter file is in
+.BR hosts.equiv (5)
+format.)
+Second, if the
+.B rs
+capability is specified in the
+.B printcap
+entry,
+.BR lpr (1)
+requests are only be honored for users with accounts on the
+printer host.
+.SS Lock File
+The
+.B lock
+file in each spool directory is used to prevent multiple daemons from
+becoming active, and to store information about the daemon process for
+.BR lpr (1),
+.BR lpq (1),
+and
+.BR lprm (1).
+.LP
+.B lpd
+uses
+.BR flock (2)
+to provide exclusive access to the lock file and to prevent multiple
+daemons from becoming active simultaneously.
+If the daemon should be killed
+or die unexpectedly, the lock file need not be removed.
+The lock file is kept in a readable
+.SM ASCII
+form and contains two lines.
+The first is the process id of the daemon
+and the second is the control
+file name of the current job being printed.
+The second line is updated to
+reflect the current status of
+.B lpd
+for the programs
+.BR lpq (1)
+and
+.BR lprm (1).
+.SS Control Files
+After the daemon has successfully set
+the lock, it scans the directory
+for files beginning with
+.BR cf .
+Lines in each
+.I cf
+file specify files to be printed or non-printing actions to be
+performed.  Each such line begins with a key character
+that indicates what to do with the remainder of the line.
+.RS
+.PD 0
+.TP
+.B J
+Job name to print on the burst page.
+.TP
+.B C
+Classification line on the burst page.
+.TP
+.B L
+Literal.  This line contains identification information from
+the password file, and causes a burst page to be printed.
+.TP
+.B T
+Title string for page headings printed by
+.BR pr (1V).
+.TP
+.B H
+Hostname of the machine where
+.BR lpr (1)
+was invoked.
+.TP
+.B P
+Person.  Login name of the person who invoked
+.BR lpr (1).
+This is used to verify ownership by
+.BR lprm (1).
+.TP
+.B M
+Send mail to the specified user when the current print job completes.
+.TP
+.B f
+Formatted File, the name of a file to print that is already formatted.
+.TP
+.B l
+Like
+.BR f ,
+but passes control characters along, and does not make page breaks.
+.TP
+.B p
+Name of a file to print using
+.BR pr (1V)
+as a filter.
+.TP
+.B t
+Troff File.  The file contains
+.BR troff (1)
+output (cat phototypesetter commands).
+.TP
+.B n
+Ditroff File.  The file contains device independent troff output.
+.TP
+.B d
+.SM DVI
+File.  The file contains
+.SM T\v'.2v'E\v'-.2v'X
+output (\s-1DVI\s0 format from Stanford).
+.TP
+.B g
+Graph File.  The file contains data produced by
+.BR plot (3X).
+.TP
+.B c
+Cifplot File. The file contains data produced by
+.IR cifplot .
+.TP
+.B v
+The file contains a raster image.
+.TP
+.B r
+The file contains text data with
+.SM FORTRAN
+carriage control characters.
+.TP
+.B 1
+Troff Font R. The name of a font
+file to use instead of the default.
+.TP
+.B 2
+Troff Font I. The name of the font file
+to use instead of the default.
+.TP
+.B 3
+Troff Font B. The name of the font
+file to use instead of the default.
+.TP
+.B 4
+Troff Font S. The name of the font file
+to use instead of the default.
+.TP
+.B W
+Width. Changes the page width (in characters) used by
+.BR pr (1V)
+and the text filters.
+.TP
+.B I
+Indent.  Specify the number of characters
+by which to indent the output.
+.TP
+.B U
+Unlink.  The name of file to remove upon completion of printing.
+.TP
+.B N
+Filename.  The name of the file being printed, or a blank
+for the standard input (when
+.BR lpr (1)
+is invoked in a pipeline).
+.PD
+.RE
+.SS Data Files
+.LP
+When a file is spooled for printing,
+the contents are copied into a data file
+in the spool directory.
+Data file names begin with
+.BR df .
+When
+.B lpr
+is called with the
+.B -s
+option, the control files contain a symbolic link
+to the actual file, and no data files are created.
+.SS Minfree File
+The file
+.I minfree
+in each spool directory contains the
+number of kilobytes to leave free
+so that the line printer queue won't completely fill the disk.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/printcap
+printer description file
+.TP
+.B /var/spool/*
+spool directories
+.TP
+.B /var/spool/*/minfree
+minimum free space to leave
+.TP
+.B /dev/lp*
+line printer devices
+.TP
+.B /dev/printer
+socket for local requests
+.TP
+.B /etc/hosts.equiv
+hosts allowed equivalent host access
+.TP
+.B /etc/hosts.lpd
+hosts allowed printer access only
+.PD
+.SH "SEE ALSO"
+.BR lpq (1),
+.BR lpr (1),
+.BR lprm (1),
+.BR hosts (5),
+.BR hosts.equiv (5),
+.BR printcap (5),
+.BR lpc (8),
+.BR pac (8)

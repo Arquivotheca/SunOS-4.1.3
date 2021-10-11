@@ -1,0 +1,205 @@
+.\" @(#)load.1 1.1 92/07/30 SMI;
+.TH LOAD 1 "19 February 1988"
+.SH NAME
+load, loadc \- load Application SunOS or Developer's Toolkit clusters
+.SH SYNOPSIS
+.B load
+[ 
+.IR filename " .\|.\|.]" 
+.LP
+.B loadc
+[
+.I cluster
+\&.\|.\|. ]
+.LP
+.B loadc appl
+.LP
+.B loadc devel
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "load command" "" "\fLload\fR command"  
+.IX "loadc command" "" "\fLloadc\fR command"  
+.LP
+.B load
+loads the optional clusters in the Application SunOS or the Developer's
+Toolkit that contain the files specified in the
+.I filename
+arguments.
+.B loadc
+loads the optional clusters in the Application SunOS or
+the Developers Toolkit specified in the cluster arguments.
+Specify the special cluster name
+.B appl
+with 
+.B loadc
+to load all the Application SunOS clusters.  Likewise, specify
+.B devel
+to
+.B loadc
+to load all the Developer's Toolkit clusters.
+.LP
+.B load
+and 
+.B loadc
+require the user to specify the distribution medium, either
+3.5-inch diskette or quarter-inch tape, and insert the diskette or tape.
+The user will be asked to confirm that the specified
+medium has been inserted.  If the user confirmation
+is negative, no software will be loaded.
+.LP
+Without arguments,
+.B load
+and 
+.B loadc
+display a summary of the clusters in the Application SunOS and
+Developer's Toolkit, including the load state and size of each cluster.
+.SH EXAMPLES
+To load the cluster that contains the 
+.BR spell (1)
+command:
+.LP
+.RS
+.ft B
+.nf
+example% load spell
+Enter your distribution media type (1=1/4" tape, 2=3.5" diskette): 2
+Insert diskette \fIn\fP to load the spellcheck cluster, confirm (y/n): y
+Loading the spellcheck cluster ...
+The spellcheck cluster has been loaded.
+space used by clusters: 6021K bytes
+total space remaining: 20432K bytes
+example%
+.ft
+.fi
+.RE
+.LP
+To load the 
+.B spellcheck 
+cluster:
+.LP
+.RS
+.nf
+.ft B
+example% loadc spellcheck
+Enter your distribution media type (1=1/4" tape, 2=3.5" diskette): 2
+Insert diskette \fIn\fP to load the spellcheck, confirm (y/n): y
+Loading the spellcheck cluster .\|.\|.
+The spellcheck cluster has been loaded.
+space used by clusters: 6021K bytes
+total space remaining: 20432K bytes
+example%
+.ft
+.fi
+.RE
+.LP
+To display a summary of the clusters in the Application
+SunOS and Developer's Toolkit:
+.LP
+.RS
+.nf
+.ta \w'    available   'u +\w'advanced_admin   'u +\w'diskette  'u
+.ft B
+example% load
+\&Application SunOS Optional Clusters:
+\&    available	cluster	size (bytes)
+\&    ---------	-------	----
+\&      yes	accounting	265K
+\&      no	advanced_admin	501K
+\&      \&.\|.\|.
+.br
+.ne 10
+\&Developer's Toolkit Optional Clusters:
+\&    available	cluster	size (bytes)
+\&    ---------	-------	----
+\&      no	base_devel	6907K
+\&      \&.\|.\|.
+.sp
+space used by clusters: 6021K bytes
+total space remaining: 20432K bytes
+example%
+.ft
+.fi
+.RE
+.LP
+A cluster is available if it has been \(lqloaded\(rq using
+.B load
+or
+.B loadc
+or if it has been \*(lqmounted\*(rq across the network.
+.SH ENVIRONMENT
+.TP 15
+.SB LOADMEDIA
+Used to specify the distribution media type for the system.  It can be set
+to
+.B diskette
+to specify 3.5-inch diskette or
+.B tape
+to specify 1/4" tape.
+If it is set,
+.B load
+and
+.B loadc
+will not ask the user to enter the distribution media type.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/cluster/appl
+where Application SunOS clusters are loaded (or mounted)
+.TP
+.B /usr/cluster/devel
+where Developer's Toolkit clusters are loaded (or mounted)
+.TP
+.B /usr/lib/load/*
+data files
+.PD
+.SH SEE ALSO
+.BR cluster(1),
+.BR unload (1),
+.BR toc (5)
+.LP
+.I Sun386i System Setup and Maintenance
+.SH DIAGNOSTICS
+.TP
+.B "Wrong \fIdiskette\fP/\fItape\fP
+An incorrect diskette or tape was inserted.  The user will again
+be asked to insert the specified media.
+.TP
+.BI "The file " filename " is not in any of the optional software clusters."
+The specified file is not part of the Application
+SunOS or Developer's Toolkit.
+.TP
+.BI "There is no " cluster " cluster."
+The specified cluster is not part of the Application
+SunOS or Developers Toolkit.
+.TP
+.BI "The cluster " cluster " is already loaded, overwrite? (y/n):"
+The specified cluster appears to have been loaded already.
+Type 
+.B y
+followed by
+.SM RETURN
+to have the cluster loaded or
+.B n
+followed by
+.SM RETURN
+to cancel the loading of the cluster.
+.TP
+.BI "Cluster " cluster " requires " n "K; there is not enough disk space."
+There is not enough disk space to hold the specified cluster.
+.TP
+.BI "The " cluster " cluster has not been loaded."
+The loading of the specified cluster has been canceled or interrupted by
+the user.
+.TP
+.B "The Application SunOS (and/or) Developers Toolkit are mounted."
+The Application SunOS or Developers Toolkit or both
+are mounted across the network
+and can not be loaded or unloaded.
+.TP
+.BI "The " tape / diskette " drive is currently in use."
+You are trying to load a cluster from tape (or diskette) 
+and another process currently
+has control of the tape (or diskette) drive.

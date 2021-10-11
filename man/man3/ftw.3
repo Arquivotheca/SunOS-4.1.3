@@ -1,0 +1,137 @@
+.\" @(#)ftw.3 1.1 92/07/30 SMI; from S5R2
+.TH FTW 3 "22 November 1987"
+.SH NAME
+ftw \- walk a file tree
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <ftw.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int ftw(path, fn, depth)
+char *path;
+int (*fn)(\|);
+int depth;
+.ft
+.fi
+.SH DESCRIPTION
+.IX ftw() "" "\fLftw()\fR \(em traverse file tree"
+.IX file "\fLftw()\fR \(em traverse file tree"
+.LP
+.B ftw(\|)
+recursively descends the directory hierarchy rooted in
+.IR path .
+For each object in the hierarchy,
+.B ftw(\|)
+calls
+.IR fn ,
+passing it a pointer to a
+null-terminated
+character string containing the name of the object, a pointer to a
+.B stat(\|)
+structure (see
+.BR stat (2V))
+containing information about the object, and an integer.
+Possible values of the integer, defined in the
+.B <ftw.h>
+header file, are
+.SM FTW_F\s0
+for a file,
+.SM FTW_D\s0
+for a directory,
+.SM FTW_DNR\s0
+for a directory that cannot be read, and
+.SM FTW_NS\s0
+for an object for which
+.B stat(\|)
+could not successfully be executed.
+If the integer is
+.SM FTW_DNR\s0,
+descendants of that directory will not be processed.
+If the integer is
+.SM FTW_NS\s0,
+the
+.B stat(\|)
+structure will contain garbage.
+An example of an object that would cause
+.SM FTW_NS\s0
+to be passed to
+.I fn
+would be a file in a directory
+with read but without execute (search) permission.
+.LP
+.B ftw(\|)
+visits a directory before visiting any of its descendants.
+.LP
+The tree traversal continues until the tree is exhausted,
+an invocation of
+.I fn
+returns a nonzero value,
+or some error is detected within
+.B ftw(\|)
+(such as an I/O error).
+If the tree is exhausted,
+.B ftw(\|)
+returns zero.  If
+.I fn
+returns a nonzero value,
+.B ftw(\|)
+stops its tree traversal and returns whatever
+value was returned by
+.IR fn .
+If
+.B ftw(\|)
+detects an error, it returns
+\-1, and sets the error type in
+.BR errno .
+.LP
+.B ftw(\|)
+uses one file descriptor for each level in the tree.
+The
+.I depth
+argument limits the number of file descriptors so used.
+If
+.I depth
+is zero or negative, the effect is the same as if it were 1.
+.I depth
+must not be greater than the number of file descriptors currently
+available for use.
+.B ftw(\|)
+will run more quickly if
+.I depth
+is at least as large as the number of levels in the tree.
+.SH SEE ALSO
+.BR stat (2V),
+.BR malloc (3V)
+.SH BUGS
+Because
+.B ftw(\|)
+is recursive, it is possible for it to terminate with a memory
+fault when applied to very deep file structures.
+.LP
+It could be made to run faster and use less storage on deep
+structures at the cost of considerable complexity.
+.LP
+.B ftw(\|)
+uses
+.BR malloc (3V)
+to allocate dynamic storage during its operation.
+If
+.B ftw(\|)
+is forcibly terminated, such as by
+.B longjmp(\|)
+being executed by
+.I fn
+or an interrupt routine,
+.B ftw(\|)
+will not have a chance to free that storage,
+so it will remain permanently allocated.
+A safe way to handle interrupts is to store
+the fact that an interrupt has occurred,
+and arrange to have
+.I fn
+return a nonzero value at its next invocation.

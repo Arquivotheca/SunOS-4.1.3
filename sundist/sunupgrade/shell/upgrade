@@ -1,0 +1,447 @@
+#
+umask 022
+HOST=`hostname`
+CLIENTS=""
+. ./check_test
+. ./house_keeper
+. ./script_gen
+. ./exec_upgrade
+. ./inout
+BIN=/usr/bin
+ETC=/usr/etc
+INC=$USR_TMP/inc
+VOL0=$USR_TMP/vol0
+VOL_NAMES=$USR_TMP/vol_names
+INST_PCK_LST=$USR_TMP/inst_pck_lst
+NOT_INST_PCK_LST=$USR_TMP/not_inst_pck_lst
+WORK_PCK_LST=$USR_TMP/work_pck_lst
+OPENWIN_PCK_LST=$USR_TMP/openwin_pck_lst
+UPGRDT_PCK_LST=$USR_TMP/upgrdt_pck_lst
+FOR_UPGR_PCK_LST0=$USR_TMP/for_upgr_pck_lst0
+FOR_UPGR_PCK_LST_ALL=$USR_TMP/for_upgr_pck_lst_all
+FOR_UPGR_PCK_LST=$USR_TMP/for_upgr_pck_lst
+CLIENT_UPGRADE_CANDIDATES=$USR_TMP/client_upgrade_candidates
+sun4_RELEASE_LST=$USR_TMP/sun4_release_list
+sun4c_RELEASE_LST=$USR_TMP/sun4c_release_list
+sun4m_RELEASE_LST=$USR_TMP/sun4m_release_list
+SUN4_REMOVE_LST=$USR_TMP/sun4_remove_list
+SUN4C_REMOVE_LST=$USR_TMP/sun4c_remove_list
+SUN4M_REMOVE_LST=$USR_TMP/sun4m_remove_list
+MEDIA_FILE=$USR_TMP/media_file
+NAME_LIST=$USR_TMP/name_list
+SERVER_PCK_LIST=$USR_TMP/server_pck_list
+SERVER_ARCH_LIST=$USR_TMP/server_karch_list
+RELEASE_LST=$USR_TMP/client_release_list
+NIS_DIR=/var/yp
+INETD_CONF=/etc/inetd.conf
+
+ARCH=arch
+PATH=$COM_PLACE:$PATH
+CAT=cat
+CD=cd
+CHMOD=chmod
+CHOWN=chown 
+COMM=comm 
+CP=cp
+CUT=cut
+ECHO=echo
+ED=ed
+EGREP=egrep
+EXPR=expr
+GREP=grep
+KILL=kill
+LN=ln
+LS=ls
+LDCONFIG=ldconfig
+MORE=more
+MKDIR=mkdir
+MOUNT=mount
+MV=mv
+NAWK=nawk
+PWD=pwd
+RM=rm
+SED=sed
+SORT=sort
+SUM=sum
+SYSLOGD=syslogd
+SYNC=sync
+TAR=tar
+TEE=tee
+TR=tr
+XDRTOC=xdrtoc
+
+export CUT PATH
+#
+AARCH=`$ARCH`
+KARCH=`$ARCH -k`
+STAND=/usr/kvm/stand
+INSDIR=/etc/install
+# release currently installed
+if [ -r $INSDIR/release ]; then
+    FROM_RELEASE=`sed "s/^.*sunos\.//" $INSDIR/release`
+    export FROM_RELEASE
+else
+    log_echo "$INSDIR/release not found"
+    log_echo "$CMD cannot run on $HOST"
+    cleanup 41
+fi
+#FROM_RELEASE=4.1.1
+#
+if [ -r $INSDIR/sys_info ]; then
+    TYPE=`$NAWK -F= '{ if ($1 == "sys_type") print $2}' \
+				$INSDIR/sys_info`
+else
+    log_echo "$INSDIR/sys_info not found"
+    log_echo "$CMD cannot run on $HOST"
+    cleanup 42
+fi
+
+INCLUDE=include
+TMP_PATH=$USR_TMP/upgrade
+INCLUDE_PATH=$TMP_PATH/include
+SCRIPT_PATH=$TMP_PATH/script
+
+REPLACE="&"  # 4.1.1/4.1.2 file replaced by 4.1.x file.
+SAVE_OLD="+" # 4.1.x file replaces 4.1.1/4.1.2 file; 4.1.1/4.1.2 file saved with .4.1.1/.4.1.2 tag.
+MAKE_NEW="-" # 4.1.1/4.1.2 file is retained; 4.1.x file added with .4.1.x tag.
+COMMENT="#"
+
+BEFORE=before
+AFTER=after
+SOS=sos
+UNTAR=untar
+DELETE=delete
+CD_MOUNT=/usr/etc/install/tar           # cdrom mount path
+CD_EXPORT=$CD_MOUNT/export   
+CD_EXEC=$CD_EXPORT/exec 
+CD_KVM_DIR=$CD_EXEC/kvm
+#
+if [ -f $UPGRADE/release ]; then
+    TO_RELEASE=`$CAT $UPGRADE/release`
+    export TO_RELEASE
+else
+    log_echo "$UPGRADE/release not found"
+    cleanup 43
+fi
+NEW_VERSION=sunos_`$SED "s/\./_/g" $UPGRADE/release | $TR '[A-Z]' '[a-z]'`
+#NEW_VERSION=sunos_4_1_3_PALPHA
+#TO_RELEASE=4.1.2
+
+OLD_SUFFIX=".`echo $FROM_RELEASE | $SED "s/\.//g" | $TR '[A-Z]' '[a-z]'`"
+NEW_SUFFIX=".`echo $TO_RELEASE | $SED "s/\.//g" | $TR '[A-Z]' '[a-z]'`"
+KARCH_VERSION=${KARCH}_$NEW_VERSION
+CD_TOC=$CD_KVM_DIR/$KARCH_VERSION/xdrtoc # cdrom toc path
+TOCFILE=$USR_TMP/toc
+#
+INCLD=$UPGRADE/incld
+OPENWINDOW_VERSION=3
+OPENWINDOWS=openwindows_
+ROOT_SPACE=2000
+USR_412usr_szdiff=4100
+USR_412kvm_szdiff=400
+USR_412sys_szdiff=300
+USR_412user_diag_szdiff=600
+USR_usr_szdiff=6000
+USR_kvm_szdiff=1000
+USR_sys_szdiff=650
+USR_user_diag_szdiff=5250
+USR_manual_szdiff=110
+USR_debugging_szdiff=70
+OW_user_sz=35600
+OW_prog_sz=24000
+OW_fonts_sz=10000
+OW_demo_sz=8100
+KARCH1=sun4
+KARCH2=sun4c
+KARCH3=sun4m
+
+trap 'cleanup 61' 1
+trap 'cleanup 62' 2
+trap 'cleanup 63' 3
+trap 'cleanup 64' 10
+trap 'cleanup 65' 15
+
+if $DUMMY ; then
+    echo "Performing the dummy upgrade (no upgrade will be performed)."
+    COALESCE_LIST=$COALESCE_LIST.dummy
+    $RM -f $COALESCE_LIST
+else
+    check_before
+    $RM -f $COALESCE_LIST.dummy
+fi
+
+##################################################
+$DO_VOLATILE_TEST && volatile_test
+cr_nullfile $COALESCE_LIST
+$CHMOD a+w $COALESCE_LIST
+log_echo
+log_echo "-------- Starting" $CMD  `date` "--------"
+log_echo
+if $VERBOSE ; then
+    TAR_OPTIONS=xvBpf
+else
+    TAR_OPTIONS=xBpf
+fi
+
+test_release
+
+print_header
+
+if $INTERACTIVE ; then
+    log_echo ""
+    get_yesno answer "Continue "
+    log_echo $answer
+    if [ $answer != "yes" ]; then
+	cleanup 0 
+    fi
+fi
+# Housekeeping for the /usr/tmp/upgrade
+tmp_house
+# Read the volatile file list:
+$RM -rf $VOL0 $VOL_NAMES
+# $VOL0 list without comments
+# $VOL_NAMES list without comments and signs
+#	 (just filenames)
+$NAWK ' NF == 2 {
+    if (substr($1, 1, 1) != "#"){
+        print $1 " " $2 >> "'$VOL0'"
+	print $2
+    }
+} ' $VOLATILE_LIST | $SORT > $VOL_NAMES
+##################################################
+
+sos_file=$SCRIPT_PATH/$SOS
+$RM -f $sos_file
+#--------------------------------
+if [ $TYPE = server ]; then
+    ./check_install -v
+    if [ -s  $CLIENT_UPGRADE_CANDIDATES ]; then
+	if $INTERACTIVE ; then
+	log_echo ""
+	if $DUMMY ; then
+            get_yesno answer "Continue"
+	else
+	    log_echo "Before you answer \"yes\" to the following question"
+	    log_echo "- make sure that all dataless clients of the server $HOST have been upgraded;"
+	    log_echo "- make sure that all diskless clients of the server $HOST are halted."
+	    log_echo
+            get_yesno answer "All listed above diskless clients will be upgraded. Continue"
+	fi
+	log_echo $answer
+	if [ $answer != "yes" ]; then
+	    cleanup 44 
+	fi
+    log_echo ""
+    fi
+    fi
+elif [ $TYPE = standalone ]; then
+    :
+elif [ $TYPE = dataless ]; then
+    :
+elif [ $TYPE = client ]; then
+    log_echo "Clients may only be upgraded from the server"
+    cleanup 45
+else
+    log_echo "Unknown system type \"$TYPE\" found in $INSDIR/sys_info"
+    cleanup 46
+fi
+#--------------------------------
+check_space $ROOT_SPACE /
+if [ $TYPE = dataless ]; then
+    echo root > $FOR_UPGR_PCK_LST
+else
+    make_upgrade_list
+fi
+#--------------------------------
+
+if $INTERACTIVE ; then
+    log_echo ""
+    if $DUMMY ; then
+        get_yesno answer "Start dummy upgrade on $TYPE $HOST"
+    else
+        get_yesno answer "Start upgrade on $TYPE $HOST"
+    fi
+    log_echo $answer
+    if [ $answer != "yes" ]; then
+	    cleanup 47 
+    fi
+    log_echo ""
+fi
+#--------------------------------
+if [ $TYPE = server ]; then
+    INTERACTIVE0=$INTERACTIVE
+    INTERACTIVE=false
+    if [ -s  $CLIENT_UPGRADE_CANDIDATES ]; then
+        log_echo
+        log_echo UPGRADING CLIENTS
+        . ./upgrade_client
+     elif [ -d /export/exec/proto.root.sunos.$FROM_RELEASE ]; then
+	  log_echo "Upgrade root files for clients"
+	  upgrade_package root /export/exec/proto.root.sunos.$FROM_RELEASE
+	  log_echo "Rename /export/exec/proto.root.sunos.$FROM_RELEASE to\
+                /export/exec/proto.root.sunos.$TO_RELEASE"
+	  if $DUMMY ; then
+		:
+	  else
+		$MV /export/exec/proto.root.sunos.$FROM_RELEASE \
+            	/export/exec/proto.root.sunos.$TO_RELEASE
+    	  fi 
+    fi
+    INTERACTIVE=$INTERACTIVE0
+    log_echo
+    log_echo UPGRADING SERVER
+fi
+#--------------------------------
+#$RM -f $COALESCE_LIST
+user=false
+for name in `$CAT  $FOR_UPGR_PCK_LST`; do
+    case $name in
+    	usr) user=true;;
+    	sys) if is_sys_loaded $INSDIR/media_file.$AARCH.$KARCH.sunos.$FROM_RELEASE; then
+    	    	upgrade_package $name
+    	     elif [ -f $SERVER_ARCH_LIST ] && $GREP -i $name $SERVER_ARCH_LIST >/dev/null; then
+    	    	 get_package $name                      
+		 add_sys $INSDIR/media_file.$AARCH.$KARCH.sunos.$FROM_RELEASE 
+             fi;;
+    	*) if [ ! -f $SERVER_PCK_LIST ] || $GREP -i $name $SERVER_PCK_LIST > /dev/null; then
+    	    	upgrade_package $name
+           else
+            	get_package $name
+           fi;;
+    esac
+done
+if [ $TYPE = server ]; then
+    if [ -f $INETD_CONF ] ; then
+	$SED "s@^#tftp	dgram@tftp	dgram@" $INETD_CONF > /tmp/inetd_$$
+	$MV /tmp/inetd_$$ $INETD_CONF
+    fi
+fi
+if [ $TYPE != dataless ] && $OW_space_check ; then
+    log_echo "Removing everything under $OPENWINHOME"
+        if $DUMMY ; then
+	    :
+        else
+            $RM -rf $OPENWINHOME/*
+        fi
+        for openwin_name in `$CAT $OPENWIN_PCK_LST`; do
+            upgrade_openwin $openwin_name
+        done
+fi
+# upgrade usr the last
+if $user && [ $TYPE != dataless ]; then
+   upgrade_package usr
+fi
+
+#
+#
+#
+log_echo "You may need to coalesce the following files / directories manually:"
+$SED 's@//@/@g' $COALESCE_LIST | $SED 's@//@/@g' > /tmp/clse_$$
+$SORT -u /tmp/clse_$$ $COALESCE_LIST
+$RM -f /tmp/clse_$$
+cat_it $COALESCE_LIST
+fix_release
+fix_links
+for client in $CLIENTS; do
+    log_echo
+    log_tab; log_echo "Installing kernel and kadb on client $client"
+    THE_KARCH=`what_karch $client`
+    THE_RELEASE=`what_release $client`
+    ROOT=`find_root $client`
+    if [ $THE_KARCH = $KARCH1 ]; then
+	KVMPATH=$KVMPATH1
+    elif [ $THE_KARCH = $KARCH2 ]; then
+	KVMPATH=$KVMPATH2
+    elif [ $THE_KARCH = $KARCH3 ]; then 
+	KVMPATH=$KVMPATH3
+    fi
+    KERNEL=$KVMPATH/stand/$NEW_KERNEL
+    fix_kernel $KERNEL $ROOT
+    fix_kadb $KVMPATH/stand/kadb $ROOT
+    log_tab; log_echo "Upgrade sbin on client $client"
+    log_tab; fix_sbin $ROOT
+done
+if [ $TYPE = server ]; then
+   if [ -s  $CLIENT_UPGRADE_CANDIDATES ]; then
+      upgrade_bootblocks
+    else
+      log_echo "Create the /tftpboot/boot.$KARCH.sunos.$TO_RELEASE."
+      if $DUMMY ; then
+        :
+      else 
+        $CP /export/exec/kvm/$KARCH/stand/boot.$KARCH \
+             /tftpboot/boot.$KARCH.sunos.$TO_RELEASE
+        if [ $? = 0 ]; then
+	  $RM /tftpboot/boot.$KARCH.sunos.$FROM_RELEASE
+        fi
+      fi
+    fi
+fi
+if [ $TYPE = dataless ]; then
+    install_vmunix_at_dataless
+    install_kadb_at_dataless
+    install_boot_block_at_dataless
+    fix_sbin_at_dataless
+    upgrade_fstab
+else
+    install_vmunix $STAND/$NEW_KERNEL
+    install_kadb $STAND
+    install_boot_block
+    fix_sbin
+fi
+log_echo "Delete unused old files"
+$SORT -u  $SCRIPT_PATH/*.$DELETE > $SCRIPT_PATH/$DELETE	2>/dev/null
+if $DUMMY ; then
+    cat_it $SCRIPT_PATH/$DELETE
+else
+    . $SCRIPT_PATH/$DELETE
+fi
+
+# Special treatment for /usr/lib/adb
+if $DUMMY ; then
+    :
+elif [ ! -h /usr/lib/adb ]; then
+    $RM -rf /usr/lib/adb
+    $LN -s ../kvm/adb /usr/lib/adb
+fi
+#
+####### For updating adb from 4.1.3x --> 4.1.3y
+#
+if $DUMMY ; then
+    :
+else
+    log_echo "Updating adb directory..."
+    ($RM -rf /usr/kvm/adb; \
+    $TAR tf /usr/etc/install/tar/export/exec/kvm/`arch -k`_$NEW_VERSION/kvm | $GREP adb | $GREP -v stand > /tmp/adb; \
+    $CD /usr/kvm; \
+    $TAR xvf /usr/etc/install/tar/export/exec/kvm/`arch -k`_$NEW_VERSION/kvm -I /tmp/adb)
+fi 
+#
+#### End 
+#
+log_echo "Log is recorded in the file $LOG"
+log_echo "-------- Exiting" $CMD  `date` "--------"
+
+if $DUMMY ; then
+    log_echo "List of volatile files / directories :"
+    log_echo "$COALESCE_LIST"
+    cleanup 0
+fi
+
+#Final operations for the real upgrade
+#To prevent creation of core when user halts
+log_echo "List of actually updated volatile files / directories :"
+log_echo "$COALESCE_LIST"
+
+log_echo ""
+if [ $TYPE = dataless ]; then
+    log_echo "You may halt $HOST now, and reboot it after server upgrade."
+else
+    log_echo "You may halt and reboot $HOST now."
+fi
+
+$SYNC; $SYNC
+
+cleanup 0
+
+

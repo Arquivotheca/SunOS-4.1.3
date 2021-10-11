@@ -1,0 +1,1131 @@
+.\" @(#)bs.1 1.1 92/07/30 SMI; from S5
+.TH BS 1 "10 April 1986"
+.SH NAME
+bs \- a compiler/interpreter for modest-sized programs
+.SH SYNOPSIS
+.B bs
+[ \fIsourcefile\fP [ \fIargs\fP ] ]
+.SH DESCRIPTION
+.I bs
+is a remote descendant of Basic and Snobol4 with a little 
+.B C 
+language thrown in.
+.I bs
+is designed for programming tasks where program development time
+is as important as the resulting speed of execution.
+Formalities of data declaration and file/process manipulation
+are minimized.  Line-at-a-time debugging, the
+.B trace
+and
+.B dump
+statements, and useful run-time error messages all simplify program testing.
+Furthermore, incomplete programs can be debugged;
+.I inner
+functions can be tested before
+.I outer
+functions have been written, and vice versa.
+.PP
+If the command line
+.I sourcefile
+argument is provided, it is used for input before the keyboard is read.
+By default, statements read from 
+.I sourcefile 
+are compiled for later 
+execution.  Likewise, statements entered from the keyboard are normally
+executed immediately
+(see
+.B compile
+and
+.B execute
+below).
+Unless the final operation is assignment,
+the result of an immediate expression statement is printed.
+.SH USAGE
+.SS Input Lines
+.PP
+If the last character on an input line is a \fB\e\fP, its text is continued
+onto the next input line.
+.I bs
+accepts lines of the following form:
+.PP
+.RS
+.I statement
+.br
+.IB label  :
+.I statement
+.RE
+.PP
+A label and a variable can have the same name.
+.PP
+A 
+.I statement 
+is either an expression or a keyword followed by zero or more expressions.
+Some keywords
+.RB ( clear ,
+.BR compile ,
+.BR ! ,
+.BR execute ,
+.BR include ,
+.BR ibase ,
+.BR obase ,
+and
+.BR run )
+are always executed as they are compiled.
+.SS Statements
+.TP  .75i
+.I expression
+The expression is executed for its side
+effects (value, assignment, or function call).
+The details of expressions follow the description of
+statement types below.
+.TP
+.B break
+Exit from the inner-most
+.BR for / while
+loop.
+.TP
+.B clear
+Clears the symbol table and compiled statements;
+.B clear
+is executed immediately.
+.HP
+.B compile 
+.RI [ " expression " ]
+.br
+Succeeding statements are compiled (overrides the immediate execution default).
+The optional expression is evaluated and used as a filename for further input.
+A
+.B clear
+is associated with this latter case.
+.I compile
+is executed immediately.
+.TP
+.B continue
+Transfer to the loop-continuation of the current
+.BR for / while
+loop.
+.HP
+.B dump 
+.RI [ " name " ]
+.br
+The name and current value of every nonlocal variable is printed.
+Optionally, only the named variable is reported.
+After an error or interrupt, the number of the last
+statement and (possibly) the user-function trace are displayed.
+.HP
+.B exit
+.RI [ " expression " ]
+.br
+Return to system level.
+The
+.I expression
+is returned as process status.
+.TP
+.B execute
+Change to immediate execution mode (an interrupt has a similar effect).
+This statement does not cause stored statements to execute (see
+.I run
+below).
+.if t .bp
+.PD 0
+.HP
+.B for
+.I name
+.B =
+.I expression expression statement
+.HP
+.B for
+.I name
+.B =
+.I expression expression
+.TP
+\&.\|.\|.
+.HP
+.B next
+.HP
+.B for
+.I expression
+.B ,
+.I expression
+.B ,
+.I expression  statement
+.HP
+.B for
+.I expression
+.B ,
+.I expression
+.B ,
+.I expression
+.TP
+\&.\|.\|.
+.TP
+.B next
+.IP
+The
+.I for
+statement repetitively executes a statement (first form)
+or a group of statements (second form) under control of a named variable.
+The variable takes on the value of the first expression,
+then is incremented by one on each loop, not to exceed the value of
+the second expression.  The third and fourth forms require three expressions
+separated by commas.  The first of these is the initialization, the second
+is the test (true to continue), and the third is the
+loop-continuation action (normally an increment).
+.PD
+.HP
+.B fun
+\fIf\fB(\fR[ \fIarg\|\fB, \fR\&.\|.\|. ]\|\fB) \fR[\|\fIvar\fB, \fR\&.\|.\|. ]
+.br
+\&.\|.\|.
+.br
+.ns
+.TP
+.B nuf
+.I fun
+defines the function name, arguments, and local variables
+for a user-written function.
+Up to ten arguments and local variables are allowed.
+Such names cannot be arrays, nor can they be I/O associated.
+Function definitions may not be nested.
+.TP
+.B freturn
+A way to signal the failure of a user-written function.
+See the interrogation operator (\fB?\fP) below.
+If interrogation is not present,
+.I freturn
+merely returns zero.  When interrogation
+.I is
+active,
+.I freturn
+transfers to that expression
+(possibly bypassing intermediate function returns).
+.TP
+.BI goto \ name
+Control is passed to the internally stored statement
+with the matching label.
+.TP
+.BI ibase \ n
+Set the input base (radix) to
+.IR n .
+The only supported values for
+.I n
+are
+.BR 8 ,
+.B 10
+(the default), and
+.BR 16 .
+Hexadecimal values 10\-15 are entered as
+.BR a \- f .
+A leading digit is required
+(i.e.,
+.B f0a
+must be entered as
+.BR 0f0a ).
+.B ibase
+(and
+.BR obase ", below)"
+are executed immediately.
+.HP
+.B if
+.I expression statement
+.br
+.ns
+.HP
+.B if
+.I expression
+.ns
+.TP
+\&.\|.\|.
+.ns
+.HP
+[
+.B else
+.ns
+.TP
+\&.\|.\|.
+.TP
+]
+.br
+.ns
+.HP
+.B fi
+.br
+The statement (first form) or group of statements (second form)
+is executed if the expression evaluates to nonzero.  The strings
+.B 0
+and "" (null) evaluate to zero.  In the second form,
+an optional
+.B else
+allows for a group of statements to be executed when the first group is not.
+The only statement permitted on the same line with an
+.B else
+is an
+.IR if ;
+only other
+.BR fi "'s can be on the same line with a"
+.BR fi .
+.B elif
+is supported.
+Only a single
+.B fi
+is required to close an
+\fBif .\|.\|. elif .\|.\|. \fR[ \fBelse .\|.\|. \fR] 
+sequence.
+.TP
+.BI include " expression"
+The expression must evaluate to a file name.
+The file must contain
+.I bs
+source statements.
+Such statements become part of the program being compiled.
+.B include
+statements may not be nested.
+.TP
+.BI obase \ n
+Set the output base to
+.I n
+(see
+.I ibase
+above).
+.HP
+.B onintr
+.I label
+.br
+.ns
+.TP
+.B onintr
+The
+.B onintr
+command provides program control of interrupts.
+In the first form, control will pass to the label given, just as if a
+.B goto
+had been executed at the time
+.B onintr
+was executed.  The effect of the statement is cleared after each interrupt.
+In the second form, an interrupt will cause
+.I bs
+to terminate.
+.HP
+.B return
+.RI [ " expression " ]
+.br
+The expression is evaluated and the result is passed
+back as the value of a function call.
+If no expression is given, zero is returned.
+.TP
+.B run
+The random number generator is reset.  Control is passed to the first internal
+statement.  If the
+.B run
+statement is contained in a file, it should be the
+last statement.
+.TP
+.B stop
+Execution of internal statements is stopped.
+.I bs
+reverts to immediate mode.
+.HP
+.B trace
+.RI [ " expression " ]
+.br
+The
+.B trace
+statement controls function tracing.
+If the expression is null (or evaluates to zero), tracing is turned off.
+Otherwise, a record of user-function calls and returns is printed.
+Each
+.B return
+decrements the
+.B trace
+expression value.
+.PD 0
+.TP
+.B while
+.I expression statement
+.br
+.ns
+.TP
+.B while
+.I expression
+.TP
+\&.\|.\|.
+.br
+.ns
+.TP
+.B next
+.B while
+is similar to
+.B for
+except that only the conditional expression
+for loop-continuation is given.
+.PD
+.HP
+.B !
+.I shell-command
+.br
+An immediate escape to the Shell.
+.TP
+.BR # \ \&.\|.\|.
+Comment.
+A comment is terminated at the next newline. 
+.SS Expressions 
+.TP .75i
+.I name
+A 
+.I name 
+is used to specify a variable.  Names are composed of a letter
+(upper or lower case) optionally followed by letters and digits.
+Only the first six characters of a name are significant.
+Except for names declared in
+.B fun
+statements, all names are global to the program.
+Names can take on numeric (double float) values, string values,
+or can be associated with input/output (see the builtin function
+.BR open() ,
+below).
+.HP
+.I name
+.B (
+.RI [ " expression " [
+.B ,
+.IR " expression " "] .\|.\|. ]"
+.B )
+.br
+Functions can be called by a name followed by the arguments
+in parentheses, separated by commas.
+Except for builtin functions (listed below),
+the name must be defined with a
+.B fun
+statement.  Arguments to functions are passed by value.
+.HP
+.I name
+.B [
+.I expression
+[
+.B ,
+.I expression
+] .\|.\|.
+.B ]
+.br
+This syntax is used to reference either arrays or tables
+(see the builtin
+.I table
+functions below).
+For arrays, each expression is truncated to an integer
+and used as a specifier for the name.
+The resulting array reference is syntactically identical to a name;
+.B a[1,2]
+is the same as
+.BR a[1][2] .
+The truncated expressions are restricted to
+values between 0 and 32767.
+.TP
+.I number
+A number is used to represent a constant value.
+A number is written in Fortran style,
+and contains digits, an optional decimal point,
+and possibly a scale factor consisting
+of an
+.B e
+followed by a possibly signed exponent.
+.TP
+.I string
+Character strings are delimited by \fB"\fP characters.
+The \fB\e\fP escape character allows the double quote (\fB\e"\fP),
+newline (\fB\en\fP), carriage return (\fB\er\fP), 
+backspace (\fB\eb\fP), and tab (\fB\et\fP) characters
+to appear in a string.
+Otherwise, \fB\e\fP stands for itself.
+.HP
+.B (
+.I expression
+.B )
+.br
+Parentheses are used to alter the normal order of evaluation.
+.HP
+.B (
+.IB expression ,
+.I expression
+.RB [ ,
+.IR "expression " ".\|.\|. ]"
+.B ") ["
+.I expression
+.B ]
+.br
+The bracketed expression is used as a subscript to select a
+comma-separated expression from the parenthesized list.
+List elements are numbered from the left, starting at zero.
+The expression:
+.PD 0
+.RS
+.IP
+.B "( False, True )[ a == b ]"
+.RE
+.PD
+.IP
+has the value
+.B true
+if the comparison is true.
+.HP
+.B ?
+.I expression
+.br
+The interrogation operator
+tests for the success of the expression rather than its value.
+At the moment, it is useful for testing end-of-file
+(see 
+.SM EXAMPLES,
+below),
+the result of the
+.B eval
+builtin function,
+and for checking the return from user-written functions
+(see
+.BR freturn ).
+An interrogation ``trap'' (end-of-file, etc.)
+causes an immediate transfer to the most recent
+interrogation, possibly skipping assignment statements or intervening
+function levels.
+.TP
+.BI \- " expression"
+The result is the negation of the expression.
+.TP
+.BI ++ " name"
+Increments the value of the variable (or array reference).
+The result is the new value.
+.TP
+.BI \-\- " name"
+Decrements the value of the variable.  The result is the new value.
+.TP
+.B !
+expression
+.br
+The logical negation of the expression.
+Watch out for the shell escape command.
+.HP
+.I expression
+.I operator
+.I expression
+.br
+Common functions of two arguments are abbreviated
+by the two arguments separated by an operator denoting the function.
+Except for the assignment,
+concatenation, and relational operators, both operands are converted to numeric form
+before the function is applied.
+.SS "Binary Operators"
+The assignment operator binds right to left.
+All other operators bind left to right.
+Operators are grouped in order of precedence:
+.TP
+^
+Exponentiation.
+.TP
+.B *\  /\  %
+Multiply, divide, and remainder, respectively.
+.TP
+.B +\  \-
+Add and subtract.
+.TP
+.B <\  <=\  >\  >=\  ==\  !=
+Comparisons.
+These comparison operators return ``1'' if the indicated relationship
+holds true for their operands, or ``0'' otherwise.
+.RS
+.PD 0
+.TP
+\fB<\fP 
+less than
+.TP
+\fB<=\fP 
+less than or equal to
+.TP
+\fB>\fP 
+greater than
+.TP
+\fB>=\fP 
+greater than or equal to
+.TP
+\fB==\fP 
+equal to
+.TP
+\fB!=\fP 
+not equal 
+.LP
+Relational operators at the same level extend as follows:
+.RS
+.IB a > b > c
+.RE
+is the same as
+.RS
+.IB a > b " & " b > c
+.RE
+A string comparison is made if both operands are strings.
+.PD
+.RE
+.TP
+.B & |
+Logical Conjunctions.
+.RS
+.TP
+.B &
+Logical 
+.SM AND.
+Has result ``0'' if either of its operands evaluates to ``0''.
+It has result ``1'' if both of its operands are nonzero.
+.TP
+.B |
+Logical 
+.SM OR.
+Has result ``0'' if both of its arguments are ``0''.
+It has result ``1'' if either of its arguments is nonzero.
+Both operators treat a null string as a zero.
+.RE
+.TP
+.B _
+Concatenation.
+.TP
+.B =
+Assignment.
+The left operand must be a name or an array element.
+The result is the right operand.
+.if t .bp
+.SS Builtin Functions
+.SS \fIProcessing \fIArguments
+.TP .75i
+.BI arg( i )
+The value of the
+.IR i -th
+actual parameter on the current level of function call.
+At level zero,
+.I arg
+returns the
+.IR i -th
+command-line argument
+.RB ( arg (0)
+returns
+.BR bs ).
+.TP
+.B narg(\|)
+Returns the number of arguments passed.
+At level zero, the command argument count is returned.
+.SS \fIMathematical \fIFunctions
+.TP .75i
+.BI abs( x )
+The absolute value of
+.IR x .
+.TP
+.BI atan( x )
+The arctangent of
+.IR x .
+Its value
+is between \-\(*p/2 and \(*p/2.
+.TP
+.BI ceil( x )
+Returns the smallest integer not less than
+.IR x .
+.TP
+.BI cos( x )
+The cosine of
+.I x
+.I x
+is in radians.
+.TP
+.BI exp( x )
+The exponential function of
+.IR x .
+.TP
+.BI floor( x )
+Returns the largest integer not greater than
+.IR x .
+.TP
+.BI log( x )
+The natural logarithm of
+.IR x .
+.TP
+.B rand(\|)
+A uniformly-distributed random number between zero and one.
+.TP
+.BI sin( x )
+The sine of
+.I x
+(radians).
+.TP
+.BI sqrt( x )
+The square root of
+.IR x .
+.SS \fIString \fIFunctions
+.TP
+.BI size( s )
+the size (length in bytes) of
+.I s
+is returned.
+.TP
+.BI format( f , \ a )
+Returns the formatted value of
+.IR a .
+.I f
+is assumed to be a format specification in the style of
+.IR printf (3S).
+Only the
+.BR %\|.\|.\|.\|f ,
+.BR %\|.\|.\|.\|e ,
+and
+.B %\|.\|.\|.\|s
+types are safe.
+.TP
+.BI index( x , \ y )
+Returns the number of the first position in
+.I x
+that any of the characters from
+.I y
+matches.  No match yields zero.
+.TP
+\fBtrans( \fIs\fB, \fIf\fB, \fIt\fB\|)
+Translate characters of the source
+.I s
+from matching characters in
+.I f
+to a character in the same position in
+.IR t .
+Source characters that do not appear in
+.I f
+are copied to the result.
+If the string
+.I f
+is longer than
+.IR t ,
+source characters that match in the excess portion of
+.I f
+do not appear in the result.
+.TP
+\fBsubstr(\fIs\fB, \fIstart\fB, \fIwidth\fB\|)
+Returns the substring of
+.I s
+defined by the
+.IR start ing
+position and
+.IR width .
+.TP
+.BI match( string , \ pattern )
+.ns
+.TP
+.BI mstring( n )
+The
+.I pattern
+is similar to the regular expression syntax of 
+.IR grep (1).
+The characters \fB.\fP, \fB[\fP, \fB]\fP, \*^ (inside
+brackets), \fB*\fP and \fB$\fP are special.
+.IP
+.B mstring()
+returns the \fIn\fR-th (1 <= \fIn\fP <= 10) substring of the subject
+that occurred between pairs of the pattern symbols \fB\e(\fP and \fB\e)\fP
+for the most recent call to
+.IR match .
+To succeed, patterns must match the beginning of the string
+(as if all patterns began with 
+.BR ^ ).
+.IP
+.B match
+returns the number of characters matched.  For example:
+.RS
+match("a123ab123", ".\(**\e([a\-z]\e)") == 6
+.br
+mstring(1) == "b"
+.RE
+.SS \fIFile \fII/O
+.PD
+.TP .75i
+.BI open( name , \ file , \ fcn )
+.ns
+.TP
+.BI close( name )
+The
+.I name
+argument must be a
+.I bs
+variable name (passed as a string).
+For 
+.BR open() ,
+the
+.I file
+argument
+may be
+.PD 0
+.RS
+.TP
+.B 0 
+standard input 
+.TP
+.B 1
+standard output
+.TP
+.B 3
+standard error.
+.TP
+.I filename
+a string representing a filename
+.TP
+.BI ! command
+a string beginning with an \fB!\fP representing a command to be executed
+(via
+.IR "sh \-c" ).
+.RE
+.IP
+.I fcn
+is one of:
+.RS
+.TP
+.B r
+read
+.TP
+.B w
+write
+.TP
+.B W
+write without new-line
+.TP
+.B a
+append
+.RE
+.PD 
+.IP
+After a
+.BR close() ,
+.I name
+reverts to being an ordinary variable.  The initial associations are:
+.RS
+.RS
+open("get", 0, "r")
+.br
+open("put", 1, "w")
+.br
+open("puterr", 2, "w")
+.RE
+.RE
+.IP
+(See
+.SM EXAMPLES,
+below.)
+.TP
+.BI access( s , \ m )
+executes
+.IR access (2).
+.TP
+.BI ftype( s )
+returns a single character file-type indication:
+.PD 0
+.RS
+.TP
+.B f
+regular file
+.TP
+.B p
+.SM FIFO 
+(named pipe)
+.TP
+.B d
+directory
+.B b
+block special
+.TP
+.B c
+character special
+.RE
+.SS \fITables
+.PD
+.TP
+.B "table(name, size)"
+.br
+A table in
+.I bs
+is an associatively accessed, single-dimension array.
+``Subscripts'' (called keys)
+are strings (numbers are converted).
+The
+.I name
+argument must be a
+.I bs
+variable name
+(passed as a string).
+The
+.I size
+argument sets the minimum number of elements to be allocated.
+.I bs
+prints an error message and stops on table overflow.
+.TP
+.B item(name, i)
+.ns
+.TP
+.B key()
+The
+.I item
+function accesses table elements sequentially
+(in normal use, there is no orderly progression of key values).
+Where the
+.I item
+function accesses
+values, the
+.I key
+function accesses the ``subscript'' of the previous
+.I item
+call.
+The
+.I name
+argument should not be quoted.
+Since exact table sizes are not defined, the interrogation operator should be used
+to detect end-of-table; for example:
+.RS
+.IP
+table("t", 100)
+.br
+\ \|.\|.\|.
+.br
+# If
+.I word
+contains "party", the following expression adds one
+.br
+# to the count of that word:
+.br
+++t[word]
+.br
+\ \|.\|.\|.
+.br
+# To print out the the key/value pairs:
+.br
+for i = 0, ?(s = item(t, i)), ++i \  if key() \ put = key()_":"_s
+.RE
+.TP
+.BI iskey( name , \ word )
+Test whether the key
+.I word
+exists in the table
+.I name.
+Returns ``1'' if true or ``0'' if false.
+.SS "\fIOdds and Ends"
+.PD
+.TP .75i
+.BI eval( s )
+The string argument is evaluated as a
+.I bs
+expression.
+The function is handy for converting numeric strings to
+numeric internal form.
+.B eval()
+can also be used as a crude form of indirection, as in:
+.RS
+.PD 0
+.IP
+name = "xyz"
+.br
+eval("++"\(ul name)
+.RE
+.IP
+which increments the variable
+.IR xyz .
+In addition,
+.BR eval() ,
+preceded by the interrogation operator, permits
+the user to control
+.I bs
+error conditions.
+For example:
+.RS
+.IP
+?eval("open(\e"\s-1X\s+1\e", \e"\s-1XXX\s+1\e", \e"r\e")")
+.RE
+.IP
+returns the value zero if there is no file named ``\s-1XXX\s+1''
+(instead of halting the user's program).
+The following executes a
+.B goto
+to the label
+.I L
+(if it exists):
+.RS
+.IP
+label="L"
+.br
+if !(?eval("goto "\(ul label)) puterr = "no label"
+.RE
+.PD
+.TP
+.BI plot( request , \ args )
+The
+.B plot()
+function produces output on devices
+recognized by
+.IR plot (1G).
+.IP
+Some requests do not apply to all plotters.
+All requests except zero and twelve
+are implemented by piping characters to
+.IR plot (1G).
+See
+.IR plot (5)
+for more details.
+.IP
+Available
+.I requests
+are as follows:
+.RS 
+.PD 0
+.TP 
+.BI plot(0, \ term )
+Further
+.B plot()
+output is piped into
+.IR plot (1G)
+with an argument of
+.BI \-T term.
+.TP 
+.B plot(4) 
+``erase'' the plotter.
+.TP 
+.BI plot(2, \ string)
+Label the current point with
+.IR string .
+.TP 
+\fBplot(3, \fIx1\fB, \fIy1\fB, \fIx2\fB, \fIy2\fB)
+Draw the line between
+.BI ( x1 , \ y1 )
+and
+.BI ( x2 , \ y2 ).
+.TP 
+.BI plot(4,  \ x , \ y ,\ r )
+Draw a circle with center
+.BI ( x , \ y )
+and radius
+.IR r .
+.TP 
+\fBplot(5, \fIx1\fB, \fIy1fB, \fIx2\fB, \fIy2\fB, \fIx3\fB, \fIy3\fB)
+Draw an arc (counterclockwise)
+with center
+.BI ( x1 , \ y1 )
+and endpoints
+.BI ( x2 , \ y2 )
+and
+.BI ( x3 , \ y3 ) .
+.IP plot(6)
+Not implemented.
+.TP 
+.BI plot(7, \ x , \ y )
+Make the current point
+.BI ( x , \ y ) .
+.TP 
+.BI plot(8 , \ x , \ y )
+Draw a line from the current point to
+.BI ( x , \ y ) .
+.TP 
+.BI plot(9, \ x , \ y )
+Draw a point at
+.BI ( x , \ y ) .
+.TP 
+.BI plot(10, \ string )
+Set the line mode to
+.IR string .
+.TP 
+\fBplot(11, \fIx1\fB, \fIy1\fB, \fIx2\fB, \fIy2\fB\|)
+Make
+.BI ( x1 , \ y1 )
+the lower-left corner of the plotting area and
+.BI ( x2 , \ y2 )
+the upper-right corner of the plotting area.
+.TP 
+.BI plot(12, \fIx1\fB, \fIy1\fB, \fIx2\fB, \fIy2\fB\|)
+causes subsequent coordinates to be multiplied componentwise by
+.I x1
+and
+.I y1,
+respectively, and then added to
+.I x2
+and
+.I y2 
+before being plotted.
+The initial scaling is
+.BR "plot(12, 1.0, 1.0, 0.0, 0.0)" .
+.RE
+.TP
+.B last(\|)
+in immediate mode,
+.B last()
+returns the most recently computed value.
+.sp
+.SH EXAMPLES
+Using
+.I bs
+as a calculator:
+.nf
+.PP
+.RS
+$ bs
+#    Distance (inches) light travels in a nanosecond.
+186000 \(** 5280 \(** 12 / 1e9
+\fB11.78496\fP
+\&.\|.\|.
+.sp 1v
+#    Compound interest (6% for 5 years on $1,000).
+int = .06 / 4
+bal = 1000
+for i = 1 5\(**4  bal = bal + bal\(**int
+bal \- 1000
+\fB346.855007\fP
+\&.\|.\|.
+exit
+.RE
+.fi
+.PP
+The outline of a typical
+.I bs
+program:
+.nf
+.PP
+.RS
+# initialize things:
+var1 = 1
+open("read", "infile", "r")
+\&.\|.\|.
+# compute:
+while  ?(str = read)
+	\&.\|.\|.
+next
+# clean up:
+close("read")
+\&.\|.\|.
+# last statement executed (exit or stop):
+exit
+# last input line:
+run
+.RE
+.fi
+.PP
+.PP
+Input/Output examples:
+.nf
+.PP
+.RS
+#    Copy "oldfile" to "newfile".
+open("read", "oldfile", "r")
+open("write", "newfile", "w")
+\&.\|.\|.
+while ?(write = read)
+\&.\|.\|.
+# close "read" and "write":
+close("read")
+close("write")
+.sp 1v
+#    Pipe between commands.
+open("ls", "!ls \(**", "r")
+open("pr", "!pr \-2 \-h \(fmList\(fm", "w")
+while ?(pr = ls)  .\|.\|.
+\&.\|.\|.
+# be sure to close (wait for) these:
+close("ls")
+close("pr")
+.RE
+.fi
+.SH SEE ALSO
+ed(1), grep(1), plot(1G), sh(1), access(2), printf(3S), intro(3S), plot(5)
+.br
+See Section\ 3M of the \f2\s-1UNIX\s+1 Interface Reference Manual\fR for a 
+further description of the mathematical functions.

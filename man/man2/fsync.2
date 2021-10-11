@@ -1,0 +1,64 @@
+.\" @(#)fsync.2 1.1 92/07/30 SMI; from UCB 4.3
+.TH FSYNC 2 "21 January 1990"
+.SH NAME
+fsync \- synchronize a file's in-core state with that on disk
+.SH SYNOPSIS
+.nf
+.ft B
+int fsync(fd)
+.ft
+.fi
+.LP
+.B int fd;
+.IX  fsync()  ""  "\fLfsync()\fP \(em synchronize disk file with core image"
+.IX  file   "synchronize state \(em \fLfsync()\fR"
+.IX  "synchronize file state \(em \fLfsync()\fR"
+.SH DESCRIPTION
+.LP
+.B fsync(\|)
+moves all modified data and attributes of
+.I fd
+to a permanent storage device: all in-core modified copies
+of buffers for the associated file have been written to a disk when
+the call returns.  Note: this is different than
+.BR sync (2)
+which schedules disk I/O for all files (as though an
+.B fsync(\|)
+had been done on all files)
+but returns before the I/O completes.
+.LP
+.B fsync(\|)
+should be used by programs which require a file to be
+in a known state; for example, a program which contains
+a simple transaction facility might use it to ensure that all
+modifications to a file or files caused by a transaction were
+recorded on disk.
+.SH RETURN VALUES
+.LP
+.B fsync(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+.I fd
+is not a valid descriptor.
+.TP
+.SM EINVAL
+.I fd
+refers to a socket, not a file.
+.\" is this too specific?  Could fd refer to something else and still give
+.\" EINVAL?
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+.BR cron (8),
+.BR sync (2)

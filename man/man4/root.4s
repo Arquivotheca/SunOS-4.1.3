@@ -1,0 +1,63 @@
+.\" @(#)root.4s	1.1 92/07/30 SMI;
+.TH ROOT 4S "19 February 1988"
+.SH NAME
+root \- pseudo-driver for Sun386i root disk
+.SH CONFIG
+.B pseudo-device rootdev
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "root Sun386i device" "" "\fLroot\fP, Sun386i root disk device"
+.LP
+The
+.B root
+pseudo-driver provides indirect, device-independent access to the root disk
+on a diskful Sun workstation. The root disk is the disk where
+the mounted root partition resides - typically the disk from which
+the system was booted.
+.LP
+The intent of the
+.B root
+device is to allow uniform access to the partitions on the root disk,
+regardless of the disk's controller type or unit number.
+For example, the following version of
+.B /etc/fstab
+will work for any disk
+(assuming the disk has the standard partitions and filesystems):
+.LP
+.RS
+.nf
+.ft B
+/dev/roota /       4.2 rw 1 1
+/dev/rootg /usr    4.2 ro 1 2
+/dev/rooth /export 4.2 rw 1 3
+.ft
+.fi
+.RE
+.LP
+When the root device is opened, the open and all subsequent operations on
+that device
+.RB ( read (2V),
+.BR write (2V),
+.BR ioctl (2),
+.BR close (2V))
+are redirected to the real disk.  Therefore,
+all device-dependent operations on a particular disk are still accessible
+via the root device (see
+.BR dkio (4S)).
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/root[a-h]
+block partitions
+.TP
+.B /dev/rroot[a-h]
+raw partitions
+.PD
+.SH "SEE ALSO"
+.BR fstab (5),
+.BR sd (4S),
+.BR open (2V),
+.BR dkio (4S)

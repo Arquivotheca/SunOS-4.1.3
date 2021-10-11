@@ -1,0 +1,1176 @@
+.\" @(#)streamio.4 1.1 92/07/30 SMI; from S5R3
+.TH STREAMIO 4 "24 November 1987"
+.SH NAME
+streamio \- STREAMS ioctl commands
+.SH SYNOPSIS
+.nf
+.B #include <stropts.h>
+.B int ioctl (fd, command, arg)
+.B int fd, command;
+.fi
+.SH DESCRIPTION
+.IX "STREAMS" "I/O, see \fLstreamio\fP(4)"
+.IX I/O "STREAMS, see \fLstreamio\fP(4)"
+.LP
+\s-1STREAMS\s0
+(see
+.BR intro (2))
+ioctl commands are a subset of
+.BR ioctl (2)
+commands that
+perform a variety of control functions on
+.SM STREAMS\s0.
+The arguments
+.I command
+and
+.I arg
+are passed to the file designated by
+.I fd
+and are interpreted by the
+.IR stream head .
+Certain combinations of these arguments may be passed to a module or driver
+in the stream.
+.LP
+.I fd
+is an open file descriptor that refers to a
+stream.
+.I command
+determines the control function to be performed as described below.
+.I arg
+represents additional information that is needed by this command.
+The type of
+.I arg
+depends upon the command, but it is generally an integer
+or a pointer to a
+\fIcommand\fP-specific
+data structure.
+.LP
+Since these
+\s-1STREAMS\s0
+commands are a subset of
+.IR ioctl ,
+they are
+subject to the errors described there.
+In addition to those errors, the call will fail with
+.I errno
+set to
+.SM EINVAL\s0,
+without processing a control function,
+if the
+stream
+referenced by
+.I fd
+is linked below a multiplexor, or if
+.I command
+is not a valid value for a
+.IR stream .
+.LP
+Also, as described in
+.IR ioctl ,
+\s-1STREAMS\s0
+modules and drivers can detect errors.
+In this case, the module or driver sends an error message to the
+.I stream head
+containing an error value.
+Subsequent system calls will fail with
+.I errno
+set to this value.
+.SH IOCTLS
+The following
+.B ioctl
+commands, with error values indicated, are
+applicable to all
+\s-1STREAMS\s0
+files:
+.TP 20
+.SB I_PUSH
+Pushes the module whose name is pointed to by
+.I arg
+onto the top of the current
+stream, just below the
+.IR stream head .
+It then calls the open routine of the newly-pushed module.
+.IP
+.SB I_PUSH
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EINVAL
+The module name is invalid.
+.TP
+.SM EFAULT
+.I arg
+points outside the allocated address
+space.
+.TP
+.SM ENXIO
+The open routine of the new module failed.
+.TP
+.SM ENXIO
+A hangup is received on the
+stream
+referred to by
+.IR fd .
+.RE
+.TP
+.SB I_POP
+Removes the module just below the
+.I stream head
+of the
+stream
+pointed to by
+.IR fd .
+.I arg
+should be 0 in an
+.SB I_POP
+request.
+.IP
+.SB I_POP
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EINVAL
+No module is present on
+.IR stream .
+.TP
+.SM ENXIO
+A hangup is received on the
+stream
+referred to by
+.IR fd .
+.RE
+.TP
+.SB I_LOOK
+Retrieves the name of the module just below the
+.I stream head
+of the
+stream pointed to by
+.IR fd ,
+and places it
+in a
+null-terminated character string pointed at by
+.IR arg .
+The buffer pointed to by
+.I arg
+should be at least
+.B \s-1FMNAMESZ\s0+1
+bytes long.
+An
+.RB ` "#include <sys/conf.h>" '
+declaration is required.
+.IP
+.SB I_LOOK
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EFAULT
+.I arg
+points outside the allocated address space of the
+process.
+.TP
+.SM EINVAL
+No module is present on
+.IR stream .
+.RE
+.br
+.ne 3
+.TP
+.SB I_FLUSH
+This request
+flushes all input and/or output queues, depending on the value of
+.IR arg .
+Legal
+.I arg
+values are:
+.RS
+.TP 20
+.SB FLUSHR
+Flush read queues.
+.TP
+.SB FLUSHW
+Flush write queues.
+.TP
+.SB FLUSHRW
+Flush read and write queues.
+.RE
+.IP
+.SB I_FLUSH
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EAGAIN
+No buffers could be allocated for the flush message.
+.TP
+.SM EINVAL
+The value of
+.I arg
+is invalid.
+.TP
+.SM ENXIO
+A hangup is received on the
+stream
+referred to by
+.IR fd .
+.RE
+.TP
+.SB I_SETSIG
+Informs the
+.I stream head
+that the user wishes
+the kernel to issue the
+.SB SIGPOLL
+signal (see
+.BR sigvec (2))
+when a particular event has occurred on the
+stream associated with
+.IR fd .
+.SB I_SETSIG
+supports an asynchronous processing capability in
+\s-1STREAMS\s0.
+The value of
+.I arg
+is a bitmask that specifies
+the events for which the user should be signaled.
+It is the bitwise-\s-1OR\s0 of any combination of the following constants:
+.RS
+.TP 20
+.SB S_INPUT
+A non-priority message has arrived on a
+.I stream head
+read queue, and no other messages existed on that queue before
+this message was placed there.
+This is set even if the message is of zero length.
+.TP
+.SB S_HIPRI
+A priority message is present on the
+.I stream head
+read queue.
+This is set even if the message is of zero length.
+.TP
+.SB S_OUTPUT
+The write queue just below the
+.I stream head
+is no longer full.
+This notifies the user that there is room on the queue for
+sending (or writing) data downstream.
+.TP
+.SB S_MSG
+A
+\s-1STREAMS\s0
+signal message
+that contains the
+.SB SIGPOLL
+signal has reached the front of the
+.I stream head
+read queue.
+.RE
+.IP
+A user process may choose to be signaled only of priority messages by
+setting the
+.I arg
+bitmask to the value
+.BR \s-1S_HIPRI\s0 .
+.IP
+Processes that wish to receive
+.SB SIGPOLL
+signals must explicitly
+register to receive them using
+.BR \s-1I_SETSIG\s0 .
+If several processes register to receive this signal for the same event on
+the same
+.IR stream ,
+each process will be signaled when the event occurs.
+.IP
+If the value of
+.I arg
+is zero,
+the calling process will be unregistered and will not receive
+further
+.SB SIGPOLL
+signals.
+.IP
+.SB I_SETSIG
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EINVAL
+The value of
+.I arg
+is invalid or
+.I arg
+is zero and the process is not registered to receive the
+.SB SIGPOLL
+signal.
+.TP
+.SM EAGAIN
+A data structure could not be allocated to store the signal request.
+.RE
+.TP
+.SB I_GETSIG
+Returns the events for which the calling process is
+currently registered to be sent a
+.SB SIGPOLL
+signal.
+The events are returned as a bitmask pointed to by
+.IR arg ,
+where the events are those specified in the description of
+.SB I_SETSIG
+above.
+.br
+.ne 5
+.IP
+.SB I_GETSIG
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EINVAL
+The process is not registered to receive the
+.SB SIGPOLL
+signal.
+.TP
+.SM EFAULT
+.I arg
+points outside the allocated address space of the
+process.
+.RE
+.TP
+.SB I_FIND
+This request compares the names of all modules currently present in
+the
+stream
+to the name pointed to by
+.IR arg ,
+and returns 1 if
+the named module is present in the
+stream.
+It returns 0 if the named module is not present.
+.IP
+.SB I_FIND
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EFAULT
+.I arg
+points outside the allocated address space of the
+process.
+.TP
+.SM EINVAL
+.I arg
+does not point to a valid module
+name.
+.RE
+.TP
+.SB I_PEEK
+This request allows a user to retrieve the information in the first
+message on the
+.I stream head
+read queue without taking the
+message off the queue.
+.I arg
+points to a
+.I strpeek
+structure
+which contains the following members:
+.IP
+.nf
+.ft B
+	struct strbuf	ctlbuf;
+	struct strbuf	databuf;
+	long		flags;
+.ft R
+.fi
+.IP
+The
+.I maxlen
+field in the
+.I ctlbuf
+and
+.I databuf
+.I strbuf
+structures (see
+.BR getmsg (2))
+must be set to the number of bytes of
+control information and/or data information,
+respectively, to retrieve.
+If the user sets
+.I flags
+to
+.BR \s-1RS_HIPRI\s0,
+.SB I_PEEK
+will only look
+for a priority message on the
+.I stream head
+read queue.
+.IP
+.SB I_PEEK
+returns 1 if a message was retrieved,
+and returns 0 if no message was found on the
+.I stream head
+read queue, or if the
+.SB RS_HIPRI
+flag was set in
+.I flags
+and
+a priority message was not present on the
+.I stream head
+read queue.
+It does not wait for a message to arrive.  On return,
+.I ctlbuf
+specifies information in the control buffer,
+.I databuf
+specifies information in the data buffer, and
+.I flags
+contains the value 0 or
+.BR \s-1RS_HIPRI\s0.
+.IP
+.SB I_PEEK
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EFAULT
+.I arg
+points, or the buffer area specified in
+.I ctlbuf
+or
+.I databuf
+is, outside the allocated address space of the
+process.
+.RE
+.TP
+.SB I_SRDOPT
+Sets the read mode using the value of the argument
+.IR arg .
+Legal
+.I arg
+values are:
+.RS
+.TP 20
+.SB RNORM
+Byte-stream mode, the default.
+.TP
+.SB RMSGD
+Message-discard mode.
+.TP
+.SB RMSGN
+Message-nondiscard mode.
+.RE
+.IP
+Read modes are described in
+.BR read (2V).
+.IP
+.SB I_SRDOPT
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EINVAL
+.I arg
+is not one of the above legal values.
+.RE
+.TP
+.SB I_GRDOPT
+Returns the current read mode setting in an
+.I int
+pointed to by the argument
+.IR arg .
+Read modes are described in
+.BR read (2V).
+.IP
+.SB I_GRDOPT
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EFAULT
+.I arg
+points outside the allocated address space of the
+process.
+.RE
+.TP
+.SB I_NREAD
+Counts the number of data bytes
+in data blocks in the first message
+on the
+.I stream head
+read queue,
+and places this value in the location pointed to by
+.IR arg .
+The return value for the command is the number of messages
+on the
+.I stream head
+read queue.
+For example, if zero is returned in
+.IR arg ,
+but the
+.B ioctl
+return
+value is greater than zero,
+this indicates that a zero-length message is next on the queue.
+.IP
+.SB I_NREAD
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EFAULT
+.I arg
+points outside the allocated address space of the
+process.
+.RE
+.TP
+.SB I_FDINSERT
+creates a message from user specified buffer(s), adds information about
+another stream
+and sends the message downstream.
+The message contains a control part and an optional data part.
+The data and control parts to be sent are distinguished by placement in separate buffers, as described below.
+.IP
+.I arg
+points to a
+.I strfdinsert
+structure
+which contains the following members:
+.IP
+.nf
+.ft B
+	struct strbuf	ctlbuf;
+	struct strbuf	databuf;
+	long		flags;
+	int		fd;
+	int		offset;
+.fi
+.ft R
+.IP
+The
+.I len
+field in the
+.I ctlbuf
+.I strbuf
+structure (see
+.BR putmsg (2))
+must be set to the size of a pointer plus the
+number
+of bytes of control information to be sent with the message.
+.I fd
+specifies the file descriptor of the other
+stream and
+.IR offset ,
+which must be word-aligned, specifies the number of
+bytes
+beyond the beginning of the control buffer where
+.SB I_FDINSERT
+will store a pointer to the
+.I fd
+stream's driver read queue
+structure.
+The
+.I len
+field in the
+.I databuf
+.I strbuf
+structure must be
+set to the number of bytes of data information to be sent with the
+message or zero if no data part is to be sent.
+.IP
+.I flags
+specifies the type of message to be created.
+A non-priority message is created if
+.I flags
+is set to 0, and
+a priority message is created if
+.I flags
+is set to
+.BR \s-1RS_HIPRI\s0.
+For non-priority messages,
+.SB I_FDINSERT
+will block if the
+stream write queue is full due to
+internal flow control conditions.
+For priority messages,
+.SB I_FDINSERT
+does not block on this condition.
+For non-priority messages,
+.SB I_FDINSERT
+does not block when the
+write queue is full and
+.SB O_NDELAY
+is set.
+Instead, it fails and sets
+.I errno
+to
+.SM EAGAIN\s0.
+.IP
+.SB I_FDINSERT
+also blocks, unless prevented by lack of internal resources,
+waiting for the availability of message blocks in the
+.IR stream ,
+regardless of priority or whether
+.SB O_NDELAY
+has been specified.
+No partial message is sent.
+.IP
+.SB I_FDINSERT
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EAGAIN
+A non-priority message was specified, the
+.SB O_NDELAY
+flag is set, and the stream
+write queue is full due to internal flow control
+conditions.
+.TP
+.SM EAGAIN
+Buffers could not be allocated for the message that was to be created.
+.TP
+.SM EFAULT
+.I arg
+points, or the buffer area specified in
+.I ctlbuf
+or
+.I databuf
+is, outside the allocated address space of the
+process.
+.br
+.ne 6
+.TP
+.SM EINVAL
+.I fd
+in the
+.I strfdinsert
+structure is not a valid, open
+stream
+file descriptor;
+the size of a pointer plus
+.I offset
+is greater than the
+.I len
+field for the buffer specified through
+\fIctlptr\fP;
+.I offset
+does not specify a properly-aligned location in the data
+buffer;
+an undefined value is pointed to by
+.IR flags .
+.TP
+.SM ENXIO
+A hangup is received on the
+stream
+referred to by
+.IR fd .
+.TP
+.SM ERANGE
+The
+.I len
+field for the buffer specified through
+.I databuf
+does
+not fall within the range specified by the maximum and minimum packet
+sizes of the topmost
+stream module, or the
+.I len
+field for the buffer specified through
+.I databuf
+is larger than the maximum
+configured size of the data part of a message, or the
+.I len
+field for the buffer specified through
+.I ctlbuf
+is larger than the
+maximum configured size of the control part of a message.
+.LP
+.RE
+.TP
+.SB I_STR
+Constructs an internal
+\s-1STREAMS\s0
+ioctl message from the data
+pointed to by
+.IR arg ,
+and sends that message downstream.
+.IP
+This mechanism is provided to permit a process to specify timeouts
+and variable-sized amounts of data when sending an
+.B ioctl
+request to downstream modules and drivers.
+It allows information to be sent with the
+.IR ioctl ,
+and will return to the user any information sent upstream by the downstream
+recipient.
+.SB I_STR
+blocks until the system responds
+with either a positive or negative acknowledgement message,
+or until the request ``times out'' after some period of time.
+If the request times out, it fails with
+.I errno
+set to
+.SM ETIME\s0.
+.IP
+At most, one
+.SB I_STR
+can be active on a stream.
+Further
+.SB I_STR
+calls will block until the active
+.SB I_STR
+completes at the
+.IR "stream head" .
+The default timeout interval for these requests is 15 seconds.
+The
+.SB O_NDELAY
+(see
+.BR open (2V))
+flag has no effect on this call.
+.IP
+To send requests downstream,
+.I arg
+must point to a
+.I strioctl
+structure which contains the following members:
+.IP
+.nf
+.ft B
+	int	ic_cmd;		/* downstream command */
+	int	ic_timout;	/* \s-1ACK/NAK\s0 timeout */
+	int	ic_len;		/* length of data arg */
+	char	*ic_dp;		/* ptr to data arg */
+.ft R
+.fi
+.IP
+.I ic_cmd
+is the internal ioctl command intended for a
+downstream
+module or driver and
+.I ic_timout
+is the number of seconds (\-1 =
+infinite, 0 = use default, >0 = as specified) an
+.SB I_STR
+request will wait for acknowledgement before timing out.
+.I ic_len
+is the number of bytes in the data argument
+and
+.I ic_dp
+is a pointer to the data
+argument.  The
+.I ic_len
+field has two uses:
+on input, it contains the length of the data argument
+passed in, and on return from the command, it contains the
+number of bytes being returned to the user (the buffer pointed to by
+.I ic_dp
+should be large enough to contain the maximum amount of
+data
+that any module or the driver in the
+stream
+can return).
+.IP
+The
+.I stream head
+will convert the information pointed to by the
+.I strioctl
+structure to an internal ioctl command message and send
+it
+downstream.
+.br
+.ne 3
+.IP
+.SB I_STR
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EAGAIN
+Buffers could not be allocated for the
+.B ioctl
+message.
+.br
+.ne 4
+.TP
+.SM EFAULT
+.I arg
+points, or the buffer area specified by
+.I ic_dp
+and
+.I ic_len
+(separately for data sent and data returned) is, outside
+the
+allocated address space of the process.
+.TP
+.SM EINVAL
+.I ic_len
+is less than 0 or
+.I ic_len
+is larger than the maximum configured size of the data part of a message or
+.I ic_timout
+is less than
+\-1.
+.TP
+.SM ENXIO
+A hangup is received on the
+stream referred to by
+.IR fd .
+.TP
+.SM ETIME
+A downstream
+.B ioctl
+timed out before acknowledgement was received.
+.RE
+.IP
+An
+.SB I_STR
+can also fail while waiting for an acknowledgement if
+a message indicating an error or a hangup is received at the
+.IR stream head .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message, in the event the
+.B ioctl
+command sent downstream fails.
+For these cases,
+.SB I_STR
+will fail with
+.I errno
+set to the value in the message.
+.TP
+.SB I_SENDFD
+Requests the
+stream associated with
+.I fd
+to send a message,
+containing a file pointer,
+to the
+.I stream head
+at the other end of a stream pipe.
+The file pointer corresponds to
+.IR arg ,
+which must be an integer file
+descriptor.
+.IP
+.SB I_SENDFD
+converts
+.I arg
+into the corresponding system file pointer.
+It allocates a message block and inserts the file pointer in the block.
+The user id and group id associated with the sending process are also inserted.
+This message is placed directly on the read queue (see
+.BR intro (2))
+of the
+.I stream head
+at the other end of the
+stream
+pipe to which it
+is connected.
+.IP
+.SB I_SENDFD
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EAGAIN
+The sending
+stream
+is unable to allocate a message block to contain the
+file pointer.
+.TP
+.SM EAGAIN
+The read queue of the receiving
+.I stream head
+is full and
+cannot accept the message sent by
+.BR \s-1I_SENDFD\s0 .
+.TP
+.SM EBADF
+.I arg
+is not a valid, open file
+descriptor.
+.TP
+.SM EINVAL
+.I fd
+is not connected to a
+stream
+pipe.
+.TP
+.SM ENXIO
+A hangup is received on the
+stream referred to by
+.IR fd .
+.RE
+.TP
+.SB I_RECVFD
+Retrieves the file descriptor associated with the message sent by an
+.SB I_SENDFD
+.B ioctl
+over a
+stream
+pipe.
+.I arg
+is a pointer to a data buffer large
+enough to hold an
+.I strrecvfd
+data structure containing the following members:
+.IP
+.nf
+.ft B
+	int fd;
+	unsigned short uid;
+	unsigned short gid;
+	char fill[8];
+.fi
+.ft R
+.IP
+.I fd
+is an integer file descriptor.
+.I uid
+and
+.I gid
+are the user
+.SM ID
+and group
+.SM ID\s0,
+respectively, of
+the
+sending
+stream.
+.IP
+If
+.SB O_NDELAY
+is not set (see
+.BR open (2V)),
+.SB I_RECVFD
+will block
+until a message is present at the
+.IR stream head .
+If
+.SB O_NDELAY
+is set,
+.SB I_RECVFD
+will fail with
+.I errno
+set to
+.SM EAGAIN
+if no message is present at the
+.IR stream head .
+.IP
+If the message at the
+.I stream head
+is a message sent by an
+.SB I_SENDFD,
+a new user file descriptor is allocated for the file pointer contained in the
+message.
+The new file descriptor is placed in the
+.I fd
+field of the
+.I strrecvfd
+structure.
+The structure is copied into the user data buffer pointed to by
+.IR arg .
+.br
+.ne 5
+.IP
+.SB I_RECVFD
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM EAGAIN
+A message was not present at the
+.I stream head
+read queue, and the
+.SB O_NDELAY
+flag is set.
+.TP
+.SM EBADMSG
+The message at the
+.I stream head
+read queue was not
+a message containing a passed file descriptor.
+.TP
+.SM EFAULT
+.I arg
+points outside the allocated address space of the
+process.
+.TP
+.SM EMFILE
+Too many descriptors are active.
+.TP
+.SM ENXIO
+A hangup is received on the
+stream
+referred to by
+.IR fd .
+.RE
+.LP
+The following four commands are used for connecting and disconnecting
+multiplexed
+\s-1STREAMS\s0
+configurations.
+.TP 20
+.SB I_LINK
+Connects two streams, where
+.I fd
+is the file descriptor of the
+stream
+connected to
+the multiplexing
+driver, and
+.I arg
+is the file descriptor of the
+stream
+connected
+to another driver.
+The
+stream designated by
+.I arg
+gets connected below the multiplexing
+driver.
+.SB I_LINK
+causes the multiplexing driver to send an acknowledgement message to the
+.I stream head
+regarding the linking
+operation.
+This call returns a multiplexor
+.SM ID
+number (an identifier
+used to disconnect the multiplexor, see
+.BR \s-1I_UNLINK\s0 )
+on success, and a \-1 on failure.
+.IP
+.SB I_LINK
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM ENXIO
+A hangup is received on the
+stream referred to by
+.IR fd .
+.TP
+.SM ETIME
+The
+.B ioctl
+timed out before an acknowledgement was received.
+.TP
+.SM EAGAIN
+Storage could not be allocated to perform the
+.BR \s-1I_LINK\s0 .
+.TP
+.SM EBADF
+.I arg
+is not a valid, open file
+descriptor.
+.TP
+.SM EINVAL
+The
+stream referred to by
+.I fd
+does not support multiplexing.
+.TP
+.SM EINVAL
+.I arg
+is not a stream, or is already linked under a
+multiplexor.
+.TP
+.SM EINVAL
+The specified link operation
+would cause a "cycle" in the resulting configuration;
+that is, if a given
+.I stream head
+is linked into a multiplexing
+configuration in more than one place.
+.RE
+.IP
+An
+.SB I_LINK
+can also fail while waiting for the multiplexing driver
+to acknowledge the link request, if a message indicating an error or a hangup
+is received at the
+.I stream head
+of
+.IR fd .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message.
+For these cases,
+.SB I_LINK
+will fail with
+.I errno
+set to the value in the message.
+.TP
+.SB I_UNLINK
+Disconnects the two
+streams specified by
+.I fd
+and
+.IR arg .
+.I fd
+is the file descriptor of the
+stream connected to the
+multiplexing driver.
+.I arg
+is the multiplexor
+.SM ID
+number that was returned by the
+.B ioctl
+.SB I_LINK
+command when a
+stream
+was linked below the multiplexing driver.
+If
+.I arg
+is \-1, then all streams
+which were linked to
+.I fd
+are disconnected.
+As in
+.BR \s-1I_LINK\s0 ,
+this command requires the multiplexing driver to
+acknowledge the unlink.
+.IP
+.SB I_UNLINK
+will fail if one of the following occurs:
+.RS
+.TP 20
+.SM ENXIO
+A hangup is received on the
+stream referred to by
+.IR fd .
+.br
+.ne 3
+.TP
+.SM ETIME
+The
+.B ioctl
+timed out before an acknowledgement was received.
+.TP
+.SM EAGAIN
+Buffers could not be allocated for the acknowledgement message.
+.TP
+.SM EINVAL
+The multiplexor
+.SM ID
+number was invalid.
+.RE
+.IP
+An
+.SB I_UNLINK
+can also fail while waiting for the multiplexing
+driver to acknowledge the link request, if a message indicating an
+error or a hangup is received at the
+.I stream head
+of
+.IR fd .
+In addition, an error code can be returned in the positive or negative
+acknowledgement message.
+For these cases,
+.SB I_UNLINK
+will fail with
+.I errno
+set to the
+value in the message.
+.SH SEE ALSO
+.BR close (2V),
+.BR fcntl (2V),
+.BR getmsg (2),
+.BR intro (2),
+.BR ioctl (2),
+.BR open (2V),
+.BR poll (2),
+.BR putmsg (2),
+.BR read (2V),
+.BR sigvec (2),
+.BR write (2V)
+.LP
+.I \s-1STREAMS\s0 Programmer's Guide
+.br
+.I \s-1STREAMS\s0 Primer

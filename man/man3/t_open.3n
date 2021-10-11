@@ -1,0 +1,229 @@
+.\" @(#)t_open.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_OPEN 3N "21 January 1990"
+.SH NAME
+t_open \- establish a transport endpoint
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_open(path, oflag, info)
+char *path;
+int oflag;
+struct t_info *info;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_open()" "" "\fLt_open()\fR \(em establish transport endpoint" ""
+.IX transport "establish endpoint"
+.IX endpoint "establish transport endpoint"
+.LP
+.B t_open(\|)
+must be called as the first step in the initialization of a
+transport endpoint.
+It establishes a transport endpoint by opening a
+file that identifies a particular transport provider
+(such as a transport protocol) and returning a file descriptor that
+identifies that endpoint.
+For example, opening the file
+.B /dev/tcp
+identifies an
+.SM OSI\s0
+connection-oriented transport layer protocol
+as the transport provider.
+Currently,
+.B /dev/tcp
+is the only transport protocol available to
+.BR t_open(\|) .
+.LP
+.I path
+points to the pathname of the file to open, and
+.I oflag
+identifies any open flags (as in
+.BR open (2V)).
+.B t_open(\|)
+returns a file descriptor that will be used by all subsequent functions
+to identify the particular local transport endpoint.
+.LP
+This function also returns various default characteristics of
+the underlying transport protocol
+by setting fields in the
+.B t_info
+structure pointed to by
+.IR info .
+.B t_info
+is defined in
+.B <nettli/tiuser.h>
+as:
+.LP
+.RS
+.nf
+.ft B
+struct t_info {
+	long addr;	/* size of protocol address */
+	long options;	/* size of protocol options */
+	long tsdu;	/* size of max transport service data unit */
+	long etsdu;	/* size of max expedited tsdu */
+	long connect;	/* max data for connection primitives */
+	long discon;	/* max data for disconnect primitives */
+	long servtype;	/* provider service type */
+};
+.ft
+.fi
+.RE
+.LP
+The fields of this structure have the following values:
+.br
+.ne 5
+.TP 15
+.B addr
+A value greater than or equal to zero indicates the maximum
+size of a transport protocol address; a value of \-1 specifies
+that there is no limit on the address size; and a value of \-2
+specifies that the transport provider does not provide user
+access to transport protocol addresses.
+.br
+.ne 5
+.TP
+.B options
+A value greater than or equal to zero indicates the maximum
+number of bytes of protocol-specific options supported by the
+provider; a value of \-1 specifies that there is no limit on the
+option size; and a value of \-2 specifies that the transport provider
+does not support user-settable options.
+.br
+.ne 5
+.TP
+.B tsdu
+A value greater than zero specifies
+the maximum size of a transport service
+data unit (\s-1TSDU\s+1);
+a value of zero specifies that the
+transport provider does not support the concept of
+.SM TSDU\s0,
+although it does support the sending of a data stream with no
+logical boundaries preserved across a connection;
+a value of \-1 specifies that there is no limit on the size of a
+.SM TSDU\s0;
+and a value of \-2 specifies that the transfer of normal data is
+not supported by the transport provider.
+.br
+.ne 5
+.TP
+.B etdsu
+A value greater than zero specifies
+the maximum size of an expedited transport
+service data unit (\s-1ETSDU\s0);
+a value of zero specifies that the
+transport provider does not support the concept of
+.SM ETSDU\s0,
+although it does support the sending of an expedited data stream with no
+logical boundaries preserved across a connection;
+a value of \-1 specifies that there is no limit on the size of an
+.SM ETSDU\s0;
+and a value of \-2 specifies that the transfer of expedited data is
+not supported by the transport provider.
+.br
+.ne 5
+.TP
+.B connect
+A value greater than or equal to zero specifies
+the maximum amount of data that may be associated with
+connection establishment functions;
+a value of \-1 specifies that there is no limit on the amount of data
+sent during connection establishment;
+and a value of \-2 specifies that the transport provider does not
+allow data to be sent with connection establishment functions.
+.ne 5
+.br
+.TP
+.B discon
+A value greater than or equal to zero specifies
+the maximum amount of data that may be associated with the
+.BR t_snddis (3N)
+and
+.BR t_rcvdis (3N)
+functions;
+a value of \-1 specifies that there is no limit on the amount of data
+sent with these abortive release functions;
+and a value of \-2 specifies that the transport provider does not
+allow data to be sent with the abortive release functions.
+.ne 5
+.br
+.TP
+.B servtype
+This field specifies the service type
+supported by the transport provider.
+.LP
+The
+.I servtype
+field of
+.I info
+may specify one of the following values on return:
+.TP 15
+.SB T_COTS
+The transport provider supports a connection-mode service but
+does not support the optional orderly release facility.
+.TP
+.SB T_COTS_ORD
+The transport provider supports a connection-mode service with
+the optional orderly release facility.
+.TP
+.SB T_CLTS
+The transport provider supports a connectionless-mode service.
+For this service type,
+.B t_open(\|)
+will return \-2 for
+.IR etsdu ,
+.IR connect ,
+and
+.IR discon .
+.LP
+A single transport endpoint may support only one of the above
+services at one time.
+.LP
+If
+.I info
+is set to
+.SM NULL
+by the transport user, no protocol information is
+returned by
+.B t_open(\|).
+.LP
+If a transport user is concerned with protocol independence, the above
+sizes may be accessed to determine how large the buffers must be
+to hold each piece of information.
+Alternatively, the
+.BR t_alloc (3N)
+function may be used to allocate these
+buffers.
+An error will result if a transport user exceeds the allowed
+data size on any function.
+.SH RETURN VALUES
+.LP
+.B t_open(\|)
+returns
+a non-negative file descriptor
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR open (2V),
+.BR tcp (4P)
+.LP
+.TX NETP

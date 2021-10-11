@@ -1,0 +1,113 @@
+.\" @(#)pipe.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH PIPE 2V "21 January 1990"
+.SH NAME
+pipe \- create an interprocess communication channel
+.SH SYNOPSIS
+.nf
+.ft B
+int pipe(fd)
+int fd[2];
+.ft R
+.fi
+.IX  pipe()  ""  "\fLpipe()\fP \(em create interprocess communication channel"
+.IX  "interprocess communication"  pipe()  ""  \fLpipe()\fP
+.IX  "create" "interprocess communication channel \(em \fLpipe()\fP"
+.SH DESCRIPTION
+.LP
+The
+.B pipe(\|)
+system call creates an I/O mechanism called a pipe and returns two file
+descriptors,
+.IR fd [0]
+and
+.IR fd [1].
+.IR fd [0]
+is opened for reading and
+.IR fd [1]
+is opened for writing.
+The
+.SB O_NONBLOCK
+flag is clear on both file descriptors
+(see
+.BR open (2V)).
+When the pipe is written using the descriptor
+.IR fd [1]
+up to
+.SM {PIPE_BUF}
+(see
+.BR sysconf (2V))
+bytes of data are buffered before the writing process is blocked.
+A read only file descriptor
+.IR fd [0]
+accesses the data written to
+.IR fd [1]
+on a
+.SM FIFO\s0
+(first-in-first-out) basis.
+.LP
+The standard programming model is that after the pipe has been set up,
+two (or more) cooperating processes (created by subsequent
+.BR fork (2V)
+calls) will pass data through the pipe using
+.BR read (2V)
+and
+.BR write (2V).
+.LP
+Read calls on an empty pipe (no buffered data) with only one end
+(all write file descriptors closed) returns an
+.SM EOF
+(end of file).
+.LP
+Pipes are really a special case of the
+.BR socketpair (2)
+call and, in fact, are implemented as such in the system.
+.LP
+A
+.SB SIGPIPE
+signal is generated if a write on a pipe with only one end is attempted.
+.LP
+Upon successful completion,
+.B pipe(\|)
+marks for update the 
+.BR st_atime ,
+.BR st_ctime ,
+and 
+.B st_mtime
+fields of the pipe.
+.SH RETURN VALUES
+.LP
+.B pipe(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+The array
+.I fd
+is in an invalid area of the process's address
+space.
+.TP
+.SM EMFILE
+Too many descriptors are active.
+.TP
+.SM ENFILE
+The system file table is full.
+.SH "SEE ALSO"
+.BR sh (1),
+.BR fork (2V),
+.BR read (2V),
+.BR socketpair (2),
+.BR write (2V)
+.SH BUGS
+.LP
+Should more than
+.SM {PIPE_BUF}
+bytes be necessary in any
+pipe among a loop of processes, deadlock will occur.

@@ -1,0 +1,161 @@
+.\" %Z%%M% %I% %E% SMI; from S5r3
+.TH T_RCVUDATA 3N "21 January 1990"
+.SH NAME
+t_rcvudata \- receive a data unit
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_rcvudata(fd, unitdata, flags)
+int fd;
+struct t_unitdata *unitdata;
+int *flags;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_rcvudata()" "" "\fLt_rcvudata()\fR \(em receive a data unit" ""
+.IX transport "receive a data unit"
+.IX receive "data unit from transport user"
+.LP
+.B t_rcvudata(\|)
+is used in connectionless mode
+to receive a data unit from another transport
+user.
+.I fd
+identifies the local transport endpoint through which data will be
+received,
+.I unitdata
+holds information associated with the received data unit, and
+.I flags
+is set on return to indicate that the complete data unit was not
+received.
+.I unitdata
+points to a
+.I t_unitdata
+structure defined in
+.B <nettli/tiuser.h>
+as:
+.RS
+.ft B
+.nf
+struct t_unitdata {
+	struct netbuf addr;             /* address		*/
+	struct netbuf opt;              /* options		*/
+	struct netbuf udata;            /* user data		*/
+};
+.fi
+.ft R
+.RE
+.LP
+The
+.IR maxlen ,
+.IR len ,
+and
+.I buf
+members of the
+.I netbuf
+structure are described in
+.BR t_accept (3N).
+The
+.I maxlen
+field of
+.IR addr ,
+.IR opt ,
+and
+.I udata
+must be set before issuing 
+.B t_rcvudata(\|)
+to indicate the maximum
+size of the buffer for each.
+.LP
+On return from this call,
+.I addr
+specifies the protocol address of the sending user,
+.I opt
+identifies protocol-specific options that were
+associated with this data unit, and
+.I udata
+specifies the user data that was received.
+.LP
+By default,
+.B t_rcvudata(\|)
+operates in synchronous mode and will
+wait for a data unit to arrive if none is currently available.
+However, if
+.SB O_NDELAY
+is set (using
+.BR t_open (3N)
+or
+.BR fcntl(\|) ),
+.B t_rcvudata(\|)
+will execute in asynchronous mode and will fail
+if no data units are available.
+.LP
+If the buffer defined in the
+.I udata
+field of
+.I unitdata
+is not large enough to hold the current data unit,
+the buffer will be filled and
+.SB T_MORE
+will be set in
+.I flags
+on return to indicate that another
+.B t_rcvudata(\|)
+should be issued to retrieve the rest of the data unit.
+Subsequent
+.B t_rcvudata(\|)
+call(s) will return zero for the length of the address and options
+until the full data unit has been received.
+.SH RETURN VALUES
+.LP
+.B t_rcvudata(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBUFOVFLW
+The number of bytes allocated for the incoming protocol address or
+options is not sufficient to store the information.
+The unit data information to be returned in
+.I unitdata
+will be discarded.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on this transport endpoint and requires
+immediate attention.
+.TP
+.SM TNODATA
+.SB T_NDELAY
+was set, but
+no data units are currently available from the transport provider.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR intro (3),
+.BR t_rcvuderr (3N),
+.BR t_sndudata (3N)
+.LP

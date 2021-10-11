@@ -1,0 +1,112 @@
+.\" @(#)sortbib.1 1.1 92/07/30 SMI;
+.TH SORTBIB 1 "21 December 1987"
+.SH NAME
+sortbib \- sort a bibliographic database
+.SH SYNOPSIS
+.B sortbib
+[
+.BI \-s \s-1KEYS\s0
+]
+.IR database .\|.\|.
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "sortbib command"  ""  "\fLsortbib\fP \(em sort bibliographic database"
+.IX  "sort bibliographic database"  ""  "sort bibliographic database \(em \fLsortbib\fP"
+.IX  "document production"  sortbib  ""  "\fLsortbib\fP \(em sort bibliographic database"
+.IX  "bibliography"  sortbib  ""  "\fLsortbib\fP \(em sort bibliographic database"
+.LP
+.B sortbib
+sorts files of records containing
+.B refer
+key-letters by user-specified keys.
+Records may be separated by blank lines,
+or by
+.RB ` \&.[ '
+and
+.RB ` \&.] '
+delimiters, but the two styles may not be mixed together.
+This program reads through each
+.I database
+and pulls out key fields, which are sorted separately.
+The sorted key fields contain the file pointer,
+byte offset, and length of corresponding records.
+These records are delivered using disk seeks and reads, so
+.B sortbib
+may not be used in a pipeline to read standard input.
+.LP
+By default,
+.B sortbib
+alphabetizes by the first
+.B %A
+and the
+.B %D
+fields, which contain the senior author and date.
+The
+.B \-s
+option is used to specify new
+.IR \s-1KEYS\s0 .
+For instance,
+.B \-s\s-1ATD\s0
+will sort by author, title, and date, while
+.B \-sA+D
+will sort by all authors, and date.
+Sort keys past the fourth are not meaningful.
+No more than 16 databases may be sorted together at one time.
+Records longer than 4096 characters will be truncated.
+.LP
+.B sortbib
+sorts on the last word on the
+.B %A
+line, which is assumed to be the author's last name.
+A word in the final position, such as
+.RB ` jr. '
+or
+.RB ` ed. ',
+will be ignored if the name beforehand ends with a comma.
+Authors with two-word last names or unusual constructions
+can be sorted correctly by using the
+.B nroff
+convention
+.RB  ` \e0 '
+in place of a blank.
+A
+.B %Q
+field is considered to be the same as
+.BR %A ,
+except sorting begins with the first, not the last, word.
+.B sortbib
+sorts on the last word of the
+.B %D
+line, usually the year.
+It also ignores leading articles (like
+.RB  ` A '
+or
+.RB ` The ')
+when sorting by titles in the
+.B %T
+or
+.B %J
+fields;
+it will ignore articles of any modern European language.
+If a sort-significant field is absent from a record,
+.B sortbib
+places that record before other records containing that field.
+.SH SEE ALSO
+.BR addbib (1),
+.BR indxbib (1),
+.BR lookbib (1),
+.BR refer (1),
+.BR roffbib (1)
+.LP
+.B refer
+in
+.TX DOCS
+.SH BUGS
+.LP
+Records with missing author fields should probably be sorted by title.

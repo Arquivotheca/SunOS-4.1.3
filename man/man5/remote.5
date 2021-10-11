@@ -1,0 +1,384 @@
+.\" @(#)remote.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH REMOTE 5 "19 October 1988"
+.SH NAME
+remote \- remote host description file
+.SH SYNOPSIS
+.B /etc/remote
+.SH DESCRIPTION
+.IX  "remote file"  ""  "\fLremote\fP \(em remote host descriptions"
+.LP
+The systems known by
+.BR tip (1C)
+and their attributes are stored in an
+.SM ASCII
+file which is structured somewhat like the
+.BR termcap (5)
+file.  Each line in the file provides
+a description for a single
+.IR system .
+Fields are separated by a colon
+.RB ` : '.
+Lines ending in a
+.RB ` \e '
+character with an immediately following
+.SM NEWLINE
+are continued on the next line.
+.LP
+The first entry is the name(s) of the host system.
+If there is more than one name for a system,
+the names are separated by vertical bars.
+After the name of the system comes the fields
+of the description.  A field name followed by an
+.RB ` = '
+sign indicates a string value follows.  A field
+name followed by a
+.RB ` # '
+sign indicates a following numeric value.
+.LP
+Entries named
+.BI tip baudrate
+are used as default entries by
+.BR tip ,
+as follows.  When
+.B tip
+is invoked with only a phone number,
+it looks for an entry of the form
+.BI tip baudrate\fR ,
+where
+.I baudrate
+is the baud rate with
+which the connection is to be made.  For example, if the connection is to be
+made at 300 baud,
+.B tip
+looks for an entry of the form
+.BR tip300 .
+.SH CAPABILITIES
+.LP
+Capabilities are either strings
+.BR (str) ,
+numbers
+.BR (num) ,
+or boolean flags
+.BR (bool) .
+A string capability is specified by
+.IR capability = value ;
+for example,
+.RB ` dv=/dev/harris '.
+A numeric capability is specified by
+.IR capability # value ;
+for example,
+.RB ` xa#99 '.
+A boolean capability is specified by simply listing
+the capability.
+.TP
+.B at
+.B (str)
+Auto call unit type.
+The following lists valid
+.RB ' at '
+types and their corresponding hardware:
+.RS
+.RS
+.PD 0
+.TP 10
+.B biz31f
+Bizcomp 1031, tone dialing
+.TP
+.B biz31w
+Bizcomp 1031, pulse dialing
+.TP
+.B biz22f
+Bizcomp 1022, tone dialing
+.TP
+.B biz22w
+Bizcomp 1022, pulse dialing
+.TP
+.B df02
+DEC DF02
+.TP
+.B df03
+DEC DF03
+.TP
+.B ventel
+Ventel 212+
+.TP
+.B v3451
+Vadic 3451 Modem
+.TP
+.B v831
+Vadic 831
+.TP
+.B hayes
+Any Hayes-compatible modem
+.TP 
+.B at
+Any Hayes-compatible modem
+.PD
+.RE
+.RE
+.TP
+.B br
+.B (num)
+The baud rate used in establishing a
+connection to the remote host.
+This is a decimal number.
+The default baud rate is 300 baud.
+.TP
+.B cm
+.B (str)
+An initial connection message to be sent to the remote host.
+For example, if a host is reached through a port selector,
+this might be set to the
+appropriate sequence required to switch to the host.
+.TP
+.B cu
+.B (str)
+Call unit if making a phone call.
+Default
+is the same as the
+.B dv
+field.
+.TP
+.B di
+.B (str)
+Disconnect message sent to the host
+when a disconnect is requested by the user.
+.TP
+.B du
+.B (bool)
+This host is on a dial-up line.
+.TP
+.B dv
+.B (str)
+Device(s) to open to establish a connection.
+If this file refers to a terminal line,
+.B tip
+attempts to perform an exclusive open
+on the device to insure only
+one user at a time has access to the port.
+.TP
+.B ec
+.B (bool)
+Initialize the
+.B tip
+variable
+.B echocheck
+to
+.IR on ,
+so that
+.B tip
+will synchronize with the remote host during file transfer by
+waiting for the echo of the last character transmitted.
+.TP
+.B el
+.B (str)
+Characters marking an end-of-line.  The default is no characters.
+.B tip
+only recognizes
+.RB ` \s+2~\s0 '
+escapes after one of the characters in
+.BR el ,
+or after a
+.SM RETURN\s0.
+.TP
+.B es
+.B (str)
+The command prefix (escape) character for
+.BR tip .
+.TP
+.B et
+.B (num)
+Number of seconds to wait for an echo response when echo-check mode
+is on.  This is a decimal number.  The default value is 10 seconds.
+.TP
+.B ex
+.B (str)
+Set of non-printable characters not to be discarded when scripting
+with beautification turned on.  The default value is
+\*(lq\et\en\eb\ef\*(rq.
+.TP
+.B fo
+.B (str)
+Character used to force literal data transmission.  The default value
+is `\e377'.
+.TP
+.B fs
+.B (num)
+Frame size for transfers.
+The default frame size is equal to 1024.
+.TP
+.B hd
+.B (bool)
+Initialize the
+.B tip
+variable
+.B halfduplex
+to
+.IR on ,
+so local echo should be performed.
+.TP
+.B hf
+.B (bool)
+Initialize the
+.B tip
+variable
+.B hardwareflow
+to
+.IR on ,
+so hardware flow control is used.
+.TP
+.B ie
+.B (str)
+Input end-of-file marks.  The default is a null string ("").
+.TP
+.B nb
+.B (bool)
+Initialize the
+.B tip
+variable
+.B beautify
+to
+.IR off ,
+so that unprintable characters will not be discarded when scripting.
+.TP
+.B nt
+.B (bool)
+Initialize the
+.B tip
+variable
+.B tandem
+to
+.IR off ,
+so that XON/XOFF flow control will not be used to throttle
+data from the remote host.
+.TP
+.B nv
+.B (bool)
+Initialize the
+.B tip
+variable
+.B verbose
+to
+.IR off ,
+so that verbose mode will be turned on.
+.TP
+.B oe
+.B (str)
+Output end-of-file string.  The default is a null string ("").  When 
+.B tip
+is transferring a file, this string is sent at end-of-file.
+.TP
+.B pa
+.B (str)
+The type of parity to use when sending
+data to the host.  This may be one
+of
+.BR even ,
+.BR odd ,
+.BR none ,
+.B zero
+(always set bit 8 to zero),
+.B one
+(always set bit 8 to 1).  The default is
+.BR none .
+.TP
+.B pn
+.B (str)
+Telephone number(s) for this host.
+If the telephone number field contains an
+.RB ` @ '
+sign,
+.B tip
+searches the
+.B /etc/phones
+file for a list of telephone numbers \(em see
+.BR phones (5).
+A
+.RB ` % '
+sign in the telephone number indicates a
+5-second delay for the Ventel Modem.
+.TP
+.B pr
+.B (str)
+Character that indicates end-of-line on the remote host.  The default
+value is `\en'.
+.TP
+.B ra
+.B (bool)
+Initialize the
+.B tip
+variable
+.B raise
+to
+.IR on ,
+so that lower case letters are mapped to upper case
+before sending them to the remote host.
+.TP
+.B rc
+.B (str)
+Character that toggles case-mapping mode.  The default value is `\e377'.
+.TP
+.B re
+.B (str)
+The file in which to record session scripts.  The default value is
+.BR tip.record .
+.TP
+.B rw
+.B (bool)
+Initialize the
+.B tip
+variable
+.B rawftp
+to
+.IR on ,
+so that all characters will be sent as is during file transfers.
+.TP
+.B sc
+.B (bool)
+Initialize the
+.B tip
+variable
+.B script
+to
+.IR on ,
+so that everything transmitted by the remote host will be recorded.
+.TP
+.B tb
+.B (bool)
+Initialize the
+.B tip
+variable
+.B tabexpand
+to
+.IR on ,
+so that tabs will be expanded to spaces during file transfers.
+.TP
+.B tc
+.B (str)
+Indicates that the list of capabilities is continued
+in the named description.  This is used
+primarily to share common capability information.
+.LP
+Here is a short example showing the use
+of the capability continuation feature:
+.LP
+.nf
+.ft B
+.ta 0.5i
+\s-1UNIX\s0-1200:\e
+	:dv=/dev/cua0:el=^D^U^C^S^Q^O@:du:at=ventel:ie=#$%:oe=^D:br#1200:
+arpavax|ax:\e
+	:pn=7654321%:tc=\s-1UNIX\s0-1200
+.ft R
+.fi
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/remote
+.TP
+.B /etc/phones
+.PD
+.SH "SEE ALSO"
+.BR tip (1C),
+.BR phones (5),
+.BR termcap (5)

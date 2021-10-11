@@ -1,0 +1,64 @@
+.\" @(#)stty.3c 1.1 92/07/30 SMI; from UCB 4.2
+.TH STTY 3C "22 November 1987"
+.SH NAME
+stty, gtty \- set and get terminal state
+.SH SYNOPSIS
+.nf
+.B #include <sgtty.h>
+.LP
+.B stty(fd, buf)
+.B int fd;
+.B struct sgttyb *buf;
+.LP
+.B gtty(fd, buf)
+.B int fd;
+.B struct sgttyb *buf;
+.fi
+.IX  set "terminal state \(em \fLstty()\fP"
+.IX  get "terminal state \(em \fLgtty()\fP"
+.IX  "terminal state"  get  ""  "get \(em \fLgtty()\fP"
+.IX  "terminal state"  set  ""  "set \(em \fLstty()\fP"
+.IX  "state of terminal"  get  ""  "get \(em \fLgtty()\fP"
+.IX  "state of terminal"  set  ""  "set \(em \fLstty()\fP"
+.IX  "stty()"  ""  "\fLstty()\fP \(em set terminal state"
+.IX  "gtty()"  ""  "\fLgtty()\fP \(em get terminal state"
+.SH DESCRIPTION
+.LP
+Note: this interface is obsoleted by
+.BR ioctl (2).
+.LP
+.B stty(\|)
+sets the state of the terminal associated with
+.IR fd .
+.B stty(\|)
+retrieves the state of the terminal associated with
+.IR fd .
+To set the state of a terminal the call must have
+write permission.
+.LP
+The
+.B stty(\|)
+call is actually
+.IP
+.B ioctl(fd, \s-1TIOCSETP\s0, buf)
+.LP
+while the
+.B gtty(\|)
+call is
+.IP
+.B ioctl(fd, \s-1TIOCGETP\s0, buf)
+.LP
+See
+.BR ioctl (2)
+and
+.BR ttcompat (4M)
+for an explanation.
+.SH DIAGNOSTICS
+.LP
+If the call is successful 0 is returned, otherwise \-1 is
+returned and the global variable
+.B errno
+contains the reason for the failure.
+.SH SEE ALSO
+.BR ioctl (2),
+.BR ttcompat (4M)

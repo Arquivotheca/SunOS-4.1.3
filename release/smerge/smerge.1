@@ -1,0 +1,653 @@
+.\" @(#)smerge.1 1.1 92/07/30 SMI;
+.TH SMERGE 1 "12 November 86"
+.SH NAME
+smerge \- compare SCCS hierarchies
+.SH SYNOPSIS
+.B smerge
+[ 
+.BI \-f " smergefile" 
+]
+[
+.BI \-l " listfile"
+|
+.BI \-L " listfile"
+]
+.RB [ " \-bdeIiknqs " ]
+[
+.I macro_def
+\&.\|.\|.
+]
+[
+.I files
+\&.\|.\|.
+]
+.SH DESCRIPTION
+.LP
+.I smerge
+compares pairs of SCCS files and executes commands in
+.I smergefile
+based on the status of the files.
+.I Smergefile
+may contain a series of commands for each possible state of a
+pair of SCCS files.
+If no
+.B \-f
+option is present, 
+.I smerge
+uses 
+.IR smergefile .
+If \fIsmergefile\fP is not present, then \fISmergefile\fP is used.
+.PP
+Large portions of the \fImake\fP command have been used in
+\fIsmerge\fP in order to provide a form of macro processing and command
+execution that the user is most likely to be familiar with.
+.LP
+.I macro_def
+is a quoted string containing a macro definition.  This definition 
+overrides any definition for the specified macro that occurs in the 
+smergefile itself.  See
+.I Macros,
+below, for details.
+.LP
+.I Files
+is a list of SCCS file names. Alternatively, file names can be read
+from a file specifiled by the \fB\-l\fP option or generated
+automatically and written to a file specified by the \fB\-L\fP option.
+.SH OPTIONS
+.TP
+.BI \-f " smergefile"
+Use the command file
+.I smergefile.
+More than one
+.BI \-f "\ smergefile"
+argument is considered an error.
+.TP
+\fB\-l\fI listfile\fR | \fB\-L \fIlistfile\fR
+Listfile is a list of names to be used in SCCS file name
+generation. Leading white space, empty lines and
+lines beginning with '#' are ignored. If \fIlistfile\fP is
+\fB\-\fP then input is taken from the standard input. If the \fB\-L\fP option
+is used, \fIsmerge\fP will generate the list of files itself and write it
+to \fIlistfile\fP.
+.sp
+.RS
+.SM WARNING:
+the \fB\-L\fP option uses the find(1) command to generate the
+list of names. Find will not follow symbolic links in the SCCS hierarchy.
+.RE
+.TP
+.B \-b
+Do not ignore branch deltas when calculating the base and top revision numbers.
+Branch deltas are always listed in the macros \fBnewsid1\fP and \fBnewsid2\fP
+if they are included by the top delta in a SCCS file.
+.TP
+.B \-d
+Debug mode.
+.TP
+.B \-e
+Environment variables override assignments within smergefiles.
+.TP
+.B \-I
+Do not stop processing after SCCS file format errors are encountered.
+.TP
+.B \-i
+Ignore error codes returned by invoked commands.
+.TP
+.B \-k
+If an invoked command returns an error code, stop processing commands
+for the current SCCS file pair and continue with the next pair.
+This option is disabled by the \-i option.
+.TP
+.B \-n
+No execute mode.  Print commands, but do not execute them.
+Even lines beginning with an
+.B @
+are printed.
+.TP
+.B \-q
+"Quick". Two shortcuts are taken:
+.IP
+1) If one file exists but the
+other doesn't, then the state of the existent file is \fBold\fP
+and the state of the non-existent file is \fBnone\fP. The SCCS
+file is not read and the \fItop\fP and \fIbase\fP macros are not
+set.
+.IP
+2) If both files exist and they have identical SCCS headers, then
+the state of both is set to \fBold\fP. The \fItop\fP and
+\fIbase\fP macros are not set.
+.TP
+.B \-s
+Silent mode.  Do not print command lines before executing.
+.LP
+
+.SH "SCCS FILE NAME GENERATION"
+The important effects of the way \fIsmerge\fP generates file names
+are:
+.TP
+1)
+Symbolic links in path names followed by ".." behave the same as
+directories followed by "..".
+.TP
+2)
+No matter what format the input file name is in, the name that
+\fIsmerge\fP uses will have the form: \fIdirectory\fP/SCCS/s.\fIfile\fP.
+.PP
+For every filename that \fIsmerge\fP processes, two SCCS file
+names are generated. The first name is constructed from the value
+of the environment variable \fBtree1\fP, followed by the
+directory part of the file name, followed by "SCCS/s.", followed
+by the file part of the file name. Extraneous "./", "//",
+"SCCS/s.", and \fIdir\fP"/.." are removed during file name
+generation. The second SCCS file name is similarly generated
+using the value of the environment variable \fBtree2\fP.
+.PP
+If either \fBtree1\fP or \fBtree2\fP cannot be found in the
+environment, \fIsmerge\fP prints an error message and stops
+processing.
+.SH "SCCS FILE COMPARISON"
+For each of the two SCCS files, a check sum and byte count is
+generated for every SCCS revision in the SCCS file. The list of
+check sums and byte counts are then compared to determine the
+newest matching delta (\fIbase delta\fP), and the the most
+recent delta (\fItop delta\fP).
+The state for each file can be \fBnone\fP, \fBold\fP, \fBnew\fP,
+\fBambiguous\fP, \fBnobase\fP, or \fBsccserror\fP.
+.LP
+The possible resulting state pairs are analagous to \fImake\fP's
+targets:
+.TP
+.B none.none
+Neither file exists.
+.TP
+.B old.none
+The first SCCS file exists, the second does not.
+.TP
+.B none.old
+The first SCCS file does not exist, the second does.
+.TP
+.B old.old
+The \fIbase deltas\fP are identical to the \fItop
+deltas\fP. As far as \fIsmerge\fP is concerned, nothing has changed.
+.TP
+.B new.old
+The top delta of the first file is different than
+its base delta. The top delta of the second file
+is the same as its base delta.
+.TP
+.B old.new
+The top delta of the first file is the same as
+its base delta. The top delta of the second file
+is different from its base delta.
+.TP
+.B new.new
+Both files' base deltas are different from their respective top deltas.
+.TP
+.B nobase
+There is no common revision. Note that "nobase.nobase" is not used
+by \fIsmerge\fP.
+.TP
+.B ambiguous
+This happens most often when a recent delta is
+backed out by laying an older delta on top of
+it. In the diagram below, identical SCCS deltas
+are connected by lines. The top delta for file1
+is 1.7, the top delta for file2 is 1.5.
+.LP
+\fL
+.nf
+.ne  12
+		file1   file2
+		1.7
+		1.6
+		1.5     1.5--+
+		1.4-----1.4  |
+		1.3-----1.3--+\fP
+.fi
+.IP
+From the point of view of file1, the base deltas
+are 1.4 for file1 and 1.4 for file2. From the
+point of view of file2 the base deltas are 1.3
+for file1 and 1.5 for file2.
+.IP
+Smerge calculates both views and uses the
+other file's conception of the base delta.
+.IP
+As a result, if the state of a file pair is
+\fBambiguous\fP, the base deltas reported by
+\fIsmerge\fP will not contain the same data. The
+list of new deltas for a file (\fBnewsid1\fP or \fBnewsid2\fP) will contain
+everything that is new for that file relative to the other file.
+.IP
+Note that "ambiguous.ambiguous" is not used by \fIsmerge\fP.
+.TP
+.B sccserror
+There is a format error in one or both of the SCCS files.
+\fISmerge\fP will exit after executing the commands for this
+target unless the \fB-I\fP flag is specified on the command
+line.
+.TP
+.B default
+If no \fIsmergefile\fP is given or found, or no
+commands are given for a particular state, the
+commands given for \fBdefault\fP are executed. If
+no commands are given for \fBdefault\fP then the
+command "echo $(state1).$(state2) $(dir)/$(file)"
+is simulated.
+.LP
+.SH USAGE
+.SS "Smergefile Target Entries"
+.LP
+An important difference between \fImake\fP and \fIsmerge\fP is
+the way targets are executed. \fIMake\fP will execute the
+first target found in a \fImakefile\fP unless a specific target
+is specified on the command line. \fISmerge\fP behaves as if it
+were executed once for every pair of SCCS files that it
+given using a state name pair, described in \fISCCS
+File Comparison\fP above, as the name of the target to be
+executed.
+.LP
+\fIMake\fP recursively executes each dependency target that is
+out of date with respect to the dependent target.
+The preamble targets in \fIsmerge\fP act as subroutines.
+\fISmerge\fP has no concept of "out-of-date" targets and \fIalways\fP
+executes the preamble targets before executing the primary target.
+.LP
+Other than
+.B include
+lines, comments and macro definitions which are described below, a
+.I smergefile
+contains a sequence of entries that specify targets.  
+A target entry has the following format:
+.IP 
+.DT
+.nf
+.ft I
+target-name:\fI  preamble-target .\|.\|.
+	command
+	\&.\|.\|.
+.fi
+.LP
+The first line contains the name of a target terminated with a colon
+.RB ( : ).
+This is followed by a (possibly empty) list of preamble targets
+terminated by a new-line.
+Subsequent lines in the entry begin with a
+.SM TAB,
+or
+.SM SPACE
+and contain Bourne shell commands.
+These commands are performed for every SCCS file pair where the
+string "$(state1).$(state2)" matches the target name.
+.LP
+Shell commands may be continued across input lines by escaping the 
+newline with a backslash
+.RB ( \e ).
+The continuation line must also start with a
+.SM TAB.
+.I smerge 
+expands any macros and passes each command line (except the initial 
+\s-1TAB\s0) directly to a Bourne shell.
+Note that \fIsmerge\fP does not remove escaped newlines from shell lines as does
+\fImake\fP.
+Thus,
+.RS
+echo a\e
+.br
+echo b
+.RE
+.LP
+produces the shell commands
+.RS
+echo a
+echo b
+.RE
+instead of
+.RS
+echo aecho b
+.RE
+as the shell does.
+.LP
+The first line that does not begin with a 
+.SM TAB 
+or
+.B #
+begins another target or a macro definition.  
+.SS "Special Characters"
+.TP 
+.B #
+Start a comment.  The comment ends at the next newline.
+.TP
+.B $
+Macro expansion.  See
+.I Macros,
+below, for details.
+.TP
+.B \-
+Following the tab, if the first character of a command line is a 
+.BR \- ,
+.I smerge
+ignores a nonzero return status when executing that command.
+.I smerge
+normally terminates when a command returns nonzero status.
+.TP
+.B @
+Following the tab, if the first character is a
+.BR @ ,
+.I smerge
+does not print the command line before executing it
+(C-Shell users note that there is no \fB@\fR built-in command for the
+Bourne shell).
+.IP
+If 
+.B \-
+and
+.B @
+appear as the first two characters after the
+.SM TAB, 
+both apply.
+.TP
+.BI $$ var
+Escape macro expansion.  Pass
+.BI $ var
+on to the shell (for variable substitution).
+.SS "Executing Command Lines"
+.LP
+Command lines are executed one at a time, 
+.I each by its own shell.
+A line is printed (after macro expansion) as it executed unless 
+it starts with a 
+.BR @ ,
+or
+.I smerge
+is run with the
+.B \-s
+option.
+Although the
+.B \-n
+option specifies printing without execution, lines containing the string 
+.B $(MAKE)
+are executed regardless.
+.LP
+To take advantage of the Bourne shell 
+.B if
+control statement, use a command line of the form:
+.IP "" 1i
+'ft L
+'nf
+\&.\|.\|.
+if \fIexpression\fP ; \e
+then \fIcommand\fP ; \e
+\fIcommand\fP ; \e
+\&.\|.\|.
+else \fIcommand\fP ; \e
+\&.\|.\|.
+fi
+'ft
+'fi
+.LP
+Although composed of several input lines, the escaped newlines
+insure that 
+.I smerge
+treats them all as one command line.
+.LP
+To take advantage of the Bourne shell
+.B for
+control statement, use a command line of the form:
+.IP 
+'ft L
+'nf
+\&.\|.\|.
+for \fIvar\fP in \fIlist\fP ; do \e
+\fIcommand\fP ; \e
+\&.\|.\|. 
+done
+'ft R
+'fi
+.LP
+To write shell variables, use double dollar-signs 
+.RB ( $$ )
+to escape macro expansion of the dollar sign by
+.I smerge.
+.SS "Include Files"
+.LP
+.I smerge
+has an include file capability.  If the string
+.B include
+appears as the first seven letters of a line in a 
+.I smergefile
+and is followed by a space or a tab, the string following the word 
+.B include
+is taken as a filename which the current invocation of 
+.I smerge
+will read.
+.B include
+files can be nested to a depth of no more than about 16.
+.SS Macros
+Entries of the form
+.IP
+.IB string1 " = " string2
+.LP
+are macro definitions.
+.I string2
+is defined as all characters up to a comment character or
+an unescaped newline.  Subsequent appearances of
+.IP
+.BI $( string1 )
+.LP
+are replaced by
+.IR string2 .
+The parentheses are optional if a single character macro name is used.
+.LP
+Substitutions within macros can be made as follows:
+.IP
+.BI $( string1 : subst1 = subst2)
+.LP
+When the substitution sequence
+.BI : subst1 = subst2
+is specified, all non-overlapping occurrences of \fIsubst1\fP in the
+named macro are replaced by \fIsubst2\fP.
+Strings (for the purposes of this type of substitution) are delimited by
+blanks, tabs, newline characters, and the beginning of a line.
+.SS Internal Macros
+.I Smerge
+defines several macros for each SCCS file pair. \fBtree1\fP and
+\fBtree2\fP must be defined somewhere by the user (environment
+variables, on the command line, or in \fIsmergefile\fP.)
+
+\fBdir\fP and \fBfile\fP are set during SCCS file name generation
+and are the directory and file parts of the file name.
+
+\fBbase1\fP and \fBbase2\fP specify the newest common SCCS
+revisions. If the state is \fBnobase\fP then both \fBbase1\fP and
+\fBbase2\fP are set to the null string. If the state is
+\fBambiguous\fP then \fBbase1\fP and \fBbase2\fP do not represent
+identical data. Branch deltas are not considered in the
+comparisons unless the \fB-b\fP option is specified.
+
+\fBtop1\fP and \fBtop2\fP are the newest delta for each file that
+is not a branch delta. The \fB-b\fP option allows \fBtop1\fP and
+\fBtop2\fP to be branch deltas.
+
+The \fInewsid\fP macros, \fBnewsid1\fP and \fBnewsid2\fP, include
+a list of all the SCCS revisions numbers from a file's \fIbase\fP
+to its \fItop\fP. This list contains all \fIincluded\fP deltas, and
+branch deltas, and does not contain \fIexcluded\fP or \fIignored\fP deltas.
+
+\fBstate1\fP and \fBstate2\fP represent the state of each file.
+The possible values are \fBnone\fP, \fBnew\fP, \fBold\fP, \fBambiguous\fP,
+\fBnobase\fP, or \fBsccserror\fP.
+.sp
+.SH ENVIRONMENT
+\fIsmerge\fR reads the environment.
+Environment variables are assumed to be macro definitions and are 
+processed as such.  Environment variables are processed before any 
+.I smergefile
+; thus, macro assignments
+in a smergefile override environment variables (for that smergefile only).  
+The
+.B \-e
+option makes the environment override the macro assignments in a 
+.IR smergefile .
+.SH EXAMPLES
+\fL
+.nf
+#
+# This smergefile is used to take new deltas from one SCCS hierarchy
+# and add then to the SCCS files in another SCCS hierarchy.
+# It is only an example.
+#
+
+# tree1 will receive all the updates
+tree1=/usr/src/SCCS_DIRECTORIES
+
+# tree2 contains recent development
+tree2=/mystuff/usr/src/SCCS_DIRECTORIES
+
+#
+# This is the hard case; both heirarchies have changed and someone
+# is going to have to manually inspect and merge the files.
+# Do some diffs and get the SCCS history for each version.
+# The last line is separate because the exit code from diff is the
+# only one to ignore.
+#
+merge:
+	@cd $(tree1)/$(dir);	\\
+	rm -f $(file).prs1 $(file).prs2 SCCS/s.$(file);	\\
+	for sid in $(newsid1); do	\\
+	 sccs prs -r$$sid $(tree1)/$(dir)/SCCS/s.$(file) >> $(file).prs1; \\
+	done;	\\
+	for sid in $(newsid2); do	\\
+	 sccs prs -r$$sid $(tree2)/$(dir)/SCCS/s.$(file) >> $(file).prs2; \\
+	done;	\\
+	sccs get -p -k $(tree1)/$(dir)/SCCS/s.$(file) > $(file).OFC; \\
+	sccs get -p -k $(tree2)/$(dir)/SCCS/s.$(file) > $(file).MINE;
+	-cd $(tree1)/$(dir); diff $(file).OFC $(file).MINE > $(file).DIFF;
+
+#
+# These are various "subroutine" targets
+#
+head:
+	@echo '$(dir)/$(file) tops($(top1),$(top2)) bases($(base1),$(base2))';\\
+	echo newsid1 = $(newsid1);\\
+	echo newsid2 = $(newsid2);
+
+newhead:
+	@echo -n "NORMAL		"
+ahead:
+	@echo -n "AMBIGUOUS	"
+nbhead:
+	@echo -n "NOBASE		"
+nfhead: head
+	@echo -n "NEWFILE	"
+
+#
+# All the hard cases
+#
+new.new: newhead head merge
+ambiguous: ahead head merge
+nobase: nbhead head merge
+
+# no change
+old.old:
+new.old: old.old
+
+# The file does not exist in tree1
+none.old: nfhead
+	cp $(tree2)/$(dir)/SCCS/s.$(file) $(tree1)/$(dir)/SCCS/s.$(file);\\
+	
+#
+# Add each of the new revisions to the official SCCS file.
+# Maintain the original delta commentary.
+#
+old.new:
+	set -k;	\\
+	cd $(tree1)/$(dir);	\\
+	for sid in $(newsid2);	\\
+	do	\\
+		sccs edit $(file);	\\
+		sccs get -pk -r$$sid $(tree2)/$(dir)/SCCS/s.$(file) > $(file);\\
+		sccs prs -r$$sid $(tree2)/$(dir)/SCCS/s.$(file) |\\
+			awk '	\\
+				NR == 1 { tag = $$0 "\\\\"; incomments = 0; } \\
+				/^COMMENTS:/ { \\
+						incomments = 1; \\
+						print "Original tag: " tag ;\\
+						next; \\
+					} \\
+				incomments == 1 { print $$0 "\\\\"; } \\
+				END { print }	\\
+			' - | \\
+			sccs delta $(file); \\
+	done
+
+none.none:
+	@echo Bogus file name $(dir)/$(file)
+
+#
+# Smerge has already printed a message giving the SCCS file name and the
+# type of corruption before executing the sccserror target.
+#
+sccserror:
+	@if [ $(state1) = "sccserror" ]; \\
+	then \\
+		echo WARNING $(tree1)/$(dir)/$(file) IS CORRUPT; \\
+	fi; \\
+	if [ $(state2) = "sccserror" ]; \\
+	then \\
+		echo WARNING $(tree1)/$(dir)/$(file) IS CORRUPT; \\
+	fi
+.LP
+.sp
+\fRTo run the above smergefile from the Borne shell:
+.sp
+.nf
+\fL$ tree1=/usr/src/SCCS_DIRECTORIES
+$ tree2=$HOME/mystuff/usr/src/SCCS_DIRECTORIES
+$ export tree1 tree2
+$ # generate a list of file names
+$ ( cd $tree1 ; find . -name 's.*' -print ;
+> cd $tree1 ; find . -name 's.*' -print ) | sort -u > filenames
+$ smerge -l filenames 
+.fi
+.LP
+.sp 2
+\fRTo find out the status of all SCCS files use the file name list
+generated in the above example and run the following command:
+.sp
+\fL$ smerge -f /dev/null -l filenames\fR
+.sp
+The use of \fL/dev/null\fP in the above command is not manditory.
+It guards against using any \fLSmergefile\fP or \fLsmergefile\fP that
+you may have in the current directory.
+.SH FILES
+[Ss]mergefile
+.SH SEE ALSO
+ssum(1), sccsreorg(1), make(1), sh(1), sccs(1), diff(1), sum(1),
+getopt(3), sccsname(1)
+.SH BUGS
+Some commands return nonzero status inappropriately; use
+.B \-i
+to overcome the difficulty.
+File names with the characters
+.B "= : @"
+will not work.
+.LP
+Commands that are directly executed by the shell, notably
+.IR cd ,
+are ineffectual across new-lines in
+.IR smerge .
+.LP
+.I Smerge
+treats an open error on an existing file as if the file did not exist.
+.SH WARNINGS
+.I smerge
+uses the checksum routine from sum(1) and a byte count for each
+delta in order to determine matching SCCS deltas. There is a
+small probability that the same checksum and byte count can be
+generated for different deltas.
+.LP
+The \fB\-L\fP option uses the find(1) command to generate the
+list of names. Find will not follow symbolic links in the SCCS hierarchy.
+.LP
+The example Smergefile in this document will not work for you.

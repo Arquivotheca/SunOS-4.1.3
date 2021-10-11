@@ -1,0 +1,943 @@
+.\" @(#)id.4s 1.1 92/07/30 SMI;
+.TH ID 4S "17 April 1991"
+.SH NAME
+id \- disk driver for IPI disk controllers
+.SH "CONFIG \(em SUN-4, SPARCsystem 600MP SERIES"
+.ft B
+.nf
+controller	idc0	at ipi ? csr 0x0000ff priority 2   # channel 0 slave 0
+disk		id 0x000 at idc0 drive 0 	# facility 0
+disk		id 0x001 at idc0 drive 1
+disk		id 0x002 at idc0 drive 2
+disk		id 0x003 at idc0 drive 3
+disk		id 0x004 at idc0 drive 4
+disk		id 0x005 at idc0 drive 5
+disk		id 0x006 at idc0 drive 6
+disk		id 0x007 at idc0 drive 7
+.fi
+.ft R
+.LP
+.ft B
+.nf
+controller	idc1	at ipi ? csr 0x0001ff priority 2 # channel 0 slave 1
+disk		id 0x010 at idc1 drive 0 	# facility 0
+disk		id 0x011 at idc1 drive 1
+disk		id 0x012 at idc1 drive 2
+disk		id 0x013 at idc1 drive 3
+disk		id 0x014 at idc1 drive 4
+disk		id 0x015 at idc1 drive 5
+disk		id 0x016 at idc1 drive 6
+disk		id 0x017 at idc1 drive 7
+.fi
+.ft R
+.LP
+.ft B
+.nf
+controller	idc2	at ipi ? csr 0x0002ff priority 2 # channel 0 slave 2
+disk		id 0x020 at idc2 drive 0 	# facility 0
+disk		id 0x021 at idc2 drive 1
+disk		id 0x022 at idc2 drive 2
+disk		id 0x023 at idc2 drive 3
+disk		id 0x024 at idc2 drive 4
+disk		id 0x025 at idc2 drive 5
+disk		id 0x026 at idc2 drive 6
+disk		id 0x027 at idc2 drive 7
+.fi
+.ft R
+.LP
+.ft B
+.nf
+controller	idc3	at ipi ? csr 0x0003ff priority 2 # channel 0 slave 3
+disk		id 0x030 at idc3 drive 0 	# facility 0
+disk		id 0x031 at idc3 drive 1
+disk		id 0x032 at idc3 drive 2
+disk		id 0x033 at idc3 drive 3
+disk		id 0x034 at idc3 drive 4
+disk		id 0x035 at idc3 drive 5
+disk		id 0x036 at idc3 drive 6
+disk		id 0x037 at idc3 drive 7
+.fi
+.ft R
+.LP
+.ft B
+.nf
+controller	idc4	at ipi ? csr 0x0004ff priority 2  # channel 0 slave 4
+disk		id 0x040 at idc4 drive 0 	# facility 0
+disk		id 0x041 at idc4 drive 1
+disk		id 0x042 at idc4 drive 2
+disk		id 0x043 at idc4 drive 3
+disk		id 0x044 at idc4 drive 4
+disk		id 0x045 at idc4 drive 5
+disk		id 0x046 at idc4 drive 6
+disk		id 0x047 at idc4 drive 7
+.fi
+.ft R
+.LP
+The first four
+.B controller
+lines given in the synopsis section above correspond to
+the first, second, third, and fourth
+.SM IPI
+disk controllers in a Sun system; the fifth controller is
+currently available on \s-1SPARC\s0system 600MP series
+machines only.
+These controllers are on
+.SM IPI
+channels or combined on integrated
+channel/disk-controller cards such as the
+.SM ISP-80
+.\" Panther
+.SM IPI
+disk controller.
+The
+.B csr
+value gives the channel, slave, and facility address of the
+controller.
+The facility address should always be
+.BR 0xff .
+See
+.BR is (4S).
+.SH DESCRIPTION
+.IX  "id device"  ""  "\fLid\fP \(em IPI Disk driver"  ""  PAGE START
+.IX  "IPI"  ""  "\fLid\fP \(em IPI Disk driver"  ""  PAGE START
+.IX  "IPI Disk driver"  ""  "IPI Disk driver \(em \fLid\fP"  ""  PAGE START
+.IX  "disk driver"  "IPI"  ""  "\fLid\fP \(em "  PAGE START
+.LP
+In order to accommodate a large number of disk drives, a multiple major
+number device addressing scheme is used.
+The minor number is formed using
+the low order 5 bits of the unit number and the 3-bit partition number.
+The low-order 3 bits of the minor number give the partition number on the
+drive.  
+The high order bits of the unit number are added to the first major number
+for
+.B id
+devices to give the major number of the particular device.
+The unit number itself is formed as follows:
+the 4-bit facility number forms the low order 4-bits,
+next the 3-bit slave number,
+and then the channel number.
+.br
+.ne 5
+.LP
+The standard device names begin with
+.B id
+followed by three hex digits giving the channel number, slave number, and
+facility number, 
+and then a letter
+.BR a-h ,
+for partitions 0-7 respectively.
+.LP
+The block files access the disk using the system's normal
+buffering mechanism and may be read and written without regard to
+physical disk records.
+There is also a 
+.I raw
+interface which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call usually results in only one I/O operation;
+therefore raw I/O is considerably more efficient when
+many words are transmitted.
+The names of the raw files conventionally
+begin with an extra
+.RB ` r '.
+.LP
+In raw I/O, counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.BR directory (3)
+calls should specify a multiple of 512 bytes.
+Depending on the channel adaptor, the buffer for raw reads or writes may
+be required to be on a 2-byte or 4-byte boundary.
+.LP
+The
+.B ioctl(\|)
+interface described in 
+.BR dkio (4S)
+is supported by this driver.
+The 
+.SM DKIOCSCMD 
+ioctl can be used to issue certain
+.SM IPI
+commands to the drive.
+The argument structure is: 
+.LP
+.RS
+.ft B
+.nf
+struct dk_cmd {
+	u_short	dkc_cmd;	/* command to be executed */
+	int	dkc_flags;	/* execution flags */
+	daddr_t	dkc_blkno;	/* disk address for command */
+	int	dkc_secnt;	/* sector count for command */
+	caddr_t	dkc_bufaddr;	/* user's buffer address */
+	u_int	dkc_buflen;	/* size of user's buffer */
+};
+.fi
+.ft R
+.RE
+.LP
+The lower 8-bits of the 
+.B dkc_cmd 
+field indicate one of the supported commands listed below.
+The upper 8-bits indicate the
+.SM IPI
+Opcode modifier.
+These commands are defined in 
+.BR /usr/include/sundev/ipi3.h .
+Block numbers are not remapped by the partition map when
+these commands are used.
+The supported commands are:
+.TP
+.SB IP_READ
+.PD 0
+.TP
+.SB IP_WRITE
+Read or write data.
+The addressing is always by logical block (ignoring
+.RB [ a-h ]
+logical partition information); the Opcode modifier is ignored.
+.PD
+.TP
+.PD 0
+.SB IP_READ_DEFLIST
+.TP
+.SB IP_WRITE_DEFLIST
+Read or write one of the defect lists.
+The defect list is selected by the Opcode modifier in bits
+<15:8> of the 
+.BR dkc_cmd .
+.PD
+.TP
+.SB IP_FORMAT
+Format a range of cylinders.
+For this command, the block number and sector
+count fields must both be a multiple of the number of blocks per cylinder.
+The 
+.B dk_buflen 
+field must be zero for this command.
+.TP
+.SB IP_REALLOC
+Reallocate a block.
+The controller attempts to recover the data from the
+old block being reallocated.
+If the old data cannot be recovered, a
+conditional success status is presented and a message may be printed.
+The 
+.B dk_buflen 
+field must be zero for this command.
+.SH "DISK SUPPORT"
+.LP
+This driver handles all supported
+.SM IPI
+drives by reading controller attributes and a label from sector
+0 of the drive which describes the disk geometry and partitioning.
+.LP
+The
+.B id000a
+partition is normally used for the root file system
+on a disk, the
+.B id0??b
+partition as a paging area, and the
+.B id???c
+partition for pack-pack copying (it normally maps the entire disk).
+The
+.B id???g
+partition is generally a partition suitable for holding the
+.B /usr
+file system.
+The rest of the disk is normally the
+.B id???h
+partition.
+.SH FILES
+.PD 0
+.TP 25
+.B /dev/id[0-7][0-7][0-7][a-h]
+block files
+.TP
+.B /dev/rid[0-7][0-7][0-7][a-h]
+raw files
+.PD
+.SH SEE ALSO
+.BR lseek (2),
+.BR read (2V),
+.BR write (2V),
+.BR directory (3),
+.BR dkio (4S)
+.BR is (4S)
+.SH DIAGNOSTICS
+.LP
+The following messages are usually preceded by either 
+.BI idc n\fR,
+indicating a message associated with controller
+.IR n ,
+or
+.BI id csf\fR,
+indicating a message associated with the drive 
+.IR csf ,
+where
+.I csf
+is the drive's channel, slave, and facility address.
+.TP
+.B "idc\fIn\fP: configured with bad \s-1IPI\s0 address \fIaddr\fP"
+The
+.SM IPI
+address of the controller should end with
+.RB ` ff '.
+.TP
+.B "idc\fIn\fP: unknown ctlr vendor id: manuf '\fIname\fP' model '\fImodel\fP'"
+The controller type is unsupported.
+The driver has not been tested
+with the controller being used.
+.TP
+.B "idc\fIn\fP: unknown string ctlr type"
+The controller type is unsupported.
+The driver has not been tested
+with the controller being used.
+.TP
+.B "id\fIcsf\fP: out of memory for label info"
+The disk could not be initialized because the driver
+could not allocate kernel memory for the label.
+.TP
+.B "id\fIcsf\fP: warning: starting block address nonzero: \fIaddr\fP"
+The disk attributes indicate a non-zero first block number.
+None of the supported controllers do this.
+.TP
+.B "id\fIcsf\fP: zero blocks per track"
+The disk attributes indicate zero blocks per track.
+None of the supported controllers do this.
+.TP
+.B "id\fIcsf\fP: inconsistent geometry: blk/cyl \fInum\fP blk/trk \fInum\fP head \fInum\fP"
+The disk attributes indicate  different number of
+blocks per cylinder than would be expected from the blocks
+per track and the number of tracks (heads).
+.TP
+.B "id\fIcsf\fP: inconsistent geometry: tot blks \fInum\fP blks/cyl \fInum\fP pcyl \fInum\fP"
+The disk attributes indicate different number
+of total blocks than would be expected from the blocks
+per cylinder and the number of cylinders.
+.TP
+.B "id\fIcsf\fP: invalid logical block size \fInum\fP"
+The disk logical block size, given by the logical block size attribute 
+parameter, is not a power of two less than 2**31.
+.TP
+.B "idintr: bad rupt \s-1NULL\s0 q_dev"
+The interrupt routine was called with a request
+that cannot be identified.
+.TP
+.B "idc\fIn\fP: ctlr message: '\fImessage-text\fP'"
+The firmware in the disk controller issued the message
+.IR message-text .
+The controller manual should describe the message.
+.TP
+.B "idc\fIn\fP: ctlr failure fru \fInum\fP message: '\fImessage-text\fP'"
+The firmware in the disk controller issued the 
+failure message 
+.IR message-text ,
+and indicates a likely field-replaceable
+unit number (printed in hex).
+The controller manual should describe the message and
+.SB FRU
+number.
+.TP
+.B "id\fIcsf\fP: corrupt label"
+The label checksum mismatched.
+.TP
+.B "id\fIcsf\fP: <\fI\s-1ASCII\s0-label\fP>"
+The label contains an
+.SM ASCII 
+string which is printed after the label is read.
+The
+.SM ASCII
+string should give the disk type and number of
+cylinders, heads, and sectors.
+.TP
+.PD 0
+.B "id\fIcsf\fP: warning: label doesn't match \s-1IPI\s0 attribute info"
+.TP
+.B "id\fIcsf\fP: label ncyl \fInum\fP pcyl \fInum\fP acyl \fInum\fP head \fInum\fP sect \fInum\fP rpm \fInum\fP"
+.TP
+.B "id\fIcsf\fP: geom ncyl \fInum\fP pcyl \fInum\fP acyl \fInum\fP head \fInum\fP sect \fInum\fP rpm \fInum\fP"
+.PD
+Some of the geometry information from the disk label
+does not match the geometry information from
+the controller attributes.
+This may or may not be a problem,
+but indicates a non-standard label.
+.TP
+.B "id\fIcsf\fP: id_rdwr: block \fInum\fP past end of disk"
+An
+.B ioctl(\|)
+read or write was issued to a block in a cylinder with a number
+greater than or equal to the number of physical cylinders indicated by 
+the disk geometry from the label or attributes.
+.TP
+.B "id\fIcsf\fP: id_format failed. result \fInum\fP"
+A format operation failed. 
+The code number printed,
+.IR num ,
+is defined in 
+.BR /usr/include/sundev/ipi_driver.h .
+.TP
+.B "id\fIcsf\fP: id_rdwr_deflist failed. result \fInum\fP"
+A read or write defect list operation failed.
+The code number printed,
+.IR num ,
+is defined in 
+.BR /usr/include/sundev/ipi_driver.h .
+.TP
+.B "id\fIcsf\fP: id_realloc failed. result \fInum\fP"
+A reallocation operation failed.
+The code number printed,
+.IR num ,
+is defined in 
+.BR /usr/include/sundev/ipi_driver.h .
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) idintr: bad rupt \s-1NULL\s0 qdev"
+An interrupt occurred for which the associated
+disk could not be located.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) idintr: neg cmd_q_len"
+The driver's count of commands outstanding
+to the drive became less than zero.
+System operation should continue normally, but this message
+indicates a minor driver problem.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) poll timeout"
+A command hung or took longer than the driver expected.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_cmd_intr: ctlr cmd_q_len negative"
+The driver's count of commands outstanding to the controller
+became less than zero.
+System operation should continue normally, but this message
+indicates a minor driver problem.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_error: slave IML not supported"
+An error response from the controller indicates
+that it requires an initial microcode load.
+If this message occurs, controllers which
+issue this error are not supported.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_error: slave reset not supported"
+An error response from the controller
+indicates that it requires a reset.
+If this message occurs, controllers which
+issue this error are not supported.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_error: full queue: not handled"
+An error response from the controller indicates
+that its internal command queue is full,
+and the command cannot be accepted.
+This message should not occur because
+the driver respects the queue limits
+determined from the controller attributes.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_error: log read not supported"
+The controller presented status indicating
+that its internal log has 
+overflowed and should be read by the host.
+If this message occurs, controllers which
+issue this status are not supported.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_error: aborted command not supported"
+An interrupt indicated that the associated
+command had been terminated by abort. 
+If this message occurs, the driver does
+not issue aborts or expect this status.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) id_error_parse: no response where expected"
+An interrupt occurred which should have been
+accompanied by a response packet,
+but none was found.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) missing interrupt \- attempting recovery"
+The command took much longer than expected,
+indicating a possible problem 
+with the controller or drive.
+Recovery of the controller will be started,
+and the command will be retried if possible.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) missing interrupt \- recovery in progress"
+The command took much longer than expected,
+indicating a possible problem 
+with the controller or drive.
+Since recovery was already in progress,
+the command was added to the list
+or commands to be retried after recovery.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) no memory for label"
+The driver could not obtain a temporary
+memory area for the disk label.
+.TP
+.B "id\fIcsf\fP[a-h]: \fIopcode\fP block \fIrel-block\fP (\fIblock\fP abs) cannot abort yet"
+The recovery code cannot abort specific commands.
+It will assume the command
+was cleared by a reset and simply reissue the command.
+.TP
+.PD 0
+.B "id\fIcsf\fP: id_recover     \fIstate-number\fP \fIstate-name\fP"
+.TP
+.B "idc\fInum\fP: id_recover     \fIstate-number\fP \fIstate-name\fP"
+.TP
+.B "id\fIcsf\fP: id_recover_intr     \fIstate-number\fP \fIstate-name\fP \fIresult\fP"
+.TP
+.B "idc\fInum\fP: id_recover_intr     \fIstate-number\fP \fIstate-name\fP \fIresult\fP"
+.PD
+These messages trace the recovery action
+during missing interrupt handling and controller recovery.
+These are for diagnosing problems in the
+event that recovery is unsuccessful.
+.TP
+.B "idc\fInum\fP: synchronous command setup failed"
+During recovery or initialization,
+the setup for a command failed, probably
+due to an internal error or lack of free memory.
+.TP
+.B "id\fIcsf\fP[a-h]: write check disabled"
+Write checking for the partition has been disabled via the \f\s-1IDKIOCWCHK\s0\fP
+ioctl() function.
+See
+.BR dkio (4S)
+and
+.BR dkctl (8).
+This message is issued whether or not write checking was previously
+disabled for that partition.
+.TP
+.B "id\fIcsf\fP[a-h]: write check enabled"
+Write checking for the partition has been enabled via the \f\s-1IDKIOCWCHK\s0\fP
+ioctl() function, possibly by
+.BR dkctl (8).
+See
+.BR dkio (4S)
+and
+.BR dkctl (8),
+This message is issued whether or not write checking was previously
+enabled for that partition.
+Write checking, when enabled, causes the driver to perform a read after
+every write to the partition to verify that the write succeeded.
+If the read fails, the write will be retried.
+.SH "IPI DIAGNOSTICS"
+.LP
+The following diagnostics come directly from controller status.
+The messages may occur in combinations determined by the controller.
+In most cases, more information about the conditions under which the
+status is issued will be found in the controller manual.
+.LP
+In the examples shown, the message for the response parameter
+is shown first, then the message for a single bit in the response
+parameter.
+In practice, there will be a response parameter message
+followed by one or more messages for the individual bits, all on the
+same line.
+.LP
+The messages will be preceded by the disk or controller number.
+The message descriptions refer to the appropriate disk or controller
+as the addressee, since it was addressed in the command or response.
+.LP
+Normally, these messages are not printed when the condition described
+arises.
+They will only be printed if the condition is \*(lqinteresting.\*(rq
+Certain conditions print all of the messages associated with a response,
+even though the individual messages might not be 
+especially interesting.
+.LP
+The description of the message meaning is excerpted from the 
+.SM IPI\s0-3 
+standards document.
+Refer to it for a more complete explanation.
+.TP
+.B "Message/Microcode Exception.  Message."
+The slave has included a message within Extended Substatus
+for the master.
+.TP
+.B "Message/Microcode Exception.  Failure Message."
+The slave encountered a failure condition which
+resulted in the identification of a
+.SM FRU
+(Field Replaceable Unit).
+.TP
+.B "Message/Microcode Exception.  Port Disable Pending."
+The addressee has received a manual or
+programmed Port Disable command that will take effect when the Disable
+conditions are met.
+.TP
+.B "Message/Microcode Exception.  Port Response."
+A port has executed a Port Response command. 
+.TP
+.B "Intervention Required.  Not P-Available."
+The selected addressee is not powered on or is not
+installed.
+.TP
+.B "Intervention Required.  Not Ready."
+The selected addressee cannot execute its intended
+functions.
+The addressee's Not Ready condition may be cleared by
+operator intervention.
+.TP
+.B "Intervention Required.  Not P-Available Transition."
+This is presented by the controller to
+advise the driver that a facility has become Not P-Available since the
+time that a command addressed to it was accepted.
+Note: if the
+transition had occurred before the command packet was accepted, the
+status would have been Not P-Available.
+.TP
+.B "Intervention Required.  Not Ready Transition."
+This is presented by the controller to advise the
+driver that a facility has dropped ready since the time that a command
+addressed to it was accepted.
+Note: if the transition had occurred
+before the command packet was accepted,
+the status would have been Not Ready.
+.TP
+.B "Intervention Required.  Attribute Table may be corrupted."
+The controller has encountered a
+condition under which it is possible that the Attributes table has been
+corrupted, and it is not prepared to continue operation without master
+intervention.
+.TP
+.B "Intervention Required.  Busy."
+The command cannot be executed because the addressee
+has been Busy for a time determined by the Facility Timeout Value
+specified in Attributes.
+.TP
+.B "Alternate Port Exception.  Priority Reserve Issued."
+The addressee has been instructed to
+release allegiance to this port because of a Priority Reserve from an
+alternate port.
+.TP
+.B "Alternate Port Exception.  Attributes Updated."
+An Attributes command has been issued from an
+alternate port which has changed the addressee's attributes.
+.TP
+.B "Alternate Port Exception.  Initialization Completed."
+The addressee has completed an
+initialization procedure which may have affected this port, and was
+originated by a Reset from an alternate port.
+.TP
+.B "Alternate Port Exception.  Format Completed."
+The addressee has completed a
+.SB FORMAT
+command from an alternate port.
+.TP
+.B "Alternate Port Exception.  Facility switched to other port."
+The slave has determined that the
+facility is switched to another port.
+.TP
+.B "Machine Exception.  No longer busy."
+The addressee is notifying the master that it is no longer busy.
+.TP
+.B "Machine Exception.  P-Available."
+This is presented asynchronously by the
+slave to advise the master that a facility which was previously Not
+P-Available has become P-Available.
+.TP
+.B "Machine Exception.  Ready."
+This is presented asynchronously by the slave to
+advise the master that a facility which was not previously ready has
+become Ready.
+.TP
+.B "Machine Exception.  Operation Timeout."
+There has been a failure condition in the
+addressee which has been detected by an internal timeout mechanism.
+.TP
+.B "Machine Exception.  Physical Interface Check."
+The slave detected a check condition on
+the Physical Interface \(em for example,
+an invalid sequence generated by the "state
+machine" or parity error on the bus(es).
+.TP
+.B "Machine Exception.  Slave Initiated Reset."
+An internal condition caused the slave to
+initiate a reset; the master shall assume all outstanding commands and
+buffer contents are either lost or suspect.
+.TP
+.B "Machine Exception.  Environmental Error."
+Some condition internal or external to the
+addressee has been detected which may cause failure condition(s) \(em 
+for example, a temperature sensor alert.
+.TP
+.B "Machine Exception.  Power Fail Alert."
+The addressee has detected an impending power failure condition.
+.TP
+.B "Machine Exception.  Data Check (on Raw Data)."
+The master has requested raw data and the
+addressee has detected a data error.
+.TP
+.B "Machine Exception.  Uncorrectable Data Check."
+The slave detected a
+data error which has persisted after the slave has exhausted any
+possible recovery actions.
+On write operations, the malfunction may
+have caused invalid data to be recorded.
+.TP
+.B "Machine Exception.  Fatal Error."
+The addressee detected an internal machine error that
+precludes execution or continuation of the current command.
+.TP
+.B "Machine Exception.  Hardware Write Protected."
+An attempt was made to write on a drive
+that was protected against writing by something physical \(em
+for example, a switch on the drive.
+.TP
+.B "Machine Exception.  Queue Full."
+The command queue for the addressee is full.
+.TP
+.B "Machine Exception.  Command Failure."
+The command in execution encountered a condition which
+caused it to complete correctly but unsuccessfully;
+for example, a
+.SB COMPARE
+of two files detected a discrepancy.
+.TP
+.B "Machine Exception.  Read Access Violation."
+An attempt was made to read on an addressee
+which had been protected using Access Permits.
+.TP
+.B "Machine Exception.  Write Access Violation."
+An attempt was made to write on an addressee
+which had been protected using Access Permits.
+.TP
+.B "Machine Exception.  Data Overrun."
+This can occur during direct data transfer, or if the
+slave has a buffer which was not adequate, and the buffer overran during
+a read or a write operation.
+.TP
+.B "Machine Exception.  Reallocation space exhausted."
+Space required for reallocation of
+data due to media defects is not available; that is,
+all space assigned for
+that purpose has been exhausted.
+.TP
+.B "Machine Exception.  Unexpected Master Action."
+The slave has encountered an unexpected
+action by the master; for example, the
+Master Status at the Physical Interface does
+not correlate to the anticipated status, no status was expected and
+some was presented by the master, the master did not respond with Data
+I/O or Control of Bus following a Transfer Notification packet.
+.TP
+.B "Machine Exception.  Error Log Full."
+The Error Log capacity has been exceeded.
+.TP
+.B "Machine Exception.  Defect Directory Full."
+The Defect Directory capacity has been
+exceeded and no more blocks can be re-allocated.
+.TP
+.B "Command Exception.  Invalid Packet Length."
+The packet length is invalid; for example, the length
+of the parameter list plus the basic packet does not equal the packet
+length.
+.TP
+.B "Command Exception.  Invalid Command Reference Number."
+The Command Reference Number is
+invalid; for example, it duplicates one in a command that is currently active.
+.TP
+.B "Command Exception.  Invalid Slave Address."
+The Slave Address in the command packet is
+invalid; for example, it does not match the selected slave's address.
+.TP
+.B "Command Exception.  Invalid Facility Address."
+The Facility Address in the command packet
+is invalid.
+.TP
+.B "Command Exception.  Invalid Selection Address."
+The facility selected at the Physical
+Interface does not match the facility address supplied in the command
+packet. 
+.TP
+.B "Command Exception.  Invalid Opcode."
+The command packet contained an invalid or unsupported Opcode.
+.TP
+.B "Command Exception.  Invalid Modifier."
+The Modifier was invalid or is not supported for the Opcode specified.
+.TP
+.B "Command Exception.  Invalid Extent."
+The Data Address (for example, the block number) plus the Count specified in an
+Extent parameter is not valid for the addressee.
+.TP
+.B "Command Exception.  Out of Context."
+The slave has encountered a situation in which it
+cannot process the command because it considers it out of context \(em for
+example, a
+.SB RESUME
+command without a previous 
+.BR \s-1COPY\s0.
+.TP
+.B "Command Exception.  Invalid Parameter."
+One or more of the parameters in the command
+packet was invalid.
+.TP
+.B "Command Exception.  Missing Parameter."
+One or more of the parameters required in the command is not present. 
+.TP
+.B "Command Exception.  Reserved Value nonzero."
+A reserved value defined by the standard does not contain zero.
+.TP
+.B "Command Exception.  Invalid Combination."
+The addressee has detected that two valid but
+mutually exclusive options have been selected by the master.
+.TP
+.B "Command Aborted.  Command Aborted."
+The command this response packet is related to was
+.BR \s-1ABORT\s0 ed
+by the master.
+.TP
+.B "Command Aborted.  Command Sequence Terminated."
+Command Sequencing was terminated
+because this command failed to complete successfully.
+.TP
+.B "Command Aborted.  Unexecuted Command from Terminated Sequence."
+The command related to
+this response packet was not executed but was terminated because a prior
+command which was sequenced to it failed to complete successfully.
+.TP
+.B "Command Aborted.  Command Chain Terminated."
+Command Chaining was terminated because
+this command failed to complete successfully.
+.TP
+.B "Command Aborted.  Unexecuted Command from Terminated Chain."
+The command related to
+this response packet was not executed but was terminated because a prior
+command which was chained to it failed to complete successfully.
+.TP
+.B "Command Aborted.  Command Order Terminated."
+Command Ordering was terminated because
+this command failed to complete successfully.
+.TP
+.B "Command Aborted.  Unexecuted Command from Terminated Order."
+The command related to
+this response packet was not executed but was terminated because a prior
+command which was ordered to it failed to complete successfully.
+.TP
+.B "Conditional Success.  Logging Data Appended."
+The slave has appended information in this
+response which the slave is advising the master is relevant to be
+logged.
+.br
+.ne 5
+.TP
+.B "Conditional Success.  Abort Received \- no Command Active."
+An
+.SB ABORT
+command was issued to an addressee in the L-Available
+condition but the referenced command could
+not be found.
+.TP
+.B "Conditional Success.  Abort Received \- Status Pending."
+An
+.SB ABORT
+command was issued to an addressee which has the response
+status for the referenced command
+pending; for example, the command has been completed.
+.TP
+.B "Conditional Success.  Abort Received \- Not Operational."
+An
+.SB ABORT
+command was issued to a facility which is Not Operational.
+.TP
+.B "Conditional Success.  Anticipated Error."
+The addressee has detected a condition which may
+result in future error conditions; for example, on disc
+seek retries were needed.
+.TP
+.B "Conditional Success.  Anticipated Data Error."
+The addressee has detected a condition which
+may result in future data errors; for example, successive retries were
+needed for reading disk data.
+.TP
+.B "Conditional Success.  Re-allocation Required."
+The addressee has detected a data error
+condition which requires reallocation action \(em for example, an
+unrecoverable read error.
+.TP
+.B "Conditional Success.  Re-allocation Discontinuity."
+The slave has automatically reallocated
+a block which contained a data error and the reallocated data is no
+longer in close proximity to the blocks previously contiguous to it.
+.TP
+.B "Conditional Success.  Defect Directory Threshold Exceeded."
+The threshold within the
+addressee's Defect Directory has been exceeded, indicating that there is
+a limited number of entries remaining for adding more defects.
+.TP
+.B "Conditional Success.  Error Retry Performed."
+The addressee has completed the command but
+error retry had to be invoked.
+Note: Error Retry does not include
+actions associated with data transfer.
+.TP
+.B "Conditional Success.  Data Retry Performed."
+The addressee has completed the command but
+data retry had to be invoked \(em for example, a physical re-read.
+Data Retry includes
+all actions associated with the transfer of data.
+.TP
+.B "Conditional Success.  Motion Retry Performed."
+The addressee has completed the command but
+motion retry had to be invoked.
+.TP
+.B "Conditional Success.  Data Correction Performed."
+The addressee has completed the command
+but data correction had to be applied.
+.TP
+.B "Conditional Success.  Soft Error."
+The slave detected an internal machine error that did
+not preclude execution or continuation of the current command.
+.TP
+.B "Conditional Success.  Release of Unreserved Addressee."
+The addressee has received a
+release command for which there is no reservation.
+.TP
+.B "Conditional Success.  Request Diagnostic Control Command."
+As a result of executing a
+diagnostic command which provided more information than can be returned
+by a Response, the addressee is requesting that the master issue a
+Diagnostic Read Command.
+.TP
+.B "Conditional Success.  Error Log Request."
+The master is requested to capture the contents
+of the Error Log (which contains manufacturer dependent information)
+because the threshold has been exceeded.
+.br
+.ne 8
+.TP
+.B "Conditional Success.  Statistics Update Requested."
+There has been a change in meaningful
+statistics during the execution of this command, and the master is
+requested to update its Statistics Table (if any).
+.br
+.ne 5
+.TP
+.B "Conditional Success.  Parameter Update Requested."
+There has been a change in meaningful
+device parameters during the execution of this command, and the master
+is requested to update its Statistics Table (if any).
+.TP
+.B "Conditional Success.  Asynchronous Event Occurrence."
+An asynchronous event has occurred
+which may be described further in Extended Status.
+.TP
+.B "Conditional Success.  Master Terminated Transfer."
+The previous Information Transfer which had
+a Master Termination Parameter, was terminated by the master.
+.TP
+.B "Incomplete.  Command May be Resumed."
+This status is used to advise the master that an otherwise successful
+command did not complete.
+The incomplete command remains on the
+slave's queue, and its Command Reference Number shall remain valid,
+until the command is resumed or aborted. 
+.TP
+.B "Incomplete.  Response Packet Truncated."
+The maximum Information Transfer Length
+specified by the attributes was exceeded by the response packet, which
+was truncated at that size, and the response is considered complete by
+the slave.
+.TP
+.B "Incomplete.  Data Length Difference."
+The addressee has not transferred all the
+information specified in a transfer command.
+.IX  "id device"  ""  "\fLid\fP \(em IPI Disk driver"  ""  PAGE START
+.IX  "IPI"  ""  "\fLid\fP \(em IPI Disk driver"  ""  PAGE START
+.IX  "IPI Disk driver"  ""  "IPI Disk driver \(em \fLid\fP"  ""  PAGE START
+.IX  "disk driver"  "IPI"  ""  "\fLid\fP \(em "  PAGE START

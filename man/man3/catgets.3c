@@ -1,0 +1,104 @@
+.\" @(#)catgets.3c 1.1 92/07/30 SMI; from XPG2
+.TH CATGETS 3C "22 January 1990"
+.SH NAME
+catgets, catgetmsg \- get message from a message catalog
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <nl_types.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *catgets(catd, set_num, msg_num, s)
+nl_catd catd;
+int set_num, msg_num;
+char *s;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *catgetmsg(catd, set_num, msg_num, buf, buflen)
+nl_catd catd;
+int set_num;
+int msg_num;
+int buflen;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "catgets" "" "\fLcatgets\fR \(em read a program message" ""
+.LP 
+.B catgets(\|) 
+reads the message 
+.IR msg_num ,
+in set
+.IR set_num ,
+from the message catalog identified by 
+.IR catd . 
+.I catd 
+is a catalog descriptor returned
+from an earlier call to 
+.BR catopen (3C). 
+.I s
+points to a default message string which will be returned by 
+.B catgets(\|) 
+if the identified message catalog is not currently available.
+The message-text is contained in an internal buffer
+area and should be copied by the application if it is
+to be saved or re-used after further calls to
+.BR catgets(\|) .
+.LP
+.B catgetmsg(\|)
+attempts to read up to
+.I buflen
+\-1
+bytes of a message string into the
+area pointed to by
+.IR buf .
+.I buflen
+is an integer value containing the size in bytes of
+.IR buf .
+The return string is always terminated with a null byte.
+.SH RETURN VALUES
+.LP
+On success,
+.B catgets(\|)
+returns
+a pointer
+to an internal buffer area containing the
+null-terminated message string.
+.B catgets(\|)
+returns
+a pointer to
+.I s
+if it fails because the message catalog
+specified by
+.I catd 
+is not currently available.
+Otherwise,
+.B catgets(\|)
+returns
+a pointer to an empty string
+if the message catalog is available
+but does not contain the specified message.
+.LP
+On success,
+.B catgetmsg(\|)
+returns a pointer to the message string in
+.IR buf .
+If
+.I catd
+is invalid or if
+.I set_num
+or
+.I msg_num
+is not in the message catalog,
+.B catgetmsg(\|)
+returns a pointer to an empty string.
+.SH SEE ALSO
+.BR catopen (3C),
+.BR locale (5)
+

@@ -1,0 +1,96 @@
+.\" @(#)xt.4s 1.1 92/07/30 SMI;
+.TH XT 4S "19 December 1989"
+.SH NAME
+xt \- Xylogics 472 1/2 inch tape controller
+.SH "CONFIG \(em SUN-3, SUN-4 SYSTEMS"
+.ft B
+.nf
+controller xtc0 at vme16d16 ? csr 0xee60 priority 3 vector xtintr 0x64
+controller xtc1 at vme16d16 ? csr 0xee68 priority 3 vector xtintr 0x65
+tape xt0 at xtc0 drive 0 flags 1
+tape xt1 at xtc1 drive 0 flags 1
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "xt device"  ""  "\fLxt\fP \(em Xylogics 472 1/2-inch tape drive"  ""  PAGE START
+.IX  "Xylogics 472 1/2-inch tape drive"  ""  "Xylogics 472 1/2-inch tape drive \(em \fLxt\fP"  ""  PAGE START
+.IX  "tape drive, 1/2-inch"  xt  ""  "\fLxt\fP \(em Xylogics 472"  PAGE START
+.IX  "1/2-inch tape drive"  xt  ""  "\fLxt\fP \(em Xylogics 472"  PAGE START
+.IX  "472 1/2-inch tape drive"  ""  "472 1/2-inch tape drive \(em \fLxt\fP"  ""  PAGE START
+.LP
+The Xylogics 472 tape controller controls Pertec-interface
+1/2\*(rq tape drives such as the
+Fujitsu M2444 and the
+.SM CDC
+Keystone III, providing a standard
+tape interface to the device see
+.BR mtio (4).
+This controller is used to support high speed or
+high density drives, which are not supported effectively by the older
+Tapemaster controller (see
+.BR tm (4S)).
+.LP
+The flags field is used to control remote density select operation:
+a 0 specifies no remote density selection is to be attempted,
+a 1 specifies that the Pertec density-select line is used to toggle
+between high and low density;
+a 2 specifies that the Pertec speed-select line is used to toggle
+between high and low density.
+The default is 1, which is appropriate for the
+Fujitsu M2444, the
+.SM CDC
+Keystone III (92185) and
+the Telex 9250.
+In no case will the controller select among more than 2 densities.
+.LP
+The
+.B xt 
+driver supports the character device interface.
+.IX  "xt device"  ""  "\fLxt\fP \(em Xylogics 472 1/2-inch tape drive"  ""  PAGE END
+.IX  "Xylogics 472 1/2-inch tape drive"  ""  "Xylogics 472 1/2-inch tape drive \(em \fLxt\fP"  ""  PAGE END
+.IX  "tape drive, 1/2-inch"  xt  ""  "\fLxt\fP \(em Xylogics 472"  PAGE END
+.IX  "1/2-inch tape drive"  xt  ""  "\fLxt\fP \(em Xylogics 472"  PAGE END
+.IX  "472 1/2-inch tape drive"  ""  "472 1/2-inch tape drive \(em \fLxt\fP"  ""  PAGE END
+.SS EOT Handling
+.LP
+The user will be notified of end of tape (\s-1EOT\s0) on write
+by a 0 byte count returned the first time this is attempted.
+This write must be retried by the user.
+Subsequent writes will be successful
+until the tape winds off the reel.
+Read past 
+.SM EOT 
+is transparent to the user.
+.SS Ioctls
+.LP
+Not all devices support all ioctls.
+The driver returns an
+.SM ENOTTY
+error on unsupported ioctls.
+.LP
+1/2\*(rq tape devices do not support the tape retension function.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rmt0	
+low density operation, typically 1600 bpi
+.TP
+.B /dev/rmt8	
+high density operation, typically 6250 bpi
+.TP
+.B /dev/nrmt*	
+non-rewinding
+.PD
+.SH SEE ALSO
+.BR mt (1),
+.BR tar (1),
+.BR mtio (4),
+.BR st (4S),
+.BR suninstall (8)
+.SH BUGS
+.LP
+Record sizes are restricted to an even number of bytes.
+.LP
+Absolute file positioning is not fully supported;
+it is only meant to be used by 
+.BR suninstall (8).

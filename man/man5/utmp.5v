@@ -1,0 +1,262 @@
+.\" @(#)utmp.5v 1.1 92/07/30 SMI; from UCB 4.2
+.TH UTMP 5V "24 January 1990"
+.SH NAME
+utmp, wtmp, lastlog \- login records
+.SH SYNOPSIS
+.B #include <utmp.h>
+.br
+.B #include <lastlog.h>
+.SH DESCRIPTION
+.IX  "utmp file"  ""  "\fLutmp\fP \(em login records"
+.IX  "wtmp file"  ""  "\fLwtmp\fP \(em login records"
+.IX  "lastlog file"  ""  "\fLlastlog\fP \(em login records"
+.IX  "login records"  "utmp file"  ""  "\fLutmp\fP file"
+.IX  "login records"  "wtmp file"  ""  "\fLwtmp\fP file"
+.IX  "login records"  "lastlog file"  ""  "\fLlastlog\fP file"
+.SS "utmp file"
+The
+.B utmp
+file records information about who is currently using the system.
+The file is a sequence of
+.B utmp
+structure entries.  That structure is defined in
+.BR <utmp.h> ,
+and contains the following members:
+.RS
+.TP 12
+.B ut_line
+Character array containing the name of the terminal on which the user logged
+in.
+.TP
+.B ut_name
+Character array containing the name of the user who logged in.
+.TP
+.B ut_host
+Character array containing
+the name of the host from which the user remotely logged in, if they logged
+in from another host; otherwise, a null string.
+.TP
+.B ut_time
+.B long
+containing the time at which the user logged in, in seconds since 00:00
+.SM GMT\s0,
+January 1, 1970.
+.RE
+.LP
+Whenever a user logs in,
+.BR login (1)
+fills in the entry in
+.B /etc/utmp
+for the terminal on which the user logged in.  When they log out,
+.BR init (8)
+clears that entry by setting
+.B ut_name
+and
+.B ut_host
+to null strings and
+.B ut_time
+to the time at which the user logged out.
+.LP
+Some window systems will make entries in
+.B utmp
+for terminal emulation windows running shells, so that library routines such
+as
+.B getlogin
+will work correctly in that window.  These entries do not directly represent
+logged-in users; they are associated with a user who has already logged into
+the system on another terminal.  These entries generally have a
+.B ut_line
+field that refers to a pseudo-terminal, and a
+.B ut_host
+field that is a null string.
+The macro
+.BR nonuser ,
+defined in
+.BR <utmp.h> ,
+takes a pointer to a
+.B utmp
+structure as an argument and, if the entry has a
+.B ut_line
+field that refers to a pseudo-terminal, and a
+.B ut_host
+field that is a null string, will return 1; otherwise, it will return 0.
+This can be used by programs that print information about logged-in users if
+they should not list entries made for logged-in users' additional windows.
+.SS "wtmp file"
+The
+.B wtmp
+file records all logins and logouts.  It also consists of a sequence of
+.B utmp
+entries.
+.LP
+Whenever a user logs in,
+.B login
+appends a record identical to the record it placed in
+.B utmp
+to the end of
+.B /var/adm/wtmp.
+Whenever a user logs out,
+.B init
+appends a record with
+.B ut_line
+equal to the terminal that the user was logged in on,
+.B ut_name
+and
+.B ut_host
+null, and
+.B ut_time
+equal to the time at which the user logged out.
+.LP
+When the system is shut down,
+.B init
+appends a record with a
+.B ut_line
+of
+.BR ~ ,
+a
+.B ut_name
+of
+.BR shutdown ,
+a null
+.BR ut_host ,
+and a
+.B ut_time
+equal to the time at which the shutdown occurred.
+When the system is rebooted,
+.B init
+appends a record with a
+.B ut_line
+of
+.BR ~ ,
+a
+.B ut_name
+of
+.BR reboot ,
+a null
+.BR ut_host ,
+and a
+.B ut_time
+equal to the time at which
+.B init
+wrote the record.
+.LP
+When the
+.B date
+command is used to change the system-maintained time,
+.B date
+appends a record with a
+.B ut_line
+of
+.BR | ,
+.B ut_name
+and
+.B ut_host
+null,
+and
+.B ut_time
+equal to the system time before the change, and then appends a record with a
+.B ut_line
+of
+.BR { ,
+.B ut_name
+and
+.B ut_host
+null,
+and
+.B ut_time
+equal to the system time after the change.
+.LP
+None of the programs that maintain
+.B wtmp
+create the file,
+so that if record-keeping is to be enabled, it must be created by hand as a
+zero-length file,
+and if it is removed, record-keeping is turned off.  It is summarized by
+.BR ac (8).
+.LP
+As
+.B wtmp
+is appended to whenever a user logs in or out, it should be
+truncated periodically so that it does not consume all the disk space on its
+file system.
+.SS "lastlog file"
+The
+.B lastlog
+file records the most recent login-date for every user logged
+in.  The file is a sequence of
+.B lastlog
+structure entries.  That structure is defined in
+.BR <lastlog.h> ,
+and contains the following members:
+.RS
+.TP 12
+.B ll_time
+.B long
+containing the time at which the user logged in, in seconds since 00:00
+.SM GMT\s0,
+January 1, 1970.
+.TP
+.B ll_line
+Character array containing the name of the terminal on which the user logged
+in.
+.TP
+.B ll_host
+Character array containing
+the name of the host from which the user remotely logged in, if they logged
+in from another host; otherwise, a null string.
+.RE
+.LP
+When reporting (and updating) the most recent login date,
+.B login
+performs an
+.BR lseek (2V)
+to a byte-offset in 
+.BR /var/adm/lastlog 
+corresponding to the userid.  Because
+the count of userids may be high, whereas the number actual users
+may be small within a network environment, the bulk of this file
+may never be allocated by the file system even though an offset
+may appear to be quite large.  
+Although
+.BR ls (1V)
+may show it to be large,
+chances are that this file need not be truncated.
+.BR du (1V)
+will report the correct (smaller) amount of space actually
+allocated to it.
+.SH SYSTEM V DESCRIPTION
+.LP
+For
+.SM XPG2
+conformance, the
+.SM XPG2
+private
+.B utmp
+structure is preserved for use by
+.XM XPG2
+compliant applications that specifically use the
+.B utmp structure.
+The structure is defined in
+.BR /usr/xpg2include/utmp.h .
+Note:
+this structure definition was removed in
+.SM XPG3\s0,
+and will be removed in a future SunOS release.
+Applications using the
+.SM XPG2
+.B utmp
+structure must do so on an application private basis.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+.TP
+.B /var/adm/wtmp
+.TP
+.B /var/adm/lastlog
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR who (1),
+.BR ac (8),
+.BR init (8)

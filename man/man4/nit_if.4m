@@ -1,0 +1,261 @@
+.\" @(#)nit_if.4m 1.1 92/07/30 SMI;
+.TH NIT_IF 4M "29 December 1987"
+.SH NAME
+nit_if \- STREAMS NIT device interface module
+.SH CONFIG
+.B
+pseudo-device	snit
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/file.h>
+open("/dev/nit", mode);
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "nit_if module" "" "\fLnit_if\fP, \s-1NIT\s0 device interface"
+.IX STREAMS nit_if "" "\fLnit_if\fP, \s-1NIT\s0 device interface"
+.LP
+.B nit_if
+is a
+.SM STREAMS
+pseudo-device driver that provides
+.SM STREAMS
+access to network interfaces.
+It is designed to be used in conjunction
+with the other components of
+.SM NIT
+(see
+.BR nit (4P)),
+but can be used by itself as a raw
+.SM STREAMS
+network interface.
+.LP
+.B nit_if
+is an exclusive-open device
+that is intended to be opened indirectly through the clone device;
+.B /dev/nit
+is a suitable instance of the clone device.
+Before the stream resulting from opening an instance of
+.B nit_if
+may be used to read or write packets,
+it must first be bound to a specific network interface,
+using the
+.SB NIOCSBIND
+ioctl described below.
+.SS "Read-side Behavior"
+.B nit_if
+copies leading prefixes of selected packets
+from its associated network interface
+and passes them up the stream.
+If the
+.SB NI_PROMISC
+flag is set,
+it passes along all packets;
+otherwise it passes along only packets addressed
+to the underlying interface.
+.LP
+The amount of data copied from a given packet depends on the current
+.IR "snapshot length" ,
+which is set with the
+.SB NIOCSSNAP
+ioctl
+described below.
+.LP
+Before passing each packet prefix upward,
+.B nit_if
+optionally prepends one or more headers,
+as controlled by the state of the flag bits set with the
+.SB NIOCSFLAGS
+.IR ioctl .
+The driver collects headers into
+.SB M_PROTO
+message blocks,
+with the headers guaranteed to be completely contained
+in a single message block,
+whereas the packet itself goes into
+one or more
+.SB M_DATA
+message blocks.
+.SS "Write-side Behavior"
+.B nit_if
+accepts packets from the module above it in the stream
+and relays them to the associated network interface for transmission.
+Packets must be formatted with the destination address in a leading
+.SB M_PROTO
+message block,
+followed by the packet itself,
+complete with link-level header,
+in a sequence of
+.SB M_DATA
+message blocks.
+The destination address must be expressed as a
+.RB ` "struct sockaddr" '
+whose
+.I sa_family
+field is
+.BR \s-1AF_UNSPEC\s0
+and whose
+.I sa_data
+field is a copy of the link-level header.
+(See
+.B sys/socket.h
+for the definition of this structure.)
+If the packet does not conform to this format,
+an
+.SB M_ERROR
+message with
+.SM EINVAL
+will be sent upstream.
+.LP
+.B nit_if
+processes
+.SB M_IOCTL
+messages as described below.
+Upon receiving an
+.SB M_FLUSH
+message specifying that the write queue be flushed,
+.B nit_if
+does so and transfers the message to the read side of the stream.
+It discards all other messages.
+.SH IOCTLS
+.B nit_if
+responds to the following
+.IR ioctl s,
+as defined in
+.BR net/nit_if.h .
+It generates an
+.SB M_IOCNAK
+message for all others,
+returning this message to the invoker along the
+read side of the stream.
+.TP 20
+.SB SIOCGIFADDR
+.TP 20
+.SB SIOCADDMULTI
+.TP 20
+.SB SIOCDELMULTI
+.B nit_if
+passes these
+ioctls on to the underlying interface's driver
+and returns its response in a
+.RB `  "struct ifreq" '
+instance,
+as defined in
+.BR net/if.h .
+(See the description of this
+ioctl in
+.BR if (4N)
+for more details.)
+.TP
+.SB NIOCBIND
+This ioctl
+attaches the stream represented by its first argument
+to the network interface designated by its third argument,
+which should be a pointer to an
+.I ifreq
+structure whose
+.I ifr_name
+field names the desired interface.
+See
+.B net/if.h
+for the definition of this structure.
+.TP
+.SB NIOCSSNAP
+Set the current snapshot length to the value
+given in the
+.I u_long
+pointed to by the
+.IR ioctl 's
+final argument.
+.B nit_if
+interprets a snapshot length value of zero as meaning infinity,
+so that it will copy all selected packets in their entirety.
+It constrains positive snapshot lengths to be at least
+the length of an Ethernet header,
+so that it will pass at least the link-level header
+of all selected packets to its upstream neighbor.
+.TP
+.SB NIOCGSNAP
+Returns the current snapshot length
+for this device instance in the
+.I u_long
+pointed to by the
+.IR ioctl 's
+final argument.
+.TP
+.SB NIOCSFLAGS
+.B nit_if
+recognizes the following flag bits,
+which must be given in the
+.I u_long
+pointed to by the
+.IR ioctl 's
+final argument.
+This set may be augmented in future releases.
+All but the
+.SB NI_PROMISC
+bit control the addition of headers that precede the packet body.
+These headers appear in the order given below,
+with the last-mentioned enabled header adjacent to the packet body.
+.RS
+.TP 20
+.SB NI_PROMISC
+Requests that the underlying interface
+be set into promiscuous mode and that all packets
+that the interface receives be passed up through the stream.
+.B nit_if
+only honors this bit for the super-user.
+.TP
+.SB NI_TIMESTAMP
+Prepend to each selected packet a header
+containing the packet arrival time expressed
+as a
+.RB `  "struct timeval" '.
+.TP
+.SB NI_DROPS
+Prepend to each selected packet a header containing
+the cumulative number of packets that this instance of
+.B nit_if
+has dropped because of flow control requirements or resource exhaustion.
+The header value is expressed as a
+.IR u_long .
+Note: it accounts only for events occurring within
+.BR nit_if ,
+and does not count packets dropped at the network interface level
+or by upstream modules.
+.TP
+.SB NI_LEN
+Prepend to each selected packet a header containing the packet's
+original length
+(including link-level header),
+as it was before being trimmed to the snapshot length.
+The header value is expressed as a
+.IR u_long .
+.RE
+.TP 20
+.SB NIOCGFLAGS
+Returns the current state of the flag bits
+for this device instance in the
+.I u_long
+pointed to by the
+.IR ioctl 's
+final argument.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/nit
+clone device instance referring to
+.B nit_if
+device
+.TP
+.B net/nit_if.h
+header file containing definitions for the
+.IR ioctl s
+and packet headers described above.
+.PD
+.SH "SEE ALSO"
+.BR clone (4),
+.BR nit (4P),
+.BR nit_buf (4M),
+.BR nit_pf (4M)

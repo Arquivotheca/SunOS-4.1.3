@@ -1,0 +1,699 @@
+.\" @(#)mps.1 1.1 92/07/30 SMI
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH MPS 1 "6 March 1991"
+.SH NAME
+mps \- display the status of current processes on an MP system 
+.SH SYNOPSIS
+.B /usr/kvm/mps
+[
+.RB [ \- ]\c
+.B acCegjklnrSuUvwx
+.\"
+.\" there is *no* space between the string of single options and num
+.\"
+]\|[
+.BI \-t x
+]\||\|[
+.I num
+]
+.if n .ti +0.5i
+[
+.I kernel-name
+]
+[
+.I c-dump-file
+]
+[
+.I swap-file
+]
+.SH AVAILABILITY 
+.LP 
+This program is only available on sun4m architectures. 
+.SH DESCRIPTION
+.IX  "mps command"  ""  "\fLmps\fP \(em display process status"
+.IX  display "process status \(em \fLmps\fP"
+.IX  process  "display status"  ""  "display status \(em \fLmps\fP"
+.B mps
+displays information about processes on an MP system.  
+.B mps
+is identical to 
+.B ps(1)
+except that the 
+.B CPU
+field was added to show
+the cpu number the process is or was running on.
+Normally, only those processes that are running with your effective user
+.SM ID
+and are attached to a controlling terminal (see 
+.BR termio (4))
+are shown.
+Additional categories of processes
+can be added to the display using various options.
+In particular, the
+.B \-a
+option allows you to include processes that are not owned by you
+(that do not have your user
+.SM ID\s0),
+and the
+.B \-x
+option allows you to
+include processes without control terminals.
+When you specify
+both 
+.B \-a
+and 
+.BR \-x ,
+you get processes owned by anyone, with or without a control
+terminal.
+The
+.B \-r
+option restricts the list of processes printed to \*(lqrunning\*(rq processes:
+runnable processes, those in page wait, or those in 
+short-term non-interruptible waits.
+.LP
+.B mps
+displays the process
+.SM ID\s0,
+under
+.SM PID\s0;
+the control terminal (if any), under
+.SM TT\s0;
+the cpu time used by the 
+process so far, including both user and system time), under
+.SM TIME\s0;
+the state of the process, under
+.SM STAT\s0;
+and finally, an indication of the 
+.SM COMMAND
+that is running.
+.LP
+The state is given by a sequence of four letters, for example,
+.RB ` \s-1RWNA\s0 '.
+.TP 15
+.I First letter
+indicates the runnability of the process:
+.RS
+.PD 0
+.TP 8
+.B R
+Runnable processes.
+.TP
+.B T
+Stopped processes.
+.TP
+.B P
+Processes in page wait.
+.TP
+.B D
+Processes in non-interruptible waits; typically short-term
+waits for disk or 
+.SM NFS
+I/O.
+.TP
+.B S
+Processes sleeping for less than about 20 seconds.
+.TP
+.B I
+Processes that are idle (sleeping longer than about 20 seconds).
+.TP
+.B Z
+Processes that have terminated and that are waiting for their parent process
+to do a
+.BR wait (2V)
+(\*(lqzombie\*(rq processes).
+.RE
+.PD
+.TP
+.I Second letter
+indicates whether a process is swapped out;
+.RS
+.PD 0
+.TP 8
+.I blank
+Represented as a
+.SM SPACE
+character,
+in this position indicates that the process is loaded
+(in memory).
+.TP
+.B W
+Process is swapped out.
+.TP
+.B >
+Process has specified a soft limit on memory requirements
+and has exceeded that limit; such a process is (necessarily)
+not swapped.
+.RE
+.PD
+.TP
+.I Third letter
+indicates whether a process is running with altered
+.SM CPU
+scheduling priority
+.RB ( nice (1)):
+.RS
+.PD 0
+.TP 8
+.I blank
+Represented as a
+.SM SPACE
+character,
+in this position indicates that the process is
+running without special treatment.
+.TP
+.B N
+The process priority is reduced,
+.TP
+.B < 
+The process priority has been raised artificially.
+.RE
+.PD
+.TP
+.I Fourth letter
+indicates any special treatment of the process for virtual
+memory replacement.
+The letters correspond to options to the
+.BR vadvise (2)
+system call.
+Currently the possibilities are:
+.RS
+.PD 0
+.TP 8
+.I blank
+Represented as a
+.SM SPACE
+character,
+in this position stands for
+.BR \s-1VA_NORM\s0 .
+.TP
+.B A
+Stands for
+.BR \s-1VA_ANOM\s0 .
+An
+.B A 
+typically represents a program which is doing
+garbage collection.
+.TP
+.B S
+Stands for
+.BR \s-1VA_SEQL\s0 .
+An
+.B S
+is typical of large image processing programs
+that are using virtual memory to sequentially address voluminous data.
+.RE
+.PD
+.LP
+.I kernel-name
+specifies the location of the system namelist.
+If the 
+.B \-k
+option is given, 
+.I c-dump-file
+tells
+.B mps
+where to look for the core dump.
+Otherwise, the core dump is located in the file
+.B /vmcore 
+and this argument is ignored.
+.I swap-file
+gives the location of a swap file other than
+the default,
+.BR /dev/drum .
+.br
+.ne 8
+.SH OPTIONS
+.LP
+Options must all be combined to form the first argument.
+.TP 5
+.B \-a
+Include information about processes owned by others.
+.TP
+.B \-c
+Display the command name, as stored internally in the system for 
+accounting purposes, rather than the command arguments,
+which are kept in the process address space.
+This is more reliable, if less informative,
+as the process is free to destroy the latter information.
+.TP
+.B \-C
+Display raw
+.SM CPU
+time
+instead of the decaying average
+in the
+.SB %CPU
+field.
+.TP
+.B \-e
+Display the environment as well as the arguments to the command.
+.TP
+.B \-g
+Display all processes.
+Without this option,
+.B mps
+prints only \*(lqinteresting\*(rq processes.
+Processes are deemed to be uninteresting if they are process group leaders.
+This normally eliminates top-level command interpreters and processes
+waiting for users to login on free terminals.
+.TP
+.B \-j
+Display a listing useful for job control information, with fields
+PPID, PID, PGID, SID, TT, TPGID, STAT, UID, TIME, and
+COMMAND as described below.
+.RS
+.LP
+With this option,
+the STAT field has three additional letters:
+.TP
+.B C
+indicates the process does not want SIGCHLD when a child changes state
+done to job control.
+.TP
+.B E
+The process has completed an exec, and the
+parent can no longer change the
+process group of this process.
+.TP 
+.B O
+The process is an orphan, with no parent process
+to handle job control signals.
+.RE
+.TP
+.B \-k
+Normally, 
+.I kernel-name
+defaults to 
+.BR /vmunix ,
+.I c-dump-file 
+is ignored, and
+.I swap-file 
+defaults to 
+.BR /dev/drum .
+With the
+.B \-k
+option in effect, these arguments default to 
+.BR /vmunix ,
+.BR /vmcore ,
+and
+.BR /dev/drum ,
+respectively.
+.TP
+.B \-l
+Display a long listing, with fields
+.BR \s-1F\s0 ,
+.BR \s-1PPID\s0 , 
+.BR \s-1CP\s0 , 
+.BR \s-1PRI\s0 , 
+.BR \s-1NI\s0 , 
+.BR \s-1SZ\s0 , 
+.BR \s-1RSS\s0 ,
+and
+.BR \s-1WCHAN\s0 ,
+as described below.
+.TP
+.B \-n
+Produce numeric output for some fields.
+In a long listing, the
+.SB WCHAN
+field is printed numerically rather than
+symbolically, or, in a user listing, the
+.SB USER
+field is replaced by a
+.SB UID
+field.
+.TP
+.B \-r
+Restrict output to \*(lqrunning\*(rq processes.
+.TP
+.B \-S
+Display accumulated
+.SM CPU
+time used by this process and all of its reaped 
+children.
+.TP
+.B \-u
+Display user-oriented output.
+This includes fields
+.BR \s-1USER\s0 ,
+.BR \s-1%CPU\s0 ,
+.BR \s-1%MEM\s0 ,
+.BR \s-1SZ\s0 ,
+.SB RSS
+and
+.SB START
+as described below.
+.TP
+.B \-U
+Update a private database where
+.B mps
+keeps system information.
+Include
+.RB ` "mps \-U" '
+in the
+.B /etc/rc
+file.
+.TP
+.B \-v
+Display a version of the output describing virtual memory
+information.
+This includes fields
+.BR \s-1RE\s0 ,
+.BR \s-1SL\s0 ,
+.BR \s-1PAGEIN\s0 ,
+.BR \s-1SIZE\s0 ,
+.BR \s-1RSS\s0 ,
+.BR \s-1LIM\s0 ,
+.SB %CPU
+and
+.BR \s-1%MEM\s0 ,
+described below.
+.TP
+.B \-w
+Use a wide output format (132 columns rather than 80); if repeated,
+that is,
+.BR \-ww ,
+use arbitrarily wide output.
+This information is used to decide how much of long commands to print.
+.TP
+.B \-x
+Include processes with no controlling terminal.
+.LP
+The following two options are mutually exclusive.
+When specified, these options must appear
+immediately following the last option.
+.TP
+.BI \-t x
+Restrict output to processes whose controlling terminal is
+.I x
+(which should be specified as printed by
+.BR mps ;
+for example,
+.B t3
+for
+.BR /dev/tty3 ,
+.B tco
+for
+.BR /dev/console ,
+.B td0
+for
+.BR /dev/ttyd0 ,
+.B t?
+for processes with no terminal, etc).
+This option must be the last one given.
+.TP
+.I num
+A process number may be given, in which case the output
+is restricted to that process.
+This option must also be last,
+and must appear with no
+white space between it and the previous option.
+.SH "DISPLAY FORMATS"
+.LP
+Fields that are not common to all output formats:
+.PD 0
+.TP 12
+.SB USER
+Name of the owner of the process.
+.TP
+.SB %CPU
+.SM CPU
+use of the process; this is a decaying average over up to
+a minute of previous (real) time.
+Because the time base over which this
+is computed varies (since processes may be very young) it is possible
+for the sum of all
+.SB %CPU
+fields to exceed 100%.
+.TP
+.SB NI
+Process scheduling increment (see
+.BR getpriority (2)
+and
+.BR nice (3V)).
+.TP
+.PD 0
+.SB SIZE
+.TP
+.SB SZ
+.PD
+The combined size of the data and stack segments (in kilobytes)
+.TP
+.SB RSS
+Real memory (resident set) size of the process (in kilobytes).
+.TP
+.SB LIM
+Soft limit on memory used, specified using a call to
+.BR getrlimit (2);
+if no limit has been specified, this is shown as
+.IR xx .
+.TP
+.SB %MEM
+Percentage of real memory used by this process.
+.TP
+.SB RE
+Residency time of the process (seconds in core).
+.TP
+.SB SL
+Sleep time of the process (seconds blocked).
+.TP
+.SB PAGEIN
+Number of disk I/Os resulting from references by the process
+to pages not loaded in core.
+.TP
+.SB UID
+Numeric user-\s-1ID\s0 of process owner.
+.TP
+.SB PPID
+Numeric
+.SM ID
+of parent of process.
+.TP
+.TP
+.SB SID
+Numeric
+.SM ID
+of the session to which the process belongs. SID = PGID = PID indicates
+a session leader.
+.TP
+.SB PGID
+Numeric 
+.SM ID
+of the process group of the process.
+.TP
+.SB TPGID
+Numeric
+.SM ID
+of the process group associated with the terminal specified under
+TT (distinguished process group, see 
+.BR termio (4)).
+.TP
+.SB CP
+Short-term
+.SM CPU
+utilization factor (used in scheduling).
+.TP
+.SB PRI
+Process priority (non-positive when in non-interruptible wait).
+.TP
+.SB START
+Time the process was created if today, or the date it was
+created if before today.
+.TP
+.SB WCHAN
+Event on which process is waiting (an address in the system).
+A symbol is chosen that classifies the address, unless numeric
+output is requested (see the 
+.B n
+flag).
+In this case, the address is printed in hexadecimal.
+.TP
+.SB CPU
+Relationship between process and processor.  Under the 
+.B CPU
+field, the cpu number the process is or was running on is displayed.
+.TP
+.B F
+Flags (in hex) associated with process as in 
+.RB < sys/proc.h >:
+.br
+.\" === troff version ===
+.if n .ig IG
+.RS
+.TS
+;
+lfB l l .
+\s-1SLOAD\s0	00000001	in core
+\s-1SSYS\s0	00000002	swapper or pager process
+\s-1SLOCK\s0	00000004	process being swapped out
+\s-1SSWAP\s0	00000008	save area flag
+\s-1STRC\s0	00000010	process is being traced
+\s-1SWTED\s0	00000020	parent has been told that this process stopped
+\s-1SULOCK\s0	00000040	user can set lock in core
+\s-1SPAGE\s0	00000080	process in page wait state
+\s-1SKEEP\s0	00000100	another flag to prevent swap out
+\s-1SOMASK\s0	00000200	restore old mask after taking signal
+\s-1SWEXIT\s0	00000400	working on exiting
+\s-1SPHYSIO\s0	00000800	doing physical I/O
+\s-1SVFORK\s0	00001000	process resulted from vfork()
+\s-1SVFDONE\s0	00002000	another vfork flag
+\s-1SNOVM\s0	00004000	no vm, parent in a vfork()
+\s-1SPAGI\s0	00008000	init data space on demand, from vnode
+\s-1SSEQL\s0	00010000	user warned of sequential vm behavior
+\s-1SUANOM\s0	00020000	user warned of anomalous vm behavior
+\s-1STIMO\s0	00040000	timing out during sleep
+\s-1SORPHAN\s0	00080000	process is orphaned
+\s-1STRACNG\s0	00100000	process is tracing another process
+\s-1SOWEUPC\s0	00200000	process is being profiled and has a pending count increment
+\s-1SSEL\s0	00400000	selecting; wakeup/waiting danger
+\s-1SFAVORD\s0	02000000	favored treatment in swapout and pageout
+\s-1SLKDONE\s0	04000000	record-locking has been done
+\s-1STRCSYS\s0	08000000	tracing system calls
+\s-1SNOCLDSTOP\s0	10000000	SIGCHLD not sent when child stops
+\s-1SEXECED\s0	20000000	process has completed an exec
+\s-1SRPC\s0	40000000	sunview window locking
+.TE
+.RE
+.PD
+.IG
+.\" === end troff version ====
+.\" === nroff version ===
+.if t .ig IG
+.RS
+.TS
+;
+lfB l l .
+\s-1SLOAD\s0	00000001	in core
+\s-1SSYS\s0	00000002	swapper or pager process
+\s-1SLOCK\s0	00000004	process being swapped out
+\s-1SSWAP\s0	00000008	save area flag
+\s-1STRC\s0	00000010	process is being traced
+\s-1SWTED\s0	00000020	parent has been told that 
+		this process stopped
+\s-1SULOCK\s0	00000040	user can set lock in core
+\s-1SPAGE\s0	00000080	process in page wait state
+\s-1SKEEP\s0	00000100	another flag to prevent 
+		swap out
+\s-1SOMASK\s0	00000200	restore old mask after 
+		taking signal
+\s-1SWEXIT\s0	00000400	working on exiting
+\s-1SPHYSIO\s0	00000800	doing physical I/O
+\s-1SVFORK\s0	00001000	process resulted from 
+		vfork()
+\s-1SVFDONE\s0	00002000	another vfork flag
+\s-1SNOVM\s0	00004000	no vm, parent in a vfork()
+\s-1SPAGI\s0	00008000	init data space on demand, 
+		from vnode
+\s-1SSEQL\s0	00010000	user warned of sequential 
+		vm behavior
+\s-1SUANOM\s0	00020000	user warned of anomalous 
+		vm behavior
+\s-1STIMO\s0	00040000	timing out during sleep
+\s-1SORPHAN\s0	00080000	process is orphaned
+\s-1STRACNG\s0	00100000	process is tracing another 
+		process
+\s-1SOWEUPC\s0	00200000	process is being profiled 
+		and has a pending count increment
+\s-1SSEL\s0	00400000	selecting; wakeup/waiting 
+		danger
+\s-1SFAVORD\s0	02000000	favored treatment in 
+		swapout and pageout
+\s-1SLKDONE\s0	04000000	record-locking has been 
+		done
+\s-1STRCSYS\s0	08000000	tracing system calls
+\s-1SNOCLDSTOP\s0	10000000	SIGCHLD not sent when 
+		child stops
+\s-1SEXECED\s0	20000000	process has completed 
+		an exec
+\s-1SRPC\s0	40000000	sunview window locking
+.TE
+.RE
+.PD
+.IG
+.\" === end nroff version ====
+.LP
+A process that has exited and has a parent, but has not
+yet been waited for by the parent, is marked
+.RB < defunct >;
+a process that is blocked trying to exit is marked
+.RB < exiting >;
+otherwise,
+.B mps
+makes an educated guess as to the file name
+and arguments given when the process was created
+by examining memory or the swap area.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR mps .
+On entry to
+.BR mps ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+system namelist
+.TP
+.B /dev/kmem
+kernel memory
+.TP
+.B /dev/drum
+swap device
+.TP
+.B /vmcore
+core file
+.TP
+.B /dev
+searched to find swap device and terminal names
+.TP
+.B /etc/psdatabase
+system namelist, device, and wait channel information
+.PD
+.SH "SEE ALSO"
+.BR kill (1),
+.BR w (1),
+.BR getpriority (2),
+.BR getrlimit (2),
+.BR wait (2V),
+.BR vadvise (2),
+.BR nice (3V),
+.BR termio (4),
+.BR locale (5),
+.BR pstat (8),
+.BR mpstat (1)
+.SH BUGS
+.LP
+Things can change while
+.B mps
+is running; the picture it gives is only a close approximation to the
+current state.
+
+

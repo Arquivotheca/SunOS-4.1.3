@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+#ident  "%Z%%M% %I% %E%"	/* from SVR3.2 uucp:uudemon.admin 2.3 */
+#
+#	This shell sends uucp status information to an administrator.
+#	It should be started by a line in /usr/spool/cron/crontabs/uucp.
+#	e.g.
+#
+# 48 8,12,16 * * * /etc/uucp/uudemon.admin
+#
+set +e
+
+export PATH
+PATH=/bin:/usr/bin
+MAILTO=uucp
+LOGDIR=/usr/spool/uucp/.Log
+ULOG=$LOGDIR/uucico
+TMP=/tmp/uu$$
+
+(uustat -p; uustat -q) > $TMP
+if [ -s $TMP ]
+then
+	(echo "Subject: uu-status"; echo; cat $TMP) | mail $MAILTO
+fi
+grep passwd $ULOG/* > $TMP 2> /dev/null
+if [ -s $TMP ]
+then
+	(echo "Subject: passwd check"; echo; cat $TMP) | mail $MAILTO
+fi
+rm $TMP

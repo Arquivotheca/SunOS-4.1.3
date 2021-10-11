@@ -1,0 +1,179 @@
+.\" @(#)screenload.1 1.1 92/07/30 SMI;
+.TH SCREENLOAD 1 "23 November 1987"
+.SH NAME
+screenload \- load a frame-buffer image from a file
+.SH SYNOPSIS
+.B screenload
+.RB [ " \-bgnw " ]
+.RB [ " \-dopr " ]
+.RB [ " \-f "
+.IR frame-buffer " ]"
+.if n .ti 5n
+.RB [ " \-h "
+.IR "count data " ".\|.\|. ]"
+.RB [ " \-i "
+.IR color " ]"
+.RB [ " \-xyXY "
+.IR value " ]"
+.if n .ti 5n
+.if t .ti +.5i
+.RI [ " filename " ]
+.SH DESCRIPTION
+.IX  "screenload command"  ""  "\fLscreenload\fP \(em load frame buffer image"
+.IX  "restore frame buffer image"  ""  "restore frame buffer image \(em \fLscreenload\fP"
+.IX  "load frame buffer image"  ""  "load frame buffer image \(em \fLscreenload\fP"
+.LP
+.B screenload
+reads a Sun standard rasterfile (see
+.BR rasterfile (5))
+and displays it on a frame-buffer.
+.B screenload
+is able to display monochrome images on a color display, but cannot
+display color images on a monochrome display.  If the input file
+contains a color image, a frame-buffer has not been explicitly
+specified, and
+.B /dev/fb
+is a monochrome frame-buffer,
+.B screenload
+looks for a color frame-buffer with one of the standard device names.
+.LP
+If the image contained in the input file is larger than the actual
+resolution of the display,
+.B screenload
+clips the right and bottom
+edges of the image.  If the input image is smaller than the
+display (for example, loading an 1152-by-900 image on a 1600-by-1280
+high resolution display),
+.B screenload
+centers the image on the display surface and fills the border
+area with solid black (by default).  Various options may be used to
+change the image location, or to change or disable the fill pattern.
+.SH OPTIONS
+.TP 15
+.BI \-b
+Fill the border area with a pattern of solid ones (default).  On a
+monochrome display this results in a black border; on a color display
+the color map value selected by the
+.B \-i
+option determines the
+border color.
+.TP
+.BI \-g
+Fill the border area with a pattern of \*(lqdesktop grey\*(rq.
+On a monochrome display this results in
+a border matching the default background pattern used
+by SunView; on a color display the color map value
+selected by the
+.B \-i
+option determines the foreground border
+color, though the pattern is the same as on a monochrome display.
+.TP
+.BI \-n
+Do not fill the border area.
+.TP
+.BI \-w
+Fill the border area with a pattern of solid zeros.
+On a monochrome display
+this results in a white border; on a color display the color map value
+at index 0 determines the border color.
+.TP
+.BI \-d
+Print a warning message if the display size does not match the
+rasterfile image size.
+.TP
+.BI \-o
+Load the image on the overlay plane of the display (ignored if the
+display does not have an overlay plane).
+.TP
+.BI \-p
+Wait for a
+.SM NEWLINE
+to be typed on the standard input before exiting.
+.TP
+.BI \-r
+Reverse the foreground and background of the output image.
+Useful when loading a screendump made from a reverse video screen.
+.TP
+.BI \-f " frame-buffer"
+Display the image on the specified frame-buffer device (default
+.BR /dev/fb ).
+.TP
+.BI \-h " count data .\|.\|."
+Fill the border area with the bit pattern described by the following
+.I count
+16-bit hexadecimal constants.  Note: a \*(lq1\*(rq bit is black and a
+\*(lq0\*(rq bit is white on the monochrome display; on a color display the
+color map value selected by the
+.B \-i
+option determines the border
+foreground color.  The number of hex constants in the pattern is
+limited to 16.
+.TP
+.BI \-i " color"
+Fill the border area with the given color value (default 255).
+.TP
+.PD 0
+.BI \-x " value"
+.TP
+.BI \-y " value"
+.PD
+Set the x or y coordinate of the upper left corner of the image on the
+display to the given value.
+.br
+.ne 3
+.TP
+.PD 0
+.BI \-X " value"
+.TP
+.BI \-Y " value"
+.PD
+Set the maximum width or height of the displayed image to the given value.
+.SH EXAMPLES
+.LP
+The command:
+.IP
+.B example% screenload saved.display.image
+.LP
+loads the raster image contained in the file
+.B saved.display.image
+on the display type indicated by the rasterfile header in that file.
+.LP
+The command:
+.IP
+.B example% screenload \-f /dev/cgtwo monochrome.image
+.LP
+reloads the raster image in the file
+.B monochrome.image
+on the color frame-buffer device
+.BR /dev/cgtwo .
+.LP
+The command:
+.IP
+.B example% screenload \-h1 ffff small.saved.image
+.LP
+is equivalent to the
+.B \-b
+option (fill border with black), while
+.IP
+.B
+example% screenload \-h4 8888 8888 2222 2222 small.saved.image
+.LP
+is equivalent to the
+.B \-g
+option (fill border with desktop grey).
+.SH FILES
+.PD 0
+.TP 24
+.B /usr/lib/rasfilters/*
+filters for non-standard rasterfile formats
+.TP
+.B /dev/fb
+default frame buffer device
+.PD
+.SH "SEE ALSO"
+.BR rasfilter8to1 (1),
+.BR rastrepl (1),
+.BR screendump (1),
+.BR screenload (1)
+.LP
+.TX PIXRCT

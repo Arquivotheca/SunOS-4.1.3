@@ -1,0 +1,144 @@
+.\" @(#)lwp_status.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH LWP_STATUS 3L "21 January 1990"
+.SH NAME
+lwp_self, lwp_ping, lwp_enumerate, lwp_getstate, lwp_setregs, lwp_getregs \- LWP status information
+.SH SYNOPSIS
+.nf
+.ft B
+#include <lwp/lwp.h>
+#include <lwp/lwpmachdep.h>
+.LP
+.ft B
+int
+lwp_enumerate(vec, maxsize)
+thread_t vec[\|];	/* list of id's to be filled in */
+int maxsize;	/* number of elements in vec */
+.LP
+.ft B
+int
+lwp_ping(tid)
+thread_t tid;
+.LP
+.ft B
+int
+lwp_getregs(tid, machstate)
+thread_t tid;
+machstate_t *machstate;
+.LP
+.ft B
+int
+lwp_setregs(tid, machstate)
+thread_t tid;
+machstate_t *machstate;
+.LP
+.ft B
+int
+lwp_getstate(tid, statvec)
+thread_t tid;
+statvec_t *statvec;
+.LP
+.ft B
+int
+lwp_self(tid)
+thread_t *tid;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "lwp_self()" "" "\fLlwp_self()\fP function"
+.IX "lwp_ping()" "" "\fLlwp_ping()\fP function"
+.IX "lwp_enumerate()" "" "\fLlwp_enumerate()\fP function"
+.IX "lwp_getstate()" "" "\fLlwp_getstate()\fP function"
+.IX "lwp_setregs()" "" "\fLlwp_setregs()\fP function"
+.IX "lwp_getregs()" "" "\fLlwp_getregs()\fP function"
+.LP
+.B lwp_self(\|)
+returns the
+.SM ID
+of the current thread in
+.IR tid .
+This is the
+.I only
+way to retrieve the identity of
+.IR main .
+.LP
+.B lwp_enumerate(\|)
+fills in a list with the
+.SM ID\s0's
+of all existing
+threads and returns the total number of threads.
+This primitive will use
+.I maxsize
+to avoid exceeding the capacity of the list.
+If the number of threads is greater than
+.IR maxsize ,
+only
+.I maxsize
+thread
+.SM ID\s0's
+are filled in
+.IR vec .
+If
+.I maxsize
+is zero,
+.B lwp_enumerate(\|)
+just returns the total number of threads.
+.LP
+.B lwp_getstate(\|)
+is used to retrieve the context of a given
+thread.
+It is possible to see
+what object (thread, monitor, etc.) if any
+that thread is blocked on, and the scheduling
+priority of the thread.
+.LP
+.B lwp_ping
+returns 0 (no error) if the thread
+.I tid
+exists.
+Otherwise, -1 is returned.
+.LP
+.B lwp_setregs
+sets the machine-dependent context (i.e., registers) of a thread.
+The next time the thread is scheduled in, this
+context is installed.
+Consult
+.B lwpmachdep.h
+for the details.
+.B lwp_getregs
+retrieves the machine-dependent context.
+Note: the registers
+may not be meaningful unless the thread
+in question is blocked or suspended because the
+state of the registers as of
+the most recent context switch is returned.
+.\" \fIlwp_setregs\fP
+.\" can be used to simulate things like
+.\" \fIlongjmp\fP
+.\" out of a signal handler.
+.\" Safe to use even if blocked: first, the thread is unblocked
+.\" and put on the run q. When it is scheduled in, it
+.\" will get the new context. Even if it was supposed to get a message
+.\" it can safely return to a different point. You may get strange results
+.\" though.
+.SH RETURNS
+Upon successful completion,
+.BR lwp_self
+and
+.B lwp_getstate(\|)
+return 0, \-1 on error.
+.LP
+.B lwp_enumerate(\|)
+returns the total number of threads.
+.LP
+.BR lwp_ping
+returns 0 if the specified thread exists, else -1.
+.SH ERRORS
+.B lwp_getstatea(\|) ,
+.B lwp_ping(\|) ,
+and
+.B lwp_setstate(\|)
+will fail if one or more of the following is true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to get the status of a non-existent thread.

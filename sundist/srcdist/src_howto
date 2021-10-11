@@ -1,0 +1,424 @@
+@(#)src_howto 1.1 92/07/30
+
+From austin@nova Wed Apr 12 13:31:23 1989
+From: austin@nova (Austin Yeats)
+
+The story so far:
+
+I. Dumping the original. "raw" source
+
+	I needed to dump the source from 4.0.2 (SCCS_DIRECTORIES)
+	and restore it to a "work area", from which I would create
+	the INTSRC, SUNSRC, and WINSRC tapes. To do this I
+
+	checked to make sure no files were checked out under sccs
+	(via editfiles) on the release build machine.
+
+	unmounted /usr/src/SCCS_DIRECTORIES from the release build
+	machines (thecla & cesium).
+
+	unmounted /usr/src.REV1/SCCS_DIRECTORIES from the disk farm
+	(baldanders)
+
+	fsck'd the /usr/src.REV1/SCCS_DIRECTORIES partition
+
+	dumped the partition and labled the tapes
+
+II. Creating the "work area"
+
+	I restored the dump tape to a reserved partiton on another
+	disk farm (valis).
+
+	I used find to locate any "old", unused source files:
+
+	find . -name "*old*" -print
+	find . -name "*OLD*" -print
+	find . -name "*SCCS/os.*" -print
+
+	Some names from above were legitimate, e.g., man/man1/fold.1,
+	games/chess/old.h. Most others I removed if there were no
+	corresponding entries in the makefile at that level. Most were
+	obvious: sys/sun2/conf/Makefile.sun2.old.
+
+	I removed all files with an SCCS/os. prefix with some exceptions.
+	Under the suntools directories, the developers move old code
+	to a subdirectory named "attic". these all has SCCS/os. prefixes,
+	but I left them in the code as this is the designated way (for
+	the windows people) to phase it out.
+
+	I then removed the fortran and pascal code: lang/pascal &
+	lang/f77, these being unbundled products and were leftover
+	from earlier versions of 4.0. I also removed usr.lib/lib{F,I,U}77
+	and libpc and libpfc, the fortran & pascal libraries.
+
+	I then did a find of the remaining source files, find . -print,
+	and examined the output. This was a loooong list, but it was
+	easy to see the "old" stuff hanging around. Files removed by
+	this examination included
+
+		5lib/libPW.gone			removed in 3.2
+		diagnostics/src/sundiag.hou	an old version
+		etc/setup			forerunner of suninstall
+		usr.etc/setup				"
+		bin/make_4.2			old Berkeley make
+		files ending with "-"
+		"number" files
+
+	The "number" files were those left by an NFS crash and usually
+	looked like "1002393.439298747".
+
+	The final test of whether something is valid or not is if it
+	exists in the Makefiles. We should really clear out the above
+	stuff for the 4.0.3 & 4.0.4 builds.
+	
+
+What remains to be done:
+
+	The source needs to be de-crypted, removing encryption
+	source from libc, ed, vi, the kernel, etc.
+
+	We now need to reset the SCCS id's to 1.1 for the entire
+	tree. There is a small script to do this. It should take
+	several hours to run.
+
+	Then, we run the existing scripts to create the tapes.
+
+	Finally, we load the tapes to a "clean" 4.0 system and
+	try a build, following the instructions to be sent out
+	with the source tapes. Any errors or missing files are
+	fixed or added to our source tree. This will be fairly
+	easy as the "real" source will still exist on the release
+	machines.
+
+	Easy, non?
+
+
+III. Removing encryption code from 4.0.X source
+
+1) lib/libc/gen/common
+
+	sccs edit _crypt.c
+	mv _crypt.c _crypt.c_old
+	unifdef -DCRYPT _crypt.c_old > _crypt.c
+	sccs delget _crypt.c
+	rm _crypt.c_old
+
+2) lib/libc
+
+	rm -rf des/SCCS des
+	sccs edit Makefile
+	{comment out the 3 references to des in Makefile}
+
+#SUBDIRS = compat crt des gen inet net rpc yp stdio sys
+SUBDIRS = compat crt gen inet net rpc yp stdio sys 
+
+	and
+
+#4.2LIB=compat/common compat/4.1 crt des gen/common gen/4.2 inet net rpc \
+4.2LIB=compat/common compat/4.1 crtgen/common gen/4.2 inet net rpc \ 
+
+	and
+
+#SYS5LIB=compat/common compat/sys5 crt des gen/common gen/sys5 inet net rpc \
+SYS5LIB=compat/common compat/sys5 crt gen/common gen/sys5 inet net rpc \ 
+
+	scsc delget Makefile
+
+3) usr.lib/librpcsvc
+
+	rm xcrypt.c publickey.c SCCS/s.xcrypt.c SCCS/s.publickey.c
+	sccs edit Makefile
+	{comment out the reference to xcrypt.o & publickey.o in Makefile}
+
+#       sprayxdr.o yppasswdxdr.o xcrypt.o publickey.o
+	sprayxdr.o yppasswdxdr.o
+
+	sccs delget Makefile
+
+4) bin
+
+	sccs edit ed.c
+	mv ed.c ed.c_old
+	unifdef -DCRYPT ed.c_old > ed.c
+	sccs delget ed.c
+	rm ed.c_old
+
+5) usr.bin
+
+	rm -rf crypt.c SCCS/s.crypt.c des/SCCS des
+	sccs edit makefile
+	{comment out references to des & crypt in Makefile}
+
+#SUBDIR= calendar cflow ctrace cxref dc des diff3 eqn file find graph \
+SUBDIR= calendar cflow ctrace cxref dc diff3 eqn file find graph \
+
+	and
+
+#STD=    basename cal cb checkeq click comm csplit crypt cut \
+STD=    basename cal cb checkeq click comm csplit  cut \
+
+	and
+
+#click  basename cal cb checkeq comm csplit crypt cut \
+click  basename cal cb checkeq comm csplit  cut \
+
+	sccs delget Makefile
+
+6) ucb/ex
+
+	sccs edit ex.c ex_io.c ex_temp.c
+	mv ex.c ex.c_old; mv ex_io.c ex_io.c_old; mv ex_temp.c ex_temp.c_old
+	unifdef -DCRYPTC ex.c_old > ex.c
+	unifdef -DCRYPTC ex_io.c_old > ex_io.c
+	unifdef -DCRYPTC ex_temp.c_old > ex_temp.c
+	sccs delget ex.c ex_io.c ex_temp.c
+	rm ex.c_old ex_io.c_old ex_temp.c_old
+
+7) usr.etc/keyserv
+
+	{no source changes}
+
+8) usr.etc/yp
+
+	{no source changes}
+
+9) sys/rpc
+
+	sccs edit auth_des.c svcauth_des.c
+	{edit auth_des.c as follows}
+
+195,199d194
+<               status = cbc_crypt((char *)&auth->ah_key, (char *)cryptbuf,
+<                       2*sizeof(des_block), DES_ENCRYPT | DES_HW, (char *)&ivec);
+<       } else {
+<               status = ecb_crypt((char *)&auth->ah_key, (char *)cryptbuf,
+<                       sizeof(des_block), DES_ENCRYPT | DES_HW);
+201,204d195
+<       if (DES_FAILED(status)) {
+<               debug("authdes_marshal: DES encryption failure");
+<               return (FALSE);
+<       }
+272,276d262
+<
+<       if (DES_FAILED(status)) {
+<               debug("authdes_validate: DES decryption failure");
+<               return (FALSE);
+<       }
+
+	{edit svcauth_des.c as follows}
+
+171,176d170
+<               status = cbc_crypt((char *)sessionkey, (char *)cryptbuf,
+<                       2*sizeof(des_block), DES_DECRYPT | DES_HW,
+<                       (char *)&ivec);
+<       } else {
+<               status = ecb_crypt((char *)sessionkey, (char *)cryptbuf,
+<                       sizeof(des_block), DES_DECRYPT | DES_HW);
+178,181d171
+<       if (DES_FAILED(status)) {
+<               debug("decryption failure");
+<               return (AUTH_FAILED);   /* system error */
+<       }
+254,259d243
+<       status = ecb_crypt((char *)sessionkey, (char *)cryptbuf,
+<           sizeof(des_block), DES_ENCRYPT | DES_HW);
+<       if (DES_FAILED(status)) {
+<               debug("encryption failure");
+<               return (AUTH_FAILED);   /* system error */
+<       }
+
+	sccs delget auth_des.c svcauth_des.c
+
+10) diagnostics/src/sundiag/tests
+
+	rm -rf dcp/SCCS dcp
+	sccs edit Makefile
+	{comment out reference to dcp}
+
+#SUBDIR= newtest dcp net gp1 sunlink tape
+SUBDIR= newtest net gp1 sunlink tape
+
+	sccs delget Makefile
+
+11) diagnostics/src/sysdiag
+
+	rm SCCS/s.dcp_amddata.h
+	rm SCCS/s.dcp_amdtest.c
+	rm SCCS/s.dcp_probe.c
+	rm SCCS/s.dcpdata.h
+	rm SCCS/s.dcptest.c
+	rm SCCS/s.dcptest.h
+	{and comment out reference in Makefile}
+
+NOTES:
+
+	I comment out the references to the removed files rather
+	than removing them in the Makefiles as to leave "clues"
+	for the knowledgable users as to our intents.
+
+	There are two basic methods in decrypting the source: removal
+	of whole files or directories (libc/des and usr.bin/crypt) and
+	removal of portions of files (bin/ed.c, ucb/ex/{ex_io.c, ex_temp.c,
+	ex.c}). For the most part, #ifdef CRYPT was used to surround the
+	encryption portions such that unidef can be used to remove it.
+	This is also used for rebuilding these programs without encryption
+	for the export release tapes (CRYPT is left undefined when compiling
+	them). The manual removal of code sections in the two kernel files
+	(sys/rpc/{auth_des.c svcauth_des.c}) is needed because these modules
+	are sent out in object form with there encryption portions enabled
+	(the rare exception allowed us by the Commerce Department).
+
+	The "knowledge" of what files need to be removed or modified
+	lies in the Makefiles under the "international" lines. Entering
+	"make -n international" under /usr/src will show which modifications
+	are done by make to produce the export release tapes. This can be
+	used, with one exception, to determine which source should be removed.
+	The exception, of couse, is the two kernel files, as they do get
+	included in the export tapes. We just can't send them out as source.
+
+	Special thanks to Dan Wong for his help in this matter.
+
+
+IV. Final Stages of Source Tape Preparation for 4.0.X
+
+
+	Now that the source has been cleaned up of "old" source files and
+	decrypted, we are ready for the final touches.
+
+	resetting SCCS ids to 1.1 (also removes comments)
+
+	customizing the scripts which produce the tapes for
+	local pathname differences
+
+	updating the copyright files (which also include part numbers)
+
+	producing the tapes (INTSRC only)
+
+	initial testing of the tapes
+
+	final corrections
+
+	producing the tapes in all flavors
+
+
+V. Resetting the SCCS ids to 1.1:
+
+	The source tapes are sent out without Sun's developer's
+	original SCCS comments. Instead, a shell script is run on
+	the source resetting the SCCS ids back to 1.1. The script
+	descends through the source heirarchy and at each subdirectory
+	it will check all the files out for editing (sccs get -e). It
+	then removes all the s. & p. files from the SCCS subdirectory
+	at that level. Then, all the files are "re-created" (sccs
+	create) and then removed, such that they only exist at the
+	SCCS level (as s. files). "edit" is used rather than "get"
+	to preserve the keywords.
+
+#!/bin/sh -x
+#
+#       Proceed through the source hierarchy beginning
+#       at ROOT.  Resets the sccs history of all files
+#       to 1.1 by recreating them all.
+#
+
+ROOT=/spare/SCCS_DIRECTORIES
+
+echo 'Before '
+date
+echo ' '
+find $ROOT -type d -name SCCS -print |
+while read DIR
+do
+        echo $DIR
+        cd `dirname $DIR`
+        rm *
+        sccs get -e -s SCCS
+        cd SCCS
+        rm *
+        cd ..
+        sccs create *
+        rm *
+done
+echo 'After '
+date
+echo ' '
+
+
+VI. Customizing the production scripts:
+
+	There are two scripts for source tape production: mksrc_mt,
+	for 1/2" tapes, and mksrc_st for 1/4" tapes. Inside, there
+	are several pathnames which must be changed for local
+	application:
+
+sunsrc_exclude="/usr/krypton/danw/sourcetool/sunsrc_exclude_list"
+winsrc="/usr/krypton/danw/sourcetool/winsrc_list"
+
+	and
+
+#cd /usr/src/SCCS_DIRECTORIES
+cd /mnt
+
+	and
+
+dd if=/usr/krypton/danw/sourcetool/Copyright1 of=$tape conv=sync
+dd if=/usr/krypton/danw/sourcetool/Copyright1 of=$tape conv=sync
+
+dd if=/usr/krypton/danw/sourcetool/Copyright2 of=$tape conv=sync
+dd if=/usr/krypton/danw/sourcetool/Copyright2 of=$tape conv=sync
+
+dd if=/usr/krypton/danw/sourcetool/Copyrightw of=$tape conv=sync
+dd if=/usr/krypton/danw/sourcetool/Copyrightw of=$tape conv=sync
+
+	The sunsrc_exclude list indicates which files are to
+	exclude in the SUNSRC tapes (a subset of INTSRC).
+	SUNSRC does not include certain proprietary source
+	as the language tools, graphics libraries, libpixrect,
+	etc.
+
+	Winsrc is a "positive" list of what files are to be
+	included on the WINSRC tapes, typically the window
+	system code and a pixrect driver example.
+
+VII. Updating the copyright files
+
+	To comply with Software Manufacturing rules, we must
+	include the part number of each tape as well as it's
+	number in it's Copyright file, the first file on the
+	tape. The year must also reflect the current date.
+
+Copyright (c) 1988 by Sun Microsystems, Inc.
+700-1889-01
+Tape 1 of 2
+
+VIII. Producing the tapes (INTSRC only)
+
+	After the above, we are now ready to produce our first
+	set of tapes. We only produce (and test by building)
+	the 1/2" INTSRC tapes.
+
+IX. Initial testing of the tapes
+
+	The tapes are loaded following the source installations
+	instructions onto a machine already running the current
+	release. A build is then done from /usr/src (make -k).
+	Any errors from missing files are fixed by either
+	brining over a "forgotten" file from the release machine
+	or adjusting a Makefile if the file has been removed
+	for encryption reasons. All such errors will be gathered
+	together after the full build and fixed on the source
+	tape machine. The tapes are then recut and reinstalled
+	and the source is again rebuilt.
+
+X. Productions of the SUNSRC & WINSRC tapes
+
+	The SUNSRC and WINSRC tapes can now be produced. No attempt
+	will be made to build the source from these tapes.
+
+XI. Final considerations:
+
+	I plan to leave the release identification string, from
+	the kernel file sys/conf.common/RELEASE, set to 4.0.X_EXPORT
+	as this is what the source will really build, as opposed
+	to the domestic release.
+

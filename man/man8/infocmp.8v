@@ -1,0 +1,409 @@
+'\" t
+.\" @(#)infocmp.8v 1.1 92/07/30 SMI; from S5R3
+.TH INFOCMP 8V "26 February 1988"
+.SH NAME
+infocmp \- compare or print out terminfo descriptions
+.SH SYNOPSIS
+.BR infocmp
+.RB [ " \-cdnILCruvV1 " ]
+.RB [ " \-sd " ]
+.RB [ " \-si " ]
+.RB [ " \-sl " ]
+.RB [ " \-sc " ]
+.RB [ " \-w"
+.IR width " ]"
+.if n .ti 5n
+.RB [ \-A
+.IR directory " ]"
+.RB [ \-B
+.IR directory " ]"
+.if t .ti +.5i
+.RI [ " termname "
+\&.\|.\|.\|]
+.SH SYNOPSIS
+.B /usr/5bin/infocmp
+.I arguments
+.LP
+Note: 
+.I arguments
+to 
+.B /usr/5bin/infocmp
+are the same as those for 
+.BR infocmp ,
+above.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "infocmp command" "" "\fLinfocmp\fP command"
+.B infocmp
+compares a binary
+.BR terminfo (5V)
+entry with other terminfo entries, rewrites a
+.B terminfo
+description to take advantage of the
+.B use=
+.IR field ,
+or prints out a
+.B terminfo
+description from the corresponding binary file in a variety of formats.
+It displays boolean fields first, then
+numeric fields, then string fields.
+.LP
+It can also convert a
+.B terminfo
+entry to a
+.BR termcap (5)
+entry; the
+.B \-C
+flag causes
+.B infocmp
+to perform this conversion.
+Some
+.B termcap
+variables are not supported by
+.BR terminfo ,
+but those that can be derived from
+.I terminfo
+variables are displayed.  Not all
+.B terminfo
+capabilities are translated either;
+only those that are allowed in a
+.B termcap
+entry are normally displayed.
+Specifying the
+.B \-r
+option eliminates this restriction, allowing all capabilities to be
+displayed in
+.B termcap
+form.
+.LP
+Because padding is collected at the beginning of a capability,
+not all capabilities are displayed.  Since
+mandatory padding is not supported by
+.B terminfo
+and
+.B termcap
+strings are not as flexible, it is not always possible to convert a
+.B terminfo
+string capability into an equivalent working
+.B termcap
+capability.  Also, a subsequent conversion of the
+.B termcap
+file back into
+.B terminfo
+format will not necessarily reproduce the original source;
+.B infocmp
+attempts to convert parameterized strings, and
+comments out those that it can not.
+.LP
+Some common
+.B terminfo
+parameter sequences, their
+.B termcap
+equivalents, and some
+terminal types which commonly have such sequences, are:
+.LP
+.TS
+center ;
+lB lB lB .
+Terminfo	Termcap	Representative Terminals
+%p1%c	%.	adm
+%p1%d	%d	hp, \s-1ANSI\s0 standard, vt100
+%p1%'x'%+%c	%+x	concept
+%i	%i	\s-1ANSI\s+1 standard, vt100
+%p1%?%'x'%>%t%p1%'y'%+%;	%>xy	concept
+%p2 is printed before %p1	%r	hp
+.TE
+.LP
+If no
+.I termname
+arguments are given, the environment variable
+.SB TERM
+is used for all expected
+.I termname
+arguments.
+.SH "OPTIONS"
+.SS Default Options
+If no options are specified and either zero or one
+.I termname
+is specified, the
+.B \-I
+option is assumed to be in effect.
+If more than one
+.I termname
+is specified, the
+.B \-d
+option is assumed.
+.SS Comparison Options
+.B infocmp
+compares the description of the first terminal
+.I termname
+with each of the descriptions for terminals listed in subsequent
+.I termname
+arguments.
+If a capability is defined for only one of the terminals,
+the value returned will depend on the type of the capability:
+.B F
+for boolean variables,
+.B \-1
+for integer variables,
+and
+.B \s-1NULL\s0
+for string variables.
+.TP
+.B \-c
+Produce a list of capabilities common to both entries.
+Capabilities that are not set are ignored.
+This option can be used as a quick check to see if the
+.B \-u
+option is worth using.
+.br
+.ne 3
+.TP
+.B \-d
+Produce a list of capabilities that differ between descriptions.
+.TP
+.B \-n
+Produce a list of capabilities in neither entry.
+.SS Source Listing Options
+The
+.BR \-I ,
+.BR \-L ,
+and
+.B \-C
+options produce a source listing for each terminal named.
+.TP
+.B \-I
+Use the
+.B terminfo
+names.
+.TP
+.B \-L
+Use the long C variable name listed in
+.BR <term.h> .
+.TP
+.B \-C
+Display only those capabilities that have
+.B termcap
+equivalents, using the
+.B termcap
+names and displaying them in
+.B termcap
+form whenever possible.
+.IP
+The source produced by the
+.B \-C
+option may be used directly as a
+.B termcap
+entry, but not all of the
+parameterized strings may be changed to the
+.B termcap
+format.
+All padding information for strings is collected together and placed at
+the beginning of the string where
+.B termcap
+expects it.
+Mandatory padding (padding information with a trailing
+.RB ` / ')
+will become optional.
+.TP
+.B \-r
+When using
+.BR \-C ,
+display all capabilities, not just those capabilities that have
+.B termcap
+equivalents.
+.TP
+.B \-u
+Produce a
+.B terminfo
+source description for the first named terminal
+which is relative to the descriptions given by the entries for all
+terminals named subsequently on the command line, by
+analyzing the differences between them, and
+producing a description with
+.B use=
+fields for the other terminals.
+In this manner, it is possible to retrofit generic terminfo entries into a
+terminal's description.
+Or, if two similar terminals exist, but were coded at different times or by
+different people so that each description is a full description, using
+.B infocmp
+will show what can be done to change one description to be relative to the
+other.
+.IP
+A capability is displayed with an at-sign
+.RB ( @ )
+if it no longer exists in
+the first terminal, but one of the other terminal
+entries contains a value for it.
+A capability's value gets printed if the value in the first
+.IR termname
+is not found in any of the other
+.I termname
+entries, or if the first of the other
+.I termname
+entries has a different value for that capability.
+.IP
+The order of the other
+.I termname
+entries is significant.
+Since the terminfo compiler
+.BR tic (8V)
+does a left-to-right scan of the capabilities, specifying two
+.B use=
+entries that contain differing entries for the same capabilities will
+produce different results, depending on the order in which they are
+given.
+.B infocmp
+flags any such inconsistencies between the other
+.I termname
+entries as they are found.
+.IP
+Alternatively, specifying a capability
+after
+a
+.B use=
+entry that contains it, will cause the second specification to
+be ignored.
+Using
+.B infocmp
+to recreate a description can be a useful check to make sure that
+everything was specified correctly in the original.
+.IP
+Specifying superfluous
+.B use=
+slows down the comparison, but is not fatal;
+.B infocmp
+flags superfluous
+.B use=
+fields.
+.SS Sorting Options
+.TP
+.B \-sd
+Sort fields in the order that they are
+stored in the
+.B terminfo
+database.
+.TP
+.B \-si
+Sort fields by
+.B terminfo
+name.
+.TP
+.B \-sl
+Sort fields by the long C variable name.
+.TP
+.B \-sc
+Sort fields by the
+.B termcap
+name.
+.IP
+If no sorting option is given,
+fields are sorted alphabetically by the
+.B terminfo
+name within each type, except in the case of the
+.B \-C
+or the
+.BR \-L
+options, which cause the sorting to be done by the
+.B termcap
+name or the long C variable name, respectively.
+.br
+.ne 8
+.SS Changing Databases
+The location of the compiled
+.B terminfo
+database is taken from the environment variable
+\s-1\fBTERMINFO\s0\fR.
+If the variable is not defined, or if the terminal is not found in that
+location, the system
+.B terminfo
+database, usually in
+.BR /usr/share/lib/terminfo ,
+is used.
+The options
+.B \-A
+and
+.B \-B
+may be used to override this location.  With these options, it is
+possible to compare descriptions for a terminal with the same name
+located in two different databases.  This is useful for comparing
+descriptions for the same terminal created by different people.
+.TP
+.B \-A
+Set
+.SB TERMINFO
+for the first
+.IR termname
+argument.
+.TP
+.B \-B
+Set
+.SB TERMINFO
+for the remaining
+.IR termname
+arguments.
+.SS Other Options
+.TP
+.B \-v
+Print out tracing information on the standard error.
+.TP
+.B \-V
+Print out the version of the program in use on the standard error
+and exit.
+.TP
+.B \-1
+Print fields out one to a line.
+Otherwise, fields are printed several to a line to a maximum width
+of 60 characters.
+.TP
+.BI \-w " width"
+Change the output to
+.I width
+characters.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/share/lib/terminfo/?/*
+compiled terminal description database
+.TP
+.B /usr/5include/term.h
+.PD
+.SH "SEE ALSO"
+.BR curses (3V),
+.BR termcap (5),
+.BR terminfo (5V),
+.BR tic (8V)
+.SH DIAGNOSTICS
+.TP
+.B malloc is out of space!
+There was not enough memory available to process
+all the terminal descriptions requested.
+Run
+.B infocmp
+in several smaller stages (with fewer
+.I termname
+arguments).
+.TP
+.B use= order dependency found:
+A value specified in one relative terminal specification was different from
+that in another relative terminal specification.
+.TP
+.BI "`use=" term "' did not add anything to the description."
+A relative terminal name did not contribute anything to the final
+description.
+.HP
+.B
+must have at least two terminal names for a comparision to be done.
+.br
+The
+.BR \-u ,
+.B \-d
+and
+.B \-c
+options require at least two terminal names.

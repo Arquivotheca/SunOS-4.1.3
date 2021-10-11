@@ -1,0 +1,354 @@
+#
+# @(#)Makefile.save 1.1 92/07/30 SMI
+#
+DESTDIR=
+CFLAGS=	-O
+LDFLAGS=
+CHOWN=	/etc/chown
+CLEANUPCPP=sed -e '/^\#.*/d' -e '/^$$/d'
+PROTO=	/proto
+TARFILES= /tarfiles
+ARCH:sh = arch -k
+# incomplete dependancy list!
+BIN=	bin/mktp bin/buildmini bin/getmini bin/getmunixfs \
+	bin/getmini.internal
+MKTP_INPUTS=	sun3_quarter	sun3_half	\
+		sun3x_quarter	sun3x_half	\
+		sun4_quarter	sun4_half	\
+		sun4c_quarter	sun4c_half	\
+		sun4c_diskette	\
+		sun3_cdrom sun3x_cdrom sun4_cdrom sun4c_cdrom
+		
+MAKEINSTALL=/usr/release/bin/makeinstall 
+
+PART_FILES=	part_num_quarter_sun3 part_num_quarter_sun3x \
+		part_num_quarter_sun4 part_num_quarter_sun4c \
+		part_num_half_sun3    part_num_half_sun3x \
+		part_num_half_sun4    part_num_half_sun4c \
+		part_num_diskette_sun4c \
+		part_num_cdrom
+
+#
+# Programs that live in subdirectories, and have makefiles of their own.
+#
+SUBDIR=	mktp util exclude.lists mkcd
+
+# sparc binaries need a bigger file system 
+#
+MUNIXFS_SIZE-sparc = 4096
+MUNIXFS_SIZE-mc68010 = 3072
+MUNIXFS_SIZE-mc68020 = 3072
+MUNIXFS_SIZE-mc68030 = 3072
+MUNIXFS_SIZE = $(MUNIXFS_SIZE$(TARGET_MACH))
+
+# Text files that live in the current directory
+#
+TEXT= README Copyright
+
+COMMON= bin/mktp miniroot.$$(ARCH) SIZE_TAR.$$(ARCH)
+
+all:	${SUBDIR} ${TEXT} ${PART_FILES} ${BIN}
+
+${SUBDIR}: FRC
+	cd $@; $(MAKE) ${MFLAGS}
+
+miniroot.$(ARCH): $(PROTO) $(BIN) Makefile
+	MINISIZE=12000 &&\
+	MINIARCH=$(ARCH) &&\
+	MININAME=`pwd`/miniroot.$$MINIARCH &&\
+	MINIGET=`pwd`/bin/getmini &&\
+	export MINISIZE MINIARCH MININAME MINIGET &&\
+	bin/buildmini
+
+miniroot.internal.$(ARCH): $(PROTO) $(BIN) Makefile
+	MINISIZE=12000 &&\
+	MINIARCH=$(ARCH) &&\
+	MININAME=`pwd`/miniroot.$$MINIARCH &&\
+	MINIGET=`pwd`/bin/getmini.internal &&\
+	export MINISIZE MINIARCH MININAME MINIGET &&\
+	bin/buildmini
+
+munixfs.$(ARCH).tape: $(PROTO) $(BIN) Makefile
+	MINIMEDIATYPE=tape &&\
+	MINISIZE=$(MUNIXFS_SIZE) &&\
+	MINIARCH=$(ARCH) &&\
+	MININAME=`pwd`/munixfs.$$MINIARCH.tape &&\
+	MINIGET=`pwd`/bin/getmunixfs &&\
+	export MINIMEDIATYPE MINISIZE MINIARCH MININAME MINIGET &&\
+	bin/buildmini
+
+# the generic minisize is impossibly large - it can't be bigger than
+# 2880 to fit on a 3.5" diskette partition "c".
+munixfs.$(ARCH).diskette: $(PROTO) $(BIN) Makefile
+	MINIMEDIATYPE=diskette &&\
+	MINISIZE=2880 &&\
+	NBPI=4096 &&\
+	MINIARCH=$(ARCH) &&\
+	MININAME=`pwd`/munixfs.$$MINIARCH.diskette &&\
+	MINIGET=`pwd`/bin/getmunixfs &&\
+	export MINIMEDIATYPE MINISIZE NBPI MINIARCH MININAME MINIGET &&\
+	bin/buildmini
+
+# the cdrom munixfs made so that it knows about the cdrom
+# needs to know how big the miniroot is
+munixfs.$(ARCH).cdrom: $(PROTO) $(BIN) Makefile miniroot.$(ARCH)
+	MINIMEDIATYPE=cdrom &&\
+	MINISIZE=$(MUNIXFS_SIZE) &&\
+	MINIARCH=$(ARCH) &&\
+	MININAME=`pwd`/munixfs.$$MINIARCH.cdrom &&\
+	MINIGET=`pwd`/bin/getmunixfs &&\
+	export MINIMEDIATYPE MINISIZE MINIARCH MININAME MINIGET &&\
+	bin/buildmini
+
+TOSIZE.sun4c= sun4c_quarter sun4c_half sun4c_cdrom sun4c_diskette
+TOSIZE.sun4= sun4_quarter sun4_half sun4_cdrom
+TOSIZE.sun3= sun3_quarter sun3_half sun3_cdrom
+TOSIZE.sun3x= sun3x_quarter sun3x_half sun3x_cdrom
+TOSIZE= $(TOSIZE.$(ARCH))
+
+# depends on existance of tar files, used by diskette and ???
+COMPRESSED: COMPRESSED.$(ARCH) SIZE_TAR.$(ARCH)
+
+COMPRESSED.$(ARCH):
+	-rm -rf $(TARFILES)/$(ARCH).Z
+	mkdir $(TARFILES)/$(ARCH).Z
+	# XXX should test for enuff space
+	list=`cd $(TARFILES)/$(ARCH); ls $(TARFILES)/$(ARCH)` && \
+	for i in $$list; do \
+		compress -c $(TARFILES)/$(ARCH)/$$i > $(TARFILES)/$(ARCH).Z/$$i  ;\
+	done;
+	date > COMPRESSED.$(ARCH)
+
+# create size info files and also the tar images
+SIZE_TAR.$(ARCH): $(PROTO) $(TOSIZE) munixfs.$(ARCH).tape
+	-rm -rf $(TARFILES)/$(ARCH)/* disksizes.$(ARCH)
+	-rm -rf COMPRESSED.$(ARCH) SIZE_TAR.$(ARCH)
+	mkdir disksizes.$(ARCH)
+	-mkdir $(TARFILES)/$(ARCH)
+	# XXX should check for enuff space in $(TARFILES)/$(ARCH)
+	#create shell commands to do disksizeing
+	-rm sizecmds.tmp
+	cat $(TOSIZE) | awk -f disksize.awk dir=disksizes.$(ARCH) - | sort -u - > sizecmds.tmp
+	#create shell commands to do disksizeing
+	-rm tarcmds.tmp
+	cat $(TOSIZE) | awk -f tarfiles.awk dir=$(TARFILES)/$(ARCH) - | sort -u - > tarcmds.tmp
+	# XXX run in background with tarcmds?
+	PATH=`pwd`/bin:/usr/bin:/usr/etc && export PATH &&\
+	ARCH=$(ARCH) && export ARCH && \
+	sh sizecmds.tmp
+	PATH=`pwd`/bin:/usr/bin:/usr/etc && export PATH &&\
+	ARCH=$(ARCH) && export ARCH && \
+	sh tarcmds.tmp
+	# wait here for sizecmds if in background
+	date > SIZE_TAR.$(ARCH)
+
+
+quarter_tapes: $(ARCH)_quarter munixfs.$(ARCH).tape $(COMMON) 
+	@$(MAKE) rootid
+	ARCH=$(ARCH) && TARFILES=$(TARFILES) && export ARCH TARFILES && \
+	PATH=`pwd`/bin:/usr/bin:/usr/etc && export PATH &&\
+	bin/mktp $(ARCH)_quarter
+
+quarter_tapesZ: $(ARCH)_quarterZ munixfs.$(ARCH).tape $(COMMON) COMPRESSED
+	@$(MAKE) rootid
+	ARCH=$(ARCH) && TARFILES=$(TARFILES) && export ARCH TARFILES && \
+	PATH=`pwd`/bin:/usr/bin:/usr/etc && export PATH &&\
+	bin/mktp $(ARCH)_quarterZ
+
+half_tapes: $(ARCH)_half munixfs.$(ARCH).tape $(COMMON) 
+	@$(MAKE) rootid
+	ARCH=$(ARCH) && TARFILES=$(TARFILES) && export ARCH TARFILES && \
+	PATH=`pwd`/bin:/usr/bin:/usr/etc && export PATH &&\
+	bin/mktp $(ARCH)_half
+
+diskettes: $(ARCH)_diskette munixfs.$(ARCH).diskette $(COMMON) COMPRESSED
+	@$(MAKE) rootid
+	ARCH=$(ARCH) && TARFILES=$(TARFILES) && export ARCH TARFILES && \
+	PATH=`pwd`/bin:/usr/bin:/usr/etc:/usr/ucb && export PATH &&\
+	bin/mktp $(ARCH)_diskette
+	# now make the diskettes themselves, too hard to do in mktp!
+	make -f diskette.mk ARCH=$(ARCH) PROTO=$(PROTO) TARFILES=$(TARFILES) dist
+
+cdrom: $(ARCH)_cdrom munixfs.$(ARCH).cdrom $(COMMON) 
+	@$(MAKE) rootid
+	ARCH=$(ARCH) && TARFILES=$(TARFILES) && export ARCH TARFILES && \
+	PATH=`pwd`/bin:/usr/bin:/usr/etc:/usr/ucb && export PATH &&\
+	bin/mktp $(ARCH)_cdrom
+	# now make the diskettes themselves, too hard to do in mktp!
+	make -f cdrom.mk ARCH=$(ARCH) PROTO=$(PROTO) TARFILES=$(TARFILES) deliverables
+
+sun3_quarter sun3x_quarter: Makefile mktp_input part_num_quarter_$(ARCH)
+	/usr/lib/cpp \
+	-DTAPE \
+	-DFILETYPE=tar \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_quarter_$(ARCH)`" \
+	-DMEDIA="1/4\\\" tape QIC-24 \(boot format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=st8 \
+	-DDEVSIZE=44mb \
+	-DFSBLOCKING=100k \
+	-DTARBLOCKING=200 \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.tape \
+	-DMUNIXFSBLOCKING=100k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $@
+
+sun4_quarter sun4c_quarter: Makefile mktp_input part_num_quarter_$(ARCH)
+	/usr/lib/cpp \
+	-DTAPE \
+	-DFILETYPE=tar \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_quarter_$(ARCH)`" \
+	-DMEDIA="1/4\\\" tape QIC-24 \(boot format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=st8 \
+	-DDEVSIZE=44mb \
+	-DFSBLOCKING=100k \
+	-DTARBLOCKING=200 \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.tape \
+	-DMUNIXFSBLOCKING=100k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $@
+
+sun3_quarterZ sun3x_quarterZ: Makefile mktp_input part_num_quarter_$(ARCH)
+	/usr/lib/cpp \
+	-DTAPE \
+	-DFILETYPE=tarZ \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_quarter_$(ARCH)`" \
+	-DMEDIA="1/4\\\" tape QIC-24 \(boot format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=st8 \
+	-DDEVSIZE=58mb \
+	-DFSBLOCKING=100k \
+	-DTARBLOCKING=200 \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.tape \
+	-DMUNIXFSBLOCKING=100k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $@
+
+sun4_quarterZ sun4c_quarterZ: Makefile mktp_input part_num_quarter_$(ARCH)
+	/usr/lib/cpp \
+	-DTAPE \
+	-DFILETYPE=tarZ \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_quarter_$(ARCH)`" \
+	-DMEDIA="1/4\\\" tape QIC-24 \(boot format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=st8 \
+	-DDEVSIZE=58mb \
+	-DFSBLOCKING=100k \
+	-DTARBLOCKING=200 \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.tape \
+	-DMUNIXFSBLOCKING=100k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $@
+
+sun3x_half sun3_half: Makefile mktp_input part_num_half_$(ARCH)
+	/usr/lib/cpp \
+	-DTAPE \
+	-DFILETYPE=tar \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_half_$(ARCH)`" \
+	-DMEDIA="1/2\\\" tape 1600 bpi \(boot format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=mt0 \
+	-DDEVSIZE=37mb \
+	-DFSBLOCKING=10k \
+	-DTARBLOCKING=20 \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.tape \
+	-DMUNIXFSBLOCKING=8k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $@
+
+sun4_half sun4c_half: Makefile mktp_input part_num_half_$(ARCH)
+	/usr/lib/cpp \
+	-DTAPE \
+	-DFILETYPE=tar \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_half_$(ARCH)`" \
+	-DMEDIA="1/2\\\" tape 6250 bpi \(boot format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=mt8 \
+	-DDEVSIZE=137mb \
+	-DFSBLOCKING=10k \
+	-DTARBLOCKING=20 \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.tape \
+	-DMUNIXFSBLOCKING=8k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $@
+
+# note that a lot of things are really set in diskette.mk
+$(ARCH)_diskette: Makefile mktp_input part_num_diskette_$(ARCH)
+	/usr/lib/cpp \
+	-DDISKETTE \
+	-DFILETYPE=tarZ \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_diskette_$(ARCH)`" \
+	-DMEDIA="Diskette \(suninstall format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=rfd0a \
+	-DDEVSIZE=1422kb \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.diskette \
+	-DMUNIXFSBLOCKING=8k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $(ARCH)_diskette
+
+# for cdrom, all archs
+$(ARCH)_cdrom: Makefile mktp_input part_num_cdrom
+	/usr/lib/cpp \
+	-DCDROM \
+	-DFILETYPE=tar \
+	-DVERS="`cat $(PROTO)/usr/kvm/sys/conf.common/RELEASE`" \
+	-DDATE="`date`" \
+	-DPART="`cat part_num_cdrom`" \
+	-DMEDIA="CDROM \(suninstall format\)" \
+	-DARCH=$(ARCH) \
+	-DDEVRNAME=rsr0 \
+	-DDEVSIZE=500mb \
+	-DMINIROOT=miniroot.ARCH \
+	-DMUNIXFS=munixfs.ARCH.cdrom \
+	-DMUNIXFSBLOCKING=8k \
+	-DPROTO=$(PROTO) \
+	mktp_input | $(CLEANUPCPP) > $(ARCH)_cdrom
+
+$(BIN) install: $(MAKEINSTALL)
+	install -d bin 
+	for i in ${SUBDIR}; do \
+		(cd $$i; $(MAKEINSTALL) DESTDIR=../bin); done
+
+clean:
+	$(RM) -rf errs bin miniroot.* munixfs.* $(MKTP_INPUTS) *.xdr \
+		disksizes.$(ARCH) $(TARFILES)/$(ARCH) \
+		SIZE_TAR.$(ARCH) COMPRESSED.$(ARCH) *.tmp
+	for i in ${SUBDIR}; do (cd $$i; $(MAKE) ${MFLAGS} clean); done
+	make -f diskette.mk ARCH=$(ARCH) clean
+	make -f cdrom.mk ARCH=$(ARCH) clean
+
+$(PROTO):
+
+$(MAKEINSTALL):
+	cd ..; $(MAKE) $(@F)
+
+rootid:
+	@if [ "`whoami`x" != "root"x ] ; then \
+		echo "You must make the release media as \"root\"."; \
+		false; \
+	fi
+
+FRC:

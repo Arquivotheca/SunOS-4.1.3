@@ -1,0 +1,91 @@
+.\" @(#)audio_ulaw2linear.3 1.1 92/07/30 SMI
+.ds Dc 7/30/92
+.TH AUDIO_ULAW2LINEAR 3 "\*(Dc" "" "Audio Library"
+.SH NAME
+audio_ulaw2linear,
+audio_u2c,
+audio_u2s,
+audio_u2l,
+audio_c2u,
+audio_s2u,
+audio_l2u
+\- \(*m-law data conversions
+.SH DISCLAIMER
+.LP
+The manual pages, header files, and object library associated with
+.B /usr/demo/SOUND/libaudio.a
+are furnished on an AS IS basis as a preliminary interface to several
+useful audio data-processing capabilities.  A future release of the
+operating system may redefine the syntax or semantics of some of the
+functions described herein.
+.SH SYNOPSIS
+.nf
+.B #include <multimedia/ulaw2linear.h>
+.LP
+.B char audio_u2c(ulaw)
+.B unsigned char ulaw;
+.LP
+.B short audio_u2s(ulaw)
+.B unsigned char ulaw;
+.LP
+.B long audio_u2l(ulaw)
+.B unsigned char ulaw;
+.LP
+.B unsigned char audio_c2u(pcm)
+.B char pcm;
+.LP
+.B unsigned char audio_s2u(pcm)
+.B short pcm;
+.LP
+.B unsigned char audio_l2u(pcm)
+.B long pcm;
+.fi
+.SH DESCRIPTION
+These macros are designed to make conversion to and from the format used
+by the SPARCstation audio chip as easy and fast as possible.
+.LP
+The audio chip processes data encoded using \(*m-law companding, a technique
+that allows Pulse Code Modulated (\s-1PCM\s0) data to be compressed
+to 8 bits.  The resulting data word contains 7 bits of magnitude and a
+high-order sign bit.  By convention, the data is also subjected to a
+one's-complement; the
+.I zero
+value (i.e., half-scale) is therefore represented by the \(*m-law value 0xFF.
+.LP
+The \(*m-law transfer function results in a nearly linear relationship to
+.SM PCM
+at low amplitudes and a logarithmic relationship at high amplitudes.
+Thus, it is not reasonable to perform arithmetic operations
+(such as would be performed on
+.SM PCM
+data) directly on the encoded data.
+For instance, to sum two \(*m-law values, the following two lines of code
+will give very different answers (the second is correct):
+.ft B
+.nf
+	wrong = (ulaw1 + ulaw2);
+	right = audio_s2u(audio_u2s(ulaw1) + audio_u2s(ulaw2));
+.fi
+.ft R
+.LP
+.BR audio_u2c(\|) ,
+.BR audio_u2s(\|) ,
+and
+.B audio_u2l(\|)
+convert \(*m-law data to
+.SM PCM
+signed integers of 8, 16, or 32 bit precision, respectively.
+Since \(*m-law data represents approximately 13 bits of precision
+to begin with, the
+conversion to 8-bit integers loses precision, while the conversion to 32-bit 
+integers is provided merely as a convenience.
+.LP
+.BR audio_c2u(\|) ,
+.BR audio_s2u(\|) ,
+and
+.B audio_l2u(\|)
+convert 8, 16, and 32 bit
+.SM PCM
+signed integers to their \(*m-law encoded form.
+.SH SEE ALSO
+.BR audio_convert (3).

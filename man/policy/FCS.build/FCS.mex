@@ -1,0 +1,908 @@
+.PL RIGHT
+.sp 5
+.UH M "Printing Man Pages Procedures Outline"
+.UH S "TERMS"
+.LP
+Some definitions to make life easier:
+.UH S "Freeze date"
+The last day engineers (and other random hackers) can make changes to
+man pages.  We set this date based on the time we'll require to do our work.
+Since engineers are responsible for making changes to pages they 
+affect, they need warning of this cut-off.  Traditionally, they
+procrastinate when it comes to man pages, this puts a fire under them.
+.UH S "Build"
+The compiling and configuring of a system, for our purposes this term
+will refer to the entire operating system, which is "built" by the
+release engineers. This is done immediately prior to making release tapes.
+.UH S "Code fork"
+This process of cloning all the release machine sources onto another
+machine can take anywhere from 2 days to 3 weeks.  Sources are
+cloned to make builds, or to begin work on the next release (yup, even
+though work on this release isn't nearly finished, somebody's already
+onto the next one \(em it never ends!)
+.UH S "Thaw date"
+Man pages are again available for changes.  Like the freeze date, we
+set this date.  It generally coincides with the end of the build.  
+.UH S "PREPARATION"
+.LP
+.UH S "8 Weeks Out"
+.LP
+Announce man page freeze date to the mail alias for the
+current release.  Also make this announcement on the
+subsequent release machine, if the code fork
+for that release has already taken place.  It's not very wise
+to be completely inflexible about this date, recognize that
+some engineers will not be able to meet this deadline.
+Offer early on to negotiate, then you'll have a good idea
+of what to expect.  Below is an example of the mail announcement.
+.BS GRAY
+.LS 2
+%  mail 4-0@argon, 4-1@argon
+Subject: man pages are FROZEN for both 4.0 and 4.1
+Cc: syspubs@gottlieb
+
+Man pages will remain FROZEN for final edits,
+merges of ECD material, administratrivia, and FCS
+printing, until at least March 7.  If you haven't
+contacted me already about changes, they'll have to
+wait until after the thaw (e.g., 4.1).
+
+Unless I've given you specific permission, do not
+check in any man page updates on larry, argon, or
+any 4.x release machine until I've announced the thaw.
+
+Questions and/or flames to me.
+
+-bob
+.LE
+.BE
+.LP
+Start catching up on evaluated bugs.  All bugs evaluated
+for the current release must be fixed in source and
+released on elmer.  Evaluate all new bugs for the next release.
+.UH S "4 Weeks Out"
+.LP
+Freeze man pages, this includes putting a warning in
+.L /etc/motd
+on release machine, and sending mail.  Again, this should also be done
+on the subsequent release machine, if necessary.
+.UH S "3 Weeks Out"
+.LP
+Hard freeze.  When the freeze has been in effect for a week,
+it is then considered a "hard freeze" and absolutely no changes
+will be accepted.
+.LP
+The following files can be updated once the hard freeze is
+set.  The updates must be done by hand, but should not be 
+extensive, each is already a good working file.
+.LS 2
+/usr/src/bin/manpages	
+/usr/src/bin/spell.ok
+.LE
+.LP
+At some point
+.L /usr/src/bin/titles
+should be created and added to
+this list.  These files will be used by make during the
+checks process.
+.LP
+When all merges and bug fixes have been made, and all pages are
+present and checked in, you can begin the final
+checks and fixes.
+.UH S "DOCUMENT CONTROL"
+.LP
+cover.mex is a standard file that needs to be edited for each
+release.  Roger will provide the partnum, revision, and date line.  It
+is important that these are changed which each release.  The date
+and release appear on the title page, and the release also appears
+in the footer of each page.
+.LP
+Edit line 2 of
+.L /usr/doctools/tmac/sunman ,
+.L /usr/doctools/tmac/an
+and
+.L /usr/lib/tmac/tmac.an
+on all doctools hosts, and
+.L /usr/src/usr.lib/tmac/tmac.an
+and
+.L /usr/lib/tmac/tmac.an
+on all affected release machines:
+.LS 2
+\&.\"     @(#)tmac.sunman 1.36    88/03/05
+\&.ds ]W Sun Release \f(LB4.0\fP
+.LE
+.LP
+The permission modes on
+.L /usr/lib
+may make it necessary to apply some force to edit these files. 
+.LP
+You also have to do this at alpha and beta stages:
+.TS
+lfL l.
+4.1\e(*a  4.1\(*a
+4.1\e(*b  4.1\(*b
+.TE
+.LP
+The copyright statement should also be reviewed at this time.
+Every non-Sun product mentioned in the pages should be covered
+by a trademark statement.  Examples of trademarked products
+include:  Ethernet,
+VAX, MicroSoft, and PostScript.  References to these products should
+only been used when absolutely necessary, and when referring to
+that specific product, otherwise generic references are sufficient.
+.UH S "FINAL CHECKS"
+.LP
+To run the final checks on all the printed man pages, cd to
+.L /usr/src/man
+on the release machine and type:
+.BS GRAY
+.LS 2
+% make prep
+.LE
+.BE
+.LP
+This will invoke the following targets:
+.IP "files" 
+Extract the current version of all man
+pages listed in
+.L $(FILES)
+of
+.L man?/Printfile .
+.IP "update"
+Append to
+.L man?/Printfile
+and
+.L man?/Makefile
+the list of man pages to be added to or deleted from
+.L $(FILES) .
+These pages must be inserted alphabetically in
+.L $(FILES) ,
+as well as in
+.L man?/List.? ,
+or deleted in both places. 
+.L $(FILES)
+must be
+maintained by hand, in both the Makefile and Printfile
+file.  They should be updated as changes occur during the release,
+this target should merely be a final test of
+that maintenance.
+.IP "pagelist"
+Create
+.L /usr/src/tmp/man?.pagelist ,
+a list of all printed man pages for each section.
+Also \(lqtouch\(rq pagelist in the current
+directory so that this target is only made
+once.
+.IP "bin/hier"
+Create
+.L /bin/hier
+using find in
+.L /proto .	
+.IP "badpgrefs"
+Create
+.L /usr/src/tmp/man?.badpgrefs ,
+a list of all man pages and any bad references they
+may contain.  Also \(lqtouch\(rq badpgrefs in the
+current directory so that this target is only
+made once.
+.br
+.ne 8
+.IP "titles"
+Create
+.L /usr/src/tmp/man?.titles ,
+a list of all man pages and any title references they
+may contain.  Title references are defined
+as any line containing more than one word
+beginning with a capital letter, or lines
+beginning with .I[RB] followed by a capitalized
+word[s].  TX macros are excluded.  Also
+\(lqtouch\(rq titles in the current directory so
+that this target is only made once.
+.IP "no.ix"
+Create
+.L /usr/src/tmp/man?.no.ix ,
+a list of all man pages with no index
+entries.  Also \(lqtouch\(rq no.ix in the
+current directory so that this target is only
+made once.
+.IP "badnames"
+Create
+.L /usr/src/tmp/man?.badnames ,
+a list of all man pages and NAME lines that contain
+point size or font changes, or line breaks.
+Also \(lqtouch\(rq badnames in the current directory
+so that this target is only made once.
+.IP "badhf"
+Create
+.L /usr/src/tmp/man?.badhf ,
+a list of all man pages that have the TH macro
+arguments in the wrong order.  Also \(lqtouch\(rq
+badhf in the current directory so that this
+target is only made once.
+.IP "spell"
+Create
+.L /usr/src/tmp/man?.spell ,
+a list of all man pages and any incorrect spellings they
+may contain.
+Also \(lqtouch\(rq spell in the
+current directory so that this target is only
+made once.
+.IP "badtroff"
+Create
+.L /usr/src/tmp/man?.badtroff ,
+a list of all man pages and any bad troff usage they
+may contain.  Also \(lqtouch\(rq badtroff in the
+current directory so that this target is only
+made once.
+.LP
+Then, using the files generated by
+.L "make prep" ,
+edit the man pages requiring fixes.  Allow
+approximately one man week for these fixes,
+depending on the number of pages that have been
+changed or added.
+.LP
+Once the 
+.L $(FILES)
+lists have been updated, they need to be
+collated before quitting the file.  The last comment inserted by
+.L "make update"
+will tell you whether you should use:
+.LS 2
+1G/FILES
+!}make collate
+.LE
+.LP
+or
+.LS 2
+1G/FILES
+!}make FILES
+.LE
+.LP
+to collate the 
+.L $(FILES)
+lists.
+.L "make collate"
+is used if you are editing the Printfile,
+.L "make FILES"
+is used to collate the Makefile.
+.LP
+Each of these will replace the existing FILES list with a new one
+that is complete and correctly collated.  In the Printfile,
+the 
+.L $(FILES)
+will only include the printed man pages; in
+Makefile, the printed pages as well as
+.L \&.so 's
+will be included.  Invoking
+.L make
+from within
+.L vi
+may seem a bit confusing, so below is a
+review brief of what happens when you follow the example above.
+.LP
+First, understand that the exclamation point in the above
+command is a shell escape, so it is actually the shell calling
+.L make ,
+and not
+.L vi .
+In its logical fashion,
+.L make
+then searches the current directory
+(\fL/man/man?\fP)
+for a file called
+.L Makefile ,
+finding it, make reads
+.L Makefile .
+.L Makefile
+includes the file
+.L ../Makefile.master .
+.L make
+knows then to read
+.L ../Makefile.master
+to find a rule for
+.L collate .
+Indeed we find the target
+.L collate
+and its rule:
+.LS 2
+collate:
+	-@ $(MAKE) -f Printfile collate
+.LE
+The rule being nothing but a nested make command, we still
+don't know what
+.L collate
+does.  To discover that we must
+follow the nested make command to
+.L Printfile
+(remember that we are still in the
+.L man/man?
+directory, so the file we are discussing is
+.L man/man?/Printfile ).
+In this file
+.L make
+finds the macro definition for
+.L $(FILES)
+and includes
+.L ../Printfile.master .
+Finally, after reading four makefiles
+.L make
+finds the definitive rule for
+.L collate :
+.BS
+.LS 2
+.ps -2
+collate: 
+	-@if test `pwd | sed 's/.*\e///'` = man3 ; \e
+	then \e
+		echo 3.FILES= $(3.FILES) | tr ' ' '\e012' | sort -u | fmt | \e
+			sed -e 's/$$/ \e\e/' -e '$$s/\e\e//' ; echo "" ; \e
+		echo 3l.FILES= $(3l.FILES) | tr ' ' '\e012' | sort -u | fmt | \e
+			sed -e 's/$$/ \e\e/' -e '$$s/\e\e//' ; echo "" ; \e
+		echo 3m.FILES= $(3m.FILES) | tr ' ' '\e012' | sort -u | fmt | \e
+			sed -e 's/$$/ \e\e/' -e '$$s/\e\e//' ; echo "" ; \e
+		echo 3r.FILES= $(3r.FILES) | tr ' ' '\e012' | sort -u | fmt | \e
+			sed -e 's/$$/ \e\e/' -e '$$s/\e\e//' ; echo "" ; \e
+		echo 3v.FILES= $(3v.FILES) | tr ' ' '\e012' | sort -u | fmt | \e
+			sed -e 's/$$/ \e\e/' -e '$$s/\e\e//' ; \e
+	else \e
+		echo FILES= $(FILES) | tr ' ' '\e012' | sort -u | fmt | \e
+			sed -e 's/$$/ \e\e/' -e '$$s/\e\e//' ; \e
+	fi
+.ps +2
+.LE
+.BE
+The rule itself is not really important, what is
+important is the ordering of the steps
+.L make
+took to find the rule.  The definition of 
+.L $(FILES)
+found in
+.L man?/Printfile
+will be used for $(FILES)
+in the above rule.  We are still in the nested
+.L make ,
+the output of
+.L collate
+will be passed to the original
+.L make
+which will then pass it to
+.L vi ,
+where the new collated
+.L $(FILES)
+list replaces the original definition.
+.UH S "INDEXING"
+.LP
+The following procedure is relies on the
+.L awk -based
+pix indexing script which is not yet working.  It is therefore
+subject to changes, and obviously, should NOT be run
+until a working script exists.
+.BS GRAY
+.LS 2
+% pix
+.LE
+.BE
+.LP
+Run script, this will create the indexing scripts for
+each page.
+.LP
+Fake a trial index and print it for editing.  Duplicate
+and kludgy entries and primary entries that should be
+secondary should be obvious.  These can be fixed
+by editing the pix generated scripts.   Cosmetic
+fixes to the index should also be done at this
+point.
+.LP
+Once satisfied with the scripts, apply them to the pages.
+At some point (not necessarily now) the scripts need to be
+archived somewhere, so that the next run of pix can access
+them for comparison.
+.UH S "CODE FORK"
+.LP
+By this time the code fork for the subsequent
+release will have been completed.  When the man
+pages thaw, all work on the current release
+machine must be included on the subsequent
+release machine.  This would be an ideal time to
+duplicate changes onto that machine.
+.LP
+You can generate a list of all pages that have
+been changed since the last build by repeating the
+following commands for each subdirectory.  
+.BS GRAY
+.LS 2
+% cd /usr/src/man/man?/SCCS
+% ls \-lt > /tmp/?.list
+% vi /tmp/?.list
+.LE
+.BE
+.LP
+Remove lines with obviously old dates, using:
+.BS GRAY
+.LS 2
+	\fIRemember, this is done while still in vi\fR
+	
+/Feb
+:.,$d
+
+	\fIFeb is used as an example, substitute the appropriate string\fR
+
+.LE
+.BE
+.LP
+Then strip off all but the filename part of each line, using:
+.BS GRAY
+.LS 2
+:%s/.* s\.//
+.LE
+.BE
+.UH S "CLONING SOURCES"
+.LP
+You are now ready to clone source.  This is a two
+step process.
+.LP
+First,
+.BS GRAY
+.LS 2
+% make \-f Printfile clone
+.LE
+.BE
+.LP
+This duplicates the
+.L /usr/src/man
+hierarchy in 
+.L $(DESTDIR) ,
+and cp's all necessary
+sources (makefiles,
+.L man?/$(FILES) ,
+etc.) to 
+.L $(CLONEDIR) .
+This is to safeguard the original sources from rcp
+flukes.
+.br
+.ne 8
+.LP
+Secondly,
+.BS GRAY
+.LS 2
+% make \-f Printfile pinstall
+.LE
+.BE
+.LP
+.L $(CLONEDIR)
+is recursively rcp'd onto
+.L $(DESTHOST) .
+This is a dangerous process (because of
+the remote procedures), and you will
+be warned accordingly.  
+.L $(DESTHOST)
+must be a
+doctools host (that's why the pages cannot be made
+on the release machine).
+.LP
+Since the above procedure was done remotely, it
+is a good idea to check that all files do exist,
+and have plausible contents.  A simple way to
+verify this is
+.BS GRAY
+.LS 2
+% cd man?
+% ls | more
+.LE
+.BE
+.LP
+All work will now be done on 
+.L $(DESTDIR) .
+Any editing done to the files will be merged back
+onto the release machine after printing.  In order
+to run make on 
+.L $(DESTDIR) ,
+the SunPro version of make
+must be in
+.L /usr/bin ,
+and
+.L default.mk
+must exist in
+.L $(DESTDIR) ,
+or in
+.L /usr/include/make
+on 
+.L $(DESTDIR) .
+.LP
+A significant amount of work has been done on the
+pages, and now that they are on the doctools host, the pages are
+no longer under the security of SCCS.  So, to protect
+our changes, a backup tape should be made at this point.
+.LP
+The last check must be done on the doctools host.
+.BS GRAY
+.LS 2
+% make checknr
+.LE
+.BE
+.UH S "BUILDING PRINTED PAGES"
+.LP
+Now, the final steps of building the printed pages.
+.BS GRAY
+.LS 2
+% make man
+.LE
+.BE
+.LP
+Will produce
+.L ?.man
+in 
+.L $(DESTDIR)
+as well as
+.L man? .
+.L ?.man
+is one concatenated file containing
+all pages for that directory.
+.BS GRAY
+.LS 2
+% make PS
+.LE
+.BE
+.LP
+This command depends on
+.L "make man" ,
+so the
+previous command is an optional step.  Using
+.L ?.man ,
+.L "make PS"
+creates the postscript
+files for each section,
+.L ?.PS ,
+and the other necessary printed files,
+.L cover.PS ,
+.L pag.PS ,
+and
+.L index.PS .
+.br
+.ne 8
+.LP
+The PS files can then be printed individually, using
+.BS GRAY
+.LS 2
+% psprint pag.PS
+% psprint ?.PS
+.LE
+.BE
+.LP
+Print the pagination first, and read it thoroughly.  The
+most obvious (and easiest to overlook) mistakes could be
+caught at this point, saving a lot of time and frustration.
+Check pagination for:
+.RS
+.IP \(bu
+pages that are in the wrong section (mostly section 3? pages)
+.IP \(bu
+pages that are out of alphabetical order
+.IP \(bu
+missing pages, or pages that appear too short
+.RE
+.LP
+If there is a problem with a particular section
+it is not necessary to remake the entire
+document.  By fudging the slushfile, you can make
+only a specified PS file.
+.BS GRAY
+.LS 2
+% mv slushfile slushfile.old
+% vi slushfile
+
+	\fIinsert the starting page number for this section
+	as the first line of the slushfile and exit\fP
+
+% make ?.PS
+.LE
+.BE
+.LP
+Note:  If remaking that section will affect the
+pagination, or index,  then you MUST run:
+.BS GRAY
+.LS 2
+% make clean
+.LE
+.BE
+.LP
+This will move all the files generated by
+make (?.PS and ?.man) so that they do not
+appear up to date.  
+.LP
+and
+.BS GRAY
+.LS 2
+% make PS
+.LE
+.BE
+.LP
+Just because you have remade the document does
+not mean you have to reprint any sections, only
+pages affected by the problem need
+to be reprinted.  Mainly, the document must be
+remade for slushfile purposes.
+.UH S "PRINTING"
+.LP
+Before you begin printing, change the printer
+cartridge (and have an extra cartridge on hand).
+.LP
+You can begin printing a PS file as soon as make goes
+on to the next section.  To print:
+.BS GRAY
+.LS 2
+% psprint ?.PS
+.LE
+.BE
+.LP
+When checking the pagination against the printed
+pages, look for the following:
+.RS
+.IP \(bu
+make sure the name and page numbers match
+.IP \(bu
+scan page for errors (point size, fonts
+that aren't turned off, overprints or
+run-off lines)
+.IP \(bu
+pages that contain more than one NAME line
+.IP \(bu
+spots or smudges on pages, these should be
+whited out where possible, in extreme cases
+the page could be reprinted as a patch
+.RE
+.LP
+Once the pagination is complete, and double
+checked, insert pink sheets to indicate where tabs
+should be inserted.  Turn in manual and
+pagination to production, saving a photocopy of the
+pagination for your records.  Tell Production how many
+immediate copies will be needed.  Immediate copies will not
+come from the printer, they are photocopies of 
+the manual as it was turned in. 
+.UH S "CHECKING BLUELINES"
+.LP
+Remain available until the manual has been sent to the
+printer.  Check with production periodically until
+bluelines are in.  Proofread bluelines immediately,
+request a 48 hour turn around from production.
+.LP
+When checking bluelines remember that this is not
+the time to make edits, we have to pay for each
+change we make (excepting printer errors we
+catch).  Always keep a cost/benefit ratio in
+mind.
+.LP
+Check bluelines for:
+.RS
+.IP \(bu 4
+overprints
+.IP \(bu 4
+copy printed off edge of page
+.IP \(bu 4
+blank pages
+.IP \(bu
+spots, smudges, and streaks
+.IP \(bu 4
+printer marks
+.IP \(bu 4
+incorrectly ordered pages and sections
+.IP \(bu 4
+bad page breaks
+.IP \(bu 4
+any other glaring, horrendous errors
+.RE
+.UH S "CLEAN UP"
+.LP
+After the manual is turned in you can begin the
+cleaning up process.
+.UH S "On doctools host"
+.LP
+As a precaution, a final tape should be made at this time.
+This tape should be saved
+.I at
+.I least
+until the next release.
+.LP
+.L $(DESTDIR)
+and all of its contents should remain fully
+intact until bluelines have been sent back to the printer,
+and a final review copy has been approved.  The final review copy
+will be printed in ink, unlike the bluelines.
+.LP
+As mentioned earlier, any pages that have been changed
+since the cloning process must be merged back onto the
+release machine.
+.BS GRAY
+.LS 2
+% make mergeback
+.LE
+.BE
+.LP
+will generate eight lists,
+.L /tmp/man?.mergeback ,
+containing all files that have been changed
+in each directory on 
+.L $(DESTDIR) .
+This list should be rcp'd onto the
+release machine.  We are now finished with 
+.L $(DESTDIR) .
+.UH S "On release machine"
+.LP
+The files listed in the file
+.L mergeback
+need to be rcp'd from 
+.L $(DESTHOST) ,
+and checked into SCCS.
+This can be done easily using the following script.
+.BS GRAY
+.LS 2
+% foreach i ( man[1-8] )
+? cd $i
+? sccs edit -s `cat /tmp/$i.mergeback`
+? rsh abraxas "cd /usr/tmp/man/$i ; \e
+?   rcp `cat /tmp/$i.mergeback` argon:/usr/src/man/$i"
+? sccs delget -s -y"merge back from printed versions" \e
+?   `cat /tmp/$i.mergeback`
+? cd ..
+? end
+%
+.LE
+.BE
+.LP
+While all make-generated files in the current directory
+will be removed by 'clean', those in subdirectories will not.
+These files must be removed by hand, verifying that each
+file should actually be removed.
+.LP
+To clean up the man pages directories, type:
+.BS GRAY
+.LS 2
+% cd /usr/src/man
+% make clean
+.LE
+.BE
+.LP
+While all make-generated files in the current directory
+will be removed by 'clean', those in subdirectories will not.
+These files must be removed by hand, verifying that each
+file should actually be removed.
+.LP
+We are now finished our work on the pages and directories,
+to prepare for the next build, type:
+.BS GRAY
+.LS 2
+% make
+.LE
+.BE
+.LP
+This will do an
+.L "sccs get"
+on all the files necessary to
+install the on-line man pages, leaving a current version
+of all pages available.
+.UH S "TEST CATMAN"
+.LP
+To make using the 
+.L man
+command easier, and generate cross-references,
+users will run 
+.L catman
+soon after installing SunOS.  We must make
+sure that the man pages will not break when they do this.
+.LP
+Since we just want to test this command, not actually create its output,
+we do not need to nroff entire files, the first line of each file is
+sufficient.  Bob has created a "dummy" nroff
+version that handles this for us, 
+.L /usr/krypton/rdh/Nroff .
+By moving this file to
+.L nroff
+somewhere in 
+.L $(PATH) 
+.I before
+.L /bin/nroff ,
+.L catman
+will use this version, and be non the wiser.
+.LP
+WARNING:  Do not forget to move
+.L nroff
+back to
+.L Nroff !
+.br
+.ne 8
+.LP
+Run
+.L catman :
+.BS GRAY
+.LS 2
+% cd /usr/src/man
+% catman
+
+	\fIoutput from catman\fR
+
+.LE
+.BE
+.LP
+.L catman
+creates a corresponding cat directory for each existing
+man directory, the nroff output files are placed
+in these directories.  For
+.L .so
+files, cat places
+a link in the directory to the nroffed version of
+the source file. 
+.LP
+Error messages will appear in the 
+.L catman
+output.
+They indicate a bad
+.L .so
+reference, or a
+non-existent file.  These files must be
+investigated.  First, check for their existence
+in the appropriate
+.L man
+directory.  Then check the
+.L cat
+directory.  Possible errors include:
+.RS
+.IP \(bu 4
+The
+.L \&.so
+file has embedded spaces in the source
+file
+.IP \(bu 4
+The current version of a file must be extracted
+from SCCS, use
+.L sccs get
+.I filename .
+.IP \(bu 4
+The
+.L \&.so
+references a non-existent file, or
+misspells filename.
+.RE
+.LP
+After fixing these errors, run
+.L catman
+again to verify the fix and make certain that
+new errors were not introduced.  Once
+.L catman
+has run successfully, remove the
+.L cat
+directories and the
+.L nroff ed
+files.
+.LP
+Remember to move
+.L nroff
+back to
+.L Nroff !
+.UH S "The \&\fLwhatis\fP Database"
+.LP
+.L catman
+also builds the
+.L whatis
+database for
+.L "man -k" '' ``
+and
+.L apropos .
+If the 
+.SM NAME
+line of a man page is garbled, this will often show up in the
+first few lines of the database (an
+.SM ASCII
+file).  Be sure to edit the man pages that contain the errors,
+and run
+.L "catman -w" '. `
+again to verify your corrections.
+.NS NOTE
+Any high priority bugs that come in while the
+pages are at the printers, can be fixed in the
+source (the on-line pages), and a note inserted in
+the RTF to mention the discrepancy between the
+printed and on-line pages.  High priority means
+bugs that are reported by engineers as must fix.
+.NE

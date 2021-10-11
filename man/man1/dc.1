@@ -1,0 +1,222 @@
+.\" @(#)dc.1 1.1 92/07/30 SMI; 
+.TH DC 1 "23 September 1987"
+.SH NAME
+dc \- desk calculator
+.SH SYNOPSIS
+.B dc
+.RI [ " filename " ]
+.SH DESCRIPTION
+.IX "dc command"  ""  "\fLdc\fP \(em desk calculator"
+.IX "desk calculator"
+.IX calculator
+.B dc
+is an arbitrary precision arithmetic package.
+Ordinarily it operates on decimal integers,
+but an input base, output base,
+and a number of fractional digits to be maintained may
+be specified. The overall structure of
+.B dc
+is a stacking (reverse Polish) calculator.
+If an argument is given,
+input is taken from that file until its end, and
+then from the standard input.
+.LP
+Note:
+.BR bc (1)
+is a preprocessor for
+.B dc
+that provides infix (normal arithmetic) notation, a C-like syntax
+for functions, and reasonable control structures for programs.
+.LP
+The following input constructs are recognized:
+.LP
+.SS Commands
+.TP 10
+.I number
+Push a number onto the stack.
+A number is an unbroken string of the digits 0-9.
+It may be preceded by an underscore 
+.RB ` _ '
+to input a negative number, and may contain decimal points.
+.HP 10
++  \- /  *  %  ^
+.br
+The
+top two values on the stack are: added
+.RB ( + ),
+subtracted
+.RB ( \- ),
+multiplied
+.RB ( * ),
+divided
+.RB ( / ),
+remaindered
+.RB ( % ),
+or exponentiated
+.RB ( ^ ).
+The two entries are popped off the stack and
+the result is pushed in their place.
+Any fractional part of an exponent is ignored.
+.TP 10
+.BI s \|x
+Pop the top of the stack and store into
+a register named
+.I x,
+where
+.I x
+is any character.
+.TP
+.BI S \|x
+Treat
+.I x
+as a stack and push the value onto it.
+.TP
+.BI l \|x
+Push the value in register
+.I x
+onto the stack.
+The register
+.I x
+is not altered.
+All registers start with zero value.
+.TP
+.BI L x
+Treat register
+.I x
+as a stack, and pop its top value onto the main stack.
+.TP
+.B  d
+Duplicate the top value on the stack.
+.TP
+.B  p
+Print the top value on the stack.
+The top value remains unchanged.
+.TP
+.B P 
+Interpret the top of the stack as an
+.SM ASCII
+string, remove and print it.
+.TP
+.B  f
+Print all values on the stack and in registers.
+.TP
+.B  q
+Exit the program.
+If executing a string, pop the recursion level by two.
+.TP
+.B Q
+Pop the top value on the stack, and pop the
+string execution level by that value.
+.TP
+.B  x
+Treat the top element of the stack as a character string
+and execute it as a string of
+.B dc
+commands.
+.TP
+.B  X
+Replace the number on the top of the stack with its scale factor.
+.TP
+.BR  [ \|.\|.\|. \|]
+Put the bracketed 
+.SM ASCII
+string onto the top of the stack.
+.TP 
+.BI < x "  >" x "  =" \|x
+Pop and compare top two elements of the stack.
+Execute register
+.I x
+if they obey the stated relation.
+.TP
+.B  v
+Replace the top element on the stack by its square root.
+Any existing fractional part of the argument is taken
+into account, but otherwise the scale factor is ignored.
+.TP
+.B  !
+Interpret the rest of the line as a
+command.
+.TP
+.B  c
+Clear all values on the stack.
+.TP
+.B  i
+Pop the top value on the stack and use that value as the
+input radix.
+.TP
+.B I
+Push the input base on the top of the stack.
+.TP
+.B  o
+Pop the top value on the stack and use as the
+output radix.
+.TP
+.B O
+Push the output base on the top of the stack.
+.TP
+.B  k
+The top of the stack is popped, and that value is used as
+a non-negative scale factor:
+the appropriate number of places
+are printed on output,
+and maintained during multiplication, division, and exponentiation.
+The interaction of scale factor,
+input base, and output base will be reasonable if all are changed
+together.
+.TP
+.B  z
+Push the stack level onto the stack.
+.TP
+.B  Z
+Replace the number on the top of the stack with its length.
+.TP
+.B  ?
+Take a line of input from the input source (usually the terminal)
+and execute it.
+.TP
+.B "; :"
+Used by 
+.BR bc
+for array operations.
+.SH EXAMPLE
+.LP
+Print the first ten values of n!
+.RS
+.nf
+.ft B
+[\|la1\|+\|dsa\|*\|pla10\|>\|y\|]sy
+.br
+0sa1
+.br
+lyx
+.fi
+.ft B
+.RE
+.SH "SEE ALSO"
+.BR bc (1)
+.SH DIAGNOSTICS
+.PD 0
+.TP "\w'x is unimplemented +4n 'u"
+.B x is unimplemented
+Where x is an octal number.
+.TP
+.B stack empty
+For not enough elements on the stack to do what was asked.
+.TP
+.B Out of space
+When the free list is exhausted (too many digits).
+.TP
+.B Out of headers
+For too many numbers being kept around.
+.TP
+.B Out of pushdown
+For too many items on the stack.
+.TP
+.B Nesting Depth
+For too many levels of nested execution.
+.PD
+.SH BUGS
+.LP
+Base conversions on fractions are truncated
+to the number of fractional
+digits of the input value.  The values are not rounded.

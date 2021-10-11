@@ -1,0 +1,69 @@
+.\" @(#)ldrseek.3x 1.1 92/07/30 SMI; from SVID
+.TH LDRSEEK 3X "19 February 1988"
+.SH NAME
+ldrseek, ldnrseek \- seek to relocation entries of a section of a COFF file
+.SH SYNOPSIS
+.nf
+.ft B
+.ta \w'unsigned\ 'u +\w'short\ \ 'u
+#include <stdio.h>
+#include <filehdr.h>
+#include <ldfcn.h>
+.LP
+.ft B
+int ldrseek (ldptr, sectindx)
+\s-1LDFILE\s+1 \(**ldptr;
+unsigned short sectindx;
+.LP
+.ft B
+int ldnrseek (ldptr, sectname)
+\s-1LDFILE\s+1 \(**ldptr;
+char \(**sectname;
+.DT
+.fi
+.ft R
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldrseek()" "" "\fLldrseek()\fP function"
+.IX "ldnrseek()" "" "\fLldnrseek()\fP function"
+.LP
+.B ldrseek(\|)
+seeks to the relocation entries of the section specified by
+.I sectindx
+of the
+.SM COFF
+file currently associated with
+.IR ldptr .
+.LP
+.B ldnrseek(\|)
+seeks to the relocation entries of the section specified by
+.IR sectname .
+.LP
+.B ldrseek(\|)
+and
+.B ldnrseek(\|)
+.RB "return " \s-1SUCCESS\s+1 " or " \s-1FAILURE\s+1 .
+.B ldrseek(\|)
+will fail if 
+.I sectindx
+is greater than the number of sections in the object file;
+.B ldnrseek(\|)
+will fail if there is no section name corresponding with
+.IR sectname .
+Either function will fail if the specified section has no relocation entries or
+if it cannot seek to the specified 
+relocation entries.
+.LP
+Note: the first section has an index of
+.BR one .
+.LP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.SH "SEE ALSO"
+.BR ldclose (3X),
+.BR ldfcn (3),
+.BR ldopen (3X),
+.BR ldshread (3X)

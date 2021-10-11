@@ -1,0 +1,707 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)ctime.3v 1.1 92/07/30 SMI; from UCB 4.3
+.\" TODO
+.\" Find out which of these are supported by posix, s5, and which ones
+.\" on the way out.
+.TH CTIME 3V "5 October 1989"
+.SH NAME
+ctime, asctime, dysize, gmtime, localtime, strftime, strptime, timegm, timelocal, tzset, tzsetwall \- convert date and time
+.SH SYNOPSIS
+.nf
+.ft B
+#include <time.h>
+.ft R
+.fi
+.LP
+.ft B
+.nf
+char *ctime(clock)
+time_t *clock;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+char *asctime(tm)
+struct tm *tm;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+int dysize(y)
+int y;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+struct tm *gmtime(clock)
+time_t *clock;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+struct tm *localtime(clock)
+time_t *clock;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+int strftime(buf, bufsize, fmt, tm)
+char *buf;
+int bufsize;
+char *fmt;
+struct tm *tm;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+char *strptime(buf, fmt, tm)
+char *buf;
+char *fmt;
+struct tm *tm;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+time_t timegm(tm)
+struct tm *tm;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+time_t timelocal(tm)
+struct tm *tm;
+.ft R
+.fi
+.LP
+.ft B
+.nf
+void tzset(\|)
+.ft R
+.fi
+.LP
+.ft B
+.nf
+void tzsetwall(\|)
+.ft R
+.fi
+.SH SYSTEM V SYNOPSIS
+.LP
+In addition to the routines above, the following variables are available:
+.LP
+.B extern long timezone;
+.LP
+.B extern int daylight;
+.LP
+.B extern char *tzname[2];
+.SH DESCRIPTION
+.IX  "ctime()"  ""  "\fLctime()\fP \(em date and time conversion"
+.IX  "date and time conversion"  ctime()  ""  \fLctime()\fP
+.IX  "time and date conversion"  ctime()  ""  \fLctime()\fP
+.IX  "convert time and date"  ctime()  ""  \fLctime()\fP
+.LP
+.B ctime(\|)
+converts a long integer, pointed to by
+.IR clock ,
+to a 26-character string of the form produced by
+.BR asctime(\|) .
+It first breaks down
+.I clock
+to a
+.B tm
+structure by calling
+.BR localtime(\|) ,
+and then calls
+.B asctime(\|)
+to convert that
+.B tm
+structure to a string.
+.LP
+.IX  "asctime()"  ""  "\fLasctime()\fP \(em date and time conversion"
+.IX  "date and time conversion"  asctime()  ""  \fLasctime()\fP
+.IX  "time and date conversion"  asctime()  ""  \fLasctime()\fP
+.IX  "convert time and date"  asctime()  ""  \fLasctime()\fP
+.B asctime(\|)
+converts a time value contained in a
+.B tm
+structure to a 26-character string of
+the form:
+.IP
+.B Sun Sep 16 01:03:52 1973\en\e0
+.LP
+Each field has a constant width.
+.B asctime(\|)
+returns a pointer to the string.
+.LP
+.IX  "dysize()"  ""  "\fLdysize()\fP \(em date and time conversion"
+.IX  "date and time conversion"  dysize()  ""  \fLdysize()\fP
+.IX  "time and date conversion"  dysize()  ""  \fLdysize()\fP
+.IX  "convert time and date"  dysize()  ""  \fLdysize()\fP
+.B dysize(\|)
+returns the number of days in the argument year, either 365 or 366.
+.IX  "localtime()"  ""  "\fLlocaltime()\fP \(em date and time conversion"
+.IX  "date and time conversion"  localtime()  ""  \fLlocaltime()\fP
+.IX  "time and date conversion"  localtime()  ""  \fLlocaltime()\fP
+.IX  "convert time and date"  localtime()  ""  \fLlocaltime()\fP
+.IX  "gmtime()"  ""  "\fLgmtime()\fP \(em date and time conversion"
+.IX  "date and time conversion"  gmtime()  ""  \fLgmtime()\fP
+.IX  "time and date conversion"  gmtime()  ""  \fLgmtime()\fP
+.IX  "convert time and date"  gmtime()  ""  \fLgmtime()\fP
+.B localtime(\|)
+and
+.B gmtime(\|)
+return pointers to structures containing the time, broken down into
+various components of that time represented in a particular time zone.
+.B localtime(\|)
+breaks down a time specified by the value pointed to by the
+.I clock
+argument, correcting for the time zone and any
+time zone adjustments (such as Daylight Savings Time).
+Before doing so,
+.B localtime(\|)
+calls
+.B tzset(\|)
+(if
+.B tzset(\|)
+has not been called in the current process).
+.B gmtime(\|)
+breaks down a time specified by the value pointed to by the
+.I clock
+argument into
+.SM GMT\s0,
+which is the time
+the system uses.
+.LP
+.IX  "strftime function"  ""  "\fLstrftime()\fP \(em date and time conversion"
+.IX  "date and time conversion"  strftime()  ""  \fLstrftime()\fP
+.IX  "time and date conversion"  strftime()  ""  \fLstrftime()\fP
+.IX  "convert time and date"  strftime()  ""  \fLstrftime()\fP
+.B strftime(\|)
+converts a time value contained in the
+.B tm
+structure pointed to by
+.I tm
+to a character string in a format specified by
+.IR fmt .
+The character string is placed into the array pointed to by
+.IR buf ,
+which is assumed to contain room for at least
+.I buflen
+characters.
+If the result contains no more than
+.I buflen
+characters,
+.B strftime(\|)
+returns the number of characters produced (not including the terminating
+null character).
+Otherwise, it returns zero and the contents of the array are
+indeterminate.
+.I fmt
+is a character string that consists of field descriptors and text characters,
+reminiscent of
+.BR printf (3V).
+Each field descriptor consists of a
+.B %
+character followd by another character that specifies the replacement for the
+field descriptor.
+All other characters are copied from
+.I fmt
+into the result.
+The following field descriptors are supported:
+.RS
+.TP
+.B %%
+same as
+.B %
+.TP
+.B %a
+day of week, using locale's abbreviated weekday names
+.TP
+.B %A
+day of week, using locale's full weekday names
+.TP
+.B %b
+.PD 0
+.TP
+.B %h
+month, using locale's abbreviated month names
+.PD
+.TP
+.B %B
+month, using locale's full month names
+.TP
+.B %c
+date and time as %x %X
+.TP
+.B %C
+date and time, in locale's long-format date and time representation
+.TP
+.B %d
+day of month (01-31)
+.TP
+.B %D
+date as %m/%d/%y
+.TP
+.B %e
+day of month (1-31; single digits are preceded by a blank)
+.TP
+.B %H
+hour (00-23)
+.TP
+.B %I
+hour (00-12)
+.TP
+.B %j
+day number of year (001-366)
+.TP
+.B %k
+hour (0-23; single digits are preceded by a blank)
+.TP
+.B %l
+hour (1-12; single digits are preceded by a blank)
+.TP
+.B %m
+month number (01-12)
+.TP
+.B %M
+minute (00-59)
+.TP
+.B %n
+same as
+.B \en
+.TP
+.B %p
+locale's equivalent of
+.SM AM
+or
+.SM PM\s0,
+whichever is appropriate
+.TP
+.B %r
+time as %I:%M:%S %p
+.TP
+.B %R
+time as %H:%M
+.TP
+.B %S
+seconds (00-59)
+.TP
+.B %t
+same as
+.B \et
+.TP
+.B %T
+time as %H:%M:%S
+.TP
+.B %U
+week number of year (01-52), Sunday is the first day of the week
+.TP
+.B %w
+day of week; Sunday is day 0
+.TP
+.B %W
+week number of year (01-52), Monday is the first day of the week
+.TP
+.B %x
+date, using locale's date format
+.TP
+.B %X
+time, using locale's time format
+.TP
+.B %y
+year within century (00-99)
+.TP
+.B %Y
+year, including century (fore example, 1988)
+.TP
+.B %Z
+time zone abbreviation
+.RE
+.LP
+The difference between
+.B %U
+and
+.B %W
+lies in which day is counted as the first day of the week.
+Week number 01 is
+the first week with four or more January days in it.
+.LP
+.IX  "strptime function"  ""  "\fLstrptime()\fP \(em date and time conversion"
+.IX  "date and time conversion"  strptime()  ""  \fLstrptime()\fP
+.IX  "time and date conversion"  strptime()  ""  \fLstrptime()\fP
+.IX  "convert time and date"  strptime()  ""  \fLstrptime()\fP
+.B strptime(\|)
+converts the character string pointed to by
+.I buf
+to a time value, which is stored in the
+.B tm
+structure pointed to by
+.IR tm ,
+using the format specified by
+.IR fmt .
+A pointer to the character following the last character in the string pointed
+to by
+.I buf
+is returned.
+.I fmt
+is a character string that consists of field descriptors and text characters,
+reminiscent of
+.BR scanf (3v).
+Each field descriptor consists of a
+.B %
+character followd by another character that specifies the replacement for the
+field descriptor.
+All other characters are copied from
+.I fmt
+into the result.
+The following field descriptors are supported:
+.RS
+.TP
+.B %%
+same as
+.B %
+.TP
+.B %a
+.PD 0
+.TP
+.B %A
+day of week, using locale's weekday names; either the abbreviated or full name
+may be specified
+.PD
+.TP
+.B %b
+.PD 0
+.TP
+.B %B
+.TP
+.B %h
+month, using locale's month names; either the abbreviated or full name
+may be specified
+.PD
+.TP
+.B %c
+date and time as %x %X
+.TP
+.B %C
+date and time, in locale's long-format date and time representation
+.TP
+.B %d
+.PD 0
+.TP
+.B %e
+day of month (1-31; leading zeroes are permitted but not required)
+.PD
+.TP
+.B %D
+date as %m/%d/%y
+.TP
+.B %H
+.PD 0
+.TP
+.B %k
+hour (0-23; leading zeroes are permitted but not required)
+.PD
+.TP
+.B %I
+.PD 0
+.TP
+.B %l
+hour (0-12; leading zeroes are permitted but not required)
+.PD
+.TP
+.B %j
+day number of year (001-366)
+.\" XXX - this is stupid?
+.TP
+.B %m
+month number (1-12; leading zeroes are permitted but not required)
+.TP
+.B %M
+minute (0-59; leading zeroes are permitted but not required)
+.TP
+.B %p
+locale's equivalent of
+.SM AM
+or
+.SM PM
+.TP
+.B %r
+time as %I:%M:%S %p
+.TP
+.B %R
+time as %H:%M
+.TP
+.B %S
+seconds (0-59; leading zeroes are permitted but not required)
+.TP
+.B %T
+time as %H:%M:%S
+.TP
+.B %x
+date, using locale's date format
+.TP
+.B %X
+time, using locale's time format
+.TP
+.B %y
+year within century (0-99; leading zeroes are permitted but not required)
+.TP
+.B %Y
+year, including century (for example, 1988)
+.RE
+.LP
+Case is ignored when matching items such as month or weekday names.  The
+.BR %M ,
+.BR %S ,
+.BR %y ,
+and
+.B %Y
+fields are optional; if they would be matched by white space, the match is
+suppressed and the appropriate field of the
+.B tm
+structure pointed to by
+.I tm
+is left unchanged.
+If any of the format items
+.BR %d ,
+.BR %e ,
+.BR %H ,
+.BR %k ,
+.BR %I ,
+.BR %l ,
+.BR %m ,
+.BR %M ,
+.BR %S ,
+.BR %y ,
+or
+.B %Y
+are matched, but the string that matches them is followed by white space, all
+subsequent items in the format string are skipped up to white space or the end
+of the format.
+The net result is that, for example, the format
+.B %m/%d/%y
+can be matched by the string
+.BR 12/31 ;
+the
+.B tm_mon
+and
+.B tm_mday
+fields of the
+.B tm
+structure pointed to by
+.I tm
+will be set to 11 and 31, respectively, while the
+.B tm_year
+field will be unchanged.
+.LP
+.IX  "timelocal function"  ""  "\fLtimelocal()\fP \(em date and time conversion"
+.IX  "date and time conversion"  timelocal()  ""  \fLtimelocal()\fP
+.IX  "time and date conversion"  timelocal()  ""  \fLtimelocal()\fP
+.IX  "convert time and date"  timelocal()  ""  \fLtimelocal()\fP
+.IX  "timegm function"  ""  "\fLtimegm()\fP \(em date and time conversion"
+.IX  "date and time conversion"  timegm()  ""  \fLtimegm()\fP
+.IX  "time and date conversion"  timegm()  ""  \fLtimegm()\fP
+.IX  "convert time and date"  timegm()  ""  \fLtimegm()\fP
+.B timelocal(\|)
+and
+.B timegm(\|)
+convert the time specified by the value pointed to by the
+.I tm
+argument to a time value that represents that
+time expressed as the number of seconds since Jan. 1, 1970, 00:00,
+Greenwich Mean Time.
+.B timelocal(\|)
+converts a
+.B tm
+structure that represents local time,
+correcting for the time zone and any time zone adjustments (such
+as Daylight Savings Time).
+Before doing so,
+.B timelocal(\|)
+calls
+.B tzset(\|)
+(if
+.B tzset(\|)
+has not been called in the current process).
+.B timegm(\|)
+converts a
+.B tm
+structure that represents
+.SM GMT\s0.
+.LP
+.IX  "tzset function"  ""  "\fLtzset()\fP \(em date and time conversion"
+.IX  "date and time conversion"  tzset()  ""  \fLtzset()\fP
+.IX  "time and date conversion"  tzset()  ""  \fLtzset()\fP
+.IX  "convert time and date"  tzset()  ""  \fLtzset()\fP
+.B tzset(\|)
+uses the value of the environment variable
+.SM TZ
+to set time conversion information used by
+.BR localtime(\|) .
+If
+.SM TZ
+is absent from the environment,
+the an available approximation to local wall clock time is used by
+.BR localtime(\|) .
+If
+.SM TZ
+appears in the environment but its value is a
+null
+string, Greenwich Mean Time is used; if
+.SM TZ
+appears and begins with a slash,
+it is used as the absolute pathname of the
+.I tzfile-format
+(see
+.BR tzfile (5))
+file from which to read the time conversion information;
+if
+.SM TZ
+appears and
+begins with a character other than a slash,
+it is used as a pathname relative to a system time conversion information
+directory.
+.LP
+.IX  "tzsetwall function"  ""  "\fLtzsetwall()\fP \(em date and time conversion"
+.IX  "date and time conversion"  tzsetwall()  ""  \fLtzsetwall()\fP
+.IX  "time and date conversion"  tzsetwall()  ""  \fLtzsetwall()\fP
+.IX  "convert time and date"  tzsetwall()  ""  \fLtzsetwall()\fP
+.B tzsetwall(\|)
+sets things up so that
+.B localtime(\|)
+returns the best available approximation of local wall clock time.
+.LP
+Declarations of all the functions and externals, and the
+.B tm
+structure,
+are in the
+.B <time.h>
+header file.
+The structure (of type)
+.B tm
+structure includes the following fields:
+.LP
+.RS
+.nf
+.ft B
+.ta .5i +\w'long tm_gmtoff;\0\0'u
+	int tm_sec;		/\(** seconds (0 - 59) \(**/
+	int tm_min;		/\(** minutes (0 - 59) \(**/
+	int tm_hour;		/\(** hours (0 - 23) \(**/
+	int tm_mday;		/\(** day of month (1 - 31) \(**/
+	int tm_mon;		/\(** month of year (0 - 11) \(**/
+	int tm_year;		/\(** year \- 1900 \(**/
+	int tm_wday;		/\(** day of week (Sunday = 0) \(**/
+	int tm_yday;		/\(** day of year (0 - 365) \(**/
+	int tm_isdst;		/\(** 1 if DST in effect \(**/
+	char \(**tm_zone;	/\(** abbreviation of timezone name \(**/
+	long tm_gmtoff;	/\(** offset from GMT in seconds \(**/
+.ft R
+.fi
+.RE
+.LP
+.B tm_isdst
+is non-zero if Daylight Savings Time is in effect.
+.B tm_zone
+points to a string that is the name used for the local time zone at
+the time being converted.
+.B tm_gmtoff
+is the offset (in seconds) of the time represented
+from
+.SM GMT\s0,
+with positive values indicating East
+of Greenwich.
+.SH SYSTEM V DESCRIPTION
+.LP
+The external
+.B long
+variable
+.B timezone
+contains the difference, in seconds, between
+.SM GMT
+and local standard time (in
+.SM PST\s0,
+.B timezone
+is 8\(**60\(**60).
+If this difference is not a constant,
+.B timezone
+will contain the value of the offset on January 1, 1970 at 00:00
+.SM GMT\s0.
+Since this is not necessarily the same as the value at some
+particular time, the time in question
+should be converted to a
+.B tm
+structure using
+.BR localtime(\|)
+and the
+.B tm_gmtoff
+field of that structure should be used.
+The external variable
+.B daylight
+is non-zero if and only if Daylight Savings Time would be in effect
+within the current time zone at some time; it does not indicate
+whether Daylight Savings Time is currently in effect.
+.br
+.ne 10
+.LP
+The external variable
+.B tzname
+is an array of two
+.B "char \(**"
+pointers.
+The first pointer points to a character string that is the name of the
+current time zone when Daylight Savings Time is not in effect; the second one,
+if Daylight Savings Time conversion should be applied, points to a character
+string that is the name of the current time zone when Daylight Savings Time
+is in effect.
+These strings are updated by
+.B localtime(\|)
+whenever a time is converted.
+If Daylight Savings Time is in effect
+at the time being converted, the second pointer is set to point to
+the name of the current time zone at that time, otherwise the first
+pointer is so set.
+.LP
+.BR timezone ,
+.BR daylight ,
+and
+.B tzname
+are retained for compatibility with existing programs.
+.SH FILES
+.PD 0
+.TP 30
+.B /usr/share/lib/zoneinfo
+standard time conversion information directory
+.TP
+.B /usr/share/lib/zoneinfo/localtime
+local time zone file
+.SH "SEE ALSO"
+.BR gettimeofday (2),
+.BR getenv (3V),
+.BR time (3V),
+.BR environ (5V),
+.BR tzfile (5)
+.SH BUGS
+.LP
+The return values point to static data,
+whose contents are overwritten by each call.
+The
+.B tm_zone
+field of a returned
+.B tm
+structure points to a static array of characters, which
+will also be overwritten at the next call
+(and by calls to
+.B tzset(\|)
+or
+.BR tzsetwall(\|) ).

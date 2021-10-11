@@ -1,0 +1,563 @@
+|*	@(#)diag.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*	
+|*		Copyright (c) 1989, Sun Microsystems, Inc.  All Rights Reserved.
+|*		Sun considers its source code as an unpublished, proprietary
+|*		trade secret, and it is available only under strict license
+|*		provisions.  This copyright notice is placed here only to protect
+|*		Sun in the event the source is deemed a published work.  Dissassembly,
+|*		decompilation, or other means of reducing the object code to human
+|*		readable form is prohibited by the license agreement under which
+|*		this code is provided to the user or company in possession of this
+|*		copy.
+|*	
+|*		RESTRICTED RIGHTS LEGEND: Use, duplication, or disclosure by the 
+|*		Government is subject to restrictions as set forth in subparagraph 
+|*		(c)(1)(ii) of the Rights in Technical Data and Computer Software 
+|*		clause at DFARS 52.227-7013 and in similar clauses in the FAR and 
+|*		NASA FAR Supplement.
+|*	
+|*	
+|*	
+|*		Microcode Routines used to support Diagnostics:
+|*
+|*
+routine l.diag0 001110010000
+|* Infinite loop
+	call .;			;				;		;
+routine c.regsel0 001001000001
+|* Set Reg RAM select to 000 and Hang
+	;			;				;		lptr;
+	hng;			;				;		lptr;
+	call idle1;		;				;		;
+routine l.diag1 001110010001
+|* Set Reg RAM select to 001; Hang after 2nd access
+	;			;				;		ptr1;
+	jclr clp idl2;		;				;		ptr1;
+routine c.regsel1 001001000011
+|* Set Reg RAM select to 001 and Hang
+	;			;				;		ptr1;
+	hng;			;				;		ptr1;
+	call idle1;		;				;		;
+routine l.diag2 001110010010
+|* Set Reg RAM select to 010; Hang after 2nd access
+	;			;				;		ptr2;
+	jclr clp idl2;		;				;		ptr2;
+routine c.regsel2 001001000101
+|* Set Reg RAM select to 010 and Hang
+	;			;				;		ptr2;
+	hng;			;				;		ptr2;
+	call idle1;		;				;		;
+routine l.diag3 001110010011
+|* Set Reg RAM select to 011; Hang after 2nd access
+	;			;				;		ptr3;
+	jclr clp idl2;		;				;		ptr3;
+routine c.regsel3 001001000111
+|* Set Reg RAM select to 011 and Hang
+	;			;				;		ptr3;
+	hng;			;				;		ptr3;
+	call idle1;		;				;		;
+routine l.diag4 001110010100
+|* Double Precision unimplemented instruction
+	call invalid2;		;				;		;
+routine c.regsel4 001001001001
+|* Set Reg RAM select to 100 and Hang
+	;			;				;		ptr4;
+	hng;			;				;		ptr4;
+	call idle1;		;				;		;
+routine c.regsel5 001001001011
+|* Set Reg RAM select to 101 and Hang
+	;			;				;		ptr5;
+	hng;			;				;		ptr5;
+	call idle1;		;				;		;
+routine c.regsel6 001001001101
+|* Set Reg RAM select to 110 and Hang
+	;			;				;		imm2;
+	hng;			;				;		imm2;
+	call idle1;		;				;		;
+routine c.regsel7 001001001111
+|* Set Reg RAM select to 111 and Hang
+	;			;				;		imm3;
+	hng;			;				;		imm3;
+	call idle1;		;				;		;
+|* Read D21 and D22 into read latch, by first moving to ptr1
+|* And then moving to temp register
+|* Will use Scratch 0 to write to the register
+routine l.diag8 001110011000
+	;			;				;		ptr5;	ptr5!0x700+0xDA
+	;			;				adtoreg;	rcsmsw ptr5;
+	;			;				;		;
+	;			;				regtotmp;	rcsmsw ptr5;
+	jclr clp idl2;		;				;		;
+	;			;				;		ptr5;	ptr5!0x700+0xDA
+	;			;				optoreg;	rcslsw ptr5;
+	;			;				;		;
+	;			;				regtotmp;	rcslsw ptr5;
+	hng;			;				;		;
+	call idle1;		;				;		;
+|*
+|*
+|*		Test Current User's Registers
+|*  This test is designed to test the data registers for the current
+|*  context.  The intent is to optimize speed while catching:
+|*  All hard data line errors.
+|*  All hard address line errors.
+|*  Any two registers in error and most other ram errors.
+|*
+|*  To catch ram bits in error two test values are used which are
+|*  complimentary.  The registers are filled with the two values
+|*  such that the hamming distance between two addresses of
+|*  registers with the same data is 2:  this should check all
+|*  address problems.  The registers are checked twice using
+|*  complementary data and performing the second check in reverse sequence
+|*  for sequence dependent errors.  The check is performed in different
+|*  ways on the different checks to catch more data errors (so
+|*  that we will catch errors in adjoining addresses even though the
+|*  address hamming distance is greater than one).  The check is
+|*  performed with a cumulative addition for speed's sake.
+|*
+|*  The data values are:
+|*     A: 0 100000...00 0000000....00000
+|*     B: 1 011111...11 1111111....11111
+|*  They are stored in the following order:
+|*     A, B, B, A, B, A, A, B, B, A, A, B, A, B, B, A
+|*
+|*  The checking summations are:
+|*     0 + 1 + 2 + 3 - 6 - 7 - 8 - 9 + A + B + 4 + 5 - C - D - E - F
+|*  and
+|*     F + E - D - C + 5 + 4 - B - A + 9 + 8 - 7 - 6 - 3 - 2 + 1 + 0
+|*		(Notice that you can add A, B, B, A, but if you add
+|*		B, A, A, B, an inexact will result)
+|*
+
+|*
+|*	Test Current User's Registers - DESTRUCTIVE
+|*
+|*  Enter with:
+|*	ptr1 pointing at element 0 (i.e. reg_1 = 0)
+|*
+routine c.tstreg.d 001001110010
+	;			;				;		;	lpreg!32
+	;			;				;		;	ptr5!c_dtest
+	call rdmovelp51;	;				;		ptr5;
+	call ctest;		;				;		ptr1;
+	call idle1;		;				;		;
+ctest:
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr1;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;	lpreg!4
+	;			dnop tioe tilsw;		;		;
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop;				;		;
+ctest.1:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw ;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.1;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.2:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.2;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.3:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.3;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.4:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.4;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.5:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.5;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.6:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.6;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!6
+ctest.7:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1+
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.7;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr5;		ptr5!c_dtestsolution1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	jne hang cstat;		dnop halt;			;		ptr1;
+	;			dnop halt;			;		ptr1;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr1;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop;				;		;		lpreg!4
+ctest.8:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.8;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.9:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.9;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.A:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.A;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.B:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.B;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.C:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.C;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!4
+ctest.D:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.D;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;		lpreg!6
+ctest.E:
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr1;		ptr1-
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr1;    lpreg-
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr1;
+	;			dnop tioe tilsw;		;		;		
+	jtierr hang cstat;	dnop tioe tilsw halt;		titotmp;	rcslsw;	
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	jloop ctest.E;		dnop;				;		;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr5;		ptr5!c_dtestsolution2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	jne hang cstat;		dnop halt;			;		;
+	rtn;			dnop;				;		;
+
+rdmovelp51:
+|* move registers at ptr5 to ptr1
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr1;		ptr5+
+	;			;				tmptoreg;	rcsmsw ptr1;	lpreg-
+	jloop rdmovelp51;	;				tmptoreg;	rcslsw ptr1;
+	rtn;			;				;		ptr5;		ptr1+
+routine l.diagimm2 001110011011
+|* Set Reg RAM select to 110; Hang after 2nd access
+	;			;				adtoti;		imm2;
+	jclr clp idl2;		;				adtoti;		imm2;
+	;			;				;		imm2;
+	hng;			;				;		imm2;
+	call idle1;		;				;		;
+routine l.diagimm3 001110011100
+|* Set Reg RAM select to 110; Hang after 2nd access
+	;			;				adtoti;		imm3;
+	jclr clp idl2;		;				adtoti;		imm3;
+	;			;				;		imm3;
+	hng;			;				;		imm3;
+	call idle1;		;				;		;
+routine c.iadd 001110011001
+deyong:
+        ;                       i2add enrb halt;                regtoti;        rcssp imm2;
+        ;                       i2add;                       	;               ptr3;
+        ;                       i2add enra halt;                regtoti;        rcssp ptr3;
+        call csafin;            halt;                           regtotmp;       rcssp ptr1;
+routine c.imult 001110011010
+        ;                       imul enrb halt;                regtoti;        rcssp imm2;
+        ;                       imul;				;               ptr3;
+        ;                       imul enra halt;                 regtoti;        rcssp ptr3;
+        call csafin;            halt;                           regtotmp;       rcssp ptr1;
+routine c.tstlpreg 001001011010
+|* Test the loop counter
+	;			;				;		;		lpreg!0xfff
+test.pt.a:
+	hng;			;				;		;
+	;			;				;		;		lpreg-
+	jloop test.pt.a;	;				;		;
+	;			;				;		;
+	jloop0 test.pt.b;	;				;		;
+	;			;				;		;
+	hng;			;				;		;
+test.pt.b:
+	hng;			;				;		;
+	call idle1;		;				;		;
+|*
+|*   Test Current User's Registers =  NON-DESTRUCTIVE
+|*
+routine c.tstreg.n 001001110011
+	;			;				;		;	lpreg!32
+	;			;				;		;	ptr5!c_dSCRATCH_0
+	call rdmovelp15;	;				;		ptr5;
+	;			;				;		;	lpreg!32
+	;			;				;		;	ptr5!c_dtest
+	call rdmovelp51;	;				;		ptr5;
+	call ctest;		;				;		;
+	;			;				;		;	lpreg!32
+	;			;				;		;	ptr5!c_dSCRATCH_0
+	call rdmovelp51;	;				;		ptr5;
+	call idle1;		;				;		;
+rdmovelp15:
+|* move registers at ptr1 to ptr5
+	;			;				regtotmp;	rcsmsw ptr1;
+	;			;				regtotmp;	rcslsw ptr1;
+	;			;				;		ptr5;		ptr1+
+	;			;				tmptoreg;	rcsmsw ptr5;	lpreg-
+	jloop rdmovelp15;	;				tmptoreg;	rcslsw ptr5;
+	rtn;			;				;		ptr5;		ptr5+
+routine c.jmpt 001110011101
+|* Jump condition test
+	jmp checkall;		;				;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkall:
+|* Tests for =:
+	;			;				;		ptr5;	ptr5!sone
+	;			scmp enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	jeq checkeq1;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkeq1:
+	jle checkeq2;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkeq2:
+	jge checkeq3;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkeq3:
+	jne faileq4;		scmp halt;			;		;
+	;			;				;		;
+	jgt faileq5;		scmp halt;			;		;
+	;			;				;		;
+	jlt faileq6;		scmp halt;			;		;
+	;			;				;		ptr5;	ptr5!smone
+|* Now, test for Greater Than
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		;
+	jgt checkgt1;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkgt1:
+	jge checkgt2;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkgt2:
+	jne checkgt3;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkgt3:
+	jeq failgt4;		scmp halt;			;		;
+	;			;				;		;
+	jlt failgt5;		scmp halt;			;		;
+	;			;				;		;
+	jle failgt6;		scmp halt;			;		;
+	;			;				;		ptr5;	ptr5!stwo
+|* Now, test for Less Than
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		;
+	jlt checklt1;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checklt1:
+	jle checklt2;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checklt2:
+	jne checklt3;		scmp halt;			;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checklt3:
+	jeq faillt4;		scmp halt;			;		;
+	;			;				;		;
+	jgt faillt5;		scmp halt;			;		;
+	;			;				;		;
+	jge faillt6;		scmp halt;			;		;
+	;			;				;		ptr5;	ptr5!stwo
+|* Now, test for tierror
+	;			sadd enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;   ptr5!sqnan
+	jnotierr checkerr1;	smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_ssin
+	hng;			;				;		;
+	call idle1;		;				;		;
+faileq4:
+	hng;			;				;		;
+	call idle1;		;				;		;
+faileq5:
+	hng;			;				;		;
+	call idle1;		;				;		;
+faileq6:
+	hng;			;				;		;
+	call idle1;		;				;		;
+failgt4:
+	hng;			;				;		;
+	call idle1;		;				;		;
+failgt5:
+	hng;			;				;		;
+	call idle1;		;				;		;
+failgt6:
+	hng;			;				;		;
+	call idle1;		;				;		;
+faillt4:
+	hng;			;				;		;
+	call idle1;		;				;		;
+faillt5:
+	hng;			;				;		;
+	call idle1;		;				;		;
+faillt6:
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkerr1:
+	jtierr checkerr2;	smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+checkerr2:
+	jnotierr jumpend;	halt;				;		;
+	;			;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+jumpend:
+	hng;			;				;		;
+	call idle1;		;				;		;
+routine l.diag5 001110010101	;				;		;
+|* Infinite in 2nd accessloop
+	jclr clp idl2;		;				;		;
+	call .;			;				;		;
+routine l.diag6 001110010110	;				;		;
+|* A long 2 access instruction:
+	jclr clp idl2;		;				;		;
+	;			;				;		;	lpreg!0xfff
+start:
+	;			;				;		;	lpreg-
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	jloop start;		;				;		;
+	;			;				;		;
+	call idle1;		;				;		;

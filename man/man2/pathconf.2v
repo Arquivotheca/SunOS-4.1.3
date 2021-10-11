@@ -1,0 +1,278 @@
+'\" t
+.\"  @(#)pathconf.2v 1.1 92/07/30 SMI; new for 4.1, POSIX
+.TH PATHCONF 2V "21 January 1990"
+.SH NAME
+pathconf, fpathconf \- query file system related limits and options
+.SH SYNOPSIS
+.nf
+.ft B
+#include <unistd.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+long pathconf(path, name)
+char *path;
+int name;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+long fpathconf(fd, name)
+int fd, name;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "pathconf get" "" "\fLpathconf()\fP \(em query file system related limits and options" ""
+.IX "fpathconf get" "" "\fLfpathconf()\fP \(em query file system related limits and options" ""
+.IX path "query file system related limits and options"
+.IX configure "query file system related limits and options"
+.LP
+.B pathconf(\|)
+and
+.B fpathconf(\|)
+provide a
+method for the application to determine the current value of a
+configurable limit or option that is associated with a file
+or directory,
+.LP
+For 
+.BR pathconf(\|) ,
+.I path
+points to the pathname of a file or
+directory.
+For 
+.BR fpathconf(\|) ,
+.I fd 
+is an open file descriptor.
+.LP
+The convention used throughout sections 2 and 3
+is that
+.SM {LIMIT}
+means that
+.SM LIMIT
+is something that
+can change from file to file (due to multiple file systems on the same 
+machine). The actual value for
+.SM LIMIT is typically 
+not defined in any header file since
+it is not invariant.  Instead, pathconf must be called to retrieve the value.
+.B pathconf(\|)
+understands a list of flags that are named similarly to the value
+being queried.  
+.LP
+The following table lists the name and meaning of each conceptual limit.
+.LP
+.RS
+.TS
+lI lI
+l l .
+Limit	Meaning	Notes
+_
+\s-1{LINK_MAX}\s0	Max links to an object.	1
+\s-1{MAX_CANON}\s0	Max tty input line size.	2
+\s-1{MAX_INPUT}\s0	Max packet a tty can accept at once.	2
+\s-1{NAME_MAX}\s0	Max filename length.	3,4
+\s-1{PATH_MAX}\s0	Max pathname length.	4,5
+\s-1{PIPE_BUF}\s0	Pipe buffer size.	6
+\s-1{_POSIX_CHOWN_RESTRICTED}\s0	T{
+If true only root can chown() files, 
+otherwise anyone may give away
+files.
+T}	7
+\s-1{_POSIX_NO_TRUNC}\s0	T{
+If false filenames > {NAME_MAX} are 
+truncated, otherwise an error.
+T}	3,4
+\s-1{_POSIX_VDISABLE}\s0	A char to use to disable tty special chars.	2
+.TE
+.RE
+.LP
+The following table lists the name of each limit, the flag
+passed to
+.B pathconf(\|)
+to retrieve the value of each variable, and some notes about usage.
+.LP
+.RS
+.TS
+lI lI lI
+l lB l .
+Limit	Pathconf Flag	Notes
+_
+\s-1{LINK_MAX}\s0	\s-1_PC_LINK_MAX\s0	1
+\s-1{MAX_CANON}\s0	\s-1_PC_MAX_CANON\s0	2
+\s-1{MAX_INPUT}\s0	\s-1_PC_MAX_INPUT\s0	2
+\s-1{NAME_MAX}\s0	\s-1_PC_NAME_MAX\s0	3,4
+\s-1{PATH_MAX}\s0	\s-1_PC_PATH_MAX\s0	4,5
+\s-1{PIPE_BUF}\s0	\s-1_PC_PIPE_BUF\s0	6
+\s-1{_POSIX_CHOWN_RESTRICTED}\s0	\s-1_PC_CHOWN_RESTRICTED\s0	7,8
+\s-1{_POSIX_NO_TRUNC}\s0	\s-1_PC_NO_TRUNC\s0	3,4,8
+\s-1{_POSIX_VDISABLE}\s0	\s-1_PC_VDISABLE\s0	2,8
+.TE
+.RE
+.LP
+.LP
+The following notes apply to the entries in the preceding table.
+.LP
+.TP
+1
+If
+.I path
+or
+.I fd
+refers to a directory, the value returned applies to the
+directory itself.
+.TP
+2
+The behavior is undefined if
+.I path
+or
+.I fd
+does not refer to a terminal file.
+.TP
+3
+If
+.I path
+or
+.I fd
+refers to a directory, the value returned applies to the
+file names within the directory.
+.TP
+4
+The behavior is undefined if
+.I path
+or 
+.I fd
+does not refer to a directory.
+.TP
+5
+If
+.I path
+or
+.I fd
+refers to a directory, the value returned is the maximum
+length of a relative pathname when the specified directory
+is the working directory.
+.TP
+6
+If
+.I path
+refers to a
+.SM FIFO\s0,
+or
+.I fd
+refers to a pipe of
+.SM FIFO\s-1,
+the value returned applies to the referenced object itself.
+If
+.I path
+or
+.I fd
+refers to a directory, the value returned applies to any
+.SM FIFO\s-1s
+that exist or can be created within the directory.
+If 
+.I path
+or
+.I fd
+refer to any other type of file, the behavior is undefined.
+.TP
+7
+If
+.I path
+or
+.I fd
+refer to a directory, the value returned applies
+to any files, other than directories, that
+exist or can be created within the directory.
+.TP
+8
+The option in question is a boolean; the return value is 0 or 1.
+.SH RETURN VALUES
+.LP
+On success,
+.B pathconf(\|)
+and
+.B fpathconf(\|)
+return
+the current
+variable value for the file or directory.
+On failure,
+they return
+\-1
+and set
+.B errno
+to indicate the error.
+.LP
+If the variable corresponding to
+.I name
+has no limit for the path or file
+descriptor,
+.B pathconf(\|)
+and 
+.B fpathconf(\|)
+return \-1 without changing
+.BR errno .
+.SH ERRORS
+.LP
+.B pathconf(\|)
+and
+.B fpathconf(\|)
+may set
+.B errno
+to:
+.TP 20
+.SM EINVAL
+The value of name is invalid.
+.LP
+For each of the following conditions,
+if the condition is detected,
+.B pathconf(\|)
+fails and sets
+.B errno
+to:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix.
+.TP
+.SM EINVAL
+The implementation does not support an association of the
+variable name with the specified file.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {POSIX_NO_TRUNC}
+is in effect.
+.TP
+.SM ENOENT
+The named file does not exist.
+.IP
+.I path 
+points to an empty string.
+.TP
+.SM ENOTDIR
+A component of the path prefix is not a directory.
+.LP
+For each of the following conditions,
+if the condition is detected,
+.B fpathconf(\|)
+fails and sets
+.B errno
+to:
+.TP 20
+.SM EBADF	
+The
+.I fd
+argument is not a valid file descriptor.
+.TP
+.SM EINVAL
+The implementation does not support an association of the
+variable name with the specified file.
+

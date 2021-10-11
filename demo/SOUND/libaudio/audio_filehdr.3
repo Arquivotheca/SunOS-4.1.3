@@ -1,0 +1,180 @@
+.\" @(#)audio_filehdr.3 1.1 92/07/30 SMI
+.ds Dc 7/30/92
+.TH AUDIO_FILEHDR 3 "\*(Dc" "" "Audio Library"
+.SH NAME
+audio_filehdr, 
+audio_isaudiofile,
+audio_read_filehdr,
+audio_decode_filehdr,
+audio_write_filehdr,
+audio_rewrite_filesize
+\- audio file header manipulation
+.SH DISCLAIMER
+.LP
+The manual pages, header files, and object library associated with
+.B /usr/demo/SOUND/libaudio.a
+are furnished on an AS IS basis as a preliminary interface to several
+useful audio data-processing capabilities.  A future release of the
+operating system may redefine the syntax or semantics of some of the
+functions described herein.
+.SH SYNOPSIS
+.nf
+.B #include <multimedia/libaudio.h>
+.LP
+.B int audio_isaudiofile(name)
+.B char *name;
+.LP
+.B int audio_read_filehdr(fd, hp, infop, ilen)
+.B int fd;
+.B Audio_hdr *hp;
+.B char *infop;
+.B unsigned ilen;
+.LP
+.B int audio_decode_filehdr(buf, hp, ilenp)
+.B unsigned char *buf;
+.B Audio_hdr *hp;
+.B unsigned *ilenp;
+.LP
+.B int audio_write_filehdr(fd, hp, infop, ilen)
+.B int fd;
+.B Audio_hdr *hp;
+.B char *infop;
+.B unsigned ilen;
+.LP
+.B int audio_rewrite_filesize(fd, size)
+.B int fd;
+.B unsigned size;
+.fi
+.SH DESCRIPTION
+Audio files contain a header that has a magic number (identifying
+the file as an audio file) and fields that describe
+the encoding format used to store the audio data.  Immediately following
+the header is a variable-length information field in which, for instance,
+.SM ASCII
+annotation may be stored.
+.LP
+The
+.B Audio_hdr
+structure used by many of the
+.B libaudio
+routines for describing audio data is not an exact duplicate of the
+audio file header.  Several routines are provided to read and write file
+headers so that programs need not be concerned with the details
+of the exact file header structure.
+.LP
+.B audio_isaudiofile(\|)
+returns
+.SM TRUE
+if the named file appears to be an audio file,
+.SM FALSE
+otherwise.  Note that only a limited degree of file header consistency
+checking is performed.  The
+.B audio_read_filehdr(\|)
+routine is somewhat more comprehensive in its tests.  However,
+.B audio_isaudiofile(\|)
+is often sufficient to determine whether or not a particular file is
+of any interest to an application.
+.LP
+.B audio_read_filehdr(\|)
+reads an audio file header from the given input stream, decoding its
+fields into the
+.B Audio_hdr
+structure whose address is given by
+.IR hp .
+If successful, the value
+.SB AUDIO_SUCCESS
+is returned and the current file position of the stream is updated to
+refer to the beginning of the audio data.
+.LP
+The
+.I data_size
+field of the returned
+.B Audio_hdr
+structure is set to the length, in bytes, of the audio data.  If this
+length is indeterminate (for instance, if the data is being read from a pipe),
+this field is set to the value
+.SB AUDIO_UNKNOWN_SIZE\s0\fP.
+.LP
+Note that the input file descriptor must not be set to a non-blocking i/o
+mode.  If non-blocking behavior is desired, it should be enabled after
+this routine returns.
+.LP
+The
+.I infop
+argument, if not
+.SM NULL\s0,
+specifies the address of a buffer, whose size is given by
+.IR ilen ,
+into which the information field of the audio file is copied.  The
+buffer is always returned
+.SM NULL\s0-terminated, even if it
+was not large enough to hold the entire file information field.
+.LP
+.B audio_decode_filehdr(\|)
+decodes a buffer presumed to contain an audio file header.
+Though ordinarily called only by
+.BR audio_read_filehdr(\|) ,
+this routine may be used in cases where an application wishes to
+read the information structure itself.  The
+.I buf
+argument specifies the address of the file header information to be
+decoded.
+The length of the information field is returned at the address given by the
+.I ilenp
+argument.
+.LP
+.B audio_write_filehdr(\|)
+encodes the given
+.B Audio_hdr
+structure into an audio file header and writes it to the output stream
+denoted by the
+.I fd
+argument.  If the
+.I infop
+argument is not
+.SM NULL\s0,
+it specifies the address of a buffer containing
+.I ilen
+bytes of file information that will be written immediately following the
+file header.  The information structure is always zero-padded so that the
+audio data begins on a double-word boundary.
+Note that the output file descriptor must not have been set to a
+non-blocking i/o mode.
+.LP
+.B audio_rewrite_filesize(\|)
+attempts to rewrite the audio file header of the file specified by the
+.I fd
+argument, setting the data length to
+.IR size .
+If successful, the value
+.SB AUDIO_SUCCESS
+is returned.  If the specified file descriptor is incapable of backward seeks
+(e.g., if it refers to a pipe),
+.SB AUDIO_ERR_NOEFFECT
+is returned.
+.SH RETURN VALUE
+With the exception of
+.BR audio_isaudiofile(\|) ,
+these routines return
+.SB AUDIO_SUCCESS
+on successful completion or, if unsuccessful, one of the following error codes:
+.TP 25
+.SM AUDIO_UNIXERROR
+An error occurred while executing a system library function.  The global
+value
+.I errno
+contains the error code.
+.TP
+.SM AUDIO_ERR_BADHDR
+The user-supplied
+.B Audio_hdr
+structure contains an inconsistency or invalid value.
+.TP
+.SM AUDIO_ERR_BADFILEHDR
+The audio file header contains an inconsistency.
+.TP
+.SM AUDIO_ERR_NOEFFECT
+The requested operation could not be performed.
+.SH SEE ALSO
+.BR audio_intro (3),
+.BR audio_hdr (3).

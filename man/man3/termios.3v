@@ -1,0 +1,568 @@
+'\" t
+.\" @(#)termios.3v 1.1 92/07/30 SMI; new for 4.1, POSIX
+.\"'\" ident	"@(#)svid_ba:ba_os/termios	1.20"
+.TH TERMIOS 3V "21 January 1990"
+.SH NAME
+termios, tcgetattr, tcsetattr, tcsendbreak, tcdrain, tcflush, tcflow, cfgetospeed, cfgetispeed, cfsetispeed, cfsetospeed \- get and set terminal attributes, line control, get and set baud rate, get and set terminal foreground process group ID
+.SH SYNOPSIS
+.nf
+.ft B
+#include <termios.h>
+#include <unistd.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int tcgetattr(fd, termios_p)
+int fd;
+struct termios *termios_p;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int tcsetattr(fd, optional_actions, termios_p)
+int fd;
+int optional_actions;
+struct termios *termios_p;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int tcsendbreak(fd, duration)
+int fd;
+int duration;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int tcdrain(fd)
+int fd;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int tcflush(fd, queue_selector)
+int fd;
+int queue_selector;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int tcflow(fd, action)
+int fd;
+int action;
+.ft
+.fi
+.LP
+.nf
+.ft B
+speed_t cfgetospeed(termios_p)
+struct termios *termios_p;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cfsetospeed(termios_p, speed)
+struct termios *termios_p;
+speed_t speed;
+.ft
+.fi
+.LP
+.nf
+.ft B
+speed_t cfgetispeed(termios_p)
+struct termios *termios_p;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cfsetispeed(termios_p, speed)
+struct termios *termios_p;
+speed_t speed;
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <termios.h>
+.ft
+.fi
+.SH DESCRIPTION
+.IX "termios terminal" "" "\fLtermios()\fR  \(em  terminal interface"
+.IX "tcgetattr()" "" "\fLtcgetattr()\fR  \(em  get terminal attributes"
+.IX "tcsetattr()" "" "\fLtcsetattr()\fR  \(em  set terminal attributes"
+.IX "tcsendbreak()" "" "\fLtcsendbreak()\fR  \(em  send break to terminal"
+.IX "tcdrain()" "" "\fLtcdrain()\fR  \(em  drain terminal I/O queues"
+.IX "tcflush()" "" "\fLtcflush()\fR  \(em  flush terminal I/O queues"
+.IX "tcflow()" "" "\fLtcflow()\fR  \(em  suspend transmission or reception of data"
+.IX "cfgetospeed()" "" "\fLcfgetospeed()\fR  \(em  get output baud rate"
+.IX "cfgetispeed()" "" "\fLcfgetispeed()\fR  \(em  get input baud rate"
+.IX "cfsetispeed()" "" "\fLcfsetispeed()\fR  \(em  set input baud rate"
+.IX "cfsetospeed()" "" "\fLcfsetospeed()\fR  \(em  set output baud rate"
+.LP
+The termios functions describe a general terminal interface that is
+provided to control asynchronous communications ports.
+A more detailed overview of the terminal interface can be found in
+.BR termio (4).
+That section also describes an
+.B ioctl(\|)
+interface 
+that can be used to access the same functionality.
+However, the function interface described here is the
+preferred user interface.
+.LP
+Many of the functions described here have a
+.I termios_p
+argument that is a pointer to a
+.B termios
+structure.
+This structure contains the following members:
+.br
+.ne 9
+.LP
+.ft B
+.ta .2i .55i 1.3i 1.8i 2.8i
+.nf
+		tcflag_t	c_iflag;		/* input modes */
+		tcflag_t	c_oflag;		/* output modes */
+		tcflag_t	c_cflag;		/* control modes */
+ 		tcflag_t	c_lflag;		/* local modes */
+		cc_t	c_cc[NCCS];	/* control chars */
+.fi
+.ft
+.LP
+These structure members are described in detail in
+.BR termio (4).
+.LP
+.B tcgetattr(\|)
+gets the parameters associated with the
+object referred by
+.I fd
+and stores them in the
+.B termios
+structure
+referenced by
+.IR termios_p .
+This function may be invoked from a background
+process; however, the terminal attributes may be subsequently changed by a
+foreground process.
+.LP
+.B tcsetattr(\|)
+sets the parameters associated with the
+terminal (unless support is required from the underlying hardware that is
+not available) from the
+.B termios
+structure
+referred to by
+.I termios_p
+as follows:
+.RS
+.TP 3
+\(bu
+If
+.I optional_actions
+is
+\s-1\fBTCSANOW\fP\s0, the change occurs immediately.
+.TP
+\(bu
+If
+.I optional_actions
+is
+\s-1\fBTCSADRAIN\fP\s0,
+the change occurs after all output
+written to
+.I fd
+has been transmitted.
+This function should be used 
+when changing parameters that affect output.
+.TP
+\(bu
+If
+.I optional_actions
+is
+\s-1\fBTCSAFLUSH\fP\s0,
+the change occurs after all output
+written to the object referred by
+.I fd
+has been transmitted, and all
+input that has been received but not read will be discarded before the change
+is made.
+.RE
+.LP
+The symbolic constants for the values of
+.I optional_actions
+are defined
+in
+.BR <sys/termios.h> .
+.LP
+If the terminal is using asynchronous serial data
+transmission,
+.B tcsendbreak(\|)
+transmits a continuous stream of zero-valued
+bits for a specific duration.
+If
+.I duration
+is zero, it transmits zero-valued bits for
+at least 0.25 seconds,
+and not more that 0.5 seconds.
+If
+.I duration
+is not zero, it sends zero-valued bits
+for
+.IB duration * N
+seconds,
+where
+.I N
+is at least 0.25, and not more than 0.5.
+.LP
+If the terminal is not using asynchronous serial data transmission,
+.B tcsendbreak(\|)
+returns without taking any action.
+.LP
+.B tcdrain(\|)
+waits until all output written to the object
+referred to by
+.I fd
+has been transmitted.
+.LP
+.B tcflush(\|)
+discards data written to the object
+referred to by
+.I fd
+but not transmitted, or data received but not
+read, depending on the value of
+.IR queue_selector :
+.LP
+.RS
+.TP 3
+\(bu
+If
+.I queue_selector
+is 
+.BR \s-1TCIFLUSH\s0,
+it flushes data received but not read.
+.TP
+\(bu
+If
+.I queue_selector
+is 
+.BR \s-1TCOFLUSH\s0,
+it flushes data written but not
+transmitted.
+.TP 3
+\(bu
+If
+.I queue_selector
+is 
+.BR \s-1TCIOFLUSH\s0,
+it flushes both data received but not
+read, and data written but not transmitted.
+.RE
+.LP
+The symbolic constants for the values of
+.I queue_selector
+and
+.I action
+are defined in
+.BR termios.h .
+.LP
+The default on open of a terminal file is that neither
+its input nor its output is suspended.
+.LP
+.B tcflow(\|)
+suspends transmission or reception of data on the
+object referred to by
+.IR fd ,
+depending on the value of
+.IR actions :
+.LP
+.RS
+.TP 3
+\(bu
+If action is
+.BR \s-1TCOOFF\s0,
+it suspends output.
+.TP
+\(bu
+If action is 
+.BR \s-1TCOON\s0,
+it restarts suspended output.
+.TP
+\(bu
+If action is 
+.BR \s-1TCIOFF\s0,
+the system transmits a
+.SM STOP
+character, which stops the terminal device from
+transmitting data to the system.
+(See
+.BR termio (4).)
+.TP
+\(bu
+If action is 
+.BR \s-1TCION\s0,
+the system transmits a
+.SM START
+character, which starts the terminal device transmitting data to the
+system.
+(See
+.BR termio (4).)
+.RE
+.LP
+The baud rate functions are provided for getting and setting the values
+of the input and output baud rates in the
+.B termios
+structure.
+The effects
+on the terminal device described below do not become effective until
+.B tcsetattr(\|)
+is successfully called.
+.LP
+The input and output baud rates are stored in the
+.B termios
+structure.
+The values shown in the table are supported.
+The names in this table
+are defined in
+.B termios.h
+.\" === troff version ===
+.br
+.ne 5
+.if n .ig IG
+.TS
+center, tab(:) ;
+cb cb cb cb cb
+lfB r r lfB r .
+Name:Description::Name:Description
+_
+B0:Hang up::B600:600 baud
+B50:50 baud::B1200:1200 baud
+B75:75 baud::B1800:1800 baud
+B110:110 baud::B2400:2400 baud
+B134:134.5 baud::B4800:4800 baud
+B150:150 baud::B9600:9600 baud
+B200:200 baud::B19200:19200 baud
+B300:300 baud::B38400:38400 baud
+.TE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.TS
+center, tab(:) ;
+cb cb cb cb cb
+lfB r r lfB r .
+Name:Description::Name:Description
+B0:Hang up::B600:600 baud
+B50:50 baud::B1200:1200 baud
+B75:75 baud::B1800:1800 baud
+B110:110 baud::B2400:2400 baud
+B134:134.5 baud::B4800:4800 baud
+B150:150 baud::B9600:9600 baud
+B200:200 baud::B19200:19200 baud
+B300:300 baud::B38400:38400 baud
+.TE
+.IG
+.\" === end nroff version ===
+.LP
+.B cfgetospeed(\|)
+returns the output baud rate stored in the
+.B termios
+structure pointed to by
+.IR termios_p .
+.LP
+.B cfsetospeed(\|)
+sets the output baud rate stored in the
+.B termios
+structure pointed to by
+.I termios_p
+to
+.IR speed .
+The zero baud rate,
+.BR B0 ,
+is used to terminate the connection.
+If
+.B B0
+is specified, the modem control lines shall no longer be
+asserted.
+Normally, this will disconnect the line.
+.LP
+If the input baud rate is set to zero,
+the input baud rate will be specified
+by the value of the output baud rate.
+.LP
+.B cfgetispeed(\|)
+returns the input baud rate stored in the
+.B termios
+structure.
+.LP
+.B cfsetispeed(\|)
+sets the input baud rate stored in the
+.B termios
+structure to
+.IR speed .
+.SH RETURN VALUES
+.LP
+.B cfgetispeed(\|)
+returns the input baud rate stored in the
+.B termios
+structure.
+.LP
+.B cfgetospeed(\|)
+returns the output baud rate stored in the
+.B termios
+structure.
+.LP
+.B cfsetispeed(\|)
+and
+.B cfsetospeed(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.LP
+All other functions
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+The
+.I fd
+argument is not a valid file descriptor.
+.TP
+.SM ENOTTY
+The file associated with
+.I fd
+is not a terminal.
+.LP
+.B tcsetattr(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+The
+.I optional_actions
+argument is not a proper value.
+.IP
+An attempt was made to change an attribute represented in the
+.B termios
+structure to an unsupported value.
+.LP
+.B tcsendbreak(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+The device does not support
+.BR tcsendbreak(\|) .
+.LP
+.B tcdrain(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINTR
+A signal interrupted
+.BR tcdrain(\|) .
+.TP
+.SM EINVAL
+The device does not support
+.BR tcdrain(\|) .
+.LP
+.B tcflush(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+The device does not support
+.BR tcflush(\|) .
+.IP
+The 
+.I queue_selector
+argument is not a proper value.
+.LP
+.B tcflow(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+The device does not support
+.BR tcflow(\|) .
+.IP
+The
+.I action
+argument is not a proper value.
+.LP
+.B tcsetattr(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EAGAIN
+There is insufficient memory available to copy in the arguments.
+.TP
+.SM EBADF
+.I fd
+is not a valid descriptor.
+.TP
+.SM EFAULT
+Some part of the structure pointed to by
+.I termios_p
+is outside the process's allocated address space.
+.TP
+.SM EINVAL
+.I optional_actions
+is not valid.
+.TP
+.SM EIO
+The calling process is a background process.
+.TP
+.SM ENOTTY
+.I fd
+does not refer to a terminal device.
+.TP
+.SM ENXIO
+The terminal referred to by
+.I fd
+is hung up.
+.LP
+.B cfsetispeed(\|)
+and
+.B cfsetospeed(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+.I speed
+is greater than B38400 or less than 0.
+.SH "SEE ALSO"
+.BR setpgid (2V),
+.BR setsid (2V),
+.BR termio (4)

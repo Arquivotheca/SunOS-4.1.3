@@ -1,0 +1,141 @@
+.\" @(#)netgroup.5 1.1 92/07/30 SMI
+.TH NETGROUP 5 "22 December 1987"
+.SH NAME
+netgroup \- list of network groups
+.SH DESCRIPTION
+.IX  "netgroup file"  ""  "\fLnetgroup\fP \(em network groups list"
+.LP
+.B netgroup
+defines network wide groups,
+used for permission checking when doing
+remote mounts, remote logins, and remote shells.
+For remote mounts, the information in
+.B netgroup
+is used to classify machines;
+for remote logins and remote shells,
+it is used to classify users.
+Each line of the
+.B netgroup
+file defines a group and has the format
+.IP
+.I groupname list-of-members
+.LP
+where
+.RI members
+is either another group name, or a triple:
+.IP
+.RI ( hostname ,
+.IR username ,
+.IR domainname )
+.LP
+Any of these three fields can be empty,
+in which case it signifies a wild card.
+Thus
+.IP
+.B universal (\|,\|,\|)
+.LP
+defines a group to which everyone belongs.
+.LP
+The
+.I domainname
+field must either be the local domain name or empty
+for the netgroup entry to be used.
+This field does
+.I not
+limit the netgroup or provide security.
+The
+.I domainname
+field refers to the domain in
+which the triple is valid, not the
+domain containing the trusted host.
+.LP
+A gateway machine should be listed under all possible hostnames by
+which it may be recognized:
+.IP
+.B wan (gateway,\|,\|) (gateway-ebb,\|,\|)
+.LP
+Field names that begin with something
+other than a letter, digit or underscore
+(such as
+.RB ` \- ')
+work in precisely the opposite fashion.
+For example, consider the following entries:
+.RS
+.nf
+.ft B
+justmachines	(analytica,\-,sun)
+justpeople	(\-,babbage,sun)
+.fi
+.ft R
+.RE
+.LP
+The machine
+.B analytica
+belongs to the group
+.B justmachines
+in the domain
+.BR sun ,
+but no users belong to it.
+Similarly, the user
+.B babbage
+belongs to the group
+.B justpeople
+in the domain
+.BR sun ,
+but no machines belong to it.
+.\" .LP
+.\" Network groups are contained in the Network Information Service
+.\" (NIS\s0),
+.\" and are accessed through these files:
+.\" .RS
+.\" .nf
+.\" .BI /var/yp/ domainname /netgroup.dir
+.\" .BI /var/yp/ domainname /netgroup.pag
+.\" .BI /var/yp/ domainname /netgroup.byuser.dir
+.\" .BI /var/yp/ domainname /netgroup.byuser.pag
+.\" .BI /var/yp/ domainname /netgroup.byhost.dir
+.\" .BI /var/yp/ domainname /netgroup.byhost.pag
+.\" .fi
+.\" .RE
+.\" .LP
+.\" These files can be created from
+.\" .B /etc/netgroup
+.\" using
+.\" .BR makedbm (8).
+.\".SH FILES
+.\".PD 0
+.\".TP 20
+.\" .BI /var/yp/ domainname /netgroup.dir
+.\" .TP
+.\" .BI /var/yp/ domainname /netgroup.pag
+.\" .TP
+.\" .BI /var/yp/ domainname /netgroup.byuser.dir
+.\" .TP
+.\" .BI /var/yp/ domainname /netgroup.byuser.pag
+.\" .TP
+.\" .BI /var/yp/ domainname /netgroup.byhost.dir
+.\" .TP
+.\" .BI /var/yp/ domainname /netgroup.byhost.pag
+.\".PD
+.IX  "trusted hosts list"  ""  "trusted hosts list \(em \fLhosts.equiv\fP"
+.SH "SEE ALSO"
+.BR getnetgrent (3N),
+.BR exports (5),
+.BR makedbm (8),
+.BR ypserv (8)
+.br
+.ne 5
+.SH WARNINGS
+.LP
+The triple,
+.BI (\|,\|,\| domain )\fR,
+allows all users and machines trusted access,
+and has the same effect as the triple,
+.B (\|,\|,\|).
+.LP
+To correctly restrict access to a specific set of members,
+use the
+.I hostname
+and
+.I username
+fields of the triple.

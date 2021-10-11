@@ -1,0 +1,110 @@
+.\" @(#)pod_getmaxpri.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH POD_GETMAXPRI 3L "6 October 1987"
+.SH NAME
+pod_getmaxpri, pod_getmaxsize, pod_setmaxpri \- control LWP scheduling priority
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int pod_getmaxpri(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int pod_getmaxsize(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int pod_setmaxpri(maxprio)
+int maxprio;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "pod_getmaxpri()" "" "\fLpod_getmaxpri()\fP \(em control LWP scheduling priority"
+.IX "pod_getmaxsize()" "" "\fLpod_getmaxsize()\fP \(em control LWP scheduling priority"
+.IX "pod_setmaxpri()" "" "\fLpod_setmaxpri()\fP \(em control LWP scheduling priority"
+.LP
+The 
+.SM LWP
+library is self-initializing:
+the first time  you use a primitive that
+requires threads to be supported,
+.I main
+is automatically converted into a thread.
+A pod will terminate when all client-created
+lightweight threads
+(including the thread bound to
+.IR main )
+are dead.
+.\" the nugget may create some helper threads that are killed automatically
+.LP
+By default, only a single priority
+.RB ( \s-1MINPRIO\s0 )
+is available.  However, by using
+.BR pod_setmaxpri(\|) ,
+you can make an arbitrary number
+(up to the limit imposed by the implementation)
+of priorities available.  The
+.I main
+thread will receive the highest available scheduling
+priority at the time of initialization.  By using
+.B pod_setmaxpri(\|)
+before any other 
+.SM LWP
+primitives, you
+can ensure that main will receive the
+same priority as the argument to
+.BR pod_setmaxpri(\|) .
+.B pod_setmaxpri(\|)
+can be called repeatedly, as long as the number of
+scheduling priorities
+.RI ( maxprio )
+increases with each call.
+.LP
+.B pod_getmaxpri(\|)
+returns the current number of available
+priorities.
+Priorities are numbered from 1
+.RB ( \s-1MINPRIO\s0 )
+to
+.BR \s-1MAXPRIO\s0 .
+.LP
+The implementation-dependent maximum
+number of priorities available
+can be retrieved using
+.BR pod_getmaxsize(\|) .
+This value will never be less than 255.
+.SH RETURN VALUES
+.LP
+.B pod_getmaxpri(\|)
+returns the number of priority levels set by the
+most recent call to
+.BR pod_setmaxpri(\|) .
+.LP
+.B pod_getmaxsize(\|)
+returns the maximum number of priorities
+your system supports.
+.LP
+.B pod_setmaxpri(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.SH ERRORS
+.LP
+.B pod_setmaxpri(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_INVALIDARG
+Attempt to allocate more priorities than supported.
+.TP
+.SM LE_NOROOM
+No internal memory left to create pod.

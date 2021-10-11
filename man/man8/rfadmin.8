@@ -1,0 +1,145 @@
+.\" @(#)rfadmin.8 1.1 92/07/30 SMI; from S5R3
+.TH RFADMIN 8 "30 June 1988"
+.SH NAME
+rfadmin \- RFS domain administration
+.SH SYNOPSIS
+.B rfadmin
+.br
+.B rfadmin
+.B \-p
+.br
+.B rfadmin
+.B \-a
+.I hostname
+.br
+.B rfadmin
+.B \-r
+.I hostname
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "rfadmin RFS" "" "\fLrfadmin\fP \(em \s-1RFS\s0 domain administration" ""
+.IX RFS "domain administration" "\s-1RFS\s0" "domain administration"
+.IX domain "RFS domain administration" "domain" "\s-1RFS\s0 domain administration"
+.IX administer "RFS domain" "administer" "\s-1RFS\s0 domain"
+.LP
+.B rfadmin
+is used to add and remove hosts and their associated
+authentication information from a
+.IB domain /passwd
+file on a Remote File Sharing
+(\s-1RFS\s0)
+primary domain name server.
+It is also used to transfer domain name server responsibilities
+from one machine to another.
+Used with no options,
+.B rfadmin
+returns the
+.I hostname
+of the current domain name server for the local domain.
+For each
+.IR domain ,
+.BI /usr/nserve/auth.info/ domain /passwd
+is created on the primary, and should be copied to all
+secondaries, and all hosts that want to do password
+verification of hosts in the
+.IR domain .
+.LP
+.B rfadmin
+can only be used to modify domain files on the
+primary domain name server
+.RB ( \-a
+and
+.B \-r
+options).
+If domain name server reponsibilities are temporarily
+passed to a secondary domain name server,
+that computer can use the
+.B \-p
+option to pass domain name server responsibility
+back to the primary.
+Any host can use
+.B rfadmin
+with no options
+to print information about the domain.
+The user must have
+.B root
+permissions to use the command.
+.LP
+Using
+.B rfadmin 
+with the
+.B \-a
+option, will result in an error if
+.I hostname
+is not unique in the domain.
+.LP
+Using 
+.B rfadmin
+with the
+.B \-r
+option, will send an error to the standard error
+if one of the following is true:
+.RS
+.TP 3
+\(bu
+.I hostname
+does not exist in the domain.
+.TP
+\(bu
+.I hostname
+is defined as a domain name server.
+.TP
+\(bu
+There are resources advertised by
+.IR hostname .
+.RE
+.LP
+When used with the
+.B \-p
+option, 
+.B rfadmin
+sends an error message to standard error,
+if there are no backup name servers defined for
+.IR domain .
+.SH OPTIONS
+.TP
+.B \-p
+Pass the domain name server responsibilities back to a primary
+or to a secondary name server.
+.TP 
+.BI \-a " hostname"
+Add a host to a domain that is served by this domain name server.
+.I hostname
+must be of the form
+.IR domain.nodename .
+Create an entry for
+.I hostname
+in the
+.IB domain /passwd
+file, which has the same format as
+.BR /etc/passwd ,
+and prompt for an initial authentication password;
+the password prompting process conforms with that of
+.BR passwd (1).
+.TP
+.BI \-r " hostname"
+Remove a host from its domain by removing it from the
+.IB domain /passwd
+file.
+.SH FILES
+.PD 0
+.TP 20
+.BI /usr/nserve/auth.info/ domain /passwd
+.PD
+.SH "SEE ALSO"
+.BR passwd (1),
+.BR mount (8),
+.BR rfstart (8),
+.BR rfstop (8)

@@ -1,0 +1,247 @@
+.\" @(#)orgrc.5	1.1 7/30/92 Copyright (c) 1988 Sun Microsystems, Inc.
+.TH ORGRC 5 "3 May 1989"
+.SH NAME
+orgrc \- organizer configuration and initialization file
+.SH AVAILABILITY
+.LP
+Sun386i systems only.
+.SH DESCRIPTION
+.IX "orgrc file"  ""  "\fLorgrc\fP \(em organizer file" ""
+.LP
+.BR organizer (1)
+is a SunView 1 application for viewing and manipulating files and
+directories.
+It saves its parameters in the
+.B \&.orgrc
+file between runs.
+The user can use this file to configure
+.BR organizer .
+.LP
+The first parameter in the file should always be the version number.
+.LP
+.RS
+.ft B
+.nf
+Version = 1.1
+.ft R
+.fi
+.RE
+.LP
+Change the version number only when necessary; if
+.B organizer
+determines that this version is \*(lqold\*(rq, then it will save this
+version in 
+.B ~/.orgrc.old 
+and try to copy 
+.B /usr/lib/Orgrc 
+into 
+.BR ~/.orgrc .
+.LP
+The next two parameters assign default names for the system
+.SM DOS 
+Program and the default text editor.
+.LP
+.RS
+.ft B
+.nf
+\s-1DOS\s0 Program = dos
+Text Editor = textedit
+.ft R
+.fi
+.RE
+.LP
+The
+.SM DOS
+Program
+parameter should not be changed. 
+However, the user can change the
+default text editor.
+For example:
+.LP
+.RS
+.ft B
+.nf
+Text Editor = shelltool vi
+.ft R
+.fi
+.RE
+.LP
+The Properties section initializes or customizes certain properties.  
+The possible values for each item are listed below. 
+The braces and vertical bars below indicate choices, they are not used in the
+.B \&.orgrc
+file.
+The
+.B Update Interval
+is in seconds.
+.LP
+.RS
+.ft B
+.nf
+#  Properties
+\s-1PROPERTY\s0 Display Style = {Name and Icon | Name Only | Name and Info}
+\s-1PROPERTY\s0 Roadmap = {Yes | No}
+\s-1PROPERTY\s0 Show Hidden Files = {Yes | No}
+\s-1PROPERTY\s0 Sort Type = {Name | File Type | Size | Date}
+\s-1PROPERTY\s0 Sort Direction = {Ascending | Descending}
+\s-1PROPERTY\s0 Update Interval = [5-300]
+.fi
+.ft R
+.RE
+.LP
+The Color Palette specifies all the color values used by
+.BR organizer 's
+buttons and icons.  These values must be 
+.SM RGB
+triplets.  It is listed
+below.
+.LP
+.RS
+.ft B
+.nf
+Begin Color Palette
+    Background Color = 255, 255, 255
+    Directory Name Color = 0, 146, 236
+    Directory Icon Foreground Color = 114, 45, 0
+    Directory Icon Background Color = 255, 227, 185
+    Directory Highlight Name Color = 255, 255, 255
+    Text Name Color = 0, 166, 143
+    Text Icon Foreground Color = 0, 0, 0
+    Text Icon Background Color = 255, 255, 255
+    Text Highlight Name Color = 255, 255, 255
+    Executable Name Color = 255, 0, 0
+    Executable Icon Foreground Color = 157, 162, 187
+    Executable Icon Background Color = 255, 255, 255
+    Executable Highlight Name Color = 255, 255, 255
+    Device Name Color = 113, 117, 135
+    Device Icon Foreground Color = 0, 0, 0
+    Device Icon Background Color = 174, 255, 159
+    Device Highlight Name Color = 255, 255, 255
+    Button Group1 Color = 255, 220, 187
+    Button Group2 Color = 201, 211, 232
+    Button Group3 Color = 255, 244, 113
+    Button Foreground Color = 0, 0, 0
+    Button Background Color = 255, 255, 255
+    Button Shadow Color = 180, 180, 184
+    Button Highlight Color = 0, 0, 0
+    Scrollbar Color = 142, 106, 146
+End Color Palette
+.ft R
+.fi
+.RE
+.LP
+The Color Labels
+section allows the labelling or \*(lqaliasing\*(rq of 
+.SM RGB
+triplets.  The
+right side of a label assignment can contain an 
+.SM RGB 
+triplet, a palette
+entry, or another label that has already been assigned.  Here's an
+example:
+.LP
+.RS
+.ft B
+.nf
+Begin Color Labels
+    Black = Text Icon Foreground Color
+    White = Background Color
+    Orange = 255, 213, 127
+    Dark Red = 232, 0, 0
+    Steel Blue = 114, 146, 161
+    Rasberry \fR(sic)\fP = 202, 140, 156
+    Dark Blue = 0, 75, 161
+    Light Gray = 223, 223, 223
+    Maroon = 182, 84, 106
+End Color Labels
+.ft R
+.fi
+.RE
+.LP
+The rest of the
+.B \&.orgrc
+file contains user defined file types.  The user can specify that certain
+files be grouped together and treated in a similar fashion.  That is,
+the same icon is used to display all files in a file type, and the same
+command is used when a file is opened or edited.  In the default
+.B \&.orgrc 
+(\fB/usr/lib/Orgrc\fP)
+there are ten user defined file types.  Here is an example of a user
+defined file type:
+.LP
+.RS
+.ft B
+.nf
+Begin File Type Definition
+    Name = *.c
+    Background Icon = /usr/include/images/cMask.icon
+    Foreground Icon = /usr/include/images/cStencil.icon
+    Name Color = Black
+    Icon Background Color = Orange
+    Icon Foreground Color = Black
+    Highlight Name Color = White
+    Execute Application = cmdtool vi "$(\s-1FILE\s0)"
+    Edit Application = cmdtool vi "$(\s-1FILE\s0)"
+    Print Application = pr -f "$(\s-1FILE\s0)" | lpr
+End File Type Definition
+.ft R
+.fi
+.RE
+.LP
+The right side of the
+.B Name
+field can contain any combination of
+.BR csh (1)
+.B Filename Substitution
+characters.  This field specifies the file type by way of its name.  The
+next six fields together specify an
+.B organizer
+icon.  This model allows a rich variety of icons.  For more
+information, see the
+.I Sun386i Advanced Skills
+manual.  The right side of the
+.B Execute Application
+entry specifies the command to execute when the user either opens or
+double clicks on a file of that type.  The
+.B Edit Application
+and
+.B Print Application
+entries specify the command to execute when the user requests that a file of
+that type be edited or printed.
+.SH FILES
+.PD 0
+.TP 20
+.B ~/.orgrc
+read at beginning of execution by the Organizer
+.TP
+.B /usr/lib/Orgrc
+default 
+.B \&.orgrc
+file
+.PD
+.br
+.ne 5
+.SH SEE ALSO
+.BR organizer (1) 
+.LP
+.I Sun386i User's Guide
+.br
+.I Sun386i Advanced Skills
+.SH LIMITATIONS
+.LP
+The right side of
+Color Palette
+entries must be 
+.SM RGB
+triplets.
+.LP
+Forward references for
+Color Labels
+are not allowed.
+.SH BUGS
+.LP
+.B organizer
+saves its parameters as it exits;
+unfortunately, it does not know how to save user's
+comments in the file.
+So, comments are blown away.

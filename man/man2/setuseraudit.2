@@ -1,0 +1,79 @@
+.\" @(#)setuseraudit.2 1.1 92/07/30 SMI;
+.TH SETUSERAUDIT 2 "21 January 1990"
+.SH NAME
+setuseraudit, setaudit \- set the audit classes for a specified user ID
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/label.h>
+#include <sys/audit.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setuseraudit(uid, state)
+int uid;
+audit_state_t *state;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setaudit(state)
+audit_state_t *state;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "setuseraudit()" "" "\fLsetuseraudit()\fR set audit class for user ID"
+.IX "setaudit()" "" "\fLsetuseraudit()\fR set audit class"
+.LP
+The
+.B setuseraudit(\|)
+system call sets the audit state for all processes whose audit user
+.SM ID
+matches the specified user
+.SM ID\s0.
+The parameter
+.I state
+specifies the audit classes to audit for both successful and unsuccessful
+operations.
+.LP
+The
+.B setaudit(\|)
+system call sets the audit state for the current process.
+.LP
+Only processes with the real or effective user
+.SM ID
+of the super-user may
+successfully execute these calls.
+.SH RETURN VALUES
+.B setuseraudit(\|)
+and
+.B setaudit(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+The
+.I state
+parameter points outside the processes' allocated address space.
+.\" Should "processes" be singular here?
+.TP
+.SM EPERM
+The process' real or effective user
+.SM ID
+is not super-user.
+.SH "SEE ALSO"
+.BR audit (2),
+.BR audit_args (3),
+.BR audit_control (5),
+.BR audit.log (5)

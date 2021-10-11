@@ -1,0 +1,122 @@
+.\" @(#)ipalloc.3r 1.1 92/07/30 SMI; from UCB 4.2
+.TH IPALLOC 3R "2 February 1988"
+.SH NAME
+ipalloc \- determine or temporarily allocate IP address
+.SH PROTOCOL
+.B /usr/include/rpcsvc/ipalloc.x
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ipalloc()" "" "\fLipalloc()\fP \(em IP address mapper"
+.IX "ipalloc()" "" "\fLipalloc()\fP \(em determine or temporarily allocate IP address"
+.IX "IP address mapping"
+.IX "IP address allocation"
+.LP
+.B ipalloc(\|)
+is the protocol for allocating the
+.SM IP
+address that a system should use.
+.SH PROGRAMMING
+.LP
+.B #include <rpcsvc/ipalloc.h>
+.LP
+The following
+.SM RPC
+calls are available in version 2 of this protocol:
+.TP
+.SB NULLPROC
+This is a standard null entry, used to ping a service to measure overhead or
+to discover servers.
+.TP
+.SB IP_ALLOC
+Returns an
+.SM IP
+address corresponding to a given Ethernet address, if
+possible.
+This
+.SM RPC
+must be called using
+.SM DES
+authentication, from a client
+authorized to allocate
+.SM IP
+addresses.
+A cache of allocated addresses is maintained.
+.IP
+The first action taken on receipt of this
+.SM RPC
+is to verify that no existing
+mapping between the 
+.I etheraddr 
+and the 
+.I netnum 
+exists in the
+Network Information Service
+(\s-1NIS\s0)
+database.
+If one is found, then that is returned. 
+Otherwise, an internal
+cache is checked, and
+if an entry is found there for the given 
+.I etheraddr 
+on the right network, that
+entry is used.
+If no address was found either in the 
+.SM NIS
+database or
+in the cache, a new one may be allocated and returned, and the
+.I ip_success
+status is returned.
+.IP
+If an unusable entry was found in the cache, this
+.SM RPC
+returns
+.B ip_failure
+status.
+.TP
+.B IP_TONAME
+Used to determine whether a given
+.SM IP
+address is known to the
+.SM NIS
+service, since
+.SM NIS
+allows a delay between the posting of 
+an address and its availability in some locations on the network.
+.TP
+.B IP_FREE
+This
+.SM RPC
+is used to delete 
+.I ipaddr
+entries from the cache when they are no longer needed
+there.
+It requires the same protections as the
+.SB IP_ALLOC
+.SM RPC\s0.
+.\"The following
+.\".SM XDR
+.\"routines are available in
+.\".BR librpcsvc :
+.\".nf
+.\".ft B
+.\"xdr_ip_status
+.\"xdr_ip_alloc_arg
+.\"xdr_ip_alloc_res
+.\"xdr_ip_addr_arg
+.\"xdr_ip_toname_res
+.\".ft R
+.\".fi
+.SH SEE ALSO
+.BR ipallocd (8C),
+.BR pnpboot (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

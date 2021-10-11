@@ -1,0 +1,224 @@
+.\" @(#)cpio.1 1.1 92/07/30 SMI; from S5R2 6.3 83/09/02
+.TH CPIO 1 "6 September 1988"
+.SH NAME
+cpio \- copy file archives in and out
+.SH SYNOPSIS
+.B "cpio \-o"
+[ 
+.B aBcv 
+]
+.br
+.B "cpio \-i"
+[ 
+.B bBcdfmrsStuv6 
+]  
+[ 
+.I patterns
+]
+.br
+.B "cpio \-p"
+[ 
+.B adlmuv
+]  
+.I directory
+.SH DESCRIPTION
+.IX  cpio  ""  "\fLcpio\fP \(em copy archives"
+.IX  files  "cpio command"  files  "\fLcpio\fP \(em copy archives"
+.IX  archive  "cpio command"  "" "\fLcpio\fP \(em copy archive"
+.IX  copy  archives
+.B cpio
+copies files in to and out from a 
+.B cpio 
+copy archive.  The archive (built by
+.RB ` "cpio \-o" ')
+contains pathname and status information, along with the
+contents of one or more archived files.
+.SH OPTIONS
+.TP
+.B \-o
+Copy out an archive.  Read the standard input for a list of 
+pathnames, then copy the named files to the standard
+output in archive form \(em including pathname and status
+information.
+.RS
+.TP
+.B a
+Reset the access times of input files after they have been copied.
+.TP
+.B B
+Output is to be blocked at 5120 bytes to the record.  This does
+not apply to the 
+.I pass
+option.  This option is only meaningful with data directed to
+raw magnetic devices, such as
+.RB ` "/dev/rmt\fI?" '.
+.TP
+.B c
+Write
+.I header
+information in
+.SM ASCII
+character form for portability.
+.TP
+.B v
+Verbose. A list of filenames is displayed.  When used with the 
+.B t
+option, the table of contents looks like the output of an 
+.RB ` "ls \-l" '
+command (see
+.BR ls (1V)).
+.RE
+.TP
+.B \-i
+Copy in an archive.  Read in an archive from the standard input
+and extract files with names matching filename substitution
+.IR patterns ,
+supplied as arguments.
+.IP
+.I patterns
+are similar to those in
+.BR sh (1)
+or
+.BR csh (1),
+save that
+within
+.BR cpio , 
+the metacharacters 
+.RB ` ? ', 
+.RB ` * '
+and
+.RB ` "[ " .\|.\|.\| " ]" ' 
+also match the
+.RB ` / '
+(slash) 
+character.  If no
+.I patterns
+are specified, the default is 
+.B * 
+(select all files).
+.RS
+.TP
+.B b
+Swap both bytes and half-words after reading in data.
+.TP
+.B B
+Input is to be blocked at 5120 bytes to the record.  This does
+not apply to the 
+.I pass
+option.  This option is only meaningful with data received from
+raw magnetic devices, such as
+.RB ` "/dev/rmt\fI?" '.
+.TP
+.B d
+Create directories as needed.
+.TP
+.B f
+Copy in all files except those matching
+.IR patterns .
+.TP
+.B m
+Retain previous file modification time.
+This option is ineffective on
+directories that are being copied.
+.TP
+.B r
+Interactively
+rename files.  If the user types a null line, the file is skipped.
+May not be used with the
+.B \-p
+option.
+.TP
+.B s
+Swap bytes after reading in data.
+.TP
+.B S
+Swap halfwords after reading in data.
+.TP
+.B t
+Print a table of contents
+of the input archive.  No files are created.
+.TP
+.B u
+Copy unconditionally.
+Normally, an older file will not replace a newer file with the same 
+name.
+.TP
+.B 6
+Process
+.SM UNIX 
+Version-6 files.  
+.RE
+.TP
+.B \-p
+One pass.  Copy in and out in a single operation.  Destination 
+pathnames are interpreted relative to the named
+.IR directory .
+.RS
+.TP
+.B l
+Whenever possible, link files rather than copying them.  
+.RE
+.SH EXAMPLES
+.LP
+To copy the contents of a directory into an archive:
+.IP
+.B "example% ls | cpio \-o > /dev/mt0"
+.LP
+To read a cpio archive from a tape drive:
+.IP
+.B "example% cpio -icdB < /dev/rmt0"
+.LP
+To duplicate the 
+.B olddir
+directory hierarchy in the
+.B newdir
+directory:
+.RS
+.nf
+.ft B
+example% cd olddir
+example% find . \-depth \-print | cpio \-pdl newdir
+.fi
+.ft R
+.RE
+.LP
+The trivial case
+.RS
+.nf
+.ft B
+example% find \|.\| \-depth \-print \|\(bv \|cpio \|\-oB \|>/dev/rmt0
+.fi
+.ft R
+.RE
+.LP
+can be handled more efficiently by:
+.IP
+.B "example% find \|.\| \-cpio \|/dev/rmt/0m"
+.LP
+.B cpio
+archive tapes from other sites may have bytes swapped
+within the archive.  Although the
+.B \-is
+option only 
+swaps the data bytes and not those in the header
+.B cpio
+recognizes tapes like this and swaps the bytes in the header
+automatically.
+.SH "SEE ALSO"
+.BR ar (1V),
+.BR csh (1),
+.BR find (1),
+.BR ls (1V),
+.BR sh (1),
+.BR tar (1),
+.BR cpio (5)
+.SH BUGS
+.LP
+.B cpio
+does not support multiple volume tapes.
+.LP
+Pathnames are restricted to 128 characters.  If there are too many
+unique linked files, 
+.B cpio
+runs out of memory and linking information is lost
+thereafter.  Only the super-user can copy special files.

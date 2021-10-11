@@ -1,0 +1,236 @@
+'\" t
+.\" @(#)unconfigure.8 1.1 92/07/30 SMI;
+.TH UNCONFIGURE 8 "24 February 1988"
+.SH NAME
+unconfigure \- reset the network configuration for a Sun386i system
+.SH SYNOPSIS 
+.B /usr/etc/unconfigure
+[
+.B \-y
+]
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "unconfigure command" "" "\fLunconfigure\fP command"
+.LP
+.B unconfigure
+restores most of the system configuration and status
+files to the state they were in when delivered by
+Sun Microsystems, Inc.
+It also deletes all user accounts (including home directories),
+Network Information Service
+(\s-1NIS\s0)
+information, and any
+diskless client configurations that were set up.
+.LP
+After running
+.B unconfigure,
+a system halts.
+Rebooting it to multi-user mode at this point will
+start automatic system installation.
+.LP
+.B unconfigure
+is intended for use in the following situations:
+.TP 3
+\(bu
+As one of the final steps in Software Manufacturing.
+.TP
+\(bu
+In systems being set up with temporary configurations,
+holding no user accounts or diskless clients.
+These will occur during demonstrations and
+evaluation trials.
+.TP
+\(bu
+To allow systems that had been used as standalones
+to be upgraded to join a network in a role other than
+as a master server.  (See instructions later.)
+.LP
+.B unconfigure
+is potentially a dangerous utility; it does not work
+unless invoked by the super-user.
+As a warning, unless the
+.B \-y
+option is passed, it will require confirmation that all
+user files and system software configuration information
+is to be deleted.
+.LP
+This utility is
+.I not
+recommended for routine use of any sort.
+.SS "Resetting Temporary Configurations"
+If users need to set up and tear down configurations,
+.B unconfigure
+can be used to restore the system to an essentially
+as-manufactured state.
+The main concern here is that user accounts will be deleted,
+so this should not be done casually.
+.LP
+To reset a temporary configuration, just become the super-user
+and invoke
+.B unconfigure.
+.SS "Upgrading Standalones to Network Clients"
+Systems that are going to be networked should be networked from
+the very first, if at all possible.
+This eliminates whole classes of compatibility problems, such as
+pathnames and (in particular) user account clashes.
+.LP
+Automatic system installation directly supports upgrading a single
+standalone system to an
+.SM NIS
+master, and joining any number of
+unused systems (or systems upon which
+.B unconfigure
+has been run) into a network.
+.LP
+However, in the situation where standalone systems that have
+been used extensively are
+to be joined to a network,
+.B unconfigure
+can be used in conjunction with automatic system installation
+by a knowledgeable super-user to change a system's
+configuration from standalone to network client.
+This procedure is not recommended for use by inexperienced
+administrators.
+.LP
+The following procedure is not needed unless user accounts or other data
+need to be preserved; it is intended to ensure that every
+.SM UID
+and
+.SM GID
+is changed so as not to clash with those in use on the network.
+It must be applied to each system that is being upgraded from a
+standalone to a network client.
+.LP
+The procedure is as follows:
+.TP 4
+\(bu
+Identify all accounts and files that you will want
+to save.  If there are none, just run
+.B unconfigure
+and install the system on the network.
+Do not follow the remaining steps.
+.TP
+\(bu
+Copy
+.B /etc/passwd
+to
+.BR /etc/passwd.bak .
+.br
+.ne 3
+.TP
+\(bu
+Rename all the files (including home directories) so that
+they aren't deleted.  (See 
+.SB FILES
+below.)
+These will probably be only in
+.BR /export/home .
+.TP
+\(bu
+Run
+.B unconfigure
+and install the system on the network.
+.TP
+\(bu
+For each account listed in
+.B /etc/passwd.bak
+that you want to save, follow this procedure:
+.RS
+.TP 4
+\(bu
+Create a new account on the network; if the
+.SM UID
+and
+.SM GID
+are the same as in
+.B /etc/passwd.bak
+on the standalone, then skip the next step.
+However, be sure that you do not make two different accounts
+with the same
+.SM UID.
+.TP
+\(bu
+Use the 
+.RB ` "chown \-R" '
+command to change the ownership of the home directories.
+.TP
+\(bu
+You may need to rename the files you just chowned above, for example
+to ensure that they are the user's home directory.
+This may involve updating the
+.BR auto.home (5)
+and
+.BR auto.home (5)
+.SM NIS
+maps, as well.
+.RE
+.TP
+\(bu
+Delete
+.BR /etc/passwd.bak .
+.SH FILES
+.LP
+.B unconfigure
+deletes the following files, if they are present,
+replacing some of them with the distribution version if
+one is supposed to exist:
+.sp .5
+.TS
+lfB lfB lfB lfB .
+/etc/.rootkey	/etc/ethers	/etc/localtime	/etc/publickey
+/etc/auto.home	/etc/exports	/etc/net.conf	/etc/sendmail.cf
+/etc/auto.vol	/etc/fstab	/etc/netmasks	/etc/syslog.conf
+/etc/bootparams	/etc/group	/etc/networks	/etc/systems
+/etc/bootservers	/etc/hosts	/etc/passwd	/single/ifconfig
+/var/sysex/*	
+.TE
+.LP
+and all files in
+.B /var/yp
+except those distributed with the operating system.
+.LP
+.B unconfigure
+truncates all files in 
+.BR /var/adm .
+All user home directories in
+.B /export/home
+are deleted, except those for the default user account
+.BR users ,
+which is shipped with the operating system.
+All diskless client configuration information stored
+in
+.BR /export/roots ,
+.BR /export/swaps ,
+and
+.B /export/dumps
+is deleted.
+.SH "SEE ALSO"
+.BR chgrp (1),
+.BR find (1),
+.BR group (5),
+.BR passwd (5)
+.BR adduser (8),
+.BR chown (8),
+.SH BUGS
+.LP
+More of the system configuration files should be reset.
+.LP
+This does not yet support taking a workstation off the network
+temporarily, for example, to take it home over the weekend for use as
+a standalone, or to move it to another network while traveling.
+This should be the default behavior.
+.LP
+The procedure for upgrading standalones to network clients
+should be automated; currently, only upgrading a standalone
+to a master server is automated.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

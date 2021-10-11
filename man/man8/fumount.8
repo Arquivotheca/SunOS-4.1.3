@@ -1,0 +1,77 @@
+.\" @(#)fumount.8 1.1 92/07/30 SMI; from S5R3
+.TH FUMOUNT 8 "30 June 1988"
+.SH NAME
+fumount \- force unmount of an advertised RFS resource
+.SH SYNOPSIS
+.B fumount
+[
+.BI \-w " seconds"
+]
+.I resource
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "fumount force" "" "\fLfumount\fP \(em force unmount of advertised resource" ""
+.IX force "unmount of advertised resource"
+.IX resource "force unmount of advertised resource"
+.IX unmount "force unmount of advertised resource"
+.IX RFS "force unmount of advertised RFS resource" "\s-1RFS\s0" "force unmount of an advertised RFS resource"
+.LP
+.B fumount
+unadvertises
+.I resource
+and disconnects remote access to the resource.
+.LP
+When the forced unmount occurs, an administrative shell script,
+.BR rfuadmin ,
+is started on each remote system that has the resource mounted
+If a grace period is specified (in seconds),
+.BR rfuadmin (8)
+is started with the
+.B fuwarn
+option.
+When the actual forced unmount is ready to occur,
+.BR rfuadmin (8)
+is started with the
+.B fumount
+option.
+See
+.BR rfuadmin (8)
+for information on the action taken in response
+to the forced unmount.
+.LP
+This command is restricted to the super-user.
+.LP
+An error message will be sent to standard error
+if any of the following are true of
+.IR resource :
+.RS
+.TP 3
+\(bu
+It does not physically reside on the local machine.
+.TP
+\(bu
+It is an invalid resource name.
+.TP
+\(bu
+It is not currently advertised and is not
+remotely mounted.
+.RE
+.SH OPTION
+.TP 12
+.BI \-w " seconds"
+Delay execution of the disconnect
+.I seconds
+seconds.
+.SH "SEE ALSO"
+.BR adv (8),
+.BR mount (8),
+.BR rfuadmin (8),
+.BR rfudaemon (8),
+.BR unadv (8)

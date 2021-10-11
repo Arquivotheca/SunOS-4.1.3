@@ -1,0 +1,125 @@
+!rm -f /tmp/initkeypad
+e keycaps
+1,$s/\([^,]*\),[ 	]*"\([^"]*\)"[ 	]*"[^"]*"[ 	]*\(KEY_[^,]*\).*/	p = _laddone(p, \1, \3, "\2");/
+/KEY_DOWN/s/^/	/
+i
+	/* If down arrow key sends \n, don't map it. */
+	if (key_down && strcmp(key_down, "\n"))
+.
+/KEY_LEFT/s/^/	/
+i
+	/* If left arrow key sends \b, don't map it. */
+	if (key_left && strcmp(key_left, "\b"))
+.
+/KEY_BACKSPACE/s/^/	/
+i
+	/* If backspace key sends \b, don't map it. */
+	if (key_backspace && strcmp(key_backspace, "\b"))
+.
+/key_f0,/s/"kf0"/lab_f0?lab_f0:"f0"/
+/key_f1,/s/"kf1"/lab_f1?lab_f1:"f1"/
+/key_f2,/s/"kf2"/lab_f2?lab_f2:"f2"/
+/key_f3,/s/"kf3"/lab_f3?lab_f3:"f3"/
+/key_f4,/s/"kf4"/lab_f4?lab_f4:"f4"/
+/key_f5,/s/"kf5"/lab_f5?lab_f5:"f5"/
+/key_f6,/s/"kf6"/lab_f6?lab_f6:"f6"/
+/key_f7,/s/"kf7"/lab_f7?lab_f7:"f7"/
+/key_f8,/s/"kf8"/lab_f8?lab_f8:"f8"/
+/key_f9,/s/"kf9"/lab_f9?lab_f9:"f9"/
+/key_f10,/s/"kf10"/lab_f10?lab_f10:"f10"/
+1i
+#ifndef lint
+static	char sccsid[] = "@(#)initkeypad.ed 1.1 92/07/30 SMI"; /* from S5R3 1.4.1.4 */
+#endif
+
+/*
+ * initkeypad.c
+ *	this file is automatically made from caps and
+ *	initkeypad.ed. Don't make changes directly to initkeypad.c!
+ *
+ */
+# include "curses.ext"
+static struct map *_addone();
+extern char *malloc();
+/*
+ * Make up the needed array of map structures for dealing with the keypad.
+ */
+#define MAXKEYS 	/* number of keys we understand */	
+
+/*
+ * label is currently unused, but is an English description
+ * of what the key is labelled, similar to the name in vi.
+ * We use the macro so that everyone doesn't pull all of
+ * this into their data space.
+ */
+#ifdef DEBUG
+#define _laddone(p, key, KEY, label)	_addone(p, key, KEY, label)
+#else
+#define _laddone(p, key, KEY, label)	_addone(p, key, KEY)
+#endif /* DEBUG */
+static struct map keymap[MAXKEYS];
+static bool mapassigned = FALSE;
+
+struct map *
+_init_keypad()
+{
+	struct map *r, *p;
+
+	if (mapassigned) {
+		SP->kp = r = (struct map *) malloc(MAXKEYS * sizeof (struct map));
+		if (r == NULL) {
+			(void) fprintf (stderr, "malloc returned NULL in _initkeypad");
+			return (struct map *) 0;
+		}
+	} else {
+		mapassigned = TRUE;
+		SP->kp = r = keymap;
+	}
+	p = r;
+
+.
+$a
+
+	p -> keynum = -1;		/* termination convention */
+	SP->lastsortedkey = -1;		/* no sorted keys to start with */
+#ifdef DEBUG
+	if(outf) fprintf(outf, "return key structure %x, ending at %x\n", r, p);
+#endif
+	return r;
+}
+
+/*
+ * Map text into num, updating the map structure p.
+ */
+static
+struct map *
+#ifdef DEBUG
+_addone(p, text, num, label)
+char *label;
+#else
+_addone(p, text, num)
+#endif /* DEBUG */
+struct map *p;
+register char *text;
+int num;
+{
+	if (text) {
+		p->sends = text;
+		p->keynum = num;
+		SP->funckeystarter[*text] = TRUE;
+#ifdef DEBUG
+		if(outf) fprintf(outf, "have key %s: sends '%s', value 0%o\n", label, _asciify(p->sends), p->keynum);
+#endif
+		p++;
+	}
+	return p;
+}
+.
+!: 1 for each key plus KEY_BREAK, KEY_SRESET, KEY_RESET, NULL
+!expr `wc -l < keycaps` + 4 > /tmp/initkeypad
+/MAXKEYS/r /tmp/initkeypad
+.-1,.j
+0r copyright.h
+/SMI/d
+w initkeypad.c
+q

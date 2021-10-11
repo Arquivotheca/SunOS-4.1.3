@@ -1,0 +1,297 @@
+'\t
+.\" @(#)localeconv.3 1.1 92/07/30 SMI;
+.TH LOCALECONV 3 "22 January 1990"
+.SH NAME
+localeconv \- get numeric and monetary formatting conventions
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <limits.h>
+#include <locale.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct lconv *localeconv(\|)
+.ft
+.fi
+.SH DESCRIPTION
+.IX "localeconv()" "" "\fLlocaleconv()\fR \(em get numeric and monetary formatting conventions" ""
+.IX "formatting" "numeric and monetary conventions for locale"
+.IX "numbers" "formatting conventions for locale"
+.IX "money" "formatting conventions for locale"
+.IX locale "numeric and monetary formatting conventions"
+.LP
+.B localeconv(\|)
+returns a pointer to a structure of type
+.B "struct lconv"
+containing values appropriate for the formatting of numeric quantities
+(monetary and otherwise) according to the rules of the current locale.
+.LP
+The members of the structure with type
+.B "(char *)"
+are strings; if a string has the value
+\fB""\fR,
+the value is not available in the current locale or has zero length.
+The members with type
+.B char
+are nonnegative numbers; if any of them have the value
+.SB CHAR_MAX
+the value is
+not available in the current locale.
+The
+.B lconv
+structure is defined in
+.B <locale.h>
+as follows:
+.LP
+.RS
+.nf
+.ft B
+struct lconv {
+.ft
+.RS
+.ft B
+char	*decimal_point;		/* decimal point character */
+char	*thousands_sep;		/* thousands separator character */
+char	*grouping;		/* grouping of digits */
+char	*int_curr_symbol;	/* international currency symbol */
+char	*currency_symbol;	/* local currency symbol */
+char	*mon_decimal_point;	/* monetary decimal point character */
+char	*mon_thousands_sep;	/* monetary thousands separator */
+char	*mon_grouping;		/* monetary grouping of digits */
+char	*positive_sign;		/* monetary credit symbol */
+char	*negative_sign;		/* monetary debit symbol */
+char	int_frac_digits;		/* intl monetary number of fractional digits */
+char	frac_digits;		/* monetary number of fractional digits */
+char	p_cs_precedes;		/* true if currency symbol precedes credit */
+char	p_sep_by_space;		/* true if space separates c.s.  from credit */
+char	n_cs_precedes;		/* true if currency symbol precedes debit */
+char	n_sep_by_space;		/* true if space separates c.s.  from debit */
+char	p_sign_posn;		/* position of sign for credit */
+char	n_sign_posn;		/* position of sign for debit */
+.ft
+.RE
+.ft B
+};
+.ft
+.fi
+.RE
+.LP
+The fields of this structure represent:
+.TP
+.B "decimal_point"
+The decimal-point character used to format non-monetary quantities.
+.TP
+.B "thousands_sep"
+The character used to separate groups of digits to the left of the
+decimal-point character in formatted non-monetary quantities.
+.TP
+.B "grouping"
+A string whose elements indicate the size of each group of digits in formatted
+non-monetary quantities.
+.TP
+.B "int_curr_symbol"
+The international currency symbol applicable to the current locale,
+left-justified within a four-character
+.SM SPACE\s0-padded
+field. 
+The character sequences are those specified in:
+.IR "ISO 4217 Codes for the Representation of Currency and Funds" .
+.TP
+.B "currency_symbol"
+The local currency symbol applicable to the current locale.
+.br
+.ne 3
+.TP
+.B "mon_decimal_point"
+The decimal-point used to format monetary quantities.
+.TP
+.B "mon_thousands_sep"
+The character used to separate groups of digits to the left of the
+decimal-point character in formatted monetary quantities.
+.TP
+.B "mon_grouping"
+A string whose elements indicate the size of each group of digits in formatted
+monetary quantities.
+.TP
+.B "positive_sign"
+The string used to indicate a nonnegative-valued formatted monetary quantity.
+.TP
+.B "negative_sign"
+The string used to indicate a negative-valued formatted monetary quantity.
+.TP
+.B "int_frac_digits"
+The number of fractional digits (those after the decimal-point) to be
+displayed in an internationally formatted monetary quantity.
+.TP
+.B "frac_digits"
+The number of fractional digits (those to the right of the decimal-point) to be
+displayed in a formatted monetary quantity.
+.TP
+.B "p_cs_precedes"
+1 if the
+.B currency_symbol
+precedes the value for a nonnegative formatted monetary quantity;
+0 if the
+.B currency_symbol
+succeeds the value for a nonnegative formatted monetary quantity.
+.TP
+.B "p_sep_by_space"
+1 if the
+.B currency_symbol
+is separated by a
+.SM SPACE
+from the value for a nonnegative formatted monetary
+quantity;
+0 if the
+.B currency_symbol
+is not separated by a 
+.SM SPACE
+from the value for a nonnegative formatted monetary
+quantity.
+.TP
+.B "n_cs_precedes"
+1 if the
+.B currency_symbol
+precedes the value for a negative formatted monetary quantity;
+0 if the
+.B currency_symbol
+succeeds the value for a negative formatted monetary quantity.
+.TP
+.B "n_sep_by_space"
+1 if the
+.B currency_symbol
+is separated by a 
+.SM SPACE
+from the value for a negative formatted monetary
+quantity;
+0 if the
+.B currency_symbol
+is not separated by a 
+.SM SPACE
+from the value for a negative formatted monetary
+quantity.
+.TP
+.B "p_sign_posn"
+A value indicating the positioning of the
+.B positive_sign
+for a nonnegative formatted monetary quantity.
+.TP
+.B "n_sign_posn"
+A value indicating the positioning of the
+.B negative_sign
+for a negative formatted monetary quantity.
+.LP
+The elements of
+.B grouping
+and
+.B mon_grouping
+are interpreted as follows:
+.RS
+.TP 14
+.B \s-1CHAR_MAX\s+1
+No further grouping is to be performed.
+.TP
+.B 0
+The previous element is to be repeatedly used for the remainder of the digits.
+.TP
+.I other
+The value is the number of digits that comprise the current group.
+The next element is examined to determine the
+size of the next group of digits to the
+left of the current group.
+.RE
+.LP
+The values of
+.B p_sign_posn
+and
+.B n_sign_posn
+are interpreted as follows:
+.RS
+.TP
+.B 0
+Parentheses surround the quantity and
+.BR currency_symbol .
+.TP
+.B 1
+The sign string precedes the quantity and
+.BR currency_symbol .
+.TP
+.B 2
+The sign string succeeds the quantity and
+.BR currency_symbol .
+.TP
+.B 3
+The sign string immediately precedes the
+.BR currency_symbol .
+.TP
+.B 4
+The sign string immediately succeds the
+.BR currency_symbol .
+.RE
+.LP
+The values for the members in the C locale are:
+.LP
+.RS
+.TS
+cfI cfI
+lfB cfB .
+field	value
+decimal_point	"."
+thousands_sep	""
+grouping	""
+int_curr_symbol	""
+currency_symbol	""
+mon_decimal_point	""
+mon_thousands_sep	""
+mon_grouping	""
+positive_sign	""
+negative_sign	""
+int_frac_digits	\s-1CHAR_MAX\s0
+frac_digits	\s-1CHAR_MAX\s0
+p_cs_precedes	\s-1CHAR_MAX\s0
+p_sep_by_space	\s-1CHAR_MAX\s0
+n_cs_precedes	\s-1CHAR_MAX\s0
+n_sep_by_space	\s-1CHAR_MAX\s0
+p_sign_posn	\s-1CHAR_MAX\s0
+n_sign_posn	\s-1CHAR_MAX\s0
+.TE
+.RE
+.SH RETURN VALUES
+.LP
+.B localeconv(\|)
+returns a pointer to
+.B struct lconv
+(see
+.BR \s-1NOTES\s0 ).
+.SH FILES
+.PD 0
+.TP
+.B /usr/share/lib/locale/\s-1LC_MONETARY\s0
+standard locale information directory for category
+.SB LC_MONETARY
+.TP
+.B /usr/share/lib/locale/\s-1LC_NUMERIC\s0
+standard locale information directory for category
+.SB LC_NUMERIC
+.PD
+.SH SEE ALSO
+.BR printf (3V),
+.BR scanf (3V),
+.BR setlocale (3V)
+.SH NOTES
+.B localeconv(\|)
+does not modify the
+.B struct lconv
+to which it returns a pointer,
+but subsequent calls to
+.BR setlocale (3V)
+with categories
+.BR \s-1LC_ALL\s0 ,
+.BR \s-1LC_MONETARY\s0 ,
+or
+.SB LC_NUMERIC
+may overwrite the contents of the structure.

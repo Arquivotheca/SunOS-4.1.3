@@ -1,0 +1,332 @@
+.\" @(#)adduser.8 1.1 92/07/30 SMI; from UCB 4.3
+.TH ADDUSER 8 "7 September 1989"
+.SH NAME
+adduser \- procedure for adding new users
+.SH DESCRIPTION
+.IX  "adduser command"  ""  "\fLadduser\fP \(em add new user account"
+.IX  "system administration"  adduser  ""  "\fLadduser\fP \(em add new user account"
+.LP
+To add an account for a new user, the system
+administrator (or super-user):
+.RS
+.TP 3
+\(bu
+Create an entry for the new user in the system password files.
+.TP 
+\(bu
+Create a home directory for the user,
+and change ownership so the new user owns that directory.
+.TP 
+\(bu
+Optionally set up skeletal dot files for the new user
+.RB ( .cshrc ,
+.BR .login ,
+.BR .profile .\|.\|.).
+.TP 
+\(bu
+If the account is on a system running the 
+Network Information Service
+(\s-1NIS\s0),
+take additional measures.
+.RE
+.SH USAGE
+.SS "Making an Entry in the Password File"
+.LP
+To add an entry for the new login name on a local host, first edit the
+.B /etc/passwd
+file
+\(em inserting a line for the new user.
+This must be done with the
+password file locked, for instance, by using
+.BR vipw (8),
+and the insertion must be made above the line containing the
+string:
+.IP
+.ft B
++::0:0:::
+.ft R
+.LP
+This line indicates that additional accounts can be found
+in the 
+.SM NIS
+service.
+.LP
+To add an entry for the new login name into the 
+.SM NIS
+service,
+add an identical line to the file
+.B /etc/passwd
+on the
+.SM NIS
+master server, and run
+.BR make (1)
+in the directory
+.B /var/yp
+(see
+.BR ypmake (8)
+for details) to propagate the change.
+.LP
+The new user is assigned a group and user
+.SM ID
+number
+(\s-1GID\s0
+and
+.SM UID
+respectively).
+\s-1UID\s0s
+should be unique for each user and
+consistent across the
+.SM NFS
+domain, since they control access to files.
+\s-1GID\s0s
+need not be unique.
+Typically, users working on similar projects will assigned to the same
+group.  The system staff is group 10 for historical reasons,
+and the super-user is in this group.
+.LP
+An entry for a new user 
+.B francine
+would look like this:
+.IP
+.B "francine::235:20:& Featherstonehaugh:/usr/francine:/bin/csh"
+.LP
+Fields in each password-file entry are delimited by colons, and have
+the following meanings:
+.RS
+.TP 3
+\(bu
+Login name
+(\fBfrancine\fP).
+The login name is limited to eight characters in length.
+.TP
+\(bu
+Encrypted password or the string
+.BI ## name
+if encrypted passwords are stored
+in the password adjunct file.
+Typically, if passwords are to be stored in
+the main password file, this field is left empty, so
+no password is needed when the user first logs in.
+If security demands a password, it should be assigned by running
+.BR passwd (1)
+immediately after exiting the editor. The number of significant
+characters in a password is eight. (See
+.BR passwd (1).)
+.TP 
+\(bu
+User
+.SM ID\s0.
+The 
+.SM UID
+is a number which identifies that user uniquely in the system.
+Files owned by the user have this number stored in
+their data blocks, and commands such as
+.B ls (1V) 
+(see 
+.BR ls (1V)), 
+use it to look up the owner's login name.
+For this reason, you cannot 
+randomly change this number. See
+.BR passwd (5)
+for more information.
+.TP 
+\(bu
+Group
+.SM ID\s0.
+The 
+.SM GID
+number identifies the group to which
+the user belongs by default (although the user may belong to
+additional groups as well).  All files that the user creates have this
+number stored in their data blocks, and commands such as
+.BR ls (1V)
+(see 
+.BR ls (1V),
+use it to look up the group name.  Group names and assignments
+are listed in the file
+.B /etc/group
+(which is described in
+.BR group (5))
+or in the 
+.SM NIS
+group map.
+.TP 
+\(bu
+This field is called the
+.SM GCOS
+field (from earlier implementation of the
+operating system) and is traditionally used to hold the user's full name.  
+Some installations have other information encoded in this field.
+From this information we can tell that Francine's real name is
+`Francine Featherstonehaugh'. 
+The
+.B &
+in the entry is shorthand for the user's
+login name.
+.br
+.ne 5
+.TP 
+\(bu
+User's home directory.
+This is the directory in which that user is
+\*(lqpositioned\*(rq when they log in.
+.TP 
+\(bu
+Initial shell which this user will see on login.
+If this field is empty,
+.BR sh (1)
+is used as the initial shell.
+.RE	
+.LP
+An entry for a new user
+.B francine
+would look like this:
+.IP
+.B francine:::::lo:ad,+dw
+.LP
+Fields in each password adjunct file entry
+are delimited by colons, and have
+the following meanings:
+.RS
+.TP 3
+\(bu
+Login name
+(\fBfrancine\fP).
+This name must match the login name in the password file.
+.TP 
+\(bu
+Encrypted password.  Typically, this field is left empty when
+adding the line using the editor.
+.BR passwd (1)
+should be run immediately after exiting the editor.
+.TP 
+\(bu
+The next three fields are
+the minimum label, the maximum label, and the default label.
+These fields should be left empty,
+since they are reserved for future use.
+.TP 
+\(bu
+The next two fields are for
+the always-audit flags and the never-audit flags.
+Always-audit flags specify which events
+are guaranteed to be audited for that user.
+Never-audit flags specify which events
+are guaranteed not to be audited for that user.
+.\" Additional events may be audited based on flags in
+.\" .BR /etc/security/audit/audit_control .
+For a description of audit flags, see
+.BR audit_data (5).
+.RE
+.SS "Making a Home Directory"
+As shown in the password file entry above, the name of Francine's home
+directory is to be
+.BR /usr/francine .
+This directory must be created using
+.BR mkdir (1),
+and Francine must be given ownership of it using
+.BR chown (8),
+in order for her profile files to be read and executed, and to
+have control over access to it by other users:
+.RS
+.ft B
+.nf
+.sp .5
+example# mkdir /usr/francine
+example# /usr/etc/chown francine /usr/francine
+.fi
+.ft R
+.RE
+.LP
+If running under
+.SM NFS\s0,
+the
+.BR mkdir (1)
+and
+.BR chown (8)
+commands must be performed on the
+.SM NFS
+server.
+.SS "Setting Up Skeletal Profile Files"
+New users often need assistance in setting up their profile
+files to initialize the terminal properly, configure their
+search path, and perform other desired functions at startup.
+Providing them with skeletal profile files saves time
+and interruptions for both the new user and the system administrator.
+.LP
+Such files as
+.B .profile
+(if they use
+.B /usr/bin/sh
+as the shell), or
+.B .cshrc
+and
+.B .login
+(if they use
+.B /usr/bin/csh
+as the shell),
+can include commands that are performed automatically at each
+login, or whenever a shell is invoked, such as
+.BR tset (1).
+The ownership of these files must be changed to belong to the
+new user, either by running
+.BR su (1V)
+before making copies, or by using
+.BR chown (8).
+.br
+.ne 12
+.SH FILES
+.PD 0
+.TP 30
+.B /etc/passwd
+password file
+.TP
+.B /etc/security/passwd.adjunct
+.TP
+.B /etc/group
+group file
+.\" .TP
+.\" .B /etc/security/passwd.adjunct
+.\" the password adjunct file
+.\" .TP
+.\" .B /etc/security/audit/audit_control
+.TP
+.B /etc/yp/src/passwd
+.TP
+.B \~/.cshrc
+.TP
+.B \~/.login
+.TP
+.B \~/.profile
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR ls (1V),
+.BR make (1),
+.BR mkdir (1),
+.BR passwd (1),
+.BR sh (1),
+.BR su (1V),
+.BR tset (1),
+.BR audit (2),
+.BR audit_control (5),
+.BR audit_data (5),
+.BR passwd.adjunct (5),
+.BR group (5),
+.BR passwd (5),
+.BR passwd.adjunct (5)
+.BR audit (8),
+.BR auditd (8),
+.BR chown (8),
+.BR vipw (8),
+.BR ypmake (8),
+.LP
+.TX ADMIN
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

@@ -1,0 +1,253 @@
+.\" @(#)hosts.equiv.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH HOSTS.EQUIV 5 "24 January 1990"
+.SH NAME
+hosts.equiv, .rhosts \- trusted remote hosts and users
+.SH DESCRIPTION
+.IX  "hosts.equiv file"  ""  "\fLhosts.equiv\fP \(em trusted hosts list"
+.IX  "trusted hosts list"  ""  "trusted hosts list \(em \fLhosts.equiv\fP"
+.LP
+The 
+.B /etc/hosts.equiv
+and
+.B .rhosts
+files provide the ``remote authentication'' database for
+.BR rlogin (1C),
+.BR rsh (1C),
+.BR rcp (1C),
+and
+.BR rcmd (3N).
+The files specify remote hosts and users
+that are considered 
+.IR trusted .
+Trusted users are allowed to access the local system
+\fIwithout supplying a password.\fR
+The library routine
+.B ruserok(\|)
+(see
+.BR rcmd (3N))
+performs the authentication procedure for programs by using the
+.B /etc/hosts.equiv
+and
+.B .rhosts
+files.
+The 
+.B /etc/hosts.equiv
+file applies to the entire system,
+while individual users can maintain their own
+.B .rhosts
+files in their home directories.
+.LP
+These files \fI bypass\fR the standard
+password-based user authentication mechanism.
+To maintain system security,
+care must be taken in creating and maintaining these files.
+.LP
+The remote authentication procedure determines whether
+a particular remote user from a particular remote host should be
+allowed to access the local system as a (possibly different)
+particular local user.
+This procedure first checks the
+.B /etc/hosts.equiv
+file and then checks the
+.B .rhosts
+file in the home directory of the local user as whom access
+is being attempted.
+Entries in these files can be of two forms.
+.I Positive 
+entries explicitly 
+.I allow
+access, while 
+.I negative
+entries explicitly
+.I deny
+access.
+The authentication succeeds as soon as a matching positive entry is found.
+The procedure fails when a matching negative entry is found, or if no
+matching entries are found in either file.
+The order of entries, therefore, can be important:
+If the files contain both matching positive and negative entries,
+the entry that appears first will prevail.
+The
+.BR rsh (1C)
+and
+.BR rcp (1C)
+programs fail if the remote authentication procedure fails.
+The
+.B rlogin 
+program will fall back
+to the standard password-based login procedure if the
+remote authentication fails.
+.LP
+Both files are formatted as
+a list of one-line entries.  Each entry has the form:
+.IP
+.IR hostname " [" username "] "
+.LP
+Negative entries are differentiated from positive
+entries by a `-' character preceding either the 
+.I hostname
+or
+.I username
+field.
+.SS Positive Entries
+.LP
+If the form:
+.IP
+.I hostname 
+.LP
+is used, then users from the named host are trusted.
+That is, they may access the system with the same user name
+as they have on the remote system.
+This form may be used in both the 
+.B /etc/hosts.equiv
+and
+.B .rhosts
+files.
+.LP
+If the line is in the form:
+.IP
+.I hostname username
+.LP
+then the named user from the named host can access the system.
+This form may be used in individual
+.B .rhosts
+files to allow 
+remote users to access the system
+\fIas a different local user.\fR
+If this form is used in the
+.B /etc/hosts.equiv
+file, the named remote user will be allowed to access the system as 
+.I any 
+local user.
+.LP
+Netgroups(5) can be used in either the 
+.I hostname
+or
+.I username
+fields to match a number of hosts or users in one entry.
+The form:
+.IP
+.BI +@ netgroup
+.LP
+allows access from all hosts in the named netgroup.
+When used in the
+.I username
+field,
+netgroups allow a group of remote users to access the system
+as a particular local user.  The form:
+.IP
+.I hostname
+.BI +@ netgroup
+.LP
+allows all of the users in the named netgroup from the named host to
+access the system as the local user.
+The form:
+.IP
+.BI +@ netgroup1
+.BI +@ netgroup2
+.LP
+allows the users in
+.I netgroup2
+from the hosts in
+.I netgroup1
+to access the system as the local user.
+.LP
+The special character `+' can be used in place of either
+.I hostname
+or
+.I username
+to match any host or user.
+For example, the entry
+.IP
+.B +
+.LP
+will allow a user from any remote host to access the system
+with the same username.
+The entry
+.IP
+.B +
+.I username
+.LP
+will allow the named user from any remote host to access the
+system.
+The entry
+.IP
+.I hostname
+.B +
+.LP
+will allow any user from the named host to access the system
+as the local user.
+.SS Negative Entries
+.LP
+Negative entries are preceded by a `-' sign.
+The form:
+.IP
+.BI - hostname
+.LP
+will disallow all access from the named host.
+The form:
+.IP
+.BI \-@ netgroup
+.LP
+means that access is explicitly disallowed from all hosts in the
+named netgroup.
+The form:
+.IP
+.I hostname 
+.BI \- username
+.LP
+disallows access by the named user only from the named host,
+while the form:
+.IP
+.B +
+.BI \-@ netgroup
+.LP
+will disallow access by all of the users in the named netgroup from all hosts.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/hosts.equiv
+.TP
+.B ~/.rhosts
+.PD
+.SH NOTES
+.LP
+Hostnames in
+.B /etc/hosts.equiv
+and
+.B .rhosts
+files must be the ``official'' name of the host, not one of its
+nicnames.
+.LP
+Root access is handled as a special case.  Only the
+.I /.rhosts
+file is checked when the access is being attempted for root.
+To help maintain system security, the
+.I /etc/hosts.equiv
+file is not checked.
+.LP
+As a security feature, the
+.I .rhosts
+file must be owned by the user as whom access is being
+attempted.
+.LP
+Positive entries in
+.I /etc/hosts.equiv
+that include a
+.I username
+field (either an individual named user, a netgroup, or `+' sign) should be
+used only with extreme caution.
+Because 
+.I /etc/hosts.equiv
+applies system-wide, these entries 
+allow one or a group of remote users to access the system
+.I as any local user.
+This can be the source of a security hole.
+.SH "SEE ALSO"
+.BR rlogin (1C),
+.BR rsh (1C),
+.BR rcp (1C),
+.BR rcmd (3N),
+.BR hosts (5),
+.BR netgroup (5),
+.BR passwd (5)

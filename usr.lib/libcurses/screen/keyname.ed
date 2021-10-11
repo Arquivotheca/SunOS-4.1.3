@@ -1,0 +1,49 @@
+e keycaps
+1,$s/[^,]*,[ 	]*"[^"]*"[ 	]*"[^"]*"[ 	]*\(KEY_[^,]*\)[, 	]*\([0-9][0-9]*\).*/	case \1:	return "\1";	\/* \2 *\//
+g/KEY_F(/d
+1i
+#ifndef lint
+static	char sccsid[] = "@(#)keyname.ed 1.1 92/07/30 SMI"; /* from S5R3 1.4.1.2 */
+#endif
+
+/*
+    This file made from keycaps and keyname.ed. DO NOT EDIT ME!
+*/
+#include <curses.h>
+
+char *keyname(key)
+int key;
+{
+    static char buf[16];
+    switch (key)
+	{
+	case KEY_BREAK:	return "KEY_BREAK";	/* 0401 */
+	case KEY_RESET:	return "KEY_RESET";	/* 0531 */
+	case KEY_SRESET:	return "KEY_SRESET";	/* 0530 */
+.
+$a
+	}
+    if (key >= 0410 && key <= 0507)
+        {
+	sprintf(buf, "KEY_F(%d)", key - 0410);
+	return buf;
+	}
+    if (key >= 0400)
+	return "UNKNOWN KEY";
+    if (key >= 0200)
+	{
+	sprintf(buf,"M-%s",unctrl(key&0177));
+	return buf;
+	}
+    if (key < 0)
+	{
+	sprintf(buf,"%d",key);
+	return buf;
+	}
+    return unctrl(key);
+}
+.
+0r copyright.h
+/SMI/d
+w keyname.c
+q

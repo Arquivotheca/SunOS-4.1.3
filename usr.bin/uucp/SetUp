@@ -1,0 +1,118 @@
+#!/bin/sh
+#ident  "%Z%%M% %I% %E%"	/* from SVR3.2 uucp:SetUp 2.3.1.1 */
+
+# This shell tries to set up all needed uucp system files.
+# Since the names changed from previous versions, it copies those.
+# For the Permissions, it will generate one if none exists
+
+LIB=$ROOT/etc/uucp
+PERM=$LIB/Permissions
+LPERM=$LIB/PERMISSIONS
+DEVICES=$LIB/Devices
+DIAL=$LIB/Dialcodes
+DIALERS=$LIB/Dialers
+SYSTEM=$LIB/Systems
+LSYS=$LIB/L.sys
+LDIAL=$LIB/L-dialcodes
+LDEVICES=$LIB/L-devices
+LDIALERS=$LIB/L-dialers
+POLL=$LIB/Poll
+DEVCFG=$LIB/Devconfig
+SYSFILES=$LIB/Sysfiles
+OWNER=uucp
+GROUP=uucp
+
+if [ ! -f $DEVCFG ]; then
+	cp Devconfig ${DEVCFG}
+	chown $OWNER $DEVCFG
+	chgrp $GROUP $DEVCFG
+	chmod 644 $DEVCFG
+fi
+
+if [ ! -f $SYSFILES ]; then
+	cp Sysfiles ${SYSFILES}
+	chown $OWNER $SYSFILES
+	chgrp $GROUP $SYSFILES
+	chmod 644 $SYSFILES
+fi
+
+if [ ! -f $SYSTEM ]
+then
+	if [ -f $LSYS ]; then
+		cp $LSYS $SYSTEM
+	else
+		cp Systems ${SYSTEM}
+	fi
+	chown $OWNER $SYSTEM
+	chgrp $GROUP $SYSTEM
+	chmod 400 $SYSTEM
+fi
+
+if [ ! -f $DIAL ]; then
+	if [ -f $LDIAL ]; then
+		cp $LDIAL $DIAL
+	else
+		cp Dialcodes ${DIAL}
+	fi
+	chown $OWNER $DIAL
+	chgrp $GROUP $DIAL
+	chmod 444 $DIAL
+fi
+
+if [ ! -f $DIALERS ]; then
+	if [ -f $LDIALERS ]; then
+		cp $LDIALERS $DIALERS
+	else
+		cp Dialers $DIALERS
+
+	fi
+	chown $OWNER $DIALERS
+	chgrp $GROUP $DIALERS
+	chmod 444 $DIALERS
+fi
+
+if [ ! -f $DEVICES ]; then
+	if [ -f $LDEVICES ]; then
+		cp $LDEVICES $DEVICES
+	else
+		cp Devices ${DEVICES}
+	fi
+	chown $OWNER $DEVICES
+	chgrp $GROUP $DEVICES
+	chmod 444 $DEVICES
+fi
+
+if [ ! -f $POLL ]; then
+	cp Poll ${POLL}
+	chown $OWNER $POLL
+	chgrp $GROUP $POLL
+	chmod 644 $POLL
+fi
+
+if [ ! -f $PERM ]; then
+	if [ -f $LPERM ]; then
+		cp $LPERM $PERM
+		chown $OWNER $PERM
+		chgrp $GROUP $PERM
+		chmod 400 $PERM
+	fi
+fi
+
+if [ -f $PERM ]; then
+	exit
+fi
+
+# Try to generate a Permissions file using uucp entries in /etc/passwd
+
+> $PERM
+set - `sed -n "/uucico/s/:.*//p" /etc/passwd`
+
+for i
+do
+	echo "	LOGNAME=$i"
+	echo
+done > $PERM
+
+chown $OWNER $PERM
+chgrp $GROUP $PERM
+chmod 400 $PERM

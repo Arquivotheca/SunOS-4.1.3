@@ -1,0 +1,287 @@
+.\" @(#)cv_create.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH CV_CREATE 3L "21 January 1990"
+.SH NAME
+cv_create, cv_destroy, cv_wait, cv_notify, cv_broadcast, cv_send, cv_enumerate, cv_waiters, SAMECV \- manage LWP condition variables
+.SH SYNOPSIS
+.nf
+.ft B
+#include <lwp/lwp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+cv_t cv_create(cv, mid)
+cv_t *cv;
+mon_t mid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_destroy(cv)
+cv_t cv;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_wait(cv)
+cv_t cv;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_notify(cv)
+cv_t cv;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_send(cv, tid)
+cv_t cv;
+lwp_t tid
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_broadcast(cv)
+cv_t cv;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_enumerate(vec, maxsize)
+cv_t vec[\|];	/* will contain list of all conditions */
+int maxsize;	/* maximum size of vec */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int cv_waiters(cv, vec, maxsize)
+cv_t cv;		/* condition variable being interrogated */
+thread_t vec[\|];	/* which threads are blocked on cv */
+int maxsize;	/* maximum size of vec */
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1SAMECV\s0(c1, c2)
+.ft
+.fi
+.SH DESCRIPTION
+.IX "cv_create()" "" "\fLcv_create()\fP function"
+.IX "cv_destroy()" "" "\fLcv_destroy()\fP function"
+.IX "cv_wait()" "" "\fLcv_wait()\fP function"
+.IX "cv_notify()" "" "\fLcv_notify()\fP function"
+.IX "cv_broadcast()" "" "\fLcv_broadcast()\fP function"
+.IX "cv_send()" "" "\fLcv_send()\fP function"
+.IX "cv_enumerate()" "" "\fLcv_enumerate()\fP function"
+.IX "cv_waiters()" "" "\fLcv_waiters()\fP function"
+.IX "SAMECV()" "" "\fLSAMECV()\fP function"
+.LP
+Condition variables are useful for synchronization within monitors.
+By waiting on a condition variable, the currently-held monitor
+(a condition variable must
+.I always
+be used within a monitor)
+is released atomically and the invoking thread is suspended.
+When monitors are nested, monitor locks other than the current one are retained
+by the thread.
+At some later point, a different thread may awaken the waiting
+thread by issuing a notification on the condition variable.
+When the notification occurs, the waiting thread will queue to reacquire
+the monitor it gave up.
+It is possible to have different condition variables operating within
+the same monitor to allow selectivity in waking up threads.
+.LP
+.B cv_create(\|)
+creates a new condition variable (returned in
+.IR cv )
+which is bound to the monitor specified by
+.IR mid .
+It is illegal to access (using
+.BR cv_wait(\|) ,
+.BR cv_notify(\|) ,
+.B cv_send(\|)
+or
+.BR cv_broadcast(\|) )
+a condition variable
+from a monitor other than the one it is bound to.
+.B cv_destroy(\|)
+removes a condition variable.
+.LP
+.B cv_wait(\|)
+blocks the current thread
+and releases the monitor lock associated with the condition
+(which must also be the monitor lock most
+recently acquired by the thread).
+Other monitor locks held by the thread are not affected.
+The blocked thread is enqueued by its scheduling priority on the condition.
+.LP
+.B cv_notify(\|)
+awakens at most one thread blocked on the
+condition variable and causes the awakened thread to queue for access to the
+monitor released at the time it waited on the condition.
+It can be dangerous to use
+.B cv_notify(\|)
+if there is a possibility that
+the thread being awakened is one of several threads
+that are waiting on a condition variable and the awakened thread
+may not be the one intended.
+In this case, use of
+.B cv_broadcast(\|)
+is recommended.
+.LP
+.B cv_broadcast(\|)
+is the same as
+.B cv_notify(\|)
+except that
+.I all
+threads blocked on the condition variable are awakened.
+.B cv_notify(\|)
+and
+.B cv_broadcast(\|)
+do nothing if no thread is
+waiting on the condition.  For both
+.B cv_notify(\|)
+and
+.BR cv_broadcast(\|) ,
+the currently held monitor must agree
+with the one bound to the condition by
+.BR cv_create(\|) .
+.LP
+.B cv_send(\|)
+is like
+.B cv_notify(\|)
+except that the particular thread
+.B tid
+is awakened.
+If this thread is not currently blocked on the condition,
+.B cv_send(\|)
+reports an error.
+.LP
+.B cv_enumerate(\|)
+lists the
+.SM ID
+of all of the condition variables.
+The value returned is the total number of condition variables.
+The vector supplied is filled in with the
+.SM ID\s0's
+of condition variables.
+.B cv_waiters(\|)
+lists the
+.SM ID\s0's
+of the threads blocked on the
+condition variable
+.I cv
+and returns the number of threads blocked on
+.IR cv .
+For both
+.B cv_enumerate(\|)
+and
+.BR cv_waiters(\|) ,
+.I maxsize
+is used to avoid exceeding the capacity of the list
+.IR vec .
+If the number of entries to be filled is greater than
+.IR maxsize ,
+only
+.I maxsize
+entries are filled in
+.IR vec .
+It is legal in both of these primitives to specify a
+.I maxsize
+of 0.
+.LP
+.SB SAMECV
+is a convenient predicate used to compare two
+condition variables for equality.
+.SH RETURN VALUES
+.LP
+.BR cv_create(\|) ,
+.BR cv_destroy(\|) ,
+.BR cv_send(\|) ,
+.BR cv_wait(\|) ,
+.B cv_notify(\|)
+and
+.B cv_broadcast(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.LP
+.B cv_enumerate(\|)
+returns the total number of condition variables.
+.LP
+.B cv_waiters(\|)
+returns the number of threads blocked on a
+condition variable.
+.SH ERRORS
+.LP
+.B cv_destroy(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INUSE
+Attempt to destroy condition variable being waited on by a thread.
+.TP
+.SM LE_NONEXIST
+Attempt to destroy non-existent condition variable.
+.LP
+.B cv_wait(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to wait on non-existent condition variable.
+.TP
+.SM LE_NOTOWNED
+Attempt to wait on a condition without possessing the correct monitor lock.
+.LP
+.B cv_notify(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to notify non-existent condition variable.
+.TP
+.SM LE_NOTOWNED
+Attempt to notify condition variable without possessing the correct monitor.
+.LP
+.B cv_send(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to awaken non-existent condition variable.
+.TP
+.SM LE_NOTOWNED
+Attempt to awaken condition variable without possessing the correct monitor lock.
+.TP
+.SM LE_NOWAIT
+The specified thread is not currently blocked on the condition.
+.LP
+.B cv_broadcast(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to broadcast non-existent condition variable.
+.TP
+.SM LE_NOTOWNED
+Attempt to broadcast condition without possessing the correct monitor lock.
+.SH "SEE ALSO"
+.BR mon_create (3L)

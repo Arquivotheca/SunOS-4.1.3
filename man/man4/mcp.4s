@@ -1,0 +1,408 @@
+'\" t
+.\" @(#)mcp.4s 1.1 92/07/30 SMI;
+.TH MCP 4S "17 April 1991"
+.SH NAME
+mcp, alm \- Sun MCP Multiprotocol Communications Processor/ALM-2 Asynchronous Line Multiplexer
+.SH "CONFIG \(em SUN-3, SUN-3x, SUN-4, SPARCsystem 600MP SERIES"
+.SS MCP
+.nf
+.ft B
+device mcp0 at vme32d32 ? csr 0x1000000 flags 0x1ffff priority 4 vector mcpintr 0x8b
+device mcp1 at vme32d32 ? csr 0x1010000 flags 0x1ffff priority 4 vector mcpintr 0x8a
+device mcp2 at vme32d32 ? csr 0x1020000 flags 0x1ffff priority 4 vector mcpintr 0x89
+device mcp3 at vme32d32 ? csr 0x1030000 flags 0x1ffff priority 4 vector mcpintr 0x88
+device mcp4 at vme32d32 ? csr 0x2000000 flags 0x1ffff priority 4 vector mcpintr 0xa0
+device mcp5 at vme32d32 ? csr 0x2010000 flags 0x1ffff priority 4 vector mcpintr 0xa1
+device mcp6 at vme32d32 ? csr 0x2020000 flags 0x1ffff priority 4 vector mcpintr 0xa2
+device mcp7 at vme32d32 ? csr 0x2030000 flags 0x1ffff priority 4 vector mcpintr 0xa3
+.fi
+.ft R
+.SS ALM-2
+.B pseudo-device mcpa128
+.SH SYNOPSIS
+.ft B
+.nf
+#include <fcntl.h>
+#include <sys/termios.h>
+open("/dev/tty\fIxy\fB", mode);
+open("/dev/ttyd\fIn\fB", mode);
+open("/dev/cua\fIn\fB", mode);
+.ft R
+.fi
+.SH DESCRIPTION (MCP)
+.IX  "mcp device"  ""  "\fLmcp\fP \(em Sun MCP Multiprotocol Communications Processor"
+.LP
+The Sun
+.SM MCP
+(Multiprotocol Communications Processor)
+supports up to four synchronous serial lines in conjunction
+with SunLink\(tm Multiple Communication Protocol products.
+.LP
+.SH DESCRIPTION (ALM-2)
+.IX  "terminal multiplexer"  ""  "\fLalm\fP \(em Sun ALM-2 Asynchronous Line Multiplexer"
+.LP
+The Sun \s-1ALM\s0-2 Asynchronous Line Multiplexer
+provides 16 asynchronous serial communication
+lines with modem control and one Centronics-compatible parallel
+printer port.
+.LP
+Each port supports those
+.BR termio (4)
+device control functions specified by flags in the
+.B c_cflag
+word of the
+.B termios
+structure and by the
+.BR \s-1IGNBRK\*S ,
+.BR \s-1IGNPAR\*S ,
+.BR \s-1PARMRK\*S ,
+or
+.SB INPCK
+flags in the
+.B c_iflag
+word of the
+.B termios
+structure are performed by the
+.B mcp
+driver.  All other
+.BR termio (4)
+functions must be performed by
+.SM STREAMS
+modules pushed atop the driver; when a device is opened, the
+.BR ldterm (4M)
+and
+.BR ttcompat (4M)
+.SM STREAMS
+modules are automatically pushed on top of the stream, providing the
+standard
+.BR termio (4)
+interface.
+.LP
+Bit
+.I i
+of
+.B flags
+may be specified to say that a line is not properly
+connected, and that the line
+.I i
+should be treated as hard-wired with carrier
+always present.  Thus, specifying
+.B "flags 0x0004"
+in the specification of
+.B mcp0
+would treat line
+.B /dev/ttyh2
+in this way.
+.LP
+Minor device numbers in the range 0 \- 127 correspond directly to the
+normal tty lines and are named
+.BI /dev/tty XY\fR,
+where
+.I X
+represents the physical board
+as one of the characters
+.BR h ,
+.BR i ,
+.BR j ,
+.BR k ,
+.BR l ,
+.BR m ,
+.BR n ,
+or
+.BR o ,
+and
+.I Y
+is the line number on the board as a single hexadecimal digit.
+Thus the first line on the first board is
+.BR /dev/ttyh0 ,
+and the sixteenth line on the third board is
+.BR /dev/ttyjf .
+.LP
+To allow a single tty line to be connected to a modem and used for
+both incoming and outgoing calls, a special feature, controlled by
+the minor device number, has been added.
+Minor device numbers in the range 128 \- 255 correspond to the same physical
+lines as those above (that is,
+the same line as the minor device number minus 128).
+.LP
+A dial-in line has a minor device in the range 0 \- 127 and
+is conventionally renamed
+.BI /dev/ttyd n\fR,
+where
+.I n
+is a number indicating which dial-in line it is (so that
+.B /dev/ttyd0
+is the first dial-in line), and the dial-out line corresponding to that dial-in
+line has a minor device number 128 greater than the minor device number of the
+dial-in line and is conventionally named
+.BI /dev/cua n\fR,
+where
+.I n
+is the number of the dial-in line.
+.LP
+The
+.BI /dev/cua n
+lines are special in that they can be opened even when
+there is no carrier on the line.
+Once a
+.BI /dev/cua n
+line is opened, the corresponding tty line cannot be
+opened until the
+.BI /dev/cua n
+line is closed; a blocking open will wait until the
+.BI /dev/cua n
+line is closed (which will drop Data Terminal Ready, after which Carrier Detect
+will usually drop as well) and carrier is detected again, and a non-blocking
+open will return an error.
+Also, if the
+.BI /dev/ttyd n
+line has been opened successfully (usually only
+when carrier is recognized on the modem) the corresponding
+.BI /dev/cua n
+line cannot be opened.
+This allows a modem to be attached, for example, to
+.B /dev/ttyd0
+(renamed from
+.BR /dev/ttyh0 )
+and used for dialin (by enabling the line for
+login in
+.BR /etc/ttytab )
+and also used for dialout (by
+.BR tip (1C)
+or
+.BR uucp (1C))
+as
+.B /dev/cua0
+when no one is logged in on
+the line.
+Note: the bit in the
+.B flags
+word in the configuration file (see above) must be zero
+for this line,
+which enables hardware carrier detection.
+.SS IOCTLS
+The standard set of
+.B termio
+.B ioctl(\|)
+calls are supported by the
+.SM ALM-2\*S.
+.LP
+If the
+.SB CRTSCTS
+flag in the
+.B c_cflag
+is set, output will be generated only if
+.SM CTS
+is high; if
+.SM CTS
+is low,
+output will be frozen.   If the
+.SB CRTSCTS
+flag is clear, the state of
+.SM CTS
+has no effect.
+Breaks can be generated by the
+.BR \s-1TCSBRK\s0 ,
+.BR \s-1TIOCSBRK\s0 ,
+and
+.SB TIOCCBRK
+.B ioctl(\|)
+calls.
+The modem control lines
+.BR \s-1TIOCM_CAR\s0 ,
+.BR \s-1TIOCM_CTS\s0 ,
+.BR \s-1TIOCM_RTS\s0 ,
+and
+.SB TIOCM_DTR
+are provided.
+.LP
+The input and output line speeds may be set to any of the speeds
+supported by
+.BR termio .
+The speeds cannot be set independently; when the output speed is set,
+the input speed is set to the same speed.
+.IX  "terminal multiplexer"  "\fLalm\fP \(em Sun ALM-2 Asynchronous Line Multiplexer"
+.br
+.ne 7
+.SS ERRORS
+An
+.B open(\|)
+on a
+.BR /dev/tty *
+or a
+.BR /dev/cu *
+device will fail if:
+.TP 15
+ENXIO
+The unit being opened does not exist.
+.TP 15
+EBUSY
+The dial-out device is being opened and the dial-in device is already open, or
+the dial-in device is being opened with a no-delay open and the dial-out device
+is already open.
+.TP 15
+EBUSY
+The unit has been marked as exclusive-use by another process with a
+.SB TIOCEXCL
+.B ioctl(\|)
+call.
+.TP 15
+EINTR
+The open was interrupted by the delivery of a signal.
+.SH DESCRIPTION (PARALLEL PORT)
+.LP
+The parallel port is Centronics-compatible
+and is suitable for most common parallel printers.
+Devices attached to this interface are
+normally handled by the line printer spooling
+system, and should not be accessed directly by the user.
+.LP
+The printer devices reside on a separate major device number
+from the serial devices.
+Minor device numbers in the range 0 \- 7 access the printer,
+and the recommended naming is
+.BR /dev/mcpp[0-7] .
+.SS IOCTLS
+Various control flags and status bits may be fetched and set on an
+.SM MCP
+printer port.  The following flags and status bits are supported;
+they are defined in
+.BR sundev/mcpcmd.h :
+.LP
+.TS
+expand;
+l l l.
+\s-1MCPRIGNSLCT\s0	0x02	set if interface ignoring \s-1SLCT\s0\- on open
+\s-1MCPRDIAG\s0	0x04	set if printer port is in self-test mode
+\s-1MCPRVMEINT\s0	0x08	set if \s-1VME\s0 bus interrupts enabled
+\s-1MCPRINTPE\s0	0x10	print message when out of paper
+\s-1MCPRINTSLCT\s0	0x20	print message when printer offline
+\s-1MCPRPE\s0	0x40	set if device ready, cleared if device out of paper
+\s-1MCPRSLCT\s0	0x80	set if device online (Centronics \s-1SLCT\s0 asserted)
+.TE
+.LP
+The flags
+.SM
+.B MCPRINTSLCT\*S,
+.SM
+.B MCPRINTPE\*S,
+and
+.SB MCPRDIAG
+may be changed; the other bits are status bits and may not be changed.
+.LP
+The
+.B ioctl(\|)
+calls supported by
+.SM MCP
+printer ports are listed below.
+.TP 15
+.SM MCPIOGPR
+The argument is a pointer to an
+.BR "unsigned char" .
+The printer flags and status bits are stored in the
+.B "unsigned char"
+pointed to by the argument.
+.TP 15
+.SM MCPIOSPR
+The argument is a pointer to an
+.BR "unsigned char" .
+The printer flags are set from the
+.B "unsigned char"
+pointed to by the argument.
+.SS ERRORS
+Normally, the interface only reports the
+status of the device when attempting an
+.BR open (2V)
+call.
+An
+.B open(\|)
+on a
+.BR /dev/mcpp *
+device will fail if:
+.TP 15
+ENXIO
+The unit being opened does not exist.
+.TP 15
+EIO
+The device is offline or out of paper.
+.LP
+Bit 17 of the configuration
+.B flags
+may be specified to say that the interface should ignore Centronics
+.SM SLCT\-
+and
+.SM RDY/PE\-
+when attempting to open the device, but
+this is normally useful only for configuration and troubleshooting:
+if the
+.SM SLCT\-
+and
+.SM RDY
+lines are not asserted during an actual data
+transfer (as with a
+.BR write (2V)
+call), no data is transferred.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/mcpp[0-7]
+parallel printer port
+.TP
+.B /dev/tty[h-o][0-9a-f]
+hardwired tty lines
+.TP
+.B /dev/ttyd[0-9a-f]
+dialin tty lines
+.TP
+.B /dev/cua[0-9a-f]
+dialout tty lines
+.PD
+.SH "SEE ALSO"
+.BR tip (1C),
+.BR uucp (1C),
+.BR mti (4S),
+.BR termio (4),
+.BR ldterm (4M),
+.BR ttcompat (4M),
+.BR zs (4S)
+.SH DIAGNOSTICS
+Most of these diagnostics ``should never happen''; their occurrence
+usually indicates problems elsewhere in the system as well.
+.TP
+.BI mcpa n ": silo overflow."
+More than
+.I n
+characters
+.RI ( n
+very large) have been received by the
+.B mcp
+hardware without being read by the software.
+.TP
+.BI "***port " n " supports \s-1RS\s0449 interface***"
+Probably an incorrect jumper configuration.  Consult the hardware manual.
+.TP
+.BI "mcp port " n " receive buffer error"
+The
+.B mcp
+encountered an error concerning the synchronous receive buffer.
+.TP
+.PD 0
+.BI "Printer on mcpp" n " is out of paper"
+.TP
+.BI "Printer on mcpp" n " paper ok"
+.TP
+.BI "Printer on mcpp" n " is offline"
+.TP
+.BI "Printer on mcpp" n " online"
+Assorted printer diagnostics, if enabled as discussed above.
+.PD
+.SH BUGS
+.LP
+Note: pin 4 is used for hardware flow control on
+\s-1ALM\s0\-2
+ports 0 through 3.
+These two pins should
+.I not
+be tied together on the
+.SM ALM
+end.

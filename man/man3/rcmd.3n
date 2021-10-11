@@ -1,0 +1,153 @@
+.\" @(#)rcmd.3n 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH RCMD 3N "22 November 1987"
+.SH NAME
+rcmd, rresvport, ruserok \- routines for returning a stream to a remote command
+.SH SYNOPSIS
+.nf
+.B "int rcmd(ahost, inport, locuser, remuser, cmd, fd2p)"
+.B char \(**\(**ahost;
+.B unsigned short inport;
+.B "char \(**locuser, \(**remuser, \(**cmd;"
+.B int \(**fd2p
+.LP
+.B int rresvport(port)
+.B int \(**port;
+.LP
+.B "ruserok(rhost, super-user, ruser, luser)"
+.B char \(**rhost;
+.B int super-user;
+.B char \(**ruser, \(**luser;
+.fi
+.IX  stream  "return to remote command \(em \fLrcmd()\fR"
+.IX  "return stream to remote command \(em \fLrcmd()\fR"
+.IX  command  "return stream to remote \(em \fLrcmd()\fR"
+.IX  "remote command, return stream to" "rcmd" "" "\fLrcmd()\fR"
+.IX  "rcmd function"  ""  "\fLrcmd()\fP \(em execute command remotely"
+.IX  "rresvport()"  ""  "\fLrresvport()\fP \(em get privileged socket"
+.IX  "ruserok()"  ""  "\fLruserok()\fP \(em authenticate user"
+.SH DESCRIPTION
+.LP
+.B rcmd(\|)
+is a routine used by the super-user to execute a command on
+a remote machine using an authentication scheme based
+on reserved port numbers.
+.B rresvport(\|)
+is a routine which returns a descriptor to a socket
+with an address in the privileged port space.
+.B ruserok(\|)
+is a routine used by servers
+to authenticate clients requesting service with
+.BR rcmd .
+All three functions are present in the same file and are used
+by the
+.BR rshd (8C)
+server (among others).
+.LP
+.B rcmd(\|)
+looks up the host
+.I *ahost
+using
+.B gethostbyname
+(see
+.BR gethostent (3N)),
+returning \-1 if the host does not exist.  Otherwise
+.I *ahost
+is set to the standard name of the host
+and a connection is established to a server
+residing at the well-known Internet port
+.IR inport .
+.LP
+If the connection succeeds,
+a socket in the Internet domain of type
+.SB SOCK_STREAM
+is returned to the caller, and given to the remote
+command as its standard input (file descriptor 0)
+and standard output (file descriptor 1). If
+.I fd2p
+is non-zero, then an auxiliary channel to a control
+process will be set up, and a descriptor for it will be placed
+in
+.IR *fd2p .
+The control process will return diagnostic
+output from the command (file descriptor 2) on this channel, and will also
+accept bytes on this channel as
+signal numbers, to be
+forwarded to the process group of the command.
+If
+.I fd2p
+is 0, then the standard error (file descriptor 2) of the remote
+command will be made the same as its standard output
+and no
+provision is made for sending arbitrary signals to the remote process,
+although you may be able to get its attention by using out-of-band data.
+.LP
+The protocol is described in detail in
+.BR rshd (8C).
+.LP
+The
+.B rresvport(\|)
+routine is used to obtain a socket with a privileged
+address bound to it.  This socket is suitable for use
+by
+.B rcmd(\|)
+and several other routines.  Privileged Internet ports are those
+in the range 0 to 1023.  Only the super-user
+is allowed to bind an address of this sort to a socket.
+.LP
+.B ruserok(\|)
+takes a remote host's name, as returned by a
+.B gethostbyaddr
+(see
+.BR gethostent (3N))
+routine, two user names and a flag indicating whether
+the local user's name is that of the super-user.  It then
+checks the files
+.B /etc/hosts.equiv
+and, possibly,
+.B .rhosts
+in the local user's home directory to see if the request for
+service is allowed.  A 0 is returned if the machine
+name is listed in the
+.B /etc/hosts.equiv
+file, or the host and remote user name are found in the
+.B .rhosts
+file; otherwise
+.B ruserok(\|)
+returns \-1.  If the super-user
+flag is 1, the checking of the
+.B /etc/hosts.equiv
+file is bypassed.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/hosts.equiv
+.TP
+.B .rhosts
+.PD
+.SH SEE ALSO
+.BR rlogin (1C),
+.BR rsh (1C),
+.BR intro (2),
+.BR gethostent (3N),
+.BR rexec (3N),
+.BR rexecd (8C),
+.BR rlogind (8C),
+.BR rshd (8C)
+.SH DIAGNOSTICS
+.LP
+.B rcmd(\|)
+returns a valid socket descriptor on success.
+It returns \-1 on error and prints a diagnostic message on the standard error.
+.LP
+.B rresvport(\|)
+returns a valid, bound socket descriptor on success.
+It returns \-1 on error with the global value
+.B errno
+set according to the reason for failure.
+The error code
+.SM EAGAIN
+is overloaded to mean \*(lqAll network ports in use.\*(rq

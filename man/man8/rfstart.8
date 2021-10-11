@@ -1,0 +1,140 @@
+.\" @(#)rfstart.8 1.1 92/07/30 SMI; from S5R3
+.TH RFSTART 8 "30 June 1988"
+.SH NAME
+rfstart \- start RFS
+.SH SYNOPSIS
+.B rfstart
+[
+.B \-v
+] [
+.BI \-p " primary_addr"
+]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "RFS" "start" "\fLrfstart\fR \(em start \s-1RFS\s0" ""
+.IX start RFS start \s-1RFS\s0
+.LP
+.B rfstart
+starts Remote File Sharing
+(\s-1RFS\s0)
+and defines an authentication level for incoming requests. 
+This command can be used only after the domain name
+server is set up and your computer's domain name and
+network specification has been defined using
+.BR dname (8).
+.LP
+If the host password has not been set,
+.B rfstart
+will prompt for a password;
+the password prompting process must match the password entered
+for your machine at the primary domain name server (see
+.BR rfadmin (8)).
+If you remove the
+.B loc.passwd
+file or change domains, you will
+also have to reenter the password.
+.LP
+Also, when
+.B rfstart
+is run on a domain name server, entries in the
+.BR rfmaster (5)
+file are syntactically validated.
+.LP
+This command is restricted to the super-user.
+.LP
+If syntax errors are found in validating the
+.BR rfmaster (5)
+file, a warning describing each error will be sent to the standard error.
+.LP
+An error message will be sent to the standard error if
+any of the following is true:
+.RS
+.TP 3
+\(bu
+The shared resource environment is already running.
+.TP
+\(bu
+There is no communications network.
+.TP
+\(bu
+The domain name server cannot be found.
+.TP
+\(bu
+The domain name server does not recognize the machine.
+.TP
+\(bu
+The command is run without super-user privileges.
+.RE
+.LP
+Remote file sharing will not start if the host password in
+.B /usr/nserve/loc.passwd
+is corrupted. 
+If you suspect this has happened, remove the file and run
+.B rfstart
+again to reenter your password.
+.LP
+Note:
+.B rfstart
+will
+.I not
+fail if your host password does not match
+the password on the domain name server.
+You will simply receive a warning message. 
+However, if you try to mount a resource from the primary
+or any other host that validates your password, the
+mount will fail if your password does not match the one
+that host has listed for your machine.
+.SH OPTIONS
+.TP
+.B \-v
+Specify that verification of all clients is required in response to
+initial incoming mount requests;
+any host not in the file
+.BI /usr/nserve/auth.info/ domain /passwd
+for the
+.B domain
+they belong to, will not be allowed to mount resources
+from your host.
+If the
+.B \-v
+option is not specified, hosts named in
+.IB domain /passwd
+will be verified, other hosts will be allowed to
+connect without verification.
+.TP
+.BI \-p " primary_addr"
+Indicate the primary domain name server for your domain.
+.I primary_addr
+must be the network address of the primary name
+server for your domain.
+If the
+.B \-p
+option is not specified, the address of the domain
+name server is taken from the
+.B rfmaster
+file. 
+See
+.BR rfmaster (5)
+for a description of the valid address syntax.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/nserve/rfmaster
+.TP 
+.B /usr/nserve/loc.passwd
+.PD
+.SH "SEE ALSO"
+.BR rfmaster (5),
+.BR adv (8),
+.BR dname (8),
+.BR mount (8),
+.BR rfadmin (8),
+.BR rfstop (8),
+.BR unadv (8)

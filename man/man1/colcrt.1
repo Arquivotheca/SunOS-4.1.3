@@ -1,0 +1,89 @@
+.\" @(#)colcrt.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH COLCRT 1 "9 September 1987"
+.SH NAME
+colcrt \- filter nroff output for a terminal lacking overstrike capability
+.SH SYNOPSIS
+.B colcrt
+.RB [ " \- " ] 
+.RB [ " \-2 " ] 
+.RI [ " filename " ".\|.\|. ]"
+.SH DESCRIPTION
+.IX  colcrt  ""  "\fLcolcrt\fP \(em document previewer"
+.IX  "document production"  "colcrt command"  ""  "\fLcolcrt\fP command"
+.IX  "preview documents, colcrt command"  ""  "\fLcolcrt\fP command"
+.IX  "nroff utilities" colcrt "" "\fLcolcrt\fP \(em filter nroff output for CRT"
+.LP
+.B colcrt
+provides virtual half and reverse
+.SM LINEFEED
+sequences for terminals without such capability, and on which overstriking
+is destructive.  Half
+.SM LINEFEED
+characters and underlining
+(changed to dashing
+.RB ` \- ')
+are placed on new lines in between the normal output lines.
+.SH OPTIONS
+.TP
+.B \-
+Suppress all underlining \(em especially useful for previewing
+.I allboxed
+tables from
+.BR tbl (1).
+.TP
+.B \-2
+Print all half
+.SM LINEFEED
+characters, effectively double spacing
+the output.  Normally, a
+minimal space output format is used which suppresses empty lines.
+.B colcrt
+never suppresses two consecutive empty lines, however.  The
+.B \-2
+option is useful for sending output to the line printer when the
+output contains superscripts and subscripts
+which would otherwise be invisible.
+.SH EXAMPLE
+.LP
+A typical use of
+.B colcrt
+would be
+.IP
+.ft B
+example% tbl exum2.n | nroff \-ms | colcrt \- | more
+.ft R
+.SH "SEE ALSO"
+.BR col (1V),
+.BR more (1),
+.BR nroff (1),
+.BR tbl (1),
+.BR troff (1),
+.BR ul (1)
+.SH BUGS
+.\".LP
+.\"Should fold underlines onto
+.\".SM SPACE
+.\"characters even with the
+.\".RB ` \- '
+.\"option so that
+.\"a true underline character would show; if we did this, however,
+.\".B colcrt
+.\"would not get rid of
+.\".IR cu 'd
+.\"underlining completely.
+.LP
+Cannot back up more than 102 lines.
+.LP
+General overstriking is lost;
+as a special case
+.RB ` \||\| '
+overstruck with
+.RB ` \|\-\| '
+or underline becomes
+.RB ` \|+\| '.
+.LP
+Lines are trimmed to 132 characters.
+.LP
+Some provision should be made for processing
+superscripts and subscripts
+in documents which are already double-spaced.

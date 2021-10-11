@@ -1,0 +1,177 @@
+.\" @(#)inews.1 1.1 92/07/30 SMI;
+.TH INEWS 1 "13 March 1984"
+.SH NAME
+inews \- submit news articles
+.SH SYNOPSIS
+.B inews
+[
+.B \-h
+]
+.B \-t
+.IR title " [ "
+.B \-n 
+.IR newsgroups " ] [ "
+.B \-e 
+.IR "expiration date" " ]"
+.LP
+.B "inews \-p"
+.RI " [ " filename " ] "
+.LP
+.BI "inews \-C " newsgroup
+.SH DESCRIPTION
+.IX  inews  ""  "\fLinews\fP \(em submit news articles"
+.IX  "network news"  "inews"  ""  "\fLinews\fP \(em submit news articles"
+.IX  "submit news articles"
+.LP
+.I Inews
+submits news articles to the
+.SM USENET
+news network.
+.I Inews
+is intended as a raw interface to the news system, not as a human user
+interface.  Casual users should probably use
+.IR postnews (1)
+instead.
+.LP
+The first form of 
+.I inews
+is for submitting user articles.
+The body of the article is read from the standard input.  A
+.I title
+must be specified as there is no default.  Each article
+belongs to a list of newsgroups.  The standard list of newsgroups is
+used if the list is not specified via the
+.B \-n
+option.
+On the Sun system, the standard subscription list is:
+.IR general,
+.IR all.general ,
+.IR general ,
+.IR all.announce ,
+.IR !junk ,
+.IR !control ,
+and
+.IR !test .
+If you wish to submit an article in multiple newsgroups, the
+.I newsgroups
+must be separated by commas and/or spaces.  The expiration
+date is set to the local default if not otherwise specified.
+.LP
+When posting an article, the environment is checked for
+information about the sender.  If
+.SM NAME
+is found, its value is used for the full name,
+rather than the system value obtained from
+.IR /etc/passwd .
+This is useful if the system value cannot be set, or when
+more than one person uses the same login.  If
+.SM ORGANIZATION
+is found, the value overrides the system default organization.
+This is useful when a person uses a guest login and is
+not primarily associated with the organization owning the machine.
+.LP
+The second form of
+.I inews
+is for receiving articles from other machines.  If
+.I filename
+is given, the article is read from the specified file; otherwise
+the article is read from the standard input.  An expiration date
+need not be present and a receival date is ignored if present.
+.LP
+After local installation,
+.I inews
+transmits the article to all systems
+that subscribe to the newsgroups that the article belongs to.
+.LP
+The third form of
+.I inews
+is for creating new newsgroups.  On some systems, this may
+be limited to specific users such as the super-user or news administrator.
+This is true on the Sun system.
+.LP
+If the file
+.I /usr/lib/news/recording
+is present, it is taken as a list of
+`recordings' to be shown to users posting news.
+This is an analogy to the recording you hear when you dial information
+in some parts of the country, asking you if you really wanted to do this.
+.I /usr/lib/news/recording
+contains lines of the form:
+.br
+	newsgroups <tab> filename
+.br
+for example:
+.br
+	net.all	net.recording
+	fa.all	fa.recording
+.br
+Any user posting an article to a newsgroup matching the pattern on
+the left is shown the contents of the file on the right.
+The file is found in the
+.SM LIB
+directory (often
+.IR /usr/lib/news ).
+The user is then told to hit DEL to abort or RETURN to proceed.
+The intent of this feature is to help companies keep proprietary
+information from accidently leaking out.
+.SH OPTIONS
+.TP
+\fB\-n\fP " \fInewsgroups\fP"
+specifies a list of newsgroups to which the articles are submitted.
+Elements in the list must be separated by commas and/or spaces.  The expiration
+date is set to the local default if not otherwise specified.
+.TP
+\fB\-f\fP [\|\fIsender\fP\|]
+Specifies the article's sender.  Without this flag, the sender
+defaults to the user's name.  If
+.B \-f
+is specified, the real sender's name is included as a Sender line.
+.TP
+.B \-h
+Headers are present at the beginning of the
+article, and these headers should be included with the article
+header instead of as text.
+This mechanism can be used to edit headers and supply additional
+nondefault headers, but not to specify certain information,
+such as the sender and article ID that
+.I inews
+itself generates.
+.SH FILES
+.PD 0
+.TP 25
+/usr/spool/news/.sys.nnn
+temporary articles
+.TP 25
+.RI /usr/spool/news/ newsgroups / article_no.
+Articles
+.TP 25
+/usr/spool/oldnews/
+Expired articles
+.TP 25
+/usr/lib/news/active
+List of known newsgroups and highest local article numbers in each.
+.TP 25
+/usr/lib/news/seq
+Sequence number of last article
+.TP 25
+/usr/lib/news/history
+List of all articles ever seen
+.TP 25
+/usr/lib/news/sys
+System subscription list
+.PD
+.SH "SEE ALSO"
+mail(1),
+binmail(1),
+getdate(3),
+news(5),
+newsrc(5),
+postnews(1),
+readnews(1),
+recnews(1),
+sendnews(8),
+uucp(1),
+uurec(8),
+.br
+\fINetwork News User's Guide\fP in the
+\fIBeginner's Guide to the Sun Workstation\fP.

@@ -1,0 +1,493 @@
+.\" @(#)read.2v 1.1 92/07/30 SMI; from UCB 4.3 and S5R3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" TODO
+.\" Rearrange bsd and s5 info into separate sections as elsewhere.
+.\" Then talk about posix non-blocking I/O as it is different from s5.
+.\" Also, check on what read() does when it receives a signal.
+.TH READ 2V "21 January 1990"
+.SH NAME
+read, readv \- read input
+.SH SYNOPSIS
+.nf
+.ft B
+int read(fd, buf, nbyte)
+int fd;
+char *buf;
+int nbyte;
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/uio.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int readv(fd, iov, iovcnt)
+int fd;
+struct iovec *iov;
+int iovcnt;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  read()  ""  \fLread()\fP
+.IX  "generic operations"  read()  ""  \fLread()\fP
+.IX  "read scattered readv()"  ""  "read scattered \(em \fLreadv()\fP"
+.IX  "generic operations"  "scatter read readv()"  ""  "scatter read \(em \fLreadv()\fP"
+.IX  "scatter read readv()"  ""  "scatter read \(em \fLreadv()\fP"
+.LP
+.B read(\|)
+attempts to read
+.I nbyte
+bytes of data from the object referenced by the descriptor
+.I fd
+into the buffer pointed to by
+.IR buf .
+.B readv(\|)
+performs the same action as 
+.BR read(\|) ,
+but scatters the input data into the
+.I iovcnt
+buffers specified by the members of the
+.I iov
+array:
+.IR iov [0], iov "[1], .\|.\|.\|,"
+.IR iov [ iovcnt \|\-\|1].
+.LP
+If
+.I nbyte
+is zero,
+.B read(\|)
+takes no action and returns 0.
+.BR readv(\|) ,
+however,
+returns \-1 and sets the global variable
+.B errno
+(see
+.SM ERRORS
+below).
+.LP
+For
+.BR readv(\|) ,
+the
+.B iovec
+structure is defined as
+.LP
+.nf
+.RS
+.DT
+.ft B
+struct iovec {
+	caddr_t	iov_base;
+	int	iov_len;
+};
+.ft R
+.RE
+.fi
+.LP
+Each
+.B iovec
+entry specifies the base address and length of an area
+in memory where data should be placed.
+.B readv(\|)
+will always fill an area completely before proceeding to the next.
+.LP
+On objects capable of seeking, the
+.B read(\|)
+starts at a position given by the pointer associated with
+.I fd
+(see
+.BR lseek (2V)).
+Upon return from
+.BR read(\|) ,
+the pointer is incremented by the number of bytes actually read.
+.LP
+Objects that are not capable of seeking always read from the current
+position.  The value of the pointer associated with such an object is
+undefined.
+.LP
+Upon successful completion,
+.B read(\|)
+and
+.B readv(\|)
+return the number of bytes actually read and placed in the buffer.
+The system guarantees to read the number of bytes requested if
+the descriptor references a normal file which has that many bytes left
+before the
+.SM EOF
+(end of file),
+but in no other case.
+.LP
+If the process calling
+.B read(\|)
+or
+.B readv(\|)
+receives a signal before any data are read, the system call is restarted
+unless the process explicitly set the signal to interrupt the call using
+.B sigvec(\|)
+or
+.B sigaction(\|)
+(see the discussions of
+.SB SV_INTERRUPT
+on
+.BR sigvec (2)
+and
+.SB SA_INTERRUPT
+on
+.BR sigaction (3V)).
+If
+.B read(\|)
+or
+.B readv(\|)
+is interrupted by a signal after successfully reading some data,
+it returns the number of bytes read.
+.LP
+If
+.I nbyte
+is not zero and
+.B read(\|)
+returns 0, then
+.SM EOF
+has been reached.
+If
+.B readv(\|)
+returns 0, then
+.SM EOF
+has been reached.
+.LP
+A
+.B read(\|)
+or
+.B readv(\|)
+from a
+.SM STREAMS
+file
+(see
+.BR intro (2))
+can operate in three different modes: \*(lqbyte-stream\*(rq mode,
+\*(lqmessage-nondiscard\*(rq mode, and \*(lqmessage-discard\*(rq mode.
+The default is byte-stream mode.
+This can be changed using the
+.SB I_SRDOPT
+.BR ioctl (2)
+request (see
+.BR streamio (4)),
+and can be tested with the
+.SB I_GRDOPT
+.B ioctl(\|)
+request.
+In byte-stream mode,
+.B read(\|)
+and
+.B readv(\|)
+will retrieve data from the
+.IR stream
+until as many bytes as were requested are
+transferred,
+or until there is no more data to be retrieved.
+Byte-stream mode ignores message boundaries.
+.LP
+In
+.SM STREAMS
+message-nondiscard mode,
+.B read(\|)
+and
+.B readv(\|)
+will retrieve data until as many bytes as were requested are transferred,
+or until a message boundary is reached.  If the
+.B read(\|)
+or
+.B readv(\|)
+does not retrieve all the data in a message,
+the remaining data are left on the
+.IR stream ,
+and can be retrieved by the next
+.BR read(\|) ,
+.BR readv(\|) ,
+or
+.BR getmsg (2)
+call.  Message-discard mode also retrieves data
+until as many bytes as were requested are transferred,
+or a message boundary is reached.
+However, unread data remaining in a message after the
+.B read(\|)
+or
+.B readv(\|)
+returns are discarded, and are not available for a
+subsequent
+.BR read(\|) ,
+.BR readv(\|) ,
+or
+.BR getmsg(\|) .
+.LP
+When attempting to read from a descriptor associated with an empty pipe,
+socket,
+.SM FIFO\s0,
+or
+.IR stream :
+.br
+.ne 4
+.TP 3
+\(bu
+If the object the descriptor is associated with is marked for
+4.2\s-1BSD\s0-style
+non-blocking I/O (with the
+.SB FIONBIO
+.B ioctl(\|)
+request or a call to
+.BR fcntl (2V)
+using the
+.SB FNDELAY
+flag from
+.B <sys/file.h>
+or the
+.SB O_NDELAY
+flag from
+.B <fcntl.h>
+in the 4.2\s-1BSD\s0
+environment), the read will return \-1 and
+.B errno
+will be set to
+.SM EWOULDBLOCK\s0.
+.TP 3
+\(bu
+If the descriptor is marked for System V-style non-blocking I/O (using
+.B fcntl(\|)
+with the
+.SB FNBIO
+flag from
+.B <sys/file.h>
+or the
+.SB O_NDELAY
+flag from
+.B <fcntl.h>
+in the System V environment), and does not refer to a
+.IR stream ,
+the read will return 0.  Note: this
+is indistinguishable from
+\s-1EOF\s0.
+.TP 3
+\(bu
+If the descriptor is marked for \s-1POSIX\s0-style non-blocking I/O
+(using
+.B fcntl(\|)
+with the
+.SB O_NONBLOCK
+flag from
+.BR <fcntl.h> )
+and refers to a
+.IR stream ,
+the read will return \-1 and
+.B errno
+will be set to
+.SM EAGAIN\s0.
+.TP 3
+\(bu
+If neither the descriptor nor the object it refers to are marked for
+non-blocking I/O, the read will block until data is available to
+be read or the object has been \(lqdisconnected\(rq.  A pipe or
+.SM FIFO
+is \(lqdisconnected\(rq when no process has the
+object open for writing; a socket that was connected is
+\(lqdisconnected\(rq when the connection is broken; a stream is
+\(lqdisconnected\(rq when a hangup condition occurs
+(for instance, when carrier
+drops on a terminal).
+.LP
+If the descriptor or the object is marked for non-blocking I/O,
+and less data are available than are requested by the
+.B read(\|)
+or
+.BR readv(\|) ,
+only the data that are available are returned, and the count indicates how
+many bytes of data were actually read.
+.LP
+When reading from a
+.SM STREAMS
+file, handling of zero-byte messages is
+determined by the current read mode setting.
+In byte-stream mode,
+.B read(\|)
+and
+.B readv(\|)
+accept data until as many bytes as were requested are transferred,
+or until there is no more data to read, or until a zero-byte message
+block is encountered.
+.B read(\|)
+and
+.B readv(\|)
+then return the number of bytes read, and places the zero-byte
+message back on the
+.I stream
+to be retrieved by the next
+.BR read(\|) ,
+.BR readv(\|) ,
+or
+.BR getmsg(\|) .
+In the two other modes, a zero-byte message returns a value of 0 and the
+message is removed from the
+.IR stream .
+When a zero-byte message is read as the first message on a
+.IR stream ,
+a value of 0 is returned regardless of the read mode.
+.LP
+A
+.B read(\|)
+or
+.B readv(\|)
+from a
+.SM STREAMS
+file can only process data messages.
+It cannot process any type of protocol message and will fail if
+a protocol message is encountered at the
+.BR stream head .
+.LP
+Upon successful completion,
+.B read(\|)
+and
+.B readv(\|)
+mark for update the
+.B st_atime
+field of the file.
+.SH RETURN VALUES
+.LP
+.B read(\|)
+and
+.B readv(\|)
+return
+the number of bytes actually read
+on success.
+On failure,
+they return
+\-1
+and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EAGAIN
+The descriptor referred to a
+.IR stream ,
+was marked for System V-style non-blocking I/O,
+and no data were ready to be read.
+.TP
+.SM EBADF
+.I d
+is not a valid file descriptor open for reading.
+.TP
+.SM EBADMSG
+The message waiting to be read on a
+.I stream
+is not a data message.
+.TP
+.SM EFAULT
+.I buf
+points outside the allocated address
+space.
+.TP
+.SM EINTR
+The process performing
+a read from a slow device received a signal before
+any data arrived, and the signal was set to interrupt the system call.
+.TP
+.SM EINVAL
+The
+.I stream
+is linked below a multiplexor.
+.IP
+The pointer associated with
+.I fd
+was negative.
+.br
+.ne 7
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.IP
+The calling process is in a background process group and is attempting to read
+from its controlling terminal and the process is ignoring or blocking
+.SM SIGTTIN\s0.
+.IP
+The calling process is in a background process group and is attempting to read
+from its controlling terminal and
+the process is orphaned.
+.TP
+.SM EISDIR
+.I fd
+refers to a directory which is on a file system
+mounted
+using the
+.SM NFS\s0.
+.TP
+.SM EWOULDBLOCK
+The file was marked for 4.2\s-1BSD\s0-style non-blocking I/O,
+and no data were ready to be read.
+.LP
+In addition to the above,
+.B readv(\|)
+may set
+.B errno
+to:
+.TP 20
+.SM EFAULT
+Part of
+.I iov
+points outside the process's allocated address space.
+.TP
+.SM EINVAL
+.I iovcnt
+was less than or equal to 0, or greater than 16.
+.IP
+One of the
+.B iov_len
+values in the
+.I iov
+array was negative.
+.IP
+The sum of the
+.B iov_len
+values in the
+.I iov
+array overflowed a 32-bit integer.
+.LP
+A
+.B read(\|)
+or
+.B readv(\|)
+from a
+.SM STREAMS
+file will also fail if an error message is received
+at the
+.I stream
+head.
+In this case,
+.B errno
+is set to the value returned in the
+error message.
+If a hangup occurs on the
+.I stream
+being read,
+.B read(\|)
+will continue to operate normally until the
+.B stream head
+read queue is empty.  Thereafter, it will return 0.
+.SH "SEE ALSO"
+.BR dup (2V),
+.BR fcntl (2V),
+.BR getmsg (2),
+.BR intro (2),
+.BR ioctl (2),
+.BR lseek (2V),
+.BR open (2V),
+.BR pipe (2V),
+.BR select (2),
+.BR socket (2),
+.BR socketpair (2),
+.BR streamio (4),
+.BR termio (4)

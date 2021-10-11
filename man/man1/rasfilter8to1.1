@@ -1,0 +1,68 @@
+.\" @(#)rasfilter8to1.1 1.1 92/07/30 SMI;
+.TH RASFILTER8TO1 1 "8 September 1988"
+.SH NAME
+rasfilter8to1 \- convert an 8-bit deep rasterfile to a 1-bit deep rasterfile
+.SH SYNOPSIS
+.B rasfilter8to1
+.RB [ " \-d " ]
+.RB [ " \-rgba "
+.IR threshold " ]"
+.if n .ti +0.5i
+.RI [ " infile " [ " outfile " ]]
+.SH DESCRIPTION
+.IX  "rasfilter8to1 command"  ""  "\fLrasfilter8to1\fP \(em convert 8-bit rasterfile to 1-bit rasterfile"
+.IX  "convert 8-bit rasterfile to 1-bit rasterfile"  ""  "convert 8-bit rasterfile to 1-bit rasterfile\(em \fLrasfilter8to1\fP"
+.LP
+.B rasfilter8to1
+reads the 8-bit deep rasterfile
+.I infile
+(the standard input default) and converts it to
+the 1-bit deep rasterfile
+.I outfile
+(standard output default) by thresholding or ordered dither.
+The output format is Sun standard rasterfile format
+.RB "(see " <rasterfile.h> ).
+This command is useful
+for viewing 8-bit rasterfiles on devices that can only display
+monochrome images.
+.SH OPTIONS
+.TP
+.B \-d
+Use ordered dither to convert the input file instead of thresholding.
+.TP
+.BI \-rgba " threshold"
+Set the threshold for the red, green, blue, and average pixel color
+values.  Pixels whose color values are greater
+than or equal to all of the thresholds are
+given a value of 0 (white) in the output rasterfile;
+other pixels are set to 1 (black).  The average threshold defaults to
+128, the individual thresholds to zero.
+.SH EXAMPLE
+The command
+.IP
+.B
+example% screendump \-f  /dev/cgtwo | rasfilter8to1 | lpr \-Pversatec \-v
+.LP
+prints a monochromatic representation of the
+.B /dev/cgtwo
+frame buffer on the printer named
+.B versatec
+using the
+.B v
+output filter (see
+.BR /etc/printcap ).
+The printer must support an appropriate imaging model such as
+PostScript in order to print the image.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/rasfilters/*
+filters for non-standard rasterfile formats
+.PD
+.SH "SEE ALSO"
+.BR lpr (1),
+.BR rastrepl (1),
+.BR screendump (1),
+.BR screenload (1)
+.LP
+.TX PIXRCT

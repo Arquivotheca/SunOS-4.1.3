@@ -1,0 +1,121 @@
+.\" @(#)t_sync.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_SYNC 3N "21 January 1990"
+.SH NAME
+t_sync \- synchronize transport library
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_sync(fd)
+int fd;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_sync()" "" "\fLt_sync()\fR \(em synchronize transport library" ""
+.IX synchronize "transport library"
+.IX transport "synchronize transport library"
+.LP
+For the transport endpoint specified by
+.IR fd ,
+.B t_sync(\|)
+synchronizes the data structures managed by the transport library
+with information from the underlying transport provider.
+In doing so, it can convert a raw file descriptor
+(obtained using
+.BR open (2V),
+.BR dup (2V),
+or as a result of a
+.BR fork (2V)
+and
+.BR execve (2V))
+to an initialized transport endpoint, assuming that file descriptor referenced
+a transport provider.
+.B t_sync(\|)
+also allows two cooperating processes to synchronize their
+interaction with a transport provider.
+.LP
+For example, if a process
+.I forks
+a new process and issues an
+.IR exec ,
+the new process must issue a
+.B t_sync(\|)
+to build the private library data structure associated with a
+transport endpoint and to synchronize the data structure
+with the relevant provider information.
+.LP
+It is important to remember that the transport provider treats
+all users of a transport endpoint as a single user.
+If multiple processes are using the same endpoint, they should
+coordinate their activities so as not to violate the state of the
+provider.
+.B t_sync(\|)
+returns the current state of the provider to the user, thereby
+enabling the user to verify the state before taking further
+action.
+This coordination is only valid among cooperating processes;
+it is possible that a process or an incoming event could change the provider's state
+.I after
+a
+.B t_sync(\|)
+is issued.
+.LP
+If the provider is undergoing a state transition when
+.B t_sync(\|)
+is called, the function will fail.
+.SH RETURN VALUES
+.LP
+.B t_sync(\|)
+returns \-1 on failure.
+Upon success, the state of the transport provider is returned;
+it may be one of the following:
+.RS
+.TP 15
+.SB T_IDLE
+idle
+.TP 15
+.SB T_OUTCON
+outgoing connection pending
+.TP 15
+.SB T_INCON
+incoming connection pending
+.TP 15
+.SB T_DATAXFER
+data transfer
+.TP 15
+.SB T_OUTREL
+outgoing orderly release (waiting for an orderly release indication)
+.TP 15
+.SB T_INREL
+incoming orderly release (waiting for an orderly release request)
+.TP 15
+.SB T_UNBND
+unbound
+.RE
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor is a valid open file descriptor but
+does not refer to a transport
+endpoint.
+.TP
+.SM TSTATECHNG
+The transport provider is undergoing a state change.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR dup (2V),
+.BR execve (2V),
+.BR fork (2V),
+.BR open (2V)
+.LP
+.TX NETP

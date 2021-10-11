@@ -1,0 +1,54 @@
+
+	@(#)README 1.1 92/07/30 SMI
+
+	Copyright (c) 1986 by Sun Microsystems, Inc.
+
+
+Implementation Notes - ndbootd
+
+
+The ND boot block server program must be able to open a raw
+IP socket (address format AF_INET, socket type SOCK_RAW) that
+listens for ND packets (protocol IPPROTO_ND, i.e. 77 decimal).
+All ND packets whose IP destination address is equal to the
+server machine's IP address or all zeroes should be received on
+the socket.  Sun Unix 3.0 does not support this, while 3.2 does.
+The fix in 3.2 involves an additional entry in the protocol
+switch table (in_proto.c in the kernel) as follows:
+
+{ SOCK_RAW,	PF_INET,	IPPROTO_ND,	PR_ATOMIC|PR_ADDR,
+  rip_input,	rip_output,	0,		0,
+  raw_usrreq,
+  0,		0,		0,		0,
+},
+
+This is the only entry with protocol IPPROTO_ND that should be
+compiled into the protocol switch table, i.e. ND support should
+NOT be configured into the kernel.  In 4.3BSD, no fix is needed.
+
+
+The program also requires Ethernet address translation functions.
+On a Sun, these are provided in ether_addr.c in the C library.
+The functions needed are specified as follows:
+	struct ether_addr {
+		u_char  ether_addr_octet[6];
+	};
+	ether_ntohost(hostname, e)
+		char *hostname;
+		struct ether_addr *e;
+	ether_hostton(hostname, e)
+		char *hostname;
+		struct ether_addr *e;
+
+On a Sun, struct ether_addr is defined in <netinet/if_ether.h>.
+ether_ntohost() takes a 48 bit Ethernet address and yields
+the corresponding host name.  The string pointed to by hostname
+must be long enough to hold the host name and a null character.
+(RFC 882 suggests that domain-style host names be no longer than
+254 characters.)  Inversely, ether_hostton() takes a host name
+and yields a 48 bit Ethernet address.
+
+Both functions return zero upon success and non-zero upon failure.
+Both functions consult the file /etc/ethers or, if available, the
+Network Information Services database 'ethers' to translate between
+host names and addresses.

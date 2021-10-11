@@ -1,0 +1,246 @@
+.\" @(#)shmctl.2 1.1 92/07/30 SMI; from S5R3
+.TH SHMCTL 2 "21 January 1990"
+.SH NAME
+shmctl \- shared memory control operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int shmctl (shmid, cmd, buf)
+int shmid, cmd;
+struct shmid_ds *buf;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  shmctl()  ""  "\fLshmctl()\fR \(em shared memory control"
+.IX  "shared memory" "control \(em\fLshmctl()\fR"
+.LP
+.B shmctl(\|)
+provides a variety of shared memory control operations as specified by
+.IR cmd .
+The following
+.IR cmd s
+are available:
+.TP 15
+.SB IPC_STAT
+Place the current value of each member of the data structure associated with
+.I shmid
+into the structure pointed to by
+.IR buf .
+The contents of this structure are defined in
+.BR intro (2).
+.B [\s-1READ\s0]
+.TP
+.SB IPC_SET
+Set the value of the following members of the data structure associated with
+.I shmid
+to the corresponding value found in the structure pointed to by
+.IR buf :
+.RS
+.IP
+.ft B
+.nf
+shm_perm.uid
+shm_perm.gid
+shm_perm.mode /\(** only low 9 bits \(**/
+.fi
+.ft R
+.RE
+.IP
+This
+.I cmd
+can only be executed by a process that has an effective user
+.SM ID
+equal to that of super-user, or to the value of
+.B shm_perm.cuid
+or
+.B shm_perm.uid
+in the data structure associated with
+.IR shmid .
+.TP 15
+.SB IPC_RMID
+Remove the shared memory identifier specified by
+.I shmid
+from the system.
+If no processes are currently mapped to the corresponding
+shared memory segment, then the segment is removed and the associated resources
+are reclaimed. 
+Otherwise, the segment will persist, although
+.BR shmget (2)
+will not be able to locate it, until it is no longer mapped by any process.
+This
+.I cmd
+can only be executed by a process that has an effective user
+.SM ID
+equal to that of super-user, or to the value of
+.B shm_perm.cuid
+or
+.B shm_perm.uid
+in the data structure associated with
+.IR shmid .
+.\".TP
+.\".SB SHM_LOCK
+.\"Lock the shared memory segment specified by \fIshmid\fP in memory.
+.\"This
+.\"\fIcmd\fP
+.\"can only be executed by a process that has an effective user
+.\".SM ID
+.\"equal to super-user.
+.\".TP
+.\".SB SHM_UNLOCK
+.\"Unlock the shared memory segment specified by
+.\"\fIshmid\fP.
+.\"This
+.\"\fIcmd\fP
+.\"can only be executed by a process that has an effective user
+.\".SM ID
+.\"equal to super-user.
+.LP
+In the
+.BR shmop (2)
+and 
+.BR shmctl (2)
+system call descriptions, the permission required
+for an operation is given as "[token]", where \*(lqtoken\*(rq is the type
+of permission needed interpreted as follows:
+.LP
+.RS
+.PD 0
+.TP 28
+00400
+Read by user
+.TP
+00200
+Write by user
+.TP
+00060
+Read, Write by group
+.TP
+00006
+Read, Write by others
+.RE
+.PD
+.LP
+Read and Write permissions on a shmid are
+granted to a process if one or more of the following are true:
+.IP
+The effective user
+.SM ID
+of the process is super-user.
+.IP
+The effective user
+.SM ID
+of the process matches
+.B shm_perm.[c]uid
+in the data structure associated with
+.I shmid
+and the appropriate bit of the
+\*(lquser\*(rq portion (0600) of
+.B shm_perm.mode
+is set.
+.IP
+The effective user
+.SM ID
+of the process does not match
+.B shm_perm.[c]uid
+and the effective group
+.SM ID
+of the process matches
+.B shm_perm.[c]gid
+and the appropriate bit of the \*(lqgroup\*(rq portion
+(060) of
+.B shm_perm.mode
+is set.
+.br
+.ne 5
+.IP
+The effective user
+.SM ID
+of the process does not match
+.B shm_perm.[c]uid
+and the effective group
+.SM ID
+of the process does not match
+.B shm_perm.[c]gid
+and the appropriate bit of the \*(lqother\*(rq portion (06) of
+.B shm_perm.mode
+is set.
+.LP
+Otherwise, the corresponding permissions are denied.
+.SH RETURN VALUES
+.LP
+.B shmctl(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+.I cmd
+is equal to
+.SB IPC_STAT
+and
+.B [\s-1READ\s0]
+operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM EFAULT
+.I buf
+points to an illegal address.
+.TP
+.SM EINVAL
+.I shmid
+is not a valid shared memory identifier.
+.IP
+.I cmd
+is not a valid command.
+.\".TP
+.\".SM ENOMEM
+.\".I cmd
+.\"is equal to
+.\".SB SHM_LOCK
+.\"and there is not enough memory.
+.TP
+.SM EPERM
+.I cmd
+is equal to
+.SB IPC_RMID
+or
+.SB IPC_SET
+and the effective user
+.SM ID
+of the calling process is not super-user or
+the value of
+.B shm_perm.cuid
+or
+.B shm_perm.uid
+in the data structure associated with
+.IR shmid .
+.\".IP
+.\".I cmd
+.\"is equal to
+.\".SB SHM_LOCK
+.\"or
+.\".SB SHM_UNLOCK
+.\"and the effective user
+.\".SM ID
+.\"of the calling process is not equal to that of super-user.
+.SH SEE ALSO
+.BR ipcrm (1),
+.BR ipcs (1),
+.BR intro (2),
+.BR shmget (2),
+.BR shmop (2)

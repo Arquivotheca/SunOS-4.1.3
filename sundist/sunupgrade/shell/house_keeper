@@ -1,0 +1,40 @@
+##################################################
+tmp_house(){
+# Housekeeping 
+
+if [ -f $TMP_PATH ]; then
+    $RM -f $TMP_PATH
+fi
+ 
+if [ ! -d $TMP_PATH ] ; then
+    $MKDIR $TMP_PATH
+fi
+if [ ! -d $INCLUDE_PATH ]; then
+    $MKDIR $INCLUDE_PATH
+fi
+if [ ! -d $SCRIPT_PATH ]; then
+    $MKDIR $SCRIPT_PATH
+fi
+
+$RM -rf $INCLUDE_PATH/* \
+	$sos_file $before_file $after_file $tar_file
+}
+##################################################
+mk_nullfile(){
+    $CAT /dev/null > $1
+}
+##################################################
+cr_nullfile(){
+    $CAT /dev/null >> $1
+}
+##################################################
+cleanup(){
+    if [ $1 != 0 ]; then
+        echo "$CMD  aborted"
+        echo "Exit code" $1
+    fi
+    $COM_PLACE/rm -rf $USR_TMP $TMP
+    $SYNC; $SYNC
+    exit $1
+}
+##################################################

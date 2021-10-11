@@ -1,0 +1,170 @@
+.\" @(#)passwd.adjunct.5 1.1 92/07/30 SMI
+.TH PASSWD.ADJUNCT 5 "14 December 1987"
+.SH NAME
+passwd.adjunct \- user security data file
+.SH SYNOPSIS
+.B /etc/security/passwd.adjunct
+.SH DESCRIPTION
+.IX  "passwd.adjunct file"  ""  "\fLpasswd.adjunct\fP \(em password file"
+.LP
+The
+.B passwd.adjunct
+file contains the following information for each user:
+.IP
+.IB name : password : min-label :\c
+.IB max-label : default-label : always-audit-flags :\c
+.IB never-audit-flags :
+.TP 20
+.I name
+The user's login name in the system and it must be unique.
+.TP
+.I password
+The encrypted password.
+.TP
+.I min-label
+The lowest security level at which this
+user is allowed to login
+(not used at C2 level).
+.TP
+.I max-label
+The highest security level at which this
+user is allowed to login
+(not used at C2 level).
+.TP
+.I default-label
+The security level at which this user will
+run unless a label is specified at login.
+.TP
+.I always-audit-flags
+Flags specifying events always to be audited
+for this user's processes; see
+.BR audit_control (5).
+.TP
+.I never-audit-flags
+Flags specifying events never to be audited
+for this user's processes; see
+.BR audit_control (5).
+.LP
+Field are separated by a colon, and
+each user from the next by a
+.SM NEWLINE\s0.
+.LP
+The
+.B passwd.adjunct
+file can also have line beginning with a
+.RB ` + '
+(plus sign), which means to incorporate
+entries from the 
+Network Information Service
+(\s-1NIS\s0).
+There are three styles of
+.RB ` + '
+entries: all by itself,
+.RB ` + '
+means to insert the entire contents
+of the 
+.SM NIS
+.B passwd.adjunct
+file at that point;
+.BI + name
+means to insert the entry (if any) for
+.I name
+from the 
+.SM NIS
+service at that point;
+.BI +@ name
+means to insert the entries for all
+members of the network group
+.I name
+at that point.  If a
+.RB ` + '
+entry has a non-null
+password, it will override what is contained
+in the 
+.SM NIS
+service.
+.SH EXAMPLE
+.LP
+Here is a sample
+.B /etc/security/passwd.adjunct
+file:
+.RS
+.LP
+.ft B
+.nf
+root:q.mJzTnu8icF.::::::
+ignatz:7KsI8C\s-1FRPNVX\s0g::b,ap,bp,gp,dp,ic,r,d,l::+dc,+da:-dr:
+rex:7\s-1HU\s08\s-1UUGRPNVX\s0g:b,ap:b,ap,bp:b,bp::+ad:
++fred:9x.\s-1FFU\s0w6xcJBa::::::
++:
+.fi
+.ft R
+.LP
+.RE
+The user
+.B root
+is the super-user, who has no special label
+constraints nor audit interest.  The user
+.B ignatz
+may have any label from the lowest to the level
+.B b
+and any of a large number of categories.
+.B ignatz
+will run at system low unless he specifies otherwise.
+He is being audited on the system default event
+classes as well as data creations and access
+changes, but never for failed data reads.
+The user
+.B rex
+can function only at the level
+.B b
+and only in the categories
+.B ap
+or
+.B ap
+and
+.BR bp .
+By default, he will run at
+.RB ` b , bp '.
+He is audited with the system defaults,
+except that successful administrative
+operations are not audited.  The user
+.B fred
+will have the labels and audit flags that are specified
+in the 
+.SM NIS
+.B passwd.adjunct
+file.
+Any other users specified in the
+.SM NIS
+service will be able to log in on this system.
+.LP
+The user security data file resides in the
+.B /etc/security
+directory.
+Because it contains encrypted passwords,
+it does not have general read permission.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/security/passwd.adjunct
+.TP
+.B /etc/security
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR passwd (1),
+.BR crypt (3),
+.BR getpwaent (3),
+.BR getpwent (3V),
+.BR audit_control (5),
+.BR passwd (5),
+.BR adduser (8)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

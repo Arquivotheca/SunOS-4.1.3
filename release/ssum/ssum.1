@@ -1,0 +1,57 @@
+.\" @(#)ssum.1 1.1 85/04/05 SMI; 
+.TH SSUM 1  "14 July 1986"
+.SH NAME
+ssum \- sum and count bytes for each revision in an SCCS file
+.SH SYNOPSIS
+.B ssum
+.BR [ - ]
+.BR [ files... ]
+.SH DESCRIPTION
+.I Ssum
+calculates and displays a 16-bit checksum, number of bytes, SCCS revision
+number, and SCCS file name for each revision in the SCCS file for
+every file name it is given. The
+checksum and byte count for a particular revision match those given by:
+.nf
+\fL
+	/usr/ucb/sccs get -p -k -r\fIrev.lev.br.seq file_name\fP > /tmp/file
+	/bin/sum /tmp/file	# same check sum
+	/bin/ls -l /tmp/file	# same byte count
+\fR
+.fi
+It is typically used to find identical SCCS deltas in one or more
+SCCS files.
+
+An argument of '-' will cause
+.I ssum
+to take standard input as a list of file names.
+.SH "SCCS FILE NAME GENERATION"
+.I Ssum
+processes each path name to generate valid SCCS file names removing
+"SCCS", "s." and redundant ".", "..", or "//"'s.
+The first file name generated is
+.IR directory_part /SCCS/s. file_name_part ,
+the second name is
+.IR directory_part /s. file_name_part .
+.SH "SEE ALSO"
+sccs(1), get(1), sum(1), sccsfile(5), smerge(1)
+.SH DIAGNOSTICS
+.HP
+"No path specified" - you must supply at least one file name.
+.HP
+"Warning: line count for \fIfile_name\fP rev \fIrevision\fP, expected
+\fIline_count\fP, counted \fIline_count\fP." - This error
+generally means that the line count in the SCCS header
+is wrong for a particular version but it could indicate a bug in
+\fIssum\fP. The probable reason for an incorrect line count in the SCCS
+header is that someone edited the SCCS file directly and then
+used \fLadmin -z \fIfile_name\fR to satisfy SCCS.
+.HP 0
+Other error messages are self explanatory or indicate a bad SCCS file.
+.SH EXIT STATUS
+.I Ssum
+normally exits with a status of 0.
+Whenever
+.I ssum
+cannot successfully process a file, the exit code is equal to \fIerrno\fP
+or 255.

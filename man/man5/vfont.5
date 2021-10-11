@@ -1,0 +1,124 @@
+.\" @(#)vfont.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH VFONT 5 "19 October 1987"
+.SH NAME
+vfont \- font formats
+.SH SYNOPSIS
+.B #include <vfont.h>
+.SH DESCRIPTION
+.IX  "vfont file"  ""  "\fLvfont\fP \(em font formats"
+.LP
+The fonts used by the window system
+and printer/plotters have
+the following format.  Each font is in a file,
+which contains a header, an array of
+character description structures, and an
+array of bytes containing the bit maps
+for the characters.  The header has the
+following format:
+.LP
+.RS
+.ta 8n +\w'unsigned short  'u +20n
+.nf
+.ft B
+struct header {
+	short	magic;	/* Magic number \s-1VFONT_MAGIC\s0 */
+	unsigned short	size;	/* Total # bytes of bitmaps */
+	short	maxx;	/* Maximum horizontal glyph size */
+	short	maxy;	/* Maximum vertical glyph size */
+	short	xtend;	/* (unused) */
+};
+#define	\s-1VFONT_MAGIC\s0	0436
+.ft R
+.fi
+.RE
+.LP
+.I maxx
+and
+.I maxy
+are intended to be the maximum horizontal
+and vertical size of any glyph in the font,
+in raster lines.  (A glyph is just a printed
+representation of a character, in a particular
+size and font.) The
+.B size
+is the total size of the
+bit maps for the characters in bytes.  The
+.I xtend
+field is not currently used.
+.LP
+After the header is an array of
+.SB NUM_DISPATCH
+structures, one for
+each of the possible characters in the font.
+Each element of the array has the form:
+.LP
+.RS
+.ta 8n +\w'unsigned short  'u +20n
+.ft B
+.nf
+struct dispatch {
+	unsigned short	addr;	/* &(glyph) - &(start of bitmaps) */
+	short	nbytes;	/* # bytes of glyphs (0 if no glyph) */
+	char	up, down, left, right;  	/* Widths from baseline point */
+	short	width;	/* Logical width, used by troff */
+};
+#define	\s-1NUM_DISPATCH\s0	256
+.fi
+.ft R
+.RE
+.LP
+The
+.I nbytes
+field is nonzero for characters which actually exist.
+For such characters, the
+.I addr
+field is an offset into the bit maps
+to where the character's bit map begins.  The
+.I up ,
+.IR down ,
+.IR left ,
+and
+.I right
+fields are offsets from the base point
+of the glyph to the edges of the
+rectangle which the bit map represents.
+(The imaginary ``base point'' is a point which is
+vertically on the ``base line''
+of the glyph (the bottom line of a
+glyph which does not have a descender)
+and horizontally
+near the left edge of the glyph; often 3 or so pixels
+past the left edge.)
+The bit map contains
+.I up+down
+rows of data for the character,
+each of which has
+.I left+right
+columns (bits).  Each row is rounded
+up to a number of bytes.  The
+.I width
+field represents the logical width of the glyph in bits,
+and shows the horizontal displacement
+to the base point of the next glyph.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/vfont/\(**
+.TP
+.B /usr/lib/fonts/fixedwidthfonts/\(**
+.PD
+.SH SEE ALSO
+.BR troff (1),
+.BR vfontinfo (1),
+.BR vswap (1)
+.SH BUGS
+.LP
+A machine-independent font format should be defined.
+The
+.BR short s
+in the above structures contain different bit patterns
+depending whether the font file is for use on a
+.SM VAX
+or a Sun.  The
+.B vswap
+program must be used to convert one to the other.

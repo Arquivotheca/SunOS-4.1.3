@@ -1,0 +1,372 @@
+.\" @(#)fstab.5 1.1 92/07/30 SMI;
+.TH FSTAB 5 "18 June 1991"
+.SH NAME
+fstab, mtab \- static file system mounting table, mounted file systems table
+.SH SYNOPSIS
+.B /etc/fstab
+.LP
+.B /etc/mtab
+.SH DESCRIPTION
+.IX  "fstab file"  ""  "\fLfstab\fP \(em file mountable information"
+.IX  "file system"  "fstab file"  ""  "\fLfstab\fP \(em static information"
+.IX  "static file system information mntent"  ""  "static file system information \(em \fLfstab\fP"
+.IX  "mtab file"  ""  "\fLmtab\fP \(em mounted file system table"
+.IX  "mounted file system table"  ""  "mounted file system table \(em \fLmtab\fP"
+.IX  "file system"  "mounted table"  ""  "mounted table \(em \fLmtab\fP"
+.LP
+The
+.B /etc/fstab
+file contains entries for file systems and disk partitions to mount
+using the
+.BR mount (8)
+command, which is normally invoked by the
+.B rc.boot
+script at boot time.
+This file is used by various utilities that
+mount, unmount, check the consistency of, dump, and restore file systems.
+It is also used by the system itself when locating the swap partition.
+.LP
+The
+.B /etc/mtab
+file contains entries for file systems
+.I currently
+mounted, and is read by programs using the routines described in
+.BR getmntent (3).
+.BR umount (8)
+removes entries from this file; 
+.B mount
+adds entries to this file.
+.LP
+Each entry consists of a line of the form:
+.IP
+.I
+filesystem\ \ \ directory\ \ \ type\ \ \ options\ \ \ freq\ \ \ pass
+.LP
+.TP 10
+.I filesystem
+is the pathname of a block-special device, the name of a remote
+file system in
+.IB host : pathname
+form, or the name of a \*(lqswap file\*(rq made with
+.BR mkfile (8).
+.TP
+.I directory
+is the pathname of the directory on which to mount the file system.
+.TP
+.I type
+is the file system type, which can be one of:
+.RS
+.RS
+.PD 0
+.TP 8
+.B 4.2
+to mount a block-special device
+.TP
+.B lo
+to loopback-mount a file system
+.TP
+.B nfs
+to mount an exported
+.SM NFS
+file system
+.TP
+.B swap
+to indicate a swap partition
+.TP
+.B ignore
+to have the
+.B mount
+command ignore the current entry (good
+for noting disk partitions that are not being used)
+.TP
+.B rfs
+to mount an
+.SM RFS
+file system
+.TP
+.B tmp
+file system in virtual memory
+.TP
+.B hsfs
+to mount an
+.SM ISO
+9660 Standard or High Sierra Standard with Rock Ridge extensions
+.SM CD-ROM
+file system
+.PD
+.RE
+.RE
+.TP
+.I options
+contains a comma-separated list (no spaces) of mounting options,
+some of which can be applied to all types of file systems, and
+others which only apply to specific types.
+.RS
+.LP
+.B 4.2
+options:
+.RS
+.TP 14
+.BR quota \||\| noquota
+Disk quotas are enforced or not enforced.
+The default is
+.BR noquota .
+.RE
+.LP
+.B nfs
+options:
+.RS
+.PD 0
+.TP 8
+.BR bg \||\| fg
+If the first attempt fails, retry in the background, or,
+in the foreground.
+.TP
+.BR noquota
+Prevent
+.BR quota (1)
+from checking whether the user is over quota on this file system;
+if the file system has quotas enabled on the server, quotas will still
+be checked for operations on this file system.
+.TP
+.BI retry= n
+The number of times to retry the mount operation.
+.TP
+.BI rsize= n
+Set the read buffer size to
+.I n
+bytes.
+.TP
+.BI wsize= n
+Set the write buffer size to
+.I n
+bytes.
+.TP
+.BI timeo= n
+Set the
+.SM NFS
+timeout to
+.I n
+tenths of a second.
+.TP
+.BI retrans= n
+The number of
+.SM NFS
+retransmissions.
+.TP
+.BI port= n
+The server
+.SM IP
+port number.
+.TP
+.BR soft \||\| hard
+Return an error if the server does not
+respond, or continue the
+retry request until the server responds.
+.TP
+.B intr
+Allow keyboard interrupts on hard mounts.
+.TP
+.B secure
+Use a more secure protocol for
+.SM NFS
+transactions.
+.TP
+.BI acregmin= n
+Hold cached attributes for at least
+.I n
+seconds after file modification.
+.TP
+.BI acregmax= n
+Hold cached attributes for no more than
+.I n
+seconds after file modification.
+.TP
+.BI acdirmin= n
+Hold cached attributes for at least
+.I n
+seconds after directory update.
+.TP
+.BI acdirmax= n
+Hold cached attributes for no more than
+.I n
+seconds after directory update.
+.TP
+.BI actimeo= n
+Set
+.I min
+and
+.I max
+times for regular files and directories to
+.I n
+seconds.
+.TP
+.B noac
+Suppress attribute caching.
+.PD
+.LP
+Regular defaults are:
+.RS
+.nf
+.ft B
+fg,retry=10000,timeo=7,retrans=3,port=\s-1NFS_PORT\s0,hard,\e
+acregmin=3,acregmax=60,acdirmin=30,acdirmax=60
+.ft R
+.fi
+.RE
+.LP
+.B actimeo
+has no default; it sets
+.BR acregmin ,
+.BR acregmax ,
+.B acdirmin
+and
+.B acdirmax
+.LP
+Defaults for
+.B rsize
+and
+.B wsize
+are set internally by the system kernel.
+.RE
+.LP
+.B rfs
+options:
+.RS
+.PD 0
+.TP 14
+.BR bg \||\| fg
+If the first attempt fails, retry in the background, or,
+in the foreground.
+.TP
+.BI retry= n
+The number of times to retry the mount operation.
+.PD
+.LP
+Defaults are the same as for NFS.
+.PD
+.RE
+.LP
+.B hsfs
+options:
+.RS
+.PD 0
+.TP 14
+.BR norrip
+Disable processing of Rock Ridge extensions for the file system.
+.PD
+.RE
+.LP
+Common options:
+.RS
+.TP 8
+.BR ro \||\| rw
+mount either read-only or read-write
+.PD 0
+.TP
+.BR suid \||\| nosuid
+setuid execution allowed or disallowed
+.TP
+.B grpid
+Create files with
+.SM BSD
+semantics for propagation of the group
+.SM ID\s0.
+With this option, files inherit the group
+.SM ID
+of the directory in
+which they are created, regardless of the directory's setgid bit.
+.TP
+.B noauto
+Do not mount this file system automatically (using
+.RB ` "mount \-a" ').
+.PD
+.RE
+.RE
+.TP
+.I freq
+is the interval (in days) between dumps.
+.TP
+.I pass
+indicates whether
+.BR fsck (8)
+should check the partition.
+File systems with
+.I pass
+0 are not checked.
+When preening the file systems in
+.BR /etc/fstab ,
+.BR fsck (8)
+automatically overlaps file system checks
+by simultaneously running one process per disk.
+If run in ``force'' mode (\fB\-f\fP), \fBfsck\fP
+checks file systems with pass 1 sequentially,
+then overlaps the remainder of the file systems checks.
+In general, only the root (/) and /usr file systems need to be
+checked in pass 1, with others checked in the second pass.
+.LP
+A hash-sign
+.RB ( # )
+as the first character indicates a comment line which
+is ignored by routines that read this file.
+The order of records in
+.B /etc/fstab
+is important because
+.BR fsck ,
+.BR mount ,
+and
+.B umount
+process the file sequentially; an entry for a file system must appear
+.I after
+the entry for any file system it is to be mounted on top of.
+.SH EXAMPLES
+.LP
+In this example, two partitions on the local disk are
+.B 4.2
+mounted.  Several
+.B /export
+directories are loopback mounted to appear in
+the traditional file system locations on the local system.  The
+.B /home/user
+directory is hard mounted read-write over the
+.SM NFS\s0,
+along with  additional swap space in the form of a mounted swap file
+(see
+.I "System and Network Administration"
+for details on adding swap space):
+.LP
+.RS
+.if t \fL
+.if n \fB
+.nf
+/dev/xy0a / 4.2 rw,noquota 1 1
+/dev/xy0b /usr 4.2 rw,noquota 1 1
+/export/tmp/localhost /tmp lo rw 0 0
+/export/var/localhost /var lo rw 0 0
+/export/cluster/sun386.sunos4.0.1 /usr/cluster lo rw 0 0
+/export/local/sun386 /usr/local lo rw 0 0
+example:/home/user /home/user nfs rw,hard,fg 0 0
+/export/swap/myswap swap swap rw 0 0
+.fi
+.if t \fR
+.if n \fR
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/fstab
+.TP
+.B /etc/mtab
+.PD
+.SH SEE ALSO
+.BR swapon (2),
+.BR getmntent (3),
+.BR lofs (4S),
+.BR fsck (8),
+.BR mkfile (8),
+.BR mount (8),
+.BR quotacheck (8),
+.BR quotaon (8),
+.BR swapon (8)
+.LP
+.I "System and Network Administration"

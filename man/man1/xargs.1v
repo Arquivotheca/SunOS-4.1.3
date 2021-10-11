@@ -1,0 +1,317 @@
+.\" @(#)xargs.1v 1.1 92/07/30 SMI; from S5R2 6.2 9/2/83
+.TH XARGS 1V "17 September 1989"
+.SH NAME
+xargs \- construct the arguments list(s) and execute a command
+.SH SYNOPSIS
+.B xargs
+[
+.B \-ptx
+] [
+.BI \-e eofstr
+] [
+.BI \-i replstr
+] [
+.BI \-l number
+] [
+.BI \-n number
+] [
+.BI \-s size
+]
+.if t .ti +.5i
+[
+.I command
+[\|\fIinitial-arguments\fR
+] ]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX xargs "" "\fLxargs\fR \(em construct and use initial arguments lists"
+.LP
+.B xargs
+combines the fixed
+.I initial-arguments
+with arguments read from the standard input, to execute the specified
+.I command
+one or more times.
+The number of arguments read for each
+.I command
+invocation, and the manner in which they are combined
+are determined by the options specified.
+.LP
+.IR command ,
+which may be a shell file,
+is searched for using one's
+.BR \s-1$PATH\s+1 .
+If
+.I command
+is omitted,
+.B /usr/bin/echo
+is used.
+.LP
+Arguments read in from the standard input are defined to be contiguous
+strings of characters delimited by white space.
+Empty lines are always discarded.
+Blanks and tabs may be embedded as part of an argument if they
+are escaped or quoted.
+Characters enclosed in quotes (single or double) are taken literally,
+and the delimiting quotes are removed.  Outside of quoted strings,
+a
+.RB ` \e '
+(backslash) will escape the character it precedes.
+.LP
+Each arguments-list is constructed starting with the
+.IR initial-arguments ,
+followed by some number of arguments read from the standard input
+(Exception: see the
+.B \-i
+option).
+Options
+.BR \-i ,
+.BR \-l ,
+and
+.BR \-n
+determine how arguments are selected for each command invocation.
+When none of these options are coded, the
+.I initial-arguments
+are followed by arguments read continuously from the standard input
+until an internal buffer is full, and then
+.I command
+is executed with the accumulated arguments.
+This process is repeated until there are none left.
+When there are option conflicts (for instance,
+.B \-l
+versus
+.BR \-n "),"
+the last option takes precedence.
+.LP
+.B xargs
+will terminate if it receives a return code of
+.BR \-1 ,
+or if it cannot execute
+.IR command .
+When
+.I command
+is a shell script,
+it should explicitly
+.B exit
+(see
+.BR sh (1))
+with an appropriate value to avoid accidentally returning with
+.BR \-1 .
+.SH OPTIONS
+.TP 15
+.B \-p
+Prompt mode.
+The user is asked whether to execute
+.I command
+each invocation.
+Trace mode
+.RB ( \-t )
+is turned on to print the command instance to be executed,
+followed by a
+.B ?\|.\|.\|.
+prompt.
+A reply of
+.B y
+(optionally followed by anything) will execute the command;
+anything else, including
+just a
+.SM return\s0,
+skips that particular invocation of
+.IR command .
+.TP
+.B \-t
+Trace mode.
+The
+.I command
+and each constructed argument list are echoed to file
+descriptor 2 just prior to their execution.
+.TP
+.B \-x
+Terminate
+.B xargs
+if any argument list would be greater than
+.I size
+characters;
+.B \-x
+is forced by the options
+.B \-i
+and
+.BR \-l .
+When neither of the options
+.BR \-i ,
+.BR \-l ,
+or
+.B \-n
+are coded, the total length of all
+arguments must be within the
+.I size
+limit.
+.TP
+.BI \-e eofstr
+.I eofstr
+is taken as the logical
+.SM EOF
+string.
+.RB ` _ '
+(underbar) is assumed for
+the logical
+.B \s-1EOF\s+1
+string if
+.B \-e
+is not coded.  The value
+.B \-e
+with no
+.I eofstr
+coded turns off the logical
+.B \s-1EOF\s+1
+string capability
+(underbar is taken literally).
+.B xargs
+reads the standard input until either
+.SM EOF
+or the logical
+.B \s-1EOF\s+1
+string is encountered.
+.TP
+.BI \-i replstr
+Insert mode:
+.I command
+is executed for each line from the standard input,
+taking the entire line as a single argument, inserting it in
+.I initial-arguments
+for each occurrence of
+.IR replstr .
+A maximum of 5 arguments in
+.I initial-arguments
+may each contain one or more instances of
+.IR replstr .
+.SM SPACE
+and
+.SM TAB
+characters at the beginning of each line are thrown away.
+Constructed arguments may not grow
+larger than 255 characters, and option
+.B \-x
+is also forced.
+.B "{\|}"
+is assumed for
+.I replstr
+if not specified.
+.TP
+.BI \-l number
+.I command
+is executed for each nonempty
+.I number
+lines of arguments from the standard input.
+The last invocation of
+.I command
+will be with fewer lines of arguments if fewer than
+.I number
+remain.
+A line is considered to end with the first
+.SM NEWLINE
+.I unless
+the last character of the line is a
+.SM SPACE
+or a
+.SM TAB\s0;
+a trailing
+.SM SPACE
+or
+.SM TAB
+signals continuation through the next non-empty line.
+If
+.I number
+is omitted, 1 is assumed.
+The
+.B \-x
+option is forced.
+.ne 6
+.TP
+.BI \-n number
+Execute
+.I command
+using as many standard input arguments as possible, up to
+.I number
+arguments maximum.
+Fewer arguments will be used if their total size is greater than
+.I size
+characters, and for the last invocation if there are fewer than
+.I number
+arguments remaining.
+If option
+.B \-x
+is also coded, each
+.I number
+arguments must fit in the
+.I size
+limitation, else
+.B xargs
+terminates execution.
+.TP
+.BI \-s size
+The maximum total size of each argument list is set to
+.I size
+characters;
+.I size
+must be a positive integer less than or equal to 470. If
+.B \-s
+is not coded, 470 is taken as the default.
+Note: the character count for
+.I size
+includes one extra character for each
+argument and the count of characters in the command name.
+.SH EXAMPLES
+.LP
+The following will move all files from directory
+.B $1
+to directory
+.BR $2 ,
+and echo each move command just before doing it:
+.LP
+.RS
+.B "ls \|$1 \|| \|xargs \|\-i \|\-t \|mv \|$1/{\|} \|$2/{\|}"
+.RE
+.LP
+The following will combine the output of
+the parenthesized commands onto one line,
+which is then echoed to the end of file
+.BR log :
+.LP
+.RS
+.B
+(logname; \|date; \|echo \|$0 \|$\(**) \|| \|xargs \|>>log
+.RE
+.LP
+The user is asked which files in the
+current directory are to be archived
+and archives them into
+.BR arch (1)
+one at a time,
+or many at a time.
+.LP
+.RS
+.TP \(bu
+.B "ls \|| \|xargs \|\-p \|\-l \|ar \|r \|arch"
+.PD 0
+.TP \(bu
+.B "ls \|| \|xargs \|\-p \|\-l \|| \|xargs \|ar \|r \|arch"
+.PD
+.RE
+.LP
+The following will execute
+.BR diff (1)
+with successive
+pairs of arguments originally typed as shell arguments:
+.IP
+.B "echo \|$\(** \|| \|xargs \|\-n2 \|diff"
+.SH "SEE ALSO"
+.BR arch (1),
+.BR diff (1),
+.BR sh (1)

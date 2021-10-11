@@ -1,0 +1,177 @@
+.\" @(#)csplit.1v 1.1 92/07/30 SMI; from S5R2 6.2
+.TH CSPLIT 1V "16 September 1989"
+.SH NAME
+csplit \- split a file with respect to a given context
+.SH SYNOPSIS
+.B csplit
+[
+.B \-f 
+.I prefix 
+] [
+.B \-k 
+] [
+.B \-s
+]
+.I filename 
+.I argument1 
+[
+.RI .\|.\|. argumentn
+]
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX csplit "" "\fLcsplit\fR \(em split file into sections"
+.IX files "\fLcsplit\fR \(em split file into sections"
+.B csplit
+reads the file whose name is
+.I filename
+and separates it into
+\fIn\fR+1 sections,
+defined by the arguments
+.I argument1
+through
+.IR argumentn .
+If the
+.I filename
+argument is a
+.RB ` \- ',
+the standard input is used.
+By default the sections are placed in files named
+.B xx00
+through
+.BR xx\fIn .
+.I n
+may not be greater than 99.
+These sections receive the following portions of the 
+file:
+.TP .85i 
+.BR xx00
+From the start of
+.I filename
+up to (but not including) the line indicated by
+.I argument1  
+(see 
+.SM OPTIONS
+below for an explanation of these arguments.)
+.PD 0
+.TP
+.BR xx01 :
+From the line indicated by
+.I argument1
+up to the line indicated by
+.IR argument2 .
+.TP 
+.BR xx\fIn :
+From the line referenced by
+.I argumentn
+to the end of
+.IR filename .
+.PD
+.LP
+.B csplit
+prints the character counts for each file created,
+and removes any files
+it creates if an error occurs.
+.SH OPTIONS
+.TP .85i
+.BI \-f \ prefix
+name the created files 
+.IB prefix 00
+through
+.IR prefixn .
+.TP .85i
+.B \-k
+Suppress removal of created files when an error occurs.
+.TP .85i 
+.B \-s
+Suppress printing of character counts.
+.LP
+The arguments
+.I argument1
+through
+.I argumentn 
+can be a combination of the following selection operators:
+.TP .85i 
+.BI / rexp /
+A file is to be created for the section from the current line
+up to (but not including) the line containing the regular expression
+.IR rexp .
+The current line then becomes the line containing
+.IR rexp .
+This argument may be followed by an optional
+.RB ` + "' or"
+.RB ` \- '
+some number of lines
+(for example,
+.BR /Page/\-5 ).
+.TP .85i 
+.RI % rexp %
+This argument is the same as
+.RI / rexp /,
+except that no file is created for the selected section.
+.TP .85i 
+.I lineno
+A file is to be created from the current line up to (but not including)
+.IR lineno .
+The current line becomes
+.IR lineno .
+.TP .85i 
+.RI { num }
+Repeat argument.
+This argument may follow any of the above arguments.
+If it follows a
+.I rexp
+type argument, that argument is applied
+.I num
+more times.
+If it follows
+.IR lineno ,
+the file will be split every
+.I lineno
+lines
+.RI ( num
+times) from that point.
+.LP
+Enclose all
+.I rexp
+type arguments that contain blanks or other characters meaningful to
+the shell in the appropriate quotes.
+Regular expressions may not contain embedded new-lines.
+.SH EXAMPLES
+This example splits the file at every 100 lines, up to 10,000 lines.
+.IP
+.B csplit \-k file\ \ 100\ \ {99}
+.LP
+Assuming that
+.B prog.c
+follows the normal
+.B C
+coding convention of ending routines with a
+.B }
+at the beginning of the line,
+this example will create a file containing each separate
+.B C
+routine (up to 21) in
+.BR prog.c .
+.IP
+.B
+csplit \-k prog.\|c\ \ \(fm%main\|(%\(fm\ \ \(fm/^\|}\|/+1\(fm\ \ {20}
+.SH SEE ALSO
+.BR ed (1),
+.BR sh (1),
+.BR regexp (3)
+.br
+.ne 8
+.SH DIAGNOSTICS
+.LP
+Self-explanatory except for:
+.IP 
+.B arg \- out of range
+.LP
+which means that the given argument did not refer to a line
+between the current position and the
+.SM EOF\s0.

@@ -1,0 +1,156 @@
+.\" @(#)getacinfo.3 1.1 92/07/30 SMI
+.TH GETACINFO 3 "21 January 1990"
+.SH NAME
+getacinfo, getacdir, getacflg, getacmin, setac, endac \- get audit control file information
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int getacdir(dir, len)
+char *dir;
+int len;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getacmin(min_val)
+int *min_val;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getacflg(auditstring, len)
+char *auditstring;
+int len;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void setac(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+void endac(\|)
+.ft
+.fi
+.SH DESCRIPTION
+.IX "getacinfo()" "" "\fLgetacinfo()\fP \(em get audit control file information"
+.IX "getacdir()" "" "\fLgetacdir()\fP function"
+.IX "getacflg()" "" "\fLgetacflg()\fP function"
+.IX "getacmin()" "" "\fLgetacmin()\fP function"
+.IX "setac()" "" "\fLsetac()\fP function"
+.IX "endac()" "" "\fLendac()\fP function"
+.LP
+When first called,
+.B getacdir(\|)
+provides information about the first audit directory in the
+.B audit_control
+file; thereafter, it returns the next directory in the file.
+Successive calls list all the directories listed in
+.BR audit_control (5)
+The parameter
+.I len
+specifies the length of the buffer
+.I dir .
+On return,
+.I dir
+points to the directory entry.
+.LP
+.B getacmin(\|)
+reads the minimum value from the
+.B audit_control
+file and returns the
+value in
+.BR min_val .
+The minimum value specifies how full the file system to
+which the audit files are being written can get before the script
+.B audit_warn
+is invoked.
+.LP
+.B getacflg(\|)
+reads the system audit value from the
+.B audit_control
+file and returns the value in
+.IR auditstring .
+The parameter
+.I len
+specifies the length of the buffer
+.IR auditstring .
+.LP
+Calling
+.I setac
+rewinds the
+.B audit_control
+file to allow repeated searches.
+.LP
+Calling
+.I endac
+closes the
+.B audit_control
+file when processing is complete.
+.LP
+.\" .SH FILES
+.\" .PD 0
+.\" .TP 20
+.\" .B /etc/security/audit/audit_control
+.\" .PD
+.SH RETURN VALUES
+.LP
+.BR getacdir(\|) ,
+.B getacflg(\|)
+and
+.B getacmin(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-2
+on failure and set
+.B errno
+to indicate the error.
+.LP
+.B getacmin(\|)
+and
+.B getacflg(\|)
+return:
+.TP
+1
+on
+.SM EOF\s0.
+.LP
+.B getacdir(\|)
+returns:
+.TP
+\-1
+on
+.SM EOF\s0.
+.TP
+2
+if the directory search had to start from the beginning because one of the
+other functions
+was called between calls to
+.BR getacdir(\|) .
+.LP
+These functions
+return:
+.TP
+\-3
+if the directory entry format in the
+.B audit_control
+file is incorrect.
+.LP
+.B getacdir(\|)
+and
+.B getacflg(\|)
+return:
+.TP
+\-3
+if the input buffer is too short to accommodate the record.
+.SH SEE ALSO
+.BR audit_control (5)

@@ -1,0 +1,24 @@
+#
+# @(#)Makefile.mach 1.1 92/07/30 SMI
+#
+# This file is included by ../$(ARCH)/Makefile
+# It defines the targets and rules needed to build the machine-dependent
+# sources for the boot os library.
+# 
+# The target library is built in ../$(ARCH) 
+#
+# The relocation symbols $LOAD, $BRELOC, and $BBRELOC must be
+# defined in ../$(ARCH)/Makefile
+
+# Machine-dependent boot os object files
+MACHDIR= ../sparc
+MACHOBJ= getvbr.o stret.o subr.o
+
+# Rules for machine-dependent .s files
+$$(LIB)(%.o): $(MACHDIR)/%.s
+	@ $(RM) tmp.c tmp.i $%
+	cp $(MACHDIR)/$< tmp.c
+	/lib/cpp -P $(CPPOPTS) $(SRTOPT) $(BOOTOPT) tmp.c > tmp.s
+	$(AS) -P -Q  tmp.s -o $%
+	@ $(AR) $(ARFLAGS) $(LIB) $%
+	@ $(RM) tmp.c tmp.i tmp.s $%

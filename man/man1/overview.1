@@ -1,0 +1,120 @@
+.\" @(#)overview.1 1.1 92/07/30 SMI;
+.TH OVERVIEW 1 "21 December 1987"
+.SH NAME
+overview \- run a program from SunView that takes over the screen
+.SH SYNOPSIS
+.B overview
+[
+.B \-w
+] [
+.I generic_tool_options
+]
+.I program_name
+[
+.I arguments
+] .\|.\|.
+.SH AVAILABILITY
+This command is available with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX overview "" "\fLoverview\fR \(em take over screen w/ graphics"
+.LP
+Bitmap graphics based programs that are not SunView based
+can be run from SunView using
+.BR overview .
+.B overview
+shows an
+icon in SunView when
+.B overview
+is brought up iconic
+.RB ( \-Wi
+generic tool option;
+see
+.BR sunview (1))
+or when the program being run by
+.B overview
+is suspended
+(for example, using
+\s-1CTRL\s0-Z).
+Opening the
+.B overview
+icon, or starting
+.B overview
+non-iconic, starts
+the program named on the command line.
+.B overview
+suppresses SunView so
+that SunView window applications will not interfere with the program's
+display output or input devices.
+.LP
+.B overview
+runs programs that fit the following profile:
+.TP 25
+.I own display
+The program needs to own the bits on the screen.
+It does not use the
+.I sunview
+library
+to arbitrate the use of the display and input devices between
+processes.
+.TP
+.IB "keyboard input from " stdin
+The program takes keyboard input from
+.I stdin
+directly.
+.TP
+.IB "mouse input from " /dev/mouse
+The program takes locator input from the mouse directly.
+.LP
+.SH OPTIONS
+.LP
+.TP
+.B \-w
+This option is
+used to specify that the program being run creates its own SunWindows
+window in order to receive the serialized input stream from the keyboard
+and mouse that is provided by the SunWindows kernel driver.
+\fB\-w\fP tells
+.B overview
+to not convert SunWindows input
+into
+\s-1ASCII\s0
+which is then sent to the program being run under
+.B overview
+via a pty.
+X and NeWS are programs that fall in this category
+(as of Dec 86.
+This is subject to change in the future.)
+.SH "SEE ALSO"
+.BR sunview (1)
+.SH BUGS
+.LP
+Users of
+.B overview
+on a Sun-3/110 should be aware of the impact
+of plane groups on pre-3.2
+applications.  You cannot successfully run pre-3.2 applications under
+.B overview
+if
+.B overview
+itself is running in the color
+buffer.  If you start
+.B overview
+so that it is not running in the
+overlay plane, then the enable plane is not be properly set up for
+viewing the application.  This means that you cannot run
+.B overview
+with the
+.B \-Wf
+or
+.B \-Wb
+generic tool arguments.  Also, you cannot run
+.B overview
+on a desktop created by
+.B sunview
+using the
+.B -8bit_color_only
+option.

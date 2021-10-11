@@ -1,0 +1,246 @@
+.\" @(#)t_connect.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_CONNECT 3N "21 January 1990"
+.SH NAME
+t_connect \- establish a connection with another transport user
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_connect(fd, sndcall, rcvcall)
+int fd;
+struct t_call *sndcall;
+struct t_call *rcvcall;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_connect()" "" "\fLt_connect()\fR \(em establish a connection with another transport user" ""
+.IX transport "establish a connection with another transport user"
+.IX connect "establish a connection with another transport user"
+.LP
+.B t_connect(\|)
+enables a transport user to request a connection to the
+specified destination transport user.
+.I fd
+identifies the local transport endpoint where communication will be
+established,
+while
+.I sndcall
+and
+.I rcvcall
+point to a
+.B t_call(\|)
+structure which contains the following members:
+.RS
+.ft B
+.nf
+	struct netbuf addr;
+	struct netbuf opt;
+	struct netbuf udata;
+	int sequence;
+.fi
+.ft R
+.RE
+.I sndcall
+specifies information
+needed by the transport provider to establish a connection and
+.I rcvcall
+specifies information that is associated with the
+newly established connection.
+.LP
+The
+.IR maxlen , 
+.IR len , 
+and 
+.I buf
+members of the 
+.I netbuf 
+structure are described in 
+.BR t_accept (3N).
+In
+.IR sndcall ,
+.I addr
+specifies the protocol address of the destination transport user,
+.I opt
+presents any protocol-specific information that might be
+needed by the transport provider,
+.I udata
+points to optional user data that may be passed to
+the destination transport user during connection establishment,
+and
+.I sequence
+has no meaning for this function.
+.LP
+On return in
+.IR rcvcall ,
+.I addr
+returns the protocol address associated with the responding
+transport endpoint,
+.I opt
+presents any protocol-specific information associated with the connection,
+.I udata
+points to optional user data that may be returned by
+the destination transport user during connection establishment,
+and
+.I sequence
+has no meaning for this function.
+.LP
+.I opt
+implies no structure on the options that may be passed to the
+transport provider.
+The transport provider is free to specify the structure of any options
+passed to it.
+These options are specific to the underlying protocol of the transport
+provider.
+The user may choose not to negotiate protocol
+options by setting the
+.I len
+field of
+.I opt
+to 0.
+In this case, the transport provider may use default options.
+.LP
+.I udata
+enables the caller to pass user data to the destination
+transport user and receive user data
+from the destination user during connection establishment.
+However, the amount of user data must not exceed the limits supported by
+the transport provider as returned by
+.BR t_open (3N)
+or
+.BR t_getinfo (3N).
+If the
+.I len
+field of
+.I udata
+is 0
+in
+.IR sndcall ,
+no data will be sent to the destination transport user.
+.LP
+On return, the
+.IR addr ,
+.IR opt,
+and
+.I udata
+fields of
+.I rcvcall
+will be updated to reflect values associated with the connection.
+Thus, the
+.I maxlen
+field of each argument
+must be set before issuing this function to indicate the maximum
+size of the buffer for each.
+However,
+.I rcvcall
+may be
+.SM NULL\s0
+in which case no information is given to
+the user on return from
+.B t_connect(\|).
+.LP
+By default,
+.B t_connect(\|)
+executes in synchronous mode, and will wait for the destination
+user's response before returning control to the local user.
+A successful return (a return value of 0) indicates that the
+requested connection has been established.
+However, if
+.SB T_NDELAY
+is set (using
+.B t_open(\|)
+or
+.BR fcntl ),
+.B t_connect(\|)
+executes in asynchronous mode.
+In this case, the call will not wait for the remote user's
+response, but will return control immediately to the local user
+and return \-1 with
+.B t_errno
+set to
+.SM TNODATA\s0
+to indicate that the connection has not yet been established.
+In this way, the function simply initiates the connection
+establishment procedure by sending a connect request to the
+destination transport user.
+.br
+.ne 8
+.SH RETURN VALUES
+.LP
+.B t_connect(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TACCES
+The user does not have permission to use the specified address or options.
+.TP
+.SM TBADADDR
+The specified protocol address was in an incorrect format or
+contained illegal information.
+.TP
+.SM TBADDATA
+The amount of user data specified was not within the bounds allowed by
+the transport provider.
+.TP
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBADOPT
+The specified protocol options were in an incorrect format or contained illegal
+information.
+.TP
+.SM TBUFOVFLW
+The number of bytes allocated for an incoming argument is not
+sufficient to store the value of that argument.
+If executed in synchronous mode,
+the transport provider's state, as seen by the user, changes to
+.SB T_DATAXFER
+and
+the connect indication information to be returned in
+.I rcvcall
+is discarded.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on this transport endpoint and requires
+immediate attention.
+.TP
+.SM TNODATA
+.SB T_NDELAY
+was set, so the function successfully initiated the connection
+establishment procedure, but did not wait for a response from the remote
+user.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TOUTSTATE
+The function was issued in the wrong sequence.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR intro (3),
+.BR t_accept (3N),
+.BR t_getinfo (3N),
+.BR t_listen (3N),
+.BR t_open (3N),
+.BR t_optmgmt (3N),
+.BR t_rcvconnect (3N)
+.LP
+.TX NETP

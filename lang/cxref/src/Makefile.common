@@ -1,0 +1,225 @@
+#
+# @(#)Makefile.common 1.1 92/07/30 SMI; from S5R2 1.7
+# Makefile for "cxref"
+#
+
+VERSION= 4.1
+
+L=	../../lint/src
+MIP=	../../pcc/mip
+SRC=	../src
+AWK=	/bin/awk
+YACC=	/usr/bin/yacc
+LINT=	/usr/bin/lint
+
+##########################################################
+#  Note: $(L) MUST PRECEDE $(PCC) in the include path    #
+#  because both directories have a version of machdep.h  #
+##########################################################
+
+#  -DBUG4 is necessary to turn off pcc debugging tools (these tools cannot
+#   be used with the lint shell script since their output conflicts)
+
+COPTS=	-O
+CPPFLAGS= -I. -I$(MIP) -I$L -I$(PCC) -I$(SRC) -DBUG4 -DCXREF -DFLEXNAMES \
+	-DS5EMUL -DMC68000=1 -DSPARC=2 -DI386=3 -DTARGET=$(TARGET)
+CFLAGS=	${COPTS} ${CPPFLAGS}
+LFLAGS=	${CPPFLAGS} -hv
+
+#
+# headers
+#
+MHDR=	$(MIP)/mip.h $(MIP)/cpass1.h $(MIP)/pcc_types.h $(MIP)/pcc_ops.h \
+	$(MIP)/pcc_node.h $(MIP)/pcc_symtab.h $(MIP)/pcc_sw.h \
+	$(MIP)/messages.h
+
+PHDR=	$(PCC)/align.h
+
+LHDR=	$L/machdep.h $L/lmanifest.h
+
+AWKHDR=	./types.h ./ops.h ./node.h ./symtab.h ./sw.h
+
+HDRS=	${MHDR} ${LHDR} ${PHDR} ${AWKHDR}
+
+#
+# sources
+#
+MSRC=	$(MIP)/xdefs.c $(MIP)/scan.c $(MIP)/pftn.c $(MIP)/trees.c \
+	$(MIP)/optim.c $(MIP)/yyerror.c $(MIP)/messages.c
+
+LSRC=	$L/lint.c $L/allo.c
+
+XPSRC=	${MSRC} ${LSRC} $(MIP)/common.c $(SRC)/xlocal.c
+
+SRCS=	$(SRC)/cxr.c ${XPSRC} $(MIP)/cgram.y $(HDRS) Makefile
+
+MKPRIV=	$(MIP)/mkpriv.awk
+
+#
+# objects
+#
+MOBJ=	xdefs.o scan.o pftn.o trees.o optim.o \
+	yyerror.o
+
+LOBJ=	lint.o allo.o
+
+XPOBJ=	cgram.o rodata.o comm1.o $(MOBJ) messages.o $(LOBJ) xlocal.o
+
+#
+# lint "objects"
+#
+MLINT=	xdefs.ln scan.ln pftn.ln trees.ln optim.ln \
+	yyerror.ln
+
+LLINT=	lint.ln allo.ln
+
+XPLINT=	cgram.ln rodata.ln comm1.ln $(MLINT) messages.ln $(LLINT) xlocal.ln
+
+#
+# rules
+#
+all:	cxref xpass
+
+
+.DEFAULT:
+	sccs get -G$@ $@
+
+#
+# CXREF
+#
+cxref:	cxr.o
+	${CC} $(LDFLAGS) cxr.o -o $@
+
+cxr.o:
+	${CC} ${CFLAGS} -c $(SRC)/cxr.c
+
+#
+# XPASS
+#
+xpass:	$(XPOBJ)
+	${CC} $(LDFLAGS) $(XPOBJ) -o $@
+
+${MOBJ}:
+	${CC} ${CFLAGS}  -c $(MIP)/$(@:.o=.c)
+
+${LOBJ}:
+	${CC} ${CFLAGS}  -c $L/$(@:.o=.c)
+
+messages.o:
+	${CC} ${CFLAGS} -c -R $(MIP)/messages.c
+
+cgram.o:
+	${CC} ${CFLAGS} -c cgram.c
+
+rodata.o:
+	${CC} ${CFLAGS} -c -R rodata.c
+
+rodata.c cgram.c: $(MIP)/cgram.y $(PCC)/yyfix.sh
+	rm -f gram.in
+	-unifdef -UBROWSER < $(MIP)/cgram.y > gram.in
+	sed -e 's/\/\*CXREF\(.*\)\*\//\1/' gram.in > gram.y
+	$(YACC) gram.y
+	@echo '(expect 6 shift/reduce)'
+	rm -f rodata.c
+	sh $(PCC)/yyfix.sh yyexca yyact yypact yypgo yyr1 yyr2 yychk yydef
+	mv y.tab.c cgram.c
+
+comm1.o:
+	${CC} ${CFLAGS} -DPASS1 -c $(MIP)/common.c -o $@
+
+xlocal.o:
+	${CC} ${CFLAGS} -c $(SRC)/xlocal.c
+
+#
+# local headers -- these include the public headers and add local
+#	aliases for the public names -- a poor man's version of the
+#	modula-2 IMPORT facility.  Note: the "./" prefixes are
+#	significant because of 'make depend'.
+#
+./types.h: $(MIP)/pcc_types.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_types.h > $@
+
+./ops.h: $(MIP)/pcc_ops.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_ops.h > $@
+
+./node.h: $(MIP)/pcc_node.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_node.h > $@
+
+./symtab.h: $(MIP)/pcc_symtab.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_symtab.h > $@
+
+./sw.h: $(MIP)/pcc_sw.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_sw.h > $@
+
+lintall: lintcxref lintxpass
+
+lintcxref:
+	${LINT} ${LFLAGS} $(SRC)/cxr.c
+
+lintxpass: $(XPLINT)
+	${LINT} ${LFLAGS} $(XPLINT)
+
+${MLINT}:
+	${LINT} ${LFLAGS} -i  $(MIP)/$(@:.ln=.c)
+
+${LLINT}:
+	${LINT} ${LFLAGS} -i  $L/$(@:.ln=.c)
+
+xlocal.ln:
+	${LINT} ${LFLAGS} -i  xlocal.c
+
+messages.ln:
+	${LINT} ${LFLAGS} -i  $(MIP)/messages.c
+
+cgram.ln:
+	${LINT} ${LFLAGS} -i  cgram.c
+
+rodata.ln:
+	${LINT} ${LFLAGS} -i  rodata.c
+
+comm1.ln:
+	${LINT} ${LFLAGS} -DPASS1 -i $(MIP)/common.c -o $@
+
+xpass.ln:
+	${LINT} ${LFLAGS} -i $(SRC)/xpass.c
+
+install: all
+	install -s cxref $(DESTDIR)/usr/5bin
+	install -s xpass $(DESTDIR)/usr/lib
+
+tags:	$(SRC)/cxr.c ${XPSRC} $(MIP)/cgram.y ${HDRS}
+	ctags -t $(SRC)/cxr.c ${XPSRC} $(MIP)/cgram.y ${HDRS}
+
+shrink:
+	rm -f *.o
+
+clean: shrink
+	rm -f *.ln xpass cxref cgram.c rodata.c gram.in gram.y ${AWKHDR}
+
+depend:	$(SRC)/cxr.c ${XPSRC} cgram.c rodata.c $(HDRS)
+	rm -f makedep
+	for i in $(SRC)/cxr.c ${MSRC} ${LSRC} cgram.c rodata.c $(SRC)/xlocal.c; do \
+	    ${CC} -M ${CPPFLAGS} $$i; \
+	    j=`basename $$i .c`; \
+	    ${CC} -M -Dlint ${CPPFLAGS} $$i | \
+		sed -e "s/$$j.o/$$j.ln/g"; \
+	done >> makedep
+	${CC} -M ${CPPFLAGS} -DPASS1 $(MIP)/common.c | \
+	    sed -e 's/common.o/comm1.o/g' >> makedep
+	${CC} -M -Dlint ${CPPFLAGS} -DPASS1 $(MIP)/common.c | \
+	    sed -e 's/common.o/comm1.ln/g' >> makedep
+	sed -e '/sysmacros/d' \
+	    -e 's,$(MIP),$$(MIP),g' \
+	    -e 's,$(L),$$(L),g' \
+	    -e 's,$(PCC),$$(PCC),g' \
+	    makedep > makedep2
+	mv makedep2 makedep
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+	rm -f eddep makedep

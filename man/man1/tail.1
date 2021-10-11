@@ -1,0 +1,143 @@
+.\" @(#)tail.1 1.1 92/07/30 SMI; from S5R2 6.2 83/09/02
+.TH TAIL 1 "14 August 1989"
+.SH NAME
+tail \- display the last part of a file
+.SH SYNOPSIS
+.B tail
+\fB+\|\fR|\fB\|\-\c
+.I number
+[
+.B lbc
+] [
+.B f
+] [
+.I filename
+]
+.br
+.B tail
+\fB+\|\fR|\fB\|\-\c
+.I number
+[
+.B l
+] [
+.B rf
+] [
+.I filename
+]
+.IX  "tail command"  ""  "\fLtail\fP \(em display last part of file"
+.IX  display "last part of file \(em \fLtail\fP"
+.IX  file  "display last part of"  ""  "display last part of \(em \fLtail\fP"
+.IX  "text processing utilities"  tail  ""  "\fLtail\fP \(em display last part of file"
+.SH DESCRIPTION
+.B tail
+copies
+.I filename
+to the standard output beginning at a
+designated place.  If no file is named, the standard input is used.
+.SH OPTIONS
+.LP
+Options are all jammed together, not specified separately with their
+own
+.RB ` \- '
+signs.
+.TP
+.BI \+ number
+Begin copying at distance
+.I number
+from the beginning of the file.
+.I number
+is counted in units of lines, blocks or
+characters,
+according to the appended option
+.BR l ,
+\fBb\fP, or
+.BR c .
+When no units are specified, counting is by lines.
+If
+.I number
+is not specified, the value 10 is used.
+.TP
+.BI \- number
+Begin copying at distance
+.I number
+from the end of the file.
+.I number
+is counted in units of lines, blocks or
+characters,
+according to the appended option
+.BR l ,
+\fBb\fP, or
+.BR c .
+When no units are specified, counting is by lines.
+If
+.I number
+is not specified, the value 10 is used.
+.TP
+.B l
+.I number
+is counted in units of lines.
+.TP
+.B b
+.I number
+is counted in units of blocks.
+.TP
+.B c
+.I number
+is counted in units of characters.
+.TP
+.B r
+Copy lines from the end of the file in
+reverse order.  The default for option
+.B r
+is to print the entire file in reverse order.
+.I number
+is the count of lines from the end of the file regardless of sign.
+Option
+.B r
+may not be used with
+.B b
+or
+.BR c .
+.TP
+.B f
+If the input file is not a pipe,
+do not terminate after the line of the input
+file has been copied, but enter an endless loop,
+sleeping for a second and then attempting to read and copy
+further records from the input file.
+This option may be used to monitor the growth of a file that is
+being written by some other process.
+For example, the command:
+.RS
+.IP
+.B tail \|\-f \|fred
+.RE
+.IP
+will print the last ten lines of the file
+.BR fred ,
+followed by any lines that are appended to
+.B fred
+between the time
+.B tail
+is initiated and killed.
+As another example, the command:
+.RS
+.IP
+.B tail \|\-15cf \|fred
+.RE
+.IP
+will print the last 15 characters of the file
+.BR fred ,
+followed by any lines that are appended to
+.B fred
+between the time
+.B tail
+is initiated and killed.
+.SH "SEE ALSO"
+.BR dd (1)
+.SH BUGS
+Data for a tail relative to the end of the file is stored in a buffer,
+and thus is limited in size.
+.LP
+Various kinds of anomalous behavior may happen with character special
+files.

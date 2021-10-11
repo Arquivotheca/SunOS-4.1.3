@@ -1,0 +1,459 @@
+.\" @(#)filesystem.7 1.1 92/07/30 SMI
+.TH FILESYSTEM 7 "10 January 1988"
+.SH NAME
+filesystem \- file system organization
+.SH SYNOPSIS
+.ft B
+.nf
+/
+/usr
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "filesystem" "" "file system organization"
+.IX "filesystem" "" "file system layout"
+.LP
+The Sun\s-1OS\s0 file system tree is organized for easy administration.
+Distinct areas within the file system tree are provided for files that
+are private to one machine, files that can be shared by multiple
+machines of a common architecture, files that can be shared
+by all machines, and home directories.
+This organization allows the sharable files to be stored
+on one machine, while being accessed by many machines using a
+remote file access mechanism such as Sun's Network File System
+(\s-1NFS\s0).
+Grouping together similar files makes the
+file system tree easier to upgrade and manage.
+.LP
+The file system tree consists of a root file system and a collection
+of mountable file systems.
+The
+.BR mount (8)
+program attaches mountable file systems to the
+file system tree at mount points (directory entries)
+in the root file system, or other previously mounted file systems.
+Two file systems,
+.B /
+(the root) and
+.BR /usr ,
+must be mounted in order to have a fully functional system.
+The root file system is mounted automatically by the kernel at boot time; the
+.B /usr
+file system is mounted by the
+.B /etc/rc.boot
+script, which is run as part of the booting process.
+.LP
+The root file system contains files that are unique
+to each machine;
+it can not be shared among machines.
+The root file system contains the following directories:
+.TP 10
+.B /dev
+Character and block special files.  Device files provide hooks into
+hardware devices or operating system facilities.  The
+.BR \s-1MAKEDEV\s0
+command
+(see
+.BR makedev (8))
+builds device files in the
+.B /dev
+directory.
+Typically, device files are built to match the kernel and hardware
+configuration of the machine.
+.TP
+.B /etc
+Various configuration files and system administration databases
+that are machine specific.
+You can think of
+.B /etc
+as the \*(lqhome directory\*(rq of a machine, defining its \*(lqidentity.\*(rq
+Executable programs are no longer kept in
+.BR /etc .
+.TP
+.B /home
+Mount points for home directories.
+This directory may be arranged so that shared user files are placed under
+the directory
+.BI /home/ machine-name
+on machines serving as file servers.
+Machines may then be locally configured with mount points under
+.B /home
+for all of the file servers of interest,
+with the name of the mount point being the name of the file server.
+.TP
+.B /mnt
+A generic mount point.
+This is an empty directory available for temporarily mounting
+file systems on.
+.TP
+.B /sbin
+Executable programs that are needed in the
+boot process before
+.B /usr
+is mounted.
+.B /sbin
+contains
+.I only
+those programs that are needed in order to
+mount the
+.B /usr
+file system:
+.BR hostname (1),
+.BR ifconfig (8C),
+.BR init (8),
+.BR mount (8),
+and
+.BR sh (1).
+After
+.B /usr
+is mounted, the full complement of utilities are available.
+.TP
+.B /tmp
+Temporary files that are deleted at reboot time.
+.TP
+.B /var
+Files, such as log files, that are unique to a machine but that can grow to
+an arbitrary (\*(lqvariable\*(rq) size.
+.TP
+.B /var/adm
+System logging and accounting files.
+.TP
+.B /var/preserve
+Backup files for
+.BR vi (1)
+and
+.BR ex (1).
+.TP
+.B /var/spool
+Subdirectories for files used in printer spooling, mail delivery,
+.BR cron (8),
+.BR at (1),
+etc.
+.TP
+.B /var/tmp
+Transitory files that are not deleted at reboot time.
+.LP
+Because it is desirable to keep the root file system small,
+larger file systems are often mounted on
+.BR /var
+and
+.BR /tmp .
+.LP
+The file system mounted on
+.B /usr
+contains architecture-dependent and architecture-independent shareable files.
+The subtree rooted at
+.B /usr/share
+contains architecture-independent shareable files;
+the rest of the
+.B /usr
+tree contains architecture-dependent files.
+By mounting a common remote file system,
+a group of machines with a common architecture
+may share a single
+.B /usr
+file system.
+A single
+.B /usr/share
+file system can be shared by machines of any architecture.
+A machine acting as a file server may export many different
+.B /usr
+file systems to support several different architectures
+and operating system releases.
+Clients usually mount
+.B /usr
+read-only to prevent their accidentally modifying any shared files.
+The
+.B /usr
+file system contains the following subdirectories:
+.TP 25
+.B /usr/5bin
+System V executables.
+.TP
+.B /usr/5include
+System V include files.
+.TP
+.B /usr/5lib
+System V library files.
+.TP
+.B /usr/bin
+Executable programs.  The bulk of the system utilities are located here.
+.TP
+.B /usr/dict
+Dictionary databases.
+.TP
+.B /usr/etc
+Executable system administration programs.
+.TP
+.B /usr/games
+Executable game programs and data.
+.TP
+.B /usr/include
+Include files.
+.TP
+.B /usr/lib
+Program libraries and various architecture-dependent databases.
+.TP
+.B /usr/pub
+Various data files.
+.TP
+.B /usr/ucb
+Executable programs descended from the Berkeley Software Distribution.
+.TP
+.B /usr/share
+Subtree for architecture-independent shareable files.
+.TP
+.B /usr/share/man
+Subdirectories for the on-line reference manual pages.
+.TP
+.B /usr/share/lib
+Architecture-independent databases.
+.LP
+A machine with disks may export root file systems, swap files
+and 
+.B /usr
+file systems to diskless or partially-disked machines,
+which mount these into the standard file system hierarchy.
+The standard directory tree for exporting these
+file systems is:
+.TP 25
+.B /export
+The root of the exported file system tree.
+.TP
+.BI /export/exec/ architecture-name
+The exported 
+.B /usr
+file system supporting
+.I architecture-name
+for the current release.
+.TP
+.BI /export/exec/ architecture-name . release-name
+The exported
+.B /usr
+file system supporting 
+.I architecture-name
+for Sun\s-1OS\s0
+.IR release-name .
+.TP
+.B /export/share
+The exported common
+.B /usr/share
+directory tree.
+.TP
+.BI /export/root/ hostname
+The exported root file system for
+.IR hostname .
+.TP
+.BI /export/swap/ hostname
+The exported swap file for
+.IR hostname .
+.TP
+.BI /export/var/ hostname
+The exported
+.B /var
+directory tree for
+.IR hostname .
+.TP
+.BI /export/dump/ hostname
+The exported dump file for
+.IR hostname .
+.TP
+.BI /export/crash/ hostname
+The exported crash dump directory for
+.IR hostname .
+.br
+.ne 5
+.SS "Changes from Previous Releases"
+.LP
+The file system layout described here is quite a bit different
+from the layout employed previous to release 4.0 of Sun\s-1OS\s0.
+For compatibility with earlier releases of Sun\s-1OS\s0,
+and other versions of the
+.SM UNIX
+system, symbolic links are provided for various files and directories
+linking their previous names to their current locations.
+The symbolic links provided include:
+.TP 25
+.BR /bin " \(em> " /usr/bin
+All programs previously located in
+.B /bin
+are now in
+.BR /usr/bin .
+.TP
+.BR /lib " \(em> " /usr/lib
+All files previously located in
+.B /lib
+are now in
+.BR /usr/lib .
+.TP
+.BR /usr/adm " \(em> " /var/adm
+The entire
+.B /usr/adm
+directory has been moved to
+.BR /var/adm .
+.TP
+.BR /usr/spool " \(em> " /var/spool
+The entire
+.B /usr/spool
+directory has been moved to
+.BR /var/spool .
+.TP
+.BR /usr/tmp " \(em> " /var/tmp
+The
+.B /usr/tmp
+directory has been moved to
+.BR /var/tmp .
+.LP
+.BR /etc/termcap " \(em> " /usr/share/lib/termcap
+.LP
+.BR /usr/5lib/terminfo " \(em> " /usr/share/lib/terminfo
+.LP
+.BR /usr/lib/me " \(em> " /usr/share/lib/me
+.LP
+.BR /usr/lib/ms " \(em> " /usr/share/lib/ms
+.LP
+.BR /usr/lib/tmac " \(em> " /usr/share/lib/tmac
+.LP
+.BR /usr/man " \(em> " /usr/share/man
+.LP
+The following program binaries have been moved from
+.B /etc
+to
+.B /usr/etc
+with symbolic links to them left in
+.BR /etc :
+.BR arp ,
+.BR clri ,
+.BR cron ,
+.BR chown ,
+.BR chroot ,
+.BR config ,
+.BR dkinfo ,
+.BR dmesg ,
+.BR dump ,
+.BR fastboot ,
+.BR fasthalt ,
+.BR fsck ,
+.BR halt ,
+.BR ifconfig ,
+.BR link ,
+.BR mkfs ,
+.BR mknod ,
+.BR mount ,
+.BR ncheck ,
+.BR newfs ,
+.BR pstat ,
+.BR rdump ,
+.BR reboot ,
+.BR renice ,
+.BR restore ,
+.BR rmt ,
+.BR rrestore ,
+.BR shutdown ,
+.BR umount ,
+.BR update ,
+.BR unlink ,
+and
+.BR vipw .
+.LP
+In addition, some files and directories
+have been moved with no symbolic link left
+behind in the old location:
+.LP
+.RS
+.TP 20
+.I Old Name
+.I New Name
+.TP
+.B /etc/biod
+.B /usr/etc/biod
+.TP 
+.B /etc/fsirand
+.B /usr/etc/fsirand
+.TP 
+.B /etc/getty
+.B /usr/etc/getty
+.TP 
+.B /etc/in.rlogind
+.B /usr/etc/in.rlogind
+.TP
+.B /etc/in.routed
+.B /usr/etc/in.routed
+.TP
+.B /etc/in.rshd
+.B /usr/etc/in.rshd
+.TP
+.B /etc/inetd
+.B /usr/etc/inetd
+.TP
+.B /etc/init
+.B /usr/etc/init
+.TP
+.B /etc/nfsd
+.B /usr/etc/nfsd
+.TP
+.B /etc/portmap
+.B /usr/etc/portmap
+.TP
+.B /etc/rpc.lockd
+.B /usr/etc/rpc.lockd
+.TP
+.B /etc/rpc.statd
+.B /usr/etc/rpc.statd
+.TP
+.B /etc/ypbind
+.B /usr/etc/ypbind
+.TP
+.B /usr/lib/sendmail.cf
+.B /etc/sendmail.cf
+.TP
+.B /usr/preserve
+.B /var/preserve
+.TP
+.B /usr/lib/aliases
+.B /etc/aliases
+.TP
+.B /stand
+.B /usr/stand
+.TP
+.B /etc/yp
+.B /var/yp
+.RE
+.LP
+Note: with this new file system organization, the approach to
+repairing a broken file system changes.
+One must mount
+.B /usr
+before doing an
+.BR fsck (8),
+for example.
+If the mount point for
+.B /usr
+has been destroyed,
+.B /usr
+can be mounted temporarily on
+.B /mnt
+or
+.BR /tmp .
+If the root file system on a standalone system
+is so badly damaged that none of these
+mount points exist,
+or if
+.B /sbin/mount
+has been corrupted, the only way to repair it may be
+to re-install the root file system.
+.SH "SEE ALSO"
+.BR at (1),
+.BR ex (1),
+.BR hostname (1),
+.BR sh (1),
+.BR vi (1),
+.BR intro (4),
+.BR nfs (4P),
+.BR hier (7),
+.BR fsck (8),
+.BR ifconfig (8C),
+.BR init (8),
+.BR makedev (8),
+.BR mount (8),
+.BR rc (8)

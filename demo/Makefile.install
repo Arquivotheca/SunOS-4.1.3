@@ -1,0 +1,36 @@
+# @(#)Makefile.install 1.1 92/07/30 SMI
+#
+#	This file is to be installed in the release area.
+#	It does not try to do a build in the XGL subdirectory.
+#
+#
+
+DESTDIR= 
+INSDIR= $(DESTDIR)/usr/demo
+SUBDIR= SUNVIEW BUTTONBOX CDROM DIALBOX SOUND SUNVIDEO
+OWNER= bin
+INSTALL= install -o $(OWNER)
+OPENWINHOME= /usr/openwin
+
+all: Makefile subdirs
+
+subdirs: FRC
+	for i in $(SUBDIR); do \
+		(cd $$i && $(MAKE) $(MFLAGS)); \
+	done
+
+clean: FRC
+	for i in $(SUBDIR); do \
+		(cd $$i && $(MAKE) $(MFLAGS) $@); \
+	done
+
+install: Makefile README FRC
+	$(INSTALL) -d $(INSDIR)
+	$(INSTALL) -m 644 Makefile $(INSDIR)
+	$(INSTALL) -m 444 README $(INSDIR)
+	for i in $(SUBDIR); do \
+		(cd $$i && $(MAKE) $(MFLAGS) $@ \
+			DESTDIR=$(DESTDIR) OWNER=$(OWNER)); \
+	done
+
+FRC:

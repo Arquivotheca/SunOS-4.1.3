@@ -1,0 +1,342 @@
+'\" t
+.\" process through tbl
+.\" @(#)matherr.3m 1.1 92/07/30 SMI; from S5R2
+.TH MATHERR 3M "16 August 1989"
+.SH NAME
+matherr \- math library exception-handling function
+.SH SYNOPSIS
+.LP
+.nf
+.B #include <math.h>
+.LP
+.B int matherr(exc)
+.B struct exception \(**exc;
+.fi
+.SH DESCRIPTION
+.IX matherr() "" "\fLmatherr()\fR \(em math library exception-handline function"
+.LP
+The
+.SM SVID
+.RI ( "System V Interface Definition" )
+specifies that certain
+.B libm
+functions call
+.B matherr(\|)
+when exceptions are detected.
+Users may define their own mechanisms
+for handling exceptions, by including a function named
+.B matherr(\|)
+in their programs.
+.B matherr(\|)
+is of the form described above.
+When an exception occurs,
+a pointer to the exception structure
+.I exc
+will be passed to the user-supplied
+.B matherr(\|)
+function.  This structure, which is defined in the
+.B <math.h>
+header file, is as follows:
+.RS
+.LP
+.ft B
+.nf
+struct exception {
+	int type;
+	char \(**name;
+	double arg1, arg2, retval;
+};
+.ft R
+.fi
+.RE
+.LP
+The element
+.B type
+is an integer describing the type of exception
+that has occurred, from the following list of
+constants (defined in the header file):
+.LP
+.RS
+.PD 0
+.TP 20
+.SB DOMAIN	
+argument domain exception
+.TP
+.SB SING
+argument singularity
+.TP
+.SB OVERFLOW
+overflow range exception
+.TP
+.SB UNDERFLOW
+underflow range exception
+.PD
+.RE
+.LP
+The element
+.B name
+points to a string containing
+the name of the function that incurred the exception.
+The elements
+.B arg1
+and
+.B arg2
+are the arguments with which the function was invoked.
+.B retval
+is set to the default value that will be
+returned by the function unless the user's
+.B matherr(\|)
+sets it to a different value.
+.LP
+If the user's
+.B matherr(\|)
+function returns non-zero,
+no exception message will be printed, and
+.B errno
+will not be set.
+.LP
+If
+.B matherr(\|)
+is not supplied by the user,
+the default matherr exception-handling
+mechanisms, summarized in the table below,
+will be invoked upon exception:
+.TP
+.B \s-1DOMAIN\s0==fp_invalid
+An
+.SM IEEE
+NaN is usually returned,
+.B errno
+is set to
+.SM EDOM\s0,
+and a message is printed on standard error.
+.BI pow( 0.0 ,0.0)
+and
+.B atan2(0.0,0.0)
+return numerical default results but set
+.B errno
+and print the message.
+.TP
+.B \s-1SING\s0==fp_division
+An
+.SM IEEE
+\(if of appropriate sign is returned,
+.B errno
+is set to
+.SM EDOM\s0,
+and a message is printed on standard error.
+.TP
+.B \s-1OVERFLOW\s0==fp_overflow
+In the default rounding direction, an
+.SM IEEE
+\(if of appropriate sign is returned.
+In optional rounding directions,
+.BR \(+-\s-1MAXDOUBLE\s0 ,
+the largest finite double-precision number,
+is sometimes returned instead of
+.BR \(+-\(if .
+.B errno
+is set to
+.SM ERANGE\s0.
+.TP
+.B \s-1UNDERFLOW\s0==fp_underflow
+An appropriately-signed zero, subnormal number,
+or smallest normalized number is returned, and
+.B errno
+is set to
+.SM ERANGE\s0.
+.LP
+The facilities provided by
+.B matherr(\|)
+are not available in situations such as
+compiling on a Sun-3 system with
+.B /usr/lib/f68881/libm.il
+or
+.BR /usr/lib/ffpa/libm.il ,
+in which case some
+.B libm
+functions are converted to atomic hardware operations.
+In these cases setting
+.B errno
+and calling
+.B matherr(\|)
+are not worth the adverse performance impact,
+but regular
+.SM ANSI/IEEE
+Std 754-1985 exception handling remains available.
+In any case
+.B errno
+is not a reliable error indicator in that it
+may be unexpectedly set by a function in
+a handler for an asynchronous signal.
+.LP
+.\" === troff version ===
+.if n .ig IG
+.TS
+center box ;
+cB s s s s
+cB s s s s
+c cI s s s
+c | c | c | c | c
+l | c | c | c | c .
+\s0DEFAULT ERROR HANDLING PROCEDURES\s0
+
+=
+	Types of Errors
+_
+\s0<math.h> type	\s-1DOMAIN\s+1	\s-1SING\s+1	\s-1OVERFLOW\s+1	\s-1UNDERFLOW\s0
+_
+\s0\fBerrno\fP	\s-1EDOM\s+1	\s-1EDOM\s+1	\s-1ERANGE\s+1	\s-1ERANGE\s0
+_
+\s0IEEE Exception	Invalid Operation	Division by Zero	Overflow	Underflow\s0
+_
+\s0<floatingpoint.h> type	fp_invalid	fp_division	fp_overflow	fp_underflow\s0
+
+_
+\s0\s-1ACOS, ASIN\s+1:	M, NaN	\-	\-	\-\s0
+_
+\s0\s-1ATAN2(0,0)\s+1:	M, \(+-0.0 or \(+-\(*p	\-	\-	\-\s0
+_
+\s0\s-1BESSEL\s+1:                \s0
+\s0y0, y1, yn (x < 0)	M, NaN	\-	\-	\-\s0
+\s0y0, y1, yn (x = 0)	\-	M, \-\(if	\-	\-\s0
+_
+\s0\s-1COSH, SINH\s+1:	\-	\-	IEEE Overflow	\-\s0
+_
+\s0\s-1EXP\s+1:	\-	\-	IEEE Overflow	IEEE Underflow\s0
+_
+\s0\s-1HYPOT\s+1:	\-	\-	IEEE Overflow	\-\s0
+_
+\s0\s-1LGAMMA\s+1:	\-	M, +\(if	IEEE Overflow	\-\s0
+_
+\s0\s-1LOG, LOG10\s+1:\s0
+\s0 (x < 0)	M, NaN	\-	\-	\-\s0
+\s0 (x = 0)	\-	M, \-\(if	\-	\-\s0
+_
+\s0\s-1POW\s+1:\s0
+\s0usual cases	\-	\-	IEEE Overflow	IEEE Underflow\s0
+\s0(x < 0) \(**\(** (y not an integer)	M, NaN	\-	\-	\-\s0
+\s0  0 \(**\(** 0	M, 1.0	\-	\-	\-\s0
+\s0  0 \(**\(** (y < 0)	\-	M, \(+-\(if	\-	\-\s0
+_
+\s0\s-1SQRT\s+1:	M, NaN	\-	\-	\-\s0
+.TE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.ta +29n +11n +12n +14n
+.nf
+DEFAULT ERROR HANDLING PROCEDURES
+	Types of Errors
+<math.h> type	DOMAIN	SING	OVERFLOW	UNDERFLOW
+\fBerrno\fP	EDOM	EDOM	ERANGE	ERANGE
+IEEE Exception	Invalid	Division	Overflow	Underflow
+	Operation	by Zero
+<floatingpoint.h> type	fp_invalid	fp_division	fp_overflow	fp_underflow
+ACOS, ASIN:	M, NaN	\-	\-	\-
+ATAN2(0,0):	M, \(+-0.0	\-	\-	\-
+	or \(+-\(*p
+BESSEL:                
+y0, y1, yn (x < 0)	M, NaN	\-	\-	\-
+y0, y1, yn (x = 0)	\-	M, \-\(if	\-	\-
+COSH, SINH:	\-	\-	IEEE Overflow	\-
+EXP:	\-	\-	IEEE Overflow	IEEE Underflow
+HYPOT:	\-	\-	IEEE Overflow	\-
+LGAMMA:	\-	M, +\(if	IEEE Overflow	\-
+LOG, LOG10:
+(x < 0)	M, NaN	\-	\-	\-
+(x = 0)	\-	M, \-\(if	\-	\-
+POW:
+usual cases	\-	\-	IEEE Overflow	IEEE Underflow
+(x < 0) \(**\(** (y not an integer)	M, NaN	\-	\-	\-
+0 \(**\(** 0	M, 1.0	\-	\-	\-
+0 \(**\(** (y < 0)	\-	M, \(+-\(if	\-	\-
+SQRT:	M, NaN	\-	\-	\-
+.fi
+.IG
+.\" === end nroff version ===
+.LP
+.\" === troff version ===
+.if n .ig IG
+.TS
+center box ;
+cB s
+c l .
+ABBREVIATIONS
+
+=
+
+M	Message is printed (\s-1EDOM\s+1 exception).
+NaN	\s-1IEEE\s+1 NaN result and invalid operation exception.
+\(if	\s-1IEEE\s+1 \(if result and division-by-zero exception.
+\s-1IEEE\s+1 Overflow	\s-1IEEE\s+1 Overflow result and exception.
+\s-1IEEE\s+1 Underflow	\s-1IEEE\s+1 Underflow result and exception.
+\(*p	Closest machine-representable approximation to \fBpi\fP\.
+.TE
+.IG
+.\" === end troff version ===
+.\" ===  nroff version ===
+.if t .ig IG
+.TS
+center box ;
+cB s
+c l .
+ABBREVIATIONS
+
+=
+
+M	Message is printed (\s-1EDOM\s+1 exception).
+NaN	\s-1IEEE\s+1 NaN result and invalid operation exception.
+\(if	\s-1IEEE\s+1 \(if result and division-by-zero exception.
+\s-1IEEE\s+1 Overflow	\s-1IEEE\s+1 Overflow result and exception.
+\s-1IEEE\s+1 Underflow	\s-1IEEE\s+1 Underflow result and exception.
+\(*p	Closest machine-representable approximation to \fBpi\fP\.
+.TE
+.IG
+.\" === end nroff version ===
+.LP
+The interaction of
+.SM IEEE
+arithmetic and
+.B matherr(\|)
+is not defined when executing under
+.SM IEEE
+rounding modes other than the default
+round to nearest:
+.B matherr(\|)
+may not be called on overflow or underflow,
+and the Sun-provided
+.B matherr(\|)
+may return results that differ from those in this table.
+.br
+.ne 20
+.SH EXAMPLE
+.nf
+.ft B
+.ta .5i 1.0i 1.5i 2.0i
+#include <math.h>
+.sp .5
+int
+matherr(x)
+register struct exception \(**x;
+{
+	switch (x\->type) {
+	case
+		\s-1DOMAIN\s0:
+		/\(** change sqrt to return sqrt(\-arg1), not NaN \(**/
+		if (!strcmp(x\->name, "sqrt")) {
+			x\->retval = sqrt(\-x\->arg1);
+			return (0); /* print message and set errno */
+	} /\(** fall through \(**/
+	case
+ 		\s-1SING\s0:
+		/\(** all other domain or sing exceptions, print message and abort \(**/
+		fprintf(stderr, "domain exception in %s\en", x\->name);
+		abort( );
+		break;
+	}
+	return (0); /\(** all other exceptions, execute default procedure \(**/
+}
+.ft R
+.fi

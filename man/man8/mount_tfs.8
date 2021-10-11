@@ -1,0 +1,107 @@
+.\" @(#)mount_tfs.8 1.1 92/07/30 SMI;
+.TH MOUNT_TFS 8 "23 November 1988"
+.SH NAME
+mount_tfs, umount_tfs \- mount and dismount TFS filesystems
+.SH SYNOPSIS
+.LP
+.B /usr/etc/mount_tfs
+[
+.B \-r
+]
+.IR "fs1 fs2" " .\|.\|.
+.I fsN dir
+.br
+.B /usr/etc/mount \-t tfs
+[
+.B \-o
+.I options
+]
+.I "fs dir"
+.LP
+.B /usr/etc/umount_tfs
+.I dir
+.br
+.B /usr/etc/umount
+.I dir
+.SH DESCRIPTION
+.IX "mount_tfs" "" "\fLmount_tfs\fR \(em mount \s-1TFS\s0 filesystems" ""
+.IX "umount_tfs" "" "umount_tfs \(em dismount \s-1TFS\s0 filesystems"
+.IX mount "TFS filesystems" "mount" "\s-1TFS\s0 filesystems"
+.IX unmount "TFS filesystems" "unmount" "\s-1TFS\s0 filesystems"
+.IX TFS "mounting and unmounting filesystems" "\s-1TFS\s0" "mounting and unmounting filesystems" 
+.LP
+.B mount_tfs
+attaches a translucent file service
+(\s-1TFS\s0)
+filesystem to the directory
+.IR dir .
+After the mount, the directory
+.I dir
+is a
+.SM TFS
+directory whose frontmost directory is
+.I fs1
+and whose backmost directory is
+.IR dir ,
+with any number of directories intervening.
+Effectively, the directories
+.IR fs1 " .\|.\|. " fsN
+are stacked in front of
+.IR dir .)
+.LP
+.SM TFS
+filesystems can also be mounted using the
+.BR mount (8)
+command.
+The
+.B mount
+command can only mount one directory,
+.IR fs ,
+in front of the backmost directory,
+.IR dir .
+.LP
+.B umount_tfs
+detaches the
+.SM TFS
+filesystem rooted at
+.IR dir .
+See
+.BR tfs (4S)
+for a description of a
+.SM TFS
+filesystem.
+.SH OPTIONS
+.TP
+.B \-r
+Mount the
+.SM TFS
+filesystem read-only.
+.SH "SEE ALSO"
+.BR lsw (1),
+.BR unwhiteout (1),
+.BR tfs (4S),
+.BR mount (8),
+.BR tfsd (8)
+.SH BUGS
+.LP
+.B mount_tfs
+will cause
+.BR tfsd (8)
+to deadlock (hang and answer no more requests) if it is used in
+conjunction with Network Software Environment
+(\s-1NSE\s0) execsets. 
+For example, a deadlock will occur if a user has used
+.B mount_tfs
+to mount over
+.BR /usr/lib ,
+and then tries to activate an
+.SM NSE
+environment whose
+execset mounts over
+.BR /usr/lib .
+.LP
+The directories
+.IR "fs1" ,
+.IR fs2 ", .\|.\|.\|,"
+.I fsN
+must be writable.

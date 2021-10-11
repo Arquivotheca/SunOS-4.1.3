@@ -1,0 +1,222 @@
+.\" @(#)aioread.3 1.1 92/07/30 SMI;
+.TH AIOREAD 3 "21 January 1990"
+.SH NAME
+aioread, aiowrite \- asynchronous I/O operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/asynch.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int aioread(fd, bufp, bufs, offset, whence, resultp)
+int fd;
+char *bufp;
+int bufs;
+int offset;
+int whence;
+aio_result_t *resultp;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int aiowrite(fd, bufp, bufs, offset, whence, resultp)
+int fd;
+char *bufp;
+int bufs;
+int offset;
+int whence;
+aio_result_t *resultp;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "aioread()" "" "\fLaioread()\fR \(em initiate asynchronous read" ""
+.IX "aiowrite()" "" "\fLaioread()\fR \(em initiate asynchronous write" ""
+.IX read "initiate asynchronous read"
+.IX write "initiate asynchronous write"
+.IX "asynchronous I/O" "aioread()" "" "\fLaioread()\fR"
+.IX "asynchronous I/O" "aiowrite()" "" "\fLaiowrite()\fR"
+.LP
+.B aioread(\|)
+initiates one asynchronous
+.BR read (2V)
+and returns control to the calling program.
+The
+.B read(\|)
+continues concurrently with other activity of the
+process.
+An attempt is made to read
+.I bufs
+bytes of data from the object referenced by the descriptor
+.I fd
+into the buffer pointed to by
+.IR bufp .
+.LP
+.B aiowrite(\|)
+initiates one asynchronous
+.BR write (2V)
+and returns control to the calling program.
+The
+.B write(\|)
+continues concurrently with other activity of the
+process.
+An attempt is made to write
+.I bufs
+bytes of data from the buffer pointed to by
+.I bufp
+to the object referenced by the descriptor
+.IR fd .
+.LP
+On objects capable of seeking, the I/O operation starts at
+the position specified by
+.I whence
+and
+.IR offset .
+These parameters have the same meaning as the corresponding
+parameters to the
+.BR lseek (2V)
+function.
+On objects not capable of seeking the I/O
+operation always start from the current position and the parameters
+.I whence
+and
+.I offset
+are ignored.
+The seek pointer for objects capable of
+seeking is not updated by
+.B aioread(\|)
+or
+.BR aiowrite(\|) . 
+Sequential asynchronous operations on these devices must be
+managed by the application using the
+.I whence
+and
+.I offset
+parameters.
+.\" .LP
+.\" Upon return from
+.\" .B aioread(\|)
+.\" or
+.\" .B aiowrite(\|)
+.\" the file pointer is incremented by the number of bytes requested
+.\" with
+.\" .IR bufs .
+.\" Note: this occurs even if an error is detected later during the
+.\" actual asynchronous operation and the requested number of
+.\" bytes can not be read or written.
+.LP
+The result of the asynchronous operation is stored in
+the structure pointed to by
+.IR resultp :
+.RS
+.nf
+.ft B
+int aio_return;		/* return value of read(\|) or write(\|) */
+int aio_errno;		/* value of errno for read(\|) or write(\|) */
+.ft R
+.fi
+.RE
+.LP
+Upon completion of the operation both
+.I aio_return
+and
+.I aio_errno
+are set to reflect the result of the operation.
+.SM AIO_INPROGRESS
+is not a value used by the system so the client
+may detect a change in state by initializing
+.I aio_return
+to this value.
+.LP
+Notification of the completion of an asynchronous I/O
+operation may be obtained synchronously through the
+.BR aiowait (3)
+function, or asynchronously through the signal mechanism.
+Asynchronous notification is accomplished by generating the
+.SB SIGIO
+signal.
+The delivery of this instance of the
+.SB SIGIO
+signal is reliable in that a signal delivered while the handler is executing
+is not lost.
+If the client ensures that
+.BR aiowait (3)
+returns nothing (using a polling timeout)
+before returning from the signal handler,
+no asynchronous I/O notifications are lost.
+The
+.BR aiowait (3)
+function is the only way to dequeue
+an asynchronous notification.
+Note:
+.SB SIGIO
+may have several meanings simultaneously:
+for example, that
+a descriptor generated
+.SB SIGIO
+and an asynchronous operation completed.
+Further, issuing an asynchronous request
+successfully guarantees that space
+exists to queue the completion notification.
+.LP
+.BR close (2V),
+.BR exit (2V)
+and
+.BR execve (2V)
+will block until all pending asynchronous I/O operations
+can be cancelled by the system.
+.LP
+It is an error to use the same result buffer in more than
+one outstanding request.
+These structures may only be
+reused after the system has completed the operation.
+.SH RETURN VALUES
+.LP
+.B aioread(\|)
+and
+.B aiowrite(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+.I fd
+is not a valid file descriptor open for reading.
+.TP
+.SM EFAULT
+At least one of
+.I bufp
+or
+.I resultp
+points to an address out side the address space of the
+requesting process.
+.TP
+.SM EINVAL
+The parameter
+.I resultp
+is currently being used by an outstanding asynchronous request.
+.TP 
+.SM EPROCLIM
+The number of asynchronous requests that the system can handle at
+any one time has been exceeded
+.SH "SEE ALSO"
+.BR close (2V),
+.BR execve (2V),
+.BR exit (2V),
+.BR lseek (2V),
+.BR open (2V),
+.BR read (2V),
+.BR sigvec (2),
+.BR write (2V),
+.BR aiocancel (3),
+.BR aiowait (3)

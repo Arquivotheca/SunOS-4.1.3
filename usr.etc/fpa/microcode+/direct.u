@@ -1,0 +1,564 @@
+|*	@(#)direct.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*              Weitek Single Precision ALU Instructions
+|*
+|*      Operations with two operands and one result
+routine c.ssub 001010000000 	enra halt;			regtoti;	rcssp imm2;
+	;			ssub enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+csafin:
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.sdiff 001010000100 	enra halt;			regtoti;	rcssp imm2;
+	;			sdiff enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.ssubm 001010001000 	enra halt;			regtoti;	rcssp imm2;
+	;			ssubm enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.sadd 001010100000 	enra halt;			regtoti;	rcssp imm2;
+	;			sadd enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.ssum 001010100100 	enra halt;			regtoti;	rcssp imm2;
+	;			ssum enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.saddm 001010101000 	enra halt;			regtoti;	rcssp imm2;
+	;			saddm enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+|*
+|*      Operations with one operand and one result
+|*
+routine c.sneg 001010010000 	sneg enra halt;                 regtoti;	rcssp imm2;
+        ;                       sneg halt;                 	;		ptr1;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.sident 001010110000 	enra halt;			;		rcssp imm2;	ptr5!0x400+0x0	
+        ;                       sadd enrb halt;                 regtoti;        rcssp ptr5;
+        ;                       sadd halt;                 	;        	ptr1;
+        call csafin;            halt;                           regtotmp;	rcssp ptr1;
+routine c.sabs 001010111000 	sabs enra halt;                 regtoti;	rcssp imm2;
+        ;                       sabs halt;			;		ptr1;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.sexct 001011100000 	sexct enra halt;                regtoti;	rcssp imm2;
+        ;                       sexct halt;			;		ptr1;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.swdnrm 001011100100 	swdnrm enra halt;               regtoti;	rcssp imm2;
+        ;                       swdnrm halt;               	;		ptr1;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.sinxct 001011101000 	sinxct enra halt;               regtoti;	rcssp imm2;
+        ;                       sinxct halt;               	;		ptr1;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+routine c.sfloat 001011110100	sfloat enra halt;               regtoti;	rcssp imm2;
+        ;                       sfloat halt;               	;		ptr1;
+        call csafin;            halt;				regtotmp;	rcssp ptr1;
+|*
+|*      Operations with two operands and no result
+|*
+routine c.scmp 001011000000 	enra halt;			regtoti;        rcssp imm2;
+	;			scmp enrb halt;			regtoti;	rcssp ptr3;
+        ;	                scmp;				;               ;
+dispstat:
+	jtierr hang cstat;	scmp halt;			;		;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.scmpm 001011001000 	enra halt;	                regtoti;        rcssp imm2;
+	;			scmpm enrb halt;		regtoti;	rcssp ptr3;
+        call dispstat;            ;				;               ;
+|*
+|*      Operations with one operand and no result
+|*
+routine c.scmp0 001011010000 	enra halt;			regtoti;	rcssp imm2;
+        ;                       ;                               ;               ptr5;	ptr5!0x400+0x0
+        ;                       scmp enrb halt;                 regtoti;        rcssp ptr5;
+        call dispstat;		;				;               ;
+|*
+|*      Operations with one operand and one integer result (i.e. from l.s.
+|*      portion of Weitek chip)
+routine c.scvtint 001011110000	scvtint enra halt;		regtoti;	rcssp imm2;
+	;			scvtint halt;			;		ptr1;
+	;			halt;				regtotmp;	rcssp ptr1;
+	;			halt;				;		ptr1;
+	jtierr dckres cstat;	snop enra tioe tisp halt;	titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;	ptr5!szero
+dckres:
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_ssin
+	jne ser1;		smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	jtierr dckres cstat;	snop halt;			;		imm2;
+	pipe idl1;		snop halt;			;		imm2;	ptr5!szero
+|*
+|*              Weitek Double Precision ALU Instructions
+|*
+|*      Operations with two operands and one result
+routine c.dsub 001010000001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr3;
+cdafin:
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop halt;			;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.ddiff 001010000101 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	call cdafin;		ddiff enrb loaddp halt;		regtoti;	rcslsw ptr3;
+routine c.dsubm 001010001001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	call cdafin;		dsubm enrb loaddp halt;		regtoti;	rcslsw ptr3;
+routine c.dadd 001010100001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	call cdafin;		dadd enrb loaddp halt;		regtoti;	rcslsw ptr3;
+routine c.dsum 001010100101 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	call cdafin;		dsum enrb loaddp halt;		regtoti;	rcslsw ptr3;
+routine c.daddm 001010101001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	call cdafin;		daddm enrb loaddp halt;		regtoti;	rcslsw ptr3;
+|*
+|*      Operations with one operand and one result
+|*
+routine c.dneg 001010010001     ;				;		ptr1;
+	;			dnop;				regtotmp;	rcslsw ptr1;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dneg enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.dident 001010110001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;		regtoti;	rcslsw imm2;	ptr5!0x600+0x0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	call cdafin;		dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+routine c.dabs 001010111001	;				;		ptr1;
+	;			dnop;				regtotmp;	rcslsw ptr1;
+        ;                       dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dabs enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.dexct 001011100001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2; 
+	call cdafin;		dexct enra loaddp halt;		regtoti;	rcslsw imm2;
+routine c.dwdnrm 001011100101 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        call cdafin;		dwdnrm enra loaddp halt;	regtoti;	rcslsw imm2;
+routine c.dinxct 001011101001 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        call cdafin;		dinxct enra loaddp halt;	regtoti;	rcslsw imm2;
+routine c.dfloat 001011110101 	;				;		ptr1;
+	;			;				regtotmp;	rcslsw ptr1;
+        ;                       dfloat enra loaddp halt;	regtoti;	rcssp imm2;
+        ;			dfloat enra loaddp halt; 	regtoti;	rcssp imm2;
+	;			dnop;				;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*      Operations with two operands and no result
+routine c.dcmp 001011000001 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;
+        ;                       dnop enrb loaddp halt;          regtoti;	rcsmsw ptr3;
+        ;                       dcmp enrb loaddp halt;          regtoti;	rcslsw ptr3;
+        ;                       dnop;                           ;               ;
+        jtierr hang cstat;      halt;				;               ;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.dcmpm 001011001001 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;
+        ;                       dnop enrb loaddp halt;          regtoti;	rcsmsw ptr3;
+        ;                       dcmpm enrb loaddp halt;		regtoti;	rcslsw ptr3;
+        ;                       dnop;                           ;               ;
+        jtierr hang cstat;      halt;				;               ;
+	pipe idl1;		snop halt;			;		imm2;
+|*      Operations with one operand and no result
+routine c.dcmp0 001011010001 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;	ptr5!0x600+0x0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+        ;                       dnop;                           ;               ;
+        jtierr hang cstat;      halt;				;               ;
+	pipe idl1;		snop halt;			;		imm2;
+
+|*      Operations with one operand and one integer result (i.e. from l.s.
+|*      portion of Weitek chip)
+routine c.dcvtint 001011110001 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+	;                       dcvtint enra loaddp halt;	regtoti;        rcslsw imm2;
+	;			halt;				regtotmp;	rcssp ptr1;
+	;			halt;				;		ptr1;
+	jtierr dckres cstat;	snop enra tioe tisp halt;	titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;	ptr5!szero
+|*
+|*              Weitek Single Precision ALU Convert Instructions
+|*
+routine c.dcvts 001011111000 	;				;		ptr1;
+	;			;				regtotmp;	rcssp ptr1;
+        ;                       dnop enra loaddp halt;          regtoti;        rcsmsw ptr2;
+        ;                       dcvts enra loaddp halt;		regtoti;        rcslsw ptr2;
+	;			;				;		ptr1;
+	jtierr ser1 cstat;	dnop tioe tisp halt;		titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.scvtd 001011111001 	;				;		ptr1;
+	;			;				regtotmp;	rcslsw ptr1;
+	;			scvtd enra loaddp halt;		regtoti;	rcssp ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcssp ptr2;
+	;			dnop tioe tilsw;		;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*              Weitek Single Precision ALU Divide Instructions
+|*
+routine c.sdiv 001010001100 	enra halt;			regtoti;	rcssp imm2;
+	;			sdiv enrb halt;			regtoti;	rcssp ptr3;
+	;			halt;				regtotmp;	rcssp ptr1;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.sdiva 001010011100 	enra halt;			regtoti;	rcssp imm2;
+	;			sdiva enrb halt;		regtoti;	rcssp ptr3;
+	;			halt;				regtotmp;	rcssp ptr1;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.sdivb 001010101100 	enra halt;			regtoti;	rcssp imm2;
+	;			sdivb enrb halt;		regtoti;	rcssp ptr3;
+	;			halt;				regtotmp;	rcssp ptr1;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+routine c.sdivab 001010111100 	enra halt;			regtoti;	rcssp imm2;
+	;			sdivab enrb halt;		regtoti;	rcssp ptr3;
+	;			halt;				regtotmp;	rcssp ptr1;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr1;
+	jtierr ser1 cstat;	tioe tisp halt;			titoreg;	rcssp ptr1;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*              Weitek Double Precision ALU Divide Instructions
+|*
+routine c.ddiv 001010001101 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;
+	;			ddiv enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			ddiv enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	;			dnop;				regtotmp;	rcslsw ptr1;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.ddiva 001010011101 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;
+	;			ddiva enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			ddiva enrb loaddp halt;		regtoti;	rcslsw ptr3;	lpreg!1
+	;			dnop;				regtotmp;	rcslsw ptr1;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.ddivb 001010101101 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;
+	;			ddivb enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			ddivb enrb loaddp halt;		regtoti;	rcslsw ptr3;	lpreg!1
+	;			dnop;				regtotmp;	rcslsw ptr1;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.ddivab 001010111101 	dnop enra loaddp halt;          regtoti;        rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;        rcslsw imm2;
+	;			ddivab enrb loaddp halt;	regtoti;	rcsmsw ptr3;
+	;			ddivab enrb loaddp halt;	regtoti;	rcslsw ptr3;	lpreg!1
+	;			dnop;				regtotmp;	rcslsw ptr1;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*              Weitek Single Precision Multiply Instructions
+|*
+routine c.smul 001010000010 	enra halt;			regtoti;	rcssp imm2;
+	;			smul enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            smul halt;			regtotmp;	rcssp ptr1;
+routine c.smwa 001010000110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwa enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            smwa halt;			regtotmp;	rcssp ptr1;
+routine c.smwb 001010001010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwb enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            smwb halt;			regtotmp;	rcssp ptr1;
+routine c.smwab 001010001110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwab enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwab halt;			regtotmp;	rcssp ptr1;
+routine c.smma 001010010010 	enra halt;			regtoti;	rcssp imm2;
+	;			smma enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            smma halt;			regtotmp;	rcssp ptr1;
+routine c.smmb 001010010110 	enra halt;			regtoti;	rcssp imm2;
+	;			smmb enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            smmb halt;			regtotmp;	rcssp ptr1;
+routine c.smmab 001010011010 	enra halt;			regtoti;	rcssp imm2;
+	;			smmab enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smmab halt;			regtotmp;	rcssp ptr1;
+routine c.smn 001010011110 	enra halt;			regtoti;	rcssp imm2;
+	;			smn enrb halt;			regtoti;	rcssp ptr3;
+        call csafin;            smn halt;			regtotmp;	rcssp ptr1;
+routine c.smwan 001010100010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwan enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwan halt;			regtotmp;	rcssp ptr1;
+routine c.smwbn 001010100110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwbn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbn halt;			regtotmp;	rcssp ptr1;
+routine c.smwabn 001010101010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwabn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabn halt;			regtotmp;	rcssp ptr1;
+routine c.smman 001010101110 	enra halt;			regtoti;	rcssp imm2;
+	;			smman enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smman halt;			regtotmp;	rcssp ptr1;
+routine c.smmbn 001010110010 	enra halt;			regtoti;	rcssp imm2;
+	;			smmbn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smmbn halt;			regtotmp;	rcssp ptr1;
+routine c.smmabn 001010110110 	enra halt;			regtoti;	rcssp imm2;
+	;			smmabn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smmabn halt;			regtotmp;	rcssp ptr1;
+routine c.smwama 001010111010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwama enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwama halt;			regtotmp;	rcssp ptr1;
+routine c.smwamb 001010111110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwamb enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwamb halt;			regtotmp;	rcssp ptr1;
+routine c.smwamab 001011000010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwamab enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwamab halt;			regtotmp;	rcssp ptr1;
+routine c.smwbma 001011000110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwbma enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbma halt;			regtotmp;	rcssp ptr1;
+routine c.smwbmb 001011001010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwbmb enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbmb halt;			regtotmp;	rcssp ptr1;
+routine c.smwbmab 001011001110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwbmab enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbmab halt;			regtotmp;	rcssp ptr1;
+routine c.smwabma 001011010010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwabma enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabma halt;			regtotmp;	rcssp ptr1;
+routine c.smwabmb 001011010110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwabmb enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabmb halt;			regtotmp;	rcssp ptr1;
+routine c.smwabmab 001011011010	enra halt;			regtoti;	rcssp imm2;
+	;			smwabmab enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabmab halt;			regtotmp;	rcssp ptr1;
+routine c.smwaman 001011011110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwaman enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwaman halt;			regtotmp;	rcssp ptr1;
+routine c.smwambn 001011100010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwambn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwambn halt;			regtotmp;	rcssp ptr1;
+routine c.smwamabn 001011100110	enra halt;			regtoti;	rcssp imm2;
+	;			smwamabn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwamabn halt;			regtotmp;	rcssp ptr1;
+routine c.smwbman 001011101010 	enra halt;			regtoti;	rcssp imm2;
+	;			smwbman enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbman halt;			regtotmp;	rcssp ptr1;
+routine c.smwbmbn 001011101110 	enra halt;			regtoti;	rcssp imm2;
+	;			smwbmbn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbmbn halt;			regtotmp;	rcssp ptr1;
+routine c.smwbmabn 001011110010	enra halt;			regtoti;	rcssp imm2;
+	;			smwbmabn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwbmabn halt;			regtotmp;	rcssp ptr1;
+routine c.smwabman 001011110110	enra halt;			regtoti;	rcssp imm2;
+	;			smwabman enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabman halt;			regtotmp;	rcssp ptr1;
+routine c.smwabmbn 001011111010	enra halt;			regtoti;	rcssp imm2;
+	;			smwabmbn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabmbn halt;			regtotmp;	rcssp ptr1;
+routine c.smwabmabn 001011111110 	enra halt;		regtoti;	rcssp imm2;
+	;			smwabmabn enrb halt;		regtoti;	rcssp ptr3;
+        call csafin;            smwabmabn halt;			regtotmp;	rcssp ptr1;
+|*
+|*              Weitek Double Precision Multiply Instructions
+|*
+routine c.dmul 001010000011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	;			dmul;				regtotmp;	rcslsw ptr1;
+cdmfin:
+	;			dnop halt;			;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+routine c.dmwa 001010000111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwa enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwa;				regtotmp;	rcslsw ptr1;
+routine c.dmwb 001010001011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwb enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwb ;				regtotmp;	rcslsw ptr1;
+routine c.dmwab 001010001111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwab enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwab;				regtotmp;	rcslsw ptr1;
+routine c.dmma 001010010011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmma enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmma ;				regtotmp;	rcslsw ptr1;
+routine c.dmmb 001010010111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmmb enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmmb;				regtotmp;	rcslsw ptr1;
+routine c.dmmab 001010011011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmmab enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmmab;				regtotmp;	rcslsw ptr1;
+routine c.dmn 001010011111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmn enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmn;				regtotmp;	rcslsw ptr1;
+routine c.dmwan 001010100011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwan enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwan;				regtotmp;	rcslsw ptr1;
+routine c.dmwbn 001010100111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbn enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbn;				regtotmp;	rcslsw ptr1;
+routine c.dmwabn 001010101011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabn;				regtotmp;	rcslsw ptr1;
+routine c.dmman 001010101111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmman enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmman;				regtotmp;	rcslsw ptr1;
+routine c.dmmbn 001010110011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmmbn enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	call cdmfin;		dmmbn;				regtotmp;	rcslsw ptr1;
+routine c.dmmabn 001010110111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmmabn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmmabn;				regtotmp;	rcslsw ptr1;
+routine c.dmwama 001010111011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwama enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwama;				regtotmp;	rcslsw ptr1;
+routine c.dmwamb 001010111111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwamb enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwamb;				regtotmp;	rcslsw ptr1;
+routine c.dmwamab 001011000011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwamab enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwamab;			regtotmp;	rcslsw ptr1;
+routine c.dmwbma 001011000111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbma enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbma;				regtotmp;	rcslsw ptr1;
+routine c.dmwbmb 001011001011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbmb enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbmb;				regtotmp;	rcslsw ptr1;
+routine c.dmwbmab 001011001111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbmab enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbmab;			regtotmp;	rcslsw ptr1;
+routine c.dmwabma 001011010011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabma enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabma;			regtotmp;	rcslsw ptr1;
+routine c.dmwabmb 001011010111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabmb enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabmb;			regtotmp;	rcslsw ptr1;
+routine c.dmwabmab 001011011011	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabmab  enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabmab ;			regtotmp;	rcslsw ptr1;
+routine c.dmwaman 001011011111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwaman enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwaman;			regtotmp;	rcslsw ptr1;
+routine c.dmwambn 001011100011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwambn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwambn;			regtotmp;	rcslsw ptr1;
+routine c.dmwamabn 001011100111	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwamabn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwamabn;			regtotmp;	rcslsw ptr1;
+routine c.dmwbman 001011101011 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbman enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbman;			regtotmp;	rcslsw ptr1;
+routine c.dmwbmbn 001011101111 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbmbn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbmbn;			regtotmp;	rcslsw ptr1;
+routine c.dmwbmabn 001011110011	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwbmabn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwbmabn;			regtotmp;	rcslsw ptr1;
+routine c.dmwabman 001011110111 dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabman enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabman;			regtotmp;	rcslsw ptr1;
+routine c.dmwabmbn 001011111011	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabmbn enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabmbn;			regtotmp;	rcslsw ptr1;
+routine c.dmwabmabn 001011111111 	dnop enra loaddp halt;	regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmwabmabn  enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	call cdmfin;		dmwabmabn ;			regtotmp;	rcslsw ptr1;

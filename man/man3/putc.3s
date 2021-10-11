@@ -1,0 +1,155 @@
+.\" @(#)putc.3s 1.1 92/07/30 SMI; from UCB 4.3
+.TH PUTC 3S "10 October 1987"
+.SH NAME
+putc, putchar, fputc, putw \- put character or word on a stream
+.SH SYNOPSIS
+.LP
+.B #include <stdio.h>
+.LP
+.nf
+.B int putc(c, stream)
+.B char c;
+.B "\s-1FILE\s0 \(**stream;"
+.fi
+.LP
+.nf
+.B int putchar(c)
+.B char c;
+.fi
+.LP
+.nf
+.B int fputc(c, stream)
+.B char c;
+.B "\s-1FILE\s0 \(**stream;"
+.fi
+.LP
+.nf
+.B int putw(w, stream)
+.B int w;
+.B "\s-1FILE\s0 \(**stream;"
+.fi
+.SH DESCRIPTION
+.IX  "put character to stream putc()"  "" "put character to stream \(em \fLputc()\fP"
+.IX  "put character to stream fputc()"  "" "put character to stream \(em \fLfputc()\fP"
+.IX  "put character to stdout"  "" "put character to stdout \(em \fLputchar()\fP"
+.IX  "put word to stream"  ""  "put word to stream \(em \fLputw()\fP"
+.IX  stream  "put character to putc()"  stream  "put character to \(em \fLputc()\fP"
+.IX  stream  "put character to fputc()"  stream  "put character to \(em \fLfputc()\fP"
+.IX  stdout  "put character to"  stdout  "put character to \(em \fLputchar()\fP"
+.IX  stream  "put word to"  stream  "put word to \(em \fLputw()\fP"
+.IX  "putc macro"  ""  "\fLputc()\fP \(em put character on stream"
+.IX  "putchar macro"  ""  "\fLputchar()\fP \(em put character on stdout"
+.IX  "fputc()"  ""  "\fLfputc()\fP \(em put character on stream"
+.IX  "putw macro"  ""  "\fLputw()\fP \(em put word on stream"
+.IX  character  "put to stream putc()"  ""  "put to stream \(em \fLputc()\fP"
+.IX  character  "put to stdin"  ""  "put to stdin \(em \fLputchar()\fP"
+.IX  character  "put to stream fputc()"  ""  "put to stream \(em \fLfputc()\fP"
+.IX  word  "put to stream"  word  "put to stream \(em \fLputw()\fP"
+.LP
+.B putc(\|)
+writes the character
+.I c
+onto the standard I/O output stream
+.I stream
+(at the position where the file pointer, if defined,
+is pointing).
+It returns the character written.
+.LP
+.BR putchar ( c )
+is defined as
+.BR putc ( c ,
+.BR stdout ).
+.B putc(\|)
+and
+.B putchar(\|)
+are macros.
+.LP
+.B fputc(\|)
+behaves like
+.BR putc(\|) ,
+but is a function rather than a macro.
+.B fputc(\|)
+runs more slowly than
+.BR putc(\|) ,
+but it takes less space per invocation and its name can be
+passed as an argument to a function.
+.LP
+.B putw(\|)
+writes the C
+.B int
+(word)
+.B w
+to the standard I/O output stream
+.I stream
+(at the position of the file pointer, if defined).
+The size of a word is the size of an integer and
+varies from machine to machine.
+.B putw(\|)
+neither assumes nor causes special alignment in the file.
+.LP
+Output streams are by default buffered if the output refers to a file
+and line-buffered if the output refers to a terminal.
+When an output stream is unbuffered,
+information is queued for writing on the
+destination file or terminal as soon as written;
+when it is buffered,
+many characters are saved up and written as a block.
+When it is line-buffered,
+each line of output is queued for writing on the
+destination terminal as soon as the line is completed
+(that is, as soon as a
+.SM NEWLINE
+character is written
+or terminal input is requested).
+.BR setbuf (3V),
+.BR setbuffer(\|) ,
+or
+.B setvbuf(\|)
+may be used to change the
+stream's buffering strategy.
+.SH "SEE ALSO"
+.BR fclose (3V),
+.BR ferror (3V),
+.BR fopen (3V),
+.BR fread (3S),
+.BR getc (3V),
+.BR printf (3V),
+.BR puts (3S),
+.BR setbuf (3V),
+.SH DIAGNOSTICS
+.LP
+On success,
+.BR putc(\|) ,
+.BR fputc(\|) ,
+and
+.BR putchar(\|)
+return the value that was written.
+On error, those functions return the constant
+.SM
+.BR EOF .
+.B putw(\|)
+returns
+.BR ferror(stream) ,
+so that it returns 0 on success and 1 on failure.
+.SH BUGS
+.LP
+Because it is implemented as a macro,
+.B putc(\|)
+treats a
+.I stream
+argument with side effects improperly.  In particular,
+.B putc(c, *f++);
+does not work sensibly.
+.B fputc(\|)
+should be used instead.
+.LP
+Errors can occur long after the call to
+.BR putc(\|) .
+.LP
+Because of possible differences in word length and byte ordering,
+files written using
+.B putw(\|)
+are machine-dependent,
+and may not be read using
+.B getw(\|)
+on a different processor.

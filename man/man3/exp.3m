@@ -1,0 +1,212 @@
+.\" @(#)exp.3m 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH EXP 3M "24 March 1988"
+.SH NAME
+exp, expm1, exp2, exp10, log, log1p, log2, log10, pow, compound, annuity \- exponential, logarithm, power
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.LP
+.B double exp(x)
+.B double x;
+.LP
+.B double expm1(x)
+.B double x;
+.LP
+.B double exp2(x)
+.B double x;
+.LP
+.B double exp10(x)
+.B double x;
+.LP
+.B double log(x)
+.B double x;
+.LP
+.B double log1p(x)
+.B double x;
+.LP
+.B double log2(x)
+.B double x;
+.LP
+.B double log10(x)
+.B double x;
+.LP
+.B double pow(x, y)
+.B double x, y;
+.LP
+.B double compound(r, n)
+.B double r, n;
+.LP
+.B double annuity(r, n)
+.B double r, n;
+.fi
+.SH DESCRIPTION
+.LP
+.B exp(\|)
+returns the exponential function 
+.IR e**x .
+.IX  "exp()"  ""  "\fLexp()\fP \(em exponential function"
+.IX  "expm1()"  ""  "\fLexpm1()\fP \(em exponential function"
+.IX  "exp2()"  ""  "\fLexp2()\fP \(em exponential function"
+.IX  "exp10()"  ""  "\fLexp10()\fP \(em exponential function"
+.IX  "mathematical functions"  exp()  ""  "\fLexp()\fP \(em exponential"
+.IX  "exponential function exp()"  ""  "exponential function \(em \fLexp()\fP"
+.LP
+.B expm1(\|)
+returns
+.I e**x\-1
+accurately even for tiny
+.IR x .
+.LP
+.B exp2(\|)
+and
+.B exp10(\|)
+return 
+.I 2**x 
+and 
+.I 10**x 
+respectively.
+.LP
+.B log(\|)
+returns the natural logarithm of
+.IR x .
+.IX  "log()"  ""  "\fLlog()\fP \(em natural logarithm"
+.IX  "log1p()"  ""  "\fLlog1p()\fP \(em natural logarithm"
+.IX  "mathematical functions"  log()  ""  "\fLlog()\fP \(em natural logarithm"
+.IX  "natural logarithm log()"  ""   "natural logarithm \(em \fLlog()\fP"
+.IX  "logarithm, natural log()"  ""   "logarithm, natural \(em \fLlog()\fP"
+.LP
+.B log1p(\|)
+returns log(1+x) accurately even for tiny
+.IR x .
+.LP
+.B log2(\|)
+and
+.B log10(\|)
+return the logarithm to base 2 and 10 respectively.
+.IX  "log2 function"  ""  "\fLlog2\fP \(em logarithm, base 2"
+.IX  "mathematical functions"  log2  ""  "\fLlog2\fP \(em logarithm, base 2"
+.IX  "logarithm, base 2 log2"  ""  "logarithm, base 2 \(em \fLlog2\fP"
+.IX  "log10 function"  ""  "\fLlog10\fP \(em logarithm, base 10"
+.IX  "mathematical functions"  log10  ""  "\fLlog10\fP \(em logarithm, base 10"
+.IX  "logarithm, base 10 log10"  ""  "logarithm, base 10 \(em \fLlog10\fP"
+.LP
+.B pow(\|)
+returns
+.IR  x**y .
+.BI pow( x " ,0.0)"
+is 1 for all x, in conformance with 4.3\s-1BSD\s0,
+as discussed in the
+.TX FPOINT .
+.IX  "pow function"  ""  "\fLpow\fP \(em raise to power"
+.IX  "mathematical functions"  pow  ""  "\fLpow\fP \(em raise to power"
+.IX  "power function pow"  ""  "power function \(em \fLpow\fP"
+.LP
+.B compound(\|)
+and 
+.B annuity(\|)
+are functions important in financial computations of the
+effect of interest at periodic rate 
+.I r
+over
+.I n
+periods.
+.BI compound( r , " n" )
+computes 
+.IR (1+r)**n , 
+the compound interest factor.
+Given an initial principal
+.I P0, 
+its value after
+.I n
+periods is just
+.BI "Pn =" " P0" " * compound(" r\c
+.BI , " n" )\c
+\&.
+.BI annuity( r , " n" )
+computes 
+.I (1 \- (1+r)**\-n)/r,
+the present value of annuity factor.
+Given an initial principal
+.I P0, 
+the equivalent periodic payment is just
+.BI "p =" " P0" " / annuity(" r\c
+.BI , " n" )\c
+\&.
+.B compound(\|)
+and 
+.B annuity(\|)
+are computed using 
+.B log1p(\|) 
+and
+.B expm1(\|)
+to avoid gratuitous inaccuracy for small-magnitude
+.IR r .
+.B compound(\|)
+and 
+.B annuity(\|)
+are not defined for 
+.I r 
+<= \-1.
+.LP
+Thus a principal amount
+.I P0 
+placed at 5% annual interest compounded quarterly
+for 30 years would yield
+.LP
+.RS
+.nf
+.ft B
+P30 = \fIP0\fP * compound(.05/4, 30.0 * 4)
+.ft
+.fi
+.RE
+.LP
+while a conventional fixed-rate 30-year home loan of amount
+.I P0
+at 10% annual interest
+would be amortized by monthly payments in the amount
+.LP
+.RS
+.nf
+.ft B
+p = \fIP0\fP / annuity( .10/12, 30.0 * 12)
+.ft
+.fi
+.SH "SEE ALSO"
+.BR matherr (3M)
+.SH DIAGNOSTICS
+All these functions handle exceptional arguments in the spirit of
+.SM ANSI/IEEE
+Std 754-1985.  Thus
+for x == \(+-0,
+.BI log( x )
+is \-\(if with a division by zero exception;
+for x < 0, including \-\(if,
+.BI log( x )
+is a quiet NaN with an invalid operation exception;
+for x == +\(if or a quiet NaN,
+.BI log( x )
+is x without exception;
+for x a signaling NaN,
+.BI log( x )
+is a quiet NaN with an invalid operation exception;
+for x == 1,
+.BI log( x )
+is 0 without exception;
+for any other positive x,
+.BI log( x )
+is a normalized number with an inexact exception.
+.LP
+In addition,
+.BR exp(\|) ,
+.BR exp2(\|) ,
+.BR exp10(\|) ,
+.BR log(\|) ,
+.BR log2(\|) ,
+.B log10(\|)
+and
+.B pow(\|)
+may also set
+.B errno
+and call
+.BR matherr (3M).

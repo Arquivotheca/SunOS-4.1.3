@@ -1,0 +1,344 @@
+#
+# @(#)Makefile.common 1.1 92/07/30 SMI
+# Makefile for "lint" and standard "lint" libraries
+#
+
+VERSION= 4.1
+
+LINT1=	./lint1
+MIP=	../../pcc/mip
+SRC=	../src
+SRC_LIB= $(SRC)/lib
+SRC_5LIB= $(SRC)/5lib
+AWK=	/bin/awk
+YACC=	/usr/bin/yacc
+LINT=	/usr/bin/lint
+LINTD=	/usr/lib/lint
+LINT5D=	/usr/5lib/lint
+# LINTD relative to LINT5D
+RELLINTD=../../lib/lint
+
+##########################################################
+#  Note: $(SRC) MUST PRECEDE $(PCC) in the include path  #
+#  because both directories have a version of machdep.h  #
+##########################################################
+
+#  -DBUG4 is necessary to turn off pcc debugging tools (these tools cannot
+#   be used with the lint shell script since their output conflicts)
+
+COPTS=	-O
+CPPFLAGS= -I. -I$(MIP) -I$(SRC) -I$(PCC) -DLINT -DBUG4 -DFLEXNAMES \
+	-DMC68000=1 -DSPARC=2 -DI386=3 -DTARGET=$(TARGET)
+CFLAGS=	${COPTS} ${CPPFLAGS}
+LFLAGS=	${CPPFLAGS} -hv
+
+#
+# headers
+#
+MHDR=	$(MIP)/mip.h $(MIP)/cpass1.h $(MIP)/pcc_types.h $(MIP)/pcc_ops.h \
+	$(MIP)/pcc_node.h $(MIP)/pcc_symtab.h $(MIP)/pcc_sw.h \
+	$(MIP)/messages.h
+
+PHDR=	$(PCC)/align.h
+
+LHDR=	$(SRC)/machdep.h $(SRC)/lerror.h $(SRC)/lmanifest.h $(SRC)/lpass2.h
+
+AWKHDR=	./types.h ./ops.h ./node.h ./symtab.h ./sw.h
+
+HDRS=	${MHDR} ${LHDR} ${PHDR} ${AWKHDR}
+
+#
+# sources
+#
+MSRC=	$(MIP)/xdefs.c $(MIP)/scan.c $(MIP)/pftn.c $(MIP)/trees.c \
+	$(MIP)/optim.c $(MIP)/yyerror.c $(MIP)/messages.c
+
+LSRC=	$(SRC)/lerror.c $(SRC)/msgbuf.c $(SRC)/lint.c $(SRC)/hash.c \
+	$(SRC)/allo.c $(SRC)/debug.c
+
+P1SRC=	${MSRC} ${LSRC} $(MIP)/common.c
+
+P2SRC=	$(SRC)/lpass2.c $(SRC)/lerror2.c $(SRC)/msgbuf2.c
+
+LLSRC=	$(SRC_LIB)/llib-lm $(SRC_LIB)/llib-lsunwindow \
+	$(SRC_LIB)/llib-lc $(SRC_LIB)/llib-lmp \
+	$(SRC_LIB)/llib-lbsd \
+	$(SRC_LIB)/llib-lcore $(SRC_LIB)/llib-lpixrect \
+	$(SRC_LIB)/llib-ltermcap \
+	$(SRC_LIB)/llib-lcurses $(SRC_LIB)/llib-lplot $(SRC_LIB)/llib-port \
+	$(SRC_LIB)/llib-lkvm \
+	$(SRC_LIB)/llib-llwp $(SRC_LIB)/llib-lsuntool
+
+L5LSRC=	$(SRC_5LIB)/llib-lposix $(SRC_5LIB)/llib-lsvid89 \
+	$(SRC_5LIB)/llib-lsvidii $(SRC_5LIB)/llib-lansic \
+	$(SRC_5LIB)/llib-lsvidii-3 $(SRC_5LIB)/llib-lxopen \
+	$(SRC_5LIB)/llib-lc $(SRC_5LIB)/llib-lcurses \
+	$(SRC_5LIB)/llib-ltermcap
+
+SRCS=	${P1SRC} $(MIP)/cgram.y ${P2SRC} ${LLSRC} ${L5LSRC} ${HDRS} Makefile
+
+MKPRIV=	$(MIP)/mkpriv.awk
+
+#
+# objects
+#
+MOBJ=	xdefs.o scan.o pftn.o trees.o optim.o \
+	yyerror.o
+
+LOBJ=	lerror.o msgbuf.o lint.o hash.o allo.o debug.o
+
+P1OBJ=	cgram.o comm1.o ${MOBJ} messages.o ${LOBJ}
+
+L2OBJ=	lpass2.o lerror2.o msgbuf2.o
+
+P2OBJ=	${L2OBJ} hash.o messages.o
+
+LLOBJ=	lib/llib-lm.ln lib/llib-lsunwindow.ln \
+	lib/llib-lc.ln lib/llib-lmp.ln lib/llib-lbsd.ln \
+	lib/llib-lcore.ln lib/llib-lpixrect.ln lib/llib-ltermcap.ln \
+	lib/llib-lcurses.ln lib/llib-lplot.ln lib/llib-port.ln \
+	lib/llib-lkvm.ln \
+	lib/llib-llwp.ln lib/llib-lsuntool.ln
+
+lib/llib-lcore.ln :=	LLINC += -I/usr/old
+
+#LLSPEC= 5lib/llib-lsvidii.ln 5lib/llib-lsvidii-3.ln 5lib/llib-lxopen.ln
+LLSPEC= 5lib/llib-lsvidii.ln 5lib/llib-lxopen.ln
+
+L5LOBJ=	5lib/llib-lposix.ln 5lib/llib-lsvid89.ln 5lib/llib-lansic.ln \
+	5lib/llib-lc.ln 5lib/llib-lcurses.ln 5lib/llib-ltermcap.ln \
+	5lib/llib-lsvidii-3.ln 
+
+$(LLSPEC) $(L5LOBJ) :=	LLINC += -I/usr/5include
+
+#
+# lint "objects"
+#
+MLINT=	xdefs.ln scan.ln pftn.ln trees.ln optim.ln \
+	yyerror.ln
+
+LLINT=	lerror.ln msgbuf.ln lint.ln hash.ln allo.ln debug.ln
+
+P1LINT= cgram.ln comm1.ln ${MLINT} messages.ln ${LLINT}
+
+L2LINT= lpass2.ln lerror2.ln msgbuf2.ln
+
+P2LINT= ${L2LINT} hash.ln messages.ln
+
+#
+# rules
+#
+all:	lint1 lint2 ${LLOBJ} ${L5LOBJ} ${LLSPEC}
+
+
+.DEFAULT:
+	sccs get -G$@ $@
+
+#
+# first pass of lint (lint1)
+#
+lint1:	${P1OBJ}
+	${CC} $(LDFLAGS) ${P1OBJ} -o $@
+
+${MOBJ}:
+	${CC} ${CFLAGS}  -c $(MIP)/$(@:.o=.c)
+
+${LOBJ} ${L2OBJ}:
+	${CC} ${CFLAGS}  -c $(SRC)/$(@:.o=.c)
+
+messages.o:
+	${CC} ${CFLAGS} -c -R $(MIP)/messages.c
+
+cgram.o:
+	${CC} ${CFLAGS} -c cgram.c
+
+cgram.c: $(MIP)/cgram.y $(PCC)/yyfix.sh
+	rm -f gram.in
+	@echo Ignore the error code returned by unifdef
+	-unifdef -UBROWSER < $(MIP)/cgram.y > gram.in
+	$(YACC) gram.in
+	@echo '(expect 6 shift/reduce)'
+	mv y.tab.c cgram.c
+
+comm1.o:
+	${CC} ${CFLAGS} -DPASS1 -c $(MIP)/common.c -o $@
+
+#
+# second pass of lint (lint2)
+#
+lint2:	${P2OBJ}
+	${CC} $(LDFLAGS) ${P2OBJ} -o $@
+
+#
+# local headers -- these include the public headers and add local
+#	aliases for the public names -- a poor man's version of the
+#	modula-2 IMPORT facility.  Note: the "./" prefixes are
+#	significant because of 'make depend'.
+#
+./types.h: $(MIP)/pcc_types.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_types.h > $@
+
+./ops.h: $(MIP)/pcc_ops.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_ops.h > $@
+
+./node.h: $(MIP)/pcc_node.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_node.h > $@
+
+./symtab.h: $(MIP)/pcc_symtab.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_symtab.h > $@
+
+./sw.h: $(MIP)/pcc_sw.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_sw.h > $@
+
+# create the directories where the lint binaries will go
+lib:
+	mkdir lib
+
+5lib:
+	mkdir 5lib
+
+#
+# the lint libraries
+# the "cd" is there so that the name of the lint library, when placed
+# in the "compiled" lint library, will not contain "../src"
+# the "-abhx" is there because the "-H" flag is absent, so "lint1" thinks it's
+# being run in 4BSD mode, so those flags are off by default (the "-H" is
+# absent so that error messages get printed rather than being stuffed into
+# an Hfile; since the source file name isn't supplied, "lint1" would think
+# the errors were in a header file).  The "-z" is there because the "-h"
+# causes "struct/union never defined" messages to occur, and they're not
+# errors here.
+#
+$(LLOBJ): $(LLSRC) $(LINT1) lib
+	(cd $(SRC_LIB); /lib/cpp $(LLINC) -C -Dlint `basename $@ .ln`) | $(LINT1) -abhxz -L > $@
+
+$(L5LOBJ): $(L5LSRC) $(LINT1) 5lib
+	(cd $(SRC_5LIB); /lib/cpp $(LLINC) -C -Dlint `basename $@ .ln`)| $(LINT1) -abhxz -L > $@
+
+$(SRC_5LIB)/llib-lsvidii-3: $(SRC_5LIB)/llib-lsvidii
+	rm -f $(SRC_5LIB)/llib-lsvidii-3
+	ln $(SRC_5LIB)/llib-lsvidii $(SRC_5LIB)/llib-lsvidii-3
+
+$(SRC_5LIB)/llib-lxopen: $(SRC_5LIB)/llib-lsvidii
+	rm -f $(SRC_5LIB)/llib-lxopen
+	ln $(SRC_5LIB)/llib-lsvidii $(SRC_5LIB)/llib-lxopen
+
+5lib/llib-lxopen.ln: $(SRC_5LIB)/llib-lxopen $(LINT1)
+	(cd $(SRC_5LIB); /lib/cpp $(LLINC) -C -DXPG2 -DSVID_V3 -Dlint `basename $@ .ln`)| $(LINT1) -abhxz -L > $@
+	
+5lib/llib-lsvidii.ln: $(SRC_5LIB)/llib-lsvidii $(LINT1)
+	(cd $(SRC_5LIB); /lib/cpp $(LLINC) -C -Dlint -DSVID_3 llib-lsvidii)| $(LINT1) -abhxz -L > 5lib/llib-lsvidii.ln
+	
+lintall: lintp1 lintp2
+
+lintp1: ${P1LINT}
+	${LINT} ${LFLAGS} ${P1LINT}
+
+lintp2: ${P2LINT}
+	${LINT} ${LFLAGS} ${P2LINT}
+
+${MLINT}:
+	${LINT} ${LFLAGS} -i  $(MIP)/$(@:.ln=.c)
+
+${LLINT} ${L2LINT}:
+	${LINT} ${LFLAGS} -i  $(SRC)/$(@:.ln=.c)
+
+messages.ln:
+	${LINT} ${LFLAGS} -i  $(MIP)/messages.c
+
+cgram.ln:
+	${LINT} ${LFLAGS} -i  cgram.c
+
+comm1.ln:
+	${LINT} ${LFLAGS} -DPASS1 -i $(MIP)/common.c -o $@
+
+install: all $(SRC)/lint.sh
+	install -d ${DESTDIR}$(LINTD)
+	install -d ${DESTDIR}$(LINT5D)
+	install -s lint1 ${DESTDIR}$(LINTD)/lint1
+	install -s lint2 ${DESTDIR}$(LINTD)/lint2
+	$(RM) ${DESTDIR}/usr/bin/lint
+	ln -s ../lib/compile ${DESTDIR}/usr/bin/lint
+	install $(SRC)/lint.sh ${DESTDIR}/usr/5bin/lint
+	for i in ${LLSRC}; do \
+		install -c $$i $(DESTDIR)$(LINTD); \
+	done
+	for i in ${LLOBJ}; do \
+		install -c $$i $(DESTDIR)$(LINTD); \
+	done
+	rm -f $(DESTDIR)$(LINTD)/llib-l4.3bsd
+	rm -f $(DESTDIR)$(LINTD)/llib-l4.3bsd.ln
+	ln $(DESTDIR)$(LINTD)/llib-lbsd $(DESTDIR)$(LINTD)/llib-l4.3bsd
+	ln $(DESTDIR)$(LINTD)/llib-lbsd.ln $(DESTDIR)$(LINTD)/llib-l4.3bsd.ln
+	for i in ${L5LSRC}; do \
+		install -c $$i $(DESTDIR)$(LINT5D); \
+	done
+	for i in ${LLSPEC} ${L5LOBJ}; do \
+		install -c $$i $(DESTDIR)$(LINT5D); \
+	done
+	rm -f $(DESTDIR)$(LINT5D)/llib-lxopen
+	ln $(DESTDIR)$(LINT5D)/llib-lsvidii $(DESTDIR)$(LINT5D)/llib-lxopen
+	rm -f $(DESTDIR)$(LINT5D)/llib-lxpg2
+	ln $(DESTDIR)$(LINT5D)/llib-lxopen $(DESTDIR)$(LINT5D)/llib-lxpg2
+	rm -f $(DESTDIR)$(LINT5D)/llib-lxpg2.ln
+	ln $(DESTDIR)$(LINT5D)/llib-lxopen.ln $(DESTDIR)$(LINT5D)/llib-lxpg2.ln
+	rm -f $(DESTDIR)$(LINT5D)/llib-lsvidii-3
+	ln $(DESTDIR)$(LINT5D)/llib-lsvidii $(DESTDIR)$(LINT5D)/llib-lsvidii-3
+	cd $(DESTDIR)$(LINTD); for i in *; do \
+		if [ ! -f $(DESTDIR)$(LINT5D)/$$i ]; then \
+			$(RM) $(DESTDIR)$(LINT5D)/$$i; \
+			ln -s $(RELLINTD)/$$i $(DESTDIR)$(LINT5D); \
+		fi; \
+	done
+
+install_unbundled: all
+	install -d ${DESTDIR}
+	install -s lint1 ${DESTDIR}/lint1
+	install -s lint2 ${DESTDIR}/lint2
+	for i in ${LLSRC}; do \
+		install -c $$i $(DESTDIR) ; \
+	done
+	rm -f $(DESTDIR)$(LINTD)/llib-lsvidii-3
+	ln $(DESTDIR)$(LINTD)/llib-lsvidii $(DESTDIR)$(LINTD)/llib-lsvidii-3
+	for i in ${LLOBJ}; do \
+		install -c $$i $(DESTDIR) ; \
+	done
+
+
+tags:	${P1SRC} $(MIP)/cgram.y ${P2SRC} ${HDRS}
+	ctags -t ${P1SRC} $(MIP)/cgram.y ${P2SRC} ${HDRS}
+
+shrink:
+	rm -f *.o
+
+clean: shrink
+	rm -f lint1 lint2 cgram.c ${AWKHDR} gram.in
+	rm -rf lib 5lib
+
+depend:	${P1SRC} cgram.c ${P2SRC} ${HDRS}
+	rm -f makedep
+	for i in ${MSRC} ${LSRC} cgram.c ${P2SRC}; do \
+	    ${CC} -M ${CPPFLAGS} $$i; \
+	    j=`basename $$i .c`; \
+	    ${CC} -M -Dlint ${CPPFLAGS} $$i | \
+		sed -e "s/$$j.o/$$j.ln/g"; \
+	done >> makedep
+	${CC} -M ${CPPFLAGS} -DPASS1 $(MIP)/common.c | \
+	    sed -e 's/common.o/comm1.o/g' >> makedep
+	${CC} -M -Dlint ${CPPFLAGS} -DPASS1 $(MIP)/common.c | \
+	    sed -e 's/common.o/comm1.ln/g' >> makedep
+	sed -e '/sysmacros/d' \
+	    -e 's,$(MIP),$$(MIP),g' \
+	    -e 's,$(PCC),$$(PCC),g' \
+	    makedep > makedep2
+	mv makedep2 makedep
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+	rm -f eddep makedep
+

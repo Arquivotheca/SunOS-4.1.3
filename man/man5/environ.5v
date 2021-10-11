@@ -1,0 +1,134 @@
+.TH ENVIRON 5V "2 February 1990"
+.SH NAME
+environ \- user environment
+.SH SYNOPSIS
+.B extern char **environ;
+.SH DESCRIPTION
+.IX  "environ file"  ""  "\fLenviron\fP \(em user environment"
+.IX  "login environment \(em \fLenviron\fP"
+.LP
+An array of strings called the `environment' is made available by
+.BR execve (2V)
+when a process begins.  By convention these strings have the form
+.RI ` name = value '.
+The following names are used by various commands:
+.TP 20
+.SB PATH
+The sequence of directory prefixes that
+.BR sh (1),
+.BR time (1V),
+.BR nice (1),
+etc., apply in searching for a file known by an incomplete path name.
+The prefixes are separated by
+.RB ` : '.
+The
+.BR login (1)
+process sets
+.BR \s-1PATH\s0=:/usr/ucb:/bin:/usr/bin .
+.TP
+.SB HOME
+The name of the user's login directory, set by
+.BR login (1)
+from the password file
+.B /etc/passwd
+(see
+.BR passwd (5)).
+.TP
+.SB TERM
+The type of terminal on which the user is logged in.
+This information is used by commands, such as
+.BR nroff (1)
+or
+.BR plot (1G),
+which may exploit special terminal capabilities.  See
+.B /etc/termcap
+.RB ( termcap (5))
+for a list of terminal types.
+.TP
+.SB SHELL
+The path name of the user's login shell.
+.TP
+.SB TERMCAP
+The string describing the terminal in
+.SM TERM,
+or the name of the
+.B termcap
+file, see
+.BR termcap (3X),
+.BR termcap (5).
+.TP
+.SB EXINIT
+A startup list of commands read by
+.BR ex (1),
+.BR edit ,
+and
+.BR vi (1).
+.TP
+.SB USER
+.PD 0
+.TP
+.SB LOGNAME
+The user's login name.
+.PD
+.TP
+.SB TZ
+The name of the time zone that the user is located in.  If
+.SB TZ
+is not present in the environment, the system's default time zone,
+normally the time zone that the computer is located in, is used.
+.LP
+Further names may be placed in the environment by the
+.I export
+command and
+.RI ` name = value '
+arguments in
+.BR sh (1),
+or by the
+.B setenv
+command if you use
+.BR csh (1).
+Arguments may also be placed in the environment at the point of an
+.BR execve (2V).
+It is unwise to conflict with certain
+.BR sh (1)
+variables that are frequently exported by
+.B .profile
+files:
+.BR \s-1MAIL\s0 ,
+.BR \s-1PS\s01 ,
+.BR \s-1PS\s02 ,
+.BR \s-1IFS\s0 .
+.LP
+Various names are expected to be defined and used by
+locale dependent commands and functions
+(see
+.BR locale (5)).
+.SH SYSTEM V DESCRIPTION
+.LP
+The description of the variable
+.SB TERMCAP
+does not apply to programs built in the System V environment.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.TP
+.B etc/termcap
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR ex (1),
+.BR login (1),
+.BR nice (1),
+.BR nroff (1),
+.BR plot (1G),
+.BR sh (1),
+.BR time (1V),
+.BR vi (1),
+.BR execve (2V),
+.BR getenv (3V),
+.BR system (3),
+.BR termcap (3X),
+.BR locale (5),
+.BR passwd (5),
+.BR termcap (5)

@@ -1,0 +1,226 @@
+|*	@(#)misc.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Initialize Instruction
+|*
+|*		In FPA-3, used to load bits 4-11 of the MODE register/.
+|*		   These set up the frequency and flowthrough mode.
+|*		They do not exist or are needed in the FPA-3X, so we just
+|*		Do a dummy routine, so that FPA-3 binaries don't break :-)
+routine c.init 001001011110	;				;		;
+	call idle1;		;				;		;
+|*		
+|*		Restore STATUS register
+|*
+|*  This instruction will: 1) set the valid bit, 2) reset the unimplemented
+|*  instruction bit, 3) set all other bits according to bits 11:8 in the
+|*  operand.
+routine c.rest.wstat 001001010110 ;				;		;
+	cstat;			;				restore;	;
+	call idle1;		;				;		;
+|*
+|*		Update Shadow registers.
+|*	This routine is here for backwards compatibility.  
+routine c.update 001001110001	;				;		;
+	;			;				;		ptr1;		lpreg!8
+usr.loop:
+	;			;				regtotmp;	rcsmsw ptr1;	lpreg-
+	;			;				;		;
+	;			;				tmptoreg;	rcsmsw ptr1;
+	;			;				regtotmp; 	rcslsw ptr1;
+	;			;				;		;
+	jloop usr.loop;		;				tmptoreg;	rcslsw ptr1;
+	;			;				;		ptr1;		ptr1+
+	call idle1;		;				;		;		
+|*
+|*		Load MODE control bits 3-0
+|*
+routine c.ld3.0 00100011010x 	enra halt;			adtoti;		;
+|*  Check to see that operand is > 0.  If not, error.
+	;			;				;		ptr5;	ptr5!szero
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		;	ptr5!c_smaxmode
+	jlt hang cstat;		halt;				;		ptr5;
+|* Check to see that operand <= c_smaxmode (or operand > c_smaxmode)
+	;			scmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;	ptr5!c_dmode
+	jgt hang cstat;		halt;			;		ptr5;
+|* Write the new mode3-0 value into c_dmode.  Only the msw needs to be loaded, though.
+	;			;				;		ptr5;
+	;			;				adtoreg;	rcsmsw ptr5;	mreg!0x10
+|* Load mode3-0 from the pipeline
+	call idle1;		;				;		;
+|*
+|*		 Read Register MSW via the Load Pointer
+|*
+routine c.rdregmsw 1011101000x0 halt;				;		lptr;
+	call idle1;		halt;				readreg;	rcsmsw lptr;
+|*
+|*		 Read Register LSW via the Load Pointer
+|*
+routine c.rdreglsw 1011101000x1 halt;				;		lptr;
+	call idle1;		halt;				readreg;	rcslsw lptr;
+|*
+|*		 Write Register MSW via the Load Pointer
+|*
+routine c.wrregmsw 0011101000x0 halt;				;		lptr;
+	call idle1;		halt;				adtoreg;	rcsmsw lptr;
+|*
+|*		 Write Register LSW via the Load Pointer
+|*
+routine c.wrreglsw 0011101000x1 halt;				;		lptr;
+	call idle1;		halt;				adtoreg;	rcslsw lptr;
+|*
+|*		Read Register Access (MSW)
+|*
+routine reg_read_msw 101100xxxxx0 halt;				readreg;	rcsmsw imm2;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Read Register Access (LSW)
+|*
+routine reg_read_lsw 101100xxxxx1 halt;				readreg;	rcslsw imm2;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Write Register Access (MSW)
+|*
+routine reg_write_msw 001100xxxxx0	halt;			adtoreg;	rcsmsw imm2;
+routine shadow_write_msw 00111000xxx0 	halt;			adtoreg;	rcsmsw imm2;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Write Register Access (LSW)
+|*
+routine reg_write_lsw 001100xxxxx1	halt;			adtoreg;	rcslsw imm2;
+routine shadow_write_lsw 00111000xxx1 	halt;			adtoreg;	rcslsw imm2;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		IDLE1 Routine
+|*
+idle1:
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Clear Pipe Clean-up Routines
+|*
+clp2:
+clp:
+clp1:
+	call idle1;		halt;				;		;
+|*
+|*		TI Error Routines
+|*
+|*  Whenever the TI chip gets an error, we hang.  For instructions that have
+|*  written to reg 1, we must restore it from the temp register.  
+|* 
+|*  Double Precision - restore from temp to ptr4 register
+der4:
+	;			halt;				;		ptr4;
+	call hang;		halt;				tmptoreg;	rcslsw ptr4;
+|*  Double Precision - restore from temp to ptr2 register
+der2:
+	;			halt;				;		ptr2;
+	call hang;		halt;				tmptoreg;	rcslsw ptr2;
+|*
+|*  Double Precision - restore from temp to ptr1 register
+der1:
+	;			halt;				;		ptr1;
+	call hang;		halt;				tmptoreg;	rcslsw ptr1;
+|*
+|*  Single Precision - restore from temp to ptr2 register
+ser2:
+	;			halt;				;		ptr2;
+	call hang;		halt;				tmptoreg;	rcssp ptr2;
+|*
+|*  Single Precision - restore from temp to ptr1 register
+ser1:
+	;			halt;				;		ptr1;
+	call hang;		halt;				tmptoreg;	rcssp ptr1;
+|*
+|*
+tierr:
+
+	call hang;		halt;				;		;
+|*
+hang:
+	hng;			;				;		;
+	call idle1;		;				;		;	
+|*
+|*
+|*              Invalid Instructions
+|*
+|*      Shadow Ram Accesses
+routine inv.h1 10111000xxxx
+|*      Other Register Accesses
+routine inv.r1 x01111xxxxxx
+|*      Register Accesses Via the Load Pointer
+routine inv.l1 x011101001xx
+routine inv.l2 x01110101xxx
+|*   NOTE: 00111011111x is Defined as an invalid instruction forever more
+|*   (it's used in the O.S. to generate the unimplimented status.)
+routine inv.l3 x0111011xxxx
+|*      Single Precision
+routine inv.s1 100xxxxxxxx0
+|*      Command
+routine inv.c1 1010xxxxxxxx
+routine inv.c2 00101001010x
+routine inv.c3 00101001100x
+routine inv.c4 00101011010x
+routine inv.c5 00101100010x
+routine inv.c6 00101100110x
+routine inv.c7 00101101010x
+routine inv.c8 001011011x0x
+routine inv.c9 00101110110x
+routine inv.ca 00101111110x
+routine inv.cb 0010000101x0
+routine inv.cc 001000011xx0
+routine inv.cd 00100011011x
+routine inv.ce 001000111xxx
+routine inv.cf 00100110111x
+routine inv.cg1 001001110000
+routine inv.cg3 0010011101xx
+routine inv.cg4 001001111xxx
+routine inv.ch1 001001011111
+routine inv.ch 00100101110x
+routine inv.ci 001001011011
+routine inv.ci2 00100101100x
+routine inv.cj 00100101010x
+routine inv.ck 0010010100xx
+routine inv.cl 00100100xxx0
+routine inv.cm 001001010111
+|routine inv.cn 00100001001x
+routine inv.stan 001000000100
+routine inv.dtan 001000000101
+|*      Write Weitek Status
+routine inv.w1 10111001xxxx
+|*      Not Used (some detected by hardware)
+routine inv.nu1 x01101xxxxxx
+|routine inv.nu2 001110010101
+|routine inv.nu3 001110010110
+routine inv.nu4 001110010111
+|routine inv.nu5 001110011001
+|routine inv.nu6 001110011010
+|routine inv.nu7 001110011011
+|routine inv.nu8 001110011100
+|routine inv.nu9 001110011101
+routine inv.nua 001110011110
+routine inv.nub 001110011111
+invalid:
+	;			;				;		;		
+	cstat unimpl;		;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;
+routine inv.x1 110000000000
+routine inv.x2 01000xxxxxx1
+routine inv.x3 010010xxxxx1
+|routine inv.x4 01011xxxxxxx
+routine inv.x4a 0101110xxxx0
+routine inv.x4b 0101111xxxx0
+routine inv.x5 0111011xxxxx
+|routine inv.x6 01111xxxxxxx
+routine inv.x6a 0111100xxxx0
+routine inv.x6b 0111101xxxx0
+routine inv.x6c 0111110xxxx0
+routine inv.x6d 0111111xxxx0
+invalid2:
+	;			;				;		;		
+	jclr clp idl2;		;				;		;
+	cstat unimpl;		;				;		;
+	hng;			;				;		;
+	call idle1;		;				;		;

@@ -1,0 +1,105 @@
+.\" @(#)on.1c 1.1 92/07/30 SMI;
+.TH ON 1C "8 September 1988"
+.SH NAME
+on \- execute a command on a remote system, but with the local environment
+.SH SYNOPSIS
+.B on
+[
+.B \-i
+] [
+.B \-d
+] [
+.B \-n
+]
+.I host
+.I command
+[
+.I argument
+]
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  "on command"  ""  "\fLon\fP \(em remote command execution"
+.IX  "remote command execution"  ""  "remote command execution \(em \fLon\fP"
+.LP
+The
+.B on
+program is used to execute commands on another system, in an
+environment similar to that invoking the program.
+All environment variables are passed, and the current working
+directory is preserved.
+To preserve the working directory, the working file system
+must be either already mounted on the host or be exported to it.
+Relative path names will only work if they are within the
+current file system; absolute path names may cause problems.
+.LP
+The standard input is connected to the
+standard input of the remote command,
+and the standard output and the standard error
+from the remote command
+are sent to the corresponding files for the
+.B on
+command.
+.SH OPTIONS
+.TP
+.B \-i
+Interactive mode. Use remote echoing and
+special character processing.
+This option is needed for programs
+that expect to be talking to a terminal.
+All terminal modes and window size changes are propagated.
+.TP
+.B \-d
+Debug mode. Print out some messages as work is being done.
+.TP
+.B \-n
+No Input. This option causes the remote
+program to get
+.SM EOF
+when it reads from the standard input,
+instead of passing the standard input from
+the standard input of the
+.B on
+program.
+For example,
+.B \-n
+is necessary when running commands in the background
+with job control.
+.SH "SEE ALSO"
+.BR chkey (1),
+.BR publickey (5),
+.BR exports (5),
+.BR rexd (8C)
+.SH DIAGNOSTICS
+.TP 20
+.B unknown host
+Host name not found.
+.TP
+.B cannot connect to server
+Host down or not running the server.
+.TP
+.B can't find
+Problem finding the working directory.
+.TP
+.B can't locate mount point
+Problem finding current file system.
+.B RPC: Authentication error 
+The server requires des authentication and you 
+do not have a secret key registered with keyserv.
+Perhaps you logged in without a password.
+Try to keylogin.  If that fails try to
+set your publickey with chkey.
+.LP
+Other error messages may be passed back from the server.
+.SH BUGS
+.LP
+The SunView window system can get confused
+by the environment variables.
+.LP
+When the working directory is remote mounted over
+.SM NFS\s0,
+a
+.B ^Z
+hangs the window.
+.LP
+Root cannot use
+.BR on .

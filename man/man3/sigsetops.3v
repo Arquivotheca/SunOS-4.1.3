@@ -1,0 +1,152 @@
+.\" @(#)sigsetops.3v 1.1 92/07/30 SMI; new for 4.1, POSIX
+.TH SIGSETOPS 3V "21 January 1990"
+.SH NAME
+sigsetops, sigaddset, sigdelset, sigfillset, sigemptyset, sigismember \- manipulate signal sets
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <signal.h>
+.LP
+.nf
+.ft B
+int sigaddset(set, signo)
+sigset_t *set;
+int signo;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sigdelset(set, signo)
+sigset_t *set;
+int signo;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sigfillset(set)
+sigset_t *set;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sigemptyset(set)
+sigset_t *set;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sigismember(set, signo)
+sigset_t *set
+int signo;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "sigaddset()" "" "\fLsigaddset()\fR \(em manipulate signal sets" ""
+.IX "sigdelset()" "" "\fLsigdelset()\fR \(em manipulate signal sets" ""
+.IX "sigfillset()" "" "\fLsigfillset()\fR \(em manipulate signal sets" ""
+.IX "sigemptyset()" "" "\fLsigemptyset()\fR \(em manipulate signal sets" ""
+.IX "sigismember()" "" "\fLsigismember()\fR \(em manipulate signal sets" ""
+.LP
+The 
+.B sigsetops
+primitives manipulate sets of signals.
+They operate on data objects 
+addressable by the application.
+They do not operate on any set of signals known to the system,
+such as the set blocked from delivery to a process or the set
+pending for a process.
+.LP
+.B sigaddset(\|)
+and 
+.B sigdelset(\|)
+respectively add and delete the individual signal specified by 
+the value of
+.B signo
+from the signal set pointed to by
+.IR set .
+.LP
+.B sigemptyset(\|)
+initializes the signal set pointed to by
+.I set
+such that all signals defined in this standard are excluded.
+.LP
+.B sigfillset(\|)
+initializes the signal set pointed to by
+.I set
+such that all signals defined in this standard are included.
+.LP
+Applications shall call either 
+.B sigemptyset(\|)
+or 
+.B sigfillset(\|)
+at least once for each object of type
+.B sigset_t
+prior to any other use of that object.  If such an object is not initialized 
+in this way, but is nonetheless supplied as an argument to any of
+.BR sigaddset(\|) ,
+.BR sigdelset(\|) ,
+.BR sigismember(\|) ,
+.BR sigaction(\|) ,
+.BR sigprocmask(\|) ,
+.BR sigpending(\|) ,
+or
+.BR sigsuspend(\|) 
+the results are undefined.
+.LP
+.B sigismember(\|)
+tests whether the signal specified by the value of
+.B signo
+is a member of the set pointed to by
+.IR set .
+.SH RETURN VALUES
+.LP
+.B sigismember(\|)
+returns:
+.TP
+1
+if the specified signal is a member of
+.IR set .
+.TP
+0
+if the specified signal is not a member of
+.IR set .
+.TP
+\-1
+if an error is detected, and sets
+.B errno
+to indicate the error.
+.LP
+The other functions
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+For each of the following conditions, if the condition is detected,
+.BR sigaddset(\|) ,
+.BR sigdelset(\|) ,
+and 
+.BR sigismember(\|) 
+set 
+.B errno
+to:
+.TP 15
+.SM EINVAL
+.B signo
+is an invalid or unsupported signal number.
+.SH SEE ALSO
+.LP
+.BR sigaction (3V),
+.BR sigpending (2V),
+.BR sigprocmask (2V)

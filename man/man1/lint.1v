@@ -1,0 +1,745 @@
+.\" @(#)lint.1v 1.1 92/07/30 SMI; from 4.3 BSD and S5
+.TH LINT 1V "23 February 1988"
+.SH NAME
+lint \- a C program verifier
+.SH SYNOPSIS
+.B lint
+[
+.B \-abchinquvxz
+] 
+[
+.BI \-D name\fR\|[ = def\|\fR]
+]
+[
+.BI \-host= arch 
+]
+.if n .ti +0.5i
+[
+.BI \-I directory
+]
+[
+.BI \-l library
+]
+[
+.BI \-o " outputfile"
+]
+.if t .ti +.5i
+[
+.BI \-target= arch
+]
+[
+.BI \-U name
+]
+.I filename
+\&.\|.\|.
+.br
+.B lint
+[
+.BI \-C library
+]
+[
+.BI \-D name\fR\|[ = def\|\fR] 
+]
+.if n .ti +0.5i
+[
+.BI \-host= arch
+]
+[
+.BI \-I directory
+]
+[
+.BI \-l library
+]
+[
+.BI \-target= arch 
+]
+.if t .ti +.5i
+[
+.BI \-U name
+]
+.I filename
+\&.\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/lint
+[
+.B \-abcghnpquvxzO
+] 
+[
+.BI \-D name\fR\|[ = def\|\fR]
+]
+.if n .ti +0.5i
+[
+.BI \-I directory
+]
+[
+.BI \-l library
+]
+[
+.BI \-o " outputfile"
+]
+.if t .ti +.5i
+[
+.BI \-U name
+]
+.I filename
+\&.\|.\|.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLlint\fR"
+.IX  "lint command"  ""  "\fLlint\fP \(em C program verifier"
+.IX  "programming tools"  "lint command"  ""  "\fLlint\fP \(em C program verifier"
+.IX  "programming languages"  "lint command"  ""  "\fLlint\fP \(em C program verifier"
+.IX  languages  "lint command"  ""  "\fLlint\fP \(em C program verifier"
+.IX  "C programming language"  "lint command"  ""  "\fLlint\fP \(em C program verifier"
+.IX  "verifier, C programs \(em \fLlint\fP"
+.LP
+.B lint
+attempts to detect features of the named C program files
+that are likely to be bugs, to be non-portable, or to be wasteful.
+It also performs stricter type checking than does the C compiler.
+.B lint
+runs the C preprocessor as its first phase, with the preprocessor symbol
+.B lint
+defined to allow certain questionable code to be altered or skipped by
+.BR lint .
+Therefore, this symbol should be thought of as a reserved word
+for all code that is to be checked by
+.BR lint .
+.LP
+Among the possible problems that are currently noted are unreachable
+statements, loops not entered at the top, automatic variables declared
+and not used, and logical expressions with constant values.
+Function calls are checked for inconsistencies, such as calls to
+functions that return values in some places and not in others,
+functions called with varying numbers of arguments,
+function calls that pass arguments of a type other than the type the function
+expects to receive, functions whose values are not used,
+and calls to functions not returning values that use the non-existent return
+value of the function.
+.LP
+Filename arguments ending with
+.B \&.c
+are taken to be C source files.
+Filename arguments with names ending with
+.B \&.ln
+are taken to be the result of an earlier invocation of
+.BR lint ,
+with either the
+.B \-i
+or the
+.B \-C
+option in effect.
+The
+.B \&.ln
+files are analogous to the
+.B \&.o
+(object) files produced by the
+.BR cc (1V)
+from
+.B \&.c
+files.
+.B lint
+also accepts special libraries specified with the
+.B \-l
+option, which contain
+simplified definitions of standard library routines (preprocessed by
+.RB ` "lint \-C" ')
+for faster checking of function calls.
+.LP
+.B lint
+processes the various
+.BR \&.c ", "  .ln ,
+and
+.BI llib-l library .ln
+(lint library) files and process them in command-line order.
+By default,
+.B lint
+appends the standard C lint library
+.RB ( llib-lc.ln )
+to the end of the list of files.
+When the
+.B \-C
+and
+.B \-i
+options are
+.I omitted
+the second pass of
+.B lint
+checks this list of files for mutual compatibility.
+When the
+.B \-C
+or the
+.B \-i
+options are used, the
+.B \&.ln
+and the
+.BI llib-l library .ln
+files are ignored.
+.SH SYSTEM V DESCRIPTION
+Filename arguments with names ending with
+.B \&.ln
+are taken to be the result of an earlier invocation of
+.BR lint ,
+with either the
+.B \-c
+or the
+.B \-o
+option in effect.
+.LP
+.B lint
+processes the various
+.BR \&.c ", "  .ln ,
+and
+.BI llib-l library .ln
+(lint library) files and process them in command-line order.
+By default,
+.B lint
+appends the standard C lint library
+.RB ( llib-lc.ln )
+to the end of the list of files.
+However, if the
+.B \-p
+option is used, the portable C lint library
+.RB ( llib-port.ln )
+is appended instead.
+When the
+.B \-c
+option is
+.I omitted
+the second pass of
+.B lint
+checks this list of files for mutual compatibility.
+When the
+.B \-c
+option is used, the
+.B \&.ln
+and the
+.BI llib-l library .ln
+files are ignored.
+.LP
+.B lint
+produces its first-pass output on a per-source-file basis.
+Complaints regarding included files are collected and printed
+after all source files have been processed.
+If the
+.B \-c
+option is not used,
+information gathered from all input files is then collected and checked for
+consistency.
+At this point,
+if it is not clear whether a complaint stems from a given source file or from
+one of its included files,
+the source file name is printed, followed by a question mark.
+.SH OPTIONS
+.TP
+.B \-a
+Report assignments of
+.B long
+values to variables that are not
+.BR long .
+.TP
+.B \-b
+Report
+.B break
+statements that cannot be reached.
+This is not the default because, unfortunately, most 
+.BR lex (1)
+and many 
+.BR yacc (1)
+outputs produce many such complaints.
+.TP
+.B \-c
+Complain about casts which have questionable portability.
+.TP
+.B \-h
+Apply a number of heuristic tests to attempt to intuit bugs, improve style,
+and reduce waste.
+.TP
+.B \-i
+Produce a 
+.B \&.ln
+file for every 
+.B \&.c
+file on the command line.  These 
+.B \&.ln
+files are the product of 
+.BR lint 's
+first pass only, and are not checked for compatibility
+between functions.
+.TP
+.B \-n
+Do not check compatibility against the standard library.
+.TP
+.B \-q
+Do not complain about constructs that do not cause portability problems between
+current Sun implementations of the C language but that will cause portability
+problems between other implementations.  If the
+.B \-q
+flag is specified,
+.B lint
+treats type
+.B enum
+as an
+.BR int ,
+treats type
+.B long
+as type
+.B int
+and type
+.B unsigned long
+as
+.BR "unsigned int" ,
+and treats a 0 argument as being conformable with any pointer.
+.TP
+.B \-u
+Do not complain about functions and external variables used and not
+defined, or defined and not used (this is suitable for running
+.B lint
+on a subset of files comprising part of a larger program).
+.TP
+.B \-v
+Suppress complaints about unused arguments in functions.
+.TP
+.B \-x
+Report variables referred to by
+.B extern
+declarations, but never used.
+.TP
+.B \-z
+Do not complain about structures that are never defined (for example,
+using a structure pointer without knowing its contents).
+.TP
+.BI \-C library
+Create a 
+.B lint
+library with the name
+.BI llib-l library .ln\fR.
+.TP
+.BI \-D name\fR[ = def\fR]
+Define 
+.I name
+for 
+.BR cpp (1),
+as if by a
+.B #define
+directive.
+If no definition is given, 
+.I name
+is defined as 1.
+.TP
+\fB\-host=\fIarch\fR	(Sun-2, Sun-3, and Sun-4 systems only)
+Define the host architecture to be
+.IR arch .
+The default is the architecture returned by the
+.BR arch (1)
+command.
+.I arch
+can be one of
+.BR sun2 ,
+.BR sun3 ,
+or
+.BR sun4 .
+.TP
+.BI \-I directory
+Add
+.I directory
+to the list of list of directories in which to search for
+include files.  Include files with names that do not begin
+with 
+.B /
+are always sought first in the directory of the
+.I filename
+argument, then in directories named in 
+.B \-I
+options, then in the
+.B /usr/include
+directory.
+.TP
+.BI \-l library
+Use the lint library
+.I library
+from the
+.B /usr/lib/lint
+directory.
+.TP
+.BI \-o " outputfile"
+Name the output file
+.IR outputfile .
+.I outputfile
+cannot be the same as 
+.I sourcefile 
+.RB ( lint
+will not overwrite the source file).
+.TP
+\fB\-target=\fIarch\fR	(Sun-2, Sun-3, and Sun-4 systems only)
+Define the target architecture to be
+.IR arch ,
+for additional portability checks specific to that architecture.
+The default is the value returned by the 
+.BR arch (1)
+command.
+.I arch
+can be one of:
+.BR sun2 ,
+.BR sun3 ,
+or
+.BR sun4 .
+.TP
+.BI \-U name
+Remove any initial definition of
+.I name
+for the preprocessor.
+.br
+.ne 8
+.SH SYSTEM V OPTIONS
+The sense of the
+.BR \-a ,
+.BR \-b ,
+.BR \-h ,
+and
+.B \-x
+options is reversed in the System V version of
+.BR lint ;
+the tests they control
+.I are
+performed unless the flag is specified.
+The
+.B \-C
+option is not available; instead, the
+.B \-c
+or
+.B \-o
+options can be used.
+The
+.B \-i
+option is not used; instead, the
+.B \-c
+option can be used.
+The
+.BR \-q ,
+.BR \-host ,
+and
+.B \-target
+options are not available.
+.TP
+.B \-c
+Produce a
+.B \&.ln
+file for every
+.B \&.c
+file on the command line.
+These
+.B \&.ln
+files are the product of
+.BR lint 's
+first pass only, and are not checked for compatibility between
+functions.
+.br
+.ne 8
+.TP
+.PD 0
+.B \-g
+.TP
+.B \-O
+These options are accepted but ignored.
+By recognizing these options,
+.BR lint 's
+behavior is closer to that of the
+.BR cc (1V)
+command.
+.PD
+.TP
+.B \-n
+Do not check compatibility against either the standard or the portable
+lint library.
+.TP
+.B \-p
+Attempt to check portability of code to other dialects of C, such as
+.SM IBM
+370
+and Honeywell
+.SM GCOS\s0.
+Along with performing stricter checking,
+this option truncates all non-external names
+to eight characters, and all external names
+to six characters and one case.
+.TP
+.BI \-o " library"
+Create a lint library with the name
+.BI llib-l lib .ln\fR.
+The
+.B \-c
+option nullifies any use of the
+.B \-o
+option.
+The lint library produced is the input that is given to
+.BR lint 's
+second pass.  The
+.B \-o
+option simply saves this file in the named lint library.
+To produce a
+.BI llib-l lib .ln
+without extraneous messages, use of the
+.B \-x
+option is suggested.  The
+.B \-v
+option is useful if the source file(s) for the lint library
+are just external interfaces (for example, the way the file
+.B llib-lc
+is written).  These option settings are also available through the
+use of \*(lqlint comments\*(rq (see
+.B Input Grammar
+below).
+.br
+.ne 7
+.SH USAGE
+.LP
+For more information about 
+.B lint
+refer to 
+.B lint
+in
+.TX PUL
+.LP
+To create lint libraries, use the
+.B \-C
+option. For example
+.IP
+.ft B
+example% lint \-Ccongress \fIfilename\fRs .\|.\|.
+.ft R
+.LP
+where
+.IR filename s
+are the C sources of library
+.IR congress ,
+produces a file
+.B llib-lcongress.ln
+in the current directory
+in the correct library format suitable for \*(lqlinting\*(rq
+programs using
+.BR \-lcongress .
+.SS Input Grammar
+.LP
+.BR lint 's
+first pass reads standard C source files.
+.B lint
+recognizes the following C comments as commands.
+.TP
+.SB /*NOTREACHED*/
+At appropriate points, inhibit comments about unreachable code.
+(This comment is typically placed just after calls to functions like
+.BR exit (2V)).
+.TP
+.SM \fB/*VARARGS\fIn\|\fB*/\fR
+Suppress the usual checking for variable numbers of arguments in the
+following function declaration.
+The data types of the first
+.I n
+arguments are checked; a missing
+.I n
+is taken to be 0.  In this version of 
+.BR lint ,
+.SB /*VARARGS0*/
+is allowed.  It no longer indicates the absence of variable
+arguments.
+.TP
+.SB /*ARGSUSED*/
+Enable the
+.B \-v
+option for the next function.
+.TP
+.SB /*LINTLIBRARY*/
+At the beginning of a file, shut off complaints about unused functions
+and function arguments in this file.
+This is equivalent to using the
+.BR \-v " and " \-x
+options.
+.br
+.ne 13
+.SH SYSTEM V USAGE
+.LP
+The behavior of the
+.B \-c
+and the
+.B \-o
+options allows for incremental use of
+.B lint
+on a set of C source files.
+Invoking
+.RB ` "lint \-c" '
+for each source file produces a corresponding
+.B \&.ln
+file, and prints all messages pertaining to that source file.
+After all of the source files have been run through
+.B lint
+separately, it is invoked once more (without the
+.B \-c
+option), and with all of the
+.B \&.ln
+files and
+.BI \-l x
+options.
+This produces messages about any inconsistencies between files.
+This scheme works well with
+.BR make (1),
+since it allows
+.B make
+to \*(lqlint\*(rq only those source files that have been modified since
+the last time
+.BR lint
+was run.
+.LP
+To create lint libraries, use the
+.B \-o
+option. For example
+.IP
+.ft B
+example% lint \-x \-o congress \fIfilename\fRs .\|.\|.
+.ft R
+.LP
+where
+.IR filename s
+are the C sources of library
+.IR congress ,
+produces a file
+.B llib-lcongress.ln
+in the current directory
+in the correct library format suitable for \*(lqlinting\*(rq
+programs using
+.BR \-lcongress .
+.br
+.ne 5
+.SH EXAMPLE
+The following
+.B lint
+call:
+.IP
+.ft B
+example% lint  \-b  myfile.c
+.ft R
+.LP
+checks the consistency of the code in the C source file file
+.BR myfile.c .
+The 
+.B \-b
+option indicates that unreachable
+.B break
+statements are to be checked for.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/lint/lint[12]
+programs
+.TP
+.B /usr/lib/lint/llib-l*.ln
+various prebuilt lint libraries
+.TP
+.B /usr/lib/lint/llib-l*
+sources of the prebuilt lint libraries
+.PD
+.LP
+The following lint libraries are supplied with Sun\s-1OS\s0:
+.BR \-lc ,
+.BR \-lcore ,
+.BR \-lcurses ,
+.BR \-lkvm ,
+.BR \-llwp ,
+.BR \-lm ,
+.BR \-lmp ,
+.BR \-lpixrect ,
+.BR \-lplot ,
+.BR \-lsuntool ,
+.BR \-lsunwindow ,
+.BR \-ltermcap ,
+and
+.BR \-ltermlib .
+Additional lint libraries may be installed separately.
+.SH SYSTEM V FILES
+.PD 0
+.TP 20
+.B /usr/5lib/lint/lint[12]
+programs
+.TP
+.B /usr/5lib/lint/llib-l*.ln
+various prebuilt lint libraries
+.TP
+.B /usr/5lib/lint/llib-l*
+sources of the prebuilt lint libraries
+.PD
+.LP
+The following System V lint libraries are supplied with Sun\s-1OS\s0:
+.BR \-lc ,
+.BR \-lcore ,
+.BR \-lcurses ,
+.BR \-lkvm ,
+.BR \-llwp ,
+.BR \-lm ,
+.BR \-lmp ,
+.BR \-lpixrect ,
+.BR \-lplot ,
+.BR \-lport .
+.BR \-lsuntool ,
+and
+.BR \-lsunwindow .
+Additional lint libraries may be installed separately.
+.SH SEE ALSO
+.BR cc (1V),
+.BR cpp (1),
+.BR lex (1),
+.BR make (1),
+.BR yacc (1),
+.BR exit (2V),
+.BR setjmp (3V),
+.BR ansic (7V),
+.BR bsd (7V),
+.BR posix (7V),
+.BR sunos (7),
+.BR svidii (7V),
+.BR svidiii (7V),
+.BR xopen (7V)
+.LP
+.TX PUL
+.SH NOTES
+Because
+.B cc
+does not generate or support 8-bit symbol names,
+it is inappropriate to make
+.B lint
+8-bit clean.
+See
+.BR cc (1V)
+for an explanation about why
+.B cc
+is not 8-bit clean.
+.SH BUGS
+There are some things you just
+.I cannot
+get
+.B lint
+to shut up about.
+.LP
+The routines
+.BR exit (2V),
+.B longjmp
+(see
+.BR setjmp (3V))
+and other functions that do not return are not understood; this causes
+various incorrect diagnostics.
+.LP
+Libraries created by the
+.B \-C
+or
+.B \-o
+options will, when used in later
+.B lint
+runs, cause certain errors that were reported when the libraries were created
+to be reported again, and cause line numbers and file names from the original
+source used to create those libraries to be reported in error messages.
+For these reasons, it is still useful to produce stripped down lint library
+source files and to use them to generate lint libraries.

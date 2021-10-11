@@ -1,0 +1,110 @@
+.\" @(#)cgeight.4s 1.1 92/07/30 SMI;
+.TH CGEIGHT 4S "21 June 1988"
+.SH NAME
+cgeight \- 24-bit color memory frame buffer
+.SH "CONFIG \(em SUN-3 AND SUN-4 SYSTEMS"
+.ft B
+.nf
+device cgeight0 at obmem 7 csr 0xff300000 priority 4
+device cgeight0 at obio 4 csr 0xfb300000 priority 4
+.fi
+.ft R
+.LP
+The first synopsis line should be used to generate a
+kernel for the Sun-3/60; the second synopsis for
+a Sun-4/110 or Sun-4/150 system.
+.SH "CONFIG \(em SUN-3x SYSTEM"
+.ft B
+.nf
+device cgeight0 at obio ? csr 0x50300000 priority 4
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "cgeight device"  ""  "\fLcgeight\fP \(em 24-bit color memory frame buffer"  ""
+.IX  "color graphics interface"  "ccgeight"  ""  "\fLcgeight\fP \(em 24-bit color memory frame buffer"
+.LP
+The
+.B cgeight
+is a 24-bit color memory frame buffer with a
+monochrome overlay plane and an overlay enable
+plane implemented optionally on the Sun-4/110,
+Sun-4/150, Sun-3/60, Sun-3/470 and Sun-3/80 system models.  
+It provides the standard frame buffer interface
+as defined in
+.BR fbio (4S).
+.LP
+In addition to the ioctls described under
+.BR fbio (4S) ,
+the
+.B cgeight
+interface responds to two
+.BR cgeight -specific
+colormap ioctls,
+.SB FBIOPUTCMAP
+and
+.BR \s-1FBIOGETCMAP\s0 .
+.SB FBIOPUTCMAP
+returns no information other than success/failure
+using the ioctl return value.
+.SB FBIOGETCMAP
+returns its information in the arrays pointed to by
+the red, green, and blue members of its
+.B fbcmap
+structure argument;
+.B fbcmap
+is defined in
+.B <sun/fbio.h>
+as:
+.RS
+.nf
+.ft B
+struct fbcmap {
+	int		index;		/* first element (0 origin) */
+	int		count;		/* number of elements */
+	unsigned char	*red;		/* red color map elements */
+	unsigned char	*green;		/* green color map elements */
+	unsigned char	*blue;		/* blue color map elements */
+};
+.ft R
+.fi
+.RE
+.LP
+The driver uses color board vertical-retrace
+interrupts to load the colormap.
+.LP
+The systems have an overlay plane colormap,
+which is accessed by encoding the plane group
+into the index value with the
+.SB PIX_GROUP
+macro (see
+.BR <pixrect/pr_planegroups.h >).
+.LP
+When using the
+.B mmap
+system call to map in the
+.B cgeight
+frame buffer.
+The device looks like:
+.RS
+.nf
+.ft B
+\s-1DACBASE\s0: 0x200000 	-> Brooktree Ramdac		16 bytes
+	 0x202000 	-> P4 Regiter			 4 bytes
+\s-1OVLBASE\s0: 0x210000	-> Overlay Plane		1152x900x1
+	 0x230000	-> Overlay Enable Planea	1152x900x1
+	 0x250000	-> 24-bit Frame Buffera		1152x900x32
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/cgeight0
+.TP
+.B <sun/fbio.h>
+.TP
+.B <pixrect/pr_planegroups.h>
+.PD
+.SH "SEE ALSO
+.BR mmap (2),
+.BR fbio (4S)

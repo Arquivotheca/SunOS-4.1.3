@@ -1,0 +1,352 @@
+.\" @(#)at.1 1.1 92/07/30 SMI; from UCB 4.3 and S5R3
+.TH AT 1 "31 October 1988"
+.SH NAME
+at, batch \- execute a command or script at a specified time
+.SH SYNOPSIS
+.B at
+.RB [ " \-csm " ]
+[
+.BI \-q queue
+]
+.I time
+[
+.I date
+]
+[
+.B +
+.I increment
+]
+.if n .in +0.5i
+.RI [ " script " ]
+.br
+.in
+.B at
+.B \-r
+.IR jobs ...
+.br
+.B at
+.B \-l
+[
+.IR jobs ...
+]
+.LP
+.B batch
+.RB [ " \-csm " ] 
+.RI [ " script " ]
+.SH DESCRIPTION
+.IX  at  ""  "\fLat\fP \(em do job at specified time"
+.IX  "timed event services"  "at command"  ""  "\fLat\fP \(em do job at specified time"
+.IX "delayed execution" "add job to queue \(em \fLat\fR"
+.B at
+and
+.B batch
+read commands from standard input to be
+executed at a later time.
+.B at
+allows you to specify when the commands should be executed,
+while jobs queued with
+.B batch
+will execute as soon as the
+system load level permits.
+.I script
+is the name of a file to be used as command input for the 
+Bourne shell, 
+.BR sh (1),
+the C shell,
+.BR csh (1),
+or an arbitrary shell specified by the
+.SM SHELL
+environment variable.
+If
+.I script
+is omitted, command input is accepted from the standard input.
+.LP
+Standard output and standard error output are
+mailed to the user unless they are redirected elsewhere.
+The shell environment variables, current directory,
+and
+.BR umask (2V)
+are retained when the commands are executed.
+Open file descriptors, traps, and priority are lost.
+.LP
+Users are permitted to use
+.B at
+if their name appears in the file
+.BR /var/spool/cron/at.allow .
+If that file does not exist, the file
+.B /var/spool/cron/at.deny
+is checked to determine if the user
+should be denied access to
+.BR at .
+If neither file exists, only the super-user is allowed to
+submit a job.
+If
+.B at.deny
+is empty, global usage is permitted.
+The allow/deny files consist of one user name
+per line.
+.LP
+The
+.I time
+may be specified as 1, 2, or 4 digits.
+One and two digit numbers are taken to be hours,
+four digits to be hours and minutes.
+The time may alternately be specified as two numbers
+separated by a colon, meaning
+.IB hour : minute.
+A suffix
+.B am
+or
+.B pm
+may be appended;
+otherwise a 24-hour clock time is understood.
+The suffix
+.B zulu
+may be used to indicate
+.SM GMT.
+The special names
+.BR noon ,
+.BR midnight ,
+.BR now ,
+and
+.B next
+are also recognized.
+.LP
+An optional
+.I date
+may be specified as either
+a month name followed by a day number
+(and possibly year number preceded by an optional comma) or
+a day of the week (fully spelled or abbreviated to three characters).
+Two special ``days'',
+.B today
+and
+.B tomorrow
+are recognized.
+If no
+.I date
+is given,
+.B today
+is assumed if the given hour is greater than the current hour
+and
+.B tomorrow
+is assumed if it is less.
+If the given month is less than the current month (and no year is
+given), next year is assumed.
+.LP
+The optional
+.I increment
+is simply
+a number
+suffixed by one of the following:
+.BR minutes ,
+.BR hours ,
+.BR days ,
+.BR weeks ,
+.BR months ,
+or
+.BR years .
+(The singular form is also accepted.)
+.LP
+Thus legitimate commands include:
+.LP
+.RS
+.ft B
+at 0815am Jan 24
+.br
+at 8:15am Jan 24
+.br
+at now + 1 day
+.br
+at 5 pm Friday
+.ft R
+.RE
+.LP
+.B at
+and
+.B batch
+write the job number and schedule time to standard
+error.
+.LP
+.B batch
+submits batch jobs to queue
+.BR b ;
+this ``batch'' queue is for jobs to be run as soon
+as possible.  A job submitted to
+.B b
+is scheduled to
+run immediately and its arguments will not
+be interpreted as
+.IR time ,
+.IR date ,
+or
+.B +
+.IR increment .
+.LP
+.B batch
+is similar to  
+.RB ` "at now" ',
+but does not, for example, go into the same queue
+or respond with the error message
+.RB ` "too late" '.
+.SH OPTIONS
+.TP 10
+.B \-c
+C shell.  
+.BR csh 
+is used to execute
+.I script.
+.TP
+.B \-s
+Standard (Bourne) shell.
+.BR sh 
+is used to execute the job.
+By default,
+the
+.SM SHELL
+environment variable determines which shell to use.
+.TP 10
+.B \-m
+Mail.  Send mail after the job has been run, even if the job
+completes successfully.
+.TP
+.BI \-q queue
+Submit the job in queue
+.I queue
+rather than the default queue
+.BR a .
+The valid
+.IR queue s
+are
+.B a
+through
+.BR z .
+.B batch
+submits jobs in queue
+.BR b .
+Queue
+.B c
+is reserved for
+.BR cron (8)
+and jobs cannot be submitted to that queue.
+.TP
+\fB\-r\fI jobs\fR .\|.\|.
+Remove the specified
+.I jobs
+previously scheduled by
+.B at
+or
+.BR batch .
+The job numbers are the numbers of the jobs
+given to you previously by the
+.B at
+or
+.B batch
+commands.
+You can only remove your own jobs unless you are the super-user.
+.TP
+\fB\-l\fR [\fI\|jobs\fR .\|.\|.\|]
+If
+.I jobs
+is specified, print the queue entry for those
+.IR jobs ;
+if
+.I jobs
+is not specified, print the queue entries for all jobs for the user.
+.SH ENVIRONMENT
+If neither
+.B at.allow
+nor
+.B at.deny
+exists, only the super-user is allowed to
+submit a job.
+If
+.B at.deny
+is present, but empty, global usage is permitted.
+The allow/deny files consist of one user name
+per line.
+.SH EXAMPLES
+Unless a
+.I script
+is specified, the
+.B at
+and
+.B batch
+commands read
+from standard input the commands to be executed
+at a later time.
+.B sh
+and
+.B csh
+provide different ways of specifying standard input.
+Within your commands, it may be useful to redirect standard output.
+.LP
+This sequence can be used at a terminal:
+.LP
+.RS
+.nf
+.B batch
+.BI nroff " filename " > " outfile "
+\s-1CTRL-D\s0 (hold down `control' and depress `D')
+.RE
+.fi
+.LP
+This sequence, which demonstrates redirecting standard
+error to a pipe, is useful in a shell procedure (the sequence of
+output redirection specifications is significant):
+.LP
+.RS
+.B batch <<!
+.br
+.BI "nroff " filename " 2>&1 > " outfile
+.BI " |  mail " loginid
+.br
+.B !
+.RE
+.LP
+To have a job reschedule itself, invoke
+.B at
+from within the
+shell procedure, by including code similar
+to the following within the shell file:
+.IP
+.BI "at 1900 thursday next week " shellfile
+.LP
+.SH FILES
+.PD 0
+.TP 25
+.B /var/spool/cron
+main cron directory
+.TP
+.B /var/spool/cron/at.allow
+list of allowed users 
+.TP
+.B /var/spool/cron/at.deny
+list of denied users 
+.TP
+.B /var/spool/cron/atjobs
+spool area
+.PD
+.SH SEE ALSO
+.BR atq (1),
+.BR atrm (1),
+.BR csh (1),
+.BR kill (1),
+.BR mail (1),
+.BR nice (1),
+.BR ps (1),
+.BR sh (1),
+.BR umask (2V),
+.BR cron (8)
+.SH DIAGNOSTICS
+Complaints about various syntax errors and times out of range.
+.SH BUGS
+If the system crashes, mail stating that
+the job was not completed is not sent to the user.
+.LP
+Shell interpreter specifiers (such as,
+.BR !/bin/csh ) 
+in the beginning of
+.I script
+are ignored.
+

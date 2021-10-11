@@ -1,0 +1,113 @@
+.\" @(#)cpio.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH CPIO 5  "19 October 1987"
+.SH NAME
+cpio \- format of cpio archive
+.SH DESCRIPTION
+.IX  "cpio file"  ""  "\fLcpio\fP \(em cpio archive format"
+.LP
+The old format
+.I header
+structure, when the
+.B \-c
+option of
+.B cpio
+is not used, is:
+.LP
+.RS
+.nf
+.ft B
+struct {
+	short	h_magic,
+		h_dev;
+	ushort	h_ino,
+		h_mode,
+		h_uid,
+		h_gid;
+	short	h_nlink,
+		h_rdev,
+		h_mtime[2],
+		h_namesize,
+		h_filesize[2];
+	char	h_name[h_namesize rounded to a word];
+} Hdr;
+.fi
+.ft R
+.RE
+.LP
+The byte order here is that of the machine on which the tape was written.
+If the tape is being read on a machine with a different byte order, you have
+to use
+.BR swab (3)
+after reading the header.  You can determine what byte order the tape was
+written with by examining the
+.I h_magic
+field; if it is equal to
+0143561 (octal), which is the standard magic number 070707 (octal) with the
+bytes swapped, the tape was written in a byte order opposite to that of the
+machine on which it is being read.  If you are producing a tape to be read
+on a machine with the opposite byte order to that of the machine on which it
+is being produced, you can use
+.B swap
+before writing the header.
+.LP
+When the
+.B \-c
+option is used, the
+.I header
+information is
+described by the statement below:
+.LP
+.ft B
+.nf
+	sscanf(Chdr, "%6o%6o%6o%6o%6o%6o%6o%6o%11lo%6o%11lo%s",
+		&Hdr.h_magic, &Hdr.h_dev, &Hdr.h_ino, &Hdr.h_mode,
+		&Hdr.h_uid, &Hdr.h_gid, &Hdr.h_nlink, &Hdr.h_rdev,
+		&Hdr.h_mtime, &Hdr.h_namesize, &Hdr.h_filesize, &Hdr.h_name);
+.fi
+.ft R
+.LP
+.I Longtime
+and
+.I Longfile
+are equivalent to
+.I Hdr.h_mtime
+and
+.IR Hdr.h_filesize ,
+respectively.  The contents of each file is
+recorded in an element of the array of varying length structures,
+.IR archive ,
+together with other items describing the
+file.
+Every instance of
+.I h_magic
+contains the constant 070707 (octal).
+The items
+.I h_dev
+through
+.I h_mtime
+have meanings explained in
+.BR stat (2V).
+The length of the
+null-terminated
+path name
+.IR h_name ,
+including the
+null
+byte, is given by
+.IR h_namesize .
+.LP
+The last record of the
+.I archive
+always contains the name
+.BR \s-1TRAILER\s0!!! .
+Special files, directories, and the trailer, are recorded
+with
+.I h_filesize
+equal to zero.  Symbolic links are recorded similarly
+to regular files, with the ``contents'' of the file being the name of the
+file the symbolic link points to.
+.SH "SEE ALSO"
+.BR cpio (1),
+.BR find (1),
+.BR stat (2V),
+.BR swab (3)

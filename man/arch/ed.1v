@@ -1,0 +1,1095 @@
+.\" @(#)ed.1v 1.1 92/07/30 SMI; from S5R2 6.2 9/2/83
+.TH ED 1V "25 July 1986"
+.SH NAME
+ed, red \- line editor
+.SH SYSTEM V SYNOPSIS
+.B ed
+[
+.B \-
+] [
+.B \-p
+.I string 
+] [
+.B \-x
+] [ 
+.I filename
+]
+.SH SYSTEM V DESCRIPTION
+.IX "System V commands" "\fLed\fR"
+.IX "ed command"  ""  "\fLed\fP \(em line editor, System V"
+.IX "text editing"  "ed command V"  ""  "\fLed\fP \(em line editor, System V"
+.IX "editing text"  "ed command V"  ""  "\fLed\fP \(em line editor, System V"
+.I Ed
+is the standard System V line editor.  If the
+.I filename
+argument is given,
+.I ed
+reads the named file into the buffer for editing.
+.PP
+.I Ed
+operates on a copy of the file it is editing; changes made
+to the copy have no effect on the file until a
+.B w
+(write) command is given.
+The copy being edited resides in a temporary file called the
+.IR buffer .
+There is only one buffer.
+.PP
+.I Red
+is a restricted version of
+.IR ed .
+It will only allow editing of files in the current directory,
+and prohibits executing shell commands with the \fB!\fP
+command.  Attempts to bypass these restrictions result
+in an error message (\fIrestricted shell\fP).
+.SH OPTIONS
+.TP
+.B \-
+Suppress printing of character counts (by
+.IR e ,
+.IR r ,
+and
+.I w
+commands),
+diagnostics (by
+.I e
+and
+.I q
+commands),
+and the
+.B !
+prompt (after a
+.BI ! 
+command).
+.TP
+.BI \-p " string"
+Specify a prompt string.
+.TP
+.B \-x
+Edit an encrypted file (see 
+.IR crypt (1)
+for details.
+.SH USAGE
+.SS Command Structure
+.PP
+.I ed
+commands have a simple and regular structure: zero, one, or two
+.IR address es 
+are followed by a single-character
+.I command,
+which may be followed by parameters for that 
+.I command.
+.IP
+.RI [ address [\c
+.BI , address\c
+.RI ]] command\c
+.RI [ parameter ]
+.LP
+A single
+.I address
+specifies a single line in the buffer.  A pair specifies an
+inclusive range.
+Commands that requires an 
+.I address
+uses certain addresses by
+default (typically the address of the current line).
+.PP
+In general, only one command can appear on a line.
+Certain commands allow you to insert or add text,
+which is placed in the appropriate location in the buffer.
+While accepting text, 
+.I ed
+is said to be in
+.IR "input mode" .
+In this mode,
+.I no
+commands are recognized; all input is added or inserted into the buffer.
+To exit input mode, type a period (\^\fB.\fP\^) by itself
+on a line.
+.SS Addresses
+.PP
+Generally speaking, the 
+.I current line 
+is the last line affected by a command.  
+Explicit addresses are constructes as follows:
+.TP
+.B \&.
+Addresses the current line.
+.TP
+.B $
+Addresses the last line of the buffer.
+.TP
+.I n
+A decimal number
+.I n
+addresses the
+.IR n 'th
+line in the buffer.
+.TP
+\fI\(fmx\fP
+addresses the line marked with the mark character
+.IR x ,
+which must be a lower-case letter.
+(Lines are marked with the
+.B k
+command).
+.TP
+.BI / \s-1RE\s0 /
+An RE is a 
+.I regular expression,
+as described below.  When enclosed by slashes, it addresses
+the first line found by searching for a string that it matches. 
+The search proceeds forward from the line following the 
+current line.  If necessary, the search wraps around to the beginning 
+of the buffer and continues up to and including the current line, so 
+that the entire buffer is searched.
+.TP
+.BI ? \s-1RE\s0 ?
+An RE enclosed in question marks addresses the first line containing 
+a match found by searching backward from the line preceding the current
+line.  If necessary, the search wraps around to the end of the buffer
+and continues up to and including the current line.
+.if t .bp
+.TP
+.IB addr + n
+.PD 0
+.TP
+.IB addr \- n
+.PD
+An address followed by a plus sign (\^\fB+\fP\^)
+or a minus sign (\fB\-\fP), followed by a decimal number, specifies 
+that base address plus or minus the indicated number of lines.
+(The plus sign may be omitted.)  If
+.I addr
+is omitted, the current line is used as the base.  For
+instance, 
+.B 31\-3
+addresses the 28'th line in the buffer.
+.IP
+If an address ends with \fB+\fP or \fB\-\fP,
+then `1' is added to or subtracted from the base address, respectively.
+The address \fB\-\fP refers to the line preceding the current line.
+(To maintain compatibility with earlier versions of the editor,
+the character \*^ in addresses is equivalent to \fB\-\fP.)
+Trailing \fB+\fP and \fB\-\fP characters
+have a cumulative effect, so \fB\-\-\fP refers to the current
+line, less 2.
+.IP
+For convenience, a comma (\^\fB,\fP\^) stands for the
+address pair \fB1,\^$\fP,
+while a semicolon (\^\fB;\fP\^) stands for the
+pair \fB.\^,\^$\fP.
+.SS Regular Expressions
+.PP
+.I Ed
+supports a limited form of "regular expression" notation, which
+can be used in an 
+.I address 
+to specify lines by their contents.  A regular expression (RE) specifies
+a set of character strings to match.  These strings are built up
+from the following "single-character" RE's:
+.TP
+.I c
+Any ordinary character not listed below.  An ordinary character matches
+itself.
+.TP
+.B \e
+Backslash.  When followed by a special character, the RE
+matches the special character itself.
+.TP
+.B \&.
+Period (or "dot").  Matches any single character.
+.TP
+.B \s+2^\s0
+As the leftmost character, a carat (or circumflex) constrains
+the RE to the leftmost segment of a line.
+.TP
+.B $
+As the rightmost character, a dollar-sign (or currency symbol)
+constrains the RE to the rightmost segment of a line.
+.IP
+The construction
+\%\*^\fIRE\fP\|\fB$\fP
+.TP
+.B *
+When it follows any RE that matches a single-character, an
+asterisk (or "star") matches a string composed of zero or more 
+occurrences of the RE.
+.TP
+.I d
+The delimiting character for the RE.
+.TP
+.BI [ c\|.\|.\|. ]
+A nonempty string of characters, enclosed in square brackets,
+matches any single character in the string.  When the
+first character of the string is a carat 
+.RB ( \s+2^\s0 ),
+then the RE matches any character 
+.I except
+those in the remainder of the string.  A carat in any other position 
+is taken as an ordinary character.  The right square bracket doesn't
+terminate the enclosed string if it is the first character
+(after an initial 
+.BR \s+2^\s0 ,
+if any).
+.TP
+.BI [ l \- r ]
+The minus sign, between two characters, indicates a range of consecutive
+.SM ASCII
+characters to match.  For instance, the range
+.B [0-9]
+is equivalent to the string
+.BR [0123456789] .
+The
+.B \-
+is treated as an ordinary character if it occurs first (or first
+after an initial
+.BR \s+2^\s0 )
+or last in the string.  
+.TP
+.I d
+The character used to delimit an RE is special for that RE 
+(for example, see how 
+.B / 
+is used in the
+.B g
+command, below).
+.LP
+The following rules and special characters allow for constructing RE's
+from single-character RE's:
+.IP
+The concatenation of RE's matches the concatenation of text strings,
+each of which is matched by a component RE.
+.TP 
+.B *
+A one-character RE, followed by an asterisk (\fB\(**\fP) matches
+.I zero
+or more occurrences of the one-character RE.  If there is a choice,
+the longest leftmost string that permits a match is chosen.
+.TP
+.BR \e{ m \e}
+.PD 0
+.TP
+.BR \e{ m ,\e}
+.PD 0
+.TP
+.BR \e{ m , n \e}
+.PD
+A one-character RE followed by \fB\^\e{\fP\^\fIm\fP\^\fB\e}\fP,
+\fB\^\e{\fP\^\fIm,\fP\^\fB\e}\fP,
+or
+\fB\^\e{\fP\^\fIm,n\fP\^\fB\e}\fP is an
+RE
+that matches a
+.I range
+of occurrences of the one-character RE.
+The values of
+.I m
+and
+.I n
+must be nonnegative integers less than 256;
+\fB\^\e{\fP\^\fIm\fP\^\fB\e}\fP
+matches
+.I exactly
+.I m
+occurrences;
+\fB\^\e{\fP\^\fIm,\fP\^\fB\e}\fP
+matches
+.I "at least\^"
+.I m
+occurrences;
+\fB\^\e{\fP\^\fIm,n\fP\^\fB\e}\fP
+matches
+.I "any number\^"
+of occurrences
+.I between
+.I m
+and
+.I n
+inclusive.  Whenever a choice exists, the RE
+matches as many occurrences as possible.
+.TP
+.BR \e( .\|.\|. \e)
+An RE enclosed between the character sequences
+\fB\^\e(\fP and \fB\^\e)\fP
+matches whatever the unadorned RE matches.
+The expression \fB\^\e\fP\fIn\fP\^ matches the same string of characters
+as was matched by an expression enclosed between \fB\^\e(\fP 
+and \fB\^\e)\fP
+.I earlier
+in the same RE.  Here
+.I n
+is a digit; the subexpression specified is that beginning with the
+.IR n -th
+occurrence of \fB\^\e(\fP counting from the left.
+For example, the expression \*^\fB\e(.\(**\e)\e1$\fP matches a line
+consisting of two repeated appearances of the same string.
+constrains the entire RE to match the entire line.
+.TP
+.B /\|/
+The null RE (\fB/\|/\fP)
+is equivalent to the last RE encountered.
+.\"See also the last paragraph before
+.\".SM
+.\".I FILES
+.\"below.
+.SS Commands
+.PP
+Commands may require zero, one, or two addresses.
+Commands that require no addresses regard the presence
+of an address as an error.
+Commands that accept one or two addresses
+assume default addresses when an insufficient number of addresses is 
+given; if more addresses are given than such a command requires,
+the last one(s) are used.
+.PP
+Typically, addresses are separated from each other by a comma
+(\^\fB,\fP\^).
+They may also be separated by a semicolon
+(\^\fB;\fP\^).
+In the latter case, the current line (\^\fB.\fP\^) is set to
+the first address,
+and only then is the second address calculated.
+This feature can be used to determine the starting
+line for forward and backward searches.
+The second address of any two-address sequence
+must correspond to a line that follows, in the buffer, the line 
+corresponding to the first address.
+.PP
+In the following list of
+.I ed
+commands, the default addresses
+are shown in parentheses.
+The parentheses are
+.I not
+part of
+the address; they show that the given addresses are
+the default.
+.PP
+It is generally illegal for more than one
+command to appear on a line.  However, any command (except
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w )
+may be suffixed by \fBl\fP, \fBn\fP,
+or \fBp\fP in which case
+the current line is either
+listed, numbered or printed, respectively).
+.TP
+.RB \u\s-3(\|.\|)\s0\d\| a
+.PD 0
+.TP
+.I text
+.TP
+.B \&.
+.PD
+Read the given 
+.I text
+and append it after the addressed line;
+\&\fB.\fP is left
+at the last inserted line, or, if there
+were none, at the addressed line.
+Address 0 is legal for this command: it causes the "appended" text to be
+placed at the beginning of the buffer.
+The maximum number of characters that may be entered from a
+terminal is 256 per line (including the 
+.SM NEWLINE
+ character).
+.TP
+.RB \u\s-3(\|.\|)\s0\d\| c
+.PD 0
+.TP
+.I text
+.TP
+.B  \&.
+.PD
+The
+.BR c hange
+command deletes the addressed lines, then accepts input
+text that replaces those lines;
+\&\fB.\fP is left at the last line input, or, if there were none,
+at the first line that was not deleted.
+.TP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| d
+The
+.BR d elete
+command deletes the addressed lines from the buffer.
+The line after the last line deleted becomes the current line;
+if the lines deleted were originally at the end of the buffer,
+the new last line becomes the current line.
+.TP
+.BI e " file\^"
+The
+.BR e dit
+command causes the entire contents of the buffer to be deleted,
+and then the named file to be read in;
+\&\fB.\fP is set to the last line of the buffer.
+If no filename is given, the currently-remembered filename, if any, is used
+(see the
+.B f
+command).  The number of characters read is typed;
+.I file
+is remembered for possible use as a default filename in subsequent
+.BR e ,
+.BR r ,
+and
+.BR w " commands."
+If
+.I file
+is replaced by \fB!\fP, the rest of the line
+is taken to be a shell (\fIsh\fP\^(1))
+command from which output is read.  Such a shell command is
+.I not
+remembered as the current filename.  See also
+.SM
+.I DIAGNOSTICS
+below.
+.TP
+.BI E " file\^"
+The
+.BR E dit
+command is like
+.BR e ,
+except that the editor does not check to see
+if any changes have been made to the buffer since
+the last
+.B w
+command.
+.TP
+.BI f " file\^"
+If
+.I file
+is given, the
+.IR f \|ile
+command changes the currently-remembered filename to
+.IR file ;
+otherwise, it prints the currently-remembered filename.
+.HP
+.RB \u\s-3(\|1\|,\|$\|)\s0\d\| g/\c
+.IB \s-1RE\s0 / "command-list"
+.br
+In the
+.IR g lobal
+command, the first step is to mark every line that matches
+the given RE.  Then, for every such line, the given
+.I "command-list\^"
+is executed with \fB.\fP initially set to that line.
+A single command or the first of a list of commands
+appears on the same line as the global command.
+All lines of a multiline list, except the last line, must end with a 
+\fB\^\e\fP;
+.BR a ,
+.BR i ,
+and
+.B c
+commands and associated input are permitted.
+The \fB.\fP terminating input mode may be omitted if it would be the
+last line of the
+.IR "command-list" .
+An empty
+.I "command-list\^"
+is equivalent to the
+.B p
+command.  The
+.BR g ,
+.BR G ,
+.BR v ,
+and
+.B V
+commands are
+.I not
+permitted in the
+.IR "command-list" .
+See also
+.SM BUGS.
+.HP
+.RB \u\s-3(\|1\|,\|$\|)\s0\d\| G/\c
+.IB \s-1RE\s0 /
+.br
+In the interactive
+.BR G lobal
+command, the first step is to mark every line that matches the given RE.
+Then, every such line is printed, \fB.\fP is changed to that line, and
+any
+.I one
+command (other than one of the
+.BR a ,
+.BR c ,
+.BR i ,
+.BR g ,
+.BR G ,
+.BR v ,
+and
+.B V
+commands) can be typed in for execution.  After the execution of that 
+command, the next marked line is printed, and so on; a 
+.SM NEWLINE
+acts as a null command; an \fB&\fP causes the reexecution of the most 
+recent command executed within the current invocation of
+.BR G .
+Note that the commands input as part of the execution of the
+.B G
+command may address and affect
+.I any
+lines in the buffer.  The
+.I G
+command can be terminated by an interrupt signal 
+(\s-1ASCII\s0 \s-1DEL\s0 or \s-1BREAK\s0).
+.TP
+.B h
+The
+.BR h elp
+command gives a short error message that explains
+the reason for the most recent \fB?\fP diagnostic.
+.TP
+.B H
+The
+.BR H elp
+command alternates
+between automatic diagnostic message, or the normal mode of 
+diagnositcs on request.  It will also explain the previous \fB?\fP if
+there was one.
+.TP
+.RB \u\s-3(\|.\|)\s0\d\| i
+.PD 0
+.TP
+.I text
+.TP
+.B \&.
+.PD
+The
+.BR i nsert
+command inserts the given text before the addressed line;
+\&\fB.\fP is left at the last inserted line, or, if there were none,
+at the addressed line.  This command differs from the
+.I a
+command in the placement of the input text.
+Address 0 is not legal for this command.
+The maximum number of characters that may be entered from a
+terminal is 256 per line (including the 
+.SM NEWLINE
+character).
+.TP
+.RB \u\s-3(\|.\|,\|.+1\|)\s0\d\| j
+The
+.BR j oin
+command joins contiguous lines by removing the appropriate 
+.SM NEWLINE
+characters.  If exactly one address is given, this command does nothing.
+.HP
+.RB \u\s-3(\|.\|)\s0\d\| k 
+.I c
+.br
+The 
+.RB mar k
+command marks the addressed line with
+name
+.IR c ,
+which must be a lower-case letter.
+The address \fB\(fm\fIc\fP then addresses this line;
+\&\fB.\fP is unchanged.
+.TP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| l
+The
+.BR l ist
+command prints the addressed lines in an unambiguous way:
+a few nonprinting characters, such as
+.SM TAB
+and
+.SM BACKSPACE
+are represented by (hopefully) mnemonic overstrikes.
+All other nonprinting characters are
+printed in octal, and long lines are folded.
+An
+.B l
+command may be appended to any command other than
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w .
+.HP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| m
+.I a
+.br
+The
+.BR m ove
+command repositions the addressed line(s) after the line
+addressed by
+.IR a .
+Address 0 is legal for
+.B a
+and causes the addressed line(s) to be moved to
+the beginning of the file.
+It is an error if address
+.B a
+falls within the range of moved lines;
+\&\fB.\fP is left at the last line moved.
+.TP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| n
+The
+.BR n umber
+command prints the addressed lines, preceding each line by its
+line number and a 
+.SM TAB 
+character; \&\fB.\fP is left at the last line printed.  The
+.B n
+command may be appended to any command other than
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w .
+.TP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| p
+The
+.BR p rint
+command prints the addressed lines;
+\&\fB.\fP is left at the last line printed.  The
+.B p
+command may be appended to any command other than
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w .
+For example, \fBdp\fP deletes the current line and prints the new 
+current line.
+.TP
+.B P
+The editor prompts with a \fB\(**\fP for all subsequent commands.
+The
+.B P
+command alternately turns this mode on and off; it is initially off.
+.TP
+.B q
+The
+.BR q uit
+command.
+.I ed
+exits.  No automatic write of a file is done, but if changes
+have been made since the last time the buffer was written,
+.I ed
+warns you (unless the
+.B \-
+option is in effect)
+by printing a
+.B ?
+diagnostic.  A second
+.B q
+exits, destroying the buffer's contents.
+.TP
+.B Q
+The editor exits without checking for changes since the last
+.B w
+command.
+.HP
+.RB \u\s-3(\|$\|)\s0\d\| r
+.I file
+.br
+The
+.BR r ead
+command reads in the given file after the addressed line.
+If no 
+.I file 
+is named, the currently-remembered filename, if any, is used
+(see
+.B e
+and
+.B f
+commands).  The currently-remembered filename is
+.I not
+changed unless
+.I file
+is the very first filename mentioned since
+.I ed
+was invoked.  Address 0 is legal for
+.B r
+and causes the file to be read at the beginning of the buffer.
+If the read is successful, the number of characters read is typed;
+\&\fB.\fP is set to the last line read in.
+If
+.I file
+is replaced by \fB!\fP, the rest of the line
+is taken to be a shell (\fIsh\fP\^(1))
+command whose output is to be read.
+For example, 
+.B "$r !ls" 
+appends current directory to the end of the file being edited.  A
+shell command is
+.I not
+remembered as the current filename.
+.HP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| s/\c
+.IB RE / replacement /\c
+.RB [ g |\c
+.IR n ]
+.br
+The
+.BR s ubstitute
+command searches each addressed line for an occurrence of the specified
+RE.  In each line for which a match is found, all (non-overlapped) 
+matched strings are replaced by the
+.I replacement
+if the global replacement indicator \fBg\fP appears after the command.
+If the global indicator does not appear, only the first occurrence
+of the matched string is replaced.
+If a number 
+.I n 
+appears after the command, only the 
+.IR n 'th 
+occurrence of the matched string on each addressed line is replaced.
+It is an error for the substitution to fail on
+.I all
+addressed lines.  Any character other than 
+.SM SPACE
+or 
+.SM NEWLINE
+can be used instead of \fB/\fP to delimit the RE and the
+.IR replacement 
+string.
+\&\fB.\fP is left at the last line on which a substitution occurred.
+.IP
+An ampersand (\^\fB&\fP\^) appearing in the
+.I replacement
+is replaced by the string matching the RE on the current line.
+The special meaning of \fB&\fP in this context may be
+suppressed by preceding it by \fB\e\fP.
+As a more general feature, the characters
+\fB\^\e\fP\fIn\fP\^,
+where
+.I n
+is a digit, are replaced by the text matched by the
+.IR n 'th
+regular subexpression of the specified RE
+enclosed between \fB\^\e(\fP and \fB\^\e)\fP.
+When nested parenthesized subexpressions are present,
+.I n
+is determined by counting occurrences of \fB\^\e(\fP starting from the 
+left.  When the character \fB%\fP is the only character in the
+.IR replacement ,
+the
+.I replacement
+used in the most recent substitute command is used as the
+.I replacement
+in the current substitute command.
+The \fB%\fP loses its special meaning when it is
+in a replacement string of more than one
+character or is preceded by a backslash.
+.IP
+A line may be split by substituting a 
+.SM NEWLINE
+character into it.
+The 
+.SM NEWLINE
+in the
+.I replacement
+must be escaped by preceding it by \fB\^\e\fP.
+Such substitution cannot be done as part of a
+.B g
+or
+.B v
+command-list.
+.HP
+.RB \u\s-3(\|.\|,\|.\|)\s0\d\| t 
+.I a
+.br
+This command acts just like the
+.B m
+command, except that a
+.I copy
+of the addressed lines is placed after address
+.I a
+(which may be `0'); \&\fB.\fP is left at the last line of the copy.
+.TP
+.B u
+The
+.BR u ndo
+command nullifies the effect of the most recent
+command that modified anything in the buffer, namely
+the most recent
+.BR a ,
+.BR c ,
+.BR d ,
+.BR g ,
+.BR i ,
+.BR j ,
+.BR m ,
+.BR r ,
+.BR s ,
+.BR t ,
+.BR v ,
+.BR G ,
+or
+.B V
+command.
+.HP
+.RB \u\s-3(\|1\|,\|$\|)\s0\d\| v\c
+.BI / \s-1RE\s0 / "command-list"
+.br
+This command is the same as the global command
+.B g
+except that the
+.I "command-list\^"
+is executed
+with \fB.\fP initially set to every line that does
+.I not
+match the RE.
+.HP
+.RB \u\s-3(\|1\|,\|$\|)\s0\d\| V\c
+.BI / \s-1RE\s0 /
+.br
+This command is the same as the interactive global command
+.B G
+except that the lines that are marked during the first step are those 
+that do
+.I not
+match the RE.
+.HP
+.RB \u\s-3(\|1\|,\|$\|)\s0\d\| w
+.I file
+.br
+The
+.BR w rite
+command writes the addressed lines into the named file.
+If the file does not exist,
+it is created with mode 666 (readable and writable by everyone),
+unless your
+.B umask
+setting
+(see
+.IR sh (1))
+dictates otherwise.  The currently-remembered filename is
+.I not
+changed unless
+.I file
+is the very first filename mentioned since
+.I ed
+was invoked.  If no filename is given,
+the currently-remembered filename, if any, is used
+(see
+.I e
+and
+.I f
+commands);
+\&\fB.\fP is unchanged.
+If the command is successful, the number of characters written is
+typed.
+If
+.I file
+is replaced by \fB!\fP, the rest of the line
+is taken to be a shell (\fIsh\fP\^(1))
+command for which the standard input is the addressed lines.
+Such a shell command is
+.I not
+remembered as the current filename.
+.TP
+.B X
+A key string is demanded from the standard input.
+Subsequent
+.BR e ,
+.BR r ,
+and
+.BR w 
+commands encrypt and decrypt the text with this key by the algorithm of
+.IR crypt (1).
+An explicitly empty key turns off encryption.
+.TP
+.RB \u\s-3(\|$\|)\s0\d\| =
+The line number of the addressed line is typed;
+\&\fB.\fP is unchanged by this command.
+.TP
+.BI ! "shell-command"
+The remainder of the line after the \fB!\fP is sent
+to the
+.SM UNIX
+system shell (\fIsh\fP\^(1)) to be interpreted as a command.
+Within the text of that command, the unescaped character
+.B %
+is replaced with the remembered filename; if a
+.B !
+appears as the first character of the shell command,
+it is replaced with the text of the previous shell command.
+Thus,
+.B !!
+will repeat the last shell command.
+If any expansion is performed, the expanded line is echoed;
+\&\fB.\fP is unchanged.
+.HP
+\u\s-3(\|.+1\|)\s0\d\|
+.SM NEWLINE
+.br
+An address, alone on a line, prints the addressed line.  A 
+.SM NEWLINE
+alone is equivalent to \fB.+1p\fP, which is useful
+for stepping forward through the buffer.
+.PP
+If an interrupt signal (\s-1ASCII\s0 \s-1DEL\s0 or \s-1BREAK\s0) is sent,
+.I ed
+prints a \fB?\fP and returns to
+.I its
+command level.
+.SS File Format Specification Support
+.PP
+Both 
+.I ed
+and 
+.I red
+support the
+.IR fspec (4)
+formatting capability.  After including a
+format specification as the first line of
+.I filename
+and invoking
+.I ed
+with your terminal in
+.B "stty\ \-tabs 
+or
+.B "stty\ tab3"
+mode (see
+.IR stty (1V),
+the tab stops specified are used when displaying lines.
+For example, if the first line of a file contained:
+.RS
+.IP
+\&<:t5,10,15\ s72:>
+.RE
+.LP
+tab stops would be set at columns 5, 10, and 15, and a maximum line
+length of 72 would be imposed.
+While inserting text, however, tab characters are expanded to every 
+eighth column.
+.SH LIMITATIONS
+The following limitations apply:
+.LP
+.RS
+.nf
+512 characters per line.
+256 characters per global command-list.
+64 characters per filename.
+128K characters in the buffer.
+The limit on the number of lines depends on the amount of user memory:
+each line takes 1 word.
+.fi
+.RE
+.PP
+When reading a file,
+.I ed
+discards
+.SM ASCII
+.SM NUL
+characters and all characters after the last 
+.SM NEWLINE.
+Files
+(like
+.IR a.out )
+that contain characters not in the
+.SM ASCII
+set (bit
+8 on) cannot be edited by
+.IR ed .
+.PP
+If the closing delimiter of an RE or of a
+replacement string (such as \fB/\fP) would be the last
+character before a 
+.SM NEWLINE,
+that delimiter may be omitted, in which case the addressed line
+is printed.  The following pairs of commands are equivalent:
+.PD 0
+.RS
+.TP 10
+s/s1/s2
+s/s1/s2/p
+.TP
+g/s1
+g/s1/p
+.TP
+?s1
+?s1?
+.RE
+.SH FILES
+.PD 0
+.TP 10
+.I /tmp/e#
+temporary;
+# is the process number.
+.TP
+.I ed\s+4.\s-4hup
+work is saved here if the terminal is hung up.
+.PD
+.SH DIAGNOSTICS
+.TP 10
+.B ?
+For command errors.
+.TP
+.BI ? file
+For an inaccessible file (use the
+.BR h elp
+and
+.BR H elp
+commands for detailed explanations).
+.PP
+If changes have been made in the buffer since the last
+.B w
+command that wrote the entire buffer,
+.I ed
+warns the user if an attempt is made to destroy
+.IR ed 's
+buffer via the
+.B e
+or
+.B q
+commands.  It
+prints
+.B ?
+and allows one to continue editing.  A second
+.B e
+or
+.B q
+command at this point will take effect.
+The \fB\-\fP command-line option inhibits this feature.
+.SH "SEE ALSO"
+ed(1), crypt(1), grep(1V), sed(1V), sh(1), stty(1V), fspec(4), regexp(5)
+.SH CAVEATS AND BUGS
+A
+.B !
+command cannot be subject to a
+.B g
+or a
+.B v
+command.
+.LP
+The
+.B !
+command
+and the
+.B !
+escape from the
+.BR e ,
+.BR r ,
+and
+.B w
+commands cannot be used if the the editor is invoked from a restricted
+shell (see
+.IR sh (1)).
+.LP
+The sequence \fB\^\en\fP in an RE does not
+match a 
+.SM NEWLINE
+character.
+.LP
+The
+.I l
+command mishandles
+.SM DEL.
+.LP
+Files encrypted directly with the
+.IR crypt (1)
+command with the null key cannot be edited.
+.LP
+Characters are masked to 7 bits on input.
+.LP
+If the editor input is coming from a command file, the editor exits at 
+the first failure of a command in that file.

@@ -1,0 +1,185 @@
+.\" @(#)uuto.1c 1.1 92/07/30 SMI; from S5R3
+.TH UUTO 1C "26 May 1988"
+.SH NAME
+uuto, uupick \- public system-to-system file copy
+.SH SYNOPSIS
+.B uuto
+[
+.B \-mp
+]
+.I source-file
+\&.\|.\|.
+.I destination
+.LP
+.B uupick
+[
+.B \-s
+.I system
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I uucp
+software  installation  option.   Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "uuto command" "" "\fLuuto\fR command"  
+.IX "uupick command" "" "\fLuupick\fR command"  
+.SS uuto
+.LP
+.B uuto
+sends
+.I source-files
+to
+.IR destination .
+.B uuto
+uses the
+.BR uucp (1C)
+facility to send files,
+while it allows the local system to control the file access.
+A source-file name is a path name on your machine.
+Destination has the form:
+.IP
+.IB system-name ! username
+.LP
+where
+.I system-name
+is taken from a list of system names that
+.B uucp
+knows about (see
+.BR uucp (1C)).
+.I username
+is the username
+of someone on the specified system.
+.LP
+The files (or sub-trees if directories are specified)
+are sent to the \*(lqpublic
+.SM UUCP\s0\*(rq
+directory on the remote machine
+.IR system-name .
+Normally, this directory is
+.BR /usr/spool/uucppublic .
+Specifically the files are sent to
+.IP
+.BI "\s-1PUBDIR\s0/receive/" username / mysystem / file
+.LP
+where
+.SB PUBDIR
+is the \*(lqpublic
+.SM UUCP\s0\*(rq
+directory on
+.IR system-name ,
+.I mysystem
+is the system from which the files are sent, and
+.I file
+is the file being sent.
+.LP
+The destined recipient is notified by
+.BR mail (1)
+of the arrival of files.
+.SS uupick
+.LP
+.B uupick
+accepts or rejects the files transmitted to the user.
+Specifically,
+.B uupick
+searches the \*(lqpublic
+.SM UUCP\s0\*(rq
+directory on the local machine
+for files destined for the user.
+For each entry (file or directory) found,
+the following message is printed on the standard output:
+.RS
+.BI from " system" ": \fR[\fPfile" " file-name\fR] [" " dir " dirname\fR]\fB\|?
+.RE
+.LP
+.B uupick
+then reads a line from the standard input to determine the
+disposition of the file:
+.TP 16
+.SM <NEWLINE>
+Go on to next entry.
+.TP
+.B d
+Delete the entry.
+.TP
+.BR m " [ \fIdir\fP ]"
+Move the entry to named directory
+.IR dir .
+If
+.I dir
+is not specified as a complete path name (in which
+.SB $HOME
+is legitimate), a destination relative to the current directory is
+assumed. 
+If no destination is given, the default is the current
+directory.
+.TP
+.BR a " [ \fIdir\fP ]"
+Same as
+.B m
+except moving all the files sent from
+.IR system .
+.TP
+.B p
+Print the content of the file.
+.TP
+.B q
+Stop.
+.TP
+.SM EOT (CTRL-D)
+Same as
+.BR q .
+.TP
+.BI ! command
+Escape to the shell to do
+.IR command .
+.TP
+.B *
+Print a command summary.
+.SH OPTIONS
+.SS uuto
+.TP
+.B \-m
+Send mail to the sender when the copy is complete.
+.TP
+.B \-p
+Copy the source file into the spool directory before transmission.
+.SS uupick
+.TP
+.BI \-s " system"
+Search only the \*(lqpublic
+.SM UUCP\s0\*(rq
+directory on the local machine
+for files sent from
+.IR system .
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/spool/uucppublic
+public
+.SM UUCP
+directory
+.PD
+.SH SEE ALSO
+.BR mail (1),
+.BR uucp (1C),
+.BR uustat (1C),
+.BR uux (1C),
+.BR uucleanup (8C)
+.SH WARNINGS
+.LP
+In order to send files that begin with a dot (such as,
+.BR .profile )
+the files must by qualified with a dot.
+For example:
+.BR .profile ,
+.BR .prof* ,
+and
+.B .profil?
+are correct, whereas
+.B *prof*
+and
+.B ?profile
+are incorrect.

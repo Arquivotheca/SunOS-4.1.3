@@ -1,0 +1,111 @@
+#!/bin/sh
+#
+# %Z%%M% %I% %E% SMI
+#
+# Configure driver for first boot attempt. We assume we are being called out of
+# /etc/rc.boot after the file systems are checked and remounted. 
+#
+UNCONFIGURED_FILE=/etc/.UNCONFIGURED
+
+if [ -f $UNCONFIGURED_FILE ]; then
+	#
+	# Probe for a "sun" terminal - really frame buffer and keyboard
+	#
+        getcons="/usr/kvm/getcons"
+        if [ -x ${getcons} ]; then
+                ${getcons} | ( read wdin in wdout out; \
+                        if [ $in -eq 0 -a $out -eq 0 ]; then\
+                                exit 0; \
+                        else \
+                                exit 1; \
+                        fi; )
+                if [ $? -eq 0 ]; then
+                        TERM=sun
+                        export TERM
+			si_gotfb="yes"
+		else
+			si_gotfb="no"
+                fi
+		export si_gotfb
+        fi
+	#
+	# the home partition might be seperately mounted, and in single-user,
+	# only / and /usr are mounted.  We check the canonical seperate
+	# paths /home and /export/home, which should cover 99% of usage.
+	#
+	# XXX to check if /home is symlink, if the linkname is a filesys?
+	#
+	if grep -s '^/dev/.*[ 	]/home[ 	][ 	]*4.2' /etc/fstab
+	then
+		# just mount it, mount will fail silently if overmounted
+		mount /home
+	elif grep -s '^/dev/.*[	 ]/export/home[	 ][ 	]*4.2' /etc/fstab
+	then
+		# just mount it, mount will fail silently if overmounted
+		mount /export/home
+	fi
+
+	(/usr/etc/install/sys-config -n) < /dev/console > /dev/console 2>&1
+	rc=$?
+	case $rc in
+	0)
+		# We set the hostname and ifconfig 
+		#
+		# Set hostname from /etc/hostname.xx0 file, if none exists no
+		# harm done  (from rc.boot)
+		#
+		hostname="`cat /etc/hostname.??0      2>/dev/null`"
+		if test -n "$hostname"
+		then
+        		hostname $hostname
+		fi
+		#
+		# Rerun the ifconfig's with (potentially) new hostname.
+		#
+		# We could probably just rerun ifconfig on hostname.??0,
+		# but this code is from rc.boot and should work, so we won't
+		# mess with it.
+		#
+		# Get the list of ether devices to ifconfig by breaking
+		# /etc/hostname.* into separate args by using "." as a shell
+		#  separator character, then step through args and ifconfig 
+		# every other arg.
+		#
+		interface_names="`cat /etc/hostname.*     2>/dev/null`"
+		if test -n "$interface_names"
+		then
+        		(
+                		IFS="$IFS."
+                		set `echo /etc/hostname\.*`
+                		while test $# -ge 2
+                		do
+                        		shift
+					if [ "$1" != "xx0" ]; then
+					   ifconfig $1 `cat /etc/hostname\.$1` \
+					     netmask + -trailers up
+					fi
+                        		shift
+                		done
+        		)
+		fi
+		ifconfig lo0 localhost up
+
+		echo "Configuration successfully completed." > /dev/console
+		;;
+	*)
+		echo ""  > /dev/console
+		echo "CONFIGURATION NOT COMPLETED - SYSTEM NOT SET UP." \
+								> /dev/console
+		echo ""  > /dev/console
+		echo "HALTING THE MACHINE, YOU MAY REBOOT OR POWER OFF WHEN DONE." \
+								> /dev/console
+		sleep 5
+		halt
+		;;
+	esac
+	#
+	# NOW we can say the system is configured, so don't do more than once
+	#
+	rm -f $UNCONFIGURED_FILE
+fi
+sync

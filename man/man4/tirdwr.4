@@ -1,0 +1,215 @@
+.\" @(#)tirdwr.4 1.1 92/07/30 SMI; new for 4.1 RFS from SVR3.2
+.TH TIRDWR 4 "17 January 1990"
+.SH NAME
+tirdwr \- Transport Interface read/write interface STREAMS module
+.SH CONFIG
+.B pseudo-device  tirw64
+.SH DESCRIPTION
+.LP
+.B tirdwr
+is a 
+.SM STREAMS
+module that provides an alternate interface to a
+transport provider which supports the Transport Interface (\s-1TI\s0)
+functions of the Network Services library (see Section 3).
+This alternate interface allows a user to communicate with
+the transport protocol provider using the 
+.BR read (2V)
+and 
+.BR write (2V)
+system calls.
+The 
+.BR putmsg (2)
+and 
+.BR getmsg (2)
+system calls may also be used.
+However, 
+.B putmsg(\|)
+and 
+.B getmsg(\|)
+can only transfer data messages between user and 
+.IR stream .
+.LP
+The 
+.B tirdwr
+module must only be pushed (see 
+.SM I_PUSH
+in 
+.BR streamio (4))
+onto a 
+.B stream
+terminated by a transport protocol provider which supports the 
+.SM TI\s0.
+After the 
+.B tirdwr
+module has been pushed onto a 
+.IR stream ,
+none of the Transport Interface functions can be used.
+Subsequent calls to
+.SM TI 
+functions cause an error on the 
+.IR stream .
+Once the error is detected, subsequent system calls on the 
+.B stream
+return an error with 
+.B errno
+set to 
+.SM EPROTO\s0.
+.LP
+The following are the actions taken by the 
+.B tirdwr
+module when pushed on the 
+.BR stream ,
+popped (see 
+.SM I_POP
+in 
+.BR streamio (4))
+off the 
+.IR stream ,
+or when data passes through it.
+.TP 10
+.BR push
+When the module is pushed onto a 
+.BR stream ,
+it checks any existing data destined
+for the user to ensure that only
+regular data messages are present.
+It ignores any messages on the 
+.B stream
+that relate to process management, such
+as messages that generate signals to the
+user processes associated with the 
+.IR stream .
+If any other messages are present, the 
+.SM I_PUSH
+returns an error with 
+.B errno
+set to 
+.SM EPROTO\s0.
+.TP
+.BR write
+The module takes the following actions on
+data that originated from a 
+.B write(\|)
+system call:
+.RS 5
+.IP
+All messages with the exception of messages that contain
+control portions (see
+.BR putmsg (2)
+and 
+.BR getmsg (2))
+are transparently passed onto the module's
+downstream neighbor.
+.IP
+Any zero length data message is freed
+by the module and is not
+passed onto the module's downstream neighbor.
+.IP
+Any message with a control portion generates an error,
+and any further system calls associated with the 
+.B stream
+fail with 
+.B errno
+set to 
+.SM EPROTO\s0.
+.RE
+.TP 10
+.BR read
+The module takes the following actions on
+data that originated from the transport protocol provider:
+.RS 5
+.IP
+All messages with the exception of those that contain
+control portions (see the 
+.B putmsg
+and 
+.B getmsg
+system calls)
+are transparently passed onto the module's upstream neighbor.
+.IP
+The action taken on messages with control portions is as follows:
+.RS 10
+.TP 3
+\(bu
+Messages that represent expedited data generate an error.
+All further system calls associated with the 
+.B stream
+fail with
+.B errno
+set to 
+.SM EPROTO\s0.
+.TP
+\(bu
+Any data messages with control portions have the control portions
+removed from the message prior to passing the message on to the
+upstream neighbor.
+.TP
+\(bu
+Messages that represent an orderly release indication from the transport
+provider generate a zero length data message,
+indicating the end of file,
+which are sent to the reader of the 
+.IR stream .
+The orderly release message itself is freed by the module.
+.TP
+\(bu
+Messages that represent an abortive disconnect
+indication from the transport provider cause all further 
+.B write(\|)
+and
+.B putmsg(\|)
+calls to fail with 
+.B errno
+set to 
+.SM ENXIO\s0.
+All further 
+.B read(\|)
+and 
+.B getmsg(\|)
+calls return zero length data (indicating an
+.SM EOF\s0)
+once all previous data has been read.
+.br
+.ne 5
+.TP
+\(bu
+With the exception of the above rules,
+all other messages with control portions
+generate an error and all further system calls
+associated with the 
+.B stream
+fail with 
+.B errno
+set to 
+.SM EPROTO\s0.
+.RE
+.IP
+Any zero length data messages are freed by
+the module and they are not
+passed onto the module's upstream neighbor.
+.RE
+.TP 10
+.BR pop
+When the module is popped off the 
+.B stream
+or the 
+.B stream
+is closed, the module takes the following action:
+.RS 5
+.IP
+If an orderly release indication has been previously received,
+then an orderly release request
+is sent to the remote side of the transport connection.
+.RE
+.SH SEE ALSO
+.BR intro (2),
+.BR getmsg (2),
+.BR putmsg (2),
+.BR read (2V),
+.BR write (2V),
+.BR intro (3),
+.BR streamio (4),
+.BR timod (4)
+.LP
+.TX NETP

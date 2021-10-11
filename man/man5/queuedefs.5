@@ -1,0 +1,115 @@
+.\" @(#)queuedefs.5 1.1 92/07/30 SMI
+.TH QUEUEDEFS 5 "22 January 1988"
+.SH NAME
+queuedefs \- queue description file for at, batch, and cron
+.SH SYNOPSIS
+.LP
+.B /var/spool/cron/queuedefs
+.SH DESCRIPTION
+.IX "queuedefs file" "" "\fLqueuedefs\fP file"
+.LP
+The
+.B queuedefs
+file describes the characteristics of the queues managed by
+.BR cron (8).
+Each non-comment line in this file describes one queue.
+The format of the lines are as follows:
+.RS
+.LP
+\fIq\fB.\fR[\fInjob\fBj\fR][\fInice\fBn\fR][\fInwait\fBw\fR]
+.RE
+.LP
+The fields in this line are:
+.TP
+.I q
+The name of the queue.
+.B a
+is the default queue for jobs started by
+.BR at (1);
+.B b
+is the default queue for jobs started by
+.B batch
+(see
+.BR at (1));
+.B c
+is the default queue for jobs run from a
+.BR crontab (5)
+file.
+.TP
+.I njob
+The maximum number of jobs that can be run simultaneously in that queue; if
+more than
+.I njob
+jobs are ready to run, only the first
+.I njob
+jobs will be run, and the others will be run as jobs that are currently running
+terminate.  The default value is 100.
+.TP
+.I nice
+The
+.BR nice (1)
+value to give to all jobs in that queue that are not run with a user
+.SM ID
+of super-user.  The default value is 2.
+.TP
+.I nwait
+The number of seconds to wait before rescheduling a job that was deferred
+because more than
+.I njob
+jobs were running in that job's queue, or because more than 25 jobs were
+running in all the queues.  The default value is 60.
+.LP
+Lines beginning with
+.B #
+are comments, and are ignored.
+.SH EXAMPLE
+.RS
+.nf
+.ft B
+#
+# @(#)queuedefs.5 1.1 92/07/30 SMI; from S5R3
+#
+a.4j1n
+b.2j2n90w
+.RE
+.fi
+.ft R
+.LP
+This file specifies that the
+.B a
+queue, for
+.B at
+jobs, can have up to 4 jobs running simultaneously; those jobs will be run with
+a
+.B nice
+value of 1.  As no
+.I nwait
+value was given, if a job cannot be run because too many other jobs are running
+.B cron
+will wait 60 seconds before trying again to run it.
+The
+.B b
+queue, for
+.B batch
+jobs, can have up to 2 jobs running simultaneously; those jobs will be run with
+a
+.B nice
+value of 2.  If a job cannot be run because too many other jobs are running,
+.B cron
+will wait 90 seconds before trying again to run it.
+All other queues can have up to 100 jobs running simultaneously; they will be
+run with a
+.B nice
+value of 2, and if a job cannot be run because too many other jobs are running
+.B cron
+will wait 60 seconds before trying again to run it.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/spool/cron/queuedefs
+.PD 
+.SH "SEE ALSO"
+.BR at (1),
+.BR nice (1),
+.BR crontab (5),
+.BR cron (8)

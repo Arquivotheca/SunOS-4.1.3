@@ -1,0 +1,54 @@
+#!/bin/sh
+# %Z%%M% %I% %E%
+#
+# Chime the hours.
+#
+# To use, add this to your crontab file:
+#	0,30 * * * * /usr/demo/SOUND/cuckoo.clock >/dev/null 2>&1
+#
+
+PATH=/usr/bin:/usr/demo/SOUND:.
+SOUNDDIR=/usr/demo/SOUND/sounds
+
+# If a filename is supplied, use it instead of cuckoo.au.
+# If the named file does not exist, try prepending the sounds directory.
+CHIME=${1:-$SOUNDDIR/cuckoo.au}
+if [ ! -f $CHIME ]
+then
+	if [ ! -f $SOUNDDIR/$CHIME ]
+	then
+		echo "$0: Cannot open '$CHIME'"
+		exit 1
+	fi
+	CHIME=$SOUNDDIR/$CHIME
+fi
+
+# Get hours and minutes all at once to avoid boundary conditions
+#
+DATE=`date +%H:%M`
+HOUR=`echo $DATE | sed -e 's/:.*//'`
+MINUTE=`echo $DATE | sed -e 's/.*://'`
+
+# Correct for near misses
+if [ $MINUTE -gt 55 ]
+then
+	HOUR=`expr $HOUR + 1`
+	MINUTE="0"
+fi
+
+# If the audio device is busy, the play program will exit immediately.
+# Otherwise, the volume will be temporarily reduced, and the chimes sounded.
+#
+if [ $MINUTE -lt 15 ]
+then
+	CNT=`expr \( $HOUR % 12 + 11 \) % 12`
+	CHIMES=$CHIME
+	while [ $CNT != 0 ]; do
+		CHIMES="$CHIMES `echo $CHIME`"
+		CNT=`expr $CNT - 1`
+	done
+	play -v 10 -i $CHIMES
+else
+	play -v 10 -i $CHIME
+fi
+exit 0

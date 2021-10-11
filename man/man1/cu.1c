@@ -1,0 +1,470 @@
+.\" @(#)cu.1c 1.1 92/07/30 SMI; from S5R3
+.TH CU 1C "26 July 1988"
+.SH NAME
+cu \- connect to remote system
+.SH SYNOPSIS
+.B cu
+[
+.B \-dhnt
+]
+[
+.B \-e
+|
+.B \-o
+]
+[
+.BI \-l " line"
+]
+[
+.BI \-s " speed"
+]
+.I phone-number 
+.LP
+.B cu
+[
+.B \-dh
+]
+[
+.B \-e
+|
+.B \-o
+]
+[
+.BI \-s " speed"
+]
+.BI \-l " line"
+.LP
+.B cu
+[
+.B \-dh
+]
+[
+.B \-e
+|
+.B \-o
+]
+.I systemname
+.SH DESCRIPTION
+.IX  "cu command"  ""  "\fLcu\fP \(em connect to remote system"
+.IX  "connect to remote system"  "\fLcu\fP"
+.IX  "remote system"  "connect to \(em \fLcu\fP"
+.IX  communications  cu  ""  "\fLcu\fP \(em connect to remote system"
+.LP
+.B cu
+calls up another system, or possibly a terminal.
+It manages an interactive conversation with possible
+transfers of
+.SM ASCII
+files.
+.LP
+If
+.I phone-number
+is specified, it is the telephone number of the system to be dialed.
+Equal signs specify a pause for a secondary dial tone, and minus
+signs specify dialing delays of 4 seconds.
+If
+.I systemname
+is specified, it is the
+.SM UUCP
+name of a the system to be dialed; in this case,
+.B cu
+will obtain an appropriate direct line or 
+telephone number from
+.BR /etc/uucp/Systems .
+Note: the
+.I systemname
+option should not be used in conjunction with the
+.B \-l
+and
+.B \-s
+options as
+.B cu
+will connect to the first available line for the system name specified,
+ignoring the requested line and speed.
+If neither
+.I phone-number
+nor
+.I systemname
+are specified, the
+.BI \-l " line"
+option must be provided;
+.I line
+specifies the device name to use.
+.SH OPTIONS
+.TP 12
+.B \-d
+Print diagnostic traces.
+.TP
+.B \-h
+Emulate local echo, supporting calls to other computer systems
+which expect terminals to be set to half-duplex mode.
+.TP
+.B \-n
+For added security, prompt the user to provide the telephone number to be
+dialed rather than taking it from the command line. 
+.TP
+.B \-t
+Perform appropriate mapping of
+.SM RETURN
+to
+.SM RETURN-LINE-FEED
+pairs.
+This is used to dial an
+.SM ASCII
+terminal which has been set to auto answer.
+.TP
+.B \-e
+Generate even parity for data sent to the remote system.
+.TP
+.B \-o
+Generate odd parity for data sent to the remote system.
+.TP
+.RI \-l " line"
+Specify a device name to use as the communication line.
+This can be 
+used to override the search that would otherwise take place
+for the first available line having the right speed.
+When the
+.B \-l
+option is used without the
+.B \-s
+option, the speed of a line is taken from the 
+.B /etc/uucp/Devices
+file.
+When the
+.B \-l
+and
+.B \-s
+options are both used together,
+.B cu
+will search the
+.B Devices
+file to check if the requested speed for the
+requested line is available.
+If so, the connection will be made at the
+requested speed; otherwise an error message will be printed and the call
+will not be made. 
+The specified device is generally a directly connected asynchronous line
+(for example,
+.BI /dev/tty ab\fR)
+in which case a telephone number 
+.RI ( phone-number )
+is not required.
+The specified device need not be in the
+.B /dev
+directory.
+If the specified device
+is associated with an auto dialer, a telephone number must be 
+provided. 
+Use of this option with
+.I systemname
+rather than
+.I phone-number
+will not give the desired result (see
+.I systemname
+below).
+.TP
+.BI \-s " speed"
+Specify the transmission speed (300, 1200, 2400, 4800, 9600);
+The default value is \*(lqAny\*(rq speed which will depend on the order of the
+lines in the
+.B Devices
+file.
+Most modems are either 300 or 1200 baud.
+Directly connected lines may be set to a speed higher than 1200
+baud.
+.SH USAGE
+.LP
+After making the connection,
+.B cu
+runs as two processes: the
+.I transmit
+process reads data from the standard input and,
+except for lines beginning with
+.BR ~ ,
+passes it to the remote system; the
+.I receive
+process accepts data from the remote system and,
+except for lines beginning with
+.BR ~ ,
+passes it to the standard output.
+Normally, an automatic
+.SM XON/XOFF
+protocol is used to control input from the remote so the buffer is
+not overrun.
+.SS Commands
+.LP
+A tilde (\s+2\|~\|\s0) appearing as the first character of a line is an escape
+signal which directs
+.B cu
+to perform some special action.
+The
+.I transmit
+recognizes the following escape sequences:
+.TP 12
+.B ~.
+Drop the connection and exit (you may still be logged in on the remote
+machine).
+.TP
+.B ~!
+Escape to an interactive shell on the local machine (exiting the shell returns
+you to
+.BR cu ).
+.TP
+.BI ~! cmd
+Run the command
+.I cmd
+on the local system
+(using
+.BR "sh \-c" ).
+.TP
+.BI ~$ cmd
+Run the command
+.I cmd
+locally and send its output to the remote system.
+.TP
+.B ~%cd
+Change the directory on the local system.
+Note:
+.B ~!cd
+will cause the command to be run by a sub-shell,
+probably not what was intended.
+.HP
+.B ~%take
+.I from
+.RI [ to ]
+.br
+Copy file
+.I from
+(on the remote system)
+to file
+.I to
+on the local system.
+If
+.I to
+is omitted,
+the
+.I from
+argument is used in both places.
+.HP
+.B ~%put
+.I from
+.RI [ to ]
+.br
+Copy file
+.I from
+(on local system)
+to file
+.I to
+on remote system.
+If
+.I to
+is omitted, the
+.I from
+argument is used in both places.
+.IP
+For both
+.B ~%take
+and
+.B ~%put
+commands, as each block of the file is transferred,
+consecutive single digits
+are printed to the terminal.
+.TP
+.BI ~~ line
+Send the line
+.BI ~ line
+to the remote system.
+.TP
+.B ~%break
+Send a 
+.SM BREAK
+to the remote system (which can also be specified as
+.BR ~%b ).
+.TP
+.B ~%debug
+Toggle the
+.BR \-d
+debugging option on or off (which can also be specified as
+.BR ~%d ).
+.TP
+.B ~t
+Prints the values of the
+.BR termio (4)
+structure variables for the user's
+terminal (useful for debugging).
+.TP
+.B ~l
+Prints the values of the
+.B termio
+structure variables for the remote
+communication line (useful for debugging).
+.TP
+.B ~%nostop
+Toggle between
+.SM XON/XOFF
+input control protocol and no input control.
+This is useful in case the remote system is one which does
+not respond properly to the
+.SM XON
+or
+.SM XOFF
+characters.
+.LP
+The
+.I receive
+process normally copies data from the remote system to its standard
+output.
+Internally the program accomplishes this by initiating an output diversion
+to a file when a line from the remote begins with
+.BR ~ .
+.LP
+Data from the remote is diverted (or appended, if
+.B >>
+is used) to
+.I file 
+on the local system.
+The trailing
+.B ~>
+marks the end of the diversion.
+.LP
+The use of
+.B ~%put
+requires
+.BR stty (1V)
+and
+.BR cat (1V)
+on the remote side.
+It also requires that the
+current erase and kill characters on the remote
+system be identical to these current control characters on the local system.
+Backslashes are inserted at appropriate places.
+.LP
+The use of
+.B ~%take
+requires the existence of
+.BR echo (1V)
+and
+.BR cat (1V)
+on the remote system.
+Also,
+.B tabs
+mode (see
+.BR stty (1V))
+should be set on the remote system if
+.SM TAB
+characters are to be copied without expansion to
+.SM SPACE
+characters.
+.LP
+When  
+.B cu
+is used on system X to connect to system Y and
+subsequently used on system Y to connect to
+system Z, commands on system Y can be executed
+by using
+.BR ~~ .
+In general,
+.B ~
+executes the command on the original machine,
+.B ~~
+executes the command on the next machine in
+the chain.
+.SH EXAMPLES
+.LP
+To dial a system whose telephone number is 9 201 555 1212 using 1200 baud
+(where dialtone is expected after the 9):
+.RS
+.ft B
+cu  \-s1200   9=12015551212
+.ft R
+.RE
+.LP
+If the speed is not specified, \*(lqAny\*(rq is the default value.
+.LP
+To login to a system connected by a direct line:
+.RS
+.ft B
+cu  \-l  /dev/ttyXX
+.ft R
+.RE
+.LP
+or
+.RS
+.ft B
+cu \-l ttyXX
+.ft R
+.RE
+.LP
+To dial a system with the specific line and a specific speed:
+.RS
+.ft B
+cu  \-s1200  \-l  ttyXX 
+.ft R
+.RE
+.LP
+To dial a system using a specific line associated with an auto dialer:
+.RS
+.ft B
+cu  \-l  culXX  9=12015551212 
+.ft R
+.RE
+.LP
+To use a system name:
+.RS
+.ft B
+cu  systemname
+.ft R
+.br
+.RE
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/uucp/Systems
+file listing remote systems
+.TP
+.B /etc/uucp/Devices
+file listing devices to use
+.TP
+.B /var/spool/locks/\s-1LCK\0.\|.*
+lock file to avoid conflicts with
+.SM UUCP
+.PD
+.SH SEE ALSO
+.BR cat (1V),
+.BR echo (1V),
+.BR stty (1V),
+.BR tip (1C),
+.BR uucp (1C),
+.BR termio (4)
+.SH DIAGNOSTICS
+.LP
+Exit code is zero for normal exit,
+otherwise, 1.
+.SH WARNINGS
+.LP
+The
+.B cu
+command does not do any integrity checking on data it transfers.
+Data fields with special
+.B cu
+characters may not be transmitted properly.
+Depending on the interconnection hardware,
+it may be necessary to use a
+.RB ` ~. '
+to terminate the conversion even if
+.B stty 0
+has been used.
+Non-printing characters are not dependably transmitted using either
+the
+.B ~%put
+or
+.B ~%take
+commands.
+.SH BUGS
+.LP
+There is an artificial slowing of transmission by
+.B cu
+during the
+.B ~%put
+operation so that loss of data is unlikely.

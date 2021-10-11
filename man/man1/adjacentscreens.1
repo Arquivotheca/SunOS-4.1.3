@@ -1,0 +1,137 @@
+.\" @(#)adjacentscreens.1 1.1 92/07/30 SMI;.
+.TH ADJACENTSCREENS 1 "19 December 1989"
+.SH NAME
+adjacentscreens \- connect multiple screens to SunView window driver
+.SH SYNOPSIS
+.B adjacentscreens 
+[
+.BR \-c \||\|\c
+.B \-m
+] 
+.I center-screen
+.if n .ti +5n
+[
+.BR \-l \||\|\c
+.BR \-r \||\|\c
+.BR \-t \||\|\c
+.B \-b
+.IR " side-screen " "] .\|.\|."
+.B \-x
+.SH AVAILABILITY
+.LP
+This command is available
+with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  adjacentscreens  ""  "\fLadjacentscreens\fP"
+.IX  "window management"  "adjacentscreens command"  ""  "\fLadjacentscreens\fP command"
+.LP
+.B adjacentscreens
+tells the window-driver's mouse-pointer tracking mechanism 
+how to move between screens that contain windows.  
+Note: 
+.BR sunview (1)
+must be running on all screens before 
+.B adjacentscreens
+is used.  Once properly notified using
+.BR adjacentscreens\| ,
+the mouse pointer slides from one screen to another
+as you move the pointer past the appropriate edge of a screen.
+.LP
+.SH OPTIONS
+.TP
+.BI \-c " center-screen"
+.PD 0
+.TP
+.BI \-m " center-screen"
+.PD
+.I center-screen
+is the name of a frame buffer device, such as 
+.BR /dev/fb ;
+all other physical screen-positions are given relative to this
+reference point.
+The 
+.B \-c
+or \-m
+flag  is optional.  If omitted, the first argument is taken
+as
+.IR center-screen .
+If no further arguments are given,
+.I center-screen
+has no neighbors.
+.TP
+.BI \-l " side-screen"
+.PD 0
+.TP
+.BI \-r " side-screen"
+.TP
+.BI \-t " side-screen"
+.TP
+.BI \-b " side-screen"
+.TP
+.BI \-l " side-screen"
+.PD
+.I side-screen
+is also a frame buffer device name,
+such as 
+.BR /dev/cgone .
+The 
+.B \-l
+flag indicates that
+.I side-screen
+is to the left of
+.IR " center-screen" ;
+.B \-r
+indicates that it is to the right.
+.B \-t
+indicates that 
+.I side-screen
+is on top of (above)
+.IR  center-screen ;
+.B \-b
+indicates that it is below.  Each neighboring screen can be
+specified as an option on the command line.
+.TP
+.B \-x
+Suppress the normal notification to a 
+.I side-screen
+pointer tracker that
+.I center-screen
+is its only neighbor.
+This option is useful if you have a large number of screens or
+want exotic inter-window pointer movements.
+.LP
+.SH EXAMPLE
+.LP
+The following command:
+.RS
+.LP
+.B
+example% adjacentscreens /dev/fb\ \-r\ /dev/cgone
+.RE
+.LP
+sets up pointer tracking so that the pointer slides from 
+a monochrome screen 
+.RB ( /dev/fb )
+to a color screen
+.RB ( /dev/cgone )
+when the pointer moves off the right hand edge of the monochrome
+display.
+Similarly, the pointer slides from the color screen to the monochrome
+screen when the pointer moves off the color screen's left edge.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/fb
+.TP
+.B /dev/cgone
+.PD
+.SH "SEE ALSO"
+.BR sunview (1),
+.BR switcher (1)
+.SH BUGS
+Window systems on all screens must be initialized before running
+.BR adjacentscreens .

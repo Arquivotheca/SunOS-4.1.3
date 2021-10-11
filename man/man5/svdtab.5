@@ -1,0 +1,82 @@
+.\" @(#)svdtab.5 1.1 92/07/30 SMI; new for 4.1
+.TH SVDTAB 5 "26 January 1990"
+.SH NAME
+svdtab \- SunView device table
+.SH SYNOPSIS
+.B /etc/svdtab
+.SH DESCRIPTION
+.IX "svdtab" "" "\fLsvdtab\fP \(em SunView device table" ""
+.IX "SunView device table" "" "SunView device table \(em \fLsvdtab\fP" ""
+.LP
+The
+.B /etc/svdtab
+contains information that is used by 
+the window system
+(for example,
+.BR sunview (1))
+to change the owner, group, and permissions of the window devices 
+.RB ( /dev/win* )
+upon startup.
+By default
+.I all
+lines in this file are commented out.
+That is, all security is disabled.
+To enable security, uncomment the following line in
+.B /etc/svdtab
+and start up the window system again:
+.IP
+.B #0600
+.LP
+If 
+.B /etc/svdtab
+contains an entry,
+the owner and group of the
+.B win
+devices are set to the owner and group of the console.
+The permissions are set as specified in
+.BR /etc/svdtab .
+The recommended permissions for normal security is
+.BR 0600 .
+.LP
+Once the window devices are owned by the user, their
+permissions and ownership can be changed using
+.BR chmod (1V)
+and
+.BR chown (8),
+as with any user-other file.
+.SH EXAMPLES
+.LP
+The following is an example entry of the
+.B /etc/svdtab
+file:
+.IP
+.B 0600
+.LP
+This entry specifies that upon SunView startup, the
+owner, group and permissions of
+.B /dev/win*
+will be set to the user's username, the user's group and
+.BR 0600 ,
+respectively.
+Upon exiting the window system, the owner and group of 
+.BR /dev/win* ,
+will be reset to 
+.BR root ,
+and
+.BR wheel .
+The permissions remain as set in
+.BR /etc/svdtab .
+If no entry appears in this file, the owner, group and
+permissions will
+.I not
+be changed.
+.SH SEE ALSO
+.BR chmod (1V),
+.BR sunview (1),
+.BR chown (8)
+.SH NOTES
+.LP
+If the window system dies unnaturally, for example by
+.BR kill (1),
+the owner, group and permissions remain as set when the window
+was started up.

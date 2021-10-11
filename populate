@@ -1,0 +1,133 @@
+#!/bin/sh
+# %Z%%M% %I% %E% SMI
+#
+# populate a source tree.
+#
+# We assume that we start out in a directory (presumably /usr/src)
+# with the subdirectory 'SCCS_DIRECTORIES' which contains the SCCS source
+# in the form:
+#
+#	...
+#	stuff
+#	stuff/SCCS
+#	stuff/SCCS/(SCCS source files for stuff...)
+#	stuff/morestuff
+#	stuff/morestuff/SCCS
+#	stuff/morestuff/SCCS/(SCCS source files for morestuff....)
+#	...
+#
+# This script will make a directory tree rooted in this directory
+# of the structure:
+#
+#	...
+#	stuff
+#	stuff/morestuff
+#	...
+# And add in, as relative path symbolic links the SCCS directories
+# in the tree rooted in SCCS_DIRECTORIES...
+#
+# (e.g., stuff/SCCS is a symlink that points to ../SCCS_DIRECTORIES/stuff/SCCS)
+#
+#################
+# set up a trap to clean up after ourselves if we are killed...
+#
+trap 'ln -s SCCS_DIRECTORIES/SCCS;make clobber;exit 100' 2 3 15
+
+#
+#	Are we building a specific release? If we are and the corresponding
+#	SID list doesn't exist, we might as well quit right now.
+#
+if [ -f RELEASE ]; then
+	SID_FILE=`cat RELEASE`.SID
+	if [ ! -f SIDlist/$SID_FILE \
+	    -a ! -f SCCS_DIRECTORIES/SIDlist/SCCS/s.$SID_FILE ]; then
+		echo "Error: SID file $1 does not exist"
+		exit 1
+	fi
+fi
+
+#
+# The only real problem child is /usr/src/SCCS->/usr/src/SCCS_DIRECTORIES/SCCS
+# which we'll handle as a special case...
+#
+
+echo "Finding sub-directories in SCCS_DIRECTORIES...."
+rm -f SCCS
+find SCCS_DIRECTORIES -type d -print | sed -e '/lost+found/d' \
+	-e '/^SCCS_DIRECTORIES$/d' -e '/^SCCS_DIRECTORIES\/SCCS/d' > major_list
+#
+# Make directories
+#
+echo " Making sub-directories in current directory...."
+for i in `grep -v 'SCCS$' major_list| sed 's/^SCCS_DIRECTORIES\///'`
+do
+	if [ ! -d $i ]
+	then
+		mkdir $i
+		if [ $? -ne 0 ]
+		then
+			echo "........mkdir failed on directory" $i
+		fi
+	fi
+done
+	
+
+echo "Making relative path symbolic links to SCCS...."
+
+for SCCS_DIR in `grep 'SCCS$' major_list`
+do
+	#
+	#	Trim off SCCS_DIRECTORIES
+	#
+	symln=`echo $SCCS_DIR| sed 's/SCCS_DIRECTORIES.//'`
+	#
+	#	Calculate relative dot-dot....
+	#
+	dotdot=`echo $symln |sed -e 's/.SCCS//' -e 's/\// /g' -e 's/$/ /' \
+	    -e 's/[^ ]* /..\//g'`
+	#
+	#	put together full symlink name
+	#
+	realdir=${dotdot}${SCCS_DIR}
+	#
+	#	command is ln -s relpath symln
+	#
+	ln -s $realdir $symln
+	if [ $? -ne 0 ]
+	then
+		echo "........symlink failed on command: ln -s " $realdir $symln
+	fi
+done
+ln -s SCCS_DIRECTORIES/SCCS
+if [ $? -ne 0 ]
+then
+	echo "........symlink failed on command: ln -s SCCS_DIRECTORIES/SCCS"
+fi
+rm -f major_list
+
+#
+#	Are we building a specific release? If not, we're done.
+#
+if [ ! -f RELEASE ]; then
+	echo "Done...."
+	exit 0
+fi
+#
+#	Make sure the SID_FILE is checked out. (We already know it exists.)
+#
+if [ ! -f SIDlist/$SID_FILE ]; then
+	/usr/sccs/get -GSIDlist/$SID_FILE SIDlist/SCCS/s.$SID_FILE
+fi
+
+#
+#	Now descend through the tree and check out the files specified
+#	in the SID list.
+#
+echo "Checking out files for release `basename $SID_FILE .SID`..."
+egrep -v '^#' SIDlist/$SID_FILE \
+	| awk '{ print $1" "$1" "$2 }' | sed 's/SCCS\/s\.//' \
+	| awk '{ printf "/usr/sccs/get -s -r%s -G%s %s;", $3, $1, $2 }' \
+	| tee errs.populate | sh -s
+echo "Done...."
+rm errs.populate
+exit 0

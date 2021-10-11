@@ -1,0 +1,436 @@
+.\" @(#)cmdtool.1 1.1 92/07/30 SMI; 
+.TH CMDTOOL 1 "19 July 1989"
+.SH NAME
+cmdtool \- run a shell (or program) using the SunView text facility
+.SH SYNOPSIS
+.B cmdtool
+[
+.B \-C
+]
+[
+.B \-M
+.I bytes
+]
+[
+.B \-P
+.I count
+]
+[
+.I generic-tool-arguments
+]
+[
+.I program
+[ 
+.I program-arguments
+]
+]
+.SH AVAILABILITY
+This command is available with the
+.I SunView User's
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX cmdtool "" "\fLcmdtool\fR \(em shell or program with SunView text facility"
+.IX "shell window" "\fLcmdtool\fR"
+.LP
+.B cmdtool
+is the standard
+.I SunView
+support facility for shells and other programs.
+When invoked,
+.B cmdtool
+runs a program (usually a shell) in a text-based command subwindow.
+Characters typed on the keyboard are inserted at the caret.  If the
+program is a shell, that shell accepts and runs commands in the
+usual manner.  
+.B cmdtool
+also supports programs that perform cursor motions directly, such
+as
+.BR vi (1).
+.LP
+The text of the current command line can be edited using normal
+.BR textedit (1)
+functions.
+The command subwindow displays a log of the
+session, which can be scrolled through using the scrollbar
+(unless the command does cursor motion).
+This log can be edited, and saved by choosing the
+.RB ` "Store as New File" '
+item in the text facility's pop-up menu. The
+.RB  ` "Split View" '
+command, also in the pop-up menu, can be used to create two or more
+independent views of the log.
+.SH OPTIONS
+.TP 15
+.B \-C
+Console 
+.BR cmdtool .
+Display console messages in this
+.BR cmdtool ,
+which might otherwise appear in unexpected places on the 
+workstation screen.  Since a
+.B cmdtool
+window can be scrolled, console error messages can be recorded for
+later examination.
+.TP
+.BI \-M " bytes"
+Set the log to wrap-around after the indicated
+number of
+.IR bytes .
+.TP
+.BI \-P " count"
+Checkpoint the log after every set of
+.I count
+editing operations.
+.TP
+.I generic-tool-arguments
+.B cmdtool
+accepts the generic tool arguments
+listed in
+.BR sunview (1).
+.HP
+.I program
+[
+.I program-arguments
+]
+.br
+If a
+.I program
+argument is present,
+.B cmdtool
+runs it and passes any remaining arguments to that
+.IR program .
+If no
+.I program
+is given,
+.B cmdtool
+runs the program indicated by the
+.SB SHELL
+environment variable, or
+.B /usr/bin/sh
+by default.
+.SH USAGE
+.LP
+Refer to
+.TX SVBG
+for details on how to use 
+.BR cmdtool .
+.SS Defaults Options
+.LP
+The following options can be configured as default settings
+using
+.BR defaultsedit (1).
+.TP
+.B /Tty/Append_only_log
+When set to
+.SB TRUE
+(the standard default) only command lines can be edited.
+.SB FALSE
+allows the entire log to be edited.
+(See also the description of 
+.B Enable Edit
+below.)
+.TP
+.B /Tty/Insert_makes_caret_visible
+This entry allows you to specify the method for displaying the
+editing caret.
+.RS
+.PD 0
+.TP 18
+.B Same_as_for_text
+Use the setting specified in the defaults for the 
+.B Text
+category (the standard default).
+.TP
+.B If_auto_scroll
+If the caret is showing, and an inserted
+.SM NEWLINE
+would position it below the bottom of the screen 
+(as determined by 
+.BR /Text/Lower_context ),
+the text is scrolled to keep the caret showing.
+The number of lines scrolled is determined by the
+.BR /Text/Auto_scroll_by
+default.
+(See
+.BR textedit (1)
+for more information.)
+.br
+.ne 3
+.TP
+.B Always
+Scroll the caret back into view whenever input would position it
+off the screen.
+.PD
+.RE
+.TP
+.B /Tty/Checkpoint_frequency
+If set to
+.B 0
+(the standard default) no checkpointing is done.
+For any value greater than zero,
+a checkpoint is made each time the indicated number
+editing operations has been performed since the last checkpoint.
+Each character typed, each
+.BR Paste ,
+and each
+.B Cut
+counts as an editing operation.
+At each checkpoint, an updated copy of the log is saved in a
+file with a name that is constructed by appending two percent signs
+.RB ( %%  )
+to the name of the log file. 
+By default, the log file has a name of the form
+.BI /tmp/tty.txt. pid
+.RI ( pid
+is the process
+.SM ID
+number of
+.BR cmdtool );
+the corresponding checkpoint file has a name of the form
+.BI /tmp/tty.txt. nnnnnn %% .
+.TP
+.B /Tty/Text_wraparound_size
+If set to
+.B 0
+(the standard default) no wrap-around takes place; the log file
+grows without a specified limit. 
+For values greater than zero,
+wrap-around occurs whenever the indicated number of characters have
+been written to the log since the last wrap-around.
+Characters that are pushed over the top are replaced by the
+message:
+.RS
+.IP
+.B 
+*** Text is lost because the maximum edit log size has been exceeded. ***
+.RE
+.TP
+.B /Text/Edit_back_char
+Set the character for erasing to the left of the caret.
+Note:
+in
+.BR cmdtool ,
+the
+.RB ` "stty erase" '
+command has no effect.
+Text-based tools refer only to the defaults database key settings.
+The default is 
+.SM DELETE\s0.
+.TP
+.B /Text/Edit_back_word
+Set the character for erasing the word to the left of the caret.
+The standard default is 
+.SM CTRL-W\s0.
+.TP
+.B /Text/Edit_back_line
+Set the character for erasing all characters to the left of
+the caret.  Note:
+.RB ` "stty kill" '
+has no effect in
+.BR cmdtool .
+The standard default is 
+.SM CTRL-U\s0.
+.SS The Command Subwindow
+.LP
+The command subwindow is based on the text facility,
+which is described in
+.TX SVBG .
+It uses the same pop-up menu as the text facility, but
+with an additional pull-right
+.RB ` "Cmd Modes" '
+menu, which contains the 
+.RB ` "Enable Editing" '
+and
+.RB ` "Disable Scrolling" '
+items.
+.LP
+Command subwindows support cursor motions, using a new
+.B /etc/termcap
+entry called
+.BR sun-cmd .
+Command subwindows automatically set the
+.SB TERM
+environment variable to
+.BR sun-cmd .
+So, if you
+.BR rlogin (1C)
+to a machine that does not have an entry for
+.B sun-cmd
+in its
+.B /etc/termcap
+file, the error message
+.RB ` "Type sun-cmd unknown" '
+results.
+To rectify this, type the command
+.RB ` "set \s-1TERM\s0=sun" '.
+Programs written using the
+.BR curses (3V)
+library package will work in a command subwindow, but programs
+hard-coded for
+.BR sun -type
+terminals may not. 
+When supporting a program that performs
+cursor motions, the command subwindow automatically takes on the
+characteristics of a tty subwindow (as with
+.BR shelltool (1)).
+When that program terminates or sleeps, the full command subwindow
+functionality is restored.
+.LP
+.B cmdtool
+supports programs that use
+.SM CBREAK
+and
+.SM NO ECHO
+terminal modes. 
+This support is normally invisible to the user.
+However, programs that use
+.SM RAW
+mode, such as
+.BR rlogin (1C)
+and
+.BR script (1),
+inhibit command-line editing with the mouse.
+In this case, however, tty-style
+.SM ERASE,
+word-kill and line-kill characters can still be used to edit the
+current command line.
+.SS The Command Subwindow Menu
+.LP
+.TP 18
+.B Copy, then Paste
+When there is a current selection, the entire menu item is active.
+The selection is copied both to the clipboard and to the location pointed
+to by the caret.  When there is no selection, but there is text on the
+clipboard, only
+.B Paste
+is active.  In this case, the contents
+of the clipboard are copied to the caret.
+When there is no selection and the clipboard is empty,
+this item is inactive.
+.RB ` "Copy then Paste" '
+is a generic text menu item.  Refer to
+.BR textedit (1)
+for information about other generic text menu items.
+.br
+.ne 3
+.TP
+.PD 0
+.B Enable Edit
+.TP
+.B Disable Edit
+.PD
+Toggle to allow or disallow editing on the log.
+.br
+.ne 5
+.TP
+.B Disable Scrolling
+.PD 0
+.TP
+.B Enable Scrolling
+.PD
+Toggle between a scrollable, editable window, or a display that
+supports cursor motions.  Note: for well-behaved programs (such as 
+.BR vi (1))
+this switching is performed automatically (so this menu item is
+seldom needed).
+.SS Accelerators
+.LP
+Text facility accelerators that are especially useful in
+command subwindows are described here.  See 
+.br
+.BR textedit (1)
+for more information.
+.TP 18
+.SM CTRL-RETURN
+Position the caret at the bottom, and scroll it into view
+as determined by 
+.BR /Text/Lower_context .
+.TP 
+.SM META-P
+Choose the
+.RB ` "Copy, then Paste" '
+menu item.
+.TP
+.PD 0
+\s-1CAPS\s0-lock
+.TP
+F1
+Toggle between all-upper-case keyboard input, and mixed-case.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR cmdtool .
+On entry to
+.BR cmdtool ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.PD
+.SH FILES
+.PD 0
+.TP 20
+.BI /tmp/tty.txt. pid
+log file
+.TP
+.B ~/.textswrc
+.TP
+.B ~/.ttyswrc
+.TP
+.B usr/lib/.text_extras_menu
+.TP
+.B /etc/termcap
+.PD
+.SH "SEE ALSO"
+.BR defaultsedit (1),
+.BR rlogin (1C),
+.BR script (1),
+.BR sh (1),
+.BR shelltool (1),
+.BR sunview (1),
+.BR textedit (1),
+.BR vi (1),
+.BR curses (3V)
+.LP
+.TX INSTALL
+.br
+.TX SVBG
+.SH BUGS
+.LP
+Typing ahead while
+.B cmdtool 
+changes between its scrollable and cursor motion modes
+will sometimes freeze
+.B cmdtool .
+.LP
+Full terminal emulation is not complete.
+Some manifestations of this deficiency are:
+.TP 3
+\(bu
+File completion in the C shell does not work.
+.TP
+\(bu
+Enhanced display of text is not supported.

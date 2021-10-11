@@ -1,0 +1,155 @@
+.\" @(#)getdents.2 1.1 92/07/30 SMI; from UCB 4.3
+.TH GETDENTS 2 "21 January 1990"
+.SH NAME
+getdents \- gets directory entries in a filesystem independent format
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/dirent.h>
+.LP
+.ft B
+int getdents(fd, buf, nbytes)
+int fd;
+char \(**buf;
+int nbytes;
+.fi
+.SH DESCRIPTION
+.LP
+.IX  getdents()  ""  \fLgetdents()\fP
+.IX  "file system"  getdents()  ""  \fLgetdents()\fP
+.IX  directory  "get entries"
+.LP
+.B getdents(\|)
+attempts to put directory entries from the directory referenced by
+the file descriptor
+.I fd
+into the buffer pointed to by
+.IR buf ,
+in a filesystem independent format.  Up to
+.I nbytes
+bytes of data will be transferred.
+.LP
+The data in the buffer is a series of
+.B dirent
+structures each containing the following entries:
+.LP
+.RS
+.ta +\w'unsigned\0short\0'u +\w'd_name[MAXNAMLEN + 1];\0'u
+.ft B
+.nf
+off_t	d_off;
+u_long	d_fileno;
+u_short	d_reclen;
+u_short	d_namlen;
+char	d_name[\s-1MAXNAMLEN\s0 + 1];	/* see below */
+.fi
+.ft R
+.RE
+.LP
+The
+.B d_off
+entry contains a value which is interpretable only by the filesystem that
+generated it.  It may be supplied as an offset to
+.BR lseek (2V))
+to find the entry following the current one in a directory.
+The
+.B d_fileno
+entry is a number which is unique for each distinct file in the filesystem.
+Files that are linked by hard links (see
+.BR link (2V))
+have the same
+.BR d_fileno .
+The
+.B d_reclen
+entry is the length, in bytes, of the directory record.
+The
+.B d_name
+entry contains a null terminated file name.
+The
+.B d_namlen
+entry specifies the length of the file name.
+Thus the actual size of
+.B d_name
+may vary from 1 to
+.BR \s-1MAXNAMLEN\s0 + 1 .
+.LP
+The structures are not necessarily tightly packed.
+The
+.B d_reclen
+entry may be used as an offset from the beginning of a
+.I dirent
+structure to the next structure, if any.
+.LP
+Upon return, the actual number of bytes transferred is returned.
+The current position pointer associated with
+.I fd
+is set to point to the directory entry following the last one returned.
+The pointer is not necessarily incremented by the number of bytes returned by
+.BR getdents(\|) .
+If the value returned is zero, the end of the directory has been reached.
+The current position pointer may be set and retrieved by
+.BR lseek (2V).
+It is not safe to set the current position pointer to any value other than
+a value previously returned by
+.BR lseek (2V),
+or the value of a
+.B d_off
+entry in a
+.B dirent
+structure returned by
+.BR getdents(\|) ,
+or zero.
+.SH RETURN VALUES
+.LP
+.B getdents(\|)
+returns
+the number of bytes actually transferred
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+.I fd
+is not a valid file descriptor open for
+reading.
+.TP
+.SM EFAULT
+.I buf
+points outside the allocated address
+space.
+.TP
+.SM EINTR
+A read from a slow device was interrupted before
+any data arrived by the delivery of a signal.
+.TP
+.SM EINVAL
+.I nbytes
+is not large enough for one directory
+entry.
+.TP
+.SM ENOTDIR
+The file referenced by 
+.I fd
+is not a 
+directory.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+.BR link (2V),
+.BR lseek (2V),
+.BR open (2V),
+.BR directory (3V)
+.SH NOTES
+.LP
+It is strongly recommended, for portability reasons, that programs that
+deal with directory entries use the
+.BR directory (3V)
+interface rather than directly calling
+.BR getdents(\|) .

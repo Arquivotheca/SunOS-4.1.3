@@ -1,0 +1,141 @@
+.\" @(#)getgroups.2v 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETGROUPS 2V "21 January 1990"
+.SH NAME
+getgroups, setgroups \- get or set supplementary group IDs
+.SH SYNOPSIS
+.nf
+.ft B
+int getgroups(gidsetlen, gidset)
+int gidsetlen;
+int gidset[];
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setgroups(ngroups, gidset)
+int ngroups;
+int gidset[];
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getgroups(gidsetlen, gidset)
+int gidsetlen;
+gid_t gidset[];
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setgroups(ngroups, gidset)
+int ngroups;
+gid_t gidset[];
+.ft
+.fi
+.SH DESCRIPTION
+.IX  setgroups()  ""  \fLsetgroups()\fP
+.IX  "processes and protection"  setgroups()  ""  \fLsetgroups()\fP
+.IX  "supplementary group \s-1ID\s0s, set \(em \fLsetgroups()\fR"
+.IX  getgroups()  ""  \fLgetgroups()\fP
+.IX  "processes and protection"  getgroups()  ""  \fLgetgroups()\fP
+.IX  "supplementary group \s-1ID\s0s, get \(em \fLgetgroups()\fR"
+.LP
+.B getgroups(\|)
+gets the current supplementary group \s-1ID\s0s of the user process and stores it in
+the array
+.IR gidset .
+The parameter
+.I gidsetlen
+indicates the number of entries that may be placed in
+.IR gidset .
+.B getgroups(\|)
+returns the actual number of entries placed in the
+.I gidset
+array.
+No more than
+.SM {NGROUPS_MAX}
+(see
+.BR sysconf (2V)),
+will ever be returned.
+If
+.I gidsetlen
+is 0,
+.B getgroups(\|)
+returns the number of groups without modifying the
+.I gidset
+array.
+.LP
+.B setgroups(\|)
+sets the supplementary group \s-1ID\s0s of the current user process
+according to the array
+.IR gidset .
+The parameter
+.I ngroups
+indicates the number of entries in the array and must be no
+more than
+.SM {NGROUPS_MAX}
+(see
+.BR sysconf (2V)).
+.LP
+Only the super-user may set new groups.
+.SH RETURN VALUES
+.LP
+.\" Do I really need to talk about what happens if NGROUPS_MAX is 0???
+On success,
+.B getgroups(\|)
+returns
+the number of entries placed in the array pointed to by
+.IR gidset .
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.LP
+.B setgroups(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+Either call fails if:
+.TP 15
+.SM EFAULT
+The address specified for
+.I gidset
+is outside the process address space.
+.LP
+.B getgroups(\|)
+fails if:
+.TP 15
+.SM EINVAL
+The argument
+.I gidsetlen
+is smaller than the number of groups in the group set.
+.LP
+.B setgroups(\|)
+fails if:
+.TP 15
+.SM EPERM
+The caller is not the super-user.
+.SH SEE ALSO
+.BR initgroups (3)

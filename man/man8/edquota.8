@@ -1,0 +1,81 @@
+.\" @(#)edquota.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH EDQUOTA 8 "9 September 1987"
+.UC 4
+.SH NAME
+edquota \- edit user quotas
+.SH SYNOPSIS
+.B /usr/etc/edquota
+[
+.B \-p
+.I proto-user
+]
+.IR usernames .\|.\|.
+.LP
+.B /usr/etc/edquota
+.B \-t
+.SH DESCRIPTION
+.IX  "edquota command"  ""  "\fLedquota\fP \(em edit user quotas"
+.IX  edit "user quotas \(em \fLedquota\fP"
+.IX  "user quotas"  "edquota command"  ""  "\fLedquota\fP \(em edit user quotas"
+.IX  "disk quotas"  "edquota command"  ""  "\fLedquota\fP \(em edit user quotas"
+.IX  "quotas"  "edquota command"  ""  "\fLedquota\fP \(em edit user quotas"
+.IX  "file system"  "edquota command"  ""  "\fLedquota\fP \(em edit user quotas"
+.B edquota
+is a quota editor.  One or more users may be specified on the command
+line.  For each user a temporary file is created with an
+.SM ASCII
+representation of the current disk quotas for that user and an editor
+is then invoked on the file.  The quotas may then be modified, new
+quotas added, etc.  Upon leaving the editor,
+.B edquota
+reads the temporary file and modifies the binary quota files to reflect
+the changes made.
+.LP
+The editor invoked is
+.BR vi (1)
+unless the
+.SB EDITOR
+environment variable specifies otherwise.
+.LP
+Only the super-user may edit quotas.  (In order for quotas to be
+established on a file system, the root
+directory of the file system must
+contain a file, owned by root, called
+.BR quotas .
+See
+.BR quotaon (8)
+for details.)
+.SH OPTIONS
+.TP
+.B \-p
+Duplicate the quotas of the prototypical user
+specified for each user specified.  This is the normal
+mechanism used to initialize quotas for groups of users.
+.TP
+.B \-t
+Edit the soft time limits for each file system.
+If the time limits are zero, the default time limits in
+.B <ufs/quota.h>
+are used.
+Time units of sec(onds), min(utes), hour(s), day(s), week(s), and month(s)
+are understood.
+Time limits are printed in the greatest possible time unit such that
+the value is greater than or equal to one.
+.SH FILES
+.PD 0
+.TP 20
+.B quotas
+quota file at the file system root
+.TP
+.B /etc/mtab
+mounted file systems
+.PD
+.SH SEE ALSO
+.BR quota (1),
+.BR vi (1),
+.BR quotactl (2),
+.BR quotacheck (8),
+.BR quotaon (8),
+.BR repquota (8)
+.SH BUGS
+The format of the temporary file is inscrutable.

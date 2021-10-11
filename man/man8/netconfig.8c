@@ -1,0 +1,146 @@
+.\" @(#)netconfig.8c 1.1 92/07/30 SMI; 
+.TH NETCONFIG 8C "19 February 1988"
+.SH NAME
+netconfig \- PNP boot service
+.SH SYNOPSIS 
+.B /single/netconfig 
+[
+.B \-e 
+]
+[
+.B \-n
+]
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "netconfig" "" "\fLnetconfig\fP \(em pnp diskful boot service"
+.LP
+.B netconfig
+is used both for automatic installation of new diskful systems, 
+and during routine booting of all
+systems.  The sequence of actions taken by 
+.B netconfig
+depends on which of these situations is in effect, but
+it always sets the hostname, domainname, time, timezone, and interface
+IP address. If the system is newly installed on the network, it does more,
+perhaps interrogating the user about system configuration.
+.LP
+.B netconfig
+is invoked with the
+.B \-e
+option from the 
+.B /etc/rc.boot
+script.
+.LP
+Invoked without options, 
+.B netconfig
+may perform 
+.SM PNP 
+set up, including set up of files, passwords, and secure
+.SM RPC\s0s.
+Unless 
+.B \-n 
+is specified, it writes 
+.BR /etc/net.conf ,
+which is read later by
+.BR rc.boot . 
+This includes the 
+.SB VERBOSE 
+flag, derived from 
+.SB NVRAM
+data, which controls the verbosity of the commands in
+.BR rc.boot . 
+.SS "Routine Booting"
+.LP
+Boot servers use information stored locally in
+Network Information Service
+(\s-1NIS\s0)
+acquiring it over the network, except that they get the time from the
+.I timehost
+system if it is up.
+The following describes the steps taken by boot clients:
+diskful clients, diskless clients, and network clients.
+.LP
+Boot clients first invoke
+.B rarp
+to acquire an
+.SM IP 
+address.  This is followed by a
+.SB ICMP
+.B Netmask
+request to obtain the
+.SM IP
+subnetwork mask, and then a
+.SB PNP_WHOAMI
+.SM RPC
+to determine the system's name,
+.SM NIS
+domain, and time zone.  
+Then the systems clock is set using the
+.SM RFC
+868 time service.
+If
+.SB PNP_WHOAMI
+fails, a 
+.SB PNP_SETUP
+sequence is followed by set up of 
+.B /etc/passwd
+and other files.
+.SH OPTIONS
+.TP
+.B \-e
+Check shell environment variables.
+This option is specified during routine boot.  
+.SB HOSTNAME
+and 
+.SB DOMAINNAME
+are used to determine if the system
+is an
+.SM NIS
+server using local 
+.SM NIS
+maps. Otherwise, if 
+.SB NETWORKED 
+is
+.BR \s-1YES\s0 , 
+.B netconfig
+probes the network for network configuration. 
+.SB MUST_SETUP
+requires writing
+.B /etc/passwd
+and other files for setup in restricted network environments.
+.TP
+.B \-n
+Used in conjunction with 
+.RB ` \-e ',
+this does not probe the
+network for anything but just sets the hostname and domainname
+of the system from the environment variables
+.SB HOSTNAME
+and
+.SB DOMAINNAME
+respectively.  Does not write the 
+.B /etc/net.conf 
+file.
+.SH FILES
+.PD 0
+.TP
+.B /var/yp/\fIdomainname\fP/netmasks
+.TP
+.B /var/yp/\fIdomainname\fP/hosts
+.PD
+.SH SEE ALSO
+.BR pnp (3R),
+.BR pnpboot (8C),
+.BR pnpd (8C),
+.BR rarpd (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

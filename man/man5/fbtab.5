@@ -1,0 +1,108 @@
+.\" @(#)fbtab.5 1.1 92/07/30 SMI; new for 4.1
+.TH FBTAB 5 "26 January 1990"
+.SH NAME
+fbtab \- framebuffer table
+.SH SYNOPSIS
+.B /etc/fbtab
+.SH DESCRIPTION
+.IX "fbtab" "" "\fLfbtab\fP \(em framebuffer table"
+.IX "framebuffer" "fbtab" "framebuffer" "\fLfbtab\fP \(em framebuffer table"
+.LP
+The
+.B /etc/fbtab
+file contains information that is used by
+.BR login (1),
+.BR getty (8)
+and the window system
+(for example,
+.BR sunview (1))
+to change the owner, group, and permissions of window
+system devices upon logging into or out of a console device. 
+By default,
+.I all
+lines in this file are commented out.
+That is, all window security is disabled.
+To enable window security, edit
+.BR /etc/fbtab ,
+log out, and log back in.
+You
+.I must
+edit this file before window security can be enabled.
+.LP
+The owner and group of the devices listed in
+.B /etc/fbtab
+are set to the owner and group of the console.
+The permissions are set as specified in
+.BR /etc/fbtab .
+As in the example below,
+.B 0600
+is the recommended permissions for normal security.
+.LP
+Fields are separated by
+.SM TAB
+and/or
+.SM SPACE
+characters.
+Blank lines and comments can appear anywhere in the file;
+comments are delimited by
+.RB ` # '
+and a
+.SM NEWLINE\s0.
+.LP
+The first field specifies the name of a console device
+(for example,
+.BR /dev/console ).
+The second field specifies the permissions to which the devices
+in the
+.I device_list
+field (third field) will be set.
+A
+.I device_list
+is a colon-separated list of device names
+(the full pathname is required).
+.LP
+Once the devices are owned by the user, their permissions
+and ownership can be changed using
+.BR chmod (1V)
+and
+.BR chown (8),
+as with any other user-owned file.
+.SH EXAMPLES
+.LP
+The following example entry in the
+.BR /etc/fbtab
+file enables normal window security:
+.IP
+.RS
+.ft B
+.nf
+/dev/console 0600	/dev/kbd:/dev/mouse
+/dev/console 0600	/dev/fb:/dev/bwone0:/dev/bwtwo0
+/dev/console 0600	/dev/cgone0:/dev/cgtwo0:/dev/cgthree0:/dev/cgfour0
+/dev/console 0600	/dev/cgsix0:/dev/cgeight0:/dev/cgnine0
+/dev/console 0600	/dev/gpone0a:/dev/gpone0b:/dev/gpone0c:/dev/gpone0d
+.fi
+.ft R
+.RE
+.LP
+This entry specifies that upon login to
+.BR /dev/console ,
+the owner, group and permissions of
+all supported devices
+will be set to the user's username, the user's group and
+.BR 0600 ,
+respectively.
+You need only specify the devices supported by your configuration.
+Upon logout, the owner and group of
+these devices will be reset to
+.B root 
+and
+.BR wheel .
+The permissions remain as set in the
+.B /etc/fbtab
+file.
+.SH SEE ALSO
+.BR login (1),
+.BR sunview (1),
+.BR sv_acquire (1),
+.BR getty (8)

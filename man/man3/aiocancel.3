@@ -1,0 +1,71 @@
+.\" @(#)aiocancel.3 1.1 92/07/30 SMI;
+.TH AIOCANCEL 3 "21 January 1990"
+.SH NAME
+aiocancel \- cancel an asynchronous operation
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/asynch.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int aiocancel(resultp)
+aio_result_t *resultp;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "aiocancel() cancel" "" "\fLaiocancel()\fR \(em cancel an asynchronous operation" ""
+.IX "asynchronous operation" "cancel"
+.IX "cancel" "asynchronous operation"
+.LP
+.B aiocancel(\|)
+cancels the asynchronous operation associated with
+the result buffer pointed to by
+.IR resultp .
+It may not be possible to immediately cancel an operation
+which is in progress and in this case,
+.B aiocancel(\|)
+will not wait to cancel it.
+.LP
+Upon successful completion,
+.B aiocancel(\|)
+will return 0 and the requested operation will be
+canceled. 
+The application will not receive the
+.SB SIGIO
+completion signal for an asynchronous operation which is
+successfully canceled.
+.SH RETURN VALUES
+.LP
+.B aiocancel(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B aiocancel(\|)
+will fail if any of the following are true:
+.TP 15
+.SM EACCES
+The parameter
+.I resultp
+does not correspond to an outstanding asynchronous operation.
+.IP
+The operation could not be cancelled.
+.TP
+.SM EFAULT
+The parameter
+.I resultp
+points to an address that is outside of the address space of
+the requesting process.
+.SH SEE ALSO
+.BR aioread (3),
+.BR aiowait (3)

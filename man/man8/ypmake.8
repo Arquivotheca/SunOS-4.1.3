@@ -1,0 +1,110 @@
+.\" @(#)ypmake.8 1.1 92/07/30 SMI
+.TH YPMAKE 8 "14 December 1987"
+.SH NAME
+ypmake \- rebuild NIS database
+.SH SYNOPSIS
+.B "cd /var/yp ; make"
+[
+.I map
+]
+.SH DESCRIPTION
+.IX  "ypmake command"  ""  "\fLypmake\fP \(em rebuild NIS database"
+.IX  "rebuild NIS database"  ""  "rebuild NIS database \(em \fLypmake\fP"
+.IX  "YP"  "rebuild database"  ""  "rebuild database \(em \fLypmake\fP"
+.IX  "NIS"  "rebuild database"  ""  "rebuild database \(em \fLypmake\fP"
+.LP
+The file called
+.B Makefile
+in
+.B /var/yp
+is used by
+.BR make (1)
+to build the 
+Network Information Service
+(\s-1NIS\s0)
+database.
+With no arguments,
+.B make
+creates
+.B dbm
+databases for any
+.SM NIS
+maps that are out-of-date,
+and then executes
+.BR yppush (8)
+to notify slave databases that there has been a change.
+.LP
+If you supply a
+.I map
+on the command line,
+.B make
+will update that map only.
+Typing
+.B "make passwd"
+will create and
+.B yppush
+the password database (assuming it is out of date).
+Likewise,
+.B "make hosts"
+and
+.B "make networks"
+will create and
+.B yppush
+the host and network files,
+.B /etc/hosts
+and
+.BR /etc/networks .
+.LP
+There are three special variables used by
+.BR make :
+.SM DIR\s0,
+which gives the directory of the source files;
+.SM NOPUSH\s0,
+which when non-null inhibits doing a
+.B yppush
+of the new database files;
+and
+.SM DOM\s0,
+used to construct a domain
+other than the master's default domain.
+The default for
+.SM DIR
+is
+.BR /etc ,
+and the default for
+.SM NOPUSH
+is the null string.
+.LP
+Refer to
+.BR ypfiles (5)
+and
+.BR ypserv (8)
+for an overview of the 
+.SM NIS
+service.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/yp
+.TP
+.B /etc/hosts
+.TP
+.B /etc/networks
+.PD
+.SH "SEE ALSO"
+.BR make (1),
+.BR ypfiles (5),
+.BR makedbm (8),
+.BR yppush (8),
+.BR ypserv (8)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

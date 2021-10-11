@@ -1,0 +1,196 @@
+.\" @(#)msgget.2 1.1 92/07/30 SMI; from S5R3
+.TH MSGGET 2 "21 January 1990"
+.SH NAME
+msgget \- get message queue
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msgget(key, msgflg)
+key_t key;
+int msgflg;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  msgget()  ""  \fLmsgget()\fR
+.IX  "message control operations"  msgget()  ""  \fLmsgget()\fR
+.B msgget(\|)
+returns the message queue identifier associated with
+.BR key .
+.LP
+A message queue identifier and associated message queue and data structure
+(see
+.BR intro (2))
+are created for
+.B key(\|)
+if one of the following is true:
+.TP 3
+\(bu
+.I key
+is equal to
+.SM
+.BR IPC_PRIVATE \s0.
+.TP
+\(bu
+.I key
+does not already have a message queue identifier associated with it, and
+.RI ( msgflg " & "
+.SM
+.BR IPC_CREAT \s0)
+is ``true''.
+.LP
+Upon creation, the data structure associated with the new message queue
+identifier is initialized as follows:
+.TP 3
+\(bu
+.BR msg_perm.cuid ", " msg_perm.uid ,
+.BR msg_perm.cgid ", and " msg_perm.gid
+are set equal to the effective user
+.SM ID
+and effective group
+.SM ID\s0,
+respectively, of the calling process.
+.TP
+\(bu
+The low-order 9 bits of
+.B msg_perm.mode
+are set equal to the low-order 9 bits of
+.IR msgflg .
+.TP
+\(bu
+.BR msg_qnum ", " msg_lspid ", " msg_lrpid ,
+.BR msg_stime ", and " msg_rtime "
+are set equal to 0.
+.TP
+\(bu
+.B msg_ctime
+is set equal to the current time.
+.TP
+\(bu
+.B msg_qbytes
+is set equal to the system-wide standard value of the maximum number of bytes
+allowed on a message queue.
+.LP
+A message queue identifier
+(msqid)
+is a unique positive integer created by a
+.BR msgget (2)
+system call.
+Each msqid has a message queue and a data structure associated with it.
+The data structure is referred to as
+.B msqid_ds(\|)
+and contains the following members:
+.LP
+.RS
+.ta 8n 28n
+.ft B
+.nf
+struct	ipc_perm msg_perm;	/\(** operation permission struct \(**/
+ushort	msg_qnum;	/\(** number of msgs on q \(**/
+ushort	msg_qbytes;	/\(** max number of bytes on q \(**/
+ushort	msg_lspid;	/\(** pid of last msgsnd operation \(**/
+ushort	msg_lrpid;	/\(** pid of last msgrcv operation \(**/
+time_t	msg_stime;	/\(** last msgsnd time \(**/
+time_t	msg_rtime;	/\(** last msgrcv time \(**/
+time_t	msg_ctime;	/\(** last change time \(**/
+		/\(** Times measured in secs since \(**/
+		/\(** 00:00:00 \s-1GMT\s+1, Jan. 1, 1970 \(**/
+.fi
+.ft
+.RE
+.LP
+.B msg_perm(\|)
+is an ipc_perm structure that
+specifies the message operation permission (see below).
+This structure includes the following members:
+.LP
+.RS
+.ta 8n 28n
+.ft B
+.nf
+ushort	cuid;	/\(** creator user id \(**/
+ushort	cgid;	/\(** creator group id \(**/
+ushort	uid;	/\(** user id \(**/
+ushort	gid;	/\(** group id \(**/
+ushort	mode;	/\(** r/w permission \(**/
+.LP
+.ft
+.fi
+.RE
+.B msg_qnum
+is the number of messages currently on the queue.
+.B msg_qbytes
+is the maximum number of bytes allowed on the queue.
+.B msg_lspid
+is the process ID of the last process that performed a
+.BR msgsnd " operation."
+.B msg_lrpid
+is the process ID of the last process that performed a
+.BR msgrcv " operation."
+.B msg_stime
+is the time of the last
+.I msgsnd
+operation,
+.B msg_rtime
+is the time of the last
+.I msgrcv
+operation, and
+.B msg_ctime
+is the time of the last
+.BR msgctl (2)
+operation that changed a member of the above structure.
+.SH RETURN VALUES
+.B msgget(\|)
+returns
+A non-negative message queue identifier
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+A message queue identifier exists for
+.BR key ,
+but operation permission (see
+.BR intro (2))
+as specified by the low-order 9 bits of
+.B msgflg
+would not be granted.
+.TP
+.SM EEXIST
+A message queue identifier exists for
+.B key(\|)
+but
+.RB "( (" msgflg " & "
+.SB IPC_CREAT\*S\s0\fR) & (\fBmsgflg\fR &
+.SB IPC_EXCL\*S\s0\fR))
+is ``true''.
+.TP
+.SM ENOENT
+A message queue identifier does not exist for
+.B key(\|)
+and
+.RB ( msgflg " & "
+\fB\s-1IPC_CREAT\s0\fR)
+is ``false''.
+.TP
+.SM ENOSPC
+A message queue identifier is to be created but
+the system-imposed limit on the maximum number of
+allowed message queue identifiers system wide
+would be exceeded.
+.SH SEE ALSO
+.BR intro (2),
+.BR msgctl (2),
+.BR msgop (2)

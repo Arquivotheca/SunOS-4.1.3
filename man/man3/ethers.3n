@@ -1,0 +1,144 @@
+.\" @(#)ethers.3n 1.1 92/07/30 SMI
+.TH ETHERS 3N "16 February 1988"
+.SH NAME
+ethers, ether_ntoa, ether_aton, ether_ntohost, ether_hostton, ether_line \- Ethernet address mapping operations
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/if_ether.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *
+ether_ntoa(e)
+struct ether_addr *e;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct ether_addr *ether_aton(s)
+char *s;
+.ft
+.fi
+.LP
+.nf
+.ft B
+ether_ntohost(hostname, e)
+char *hostname;
+struct ether_addr *e;
+.ft
+.fi
+.LP
+.nf
+.ft B
+ether_hostton(hostname, e)
+char *hostname;
+struct ether_addr *e;
+.ft
+.fi
+.LP
+.nf
+.ft B
+ether_line(l, e, hostname)
+char *l;
+struct ether_addr *e;
+char *hostname;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "Ethernet address to ASCII \(em \fLether_ntoa()\fR"
+.IX "ascii to ether" "" "ASCII to Ethernet address \(em \fLether_aton()\fR"
+.IX "Ethernet address to hostname \(em \fLether_ntohost()\fR"
+.IX "hostname to Ethernet address \(em \fLether_hostton()\fR"
+.IX "line to Ethernet address \(em \fLether_line()\fR"
+.IX "Ethernet address mapping"
+.LP
+These routines are useful for mapping 48 bit Ethernet numbers to their
+.SM ASCII
+representations or their corresponding host names, and vice versa.
+.LP
+The function
+.B ether_ntoa(\|)
+converts a 48 bit Ethernet number pointed to by
+.I e
+to its standard
+.SM ACSII
+representation; it returns a pointer to the
+.SM ASCII
+string.  The representation is of the form:
+.IR x : x : x :\c
+.IR x : x : x
+where
+.I x
+is a hexadecimal number between 0 and ff.
+The function
+.B ether_aton(\|)
+converts an
+.SM ASCII
+string in the standard representation back
+to a 48 bit Ethernet number;  the function returns
+.SM NULL
+if the string
+cannot be scanned successfully.
+.LP
+The function
+.B ether_ntohost(\|)
+maps an Ethernet number (pointed to by
+.IR e )
+to its associated hostname.  The string pointed to by
+.B hostname
+must be long enough to hold the hostname and a
+null
+character.  The function returns zero
+upon success and non-zero upon failure.
+Inversely, the function
+.B ether_hostton(\|)
+maps a hostname string to its corresponding Ethernet number;
+the function modifies the Ethernet number pointed to by
+.IR e .
+The function also returns zero upon success and non-zero upon failure.
+.LP
+The function
+.B ether_line(\|)
+scans a line (pointed to by
+.IR l )
+and sets the hostname and the Ethernet number (pointed to by
+.IR e ).
+The string pointed to by
+.B hostname
+must be long enough to hold the hostname and a
+null
+character.
+The function returns zero upon success and non-zero upon failure.
+The format of the scanned line is described by
+.BR ethers (5).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/ethers
+(or the 
+Network Information Service
+(\s-1NIS\s0)
+maps
+.B ethers.byaddr
+and
+.BR ethers.byname )
+.PD
+.SH "SEE ALSO"
+.BR ethers (5)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

@@ -1,0 +1,207 @@
+.\" @(#)getrlimit.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETRLIMIT 2 "21 January 1990"
+.SH NAME
+getrlimit, setrlimit \- control maximum system resource consumption
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+#include <sys/resource.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getrlimit(resource, rlp)
+int resource;
+struct rlimit *rlp;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setrlimit(resource, rlp)
+int resource;
+struct rlimit *rlp;
+.ft
+.fi
+.IX  getrlimit()  ""  \fLgetrlimit()\fP
+.IX  "resource control"  getrlimit()  ""  \fLgetrlimit()\fP
+.IX  setrlimit()  ""  \fLsetrlimit()\fP
+.IX  "resource control"  setrlimit()  ""  \fLsetrlimit()\fP
+.SH DESCRIPTION
+.LP
+Limits on the consumption of system resources by the current process
+and each process it creates may be obtained with the
+.B getrlimit(\|)
+call, and set with the
+.B setrlimit(\|)
+call.
+.LP
+The
+.I resource
+parameter is one of the following:
+.TP 20
+.SB RLIMIT_CPU
+the maximum amount of cpu time (in seconds) to be used by
+each process.
+.TP
+.SB RLIMIT_FSIZE
+the largest size, in bytes, of any single file that may be created.
+.TP
+.SB RLIMIT_DATA
+the maximum size, in bytes, of the data segment for a process;
+this defines how far a program may extend its break with the
+.B sbrk(\|)
+(see
+.BR brk (2))
+system call.
+.TP
+.SB RLIMIT_STACK
+the maximum size, in bytes, of the stack segment for a process;
+this defines how far a program's stack segment may be extended
+automatically by the system.
+.TP
+.SB RLIMIT_CORE
+the largest size, in bytes, of a
+.B core
+file that may be created.
+.TP
+.SB RLIMIT_RSS
+the maximum size, in bytes, to which a process's resident set size may
+grow.  This imposes a limit on the amount of physical memory
+to be given to a process; if memory is tight, the system will
+prefer to take memory from processes that are exceeding their
+declared resident set size.
+.TP
+.SB RLIMIT_NOFILE
+one more than the maximum value that the system may assign
+to a newly created descriptor.
+This limit constrains the number of descriptors
+that a process may create.
+.LP
+A resource limit is specified as a soft limit and a hard limit.
+When a soft limit is exceeded a process may receive a signal
+(for example, if the cpu time is exceeded), but it will be allowed
+to continue execution until it reaches the hard limit (or modifies
+its resource limit).  The
+.B rlimit
+structure is used to specify the hard and soft limits on a resource,
+.LP
+.nf
+.RS
+.DT
+.ft B
+struct rlimit {
+	int	rlim_cur;	/* current (soft) limit */
+	int	rlim_max;	/* hard limit */
+};
+.ft R
+.RE
+.fi
+.LP
+Only the super-user may raise the maximum limits.  Other users
+may only alter
+.B rlim_cur
+within the range from 0 to
+.B rlim_max
+or (irreversibly) lower
+.BR rlim_max .
+.LP
+An \*(lqinfinite\*(rq value for a limit is defined as
+.SB RLIM_INFINITY
+.BR  (0x7\&f\&f\&f\&f\&f\&f\&f).
+.LP
+Because this information is stored in the per-process information,
+this system call must be executed directly by the shell if it
+is to affect all future processes created by the shell;
+.B limit
+is thus a built-in command to
+.BR csh (1).
+.br
+.ne 5
+.LP
+The system refuses to extend the data or stack space when the limits
+would be exceeded in the normal way: a
+.B brk(\|)
+or
+.B sbrk(\|)
+call will fail if the data space limit is reached, or the process will be
+sent a 
+.SB SIGSEGV
+when the stack limit is reached
+which will kill the process unless
+.SB SIGSEGV
+is handled on a separate signal stack (since the stack cannot be
+extended, there is no way to send a signal!).
+.LP
+A file I/O operation that would create a file that is too large
+generates a signal
+.BR \s-1SIGXFSZ\s0 ;
+this normally terminates
+the process, but may be caught.
+When the soft
+.SM CPU
+time limit is exceeded, a signal
+.SB SIGXCPU
+is sent to the offending process.
+.SH RETURN VALUES
+.B getrlimit(\|)
+and
+.B setrlimit(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+The address specified by
+.I rlp
+was invalid.
+.TP
+.SM EINVAL
+An invalid
+.I resource
+was specified.
+.LP
+In addition to the above,
+.B setrlimit(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EINVAL
+The new
+.B rlim_cur
+exceeds the new
+.BR rlim_max .
+.TP
+.SM EPERM
+The limit specified would have
+raised the maximum limit value, and the caller was not the super-user.
+.SH SEE ALSO
+.BR csh (1),
+.BR sh (1),
+.BR brk (2),
+.BR getdtablesize (2),
+.BR quotactl (2)
+.SH BUGS
+.LP
+There should be
+.B limit
+and
+.B unlimit
+commands in
+.BR sh (1)
+as well as in
+.BR csh (1).

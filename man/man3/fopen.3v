@@ -1,0 +1,190 @@
+.\" @(#)fopen.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH FOPEN 3V  "21 January 1990"
+.SH NAME
+fopen, freopen, fdopen \- open a stream
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <stdio.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1FILE\s0 *fopen(filename, type)
+char *filename, *type;
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1FILE\s0 *freopen(filename, type, stream)
+char *filename, *type;
+\s-1FILE\s0 *stream;
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1FILE\s0 *fdopen(fd, type)
+int fd;
+char *type;
+.ft
+.fi
+.IX  "fopen()"  ""  "\fLfopen()\fP \(em open stream"
+.IX  stream  open  ""  "open \(em \fLfopen()\fP"
+.IX  "open stream \(em \fLfopen()\fP"
+.IX  "freopen()"  ""  "\fLfreopen()\fP \(em reopen stream"
+.IX  stream  reopen  ""  "reopen \(em \fLfreopen()\fP"
+.IX  "reopen stream \(em \fLfreopen()\fP"
+.IX  "fdopen()"  ""  "\fLfdopen()\fP \(em associate descriptor"
+.IX  stream  "associate descriptor \(em \fLfdopen()\fP"
+.SH DESCRIPTION
+.LP
+.B fopen(\|)
+opens the file named by
+.I filename
+and associates a stream with it.
+If the open succeeds,
+.B fopen(\|)
+returns a pointer to be used to identify the stream in subsequent operations.
+.LP
+.I filename
+points to a character string that contains
+the name of the file to be opened.
+.LP
+.I type
+is a character string having one of the following values:
+.RS
+.TP 10
+.B r
+open for reading
+.ns
+.TP
+.B w
+truncate or create for writing
+.ns
+.TP
+.B a
+append: open for writing at end of file, or create for writing
+.TP
+.B r+
+open for update (reading and writing)
+.ns
+.TP
+.B w+
+truncate or create for update
+.ns
+.TP
+.B a+
+append; open or create for update at
+.SM EOF
+.RE
+.LP
+.B freopen(\|)
+opens the file named by
+.I filename
+and associates the stream pointed to by
+.I stream
+with it.  The
+.I type
+argument is used just as in
+.BR fopen .
+The original stream is closed, regardless of whether the open
+ultimately succeeds.
+If the open succeeds,
+.B freopen(\|)
+returns the original value of
+.IR stream .
+.LP
+.B freopen(\|)
+is typically used to attach the preopened
+streams associated with
+.BR stdin ,
+.BR stdout ,
+and
+.B stderr
+to other files.
+.LP
+.B fdopen(\|)
+associates a stream with the file descriptor
+.IR fd .
+File descriptors are obtained from calls like
+.BR open (2V),
+.BR dup (2V),
+.BR creat (2V),
+or
+.BR pipe (2V),
+which open files but do not return streams.
+Streams are necessary input for many of the Section 3S library routines.
+The
+.I type
+of the stream must agree with the access permissions of the open file.
+.LP
+When a file is opened for update, both input and output may be
+done on the resulting stream.
+However, output may not be directly followed by input without an
+intervening
+.BR fseek (3S)
+or
+.BR rewind(\|) ,
+and input may not be directly followed by output without an
+intervening
+.BR fseek(\|) ,
+.BR rewind(\|) ,
+or an input operation which encounters
+.SM EOF\s0.
+.br
+.ne 10
+.SH SYSTEM V DESCRIPTION
+.LP
+When a file is opened for append (that is, when
+.I type
+is
+.B a
+or
+.BR a+ ),
+it is impossible to overwrite information
+already in the file.
+.B fseek(\|)
+may be used to reposition the file pointer to any position
+in the file, but when output is written
+to the file, the current file pointer is disregarded.
+All output is written at the end of the file and causes the file
+pointer to be repositioned at the end of the output.  If two separate
+processes open the same file for append, each process may write freely
+to the file without fear of destroying output being written by the
+other.  The output from the two processes will be intermixed in the
+file in the order in which it is written.
+.SH RETURN VALUES
+.LP
+On success,
+.BR fopen(\|) ,
+.BR freopen(\|) ,
+and
+.B fdopen(\|)
+return
+a pointer to
+.SB FILE
+which identifies the opened stream.
+On failure,
+they return
+.SM NULL\s0.
+.SH SEE ALSO
+.BR open (2V),
+.BR pipe (2V),
+.BR fclose (3V),
+.BR fseek (3S)
+.SH BUGS
+.LP
+In order to support the same number of open files that the system does,
+.B fopen(\|)
+must allocate additional memory for data structures using
+.B calloc(\|)
+after 64 files have been opened.
+This confuses some programs which use their own memory allocators.
+.\"An undocumented routine,
+.\".BR f_prealloc ,
+.\"may be called to force immediate allocation of all internal memory
+.\"except for buffers.

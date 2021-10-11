@@ -1,0 +1,98 @@
+.\" @(#)uucpd.8c 1.1 92/07/30 SMI
+.TH UUCPD 8C "12 June 1988"
+.SH NAME
+uucpd \- UUCP server
+.SH SYNOPSIS
+.B /usr/etc/in.uucpd
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I uucp
+software  installation  option.   Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "uucpd command"  ""  "\fLuucpd\fP \(em UUCP server"
+.IX  "UUCP" "server \(em \fLuucpd\fP"
+.IX  servers  uucpd  ""  "\fLuucpd\fP \(em UUCP server"
+.LP
+.B uucpd
+is the server for supporting
+.SM UUCP
+connections over networks.
+.LP
+.B uucpd
+is invoked by
+.BR inetd (8C)
+when a
+.SM UUCP
+connection is established (that is, a connection to the port indicated
+in the \*(lquucp\*(rq service specification; see
+.BR services (5)),
+and executes the following protocol:
+.TP
+1)
+The server prompts with
+.BR "login:" .
+The
+.BR uucico (8C)
+process at the other end must supply a username.
+.TP
+2)
+Unless the username refers to an account without a password, the server
+then prompts with
+.BR "Password:" .
+The
+.B uucico
+process at the other end must supply the password for that account.
+.LP
+If the username is not valid or is valid but refers to an account that does
+not have
+.B /usr/lib/uucp/uucico
+as its login shell, or if the password is not the correct password for that
+account, the connection is dropped.  Otherwise,
+.B uucico
+is run, with the user
+.SM ID\s0,
+group
+.SM ID\s0,
+group set, and home directory for that account, with the environment variables
+.SB USER
+and
+.SB LOGNAME
+set to the specified username,
+and with a
+.B \-u
+flag specifying the username.
+Entries are made in
+.B /var/adm/wtmp
+and
+.B /var/adm/lastlog
+for the username.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/wtmp	
+accounting
+.TP
+.B /var/adm/lastlog
+time of last login
+.SH SEE ALSO
+.BR services (5),
+.BR inetd (8C),
+.BR uucico (8C)
+.SH DIAGNOSTICS
+.LP
+All diagnostic messages are returned on the connection, after which the
+connection is closed.
+.TP
+.B user read
+An error occurred while reading the username.
+.TP
+.B passwd read
+An error occurred while reading the password.
+.TP
+.B Login incorect.
+The username is invalid or refers to an account with a login shell other than
+.BR /usr/lib/uucp/uucico ,
+or the password is not the correct password for the account.

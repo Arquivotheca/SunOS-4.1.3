@@ -1,0 +1,159 @@
+.\" @(#)file.1 1.1 92/07/30 SMI; from S5r3
+.TH FILE 1 "2 October 1989"
+.SH NAME
+file \- determine the type of a file by examining its contents
+.SH SYNOPSIS
+.B file
+[ 
+.B \-f 
+.I ffile 
+]
+[ 
+.B \-cL 
+]
+[ 
+.B \-m
+.I mfile 
+]
+.IR filename .\|.\|.
+.SH DESCRIPTION
+.IX "file command"  ""  "\fLfile\fP \(em get file type"
+.IX files  "determine type of"
+.B file
+performs a series of tests on each 
+.I filename
+in an attempt to determine
+what it contains.  If the contents of a file appear to be 
+.SM ASCII 
+text,
+.B file
+examines the first 512 bytes and tries to guess its language.
+.LP
+.B file
+uses the file
+.B /etc/magic
+to identify files that have some sort of
+.IR "magic number" ,
+that is, any file containing a numeric or
+string constant that indicates its type.
+.SH OPTIONS
+.TP
+.B \-c
+Check for format errors in the magic number file.
+For reasons of efficiency, this validation
+is not normally carried out.
+No file type-checking is done under
+.BR \-c .
+.TP
+.BI \-f " ffile"
+Get a list of filenames to identify from 
+.I ffile.
+.TP
+.B \-L
+If a file is a symbolic link, test the file the link references
+rather than the link itself.
+.TP
+.BI \-m " mfile"
+Use
+.I mfile 
+as the name of an alternate magic number file.
+.SH EXAMPLE
+.LP
+This example illustrates the use of 
+.B file
+on all the files in a
+specific user's directory:
+.RS
+.sp .5
+.nf
+.ft B
+example% pwd
+/usr/blort/misc
+example% file  *
+.ft R
+.fi
+.TP 20
+.B code:
+.B mc68020 demand paged executable
+.TP
+.B code.c:	
+.B c program text
+.TP
+.B counts:
+.B ascii text
+.TP
+.B doc:
+.B roff, nroff , or eqn
+.B input text
+.TP
+.B empty.file:
+.B empty
+.TP
+.B libz:
+.B archive random library
+.TP
+.B memos:
+.B directory
+.TP
+.B project:
+.B symbolic link to
+.B /usr/project
+.TP
+.B script:
+.B executable shell script
+.TP
+.B titles:
+.B ascii text
+.TP
+.B s5.stuff:
+.B cpio archive
+.TP
+.B example%
+.RE
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR file .
+On entry to
+.BR file ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/magic
+.PD
+.SH SEE ALSO
+.BR locale (5),
+.BR magic (5)
+.SH BUGS
+.LP
+.B file
+often makes mistakes.  In particular, it often suggests that command
+files are C programs.
+.LP
+Does not recognize Pascal or 
+.SM LISP.

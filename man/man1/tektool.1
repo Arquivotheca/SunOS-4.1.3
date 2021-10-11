@@ -1,0 +1,264 @@
+.\" @(#)tektool.1 1.1 92/07/30 SMI;
+.TH TEKTOOL 1 "15 June 1988"
+.SH NAME
+tektool \- SunView Tektronix 4014 terminal-emulator window
+.SH SYNOPSIS
+.LP
+.B tektool
+[
+.B \-s\c
+[
+.B lcdeg\c
+[
+.B ce
+]\c
+.B m\c
+[
+.B 12
+] ] [
+.B \-\c
+[
+.B cr
+]
+.I command-line
+] [
+.B \-f
+.I fontdir
+]
+.IX  "tektool command"  ""  "\fLtektool\fP \(em emulate Tektronix 4014"
+.IX  "emulate Tektronix 4014"  ""  "emulate Tektronix 4014 \(em \fLtektool\fP"
+.IX  "Tektronix 4014, emulate \(em \fLtektool\fP"
+.LP
+.SH AVAILABILITY
+.LP
+This command is available with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.LP
+.B tektool
+emulates a Tektronix 4014 terminal with the enhanced graphics
+module.
+It does this in much the same way as shelltool (see
+.BR shelltool (1))
+emulates a regular glass tty.  When
+.B tektool
+is invoked, a command (usually a shell) is started up,
+its output and input are connected to the emulator, and a new
+window is formed.
+The default window is the entire screen.
+When the emulator is running, keys
+.SM TF\s0(1)
+through
+.SM TF\s0(3),
+(usually function keys F1-F3 (see
+.BR kbd (4S))
+have special meaning.
+.TP 15
+.SM TF\s0 (1)
+Unshifted, this is the 4014
+.SB PAGE
+button.
+Shifted, this is the 4014
+.SB RESET
+button.
+.TP
+.SM TF\s0 (2)
+Copy screen.
+The raster image
+.RB  ( <rasterfile.h> )
+of the 4014 screen is piped
+to a command found in the
+.SB TEKCOPY
+environment variable.
+If
+.SB TEKCOPY
+is not found in the environment,
+.RB ` "lpr \-v" '
+is used.
+The copy button is unaffected by window manipulations, and will transmit
+the contents of the 4014 screen only.
+.TP
+.SM TF\s0 (3)
+Release page full condition.
+.LP
+These functions are also available through the tool menu.
+When in graphics input (\s-1GIN\s0) mode
+and the 4014 crosshairs are visible,
+the left hand mouse button may be used as
+the space bar to terminate
+.SM GIN
+mode.
+.SH OPTIONS
+.TP 15
+.B \-s
+Specifies the Tektronix 4014 strap options with the following modifiers:
+.IP
+.RS
+.PD 0
+.TP 4
+l
+Received
+.SM LINEFEED 
+characters also generate 
+.SM RETURN 
+characters.
+.TP
+c
+Received 
+.SM RETURN 
+characters also generate 
+.SM LINEFEED 
+characters.
+.TP
+d
+Received
+.SM DELETE
+characters are used as low order Y axis (
+.SM LOY
+) addresses.
+.TP
+e
+Echo keyboard input.
+.TP
+g
+Graphic input mode 
+(\s-1GIN\s0) terminator
+specification. If this strap is followed by a
+.BR c ,
+.SM GIN
+mode data is terminated by a 
+.SM RETURN 
+character.
+If it is followed by a
+.BR e ,
+.SM GIN
+mode data is terminated by a
+.SM RETURN 
+character followed by an
+.SM EOT
+character.  If this strap is not present, no
+characters are sent after
+.SM GIN
+mode data.
+.TP
+m
+Page full control specification.
+If this strap is followed by a
+.BR 1 ,
+.B tektool
+will stop accepting tty input when a 
+.SM LINEFEED
+character is done past the last line in margin 1.
+This is the 4014 page full condition.
+The page full condition it released by a
+.SB PAGE
+or a
+.SB RELEASE
+or any 
+.SM ASCII 
+keyboard input.
+If this strap is followed by a
+.BR 2 ,
+the page full condition happens at
+the end of margin 2.
+If this strap is not present, the page full condition never occurs.
+.PD
+.IP
+If the
+.B \-s
+option is not given, the environment is searched for the
+.SB TEKSTRAPS
+variable which provides the modifiers.
+The straps may also be set by the property sheet available by selecting the
+.SB PROPS
+menu item.
+If no straps are specified the
+.B d
+strap is assumed.
+.RE
+.TP 15
+.BI \-c " command-line"
+Take terminal emulator input from a shell which in turn runs the
+.I command-line
+following the
+.B \-c
+option.
+.br
+.ne 10
+.TP
+.BI \-f " fontdir"
+Look for fonts in the directory specified by
+.IR fontdir .
+The fonts must be called
+.BR tekfont 0
+through
+.BR tekfont 3.
+Fonts must be in
+.BR vfont (5)
+format.  If this option is not given,
+the font directory is obtained from the
+.SM TEKFONTS
+environment variable (if it exists).
+If no font directory is specified,
+.B /usr/lib/fonts/tekfonts
+is used.
+.TP
+.BI \-r " command-line"
+Run
+.I command-line
+to provide input to the terminal emulator.
+This must be the last option, since the remainder of the arguments are used
+by the command.
+.br
+.ne 8
+.br
+.ne 4
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/fonts/tekfonts/tekfont[0-3]
+.PD
+.SH "SEE ALSO"
+.LP
+.BR shelltool (1),
+.BR sunview (1),
+.BR kbd (4S),
+.BR vfont (5)
+.LP
+.TX INSTALL
+.\".br
+.\"Tektronix 4014 and 4014-1 Computer Display Terminal User's Manual (070-1647-00)
+.SH BUGS
+.LP
+Special point plot mode is not supported.
+.LP
+Z-axis stuff, except for defocusing, is not supported.
+.LP
+Defocused alpha characters are not supported.
+.SH DIAGNOSTICS
+.LP
+.TP 20
+.B copy command failed
+The copy command in the
+.SB TEKCOPY
+environment variable or in the property sheet could not be executed.
+.LP
+.SH WARNINGS
+.LP
+Like all 4014 emulators, this does not duplicate every nuance of the 4014.
+For instance, certain programs redraw stuff already on the screen in
+order to highlight things with the storage flash.
+This will not work here.
+Also, even though the emulator supports the full 4096 point addressing of the
+4014, it cannot display this on the screen.
+All points will be rounded to the nearest available pixel.
+This may cause some funny effects.
+.LP
+The
+.B tektool
+window may be treated just like other windows;
+it can be overlaid, moved, reshaped etc.
+However, when the window is reshaped, the contents will not scale.

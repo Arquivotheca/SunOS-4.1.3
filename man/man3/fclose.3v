@@ -1,0 +1,72 @@
+.\" @(#)fclose.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH FCLOSE 3V  "22 January 1990"
+.SH NAME
+fclose, fflush \- close or flush a stream
+.SH SYNOPSIS
+.nf
+.B #include <stdio.h>
+.LP
+.B fclose(stream)
+.B \s-1FILE\s0 *stream;
+.LP
+.B fflush(stream)
+.B \s-1FILE\s0 *stream;
+.fi
+.SH DESCRIPTION
+.LP
+.IX  "fclose()"  ""  "\fLfclose()\fP \(em close stream"
+.IX  "close stream"  ""  "close stream \(em \fLfclose()\fP"
+.IX  stream  "close \(em \fLfclose()\fP"
+.IX  "fflush()"  ""  "\fLfflush()\fP \(em flush stream"
+.IX  "flush stream"  ""  "flush stream \(em \fLfflush()\fP"
+.IX  stream  "flush \(em \fLfflush()\fP"
+.LP
+.B fclose(\|)
+writes out any buffered data for the named
+stream, and closes the named stream.
+Buffers allocated by the standard input/output system
+are freed.
+.LP
+.B fclose(\|)
+is performed automatically for all open files upon
+calling
+.BR exit (3).
+.LP
+.B fflush(\|)
+writes any unwritten data for an output stream or an update stream
+in which the most recent operation was not input to be delivered to
+the host environment to the file; otherwise it is
+ignored.
+The named stream remains open.
+.SH SYSTEM V DESCRIPTION
+When
+.B fflush(\|)
+is called on a  stream opened for reading,
+any unread data buffered in the stream is invalidated.
+When
+.B fflush(\|)
+is called on a stream opened for reading,
+if the file is not already at
+.SM EOF\s0,
+and the file is one capable of seeking, the file offset of the underlying
+open file description is adjusted so the next operation on the open file
+description deals with the byte after the last byte read from or written
+to the stream being flushed.
+.SH RETURN VALUES
+.LP
+.B fclose(\|)
+and
+.B fflush(\|)
+return:
+.TP
+0
+on success.
+.TP
+.SM EOF
+if any error (such as trying to write to a file that
+has not been opened for writing) was detected.
+.SH SEE ALSO
+.BR close (2V),
+.BR exit (3),
+.BR fopen (3V),
+.BR setbuf (3V)

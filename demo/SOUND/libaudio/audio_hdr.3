@@ -1,0 +1,156 @@
+.\" @(#)audio_hdr.3 1.1 92/07/30 SMI
+.ds Dc 7/30/92
+.TH AUDIO_HDR 3 "\*(Dc" "" "Audio Library"
+.SH NAME
+audio_hdr
+\- audio header structure
+.SH DISCLAIMER
+.LP
+The manual pages, header files, and object library associated with
+.B /usr/demo/SOUND/libaudio.a
+are furnished on an AS IS basis as a preliminary interface to several
+useful audio data-processing capabilities.  A future release of the
+operating system may redefine the syntax or semantics of some of the
+functions described herein.
+.SH SYNOPSIS
+.nf
+.B #include <multimedia/audio_hdr.h>
+.fi
+.SH OVERVIEW
+.LP
+Digital audio data represents a quantized approximation of an analog
+audio signal, which itself is directly proportional to the rapid changes
+of air pressure that we perceive as sound.
+Pulse Code Modulation (\s-1PCM\s0) refers to the sampling, at discrete
+intervals, of an audio waveform to produce a (usually linear) quantization.
+In order to achieve the best approximation of a signal,
+the highest possible sampling frequency and precision should be used.
+However, it is often impractical to process and store the huge amounts
+of data that such a practice yields.
+.LP
+In lowering the overall data rate, a number of compromises must be
+made.  To begin with, the sampling frequency is generally reduced to a level
+commensurate with the quality of the audio signal.  For speech and telephony,
+8, 12, and 16 kHz sampling rates are typically used.  For high-fidelity
+audio, 44.1 and 48 kHz sampling rates are predominant.
+.LP
+Sampling precision may also be reduced to yield lower data rates.
+Various encoding schemes further compress the signal.  Some of these,
+such as \(*m-law and A-law companding, map the linear
+.SM PCM
+domain into a pseudo-logarithmic domain.  Like
+.SM PCM
+encoding, these schemes maintain a one-to-one relationship between
+individual samples and waveform quantizations.
+Other encoding schemes, such as Differential and Adaptive Differential
+.SM PCM\s0,
+convolve several samples into a single
+.I sound unit
+that must be treated as an atomic entity.
+.LP
+Multiple channels of audio data may be combined into a single audio stream
+by interleaving individual sound units from each channel.  For each
+quantized period of time, the set consisting of one sound unit from each
+audio channel is known as a
+.IR "sample frame" .
+.SH AUDIO HEADER
+.LP
+For programming purposes, the encoding of audio data is described by an in-core
+.B Audio_hdr
+structure.  This audio header is defined in
+.B <multimedia/audio_hdr.h>
+as follows:
+.RS
+.nf
+.ft B
+typedef struct {
+	unsigned	sample_rate;		/* samples per second */
+	unsigned	samples_per_unit;	/* samples per unit */
+	unsigned	bytes_per_unit;		/* bytes per sample unit */
+	unsigned	channels;		/* # of interleaved channels */
+	unsigned	encoding;		/* data encoding format */
+	unsigned	data_size;		/* length of data (advisory) */
+} Audio_hdr;
+.ft P
+.fi
+.RE
+.LP
+The
+.I sample_rate
+field is an integer representing the sampling frequency, in samples per second,
+of the audio data.
+.LP
+The
+.I samples_per_unit
+and
+.I bytes_per_unit
+fields describe an individual sound unit.  For
+.SM PCM
+and related encodings, the
+.I samples_per_unit
+field is 1, and
+.I bytes_per_unit
+gives the precision.  For encodings that group several samples together, 
+.I bytes_per_unit
+reflects the size of an atomic unit of audio data.
+.LP
+The
+.I channels
+field describes the number of interleaved audio channels.  The quantity
+.RS
+.ft B
+channels \(** bytes_per_unit
+.ft P
+.RE
+gives the size, in bytes, of each sample frame.
+.LP
+These four values are used to compute the byte offset given a
+particular time, and vice versa.  Specifically:
+.RS
+.ft B
+seconds = offset / C
+.br
+offset = seconds \(** C
+.ft P
+.RE
+where:
+.RS
+.ft B
+C = (channels \(** bytes_per_unit \(** sample_rate) / samples_per_unit
+.ft P
+.RE
+.LP
+The
+.I encoding
+field enumerates the specific data encoding.  The following values are defined:
+.TP 35
+.SB AUDIO_ENCODING_ULAW
+ISDN \(*m-law companding
+.TP
+.SB AUDIO_ENCODING_ALAW
+ISDN A-law companding
+.TP
+.SB AUDIO_ENCODING_LINEAR
+linear PCM 2's-complement integer (0-center)
+.TP
+.SB AUDIO_ENCODING_FLOAT
+linear IEEE floating-point (\(mi1. \(<= x \(<= \(pl1.)
+.LP
+Note that floating-point data is normalized to \(+-1.
+Many signal-processing algorithms are simplified by such normalization
+since the result of the multiplication of two signals is guaranteed to
+lie within the acceptable range.  Thus, bounds-checking need only be performed
+when converting to or from integer representations.
+.LP
+The
+.I data_size
+field contains the number of bytes in the data stream.  This value is
+advisory only, as this quantity is not always known in advance.  In such
+cases, the special value
+.SB AUDIO_UNKNOWN_SIZE
+should be used.
+.SH SEE ALSO
+.BR audio_convert (3),
+.BR audio_filehdr (3),
+.BR audio_misc (3),
+.BR audio_ulaw2linear (3).

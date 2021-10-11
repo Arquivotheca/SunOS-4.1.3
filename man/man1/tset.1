@@ -1,0 +1,724 @@
+.\" @(#)tset.1 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"-m in options
+.TH TSET 1 "18 December 1989"
+.SH NAME
+tset, reset  \- establish or restore terminal characteristics
+.SH SYNOPSIS
+.B tset
+[
+.B \-InQrsS
+] [
+.BI \-e c
+] [
+.BI \-k c
+] [
+.B \-m
+.RI [ port "\-ID" 
+.if n .ti +0.5i 
+[
+.IR baudrate "] : " type
+.RI "] .\|.\|. ] [" type ]
+.LP
+.B reset
+[
+.B \-
+] [
+.BI \-e c
+] [
+.B \-I
+] [
+.BI \-k c
+]
+[
+.B \-n
+] 
+.if n .ti +0.5i
+[
+.B \-Q
+] [
+.B \-r
+] [
+.B \-s
+] [
+.B \-S
+]
+.if t .ti +0.5i
+.B \-m
+[
+.I indent
+]
+.if n .ti +0.5i
+[
+.I test
+.I baudrate
+]:
+.I type
+] .\|.\|. [
+.I type
+]
+.SH DESCRIPTION
+.IX  "reset command"  ""  "\fLreset\fP \(em reset terminal bits"
+.IX  "reset terminal bits"  ""  "reset terminal bits \(em \fLreset\fP"
+.IX  terminal  "reset bits"  ""  "reset bits \(em \fLreset\fP"
+.IX  "tset command"  ""  "\fLtset\fP \(em set terminal characteristics"
+.IX  set "terminal characteristics \(em \fLtset\fP"
+.IX  terminal  "set characteristics"  ""  "set characteristics \(em \fLtset\fP"
+.IX  "login environment"  tset  ""  "\fLtset\fP \(em set terminal characteristics"
+.IX  environment  tset  ""  "\fLtset\fP \(em set terminal characteristics for"
+.IX  "tty, set characteristics \(em \fLtset\fP"
+.LP
+.B tset
+sets up your terminal, typically  when you first log in.
+It does terminal dependent processing such as setting
+erase and kill characters, setting or resetting delays,
+sending any sequences needed to properly initialized the terminal,
+and the like.
+.B tset
+first determines the
+.I type
+of terminal involved,
+and then does necessary initializations and mode settings.
+The type of terminal attached to each
+port is specified in the
+.B /etc/ttytab
+database.  Type names for terminals may be found in
+the
+.BR termcap (5)
+database.
+If a port is not wired permanently to a
+specific terminal (not hardwired)
+it is given an appropriate generic identifier such as
+.BR dialup .
+.LP
+.B reset
+clears the terminal settings by turning off 
+.SM CBREAK
+and 
+.SM RAW
+modes, output delays and parity checking, turns on
+.SM NEWLINE
+translation, echo and
+.SM TAB
+expansion, and restores undefined special characters
+to their default state.   It then sets the modes as usual, based on
+the terminal type (which will probably override some of the above).
+(See
+.BR stty (1V)
+for more information.) All arguments to
+.B tset
+may be used with
+.BR reset .
+.B reset
+also uses the
+.B rs=
+and
+.B rf=
+(reset string and file)
+instead of the initialization string and file from
+.BR /etc/termcap .
+This is useful after a program dies and leaves the terminal in a funny
+state.  Often in this situation,
+characters will not echo as you type them.
+You may have to type
+.RB ` \s-1LINEFEED\s0\|reset\|\s-1LINEFEED\s0 '
+since
+.RB ` \s-1RETURN\s0 '
+may not work.
+.LP
+When no arguments are specified,
+.B tset
+reads the terminal type from the
+.B
+.SM TERM
+environment variable
+and re-initializes the terminal, and
+performs initialization of mode, environment and other options at login
+time to determine the terminal type and set up terminal modes.
+.LP
+When used in a startup script
+.RB ( \&.profile
+for
+.BR sh (1)
+users or
+.B \&.login
+for
+.BR csh (1)
+users) it is desirable to give information about the type of terminal
+you will usually use on ports that are not hardwired.
+These ports are identified in
+.B /etc/ttyab
+as
+.B dialup
+or
+.BR plugboard ,
+etc.
+.\".BR arpanet ,
+.\"etc.
+.\"To specify what terminal type you usually use on these ports, the
+.\".B \-m
+.\" (map) option flag is followed by the appropriate port type identifier,
+.\"an optional baud rate specification, and the terminal type.
+.\"(The effect is to \*(lqmap\*(rq from some conditions to a terminal type,
+.\"that is, to tell
+.\".I tset
+.\"\*(lqIf I'm on this kind of port, guess that I'm on that kind of terminal\*(rq.)
+.\"If more than one mapping is specified, the first applicable mapping prevails.
+.\"A missing port type identifier matches all identifiers.
+.\" from comments by Bill Joy
+Any of the alternate generic names given in
+.B /etc/termcap
+may be used for the identifier.
+Refer to the
+.B \-m
+option under
+\s-1OPTIONS\s0
+for more information.
+.\".LP
+.\"A 
+.\".I baudrate
+.\"is specified as with
+.\".IR stty ,
+.\"and is compared with the
+.\"speed of the diagnostic output (which should be the control terminal).
+.\"The 
+.\".I test
+.\"portion of the optional
+.\".I baudrate
+.\"specifier may be any
+.\"combination of:
+.\".BR > ,
+.\".BR @ ,
+.\".BR < ,
+.\"and
+.\".BR ! ;
+.\".B @
+.\"means \*(lqat\*(rq and
+.\".B !
+.\"inverts the sense of the test.  To avoid problems with metacharacters, it
+.\"is best to place the entire argument to
+.\".B \-m
+.\"within single-quote (') characters; users of
+.\".I csh
+.\"must also put a \*(lq\e\*(rq before any \*(lq!\*(rq used here.
+.\".LP
+.\".KS
+.\"Thus, the command
+.\".IP
+.\".B
+.\"tset \-m \'dialup>300:adm3a\' -m dialup:dw2 -m \'plugboard:?adm3a\'
+.\".KE
+.\".LP
+.\"sets the terminal type to
+.\".B adm3a
+.\"if the port in use is a dialup at a speed greater than 300 baud; to a
+.\".B dw2
+.\"if the port is (otherwise) a dialup (that is, at 300 baud or less).
+.\"(NOTE: some of the examples given here appear to take up more than
+.\"one line, for text processing reasons.  When you type in real
+.\".I tset
+.\".\"commands, you must enter them entirely on one line.)
+.\".LP
+.\"If the
+.\".I type
+.\"finally determined by
+.\".I tset
+.\"begins with a question mark,
+.\"the user is asked if he really wants that type.
+.\"A null response means to use that type;
+.\"otherwise, another type can be entered which will be used instead.
+.\"Thus, in the above case, the user is queried on a plugboard port
+.\"as to whether she is actually using an
+.\".BR adm3a .
+.\".LP
+If no mapping applies and a final
+.I type
+option, not preceded by a
+.BR \-m ,
+is given on the command line then that type is used;
+otherwise the type found in the
+.B /etc/ttytab
+database is used as the terminal type.
+This should always be the case for hardwired ports.
+.LP
+It is usually desirable to return the
+terminal type, as finally determined by
+.BR tset ,
+and information about the terminal's capabilities,
+to a shell's environment.  This can be done using the
+.BR \- ,
+.BR \-s ,
+or
+.B \-S
+options.  (Refer to
+\s-1OPTIONS\s0
+for more information.)
+.LP
+For the Bourne shell, put this command in your
+.B .profile
+file:
+.IP
+.B eval \`tset \-s
+.IB options... \`
+.LP
+or using the C shell, put this command in your
+.B .login
+file:
+.IP
+.B eval \`tset \-s
+.IB options... \`
+.LP
+With the C shell, it is also convenient to make an alias in your
+.B .cshrc
+file:
+.IP
+.B alias tset \'eval \`tset \-s \e!*\`\'
+.LP
+This also allows the command:
+.IP
+.B tset 2621
+.LP
+to be invoked at any time to set the terminal and environment.
+.I Note to Bourne Shell users:
+It is
+.I not
+possible to get this aliasing effect with a shell script,
+because shell scripts cannot set the environment of their parent.
+If a process could set its parent's environment,
+none of this nonsense would be necessary in the first place.
+.LP
+Once the terminal type is known,
+.B tset
+sets the terminal driver mode.
+This normally involves sending an initialization sequence to the
+terminal, setting the single character erase (and optionally
+the line-kill (full line erase)) characters,
+and setting special character delays.
+.SM TAB
+and
+.SM NEWLINE
+expansion are turned off during transmission of
+the terminal initialization sequence.
+.LP
+On terminals that can backspace but not overstrike (such as a
+\s-1CRT\s0),
+and when the erase character is
+.RB ` # ',
+the erase character is changed as if
+.B -e
+had been used.
+.SH OPTIONS
+.TP
+.B \-
+The name of the terminal finally decided
+upon is output on the standard output.
+This is intended to be captured by the shell and placed in the
+.B
+.SM TERM
+environment variable.
+.TP
+.BI \-e c
+Set the erase character to be the named character
+.I c
+on all terminals.
+Default is the backspace key on the keyboard, usually
+.BR ^H " (\s-1CTRL\s0-H)."
+The character
+.I c
+can either be typed directly, or entered using
+the circumflex-character notation used here.
+.TP
+.BI \-i c
+Set the interrupt character to be the named character
+.I c
+on all terminals.
+Default is
+.BR ^C " (\s-1CTRL\s0-C)."
+The character
+.I c
+can either be typed directly, or entered using
+the circumflex-character notation used here.
+.TP
+.B \-I
+Suppress transmitting terminal-initialization strings.
+.TP
+.BI \-k c
+Set the line kill character to be the named character
+.I c
+on all terminals.
+Default is
+.BR ^U " (\s-1CTRL\s0-U)."
+The kill character is left alone if
+.B \-k
+is not specified.
+Control characters can be specified by prefixing the alphabetical
+character with a circumflex (as in \s-1CTRL\s0-U)
+instead of entering the
+actual control key itself.  This allows you to specify control keys
+that are currently assigned.
+.TP
+.B \-n
+.\"On systems with the Berkeley 4BSD tty driver,
+Specify that the new tty driver modes should be initialized for this
+terminal.  Probably useless since
+.B stty new
+is the default.
+.\"For a \s-2CRT\s0,
+.\"the CRTERASE and CRTKILL modes are set only if the baud rate is 1200 or greater.
+.TP
+.B \-Q
+Suppress printing the
+.RB ` "Erase set to" '
+and
+.RB ` "Kill set to" '
+messages.
+.TP
+.B \-r
+In addition to other actions, reports the terminal type.
+.TP
+.B \-s
+Output commands to set and export
+.B
+.SM TERM
+and
+.B
+.SM TERMCAP\s0\fR.
+This can be used with
+.RS 
+.RS
+.nf
+.ft B
+set noglob
+eval \`tset \-s .\|.\|.\`
+unset noglob
+.ft R
+.fi
+.RE
+.RE
+.IP
+to bring the terminal information into the environment.
+Doing so makes programs such as
+.BR vi (1)
+start up faster.
+If the
+.B
+.SM SHELL
+environment variable ends with
+.BR csh ,
+C shell commands are output, otherwise Bourne
+shell commands are output.
+.br
+.ne 8
+.TP
+.B \-S
+.ne 7
+Similar to the
+.B \-s
+option, but produces two strings containing
+suitable values for the (environment) variables
+.B
+.SM TERM
+and
+.B
+.SM TERMCAP\s0\fR,
+respectively, and can be used as follows:
+.RS 
+.RS
+.nf
+.ft B
+set noglob
+set t=(\`tset \-S .\|.\|.\`)
+setenv \s-1TERM\s0 $t[1]
+setenv \s-1TERMCAP\s0 "$t[2]"
+unset t
+unset noglob
+.ft R
+.RE
+.RE
+.fi
+.br
+.ne 4
+.IP
+Since
+.B \-s
+loads these values, its use is preferred.  If the
+.B
+.SM SHELL
+environment variable does not end with
+.BR csh ,
+.B \-S
+produces the same Bourne shell commands that
+.B \-s
+does.
+.br
+.ne 11
+.TP
+\fB\-m\fR [\fIport\fR-ID[\fIbaudrate\fR]\fB:\fItype\fR] .\|.\|.
+Specify (map) a terminal type when connected to a generic port
+(such as
+.I dialup
+or
+.IR plugboard )
+identified by
+.IR port-ID.
+The
+.I baudrate
+argument can be used to
+check the baudrate of the port and set the terminal type
+accordingly.  The target rate is prefixed
+by any combination of the following operators
+to specify the conditions under which the mapping is made:
+.RS
+.RS
+.TP
+.B >
+Greater than
+.TP
+.B @
+Equals or ``at''
+.TP
+.B <
+Less than
+.TP
+.B !
+It is not the case that (negates the above operators)
+.TP
+.B ?
+Prompt for the terminal type.  If no response is given, then
+.I type
+is selected by
+default.
+.RE
+.RE
+.IP
+In the following example, the terminal type is set to
+.B adm3a
+if the port
+is a dialup with a speed of greater than 300 or to
+.I dw2
+if the port is
+a dialup at 300 baud or less.
+In the third case, the question mark preceding
+the terminal type indicates that the user is to verify the
+type desired.  A
+null
+response indicates that the
+named type is correct.
+Otherwise, the user's response is taken to be the type desired.
+.RS
+.IP
+.ft B
+tset \-m 'dialup>300:adm3a' \-m 'dialup:dw2' \-m 'plugboard:?adm3a'
+.ft R
+.LP
+To prevent interpretation as metacharacters, the entire argument to
+.B \-m
+should be enclosed in single quotes.   When using the
+C shell,
+exclamation points should be preceded by a backslash (\e).
+.RE
+.SH EXAMPLES
+.LP
+These examples all use the 
+.RB ` \- '
+option.  A typical use of
+.B tset
+in a
+.B .profile
+or
+.B .login
+will also use the
+.B \-e
+and
+.B \-k
+options, and often the
+.B \-n
+or
+.B \-Q
+options as well.
+These options have been omitted here to keep the examples short.
+.LP
+To select a 2621, you might put the following sequence of commands in
+your
+.B .login
+file (or
+.B .profile
+for Bourne shell users).
+.RS 10
+.nf
+.ft B
+set noglob
+eval \`tset \-s 2621\`
+unset noglob
+.ft R
+.fi
+.RE
+.LP
+If you have an h19 at home which you dial up on, but your office
+terminal is hardwired and known in
+.BR /etc/ttytab ,
+you might use:
+.RS 10
+.nf
+.ft B
+set noglob
+eval \`tset \-s \-m dialup:h19\`
+unset noglob
+.ft R
+.fi
+.RE
+.LP
+If you have a switch which connects to various ports (making
+it impractical to identify which port you may be connected to),
+and use various terminals from time to time, you can select from
+among those terminals according to the
+.I speed
+or baud rate.
+In the example below,
+.B tset
+will prompt you for a terminal type if the baud rate
+is greater than 1200 (say, 9600 for a terminal connected by an
+RS-232 line), and use a Wyse 50 by default.  If the baud rate is
+less than or equal to 1200, it will select a 2621.
+Note the placement of the question mark, and the quotes
+to protect the
+.B >
+and
+.B ?
+from interpretation by the shell.
+.RS 10
+.nf
+.ft B
+set noglob
+eval \`tset \-s \-m 'switch>1200:?wy' \-m 'switch<=1200:2621'\`
+unset noglob
+.ft R
+.fi
+.RE
+.LP
+All of the above entries will fall back on the terminal type
+specified in
+.B /etc/ttytab
+if none of the conditions hold.
+The following entry is appropriate if
+you always dial up, always at the same baud rate,
+on many different kinds of terminals, and the terminal you use
+most often is an adm3a.
+.RS 10
+.nf
+.ft B
+set noglob
+eval \`tset \-s \?adm3a\`
+unset noglob
+.ft R
+.fi
+.RE
+.LP
+If the file
+.B /etc/ttytab
+is not properly set up and you want
+to make the selection based only on the baud rate, you might use
+the following:
+.RS 10
+.nf
+.ft B
+set noglob
+eval \`tset \-s \-m '>1200:wy' 2621\`
+unset noglob
+.ft R
+.fi
+.RE
+.LP
+The following example quietly sets the erase character to
+.SM BACKSPACE,
+and kill to
+.SM CTRL-U.
+If the port is switched, it selects a Concept 100 for speeds less than
+or equal to 1200, and asks for the terminal type otherwise
+(the default in this case is a Wyse 50).  If the port is a
+direct dialup, it selects Concept 100 as the terminal type.  If
+logging in over the
+.SM TCP/IP\s0,
+the terminal type selected is a
+Datamedia 2500 terminal or emulator.  (Note the backslash
+escaping the
+.SM NEWLINE
+at the end of the first line in the example.)
+.IP
+.ft B
+set noglob
+.br
+eval \`tset \-e \-k^U \-Q \-s \-m 'switch<=1200:concept100' \-m \e
+	'switch:?wy' \-m dialup:concept100 \-m arpanet:dm2500\`
+.br
+unset noglob
+.ft R
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/ttytab
+port name to terminal type mapping database
+.TP
+.B /etc/termcap
+terminal capability database
+.TP
+.B /usr/share/lib/tabset/*
+.SM TAB
+setting sequences for various terminals.  Pointed to by
+.B termcap
+entries.
+.TP
+.B \&.login
+.TP
+.B \&.profile
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR sh (1),
+.BR stty (1V),
+.BR vi (1),
+.BR environ (5V),
+.BR termcap (5),
+.BR ttytab (5)
+.SH NOTES
+.LP
+Once the terminal's size has been initialized,
+further invocations of
+.B tset
+will not affect it.
+To correct this, do the following:
+.IP
+.B example% stty rows 0 colums 0
+.LP
+and then run
+.B tset
+normally.
+.SH BUGS
+.LP
+The
+.B tset
+command is one of the first commands a user must master
+when getting started on a
+.SM UNIX
+system.
+Unfortunately, it is one of the most complex,
+largely because of the extra effort the user must go through
+to get the environment of the login shell set.
+Something needs to be done to make all this simpler, either the
+.B login
+program should do this stuff, or a default shell alias should be made,
+or a way to set the environment of the parent should exist.
+.LP
+This program cannot intuit personal choices for erase, interrupt
+and line kill characters, so it leaves these set to the local system
+standards.
+.LP
+It could well be argued that the shell should
+be responsible for ensuring that
+the terminal remains in a sane state;
+this would eliminate the need for the
+.B reset
+program.

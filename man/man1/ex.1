@@ -1,0 +1,245 @@
+.\" @(#)ex.1 1.1 92/07/30 SMI;
+.TH EX 1 "18 December 1989"
+.SH NAME
+ex, edit, e \- line editor
+.SH SYNOPSIS
+.LP
+.B ex
+[
+.B \-
+] [
+.B \-lLrRsvVxC
+] [
+.BI \-t " tag"
+]
+[
+.BI +c " command"
+\||\|
+.BI \-c " command"
+]
+.IR " filename" .\|.\|.
+.LP
+.B edit
+.RI [ " options " ]
+.SH DESCRIPTION
+.IX "ex"  ""  "\fLex\fP \(em line editor"
+.IX "text editing"  "ex command"  ""  "\fLex\fP \(em line editor"
+.IX "editing text"  "ex command"  ""  "\fLex\fP \(em line editor"
+.IX "edit command"  ""  "\fLedit\fP \(em line editor"
+.IX "text editing"  "edit command"  ""  "\fLedit\fP \(em line editor"
+.IX "editing text"  "edit command"  ""  "\fLedit\fP \(em line editor"
+.LP
+.BR  ex ,
+a line editor, is the root of a family of editors that includes
+.BR edit ,
+.BR ex (1),
+and
+.BR vi (1)
+(the display editor).
+In most cases
+.B vi
+is preferred for interactive use.
+.SH OPTIONS
+.TP  10
+.B \- \||\| \-s
+.PD
+Suppress all interactive feedback to
+the user (useful for processing
+.B ex
+scripts in shell files).
+.TP
+.B \-l
+Set up for editing
+.SM LISP
+programs.
+.TP
+.B \-L
+List the names of all files saved as the result of an editor or system crash.
+.TP 
+.B \-r
+Recover the indicated 
+.IR filename s
+after a system crash.
+.TP 
+.B \-R
+Read only.  Do not overwrite the original file.
+.TP 
+.B \-v
+Start up in display editing state using
+.BR vi .
+You can achieve the same effect by simply typing the
+.B vi
+command itself.
+.TP 
+.B \-V
+Verbose. Any non-tty input will be echoed on standard error.
+This may be useful when processing editor commands within shell scripts.
+.TP 
+.B \-x
+Prompt for a key to be used in encrypting the file being edited. 
+When used in conjunction with a pre-existing file,
+.I ex
+will make an educated guess to determine whether or not the input text file is already encrypted.
+.TP
+.B \-C
+Encryption option; the same as the 
+.B \-x
+option, except that all input text is assumed to have already been 
+encrypted. This guarantees decryption in the cases where the 
+.B \-x
+option incorrectly determines that the input file is not already encrypted (this is extremely rare, and will only occur in conjunction with the use of files containing non-ASCII text).
+.TP 
+.BI \-t " tag"
+Edit the file containing the tag
+.IR tag .
+A tags database must first be created using the
+.BR ctags (1) 
+command.
+.TP 
+.BI +c " command"
+.TP 
+.BI \-c " command"
+.PD
+Start the editing session by executing
+.IR command .
+.SH ENVIRONMENT
+The editor recognizes the environment variable
+.SB EXINIT
+as a command (or list of commands separated by 
+.B |
+characters) to run when it starts up.  If this variable is
+undefined, the editor checks for startup commands in the file
+.B \s-1$HOME\s0/.exrc
+file, which you must own.  However, if there is a
+.B .exrc
+owned by you in the current directory, the editor takes its
+startup commands from this file 
+\(em overriding both the 
+file in your home directory and the environment variable.
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR ex .
+On entry to
+.BR ex ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/ex?.?strings
+error messages
+.TP
+.B /usr/lib/ex?.?recover
+recover command
+.TP
+.B /usr/lib/ex?.?preserve
+preserve command
+.TP
+.B /etc/termcap
+describes capabilities of terminals
+.TP
+.B \&.exrc
+editor startup file for current directory 
+.TP
+.B \s-1$HOME\s0/.exrc
+user's editor startup file if
+.B \&./.exrc
+is not found
+.TP
+.B /tmp/Ex\fInnnnn\fR
+editor temporary file
+.TP
+.B /tmp/Rx\fInnnnn\fR
+file named buffer temporary
+.TP
+.B /var/preserve
+preservation directory
+.PD
+.SH SEE ALSO
+.BR awk (1),
+.BR ctags (1),
+.BR ed (1),
+.BR grep (1V),
+.BR sed (1V),
+.BR vi (1),
+.BR locale (5),
+.BR termcap (5), 
+.BR environ (5V),
+.BR iso_8859_1 (7)
+.LP
+.TX TEXT
+.SH BUGS
+.LP
+The
+.B z
+command prints a number of logical rather than physical lines.
+More than a screen full of output
+may result if long lines are present.
+.LP
+File input/output errors do not print a name if the command line
+.RB ` \- '
+option is used.
+.LP
+There is no easy way to do a single scan ignoring case.
+.LP
+The editor does not warn if text is
+placed in named buffers and not used
+before exiting the editor.
+.LP
+Null characters are discarded in input
+files, and cannot appear in resultant
+files.
+.LP
+With the
+.B modeline
+option in effect, the editor checks the
+first five lines of the text file for
+commands of the form
+.RS
+.B ex:
+.IB command :
+.RE
+or
+.RS
+.B vi:
+.IB command :
+.RE
+if any are found, the
+editor executes them.  This can result
+in unexpected behavior, and is not
+recommended in any case.  In earlier releases,
+.B modeline
+was in effect by default.  Now it is not, but setting it in the
+.B .exrc
+file or the
+.SB EXINIT
+environment variable can still produce untoward effects.
+.SH RESTRICTIONS
+.LP
+The encryption facilities of
+.B ex
+are not available on software
+shipped outside the U.S.

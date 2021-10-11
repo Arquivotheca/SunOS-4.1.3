@@ -1,0 +1,197 @@
+.\" @(#)lp.1 1.1 92/07/30 SMI; from SVID
+.TH LP 1 "21 June 1988" 
+.SH NAME
+lp, cancel \- send/cancel requests to a printer
+.SH SYNOPSIS
+.B lp
+[
+.B \-cmsw
+]
+[
+.BI \-d dest
+]
+[
+.BI \-n number
+]
+[
+.BI \-o option
+]
+[
+.BI \-t title
+]
+.IR filename .\|.\|.
+.LP
+.B cancel
+[
+.I ids
+] [
+.I printers
+]
+.SH DESCRIPTION
+.IX "lp send requests to a printer" "" "\fLlp\fP\(emsend requests to a printer" ""
+.IX "cancel requests to a printer" "" "\fLcancel\fP\(emcancel requests to a printer"
+.IX "printer" "send requests to"
+.IX "printer" "cancel requests to"
+.IX "remove" "print jobs from printer queue"
+.IX "send" "print jobs to printer"
+.LP
+.B lp
+arranges for the named files and associated information
+(collectively called a
+.IR request )
+to be printed by a line printer.
+If no file names are mentioned,
+the standard input is assumed.
+The file name
+.RB ` \- '
+stands for the standard input
+and may be supplied on the command line
+in conjunction with named
+.IR filenames .
+The order in which
+.I filenames
+appear is the same order in which they will be printed.
+.LP
+.B lp
+associates a unique
+.I id
+with each request and prints it on the standard output.
+This
+.I id
+can be used later to cancel (see
+.BR cancel )
+or find the status (see
+.BR lpstat (1))
+of the request.
+.LP
+.B cancel
+cancels line printer requests.
+The command line arguments may be either request
+.I ids
+(as returned by
+.BR lp (1))
+or
+.I printer
+names.
+When
+.I ids
+are specified,
+.B cancel
+removes the jobs corresponding to the
+.I ids
+on the destination printer.
+See the
+.B \-d
+option for details on how the default destination
+printer is obtained.
+For a complete list of printers, use
+.BR lpstat (1).
+Specifying a request
+.I id
+cancels the associated request
+even if it is currently printing.
+Specifying a
+.I printer
+cancels the request which is currently printing
+on that printer.
+In either case, the cancellation of a request
+that is currently printing frees the printer
+to print its next available request.
+.SH OPTIONS
+.LP
+The following options to
+.B lp
+may appear in any order and may be intermixed
+with file names:
+.TP 10
+.B \-c
+Make copies of the
+.I filenames
+to be printed immediately when
+.B lp
+is invoked.
+Otherwise,
+.I filenames
+will not be copied, but will be linked whenever possible.
+If the
+.B \-c
+option is not given, then the user
+should be careful not to remove any of the
+.I filenames
+before the request has been printed in its entirety.
+It should also be noted that in the absence of the
+.B \-c
+option, any changes made to the named
+.I filenames
+after the request is made but before it is printed
+will be reflected in the printed output.
+.TP
+.B \-m
+Send mail
+(see
+.BR mail(1))
+after the files have been printed.
+By default, no mail is sent upon normal completion
+of the print request.
+.TP
+.B \-s
+Suppress messages from
+.IR lp (1)
+such as
+.RB ` "request id is .\|.\|." '.
+.TP
+.B \-w
+Write a message on the user's terminal after the
+.I filenames
+have been printed.
+If the user is not logged in locally,
+then mail will be sent instead.
+.TP
+.BI \-d dest
+Choose
+.I dest
+as the printer that is to do the printing.
+By default,
+.I dest
+is taken from the environment variable
+.SB LPDEST
+(if it is set).
+Otherwise, 
+.I dest
+will be taken from the environment variable 
+.BR \s-1PRINTER\s0 .
+If
+.SB PRINTER
+is not defined either, then the default destination
+for the computer system is used.
+Destination names vary between systems (see
+.BR lpstat (1)).
+.TP
+.BI \-n number
+Print
+.I number
+copies (default of 1) of the output.
+.TP
+.BI \-o option
+Specify printer-dependent 
+.IR options .
+Several such options may be collected by specifying the
+.B \-o
+option more than once.
+.TP
+.BI \-t title
+Print
+.I title
+on the banner page of the output.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/termcap
+.PD
+.SH SEE ALSO
+.BR lpstat (1),
+.BR lpr (1),
+.BR lprm (1),
+.BR mail (1),
+.BR lpc (8),
+.BR lpd (8)

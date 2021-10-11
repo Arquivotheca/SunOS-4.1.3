@@ -1,0 +1,630 @@
+'\" t
+.\" @(#)fcntl.2v 1.1 92/07/30 SMI; from 4.2 BSD and S5
+.TH FCNTL 2V "21 January 1990"
+.SH NAME
+fcntl \- file control
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int fcntl(fd, cmd, arg)
+int fd, cmd, arg;
+.ft R
+.fi
+.IX  fcntl()  ""  "\fLfcntl()\fP \(em file control system call"
+.IX  "file control" "system call \(em \fLfcntl()\fR"
+.IX  descriptors  fcntl()  ""  \fLfcntl()\fP
+.IX "lock" "record" "lock" "record \(em \fLfcntl()\fP"
+.SH DESCRIPTION
+.LP
+.B fcntl(\|)
+performs a variety of functions on open descriptors.
+The argument
+.I fd
+is an open descriptor used by
+.I cmd
+as follows:
+.TP 15
+.SB F_DUPFD
+Returns a new descriptor,
+which has the smallest value greater than or equal to
+.IR arg .
+It refers to the same object as the original descriptor,
+and has the same access mode (read, write or read/write).
+The new descriptor
+shares descriptor status flags with 
+.IR fd ,
+and if the object was a file, the same file pointer.
+It is also associated with a
+.SB FD_CLOEXEC
+(close-on-exec) flag
+set to remain open across
+.BR execve (2V)
+system calls.
+.br
+.ne 4
+.TP
+.SB F_GETFD
+Get the
+.SB FD_CLOEXEC
+(close-on-exec) flag associated with
+.IR fd .
+If the low-order bit is
+.BR 0 ,
+the file remains open after executing 
+.BR execve(\|) ,
+otherwise it is closed.
+.TP
+.SB F_SETFD
+Set the
+.SB FD_CLOEXEC
+(close-on-exec) flag associated with
+.I fd
+to the low order bit of
+.I arg
+.RB ( 0
+or
+.B 1
+as above).
+.RS
+.LP
+Note: this is a per-process and per-descriptor flag.
+Setting or clearing it for a particular descriptor does not affect the flag
+on descriptors copied from it by
+.BR dup (2V)
+or
+.SM
+.BR F_DUPFD \s0,
+nor does it affect the flag on other processes of that
+descriptor.
+.RE
+.TP 15
+.SB F_GETFL
+Get descriptor status flags (see
+.BR fcntl (5)
+for definitions).
+.TP
+.SB F_SETFL
+Set descriptor status flags (see
+.BR fcntl (5)
+for definitions).
+The following flags are the only ones whose
+values may change:
+.BR \s-1O_APPEND\s0 ,
+.BR \s-1O_SYNC\s0 ,
+and
+.BR \s-1O_NDELAY\s0 ,
+and the
+.BR \s-1FASYNC\s0 ,
+.BR \s-1FNDELAY\s0 ,
+and
+.SB FNBIO
+flags defined in
+.BR <fcntl.h> .
+.IP
+.SB O_NDELAY
+and
+.SB FNDELAY
+are identical.
+.IP
+Descriptor status flag values set by 
+.BR \s-1F_SETFL\s+1
+affects descriptors copied using
+.BR dup (2V),
+.SB F_DUPFD
+or other processes.
+.IP
+Setting or clearing the
+.SB FNDELAY
+flag on a descriptor causes an
+.SB FIONBIO
+.BR ioctl (2)
+request to be performed on the object referred
+to by that descriptor.
+Setting or
+clearing non-blocking mode, and setting or clearing the
+.SB FASYNC
+flag on a descriptor causes an
+.SB FIOASYNC
+.BR ioctl (2)
+request to be performed on the object referred to by that descriptor,
+setting or clearing asynchronous mode.
+Thus, all descriptors referring to the object are affected.
+.TP
+.SB F_GETLK
+Get a description of the first lock which
+would block
+the lock specified by the
+.B flock
+structure pointed to by
+.I arg
+(see the definition of
+.B "struct flock"
+below).
+If a lock exists, 
+The
+.B flock
+structure is overwritten with that lock's 
+description.  Otherwise, the structure
+is passed back with the lock type set to
+.SB F_UNLOCK
+and is otherwise unchanged.
+.TP
+.SB F_SETLK\s0
+Set or clear a file segment lock according to the
+.B flock
+structure pointed to by
+.IR arg .
+.SB F_SETLK
+is used to set shared
+.RB ( \s-1F_RDLCK\s+1 )
+or exclusive
+.RB ( \s-1F_WRLCK\s+1 )
+locks, or to remove those locks
+.RB ( \s-1F_UNLCK\s+1 ).
+If the specified lock cannot be applied,
+.B fcntl(\|)
+fails and returns immediately.
+.br
+.ne 6
+.TP
+.SB F_SETLKW
+This
+.I cmd
+is the same as
+.SB F_SETLK
+except that if a shared or
+exclusive lock is blocked by other locks,
+the process waits until the requested lock
+can be applied.  If a signal that is set to be caught
+(see
+.BR signal (3V))
+is received while
+.B fcntl(\|)
+is waiting for a region,
+the call to
+.B fcntl(\|)
+is interrupted.
+Upon return from the process's signal handler,
+.B fcntl(\|)
+fails and returns,
+and the requested lock is not applied.
+.TP
+.SB F_GETOWN
+Get the process
+.SM ID
+or process group currently receiving
+.SB SIGIO
+and
+.SB SIGURG
+signals; process groups are returned
+as negative values.
+.TP
+.SB F_SETOWN
+Set the process or process group
+to receive
+.SB SIGIO
+and
+.SB SIGURG
+signals.
+Process groups are specified by supplying
+.I arg
+as negative, otherwise
+.I arg
+is interpreted as a process
+.SM ID\s0.
+.TP
+.SB F_RSETLK
+.PD 0
+.TP
+.SB F_RSETLKW
+.TP
+.SB F_RGETLK
+Are used by the
+network lock daemon,
+.BR lockd (8C),
+to communicate with the NFS server kernel
+to handle locks on the 
+.SM NFS
+files.
+.PD
+.LP
+Record locking is done
+with either
+.I shared
+.RB ( \s-1F_RDLCK\s+1 ),
+or
+.I exclusive
+.RB ( \s-1F_WRLCK\s+1 )
+locks.
+More than one process may hold a shared
+lock on a particular
+file segment,
+but if one process holds an exclusive
+lock on the segment, no other process may hold any lock on the segment
+until the exclusive lock is removed.
+.LP
+In order to claim a shared lock, a 
+descriptor must be opened with read access.
+Descriptors for exclusive locks must
+be opened with write access.
+.LP
+A shared lock may be changed
+to an exclusive lock, and vice versa, simply by specifying
+the appropriate lock type with a
+.SB F_SETLK
+or
+.SB F_SETLKW
+.I cmd\fP.
+Before the previous lock is released and 
+the new lock applied, any other processes already in line must
+gain and release their locks.
+.LP
+If
+.I cmd
+is
+.SB F_SETLKW
+and the requested lock cannot be
+claimed immediately (for instance,
+when another process holds an exclusive lock
+that overlaps the current request) the
+calling process is blocked until the lock may be acquired.
+These blocks may be interrupted by signals.
+Care should be taken to avoid deadlocks 
+caused by
+multiple processes all blocking the same records.
+.LP
+A shared or exclusive lock is either
+.I advisory
+or
+.I mandatory
+depending on the mode bits
+of the file containing the locked segment.
+The lock is mandatory if the
+set-\s-1GID\s0
+bit
+.RB ( \s-1S_ISGID\s0 )
+is set and the group execute bit
+.RB ( \s-1S_IXGRP\s0 )
+is clear
+(see
+.BR stat (2V)
+for information about mode bits).
+Otherwise, the lock is advisory.
+.LP
+If a process holds a mandatory shared lock on a segment of a file,
+other processes may read from the segment, but write operations
+block until all locks are removed.
+If a process holds a mandatory exclusive lock on a segment of a file,
+both read and write operations block until the lock is removed (see
+.BR \s-1WARNINGS\s0 ).
+.LP
+An advisory lock does not affect read and write access to the locked
+segment.  Advisory locks may be used by cooperating processes
+checking for locks using
+.SB F_GETLCK
+and voluntarily observing the indicated read and write restrictions.
+.LP
+The record to be locked or unlocked is described by the
+.B flock 
+structure defined in
+.B <fcntl.h>
+as follows:
+.LP
+.RS
+.nf
+.ft B
+struct flock {
+.RS
+.ft B
+.ta +\w'short\0'u +\w'l_whence;\0'u
+short	l_type;	/\(** \s-1F_RDLCK\s0, \s-1F_WRLCK\s0, or \s-1F_UNLCK\s0 \(**/
+short	l_whence;	/\(** flag to choose starting offset \(**/
+long	l_start;	/\(** relative offset, in bytes \(**/
+long	l_len;	/\(** length, in bytes;  0 means lock to \s-1EOF\s0 \(**/
+pid_t	l_pid;	/\(** returned with \s-1F_GETLK\s0 \(**/
+.RE
+.B };
+.fi
+.ft R
+.RE
+.LP
+The
+.B flock
+structure describes the type
+.RB ( l_type ),
+starting offset
+.RB ( l_whence ),
+relative offset
+.RB  ( l_start ),
+and size
+.RB  ( l_len )
+of the file segment to be affected.
+.B l_whence
+is set to
+.SM
+.BR SEEK_SET \s0,
+.SM
+.BR SEEK_CUR \s0,
+or
+.SB SEEK_END
+(see
+.BR lseek (2V))
+to indicate that the
+relative offset is to be measured from the start of the file,
+current position, or
+.SM EOF\s0,
+respectively.
+The process id field
+.RB  ( l_pid )
+is only used with the
+.SB F_GETLK
+.I cmd
+to return
+the description of a lock held by another process.
+Note:  do not confuse
+.B "struct flock"
+with the function
+.BR flock (2).
+They are unrelated.
+.LP
+Locks may start or extend beyond the current EOF, 
+but may not be negative relative to the beginning of the file.
+Setting 
+.B l_len
+to zero (0) extends the lock to EOF.
+If
+.B l_whence
+is set to
+.SB SEEK_SET
+and
+.B l_start
+and
+.B l_len
+are set to zero (0), the entire file is locked.
+Changing or unlocking the subset of a locked
+segment leaves the smaller segments at either end locked.  Locking a
+segment already locked by the calling process causes the
+old lock type to be removed and the new lock type to take affect.
+All locks associated with a file for a given process are removed
+when the file is closed or the process terminates.  Locks are not
+inherited by the child process in a
+.BR fork (2V)
+system call.
+.LP
+.B fcntl(\|)
+record locks
+are implemented in the kernel for local
+locks, and throughout the network by the
+network lock daemon
+.RB ( lockd (8C))
+for remote locks on
+.SM NFS
+files.
+If the file server crashes and has to be
+rebooted, the lock daemon attempts to
+recover all locks that were
+associated with that server.  If a lock
+cannot be reclaimed, the process that held the lock is issued a
+.SB SIGLOST
+signal.
+.LP
+In order to maintain consistency in the network case, data must not
+be cached on client machines.  For this reason, file buffering for
+an 
+.SM NFS  
+file is turned off when the first lock is attempted on the file.
+Buffering remains off as long as the file is open.
+Programs that do I/O buffering in the
+user address space, however, may have inconsistent results.  The standard
+I/O package, for instance, is a common source of unexpected buffering.
+.br
+.ne 10
+.SH SYSTEM V DESCRIPTION
+.SB O_NDELAY
+and
+.SB FNBIO
+are identical.
+.SH RETURN VALUES
+.LP
+On success, the value returned by
+.B fcntl(\|)
+depends on
+.I cmd
+as follows:
+.RS
+.TP 15
+.SB F_DUPFD
+A new descriptor.
+.TP
+.SB F_GETFD
+Value of flag (only the low-order bit is defined).
+.TP
+.SB F_GETFL
+Value of flags.
+.TP
+.SB F_GETOWN
+Value of descriptor owner.
+.TP
+other
+Value other than \-1.
+.RE
+.LP
+On failure,
+.B fcntl(\|)
+returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+.I cmd
+is
+.B \s-1F_SETLK\s+1\fR,
+the lock type
+.RB ( l_type )
+is
+.SB F_RDLCK
+(shared lock), and
+the file segment to be locked is already
+under an exclusive lock
+held by another process.  This error is also returned if the lock
+type is
+.SB F_WRLCK
+(exclusive lock) and the file segment
+is already locked with a shared or exclusive lock.
+.IP
+Note:
+In future,
+.B fcntl(\|)
+may generate
+.SM EAGAIN
+under these conditions, so
+applications testing for
+.SM EACCES
+should also test for
+.SM EAGAIN\s0.
+.TP
+.SM EBADF
+.I fd
+is not a valid open descriptor.
+.IP
+.I cmd
+is
+.SB F_SETLK
+or
+.SB F_SETLKW
+and the process does not have the appropriate
+read or write permissions on the file.
+.TP
+.SM EDEADLK
+.I cmd
+is
+.BR \s-1F_SETLKW\s+1 ,
+the lock is blocked by one from another process, and putting
+the calling-process to sleep
+would cause a deadlock.
+.TP
+.SM EFAULT
+.I cmd
+is
+.BR \s-1F_GETLK\s+1 ,
+.BR \s-1F_SETLK\s+1 ,
+or
+.SB F_SETLKW
+and
+.I arg
+points to an invalid address.
+.TP
+.SM EINTR
+.I cmd
+is
+.SB F_SETLKW
+and a signal interrupted the process while it was waiting
+for the lock to be granted.
+.TP
+.SM EINVAL
+.I cmd
+is
+.SB F_DUPFD
+and
+.I arg
+is negative or greater than the maximum allowable number
+(see
+.BR getdtablesize (2)).
+.IP
+.I cmd
+is
+.BR \s-1F_GETLK\s+1 ,
+.BR \s-1F_SETLK\s+1 ,
+or
+.SB F_SETLKW
+and
+.I arg
+points to invalid data.
+.br
+.ne 2
+.TP
+.SM EMFILE
+.I cmd
+is
+.SB F_DUPFD
+and the maximum number of open descriptors
+has been reached.
+.TP
+.SM ENOLCK
+.I cmd
+is
+.SB F_SETLK
+or
+.SB F_SETLKW
+and there are no more file lock entries available.
+.SH "SEE ALSO"
+.BR close (2V),
+.BR execve (2V),
+.BR flock (2),
+.BR fork (2V),
+.BR getdtablesize (2),
+.BR ioctl (2),
+.BR open (2V),
+.BR sigvec (2),
+.BR lockf (3),
+.BR fcntl (5),
+.BR lockd (8C)
+.SH WARNINGS
+Mandatory record locks are dangerous.
+If a runaway or otherwise out-of-control process should hold a
+mandatory lock on a file critical to the system and fail to release
+that lock, the entire system could hang or crash.  For this reason,
+mandatory record locks may be removed in a future SunOS release.
+Use advisory record locking whenever possible.
+.SH NOTES
+.LP
+Advisory locks allow cooperating processes to perform
+consistent operations on files, but do not guarantee
+exclusive access.  Files
+can be accessed without advisory files,
+but inconsistencies may result.
+.LP
+.BR read (2V)
+and
+.BR write (2V)
+system calls on files
+are affected by mandatory file and record
+locks (see
+.BR chmod (2V)).
+.SH BUGS
+.LP
+File locks obtained by 
+.B fcntl(\|)
+do not interact with
+.B flock(\|)
+locks.
+They do, however,
+work correctly with the exclusive locks claimed by
+.BR lockf (3).
+.LP
+.SB F_GETLK
+returns
+.SB F_UNLCK
+if the requesting process holds the specified lock.
+Thus, there is no way for a process to determine if it is still holding a
+specific lock after catching a
+.SB SIGLOST
+signal.
+.LP
+In a network environment, the value of
+.B l_pid
+returned by
+.SB F_GETLK
+is next to useless.
+

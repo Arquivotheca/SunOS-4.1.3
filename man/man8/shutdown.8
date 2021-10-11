@@ -1,0 +1,114 @@
+.\" @(#)shutdown.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SHUTDOWN 8 "1 July 1990"
+.SH NAME
+shutdown \- close down the system at a given time
+.SH SYNOPSIS
+.B /usr/etc/shutdown
+[
+.B \-fhknr
+]
+.I time
+[
+.I warning-message
+\&.\|.\|.
+]
+.SH DESCRIPTION
+.IX  "shutdown command"  ""  "\fLshutdown\fP \(em shut down multiuser operation"
+.LP
+.B shutdown
+provides an automated procedure to notify users when the
+system is to be shut down.
+.I time
+specifies when
+.B shutdown
+will bring the system down; it may be the word
+.B now
+(indicating an immediate shutdown),
+or it may specify a future time in one of two formats:
+.BI + number
+and
+.IB hour : min.
+The first form brings the system down in
+.I number
+minutes, and the second brings the system down
+at the time of day indicated in 24-hour notation.
+.LP
+At intervals that get closer as the apocalypse approaches,
+warning messages are displayed at terminals of all logged-in users,
+and of users who have remote mounts on that machine.
+Five minutes before shutdown,
+or immediately if shutdown is in less than 5 minutes,
+logins are disabled by creating
+.B /etc/nologin
+and writing a message there.
+If this file exists when a user attempts to log in,
+.BR login (1)
+prints its contents and exits.  The file is removed just before
+.B shutdown
+exits.
+.LP
+At shutdown time a message is written to the system log daemon,
+.BR syslogd (8),
+containing the time of shutdown,
+the instigator of the shutdown, and the reason.
+Then a terminate signal is sent to
+.BR init ,
+which brings the system down to single-user mode.
+.LP
+The time of the shutdown and the warning message are placed in
+.BR /etc/nologin ,
+which should be used to inform the users as to when the system
+will be back up, and why it is going down (or anything else).
+.SH OPTIONS
+.LP
+As an alternative to the above procedure, these options can be
+specified:
+.TP
+.B \-f
+Shut the system down in the manner of
+.B fasthalt
+(see
+.BR fastboot (8)),
+so that when the system is rebooted,
+the file systems are not checked.
+.TP
+.B \-h
+Execute
+.BR halt (8).
+.TP
+.B \-k
+Simulate shutdown of the system. Do not actually shut down the system.
+.TP
+.B \-n
+Prevent the normal
+.BR sync (2)
+before stopping.
+.TP
+.B \-r
+Execute
+.BR reboot (8).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/nologin
+tells login not to let anyone log in
+.TP
+.B /etc/xtab
+list of remote hosts that have mounted this host
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR sync (2),
+.BR fastboot (8),
+.BR halt (8),
+.BR reboot (8),
+.BR syslogd (8)
+.SH BUGS
+.LP
+Only allows you to bring the system down between
+\*(lqnow\*(rq and 23:59 if
+you use the absolute time for shutdown.

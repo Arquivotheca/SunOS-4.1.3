@@ -1,0 +1,78 @@
+.\" @(#)socketpair.2 1.1 92/07/30 SMI; from UCB 7 Jul 1983
+.TH SOCKETPAIR 2 "21 January 1990"
+.SH NAME
+socketpair \- create a pair of connected sockets
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int socketpair(d, type, protocol, sv)
+int d, type, protocol;
+int sv[2];
+.ft
+.fi
+.IX  socketpair()  ""  "\fLsocketpair()\fP create connected socket pair"
+.IX  "socket operations"  socketpair()  ""  \fLsocketpair()\fP
+.IX  "interprocess communication"  socketpair()  ""  \fLsocketpair()\fP
+.IX  "create" "pair of connected sockets \(em \fLsocketpair()\fR"
+.SH DESCRIPTION
+The
+.B socketpair(\|)
+system call
+creates an unnamed pair of connected sockets in
+the specified address family
+.IR d ,
+of the specified
+.I type
+and using the optionally specified
+.IR protocol .
+The descriptors used in referencing the new sockets
+are returned in
+.IR sv [0]
+and
+.IR sv [1].
+The two sockets are indistinguishable.
+.SH RETURN VALUES
+.B socketpair(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EAFNOSUPPORT
+The specified address family is not supported on this machine.
+.TP
+.SM EFAULT
+The address
+.I sv
+does not specify a valid part of the
+process address space.
+.TP
+.SM EMFILE
+Too many descriptors are in use by this process.
+.TP
+.SM EOPNOSUPPORT
+The specified protocol does not support creation of socket pairs.
+.TP
+.SM EPROTONOSUPPORT
+The specified protocol is not supported on this machine.
+.SH "SEE ALSO"
+.BR pipe (2V),
+.BR read (2V),
+.BR write (2V)
+.SH BUGS
+This call is currently implemented only for the
+.SB AF_UNIX
+address family.

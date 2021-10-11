@@ -1,0 +1,266 @@
+.\" @(#)chmod.1v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH CHMOD 1V "9 September 1987"
+.SH NAME
+chmod \- change the permissions mode of a file
+.SH SYNOPSIS
+.B chmod
+[
+.B \-fR
+] 
+.I mode 
+.I filename
+\&.\|.\|.
+.SH SYNOPSIS
+.B /usr/5bin/chmod
+[
+.B \-fR
+] 
+.I mode 
+.I filename
+\&.\|.\|.
+.SH AVAILABILITY
+.LP
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLchmod\fR"
+.IX  chmod  ""  "\fLchmod\fP \(em change mode"
+.IX  files   "chmod command"  files   "\fLchmod\fP \(em change mode"
+.IX  change  "mode of file"
+.IX  change  "permissions of file"
+.IX  "modes,  change permission  \(em \fLchmod\fP"
+.IX  "permissions, change mode \(em \fLchmod\fP"
+.LP
+Change the permissions (mode) of a file or files.
+Only the owner of a file (or the super-user) may change its mode.
+.LP
+The mode of each named file is changed according to
+.IR mode ,
+which may be absolute or symbolic, as follows.  
+.SS Absolute Modes
+.LP
+An absolute
+.I mode
+is an octal number constructed from the 
+.SM OR 
+of the following modes:
+.TP 8
+.PD 0
+.B \0400
+Read by owner.
+.TP
+.B \0200
+Write by owner.
+.TP
+.B \0100
+Execute (search in directory) by owner.
+.sp .25v
+.TP
+.B \0040
+Read by group.
+.TP
+.B \0020
+Write by group.
+.TP
+.B \0010
+Execute (search) by group.
+.sp .25v
+.TP
+.B \0004
+Read by others.
+.TP
+.B \0002
+Write by others.
+.TP
+.B \0001
+Execute (search) by others.
+.sp .25v
+.TP
+.B 4000
+Set user
+.SM ID
+on execution.
+.TP
+.B 2000
+Set group
+.SM ID
+on execution
+(this bit is ignored if the file is a directory;
+it may be set or cleared only using symbolic mode).
+.TP
+.B 1000
+Sticky bit, (see
+.BR chmod (2V)
+for more information).
+
+.PD
+.SS Symbolic Modes
+.LP
+A symbolic
+.I mode
+has the form:
+.IP
+[
+.I who
+]
+.I "op permission"
+[
+.I "op permission"
+] .\|.\|.
+.LP
+.I who
+is a combination of: 
+.RS
+.TP 8
+.PD 0
+.B u
+User's permissions.
+.TP
+.B g
+Group permissions.
+.TP
+.B o
+Others.
+.TP
+.B a
+All, or
+.BR ugo .
+.PD
+.RE
+.IP
+If
+.I who
+is omitted, the default is
+.BR a ,
+but the setting of the file creation mask (see
+.B umask
+in
+.BR sh (1)
+or
+.BR csh (1) 
+for more information) is taken into account.  When 
+.I who
+is omitted,
+.B chmod
+will not override the restrictions of your user mask.
+.LP
+.I op
+is one of:
+.RS
+.TP 8
+.PD 0
+.B +
+To add the
+.IR permission .
+.TP
+.B \-
+To remove the
+.IR permission .
+.TP
+.B =
+To assign the permission explicitly
+(all other bits for that category, owner, group, or
+others, will be reset).
+.PD
+.RE
+.LP
+.I permission
+is any combination of:
+.RS
+.TP 8
+.B r
+Read.
+.PD 0
+.TP
+.B w
+Write.
+.TP
+.B x
+Execute.
+.TP
+.B X
+Give execute permission if the file is a directory
+or if there is execute permission for one of the other user classes.
+.TP
+.B s
+Set owner or group
+.SM ID\s0.
+This is only useful with
+.B u
+or
+.BR g .
+Also, the set group 
+.SM ID
+bit of a directory may only be
+modified with
+.RB ` + '
+or
+.RB ` \- '.
+.TP
+.B t
+Set the sticky bit to save program text between processes.
+.RE
+.PD
+.IP
+The letters
+.BR u ,
+.BR g ,
+or
+.B o
+indicate that
+.I permission
+is to be taken from the current mode for the user-class.
+.IP
+Omitting
+.I permission
+is only useful with
+.RB ` = ',
+to take away all permissions.
+.LP
+Multiple symbolic modes, separated by commas, may be given.
+Operations are performed in the order specified.  
+.SH SYSTEM V DESCRIPTION
+.LP
+If
+.I who
+is omitted in a symbolic mode, it does not take the file
+creation mask into account, but acts as if
+.I who
+were
+.BR a .
+.SH OPTIONS
+.TP
+.B \-f
+Force.
+.B chmod
+will not complain if it fails to change the mode of a file.
+.TP
+.B \-R
+Recursively descend through directory arguments,
+setting the mode for each file as described above.
+When symbolic links are encountered, their mode is not changed
+and they are not traversed.
+.SH EXAMPLES
+.LP
+The first example denies write permission to others,
+the second makes a file executable by all if it
+is executable by anyone:
+.LP
+.RS
+.ft B
+.nf
+example% chmod o\-w file
+example% chmod +X file
+.fi
+.ft R
+.RE
+.LP
+.SH SEE ALSO
+.BR csh (1),
+.BR ls (1V),
+.BR sh (1),
+.BR chmod (2V),
+.BR chown (8)

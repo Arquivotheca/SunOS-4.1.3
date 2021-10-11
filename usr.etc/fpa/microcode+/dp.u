@@ -1,0 +1,210 @@
+|*	@(#)dp.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Double Precision NOP Instruction
+|*
+routine dp.nop 0000000xxxx1 	dnop;				;		;
+	jclr clp idl2;		dnop;				;		;
+	call idle1;		dnop;				;		;
+|*
+|*		Double Precision Add Instruction
+|*
+routine dp.add 0000111xxxx1 	dnop enra loaddp halt;		regtitmp;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtitmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dadd enrb loaddp halt;		optoti;		;
+dpafin:
+|#
+|#	Enter with one clock cycle into the routine -- it will finish a three-cycle routine.
+|#
+	;			dnop;				;		ptr2;	
+	jtierr der2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr2;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr2;
+|*
+|*		Double Precision Subtract Instruction
+|*
+routine dp.sub 0001000xxxx1 	dnop enra loaddp halt;		regtitmp;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtitmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	call dpafin;		dsub enrb loaddp halt;		optoti;		;
+|*
+|*		Double Precision Backwards Subtract Instruction
+|*
+routine dp.b.sub  0001011xxxx1 	dnop enrb loaddp halt;		regtitmp;	rcsmsw imm2;
+	;			dnop enrb loaddp halt;		regtitmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	call dpafin;		dsub enra loaddp halt;		optoti;		;
+|*
+|*              Double Precision Absolute Value Instruction
+|*
+routine dp.abs 0000010xxxx1 	dnop;				regtotmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	call dpa1fin;		dabs enra loaddp halt;		optoti;		;
+dpa1fin:
+	;			dnop;				;		ptr2;	
+	jtierr der2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr2;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr2;
+|*
+|*              Double Precision Negate Instruction
+|*
+routine dp.neg 0000001xxxx1 	dnop;				regtotmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	call dpa1fin;		dneg enra loaddp halt;		optoti;		;
+|*
+|*              Double Precision Fix Instruction (convert DP to 32-bit integer)
+|*
+routine dp.fix 0000100xxxx1 	dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dcvtint enra loaddp halt;	optoti;		;	
+	;			halt;				regtotmp;	rcssp ptr2;
+	;			halt;				;		ptr2;	
+	jtierr ckres cstat;	snop enra tioe tisp halt;	titoreg;	rcssp ptr2;
+	pipe idl1;		snop halt;			;		imm2;	ptr5!szero
+ckres:
+|* Check to see if result is 0 and if so, return normally.  This is due to a 'bug' in
+|* the 8847 that causes an underflow signal to be generated if the result of a convert
+|* to integer operation is zero.  We'll just compare the result w/ zero and if equal, 
+|* then just return the zero while generating an inexact.  Note that cstat cannot be
+|* asserted at the same time as pipe idl1, so we need an extra cycle.
+|*
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_ssin
+	jne ser2;		smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	jtierr ser2 cstat;	halt;				;		imm2;
+	pipe idl1;		snop halt;			;		imm2;	ptr5!szero
+|*
+|*              Double Precision Float Instruction (32-bit integer to double)
+|*
+routine dp.float 0000011xxxx1 	dfloat enra loaddp halt;	adtoti;		;
+	;			dfloat enra loaddp halt;	adtoti;		;	
+	;			dnop;				regtotmp;	rcslsw ptr2;
+	jclr idle1 idl2;	dnop;				;		ptr2;
+	jtierr der2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr2;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr2;	
+|*
+|*              Double Precision Convert Instruction (double to single)
+|*
+routine dp.conv 0000101xxxx1	dnop;				regtotmp;	rcssp imm2;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dcvts enra loaddp halt;		optoti;		;	
+	;			;				;		ptr2;	
+	jtierr ser2 cstat;	tioe tisp halt;			titoreg;	rcssp ptr2;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Double Precision Multiply Instruction
+|*
+routine dp.mul 0001001xxxx1 	dnop enra loaddp halt;		regtitmp;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtitmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dmul enrb loaddp halt;		optoti;		;	
+dpmfin: 
+|# 
+|#	Enter one clock cycle into the routine -- it will finish a four-cycle routine.  
+ 	;			dmul;				regtotmp;	rcslsw ptr2; 
+	;			dnop halt;			;		ptr2; 
+	jtierr der2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr2; 
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr2;
+|*
+|*		Double Precision Square Instruction
+|*
+routine dp.sqar 0000110xxxx1 	dnop enra enrb loaddp halt;	adtoti;		;
+	jclr idle1 idl2;	dnop;				;		;
+	call dpmfin;		dmul enra enrb loaddp halt;	optoti;		;	
+|*
+|*		Double Precision Divide Instruction
+|*
+routine dp.div 0001010xxxx1 	dnop enra loaddp halt;		regtitmp;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtitmp;	rcslsw imm2;
+	;			dnop;				;		;
+	;			ddiv enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			ddiv enrb loaddp halt;		optoti;		;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		ptr2;
+	jtierr der2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr2;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr2;
+|*
+|*		Double Precision Reverse Divide Instruction
+|*
+routine dp.b.div 0001100xxxx1 	dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dnop enra loaddp halt;		optoti;		ptr2;
+	;			ddiv enrb loaddp halt;		regtitmp;	rcsmsw ptr2;
+	;			ddiv enrb loaddp halt;		regtitmp;	rcslsw ptr2;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		ptr2;
+	jtierr der2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr2;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr2;
+|*
+|*		Double Precision Compare with 0 (Compare 0,Operand)
+|*
+routine dp.eqlzero 0001101xxxx1 ;				;		;
+|#
+|#		Load A register with double precision zero and execute a compare
+|#
+	;			;				;		ptr5;		ptr5!0x600+0x0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dcmp enra loaddp halt;		optoti;		;	
+dpcfin:
+	;			dnop;				;		;	
+	jtierr hang cstat;	dnop;				;		;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Double Precision Compare with Register 1 Instruction
+|*
+routine dp.eqlreg1 0001110xxxx1	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	call dpcfin;		dcmp enrb loaddp halt;		optoti;		;	
+|*
+|*		Double Precision Compare Magnitude with Register 1 Instruction
+|*
+routine dp.cmpreg1 0001111xxxx1	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	call dpcfin;		dcmpm enrb loaddp halt;		optoti;		;	
+|*
+|*		General Routines
+|*
+|*	Wait:  Delay will be [(lpreg + 1) * 2] 60 ns cycles.  Double this for the TI cycles.
+wait:
+	jloop wait;		;				;		;
+	rtn;			;				;		;		lpreg-
+wait3:
+	;			;				;		;
+wait2:
+	;			;				;		;
+wait1:
+	rtn;			;				;		;

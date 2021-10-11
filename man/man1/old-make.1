@@ -1,0 +1,1035 @@
+'\" t
+.ds ~ \u\(ap\d
+.\" @(#)old-make.1 1.1 92/07/30 SMI; from S5
+.TH OLD-MAKE 1 "16 November 1987"
+.SH NAME
+old-make \- maintain, update, and regenerate groups of programs
+.SH SYNOPSIS
+.B /usr/old/make
+[
+.BI \-f " makefile"
+]
+\&.\|.\|.
+.RB [ " \-bdeikmnpqrsSt " ]
+[
+.I target
+\&.\|.\|.
+]
+[
+.IB macro-name = value
+\&.\|.\|.
+]
+.IX  "make command"  ""  "\fLmake\fP \(em build programs"  "" PAGE START
+.IX  "programming tools"  make  ""  "\fLmake\fP \(em build programs"  PAGE START
+.IX  "build" "programs \(em \fLmake\fP"
+.IX  "maintain programs make"  ""  "maintain programs \(em \fLmake\fP"  ""  PAGE START
+.IX  "update programs make"  ""  "update programs \(em \fLmake\fP"  ""  PAGE START
+.IX  "regenerate programs make"  ""  "regenerate programs \(em \fLmake\fP"  ""  PAGE START
+.SH DESCRIPTION
+.LP
+.B make
+executes a list of shell commands associated with each
+.IR target ,
+typically to create or update a file of the same name.
+.I makefile
+contains entries for targets that describe how
+to bring them up to date with respect to the files and/or other
+targets on which each depends, called
+.IR dependencies .
+.LP
+A target is out of date when the file it describes is missing, or
+when one (or more) of its dependency files
+has a more recent modification time than that of the target
+file.
+.B make
+recursively scans the list of dependencies for each
+.I target
+argument (or the first
+.I target
+entry in the
+.I makefile
+if no
+.I target
+argument is supplied) to generate a list of targets to check.
+It then checks, from the bottom up,
+each target against any files it depends on to see if it is out
+of date.  If so,
+.B make
+rebuilds that target.
+.LP
+To rebuild a target,
+.B make
+executes the set of shell commands, called a
+.IR rule ,
+associated with it.  This rule may be listed explicitly in a
+makefile entry for that target, or it may be supplied implicitly by
+.BR make .
+.LP
+If no
+.I makefile
+is specified on the command line,
+.B make
+uses the first file it finds with a name from the following
+list:
+.IP
+.BR makefile ,
+.BR Makefile ,
+.BR s.makefile ,
+.BR s.Makefile ,
+.BR \s-1SCCS\s0/s.makefile ,
+.BR \s-1SCCS\s0/s.Makefile .
+.LP
+If no
+.I target
+is specified on the command line,
+.B make
+uses the first target defined in
+.IR makefile .
+If a
+.I target
+has no
+.I makefile
+entry,
+or if its entry has no rule,
+.B make
+attempts to update that target using an implicit rule.
+.SH OPTIONS
+.TP
+.BI \-f " makefile"
+Use the description file
+.I makefile.
+A
+.RB ` \- '
+as the
+.I makefile
+argument denotes the standard input.  The contents of
+.IR makefile ,
+when present, override the builtin rules.  When more than one
+.RB ` "\-f\fI\ makefile" '
+argument pairs appear,
+.B make
+takes input from each
+.I makefile
+in the order listed (just as if they were run through
+.BR cat (1V)).
+.TP
+.B \-b
+This option has no effect, but is present for compatibility reasons.
+.TP
+.B \-d
+Debug mode.
+Print out detailed information on files and times examined.
+.TP
+.B \-e
+Environment variables override assignments within makefiles.
+.TP
+.B \-i
+Ignore error codes returned by invoked commands.
+.TP
+.B \-k
+When a nonzero error status is returned by an invoked command,
+abandon work on the current target but continue with other branches
+that do not depend on that target.
+.TP
+.B \-n
+No execution mode. 
+Print commands, but do not execute them.
+Even lines beginning with an
+.B @
+are printed.  However, if a command line contains the
+.B $(\s-1MAKE\s0)
+macro, that line is always executed (see the discussion of
+.SB MAKEFLAGS
+in
+.BR "Environment Variables and Macros" ).
+.TP
+.B \-p
+Print out the complete set of macro definitions and target descriptions.
+.TP
+.B \-q
+Question mode.
+.B make
+returns a zero or nonzero status code depending
+on whether or not the target file is up to date.
+.TP
+.B \-r
+Do not use the implicit rules
+.B make
+supplies by default.
+Implicit rules defined in the makefile remain in effect.
+.TP
+.B \-s
+Silent mode.
+Do not print command lines before executing them.
+.TP
+.B \-S
+Undo the effect of the
+.B \-k
+option.
+.TP
+.B \-t
+Touch the target files (bringing them up to date) rather than performing
+commands listed in their rules.
+.br
+.ne 5
+.TP
+.IB macro-name = value
+Macro definition.
+This definition overrides any definition for the
+specified macro that occurs in the makefile itself, or in the
+environment.  See
+.B Macros
+and
+.IR "Environment Variables and Macros" ,
+for details.
+.SH USAGE
+.LP
+Refer to
+.TX DMBG
+and
+.TX PUL
+for tutorial information about
+.BR make .
+.SS "Targets and Rules"
+.LP
+There need not be an actual file named by a target, but every
+dependency in the dependency list must be either the name of a file,
+or the name of another target.
+.LP
+If the target has no dependency list and no rule, or if the target
+has no entry in the makefile,
+.B make
+attempts to produce an entry by selecting a rule from its
+set of implicit rules.  If none of the implicit rules apply,
+.B make
+uses the rule specified in the
+.SB \&.DEFAULT
+target (if it appears in the makefile).  Otherwise
+.B make
+stops and produces an error message.
+.SS "Makefile Target Entries"
+.LP
+A target entry has the following format:
+.RS
+.DT
+.HP
+.I target .\|.\|.
+.B :
+.RI [ dependency "] .\|.\|."
+.RB [ ;
+.IR command "] .\|.\|.
+.br
+.nf
+.RI [ command ]
+\&.\|.\|.
+.fi
+.RE
+.LP
+The first line contains the name of a target (or a space-separated
+list of target names), terminated with a colon
+.RB ( : ).
+This may be followed by a
+.IR dependency ,
+or a dependency list that
+.B make
+checks in the order listed.
+The dependency list may be terminated with a semicolon
+.RB ( ; ),
+which in turn can be followed by a Bourne shell command.
+Subsequent lines in the target entry begin with a
+.SM TAB\s0,
+and contain Bourne shell commands.
+These commands comprise a rule for building the target, and are
+performed when the target is updated by
+.BR make .
+.LP
+Shell commands may be continued across input lines by escaping the
+.SM NEWLINE
+with a backslash
+.RB ( \|\e\| ).
+The continuing line must also start with a
+.SM TAB\s0.
+.LP
+To rebuild a target,
+.B make
+expands any macros, strips off initial
+.SM TAB\*S
+characters and passes each resulting command line to a Bourne shell for execution.
+.LP
+The first nonblank line that does not begin with a
+.SM TAB
+or
+.B #
+begins another target or macro definition.
+.SS "Makefile Special Characters"
+.TP
+.B ::
+Conditional dependency branch.  When used in place of a colon
+.RB ( : )
+the double-colons allow a target to be checked and updated with respect
+to more than one dependency list.  The double-colons allow the target
+to have more than one branch entry in the makefile, each with a
+different dependency list and a different rule.
+.B make
+checks each branch, in order of appearance, to see if the target is
+outdated with respect to its dependency list.  If so,
+.B make
+updates the target according to dependencies and rule for that branch.
+.TP
+.B #
+Start a comment.
+The comment ends at the next
+.SM NEWLINE\s0.
+.TP
+.B $
+Macro expansion.
+See
+.BR Macros ,
+below, for details.
+.TP
+.B \-
+Following the
+.SM TAB\s0,
+if the first character of a command line is a
+.RB ` \- ',
+.B make
+ignores any nonzero error code it may return.
+.B make
+normally terminates when a command returns nonzero status, unless the
+.B \-i
+or
+.B \-k
+options are in effect.
+.TP
+.B @
+Following the
+.SM TAB\s0,
+if the first character is a
+.RB ` @ ',
+.B make
+does not print the command line before executing it.
+.IP
+If
+.RB ` \- '
+and
+.RB ` @ '
+appear as the first two characters after the
+.SM TAB\s0,
+both apply.
+.TP
+.B $$
+The dollar-sign, escaped from macro expansion.  Can be used to
+pass variable expressions beginning with
+.B $
+to the shell.
+.SS "Command Execution"
+.LP
+Command lines are executed one at a time,
+.IR "each by its own shell" .
+Shell commands, notably
+.BR cd ,
+are ineffectual across an unescaped
+.SM NEWLINE
+in the makefile.
+A line is printed (after macro expansion) as it is executed, unless
+it starts with a
+.RB ` @ ',
+there is a
+.SB \&.SILENT
+entry in the dependency hierarchy of the current target, or
+.B make
+is run with the
+.B \-s
+option.
+Although the
+.B \-n
+option specifies printing without execution, lines containing the macro
+.B $(\s-1MAKE\s0)
+are executed regardless, and lines containing the
+.B @
+special character are printed.
+The
+.B \-t
+(touch) option updates the modification date of a file without executing
+any rules.  This can be dangerous when sources are
+maintained by more than one person.
+.LP
+To take advantage of the Bourne shell
+.B if
+control structure for branching, use a command line of the form:
+.RS
+.nf
+.B if
+.IB expression "; \e"
+.B then
+.IB command "; \e"
+.IB command "; \e"
+\&.\|.\|.
+.B elif
+.IB expression "; \e"
+\&.\|.\|.
+.B else
+.IB command "; \e"
+.B fi
+.fi
+.RE
+Although composed of several input lines, the escaped
+.SM NEWLINE 
+characters insure that
+.B make
+treats them all as one command line.
+To take advantage of the Bourne shell
+.B for
+control statement, use a command line of the form:
+.RS
+.nf
+.BI for " var " in " list " "; do \e"
+.IB command " ; \e"
+\&.\|.\|.
+.B done
+.fi
+.RE
+To write shell variables, use double dollar-signs
+.RB ( \|$$\| ).
+This escapes expansion of the dollar-sign by
+.BR make .
+.SS Signals
+.LP
+.SM INT
+and
+.SM QUIT
+signals received from the keyboard halt
+.B make
+and remove the target file being processed
+(unless it is in the dependency list for 
+.BR \&.\s-1PRECIOUS\s0 ).
+.SS "Special-Function Targets"
+.LP
+When incorporated in a makefile, the following
+target names perform special functions.
+.TP 12
+.SB \&.DEFAULT
+If this target is defined in the makefile, its rule is used when
+there is no entry in the makefile for a given target and none
+of the implicit rules applies.
+.B make
+ignores the dependency list for this target.
+.TP
+.SB \&.PRECIOUS
+List of files not to delete.  
+Files listed as dependencies for this target are
+not removed if
+.B make
+is interrupted while rebuilding them.
+.TP
+.SB \&.SILENT
+Run silently.  
+When this target appears in the makefile,
+.B make
+does not echo commands before executing them.
+.TP
+.SB \&.IGNORE
+Ignore errors.  
+When this target appears in the makefile,
+.B make
+ignores nonzero error codes returned from commands.
+.TP
+.SB \&.SUFFIXES
+The suffixes list for selecting implicit rules (see
+.BR "Implicit Rules" ).
+.SS "Include Files"
+.LP
+.B make
+has an include file capability.  If the word
+.B include
+appears as the first seven letters of a line,
+and is followed by a
+.SM SPACE
+or a
+.SM TAB\s0,
+the string that follows
+is taken as a filename.  The text of the named file is read in
+at the current location in the makefile.
+.B include
+files can be nested to a depth of no more than about 16.
+.br
+.ne 8
+.SS Macros
+Entries of the form
+.IP
+.IB macro-name = value
+.LP
+define macros.
+.I name
+is the name of the macro, and
+.IR value ,
+which consists of all characters up to a comment character or
+unescaped
+.SM NEWLINE\s0,
+is the value.
+Words in a macro value are delimited by
+.SM SPACE\s0,
+.SM TAB\s0,
+and
+escaped
+.SM NEWLINE
+characters, and the terminating
+.SM NEWLINE\s0.
+.LP
+Subsequent references to the macro, of the forms:
+.BI $( name )
+or
+.BI ${ name }
+are replaced by
+.IR value .
+The parentheses or brackets can be omitted in a reference to a
+macro with a single-character name.
+.LP
+Macros definitions can contain references to other macros, but
+the nested references aren't expanded immediately.  Instead,
+they are expanded along with references to the macro itself.
+.LP
+Substitutions within macros can be made as follows:
+.IP
+.BI $( name : str1 = str2\fB)
+.LP
+where
+.I str1
+is either a suffix, or a word to be replaced in the macro
+definition, and
+.I str2
+is the replacement suffix or word.
+.SS Dynamically Maintained Macros
+.LP
+There are several dynamically maintained macros that are useful
+as abbreviations within rules.
+.TP
+.B $*
+The basename of the current target.  It is assigned only
+for implicit rules.
+.TP
+.B $<
+The name of the file on which the target is assumed to depend.
+This macro is only assigned for implicit rules, or within the
+.SB \&.DEFAULT
+target's rule.
+.TP
+.B $@
+The name of the current target.  
+It is assigned only for rules
+in targets that are explicitly defined in the makefile.
+.TP
+.B $?
+The list of dependencies with respect to which the target
+is out of date.  This macro is assigned only for explicit rules.
+.TP
+.B $%
+The library member. The 
+.B $% 
+macro is only evaluated when the target is an
+archive library member of the form:
+.IB lib ( file ".o )"\fR. 
+In this case,
+.B $@
+evaluates to
+.I lib
+and
+.B $%
+evaluates to the library member,
+.IB file .o\fR.
+.LP
+All of these macros but
+.B $?
+can be modified to apply either to the filename part, or the
+directory part of the strings they stand for, by adding an
+upper case
+.B F
+or
+.BR D ,
+respectively (and enclosing the resulting name in parentheses or
+braces).  Thus,
+.RB ` $(@D) '
+refers to the directory part of the string
+.RB ` $@ '.
+If there is no directory part,
+.RB ` \&. '
+is generated.
+.SS Environment Variables and Macros
+.LP
+After reading in its implicit rules,
+.B make
+reads in
+variables from the environment, treating them as if they were
+macro definitions.  Only then does
+.B make
+read in a makefile.
+Thus, macro assignments within a makefile override environment
+variables, provided that the
+.B \-e
+option is not in effect.  In turn,
+.B make
+exports environment variables to each shell it invokes.  Macros
+not read in from the environment are
+.I not
+exported.
+.LP
+The
+.SB MAKEFLAGS
+macro is a special case.
+When present as an environment variable,
+.B make
+takes its options (except for
+.BR  \-f ,
+.BR  \-p ,
+and
+.BR  \-d )
+from
+.SB MAKEFLAGS
+in combination with any flags entered on the command line.
+.B make
+retains this combined value, exports it automatically to each
+shell it forks, and reads its value to obtain options for any
+.B make
+commands it invokes.  Note, however that flags passed with
+.SB MAKEFLAGS
+even though they are in effect, are not shown in the output produced by
+.BR make .
+.LP
+The
+.SB MAKE
+macro is another special case.  It has the value 
+.B make
+by default, and temporarily overrides the
+.B \-n
+option for any line that contains a reference to it.
+This allows nested invocations of
+.B make
+written as:
+.IP
+.BR $(\s-1MAKE\s0) " .\|.\|."
+.LP
+to run recursively,
+so that the command 
+.B make \-n 
+can be used to test an
+entire hierarchy of makefiles.
+.LP
+For compatibility with the 4.2 
+.SM BSD
+.BR make ,
+the
+.SB MFLAGS
+macro is set from the
+.SB MAKEFLAGS
+variable by prepending a
+.RB  ` \- '.
+.SB MFLAGS
+is not exported automatically.
+.LP
+.B make
+supplies the following macros for compilers and their options:
+.TS
+lBp-1 l lBp-1 l .
+CC	\fBC\fR compiler, \fBcc\fR\|(1V)	CFLAGS	\fBC\fR compiler options
+FC	\s-1FORTRAN\s0 77 compiler, \fBf77\fR\|(1)	FFLAGS	\s-1FORTRAN\s0 77 compiler options
+		RFLAGS	\s-1FORTRAN\s0 77 compiler options with 
+			Ratfor (\fB.r\fR) source files
+PC	Pascal compiler, \fBpc\fR\|(1)	PFLAGS	Pascal compiler options
+M2C	Modula-2 compiler 	M2FLAGS 	Modula-2 compiler options
+GET	\fBsccs\fR\|(1) \fBget\fR command	GFLAGS	\fBsccs get\fR options
+AS	the assembler, \fBas\fR\|(1)	ASFLAGS 	assembler options
+LD  	the linker, \fBld\fR\|(1)	LDFLAGS 	linker options
+LEX 	\fBlex\fR\|(1) 	LFLAGS 	\fBlex\fR options
+YACC 	\fByacc\fR\|(1)	YFLAGS	\fByacc\fR options
+.TE
+Unless these macros are  read in as environment variables,
+their values are not exported by
+.BR make .
+If you run
+.B make
+with any these set in the environment, it is a good idea to add
+commentary to the makefile to indicate what value each takes.
+If
+.B \-r
+is in effect,
+.B make
+ignores these macro definitions.
+.DT
+.LP
+When set to a single-word value such as
+.BR /usr/bin/csh ,
+the
+.SB SHELL
+macro indicates the name of an alternate shell to use for
+invoking commands.  Note: to improve normal performance
+.B make
+executes command lines that contain no shell
+metacharacters directly.  Such builtin commands as
+.BR dirs ,
+or
+.BR set
+in the C shell are not recognized unless the command line includes a
+metacharacter (for instance, a semicolon).
+.\"
+.\".SS Target/Dependency File Search Path
+.\"Normally,
+.\".B make
+.\"searches for target and dependency files in the current working
+.\"directory.  To extend this search, set the
+.\".SB VPATH
+.\"macro to contain a colon-separated list of additional directories.
+.\".LP
+.\"If a target or dependency is found,
+.\".B make
+.\"uses entire pathname, rather than just the filename part.
+.\".LP
+.\"To maintain multiple versions of target files,
+.\"isolate dependency files in a directory listed in the search
+.\"path, and
+.\".B make
+.\"each version from within a directory outside that search path.
+.\"
+.SS Implicit Rules
+.LP
+.B make
+supplies implicit rules for certain types of targets that have no
+explicit rule defined in the makefile.  For these types of targets,
+.B make
+attempts to select an implicit rule by looking for an association
+between the target and a file in the directory that shares its
+basename.  That file, if found, is presumed to be a dependency file.
+The implicit rule is selected according to the target's suffix
+(which may be null), and that of the dependency file.
+If there is no such dependency file, if the suffix of either dependency
+or target is not the suffixes list, or if there is no implicit
+rule defined for that pair of suffixes, no rule is selected.
+.B make
+either uses the default rule that you have supplied (if any), or stops.
+.LP
+The suffixes list is a target with each known suffix listed
+as a dependency, by default:
+.RS
+.HP
+.SB \&.SUFFIXES:
+.B
+\&.o  .c  .c\*~  .mod  .mod\*~  .sym  .def  .def\*~  .p
+.B
+\&.p\*~  .f  .f\*~  .r  .r\*~  .y  .y\*~  .l  .l\*~
+.br
+.B \&.s  .s\*~  .sh  .sh\*~  .h  .h\*~
+.RE
+Multiple suffix-list targets accumulate; a 
+.SB \&.SUFFIXES
+target with no dependencies clears the list of suffixes.  Order is
+significant;
+.B make
+selects a rule that corresponds to the target's suffix and the first
+dependency-file suffix found in the list.
+.LP
+A tilde
+.RB ( \(ap )
+refers to the
+.BI s. prefix
+of an 
+.SM SCCS 
+history file (see
+.BR sccs (1)).
+If
+.B make
+cannot locate a history file (with a name of the form
+.BI s. basename.suffix\fR)
+in the current working directory, it checks for one in the
+.SM SCCS 
+subdirectory (if that directory exists) for one from which to
+.BR sccs-get (1)
+the dependency file.
+.LP
+An implicit rule is a target of the form:
+.RS
+.sp
+.IB dt :
+.ti +5
+.I rule
+.RE
+.LP
+where
+.I t
+is the suffix of the target,
+.I d
+is the suffix of the dependency, and
+.I rule
+is the implicit rule for building such a target from such a dependency.
+Both
+.I d
+and
+.I t
+must appear in the suffixes list for
+.B make
+to recognize the target as one that defines an implicit rule.
+.LP
+An implicit rule with only one suffix describes how to build
+a target having a null (or no)
+suffix, from a dependency having the indicated suffix.  For instance,
+the
+.B \&.c
+rule describes how to build the executable
+.I file
+from a
+.B C
+source file,
+.IB file .c\fR.
+.br
+.ne 7
+.LP
+Implicit rules are supplied for the following suffixes and suffix pairs:
+.IP
+.RS
+.ft B
+\&.c  .c\*~  .p  .p\*~  .mod  .mod\*~  .f  .f\*~  .F  .F\*~  .r  .r\*~
+\&.sh  .sh\*~
+\&.c.o  .c\*~.o  .c\*~.c  .p.o  .p\*~.o  .p\*~.p  .mod.o  .mod\*~.o
+\&.mod\*~.mod
+\&.def.sym  .def\*~.sym  .def\*~.def .f.o  .f\*~.f  .F.o  .F\*~.o
+\&.F\*~.F
+\&.r.o  .r\*~.o  .r\*~.r  .s.o  .s\*~.o .s\*~.s .sh\*~.sh .y.o
+\&.y\*~.o  .l.o  .l\*~.o
+\&.y.c  .y\*~.c  .y\*~.y  .l.c  .l\*~.c  .l\*~.l  .c.a  .c\*~.a
+\&.s\*~.a  .h\*~.h
+.ft R
+.RE
+.LP
+These rules can be changed within a makefile, and additional
+implicit rules can be added.
+To print out
+.BR make 's
+internal rules, use the following command.
+Note: this command only works with the Bourne Shell:
+.IP
+.RS
+.nf
+$  \fBmake \|\-fp \|\- \|2>/dev/null \|</dev/null\fP
+.fi
+.RE
+.LP
+If you are using the C shell, use this command to print out
+.BR make 's
+internal rules:
+.IP
+.RS
+.nf
+.B "example%  (make \|\-fp \|\- \|</dev/null \|>/dev/tty) \|>&/dev/null"
+.fi
+.RE
+.SS Library Maintenance
+.LP
+If a target name contains parentheses, as with:
+.RS
+.LP
+.B lib.a(member)
+.RE
+.LP
+it is assumed to be the name of an archive
+.RB ( ar (1V))
+library.  The string within the parentheses
+refers to a member of the library.  (If the string contains
+more than one word, the only first word is used.)
+A member of an archive can be explicitly made to depend on a
+file with a matching filename.  For instance, given a directory that
+contains the files
+.B mem1.c
+and
+.BR mem2.c ,
+along with a makefile with the entries:
+.RS
+.LP
+.B lib.a: lib.a(mem1.o) lib.a(mem2.0)
+.TP
+.B lib.a(mem1.o): mem1.o
+.B ar rv lib.a mem1.o
+.TP
+.B lib.a(mem2.o): mem2.o
+.B ar rv lib.a mem2.o
+.RE
+.LP
+.BR make ,
+when run, compiles the
+.B \&.c
+files into relocatable object
+.RB ( .o )
+files using the
+.B \&.c.o
+implicit rule.  It then loads the freshly compiled version of
+each file into the library according to the explicit rules in
+the 
+.BR lib.a() targets.
+.LP
+Implicit rules pertaining to archive libraries have the form
+.BI \&.\| \s-1XX\s0 .a
+where the
+.SM
+.I XX
+is the suffix from which the archive member is to be made.
+An unfortunate byproduct of the current implementation
+requires that
+.SM
+.I XX
+to be different from the suffix of the archive member itself.
+For instance, the target 
+.BI lib( file .o) 
+cannot depend upon the
+.IB file .o 
+explicitly, but instead, must be made to depend
+on a source file, such as
+.IB file .c\fR.
+For this reason it is recommended that you define an
+explicit target in the makefile for each library member to
+maintain, as shown above.
+.LP
+A target name of the form
+.IP
+.IB library (( entry-point ))
+.LP
+refers to the member of a randomized object library (see
+.BR ranlib (1))
+that defines the symbol
+.IR entry-point .
+.SH EXAMPLES
+.LP
+This
+.I makefile
+says that
+.B pgm
+depends on two files
+.B a.o
+and
+.BR b.o ,
+and that they in turn depend on their corresponding source files
+.RB ( a.c
+and
+.BR b.c )
+along with a common file
+.BR incl.h :
+.LP
+.RS
+.TP
+.B pgm: a.o b.o
+.B cc a.o b.o \-o $@
+.TP
+.B a.o: incl.h a.c
+.B cc \-c a.c
+.TP
+.B b.o: incl.h b.c
+.B cc \-c b.c
+.PD
+.RE
+.br
+.ne 5
+.LP
+The following
+.I makefile
+uses the builtin inference rules to express the same dependencies:
+.br
+.ne 6
+.RS
+.TP
+.B pgm: a.o b.o
+.B cc a.o b.o \-o pgm
+.TP
+.B a.o b.o: incl.h
+.PD
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.RI [ Mm ] akefile
+.TP
+.BI s.\fR[ Mm\fR]\fPakefile
+.TP
+.BI \s-1SCCS\s0/s.\fR[ mM\fR]\fPakefile
+.PD
+.SH DIAGNOSTICS
+.TP
+.BI "Don't know how to make " target "\|. Stop."
+There is no makefile entry for
+.IR target ,
+and none of
+.BR make 's
+implicit rules apply (there is no dependency file with
+a suffix in the suffixes list, or the target's suffix is not in
+the list).
+.TP
+.BI *** " target " removed.
+.B make
+was interrupted in the middle of trying to build
+.IR target .
+Rather than leaving a partially-completed version
+that is newer than its dependencies, make removes the file
+associated with
+.IR target .
+.TP
+.BI "*** Error code " n .
+The previous shell command returned a nonzero error code.
+In this case
+.I make
+stops, unless either the
+.B \-k
+or the
+.B \-i
+option is set, the target
+.SB \&.IGNORE
+appears, or the command is prefixed with a
+.RB ` \- '
+in the makefile.
+.TP
+.BI *** " signal message"
+The previous shell command was aborted due to a signal.  If
+.RB ` "\- core dumped" '
+appears after the message, a
+.B core
+file was created.
+.SH SEE ALSO
+.BR ar (1V),
+.BR cat (1V),
+.BR cc (1V),
+.BR cd (1),
+.BR csh (1),
+.BR lex (1),
+.BR ranlib (1),
+.BR sccs (1),
+.BR sccs-get (1),
+.BR sh (1)
+.LP
+.TX DMBG
+.br
+.TX PUL
+.SH BUGS
+.LP
+Some commands return nonzero status inappropriately; use
+.B \-i
+to overcome the difficulty.
+.LP
+Filenames with the characters
+.BR = ,
+.BR : ,
+and
+.B @
+will not work.
+.LP
+You cannot build 
+.BI lib( file .o) 
+from 
+.IB file .o\fR.
+.LP
+The macro substitution
+.B  $(a:.o=.c~)
+does not work.
+.LP
+Options supplied by
+.SB MAKEFLAGS
+should appear in output from
+.BR make .
+.IX  "make command"  ""  "\fLmake\fP \(em build programs"  "" PAGE END
+.IX  "programming tools"  make  ""  "\fLmake\fP \(em build programs" PAGE END
+.IX  "maintain programs make"  ""  "maintain programs \(em \fLmake\fP"  ""  PAGE END
+.IX  "update programs make"  ""  "update programs \(em \fLmake\fP"  "" PAGE END
+.IX  "regenerate programs make"  ""  "regenerate programs \(em \fLmake\fP"  ""  PAGE END

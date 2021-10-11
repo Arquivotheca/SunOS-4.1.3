@@ -1,0 +1,243 @@
+.\" @(#)ypxfr.8 1.1 92/07/30 SMI;
+.TH YPXFR 8 "21 December 1987"
+.SH NAME
+ypxfr \- transfer NIS map from NIS server to here
+.SH SYNOPSIS
+.B /usr/etc/yp/ypxfr
+[
+.B \-b
+]
+[
+.B \-c
+]
+[
+.B \-f
+]
+[
+.B \-d
+.I domain
+]
+.if n .ti +5n
+[
+.B \-h
+.I host
+] [
+.B \-s
+.I domain
+] [
+.B \-C
+.I tid prog ipadd port
+]
+.if n .ti +5n
+.if t .ti +.5i
+.I mapname
+.SH DESCRIPTION
+.IX ypxfr "" "\fLypxfr\fR \(em move remote NIS map to local host"
+.LP
+.B ypxfr
+moves a
+Network Information Service
+(\s-1NIS\s0)
+map in the default domain for the local host
+to the local host by making use of normal
+.SM NIS
+services.
+It creates a temporary map in the directory
+.BI /var/yp/ domain
+(this directory must already exist;
+.I domain
+is the default domain for the local host),
+fills it by enumerating the map's entries,
+fetches the map parameters (master and order number),
+and loads them.
+It then deletes any old versions of the map and moves the
+temporary map to the real
+.IR mapname .
+.LP
+If run interactively,
+.B ypxfr
+writes its output to the terminal.
+However, if it is invoked without a controlling terminal,
+and if the log file
+.B /var/yp/ypxfr.log
+exists, it will append all its output to that file.  Since
+.B ypxfr
+is most often run from the super-user's
+.B crontab
+file, or by
+.BR ypserv ,
+you can use the log file to retain a record of what was attempted,
+and what the results were.
+.LP
+If
+.BR issecure (3)
+is
+.SM TRUE\s0,
+.B ypxfr
+requires that
+.B ypserv
+on the
+.I host
+be running as root.
+If the map being transferred is a secure map,
+.B ypxfr
+sets the permissions on the map to 0600.
+.LP
+For consistency between servers,
+.B ypxfr
+should be run periodically for every map in the
+.SM NIS
+data base.  Different maps change
+at different rates: the
+.IB services . byname
+map may not change for months at a time, for instance, and may
+therefore be checked only once a day (in the wee hours).
+You may know that
+.IB mail . aliases
+or
+.IB hosts . byname
+changes several times per day.
+In such a case, you may want to check hourly for updates.
+A
+.BR crontab (5)
+entry can be used to perform periodic updates automatically.
+Rather than having a separate
+.B crontab
+entry for each map,
+you can group commands to update several maps in a shell script.
+Examples (mnemonically named) are in
+.BR /usr/etc/yp :
+.BR ypxfr_1perday ,
+.BR ypxfr_2perday ,
+and
+.BR ypxfr_1perhour .
+They can serve as reasonable first cuts.
+.LP
+Refer to
+.BR ypfiles (5)
+and
+.BR ypserv (8)
+for an overview of the 
+.SM NIS
+service.
+.SH OPTIONS
+.TP
+.B \-b
+Preserve the resolver flag in the map during the transfer.
+.TP
+.B \-c
+Do not send a \*(lqClear current map\*(rq request to the local
+.B ypserv
+process.  Use this flag if
+.B ypserv
+is not running locally at the time you are running
+.BR ypxfr .
+Otherwise,
+.B ypxfr
+will complain that it cannot talk to the local
+.BR ypserv ,
+and the transfer will fail.
+.TP
+.B \-f
+Force the transfer to occur even if the version at the master is not
+more recent than the local version.
+.TP
+.BI \-d " domain"
+Specify a domain other than the default domain.
+.TP
+.BI \-h " host"
+Get the map from
+.IR host ,
+regardless of what the map says the master is.  If
+.I host
+is not specified,
+.B ypxfr
+asks the
+.SM NIS
+service for the name of the master, and tries to get the
+map from there.
+.I host
+may be a name or an internet address in the form
+.IR "a.b.c.d" .
+.TP
+.BI \-s " domain"
+Specify a source domain from which to
+transfer a map that should be the same
+across domains (such as the
+.IB  services . byname
+map).
+.TP
+.BI \-C  "tid prog ipadd port"
+This option is
+.B only
+for use by
+.BR ypserv .
+When
+.B ypserv
+invokes
+.BR ypxfr ,
+it specifies that
+.B ypxfr
+should call back a
+.B yppush
+process at the host with
+.SM IP
+address
+.IR ipaddr ,
+registered as program number
+.IR prog ,
+listening on port
+.IR port ,
+and waiting for a response to transaction
+.IR tid .
+.br
+.ne 21
+.SH FILES
+.PD 0
+.TP 20
+.B /var/yp/ypxfr.log
+log file
+.TP
+.B /usr/etc/yp/ypxfr_1perday
+script to run one transfer per day, for use with
+.BR cron (8)
+.br
+.ne 5
+.TP
+.B /usr/etc/yp/ypxfr_2perday
+script to run two transfers per day
+.TP
+.B /usr/etc/yp/ypxfr_1perhour
+script for hourly transfers of volatile maps
+.TP
+.BI /var/yp/ domain
+.SM NIS
+domain
+.TP
+.B /var/spool/cron/crontabs/root
+Super-user's 
+.B crontab
+file
+.PD
+.SH "SEE ALSO"
+.BR issecure (3),
+.BR crontab (5),
+.BR ypfiles (5),
+.BR cron (8),
+.BR ypserv (8),
+.BR yppush (8),
+.LP
+.IR "\s-1YP\s0 Protocol Specification" ,
+in
+.TX NETP
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

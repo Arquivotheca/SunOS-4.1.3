@@ -1,0 +1,62 @@
+.\" @(#)ungetc.3s 1.1 92/07/30 SMI; from UCB 4.2
+.TH UNGETC 3S  "18 November 1987"
+.SH NAME
+ungetc \- push character back into input stream
+.SH SYNOPSIS
+.nf
+.B #include <stdio.h>
+.LP
+.B ungetc(c, stream)
+.B \s-1FILE\s0 *stream;
+.fi
+.IX  "push character back to input stream"  "" "push character back to input stream \(em \fLungetc()\fP"
+.IX  stream  "push character back to"  stream  "push character back to \(em \fLungetc()\fP"
+.IX  "input stream, push character back to \(em \fLungetc()\fP"
+.IX  "ungetc function"  ""  "\fLungetc()\fP \(em push character back to stream"
+.IX  character  "push back to stream"  ""  "push back to stream \(em \fLungetc()\fP"
+.SH DESCRIPTION
+.LP
+.B ungetc(\|)
+pushes the character
+.I c
+back onto an input stream.
+That character will be returned by the next
+.B getc(\|)
+call on that stream.
+.B ungetc(\|)
+returns
+.IR c ,
+and leaves the file
+stream
+unchanged.
+.LP
+One character of pushback is guaranteed provided
+something has been read from the stream
+and the stream is actually buffered.  In the case that
+stream
+is
+.BR stdin ,
+one character may be pushed back onto
+the buffer without a previous read statement.
+.LP
+If
+.I c
+equals
+.SM EOF\s0,
+.B ungetc(\|)
+does nothing to the buffer and returns
+.SM EOF\s0.
+.LP
+An
+.BR fseek (3S)
+erases all memory of pushed back characters.
+.SH "SEE ALSO"
+.BR fseek (3S),
+.BR getc (3V),
+.BR setbuf (3V)
+.SH DIAGNOSTICS
+.LP
+.B ungetc(\|)
+returns
+.SM EOF
+if it cannot push a character back.

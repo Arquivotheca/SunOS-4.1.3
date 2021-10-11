@@ -1,0 +1,199 @@
+.\" @(#)mem.4s 1.1 92/07/30 SMI;
+.TH MEM 4S "19 March 1991"
+.SH NAME
+mem, kmem, zero, vme16d16, vme24d16, vme32d16, vme16d32, vme24d32, vme32d32, eeprom, atbus, sbus \- main memory and bus I/O space
+.SH CONFIG
+None; included with standard system.
+.SH DESCRIPTION
+.IX  "mem device"  ""  "\fLmem\fP \(em main memory space"  ""  PAGE START
+.IX  "kmem device"  ""  "\fLkmem\fP \(em kernel memory space"  ""  PAGE START
+.IX  "vme16 device"  ""  "\fLvme16\fP \(em VMEbus 16-bit space"  ""  PAGE START
+.IX  "vme24 device"  ""  "\fLvme24\fP \(em VMEbus 24-bit space"  ""  PAGE START
+.IX  "vme16d16 device"  ""  "\fLvme16d16\fP \(em VMEbus address space"  ""  PAGE START
+.IX  "vme24d16 device"  ""  "\fLvme24d16\fP \(em VMEbus address space"  ""  PAGE START
+.IX  "vme32d16 device"  ""  "\fLvme32d16\fP \(em VMEbus address space"  ""  PAGE START
+.IX  "vme16d32 device"  ""  "\fLvme16d32\fP \(em VMEbus address space"  ""  PAGE START
+.IX  "vme24d32 device"  ""  "\fLvme24d32\fP \(em VMEbus address space"  ""  PAGE START
+.IX  "vme32d32 device"  ""  "\fLvme32d32\fP \(em VMEbus address space"  ""  PAGE START
+.IX  "sbus device"  ""  "\fLsbus\fP \(em Sbus address space"  ""  PAGE START
+.IX  "virtual device"  ""  "\fLvirtual\fP \(em virtual address space"  ""  PAGE START
+.IX  "memory images"  "mem device"  ""  "\fLmem\fP \(em main memory space"  PAGE START
+.IX  "memory images"  "kmem device"  ""  "\fLkmem\fP \(em kernel memory space"  PAGE START
+.IX  "memory images"  "vme16 device"  ""  "\fLvme16\fP \(em VMEbus 16-bit space"  PAGE START
+.IX  "memory images"  "vme24 device"  ""  "\fLvme24\fP \(em VMEbus 24-bit space"  PAGE START
+.IX  "memory images"  "vme16d16 device"  ""  "\fLvme16d16\fP \(em VMEbus address space"  PAGE START
+.IX  "memory images"  "vme24d16 device"  ""  "\fLvme24d16\fP \(em VMEbus address space"  PAGE START
+.IX  "memory images"  "vme32d16 device"  ""  "\fLvme32d16\fP \(em VMEbus address space"  PAGE START
+.IX  "memory images"  "vme16d32 device"  ""  "\fLvme16d32\fP \(em VMEbus address space"  PAGE START
+.IX  "memory images"  "vme24d32 device"  ""  "\fLvme24d32\fP \(em VMEbus address space"  PAGE START
+.IX  "memory images"  "vme32d32 device"  ""  "\fLvme32d32\fP \(em VMEbus address space"  PAGE START
+.IX  "memory images"  "sbus device"  ""  "\fLsbus\fP \(em Sbus address space"  PAGE START
+.IX  "memory images"  "virtual device"  ""  "\fLvirtual\fP \(em virtual address space"  PAGE START
+.LP
+These devices are special files that map memory and bus I/O space.
+They may be read, written, seeked, and (except for
+.BR kmem )
+memory-mapped.
+See
+.BR read (2V),
+.BR write (2V),
+.BR mmap (2),
+and
+.BR directory (3V).
+.SS "All Systems"
+.LP
+.B mem
+is a special file that is an image of the physical memory of the computer.
+It may be used, for example, to examine (and even to patch) the system.
+.LP
+.B kmem
+is a special file that is an image of the kernel virtual memory of the system.
+.LP
+.B zero
+is a special file which is a source of private zero pages.
+.LP
+.B eeprom
+is a special file that is an image of the
+.SM EEPROM
+or
+.SM NVRAM\s0.
+.SS "Sun-3 and Sun-4 Systems VMEbus"
+.B vme16d16
+(also known as
+.BR vme16 )
+is a special file that is an image of
+.SM VME\s0bus
+16-bit addresses with 16-bit data.
+.B vme16
+address space extends from 0 to 64K.
+.LP
+.B vme24d16
+(also known as
+.BR vme24 )
+is a special file that is an image of
+.SM VME\s0bus
+24-bit addresses with 16-bit data.
+.B vme24
+address space extends from 0 to 16 megabytes.  The
+.SM VME
+16-bit address space
+overlaps the top 64K of the 24-bit address space.
+.LP
+.B vme32d16
+is a special file that is an image of
+.SM VME\s0bus
+32-bit addresses with 16-bit data.
+.LP
+.B vme16d32
+is a special file that is an image of
+.SM VME\s0bus
+16-bit addresses with 32-bit data.
+.LP
+.B vme24d32
+is a special file that is an image of
+.SM VME\s0bus
+24-bit addresses with 32-bit data.
+.LP
+.B vme32d32
+(also known as
+.BR vme32 )
+is a special file that is an image of
+.SM VME\s0bus
+32-bit addresses with 32-bit data.
+.B vme32
+address space extends from 0 to 4 gigabytes.  The
+.SM VME
+24-bit address space
+overlaps the top 16 megabytes of the 32-bit address space.
+.SS "Desktop SPARCsystems"
+The 
+.B sbus
+is represented by a series of entries each of which is an image
+of a single 
+.B sbus 
+slot.
+The entries are named 
+.BI sbus n\fR,
+where 
+.I n
+is the slot number
+in hexadecimal.
+The number of 
+.B sbus 
+slots and the address range within each slot may vary
+between implementations.
+.SS "SPARCsystem 600MP Series"
+\s-1SPARC\s0system 600MP series systems have both
+.B sbus
+and
+.SM VME\s0bus
+as described above.
+.SS "Sun386i Systems"
+.LP
+.B atbus
+is a special file that is an image of the
+.SM AT
+bus space.
+It extends from 0 to 16 megabytes.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/mem
+.TP
+.B /dev/kmem
+.TP
+.B /dev/zero
+.TP
+.B /dev/vme16d16
+.TP
+.B /dev/vme16
+.TP
+.B /dev/vme24d16
+.TP
+.B /dev/vme24
+.TP
+.B /dev/vme32d16
+.TP
+.B /dev/vme16d32
+.TP
+.B /dev/vme24d32
+.TP
+.B /dev/vme32d32
+.TP
+.B /dev/vme32
+.TP
+.B /dev/eeprom
+.TP
+.B /dev/atbus
+.TP
+.B /dev/sbus[0-3]
+.PD
+.SH SEE ALSO
+.BR mmap (2),
+.BR read (2V),
+.BR write (2V),
+.BR directory (3V)
+.IX  "mem device"  ""  "\fLmem\fP \(em main memory space"  ""  PAGE END
+.IX  "kmem device"  ""  "\fLkmem\fP \(em kernel memory space"  ""  PAGE END
+.IX  "vme16 device"  ""  "\fLvme16\fP \(em VMEbus 16-bit space"  ""  PAGE END
+.IX  "vme24 device"  ""  "\fLvme24\fP \(em VMEbus 24-bit space"  ""  PAGE END
+.IX  "vme16d16 device"  ""  "\fLvme16d16\fP \(em VMEbus address space"  ""  PAGE END
+.IX  "vme24d16 device"  ""  "\fLvme24d16\fP \(em VMEbus address space"  ""  PAGE END
+.IX  "vme32d16 device"  ""  "\fLvme32d16\fP \(em VMEbus address space"  ""  PAGE END
+.IX  "vme16d32 device"  ""  "\fLvme16d32\fP \(em VMEbus address space"  ""  PAGE END
+.IX  "vme24d32 device"  ""  "\fLvme24d32\fP \(em VMEbus address space"  ""  PAGE END
+.IX  "vme32d32 device"  ""  "\fLvme32d32\fP \(em VMEbus address space"  ""  PAGE END
+.IX  "sbus device"  ""  "\fLsbus\fP \(em Sbus address space"  ""  PAGE END
+.IX  "virtual device"  ""  "\fLvirtual\fP \(em virtual address space"  ""  PAGE END
+.IX  "memory images"  "mem device"  ""  "\fLmem\fP \(em main memory space"  PAGE END
+.IX  "memory images"  "kmem device"  ""  "\fLkmem\fP \(em kernel memory space"  PAGE END
+.IX  "memory images"  "vme16 device"  ""  "\fLvme16\fP \(em VMEbus 16-bit space"  PAGE END
+.IX  "memory images"  "vme24 device"  ""  "\fLvme24\fP \(em VMEbus 24-bit space"  PAGE END
+.IX  "memory images"  "vme16d16 device"  ""  "\fLvme16d16\fP \(em VMEbus address space"  PAGE END
+.IX  "memory images"  "vme24d16 device"  ""  "\fLvme24d16\fP \(em VMEbus address space"  PAGE END
+.IX  "memory images"  "vme32d16 device"  ""  "\fLvme32d16\fP \(em VMEbus address space"  PAGE END
+.IX  "memory images"  "vme16d32 device"  ""  "\fLvme16d32\fP \(em VMEbus address space"  PAGE END
+.IX  "memory images"  "vme24d32 device"  ""  "\fLvme24d32\fP \(em VMEbus address space"  PAGE END
+.IX  "memory images"  "vme32d32 device"  ""  "\fLvme32d32\fP \(em VMEbus address space"  PAGE END
+.IX  "memory images"  "sbus device"  ""  "\fLsbus\fP \(em Sbus address space"  PAGE END
+.IX  "memory images"  "virtual device"  ""  "\fLvirtual\fP \(em virtual address space"  PAGE END

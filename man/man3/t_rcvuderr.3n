@@ -1,0 +1,133 @@
+.\" @(#)t_rcvuderr.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_RCVUDERR 3N "21 January 1990"
+.SH NAME
+t_rcvuderr \- receive a unit data error indication
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_rcvuderr(fd, uderr)
+int fd;
+struct t_uderr *uderr;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_rcvuderr()" "" "\fLt_rcvuderr()\fR \(em receive unit data error indication" ""
+.IX transport "receive a unit data error indication"
+.IX receive "transport unit data error indication"
+.LP
+.B t_rcvuderr(\|)
+is used in connectionless mode
+to receive information concerning an error
+on a previously sent data unit, and
+should only be issued following a unit data error indication.
+It informs the transport user that a data unit with a specific
+destination address and protocol options produced an error.
+.I fd
+identifies the local transport endpoint through which the error
+report will be received, and
+.I uderr
+points to a
+.B t_uderr(\|)
+structure defined in
+.B <nettli/tiuser.h>
+as:
+.nf
+.RS
+.ft B
+struct t_uderr {
+	struct netbuf addr;			/* address	*/
+	struct netbuf opt;			/* options	*/
+	long  error;				/* error code	*/
+};
+.fi
+.ft R
+.RE
+.LP
+The
+.IR maxlen ,
+.IR len ,
+and
+.I buf
+members of the
+.I netbuf
+structure are described in
+.BR t_accept (3N).
+The
+.I maxlen
+field of
+.I addr
+and
+.I opt
+must be set before issuing this function to indicate the maximum
+size of the buffer for each.
+.LP
+On return from this call, the
+.I addr
+structure specifies the destination protocol address of the erroneous data
+unit, the
+.I opt
+structure identifies protocol-specific options that were
+associated with the data unit, and
+.B error
+specifies a protocol-dependent error code.
+.LP
+If the user does not care to identify the data unit
+that produced an error,
+.I uderr
+may be set to
+.SM NULL
+and
+.B t_rcvuderr(\|)
+will simply clear the error indication without reporting any
+information to the user.
+.SH RETURN VALUES
+.LP
+.B t_rcvuderr(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBUFOVFLW
+The number of bytes allocated for the incoming protocol address or
+options is not sufficient to store the information.
+The unit data error information to be returned in
+.I uderr
+will be discarded.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TNOUDERR
+No unit data error indication currently exists on the specified
+transport endpoint.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.br
+.ne 5
+.SH SEE ALSO
+.BR intro (3),
+.BR t_rcvudata (3N),
+.BR t_sndudata (3N)
+.LP
+.TX NETP

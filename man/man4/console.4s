@@ -1,0 +1,611 @@
+.\" @(#)console.4s 1.1 92/07/30 SMI
+.TH CONSOLE 4S "20 November 1987"
+.SH NAME
+console \- console driver and terminal emulator for the Sun workstation
+.SH CONFIG
+None; included in standard system.
+.SH SYNOPSIS
+.ft B
+.nf
+#include <fcntl.h>
+#include <sys/termios.h>
+open("/dev/console", mode);
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "console device"  ""  "\fLconsole\fP \(em console driver/terminal emulator"  ""  PAGE START
+.IX  "terminal emulator"  ""  "terminal emulator \(em \fLconsole\fP"  ""  PAGE START
+.IX  "ANSI terminal emulation"  ""  "ANSI terminal emulation \(em \fLconsole\fP"  ""  PAGE START
+.LP
+.B console
+is an indirect driver for the Sun console terminal.
+On a Sun workstation, this driver refers to
+the workstation console driver, which implements
+a standard
+.SM UNIX
+system terminal.  On a Sun server without a
+keyboard or a frame buffer, this driver refers to the
+.SM CPU
+serial port driver
+.RB ( zs (4S));
+a terminal is normally connected to this port.
+.LP
+The workstation console does not support any of the
+.BR termio (4)
+device control functions specified by flags in the
+.B c_cflag
+word of the
+.B termios
+structure or by the
+.SM
+.BR IGNBRK\*S ,
+.SM
+.BR IGNPAR\*S ,
+.SM
+.BR PARMRK\*S ,
+or
+.SB INPCK
+flags in the
+.B c_iflag
+word of the
+.B termios
+structure, as these functions apply only to asynchronous serial
+ports.  All other
+.BR termio (4)
+functions must be performed by
+.SM STREAMS
+modules pushed atop the driver; when a slave device is opened, the
+.BR ldterm (4M)
+and
+.BR ttcompat (4M)
+.SM STREAMS
+modules are automatically pushed on top of the stream, providing the
+standard
+.BR termio (4)
+interface.
+.LP
+The workstation console driver calls the
+.SM PROM
+resident monitor to output data to the console frame buffer.
+Keystrokes from the
+.SM CPU
+serial port to which the keyboard is
+connected are routed through the keyboard
+.SM STREAMS
+module
+.RB ( kb (4M))
+and treated as input.
+.LP
+When the Sun window system
+.BR win (4S)
+is active, console input is directed through
+the window system rather
+than being treated as input by the workstation
+console driver.
+.SH IOCTLS
+.IX  "ioctls for terminals"  "TIOCCONS"  "\fLioctl\fP's for terminals"  "\fLTIOCCONS\fP \(em get console I/O"
+.IX  "TIOCCONS get console I/O"  ""  "\fLTIOCCONS\fP \(em get console I/O"
+.IX  get "console I/O \fLioctl\fP \(em \fLTIOCCONS\fP"
+.IX  "console I/O ioctl, \fLTIOCCONS\fP"
+.LP
+An ioctl
+.SB TIOCCONS
+can be applied to pseudo-terminals
+.RB ( pty (4))
+to route output that would normally appear on the console to the
+pseudo-terminal instead.  Thus, the window system does a
+.SB TIOCCONS
+on a pseudo-terminal so that the system will route console output to
+the window to which that pseudo-terminal is connected,
+rather than routing output through the
+.SM PROM
+monitor to the screen, since routing output through the
+.SM PROM
+monitor destroys the integrity of the screen.  Note:
+when you use
+.SB TIOCCONS
+in this way, the console
+.I input
+is routed from the pseudo-terminal as well.
+.LP
+If a
+.SB TIOCCONS
+is performed on
+.BR /dev/console ,
+or the pseudo-terminal to which console output is being routed is
+closed, output to the console will again be routed to the workstation
+console driver.
+.SH "ANSI STANDARD TERMINAL EMULATION"
+.LP
+.IX  "ANSI standard terminal emulation"  ""  ""  ""  PAGE START
+.IX  "terminal emulation, ANSI"  ""  ""  ""  PAGE START
+The Sun Workstation's
+.SM PROM
+monitor provides routines that emulates a standard
+.SM ANSI
+X3.64 terminal.
+.LP
+Note: the
+.SM VT\s0100
+also follows the
+.SM ANSI
+X3.64 standard but both the Sun and the
+.SM VT\s0100
+have nonstandard extensions to the
+.SM ANSI
+X3.64 standard.  The Sun terminal emulator and the
+.SM VT\s0100
+are
+.I not
+compatible in any true sense.
+.LP
+The Sun console displays 34 lines of 80
+.SM ASCII
+characters per line, with scrolling,
+.RI ( x , " y" )
+cursor
+addressability, and a number of other control functions.
+.LP
+The Sun console displays a non-blinking block cursor which marks the
+current line and character position on the screen.
+.SM ASCII
+characters between 0x20 (space) and 0x7E (tilde) inclusive are printing
+characters \(em when one is
+written to the Sun console (and is not part of an escape sequence),
+it is displayed at the current cursor position and the
+cursor moves one position to the right on the current line.  If the
+cursor is already at the right edge of the screen, it moves to the
+first character position on the next line.  If the cursor is already at
+the right edge of the screen on the bottom line, the Line-feed function
+is performed (see
+.SM CTRL-J
+below), which scrolls the screen up by one
+or more lines or wraps around, before moving the cursor to the first
+character position on the next line.
+.LP
+.B Control Sequence Syntax
+.LP
+The Sun console defines a number of control sequences which may occur in its
+input.  When such a sequence is written to the Sun console, it is not
+displayed on the screen, but effects some control function as
+described below, for example, moves the cursor or sets a display mode.
+.LP
+Some of the control sequences consist of a single character.  The notation
+.RS
+\s-1CTRL-\fIX\fP\s0
+.RE
+for some character
+.I X ,
+represents a control character.
+.LP
+Other
+.SM ANSI
+control sequences are of the form
+.RS
+.nf
+.RI "\s-1ESC\s0 [ " params char"
+.fi
+.RE
+.LP
+Spaces are included only for readability; these characters must
+occur in the given sequence without the intervening spaces.
+.LP
+.PD 0
+.TP
+\s-1ESC\s0
+represents the
+.SM ASCII
+escape character (\s-1ESC\s0, \s-1CTRL-[\s0, 0x1B).
+.TP
+[
+The next character is a left square bracket `[' (0x5B).
+.TP
+.I params
+are a sequence of zero or more decimal numbers
+made up of digits between 0 and 9, separated by semicolons.
+.TP
+.I char
+represents a function character, which is different for each control sequence.
+.PD
+.LP
+Some examples of syntactically valid escape sequences are (again,
+\s-1ESC\s0
+represent the single
+.SM ASCII
+character `Escape'):
+.RS
+.nf
+.ta 2.5i
+\s-1ESC\s0\^[\^m	\fIselect graphic rendition with default parameter\fP
+\s-1ESC\s0\^[\^7m	\fIselect graphic rendition with reverse image\fP
+\s-1ESC\s0\^[\^33;54H	\fIset cursor position\fP
+\s-1ESC\s0\^[\^123;456;0;;3;B	\fImove cursor down\fP
+.fi
+.RE
+.LP
+Syntactically valid
+.SM ANSI
+escape sequences which are not currently interpreted by the Sun
+console are ignored.  Control characters which are not currently
+interpreted by the Sun console are also ignored.
+.LP
+Each control function requires a specified number of parameters, as
+noted below.  If fewer parameters are supplied, the remaining
+parameters default to 1, except as noted in the descriptions below.
+.LP
+If more than the required number of parameters is supplied, only the
+last
+.I n
+are used, where
+.I n
+is the number required by that particular command character.  Also,
+parameters which are omitted or set to zero are reset to the default
+value of 1 (except as noted below).
+.LP
+Consider, for example, the command character M which requires one
+parameter.
+\s-1ESC\s0\^[\^;M
+and
+\s-1ESC\s0\^[\^0M
+and
+\s-1ESC\s0\^[\^M
+and
+\s-1ESC\s0\^[\^23;15;32;1M
+are all equivalent to
+\s-1ESC\s0\^[\^1M
+and provide a parameter value of 1.  Note:
+\s-1ESC\s0\^[\^;5M
+(interpreted as
+`\s-1ESC\s0\^[\^5M')
+is
+.I not
+equivalent to
+\s-1ESC\s0\^[\^5;M
+(interpreted as
+`\s-1ESC\s0\^[\^5;1M')
+which is ultimately interpreted as
+`\s-1ESC\s0\^[\^1M').
+.LP
+In the syntax descriptions below, parameters are represented as
+.RB ` # '
+or
+.RB ` #1;#2 '.
+.LP
+.B ANSI Control Functions
+.LP
+The following paragraphs specify the
+.SM ANSI
+control functions implemented by the Sun console.  Each description gives:
+.RS
+.TP 2
+\(bu
+the control sequence syntax
+.TP 2
+\(bu
+the hex equivalent of control characters where applicable
+.TP 2
+\(bu
+the control function name and
+.SM ANSI
+or Sun abbreviation (if any).
+.TP 2
+\(bu
+description of parameters required, if any
+.TP 2
+\(bu
+description of the control function
+.TP 2
+\(bu
+for functions which set a mode, the initial setting of the mode.
+The initial settings can be restored with the
+.SM SUNRESET
+escape sequence.
+.RE
+.LP
+.B Control Character Functions
+.LP
+.ta 1.2i
+.TP
+\s-1CTRL-G\s0 (0x7)	Bell (\s-1BEL\s0)
+The Sun Workstation Model 100 and 100U is not equipped with an audible
+bell.  It `rings the bell' by flashing the entire screen.
+The window system flashes the window.
+.TP
+\s-1CTRL-H\s0 (0x8)	Backspace (\s-1BS\s0)
+The cursor moves one position to the left on the current line.  If it
+is already at the left edge of the screen, nothing happens.
+.TP
+\s-1CTRL-I\s0 (0x9)	Tab (\s-1TAB\s0)
+The cursor moves right on the current line to the next tab stop.  The
+tab stops are fixed at every multiple of 8 columns.  If the cursor is
+already at the right edge of the screen, nothing happens; otherwise the
+cursor moves right a minimum of one and a maximum of eight character
+positions.
+.TP
+\s-1CTRL-J\s0 (0xA)	Line-feed (\s-1LF\s0)
+The cursor moves down one line, remaining at the same character
+position on the line.  If the cursor is already at the bottom line, the
+screen either scrolls up or ``wraps around'' depending on the setting of
+an internal variable
+.I S
+(initially 1) which can be changed by the
+\s-1ESC\s0\^[\^r
+control sequence.  If
+.I S
+is greater than zero, the entire screen
+(including the cursor) is scrolled up by
+.I S
+lines before executing
+the line-feed.  The top
+.I S
+lines scroll off the screen and are lost.
+.I S
+new blank lines scroll onto the bottom of the screen.
+After scrolling, the line-feed is executed by moving the cursor down
+one line.
+.IP
+If
+.I S
+is zero, `wrap-around' mode is entered.
+`\s-1ESC\s0 [ 1 r' exits
+back to scroll mode.
+If a line-feed occurs on the bottom line in wrap mode, the cursor goes to
+the same character position in the top line of
+the screen.  When any line-feed occurs, the line that the cursor moves
+to is cleared.  This means that no scrolling occurs.  Wrap-around mode is not
+implemented in the window system.
+.IP
+The screen scrolls as fast as possible depending on how much data is
+backed up waiting to be printed.  Whenever a scroll must take place and the
+console is in normal scroll mode
+(`\s-1ESC\s0 [ 1 r'), it scans the rest of
+the data awaiting printing to see how many line-feeds occur in it.  This
+scan stops when any control character from the set
+.RB { \s-1VT\s0 ,
+.BR \s-1FF\s0 ,
+.BR \s-1SO\s0 ,
+.BR \s-1SI\s0 ,
+.BR \s-1DLE\s0 ,
+.BR \s-1DC\s01 ,
+.BR \s-1DC\s02 ,
+.BR \s-1DC\s03 ,
+.BR \s-1DC\s04 ,
+.BR \s-1NAK\s0 ,
+.BR \s-1SYN\s0 ,
+.BR \s-1ETB\s0 ,
+.BR \s-1CAN\s0 ,
+.BR \s-1EM\s0 ,
+.BR \s-1SUB\s0 ,
+.BR \s-1ESC\s0 ,
+.BR \s-1FS\s0 ,
+.BR \s-1GS\s0 ,
+.BR \s-1RS\s0 ,
+.BR \s-1US\s0 }
+is found.  At that point, the screen is scrolled
+by N lines (N \(>= 1) and processing continues.
+The scanned text is still processed
+normally to fill in the newly created lines.
+This results in much faster scrolling with scrolling as long as no escape
+codes or other control characters are intermixed with the text.
+.IP
+See also the discussion of the `Set scrolling'
+.BR  (\s-1ESC\s0\^[\^r)
+control function below.
+.TP
+\s-1CTRL-K\s0 (0xB)	Reverse Line-feed
+The cursor moves up one line, remaining at the same character position
+on the line.  If the cursor is already at the top line, nothing happens.
+.TP
+\s-1CTRL-L\s0 (0xC)	Form-feed (\s-1FF\s0)
+The cursor is positioned to the Home position (upper-left corner) and
+the entire screen is cleared.
+.TP
+\s-1CTRL-M\s0 (0xD)	Return (\s-1CR\s0)
+The cursor moves to the leftmost character position on the current
+line.
+.LP
+.B Escape Sequence Functions
+.LP
+.TP
+\s-1CTRL-[\s0 (0x1B)	Escape (\s-1ESC\s0)
+This is the escape character.  Escape initiates a multi-character
+control sequence.
+.TP
+\s-1ESC\s0\^[\^#@	Insert Character (\s-1ICH\s0)
+Takes one parameter, # (default 1).  Inserts #
+spaces at the current
+cursor position.  The tail of the current line starting at the current
+cursor position inclusive is shifted to the right by #
+character
+positions to make room for the spaces.  The rightmost #
+character
+positions shift off the line and are lost.  The position of the cursor
+is unchanged.
+.br
+.ne 6
+.TP
+\s-1ESC\s0\^[\^#A	Cursor Up (\s-1CUU\s0)
+Takes one parameter, # (default 1).  Moves the cursor up # lines.  If
+the cursor is fewer than # lines from the top of the screen, moves the
+cursor to the topmost line on the screen.  The character position of
+the cursor on the line is unchanged.
+.TP
+\s-1ESC\s0\^[\^#B	Cursor Down (\s-1CUD\s0)
+Takes one parameter, # (default 1).  Moves the cursor down # lines.  If
+the cursor is fewer than # lines from the bottom of the screen, move
+the cursor to the last line on the screen.  The character position of
+the cursor on the line is unchanged.
+.TP
+\s-1ESC\s0\^[\^#C	Cursor Forward (\s-1CUF\s0)
+Takes one parameter, # (default 1).  Moves the cursor to the right by #
+character positions on the current line.  If the cursor is fewer than #
+positions from the right edge of the screen, moves the cursor to the
+rightmost position on the current line.
+.TP
+\s-1ESC\s0\^[\^#D	Cursor Backward (\s-1CUB\s0)
+Takes one parameter, # (default 1).  Moves the cursor to the left by #
+character positions on the current line.  If the cursor is fewer than #
+positions from the left edge of the screen, moves the cursor to the
+leftmost position on the current line.
+.TP
+\s-1ESC\s0\^[\^#E	Cursor Next Line (\s-1CNL\s0)
+Takes one parameter, # (default 1).  Positions the cursor at the
+leftmost character position on the #-th line below the current line.
+If the current line is less than # lines from the bottom of the screen,
+positions the cursor at the leftmost character position on the bottom
+line.
+.TP
+\s-1ESC\s0\^[\^#1;#2f	Horizontal And Vertical Position (\s-1HVP\s0)
+.PD 0
+or
+.TP
+\s-1ESC\s0\^[\^#1;#2H	Cursor Position (\s-1CUP\s0)
+Takes two parameters, #1 and #2 (default 1, 1).  Moves the cursor to
+the #2-th character position on the #1-th line.  Character positions
+are numbered from 1 at the left edge of the screen; line positions are
+numbered from 1 at the top of the screen.  Hence, if both parameters
+are omitted, the default action moves the cursor to the home position
+(upper left corner).  If only one parameter is supplied, the cursor moves to
+column 1 of the specified line.
+.PD
+.TP
+\s-1ESC\s0\^[\^J	Erase in Display (\s-1ED\s0)
+Takes no parameters.  Erases from the current cursor position inclusive
+to the end of the screen.  In other words, erases from the current
+cursor position inclusive to the end of the current line and all lines
+below the current line.  The cursor position is unchanged.
+.TP
+\s-1ESC\s0\^[\^K	Erase in Line (\s-1EL\s0)
+Takes no parameters.  Erases from the current cursor position inclusive
+to the end of the current line.  The cursor position is unchanged.
+.TP
+\s-1ESC\s0\^[\^#L	Insert Line (\s-1IL\s0)
+Takes one parameter, # (default 1).  Makes room for # new lines
+starting at the current line by scrolling down by # lines the portion
+of the screen from the current line inclusive to the bottom.  The # new
+lines at the cursor are filled with spaces; the bottom # lines shift
+off the bottom of the screen and are lost.  The position of the cursor
+on the screen is unchanged.
+.TP
+\s-1ESC\s0\^[\^#M	Delete Line (\s-1DL\s0)
+Takes one parameter, # (default 1).  Deletes # lines beginning with the
+current line.  The portion of the screen from the current line
+inclusive to the bottom is scrolled upward by # lines.  The # new lines
+scrolling onto the bottom of the screen are filled with spaces; the #
+old lines beginning at the cursor line are deleted.  The position of
+the cursor on the screen is unchanged.
+.TP
+\s-1ESC\s0\^[\^#P	Delete Character (\s-1DCH\s0)
+Takes one parameter, # (default 1).  Deletes # characters starting with
+the current cursor position.  Shifts to the left by # character
+positions the tail of the current line from the current cursor position
+inclusive to the end of the line.  Blanks are shifted into the
+rightmost # character positions.  The position of the cursor on the
+screen is unchanged.
+.TP
+\s-1ESC\s0\^[\^#m	Select Graphic Rendition (\s-1SGR\s0)
+Takes one parameter, # (default 0).  Note: unlike most escape
+sequences, the parameter defaults to zero if omitted.  Invokes the
+graphic rendition specified by the parameter.  All following printing
+characters in the data stream are rendered according to the parameter
+until the next occurrence of this escape sequence in the data stream.
+Currently only two graphic renditions are defined:
+.RS
+.TP 3
+0
+Normal rendition.
+.TP 3
+7
+Negative (reverse) image.
+.RE
+.IP
+Negative image displays characters as white-on-black if the screen mode
+is currently black-on white, and vice-versa.  Any non-zero value of #
+is currently equivalent to 7 and selects the negative image rendition.
+.TP
+\s-1ESC\s0\^[\^p	Black On White (\s-1SUNBOW\s0)
+Takes no parameters.  Sets the screen mode to black-on-white.  If the
+screen mode is already black-on-white, has no effect.  In this mode
+spaces display as solid white, other characters as black-on-white.  The
+cursor is a solid black block.  Characters displayed in negative image
+rendition (see `Select Graphic Rendition' above) is white-on-black in
+this mode.  This is the initial setting of the screen mode on reset.
+.TP
+\s-1ESC\s0\^[\^q	White On Black (\s-1SUNWOB\s0)
+Takes no parameters.  Sets the screen mode to white-on-black.  If the
+screen mode is already white-on-black, has no effect.  In this mode
+spaces display as solid black, other characters as white-on-black.  The
+cursor is a solid white block.  Characters displayed in negative image
+rendition (see `Select Graphic Rendition' above) is black-on-white in
+this mode.  The initial setting of the screen mode on reset is the
+alternative mode, black on white.
+.TP
+\s-1ESC\s0\^[\^#r	Set scrolling (\s-1SUNSCRL\s0)
+Takes one parameter, # (default 0).
+Sets to # an internal register which
+determines how many lines the screen scrolls up when a line-feed
+function is performed with the cursor on the bottom line.  A parameter
+of 2 or 3 introduces a small amount of ``jump'' when a scroll occurs.  A
+parameter of 34 clears the screen rather than scrolling.  The initial setting is 1
+on reset.
+.IP
+A parameter of zero initiates ``wrap mode'' instead of scrolling.  In
+wrap mode, if a linefeed occurs on the bottom line, the cursor goes to
+the same character position in the top line of the screen.  When any
+linefeed occurs, the line that the cursor moves to is cleared.  This
+means that no scrolling ever occurs.
+`\s-1ESC\s0 [ 1 r'
+exits back to scroll mode.
+.IP
+For more information, see the description of the Line-feed (\s-1CTRL-J\s0)
+control function above.
+.TP
+\s-1ESC\s0\^[\^s	Reset terminal emulator (\s-1SUNRESET\s0)
+Takes no parameters.  Resets all modes to default, restores current
+font from
+.SM PROM\s0.  Screen and cursor position are unchanged.
+.IX  "ANSI standard terminal emulation"  ""  ""  ""  PAGE END
+.IX  "terminal emulation, ANSI"  ""  ""  ""  PAGE END
+.DT
+.SH "4014 TERMINAL EMULATION"
+.LP
+The
+.SM PROM
+monitor for Sun models 100U and 150U provides the Sun
+Workstation with the capability to emulate a subset of the Tektronix
+4014 terminal.  This feature does not exist in other Sun
+.SM PROM\s0s
+and will be removed from models 100U and 150U in future Sun releases.
+.BR tektool (1)
+provides Tektronix 4014 terminal emulation and should be used instead
+of relying on the capabilities of the
+.SM PROM
+monitor.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/console
+.PD
+.SH SEE ALSO
+.BR tektool (1)
+.BR kb (4M),
+.BR ldterm (4M),
+.BR pty (4),
+.BR termio (4),
+.BR ttcompat (4M),
+.BR win (4S),
+.BR zs (4S)
+.LP
+.SM ANSI
+Standard X3.64,
+.RI `` "Additional Controls for Use with \s-1ASCII\s0" '',
+Secretariat:
+.SM CBEMA\s0,
+1828 L St., N.W., Washington, D.C.  20036.
+.SH BUGS
+.SB TIOCCONS
+should be restricted to the owner of
+.BR /dev/console .
+.IX  "console device"  ""  "\fLconsole\fP \(em console driver/terminal emulator"  ""  PAGE END
+.IX  "terminal emulator"  ""  "terminal emulator \(em \fLconsole\fP"  ""  PAGE END
+.IX  "ANSI terminal emulation"  ""  "ANSI terminal emulation \(em \fLconsole\fP"  ""  PAGE END

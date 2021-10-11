@@ -1,0 +1,100 @@
+.\" @(#)ustat.2 1.1 92/07/30 SMI; from S5R3
+.TH USTAT 2 "21 January 1990"
+.SH NAME
+ustat \- get file system statistics
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <ustat.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int ustat(dev, buf)
+dev_t dev;
+struct ustat *buf;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "ustat() get" "" "\fLustat()\fP \(em get file system statistics" ""
+.IX "file system" "get file system statistics"
+.IX statistics "get file system statistics"
+.LP
+.B ustat(\|)
+returns information about a mounted file system.
+.I dev
+is a device number identifying a device containing
+a mounted file system.  This is normally the value returned in the
+.B st_dev
+field of a
+.B stat
+structure when a
+.BR stat(\|) ,
+.BR fstat(\|) ,
+or
+.B lstat(\|)
+call is made on a file on that file system.
+.I buf
+is a pointer to a
+.B ustat
+structure that includes the following elements:
+.LP
+.RS
+.nf
+.ft B
+.ta 8n 25n 30n
+daddr_t	f_tfree;	/\(** Total blocks available to non-super-user \(**/
+ino_t	f_tinode;	/\(** Number of free files \(**/
+char	f_fname[6];	/\(** Filsys name \(**/
+char	f_fpack[6];	/\(** Filsys pack name \(**/
+.fi
+.ft
+.RE
+.LP
+The
+.B f_fname
+and
+.B f_fpack
+fields are always set to a null string.
+Other fields that are undefined for a particular file system are set to \-1.
+.SH RETURN VALUES
+.LP
+.B ustat(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+.I buf
+points to an invalid address.
+.TP
+.SM EINVAL
+.I dev
+is not the device number of a device containing a mounted file system.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+.BR stat (2V),
+.BR statfs (2)
+.SH BUGS
+.LP
+The
+.SM NFS
+revision 2 protocol does not permit the number of free files to be provided to
+the client; thus, when
+.B ustat(\|)
+is done on an
+.SM NFS
+file system,
+.B f_tinode
+is always \-1.

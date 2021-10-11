@@ -1,0 +1,112 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)uuencode.1c 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH UUENCODE 1C "23 November 1987"
+.SH NAME
+uuencode, uudecode \- encode a binary file, or decode its ASCII representation
+.SH SYNOPSIS
+.B uuencode
+[
+.I source-file
+]
+.I file-label
+.LP
+.B uudecode
+[
+.I encoded-file
+]
+.IX  "uuencode command"  ""  "\fLuuencode\fP \(em encode binary file"
+.IX  "uudecode command"  ""  "\fLuudecode\fP \(em decode binary file"
+.IX  "encode binary file"  ""  "encode binary file \(em \fLuuencode\fP"
+.IX  "decode binary file"  ""  "decode binary file \(em \fLuudecode\fP"
+.IX  communications  uuencode  ""  "\fLuuencode\fP \(em encode binary file"
+.IX  communications  uudecode  ""  "\fLuudecode\fP \(em decode binary file"
+.IX  "binary file transmission"  uuencode  ""  "\fLuuencode\fP \(em encode binary file"
+.IX  "binary file transmission"  uudecode  ""  "\fLuudecode\fP \(em decode binary file"
+.SH DESCRIPTION
+.B uuencode
+converts a binary file into an
+.SM ASCII\s0-encoded
+representation that can be sent using
+.BR mail (1).
+It encodes the contents of
+.IR source-file ,
+or the standard input if no
+.I source-file
+argument is given.  The
+.I file-label
+argument is required.  It is included in the encoded file's
+header as the name of the file into which
+.B uudecode
+is to place the binary (decoded) data.
+.B uuencode
+also includes the ownership and permission modes of
+.I source-file,
+so that
+.I file-label
+is recreated with those same ownership and permission modes.
+.LP
+If the remote host is a
+.SM UNIX
+system with the
+.BR sendmail (8)
+mail-message delivery daemon, you can pipe the output of
+.B uuencode
+through
+.BR mail (1)
+to the recipient named
+.B decode
+on the remote host.  This recipient is typically an alias for the
+.B uudecode
+program (see
+.BR aliases (5)
+for details), which allows a binary file to be
+decoded (extracted) from a mail message automatically.
+If this alias is absent on a particular host, the encoded
+file can be mailed to a user, who can run it through
+.B uudecode
+manually.
+.LP
+.I uudecode
+reads an
+.IR encoded-file ,
+strips off any leading and trailing lines
+added by mailer programs, and recreates the original binary data
+with the filename and the mode and owner specified in the header.
+.LP
+The encoded file is an ordinary
+.SM ASCII
+text file; it can be edited by any text editor.  But it is best
+only to change the mode or file-label in the header to avoid
+corrupting the decoded binary.
+.SH SEE\ ALSO
+.BR mail (1),
+.BR uucp (1C),
+.BR uusend (1C),
+.BR uux (1C),
+.BR aliases (5),
+.BR uuencode (5),
+.BR sendmail (8)
+.SH BUGS
+The encoded file's size is expanded by 35% (3 bytes become 4, plus
+control information), causing it to take longer to transmit than the
+equivalent binary.
+.LP
+The user on the remote system who is invoking
+.B uudecode
+(typically
+.BR uucp )
+must have write permission on the file specified in the
+.IR file-label .
+.LP
+Since both
+.B uuencode
+and 
+.B uudecode
+run with user ID set to
+.BR uucp ,
+.B uudecode
+can fail with ``permission denied'' when attempted in a directory that
+does not have write permission allowed for ``other.''

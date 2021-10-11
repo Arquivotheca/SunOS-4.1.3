@@ -1,0 +1,180 @@
+'\" t
+.\" @(#)systems.5 1.1 92/07/30 SMI;
+.TH SYSTEMS 5 "25 September 1989"
+.SH NAME
+systems \- NIS systems file
+.SH SYNOPSIS
+.B /etc/systems
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "systems" "\fLsystems\fP \(em NIS systems file" ""
+.LP
+The
+.B /etc/systems
+file is used only by
+.SM SNAP
+and Automatic System Installation, and contains basic information about each
+host on the network.
+It is an
+.SM ASCII
+file in the
+.B /etc
+directory on the
+Network Information Service
+(\s-1NIS\s0)
+master server.
+To successfully administer all systems in a 
+.SM NIS
+domain using
+.SM SNAP\s0,
+there must be an entry in this file for each host listed in the
+.B /etc/hosts
+file.
+For each host, this file contains a one-line entry, of the following
+form, where each field
+.I must
+be separated by a
+.SM TAB
+character:
+.sp
+.\" use .ft so following line prints " in line
+.ft I
+.if n .ti 0
+.if t .ti 1i
+system\ \ architecture\ \ sunos\ \ "hostid"\ \ memory_size\ \ disk_size\ \ network_role
+.ft P
+.TP
+.I system
+is the name of a host, whether it is on a network or
+a standalone system.
+This field contains only lowercase and numeric characters,
+must start with a lower-case character,
+and must not be longer than 32 characters.
+.TP
+.I architecture
+indicates the architecture of the specified system.  
+This can be
+.BR s386 ,
+.BR sun4 ,
+.BR sun3 ,
+.BR sun2 ,
+.BR sun1 ,
+.BR pcnfs ,
+or
+.BR other .
+.TP
+.I sunos
+indicates the SunOS operating system version the system is running.
+Typically, the form is
+.BI sunos version_number
+or
+.BR \%unknown .  
+.SM SNAP
+always inserts
+.B \%unknown
+when adding new systems.
+.TP
+.I hostid
+the system host 
+.SM ID\s0,
+as obtained from
+.BR /bin/hostid .
+This entry must be in quotes.
+If the host
+.SM ID
+is
+.BR \%unknown ,
+an empty string (\fB"\|"\fR) is specified.
+.SM SNAP
+always inserts an empty string when adding new systems.
+.TP
+.I memory_size
+amount of memory, in kilobytes.
+This can be
+.B 8000
+(for 8 megabytes),
+.B 4000
+(for 4 megabytes), or
+.B \-1
+for
+.BR \%unknown .
+.SM SNAP
+always inserts 
+.B \-1
+when adding new systems.
+.TP
+.I disk_size
+amount of disk space, in kilobytes. 
+This can be any value, but typically should be
+close to the actual disk size or to the total amount
+of disk space, if expansion disks were added. 
+Diskless clients would have a zero value, while
+.B \%unknown
+disk sizes are specified by a
+.B \-1
+value.
+.SM SNAP
+always inserts
+.B \-1 
+when adding new network clients.
+.TP
+.I network_role
+indicates the role the system plays on the network.
+This can be
+.BR master_bootserver ,
+.BR slave_bootserver ,
+.BR network_client ,
+or
+.BR diskless_client .
+.SH EXAMPLES
+.LP
+Here is a sample systems file:
+.sp
+.if n .in 0
+.TS
+;
+lfB lfB lfB lfB lfB lfB lfB .
+vulcan	s386	sunos4.0.1	"12345678"	8000	327000	master_bootserver
+polaris	s386	sunos4.0.1	""	8000	91000	slave_bootserver
+star	sun4	sunos4.1	""	8000	91000	network_client
+traveler	s386	sunos4.0.1	""	8000	0	diskless_client
+.TE
+.if n .in
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/systems
+.TP
+.B /etc/hosts
+.TP
+.B /bin/hostid
+.PD
+.SH SEE ALSO
+.BR snap (1),
+.BR vipw (8)
+.LP
+.TX ADMIN ,
+.br
+.I Sun386i Advanced Administration
+.SH NOTES
+.LP
+Take precautions to lock the
+.B /etc/systems
+file against simultaneous changes if it will be edited
+with a text editor;
+editing with
+.BR vipw (8)
+provides the necessary locking.
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

@@ -1,0 +1,114 @@
+.\" @(#)sqz.8 1.1 92/07/30 SMI
+.TH SQZ 8 "06 April 1988"
+.SH NAME
+sqz \- reduce available physical memory pages
+.SH SYNOPSIS
+.B sqz
+[
+.B \-f
+.I device
+]
+[
+.I request
+]
+.SH DESCRIPTION
+.LP
+.B sqz
+is a command which works in conjunction with the
+.BR sqz (4S)
+driver to reduce the number of physical
+memory pages available for any use (system or user).  See
+.BR sqz (4S)
+for details on intent and implementation.
+.LP
+If invoked without a request,
+.B sqz
+drops into an interactive mode,
+in which it prompts for and processes requests.
+When invoked with a request,
+.B sqz
+processes the request; it then pauses indefinitely
+if a valid hold request was executed,
+otherwise, it exits immediately.
+.SH OPTIONS
+.TP
+.BI "\-f " device
+Set the name of the device to be opened to
+.IR device .
+The device defaults to
+.BR /dev/sqz0 .
+.LP
+Valid
+.IR request s
+and their corresponding actions follow:
+.TP
+.BR ? " or " help
+Provide list of requests and descriptions.
+.TP
+.BI hold number\fR[\fPscale\fR]
+Hold a specified number of bytes, rounded up to full pages.
+.IR scale ,
+which can be specified in upper or lower case,
+is one of
+.B M
+(meg),
+.B K
+(kilo),
+.B B
+(bytes), or
+.B P
+(pages).
+Note:
+.RB ` "hold 3" '
+will be interpretted as
+.RB ` "hold 3 bytes" ',
+which is rounded up to one page.  Use
+.RB ` "hold 3p" '
+to hold 3 pages.  Unlike the
+.B sqz (4S)
+driver, if many pages are requested,
+they are allocated a little at a time, in order to avoid deadlock.
+.TP
+.B free
+Free all held pages.
+.TP
+.B status
+Report number of pages (and kilobytes) held locally and globally.
+.TP
+.B stop
+Suspend the program (and return to
+.BR csh (1).
+Keep pages held.
+.TP
+.B pause
+Pause indefinitely without returning.  Keep pages held.
+.TP
+.BR exit " or " quit
+Exit the program.  Release held pages.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/sqz*
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR sh (1),
+.BR sqz (4S),
+.BR sqzpage (8)
+.SH BUGS
+.LP
+The
+.B stop
+request only behaves properly when
+.B sqz
+is run from a process which notices stopped children.
+So, for example
+.RB ` "sqz stop" '
+will work well when
+.B sqz
+is invoked from
+.BR csh (1),
+but
+.B sqz
+will appear to hang when invoked from
+.BR sh (1).

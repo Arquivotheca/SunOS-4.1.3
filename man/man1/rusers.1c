@@ -1,0 +1,86 @@
+.\" @(#)rusers.1c 1.1 92/07/30 SMI; from UCB 4.1
+.TH RUSERS 1C "17 December 1987"
+.SH NAME
+rusers \- who's logged in on local machines (RPC version)
+.SH SYNOPSIS
+.B rusers
+[
+.B \-ahilu
+] [
+.IR host .\|.\|.
+]
+.SH AVAILABILITY
+This command is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "rusers command"  ""  "\fLrusers\fP \(em who is logged in on local network"
+.IX  "who is logged in on local network"  ""  "who is logged in on local network \(em \fLrusers\fP"
+.IX  network  rusers  ""  "\fLrusers\fP \(em who is logged in on local network"
+.IX  login  rusers  ""  "\fLrusers\fP \(em who is on local network"
+.LP
+The
+.B rusers
+command produces output similar to
+.BR users (1)
+and
+.BR who (1),
+but for remote machines.  It broadcasts on the local network,
+and prints the responses it receives.
+Normally, the listing is in the order that responses are received,
+but this order can be
+changed by specifying one of the options listed below.
+When
+.I host
+arguments are given, rather than broadcasting
+.B rusers
+will only query the list of specified hosts.
+.LP
+The default is to print out a listing in the style of
+.BR users (1)
+with one line per machine.  When the
+.B \-l
+flag is given, a
+.BR rwho (1C)
+style listing is used.  In addition, if
+a user has not typed to the system for a minute or more,
+the idle time is reported.
+.LP
+A remote host will only respond if it is running the
+.B rusersd
+daemon, which is normally started up from
+.BR inetd (8C).
+.SH OPTIONS
+.TP
+.B \-a
+Give a report for a machine even if
+no users are logged on.
+.TP
+.B \-h
+Sort alphabetically by host name.
+.TP
+.B \-i
+Sort by idle time.
+.TP
+.B \-l
+Give a longer listing in the style of
+.BR who (1).
+.TP
+.B \-u
+Sort by number of users.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/inetd.conf
+.PD
+.SH SEE ALSO
+.BR rwho (1C),
+.BR users (1),
+.BR who (1),
+.BR inetd (8C),
+.BR rusersd (8C)
+.SH BUGS
+.LP
+Broadcasting does not work through gateways.

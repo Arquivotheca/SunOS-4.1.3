@@ -1,0 +1,106 @@
+#	@(#)Makefile.standalone 1.1 92/07/30
+#
+# Sun-4 standalone library makefile
+#
+
+ARCH=	`arch`
+MACH=	`mach`
+CPP=	/lib/cpp -undef -D${MACH} -Dsun
+CC=	/bin/cc -${ARCH}
+AS=	as 
+RM=	rm -f
+
+DESTDIR= /
+LIBSA=	../libsa.a
+LIBXX=	../libxx.a
+SRT0=	../srt0.o
+BBSU=	../bbsu.o
+SYSDIR=	../../..
+CPPDEFS= -D${ARCH} "-Dprintf=(*romp->v_printf)" "-Dputchar=(*romp->v_putchar)"
+#CPPOPTS= ${CPPDEFS} -I${SYSDIR}/${ARCH} -I${SYSDIR}
+CPPOPTS= ${CPPDEFS} 
+COPTS=	-O
+CFLAGS=	${COPTS} ${CPPOPTS}
+ASFLAGS= -P ${CPPOPTS} -DLOCORE
+ARFLAGS= rv
+LDFLAGS= -x -r
+
+.PRECIOUS: $(LIBSA) $(LIBXX)
+
+#.DEFAULT:
+#	sccs get $@
+
+SRC=	cache.s getidprom.s map.s misc.s probe.s \
+	sadiv.s samul.s stubs.s _setjmp.s copy.s
+OBJS=	cache.o getidprom.o map.o misc.o probe.o \
+	sadiv.o samul.o stubs.o _setjmp.o copy.o
+
+ALL=	${SRC} ${LIBSA} ${SRT0} ${LIBXX} 
+
+all: ${ALL}
+srt0.o: $(SRT0)
+bbsu.o: $(BBSU)
+libsa.a: $(LIBSA)
+libxx.a: $(LIBXX)
+
+${SRT0}: srt0.s
+	${AS} ${ASFLAGS} srt0.s -o $@
+
+$(BBSU): srt0.s
+	${AS} ${ASFLAGS} -DBOOTBLOCK srt0.s -o $@
+
+$(LIBSA) $(LIBXX): \
+	$$@(cache.o) $$@(getidprom.o) $$@(map.o) \
+	$$@(misc.o) $$@(probe.o) $$@(sadiv.o) $$@(samul.o) \
+	$$@(stubs.o)  $$@(_setjmp.o) $$@(copy.o)
+	ranlib $@
+
+$(LIBSA)(cache.o) $(LIBSA)(getidprom.o) \
+$(LIBSA)(map.o) $(LIBSA)(misc.o) $(LIBSA)(probe.o) \
+$(LIBSA)(sadiv.o) $(LIBSA)(samul.o) $(LIBSA)(stubs.o) \
+$(LIBSA)(_setjmp.o) $(LIBSA)(copy.o):
+	$(AS) $(ASFLAGS) $*.s -o $%
+	$(LD) $(LDFLAGS) $%; mv a.out $%
+	ar ${ARFLAGS} $@ $%; $(RM) $%
+
+$(LIBXX)(cache.o) $(LIBXX)(getidprom.o) \
+$(LIBXX)(map.o) $(LIBXX)(misc.o) $(LIBXX)(probe.o) \
+$(LIBXX)(sadiv.o) $(LIBXX)(samul.o) $(LIBXX)(stubs.o) \
+$(LIBXX)(_setjmp.o) $(LIBXX)(copy.o):
+	$(AS) $(ASFLAGS) -DBOOTBLOCK $*.s -o $%
+	$(LD) $(LDFLAGS) $%; mv a.out $%
+	ar ${ARFLAGS} $@ $%; $(RM) $%
+
+depend: 
+	@echo 'making dependencies ...'
+	@${RM} depend.tmp
+	@for i in *.[cs]; do \
+		(${CPP} -M ${CPPOPTS} $$i | sed -e '/.*\.s/d' | sed \
+			-e 's,^\(.*\.o\):,$${LIBSA}(\1) $${LIBXX}(\1):,' \
+			>> depend.tmp); done
+	@awk ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$3) > 78) { print rec; rec = $$0; } \
+		       else rec = rec " " $$3 } } \
+	      END { print rec } ' <depend.tmp  > makedep
+	@echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
+	@echo '$$r makedep' >>eddep
+	@echo 'w' >>eddep
+	@if [ -w Makefile ]; then \
+		ed - Makefile < eddep; \
+	    else \
+		chmod +w Makefile; \
+		ed - Makefile < eddep; \
+		chmod -w Makefile; \
+	    fi
+	@${RM} eddep makedep depend.tmp
+	@echo '... done'
+
+clean: 
+	${RM} *.o *.i core a.out
+
+lint:
+
+install install_h:
+FRC:
+
+# DO NOT DELETE THIS LINE -- make depend uses it

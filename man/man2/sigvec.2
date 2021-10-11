@@ -1,0 +1,573 @@
+.\" @(#)sigvec.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SIGVEC 2 "21 January 1990"
+.ie t .ds d \(dg
+.el .ds d \z|+
+.ie t .ds b \(bu
+.el .ds b @
+.SH NAME
+sigvec \- software signal facilities
+.SH SYNOPSIS
+.nf
+.ft B
+#include <signal.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sigvec(sig, vec, ovec)
+int sig;
+struct sigvec *vec, *ovec;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "sigvec()"  ""  "\fLsigvec()\fP \(em software signals" ""  PAGE START
+.IX  signals  sigvec()  ""  \fLsigvec()\fR  PAGE START
+.IX  "software signals" "" "software signals \(em \fLsigvec()\fR" "" PAGE START
+.IX  process  "software signals sigvec()"  ""  "software signals \(em \fLsigvec()\fR" PAGE START
+.LP
+The system defines a set of signals that may be delivered to a process.
+Signal delivery resembles the occurrence of a hardware interrupt:
+the signal is blocked from further occurrence, the current process
+context is saved, and a new one is built.  A process may specify a
+.I handler
+to which a signal is delivered, or specify that a signal is to be
+.I blocked
+or
+.IR ignored .
+A process may also specify that a default action is to be taken
+by the system when a signal occurs.
+Normally, signal handlers execute on the current stack
+of the process.  This may be changed, on a per-handler basis,
+so that signals are taken on a special
+.IR "signal stack" .
+.LP
+All signals have the same
+.IR priority .
+Signal routines execute with the signal that caused their invocation
+.IR blocked ,
+but other signals may yet occur.
+A global
+.I "signal mask"
+defines the set of signals currently blocked from delivery
+to a process.  The signal mask for a process is initialized
+from that of its parent (normally 0).  It may be changed with a
+.BR sigblock (2)
+or
+.BR sigsetmask (2)
+call, or when a signal is delivered to the process.
+.LP
+A process may also specify a set of
+.I flags
+for a signal that affect the delivery of that signal.
+.LP
+When a signal condition arises for a process, the signal is added to a
+set of signals pending for the process.  If the signal is not currently
+.I blocked
+by the process then it is delivered to the process.  When a signal is
+delivered, the current state of the process is saved, a new signal mask
+is calculated (as described below), and the signal handler is invoked.
+The call to the handler is arranged so that if the signal handling
+routine returns normally the process will resume execution in the
+context from before the signal's delivery.  If the process wishes to
+resume in a different context, then it must arrange to restore the
+previous context itself.
+.LP
+When a signal is delivered to a process a new signal mask is installed
+for the duration of the process' signal handler (or until a
+.B sigblock(\|)
+or
+.B sigsetmask(\|)
+call is made).  This mask is formed by taking the current signal mask,
+adding the signal to be delivered, and
+.SM OR\s0ing
+in the signal mask associated with the handler to be invoked.
+.LP
+The action to be taken when the signal is delivered is specified by a
+.B sigvec
+structure, defined in
+.B <signal.h>
+as:
+.LP
+.RS
+.nf
+.ft B
+.ta 1i 1.7i 3i
+struct sigvec {
+.RS
+.ft B
+void (*sv_handler)();	/* signal handler */
+int sv_mask;		/* signal mask to apply */
+int sv_flags;		/* see signal options */
+.ft
+.RE
+.ft B
+}
+.ft R
+.fi
+.DT
+.RE
+.LP
+The following bits may be set in
+.BR sv_flags :
+.LP
+.RS
+.nf
+.ft B
+.ta 1i 1.7i 2.5i 3.5i
+#define \s-1SV_ONSTACK\s0	0x0001	/* take signal on signal stack */
+#define \s-1SV_INTERRUPT\s0	0x0002	/* do not restart system on signal return */
+#define \s-1SV_RESETHAND\s0	0x0004	/* reset signal handler to SIG_DFL on signal */
+.ft R
+.fi
+.DT
+.RE
+.LP
+If the
+.SB SV_ONSTACK
+bit is set in the flags for that signal,
+the system will deliver the signal to the process on the signal stack
+specified with
+.BR sigstack (2),
+rather than delivering the signal on the current stack.
+.LP
+If
+.I vec
+is not a
+.SM NULL
+pointer,
+.B sigvec(\|)
+assigns the handler specified by
+.BR sv_handler ,
+the mask specified by
+.BR sv_mask ,
+and the flags specified by
+.B sv_flags
+to the specified signal.  If
+.I vec
+is a
+.SM NULL
+pointer,
+.B sigvec(\|)
+does not change the handler, mask, or flags for the specified signal.
+.LP
+The mask specified in
+.I vec
+is not allowed to block
+.SM
+.SB SIGKILL
+or
+.SM
+.BR SIGSTOP \s0.
+The system enforces this restriction silently.
+.LP
+If
+.I ovec
+is not a
+.SM NULL
+pointer, the handler, mask, and flags in effect for the signal
+before the call to
+.B sigvec(\|)
+are returned to the user.  A call to
+.B sigvec(\|)
+with
+.I vec
+a
+.SM NULL
+pointer and
+.I ovec
+not a
+.SM NULL
+pointer can be used to determine the handling information
+currently in effect for a signal without changing that information.
+.LP
+The following is a list of all signals
+with names as in the include file
+.BR <signal.h> :
+.RS
+.LP
+.nf
+.ta \w'SIGVTALRM 'u +\w'15*  'u
+\fB\s-1SIGHUP\s0\fR	1	hangup
+\fB\s-1SIGINT\s0\fR	2	interrupt
+\fB\s-1SIGQUIT\s0\fR	3*	quit
+\fB\s-1SIGILL\s0\fR	4*	illegal instruction
+\fB\s-1SIGTRAP\s0\fR	5*	trace trap
+\fB\s-1SIGABRT\s0\fR	6*	abort (generated by \fBabort\fP(3) routine)
+\fB\s-1SIGEMT\s0\fR	7*	emulator trap
+\fB\s-1SIGFPE\s0\fR	8*	arithmetic exception
+\fB\s-1SIGKILL\s0\fR	9	kill (cannot be caught, blocked, or ignored)
+\fB\s-1SIGBUS\s0\fR	10*	bus error
+\fB\s-1SIGSEGV\s0\fR	11*	segmentation violation
+\fB\s-1SIGSYS\s0\fR	12*	bad argument to system call
+\fB\s-1SIGPIPE\s0\fR	13	write on a pipe or other socket with no one to read it
+\fB\s-1SIGALRM\s0\fR	14	alarm clock
+\fB\s-1SIGTERM\s0\fR	15	software termination signal
+\fB\s-1SIGURG\s0\fR	16\*b	urgent condition present on socket
+\fB\s-1SIGSTOP\s0\fR	17\*d	stop (cannot be caught, blocked, or ignored)
+\fB\s-1SIGTSTP\s0\fR	18\*d	stop signal generated from keyboard
+\fB\s-1SIGCONT\s0\fR	19\*b	continue after stop
+\fB\s-1SIGCHLD\s0\fR	20\*b	child status has changed
+\fB\s-1SIGTTIN\s0\fR	21\*d	background read attempted from control terminal
+\fB\s-1SIGTTOU\s0\fR	22\*d	background write attempted to control terminal
+\fB\s-1SIGIO\s0\fR	23\*b	I/O is possible on a descriptor (see \fBfcntl\fR(2V))
+\fB\s-1SIGXCPU\s0\fR	24	cpu time limit exceeded (see \c
+.BR getrlimit (2))
+\fB\s-1SIGXFSZ\s0\fR	25	file size limit exceeded (see \c
+.BR getrlimit (2))
+\fB\s-1SIGVTALRM\s0\fR	26	virtual time alarm (see \c
+.BR getitimer (2))
+\fB\s-1SIGPROF\s0\fR	27	profiling timer alarm (see \c
+.BR getitimer (2))
+\fB\s-1SIGWINCH\s0\fR	28\*b	window changed (see \fBtermio\fR(4) and \fBwin\fR(4S))
+\fB\s-1SIGLOST\s0\fR	29*	resource lost (see \c
+.BR lockd (8C))
+\fB\s-1SIGUSR1\s0\fR	30	user-defined signal 1
+\fB\s-1SIGUSR2\s0\fR	31	user-defined signal 2
+.fi
+.RE
+.LP
+The starred signals in the list above cause a core image
+if not caught or ignored.
+.LP
+Once a signal handler is installed, it remains installed until another
+.B sigvec(\|)
+call is made, or an
+.BR execve (2V)
+is performed, unless the
+.SB SV_RESETHAND
+bit is set in the flags for that signal.  In that case, the value of the
+handler for the caught signal is set to
+.SB SIG_DFL
+before entering the signal-catching function, unless the signal is
+.SB SIGILL
+or
+.SM
+.BR SIGTRAP \s0.
+Also, if this bit is set, the bit for that signal
+in the signal mask will not be set; unless the signal mask
+associated with that signal blocks that signal, further occurrences
+of that signal will not be blocked.
+The
+.SB SV_RESETHAND
+flag is not available in 4.2\s-1BSD\s0,
+hence it should not be used if backward compatibility is needed.
+.LP
+The default action for a signal may be reinstated by setting the
+signal's handler to
+.SM
+.BR SIG_DFL \s0;
+this default is termination
+except for signals marked with \*b or \*d.  Signals marked
+with \*b are discarded if the action is
+.SM
+.BR SIG_DFL \s0;
+signals marked with
+\*d cause the process to stop.
+If the process is terminated, a ``core image'' will be made in
+the current working directory of the receiving
+process if the signal
+is one for which an asterisk appears in the above list
+.I and
+the following conditions are met:
+.RS
+.TP 3
+\(bu
+The effective user
+.SM ID
+(\s-1EUID\s0)
+and the real user
+.SM ID
+(\s-1UID\s0)
+of the receiving
+process are equal.
+.TP 3
+\(bu
+The effective group
+.SM ID
+(\s-1EGID\s0)
+and the real group
+.SM ID
+(\s-1GID\s0)
+of the receiving
+process are equal.
+.TP 3
+\(bu
+An ordinary file named
+.B core
+exists and is writable or can be created.
+If the file must be created, it will have the following properties:
+.RS
+.TP 3
+\(bu
+a mode of 0666 modified by the file creation mask
+(see
+.BR umask (2V))
+.TP
+\(bu
+a file owner
+.SM ID
+that is the same as the effective user
+.SM ID
+of the receiving process.
+.TP
+\(bu
+a file group
+.SM ID
+that is the same as the file group
+.SM ID
+of the current directory
+.RE
+.RE
+.LP
+If the handler for that signal is
+.SM
+.BR SIG_IGN \s0,
+the signal is subsequently ignored,
+and pending instances of the signal are discarded.
+.LP
+Note: the signals
+.SM
+.SB SIGKILL
+and
+.SM
+.SB SIGSTOP
+cannot be ignored.
+.LP
+If a caught signal occurs during certain system calls,
+the call is restarted by default.
+The call can be forced to terminate prematurely with an
+.SM EINTR
+error return by setting the
+.SB SV_INTERRUPT
+bit in the flags for that signal.
+.SB SV_INTERRUPT
+is not available in 4.2\s-1BSD\s0,
+hence it should not be used if backward compatibility is needed.
+The affected system calls are
+.BR read (2V)
+or
+.BR write (2V)
+on a slow device (such as a terminal or pipe or other socket, but not a file)
+and during a
+.BR wait (2V).
+.LP
+After a
+.BR fork (2V),
+or
+.BR vfork (2)
+the child inherits
+all signals, the signal mask, the signal stack,
+and the restart/interrupt and reset-signal-handler flags.
+.LP
+The
+.BR execve (2V),
+call resets all
+caught signals to default action and
+resets all signals to be caught on the user stack.
+Ignored signals remain ignored;
+the signal mask remains the same;
+signals that interrupt system calls continue to do so.
+.SH "CODES"
+.LP
+The following defines the codes for signals which produce them.
+All of these symbols are defined in
+.BR signal.h :
+.LP
+.if t .ta .25i; +2.75i; +.75i; +1i;
+.if n .ta 2m; +35m; +8m; +20m
+.nf
+	Condition	Signal	Code
+Sun codes:
+	Illegal instruction	\fB\s-1SIGILL\s0	\s-1ILL_INSTR_FAULT\s0\fR
+	Integer division by zero	\fB\s-1SIGFPE\s0	\s-1FPE_INTDIV_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt inexact	\fB\s-1SIGFPE\s0	\s-1FPE_FLTINEX_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt division by zero	\fB\s-1SIGFPE\s0	\s-1FPE_FLTDIV_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt underflow	\fB\s-1SIGFPE\s0	\s-1FPE_FLTUND_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt operand error	\fB\s-1SIGFPE\s0	\s-1FPE_FLTOPERR_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt overflow	\fB\s-1SIGFPE\s0	\s-1FPE_FLTOVF_FAULT\s0\fR
+	Hardware bus error	\fB\s-1SIGBUS\s0	\s-1BUS_HWERR\s0\fR
+	Address alignment error	\fB\s-1SIGBUS\s0	\s-1BUS_ALIGN\s0\fR
+	No mapping fault	\fB\s-1SIGSEGV\s0	\s-1SEGV_NOMAP\s0\fR
+	Protection fault	\fB\s-1SIGSEGV\s0	\s-1SEGV_PROT\s0\fR
+	Object error	\fB\s-1SIGSEGV\s0	\s-1SEGV_CODE\s0\fR(code)=\fB\s-1SEGV_OBJERR\s0\fR
+	Object error number	\fB\s-1SIGSEGV\s0	\s-1SEGV_ERRNO\s0\fR(code)
+\s-1SPARC\s0 codes:
+	Privileged instruction violation	\fB\s-1SIGILL\s0	\s-1ILL_PRIVINSTR_FAULT\s0\fR
+	Bad stack	\fB\s-1SIGILL\s0	\s-1ILL_STACK\s0\fR
+	Trap #\fIn\fP (1 <= \fIn\fP <= 127)	\fB\s-1SIGILL\s0	\s-1ILL_TRAP_FAULT\s0(\fIn\fP)\fR
+	Integer overflow	\fB\s-1SIGFPE\s0	\s-1FPE_INTOVF_TRAP\s0\fR
+	Tag overflow	\fB\s-1SIGEMT\s0	\s-1EMT_TAG\s0\fR
+\s-1MC\s0680X0 codes:
+	Privilege violation	\fB\s-1SIGILL\s0	\s-1ILL_PRIVVIO_FAULT\s0\fR
+	Coprocessor protocol error	\fB\s-1SIGILL\s0	\s-1ILL_INSTR_FAULT\s0\fR
+	Trap #\fIn\fP (1 <= \fIn\fP <= 14)	\fB\s-1SIGILL\s0	\s-1ILL_TRAP\s0\fIn\fP _\s-1FAULT\s0\fR
+	A-line op code	\fB\s-1SIGEMT\s0	\s-1EMT_EMU\s01010\fR
+	F-line op code	\fB\s-1SIGEMT\s0	\s-1EMT_EMU\s01111\fR
+	\s-1CHK\s0 or \s-1CHK\s02 instruction	\fB\s-1SIGFPE\s0	\s-1FPE_CHKINST_TRAP\s0\fR
+	\s-1TRAPV\s0 or \s-1TRAP\s0cc or cp\s-1TRAP\s0cc	\fB\s-1SIGFPE\s0	\s-1FPE_TRAPV_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt compare unordered	\fB\s-1SIGFPE\s0	\s-1FPE_FLTBSUN_TRAP\s0\fR
+	\s-1IEEE\s0 floating pt signaling NaN	\fB\s-1SIGFPE\s0	\s-1FPE_FLTNAN_TRAP\s0\fR
+.fi
+.SH "ADDR"
+.LP
+The
+.I addr
+signal handler parameter is defined as follows:
+.LP
+.if t .ta .25i; +.75i; +1.25; +1.5i;
+.if n .ta 2m; +10m; +12; +20m
+.nf
+	Signal	Code	Addr
+Sun:
+	\fB\s-1SIGILL\s0\fR	Any	address of faulted instruction
+	\fB\s-1SIGEMT\s0\fR	Any	address of faulted instruction
+	\fB\s-1SIGFPE\s0\fR	Any	address of faulted instruction
+	\fB\s-1SIGBUS\s0\fR	\fB\s-1BUS_HWERR\s0\fR	address that caused fault
+	\fB\s-1SIGSEGV\s0\fR	Any	address that caused fault
+\s-1SPARC\s0:
+	\fB\s-1SIGBUS\s0\fR	\fB\s-1BUS_ALIGN\s0\fR	address of faulted instruction
+\s-1MC\s0680X0:
+	\fB\s-1SIGBUS\s0\fR	\fB\s-1BUS_ALIGN\s0\fR	address that caused fault
+.fi
+.LP
+The accuracy of
+.I addr
+is machine dependent.
+For example, certain machines may supply an address that is on the
+same page as the address that caused the fault.
+If an appropriate
+.I addr
+cannot be computed it will be set to \fB\s-1SIG_NOADDR\s0\fR.
+.SH RETURN VALUES
+.LP
+.B sigvec(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B sigvec(\|)
+will fail and no new signal handler will be installed if one
+of the following occurs:
+.TP 15
+.SM EFAULT
+Either
+.I vec
+or
+.I ovec
+is not a
+.SM NULL
+pointer and points to memory that is not a valid part of
+the process address space.
+.TP
+.SM EINVAL
+.I Sig
+is not a valid signal number.
+.IP
+An attempt was made to ignore or supply a handler for
+.SB SIGKILL
+or
+.SM
+.BR SIGSTOP \s0.
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR fcntl (2V),
+.BR fork (2V),
+.BR getitimer (2),
+.BR getrlimit (2),
+.BR ioctl (2),
+.BR kill (2V),
+.BR ptrace (2),
+.BR read (2V),
+.BR sigblock (2),
+.BR sigpause (2V),
+.BR sigsetmask (2),
+.BR sigstack (2),
+.BR umask (2V),
+.BR vfork (2),
+.BR wait (2V),
+.BR write (2V),
+.BR setjmp (3V),
+.BR signal (3V),
+.BR streamio (4),
+.BR termio (4),
+.BR win (4S),
+.BR lockd (8C)
+.SH NOTES
+.LP
+.SB SIGPOLL
+is a synonym for
+.SM
+.BR SIGIO \s0.
+A
+.SB SIGIO
+will be issued when a file descriptor corresponding
+to a
+.SM STREAMS
+(see
+.BR intro (2))
+file has a "selectable" event pending.
+Unless that descriptor has been put into asynchronous mode
+(see
+.B fcntl (2V),
+a process must specifically request that this signal be sent
+using the
+.SB I_SETSIG
+.BR ioctl (2)
+call (see
+.BR streamio (4)).
+Otherwise, the process will never receive
+.SM
+.BR SIGPOLL \s0.
+.LP
+The handler routine can be declared:
+.RS
+.LP
+.nf
+.ft B
+void handler(sig, code, scp, addr)
+int sig, code;
+struct sigcontext \(**scp;
+char \(**addr;
+.ft R
+.fi
+.RE
+.br
+.ne 7
+.LP
+Here
+.I sig
+is the signal number;
+.I code
+is a parameter of certain signals that provides additional detail;
+.I scp
+is a pointer to the
+.B sigcontext
+structure (defined in
+.BR signal.h ),
+used to restore the context from before the signal;
+and
+.I addr
+is additional address information.
+.LP
+Programs that must be portable to
+.SM UNIX
+systems
+other than 4.2\s-1BSD\s0 should use the
+.BR signal (3V),
+interface instead.
+.IX  "sigvec()"  ""  "\fLsigvec()\fP \(em software signals" ""  PAGE END
+.IX  signals  sigvec()  ""  \fLsigvec()\fP  PAGE END
+.IX  "software signals" "" "software signals \(em \fLsigvec()\fR" "" PAGE END
+.IX  process  "software signals sigvec()"  ""  "software signals \(em \fLsigvec()\fR" PAGE END

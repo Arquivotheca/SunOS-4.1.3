@@ -1,0 +1,355 @@
+.\" @(#)xdr_simple.3n 1.1 92/07/30 SMI;
+.TH XDR_SIMPLE 3N "20 January 1990"
+.SH NAME
+xdr_bool, xdr_char, xdr_double, xdr_enum, xdr_float, xdr_free, xdr_int, xdr_long, xdr_short, xdr_u_char, xdr_u_int, xdr_u_long, xdr_u_short, xdr_void \- library routines for translating simple data types
+.SH DESCRIPTION
+.IX "xdr routines" "xdr_bool()" "" "\fLxdr_bool()\fP function"
+.IX "xdr routines" "xdr_char()" "" "\fLxdr_char()\fP function"
+.IX "xdr routines" "xdr_double()" "" "\fLxdr_double()\fP function"
+.IX "xdr routines" "xdr_enum()" "" "\fLxdr_enum()\fP function"
+.IX "xdr routines" "xdr_float()" "" "\fLxdr_float()\fP function"
+.IX "xdr routines" "xdr_free()" "" "\fLxdr_free()\fP function"
+.IX "xdr routines" "xdr_int()" "" "\fLxdr_int()\fP function"
+.IX "xdr routines" "xdr_long()" "" "\fLxdr_long()\fP function"
+.IX "xdr routines" "xdr_short()" "" "\fLxdr_short()\fP function"
+.IX "xdr routines" "xdr_u_char()" "" "\fLxdr_u_char()\fP function"
+.IX "xdr routines" "xdr_u_int()" "" "\fLxdr_u_int()\fP function"
+.IX "xdr routines" "xdr_u_long()" "" "\fLxdr_u_long()\fP function"
+.IX "xdr routines" "xdr_u_short()" "" "\fLxdr_u_short()\fP function"
+.IX "xdr routines" "xdr_void()" "" "\fLxdr_void()\fP function"
+.IX "xdr_bool()" "" "\fLxdr_bool()\fP function"
+.IX "xdr_char()" "" "\fLxdr_char()\fP function"
+.IX "xdr_double()" "" "\fLxdr_double()\fP function"
+.IX "xdr_enum()" "" "\fLxdr_enum()\fP function"
+.IX "xdr_float()" "" "\fLxdr_float()\fP function"
+.IX "xdr_free()" "" "\fLxdr_free()\fP function"
+.IX "xdr_int()" "" "\fLxdr_int()\fP function"
+.IX "xdr_long()" "" "\fLxdr_long()\fP function"
+.IX "xdr_short()" "" "\fLxdr_short()\fP function"
+.IX "xdr_u_char()" "" "\fLxdr_u_char()\fP function"
+.IX "xdr_u_int()" "" "\fLxdr_u_int()\fP function"
+.IX "xdr_u_long()" "" "\fLxdr_u_long()\fP function"
+.IX "xdr_u_short()" "" "\fLxdr_u_short()\fP function"
+.IX "xdr_void()" "" "\fLxdr_void()\fP function"
+.LP
+.SM XDR
+library routines allow C programmers to describe
+simple data structures in a machine-independent fashion.
+Protocols such as remote procedure calls (\s-1RPC\s0)
+use these routines to describe the format of the data.
+.LP
+These routines require the creation of
+.SM XDR
+streams
+(see
+.BR xdr_create (3N)).
+.SS Routines
+.LP
+The
+.SB XDR
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions of the
+.TX NETP .
+.br
+.LP
+.ft B
+.nf
+#include <rpc/xdr.h>
+.fi
+.ft 1
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_bool(xdrs, bp)
+\s-1XDR\s0 *xdrs;
+bool_t *bp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a boolean (C
+integer) and its external representation.
+When encoding data, this
+filter produces values of either one or zero.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_char(xdrs, cp)
+\s-1XDR\s0 *xdrs;
+char *cp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C character
+and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.IP
+Note: 
+Encoded characters are not packed, and occupy 4 bytes each.
+For arrays of characters, it is worthwhile to consider
+.BR xdr_bytes(\|) ,
+.B xdr_opaque(\|)
+or
+.B xdr_string(\|) ,
+see
+.BR xdr_complex (3N).
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_double(xdrs, dp)
+\s-1XDR\s0 *xdrs;
+double *dp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.B double
+precision number and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_enum(xdrs, ep)
+\s-1XDR\s0 *xdrs;
+enum_t *ep;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.BR enum 
+(actually integer) and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_float(xdrs, fp)
+\s-1XDR\s0 *xdrs;
+float *fp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.BR float 
+and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+void xdr_free(proc, objp)
+xdrproc_t proc;
+char *objp;
+.fi
+.ft R
+.IP
+Generic freeing routine.
+The first argument is the
+.SM XDR
+routine for the object being freed. 
+The second argument is a pointer to the object itself. 
+Note:
+The pointer passed to this routine is
+.I not
+freed, but what it points to
+.I is
+freed, recursively such that objects pointed to are also freed 
+for example, linked lists.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_int(xdrs, ip)
+\s-1XDR\s0 *xdrs;
+int *ip;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C 
+.B integer
+and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_long(xdrs, lp)
+\s-1XDR\s0 *xdrs;
+long *lp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.B long
+integer and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_short(xdrs, sp)
+\s-1XDR\s0 *xdrs;
+short *sp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.B short
+integer and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_u_char(xdrs, ucp)
+\s-1XDR\s0 *xdrs;
+unsigned char *ucp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between an
+.B unsigned
+C character and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_u_int(xdrs, up)
+\s-1XDR\s0 *xdrs;
+unsigned *up;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.B unsigned
+integer and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_u_long(xdrs, ulp)
+\s-1XDR\s0 *xdrs;
+unsigned long *ulp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.B "unsigned long"
+integer and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_u_short(xdrs, usp)
+\s-1XDR\s0 *xdrs;
+unsigned short *usp;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a C
+.B "unsigned short"
+integer and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 5
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_void(\|)
+.fi
+.ft R
+.IP
+This routine always returns 
+.SM TRUE\s0.
+It may be passed to
+.SM RPC
+routines that require a function parameter,
+where nothing is to be done.
+.SH SEE ALSO
+.BR xdr (3N),
+.BR xdr_admin (3N),
+.BR xdr_complex (3N),
+.BR xdr_create (3N)

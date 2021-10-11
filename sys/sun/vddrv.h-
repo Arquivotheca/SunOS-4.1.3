@@ -1,0 +1,277 @@
+/*	@(#)vddrv.h- 1.1 92/07/30 SMI	*/
+
+/*
+ * Copyright (c) 1988 by Sun Microsystems, Inc.
+ */
+
+/*
+ * vddrv.h - include file for loadable module support.
+ */
+
+#ifndef	_sun_vddrv_h_
+#define _sun_vddrv_h_
+
+#include <sys/types.h>
+#include <sys/ioccom.h>
+
+/*
+ * Module type identifiers
+ */
+
+#define VDMAGIC_BASE	0x12345600
+#define VDMAGIC_DRV	(VDMAGIC_BASE + 0x0)
+#define VDMAGIC_NET 	(VDMAGIC_BASE + 0x1)
+#define VDMAGIC_SYS	(VDMAGIC_BASE + 0x2)
+#define VDMAGIC_USER	(VDMAGIC_BASE + 0x6)
+
+#define VD_TYPELESS	0
+
+/*
+ * The following structures are what the module writer must provide.
+ * They provide the kernel with the addresses of data structures
+ * in the loadable module.
+ *
+ * The first two fields are the same in all of the structures.
+ * The magic number tells what type of module this is.  The name is
+ * for informational purposes only and is returned by the VDSTAT ioctl.
+ */
+
+/* For drivers */
+struct vdldrv {
+	int			 Drv_magic;
+	char			*Drv_name;
+	struct mb_ctlr		*Drv_mb_ctlr;
+	struct mb_driver	*Drv_mb_driver;
+	struct mb_device	*Drv_mb_device;
+	int			 Drv_numctlrs;
+	int			 Drv_numdevs;
+	struct bdevsw		*Drv_bdevsw;
+	struct cdevsw		*Drv_cdevsw;
+	int			 Drv_blockmajor;
+	int			 Drv_charmajor;
+};
+
+/* For network interfaces */
+struct vdlnet {
+	int			 Net_magic;
+	char			*Net_name;
+	struct mb_ctlr 		*Net_mb_ctlr;
+	struct mb_driver	*Net_mb_driver;
+	struct mb_device	*Net_mb_device;
+	int			 Net_numctlrs;
+	int			 Net_numdevs;
+};
+
+/* For system calls */
+struct vdlsys {
+	int			 Sys_magic;
+	char			*Sys_name;
+	int			 Sys_num;
+	struct sysent		*Sys_sysent;
+};
+
+/*
+ * VD ioctl commands.  These are the ioctl commands supported by /dev/vd.
+ */
+#define VDLOAD		_IOWR(V, 0, struct vdioctl_load)
+#define VDUNLOAD	_IOWR(V, 1, struct vdioctl_unload)
+#define VDSTAT		_IOWR(V, 2, struct vdioctl_stat)
+#define VDGETVADDR	_IOWR(V, 3, struct vdioctl_getvaddr)
+#define VDFREEVADDR	_IOW(V, 4, struct vdioctl_freevaddr)
+
+/*
+ * configuration constants.
+ */
+#define VD_MAXID	0x10000		/* Maximum module ID */
+
+/*
+ * Structures used with pseudo-driver ioctls.
+ */
+
+/* VDLOAD */
+struct vdioctl_load {
+	int		vdi_id;		/* module id */
+	int		vdi_status;	/* returned status */
+	caddr_t		vdi_mmapaddr;	/* user address of module image */
+	u_int		vdi_symtabsize;	/* symbol table size */
+	struct vdconf	*vdi_userconf;	/* pointer to configuration info */
+};
+
+/* VDUNLOAD */
+struct vdioctl_unload {
+	int		vdi_id;		/* module id */
+};
+
+/* VDSTAT */
+struct vdioctl_stat {
+	int		vdi_id;		/* module id */
+	struct vdstat	*vdi_vdstat;	/* buffer for VDSTAT */
+	u_int		vdi_vdstatsize;	/* size of vdstat buffer */
+	int		vdi_statsubfcn;	/* stat subfunction */
+};
+
+/* VDGETVADDR */
+struct vdioctl_getvaddr {
+	int		vdi_id;		/* Module id */
+	u_long		vdi_vaddr;	/* address at which to link */
+	u_int		vdi_size;	/* size of module */
+};
+
+/* VDFREEVADDR */
+struct vdioctl_freevaddr {
+	int		vdi_id;		/* Module id */
+};
+
+/*
+ * Structure returned by the VDSTAT ioctl.
+ */
+#define SUNSTATSUBFCN	0x100000	/* Sun-reserved stat subfcns (?) */
+#define VDMAXNAMELEN 32			/* max module name length */
+#define VDMAXMODINFO 32			/* module specific information */
+
+struct vdstat {
+	int		vds_id;		/* id of loaded module */
+	int		vds_magic;	/* type of module */
+	u_long		vds_vaddr;	/* virtual address of start of text */
+	u_int		vds_size;	/* size of module in bytes */
+	char		vds_modname[VDMAXNAMELEN];   /* name of module */
+	char		vds_modinfo[VDMAXMODINFO]; /* module specific info */
+};
+
+/*
+ * The following definitions are intended for the kernel.
+ * Most module developers should not have to worry about any of this.
+ * The one exception is if the module being developed is of type VDMAGIC_USER.
+ */
+
+/*
+ * The following structure defines the operations used by vd driver
+ * to load and unload modules.  Each supported loadable module type
+ * requires a set of vd_moduleops.
+ */
+struct vd_moduleops {
+	int		(*vdm_status)();	/* module status */
+	int		(*vdm_install)();	/* install module in kernel */
+	int		(*vdm_remove)();	/* remove from kernel */
+};
+
+/*
+ * This structure is used to enumerate the supported module types
+ */
+struct vd_modsw {
+	int 	vd_magic;			/* identification */
+	struct vd_moduleops *vd_ops;		/* operations */
+};
+
+/*
+ * The vdlinkage structure is used by the kernel to collect all the
+ * possible linkage structures that a module writer might provide.
+ * This makes it easier for the kernel to access the individual structures
+ * without using casts.
+ */
+struct vdlinkage {
+	union {
+		struct	vdldrv vdldrv;	/* driver */
+		struct	vdlnet vdlnet;	/* network interface */
+		struct	vdlsys vdlsys;	/* system call */
+	} vdlxxx;
+};
+
+/*
+ * These defines make life easier for the kernel.
+ */
+#define vdl_magic 		vdlxxx.vdldrv.Drv_magic
+#define vdl_name 		vdlxxx.vdldrv.Drv_name
+
+#define vdldrv_bdevsw 		vdlxxx.vdldrv.Drv_bdevsw
+#define vdldrv_cdevsw 		vdlxxx.vdldrv.Drv_cdevsw
+#define vdldrv_mb_ctlr 		vdlxxx.vdldrv.Drv_mb_ctlr
+#define vdldrv_mb_driver 	vdlxxx.vdldrv.Drv_mb_driver
+#define vdldrv_mb_device 	vdlxxx.vdldrv.Drv_mb_device
+#define vdldrv_numctlrs 	vdlxxx.vdldrv.Drv_numctlrs
+#define vdldrv_numdevs 		vdlxxx.vdldrv.Drv_numdevs
+#define vdldrv_blockmajor 	vdlxxx.vdldrv.Drv_blockmajor
+#define vdldrv_charmajor 	vdlxxx.vdldrv.Drv_charmajor
+
+#define vdlnet_mb_ctlr 		vdlxxx.vdlnet.Net_mb_ctlr
+#define vdlnet_mb_driver 	vdlxxx.vdlnet.Net_mb_driver
+#define vdlnet_mb_device 	vdlxxx.vdlnet.Net_mb_device
+#define vdlnet_numctlrs 	vdlxxx.vdlnet.Net_numctlrs
+#define vdlnet_numdevs 		vdlxxx.vdlnet.Net_numdevs
+
+#define vdlsys_num		vdlxxx.vdlsys.Sys_num
+#define vdlsys_sysent		vdlxxx.vdlsys.Sys_sysent
+
+/*
+ * The vddrv structure is where the driver collects all information
+ * about a loaded module.
+ */
+struct vddrv {
+	struct	vdlinkage *vdd_vdtab;	/* Module-specific linkage info */
+	int	vdd_id;			/* Module id */
+	int	vdd_status;		/* Status indicator */
+	struct	vddrv *vdd_next;	/* Next module on list */
+	struct	vd_moduleops *vdd_ops;	/* Generic module operations */
+	addr_t	vdd_vaddr;		/* Module's starting address */
+	u_int	vdd_size;		/* Module size in bytes */
+	addr_t	vdd_textvaddr;		/* virtual start address of text */
+	u_int	vdd_textsize;		/* text size in bytes */
+	addr_t	vdd_datavaddr;		/* virtual start address of data */
+	u_int	vdd_datasize;		/* data size in bytes */
+	addr_t	vdd_bssvaddr;		/* virtual start address of bss */
+	u_int 	vdd_bsssize;		/* bss size in bytes */
+	addr_t	vdd_symvaddr;		/* virtual start of symbol table */
+	u_int 	vdd_symsize;		/* symbol table size in bytes */
+	u_int	vdd_nsyms;		/* number of symbol table entries */
+	off_t	vdd_symoffset;		/* offset of syms from start of file */
+	int	(*vdd_entry)();		/* entry point virtual address */
+	u_int	vdd_userconf:1,		/* user config info used to config */
+		vdd_intransit:1;	/* being loaded or unloaded */
+};
+
+#define VDD_STATUS(VDP, VDS) \
+	(*(VDP)->vdd_ops->vdm_status)(VDP, VDS)
+#define VDD_INSTALL(VDP, VDI) \
+	(*(VDP)->vdd_ops->vdm_install)(VDP, VDI)
+#define VDD_REMOVE(VDP, VDI) \
+	(*(VDP)->vdd_ops->vdm_remove)(VDP, VDI)
+
+/*
+ * User specified configuration information.  The user specifies
+ * configuration information in a form similar to what the config program
+ * takes.  The modload program converts the user info into an array
+ * of vdconf structures terminated by a NULL entry.
+ */
+struct vdconf {
+	int	vdc_type;		/* type of entry */
+	long	vdc_data;		/* data for this type */
+};
+
+#define VDCEND		0
+#define VDCCONTROLLER	1
+#define VDCDEVICE	2
+#define VDCBLOCKMAJOR	3
+#define VDCCHARMAJOR	4
+#define VDCSYSCALLNUM	5
+
+/*
+ * Symbol table information.  Kadb knows how to read these symbol table entries.
+ *
+ * Someday we'll have linker support for this symbols in loadable modules
+ * at which time we'll use the standard nlist structure for symbols.
+ */
+
+struct vdsym {
+	u_int	vdsym_name;		/* offset in symtab to symbol name */
+	u_int	vdsym_value;		/* symbol value */
+};
+
+#ifdef KERNEL
+/*
+ * global function and data declarations
+ */
+extern int vd_unuseddev();
+extern struct vd_modsw vd_modsw[];
+#endif KERNEL
+
+#endif	/* !_sun_vddrv_h_ */

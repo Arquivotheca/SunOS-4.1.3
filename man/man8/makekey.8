@@ -1,0 +1,57 @@
+.\" @(#)makekey.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH MAKEKEY 8 "9 September 1987"
+.SH NAME
+makekey \- generate encryption key
+.SH SYNOPSIS
+.B /usr/lib/makekey
+.SH DESCRIPTION
+.IX  "makekey command"  ""  "\fLmakekey\fP \(em generate encryption key"
+.IX  generate "encryption key \(em \fLmakekey\fP"
+.IX  "encryption key, generate \(em \fLmakekey\fP"
+.B makekey
+improves the usefulness of encryption schemes depending on a key by
+increasing the amount of time required to search the key space.  It
+reads 10 bytes from its standard input, and writes 13 bytes on its
+standard output.  The output depends on the input in a way intended to
+be difficult to compute (that is, to require a substantial fraction of
+a second).
+.LP
+The first eight input bytes
+(the
+.IR "input key" )
+can be arbitrary
+.SM ASCII
+characters.  The last two (the
+.IR salt )
+are best chosen from the set of digits, upper- and lower-case
+letters, and
+.RB ` . '
+and
+.RB ` / '.
+The salt characters are repeated as the
+first two characters of the output.
+The remaining 11 output characters are
+chosen from the same set as the salt
+and constitute the
+.I "output key."
+.LP
+The transformation performed is essentially the following:
+the salt is used to select one of 4096 cryptographic
+machines all based on the National Bureau of Standards
+.SM DES
+algorithm, but modified in 4096 different ways.
+Using the input key as key,
+a constant string is fed into the machine
+and recirculated a number of times.
+The 64 bits that come out are distributed into the
+66 useful key bits in the result.
+.LP
+.B makekey
+is intended for programs that perform encryption (for instance,
+.BR ed (1)
+and
+.BR crypt (1)).
+Usually makekey's input and output will be pipes.
+.SH SEE ALSO
+.BR crypt (1),
+.BR ed (1)

@@ -1,0 +1,190 @@
+.\" @(#)fs.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH FS 5 "5 July 1990"
+.UC 4
+.SH NAME
+fs, inode \- format of a 4.2 (ufs) file system volume
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <ufs/fs.h>
+.B #include <ufs/inode.h>
+.fi
+.SH DESCRIPTION
+.IX  "fs file"  ""  "\fLfs\fP \(em 4.2 file system format"
+.IX  "file system" "4.2 format \(em \fLfs\fP"
+.LP
+Standard 4.2 (ufs) file system storage volumes
+have a common format for certain vital information.
+Every such volume is divided into a certain number of blocks.
+The block size is a parameter of the file system.
+Sectors 0 to 15 contain primary
+and secondary bootstrapping programs.
+.LP
+The actual file system begins at sector 16 with the
+.IR super-block .
+The layout of the super block is defined by the include file
+.B <ufs/fs.h>
+.LP
+Each disk drive contains some number of file systems.
+A file system consists of a number of cylinder groups.
+Each cylinder group contains inodes and data.
+.LP
+A file system is described by its super-block, which in turn
+describes the cylinder groups.
+The super-block is critical
+data and is replicated in each cylinder group to protect against
+catastrophic loss.
+This is done at file system creation
+time and the critical
+super-block data does not change, so the copies need not be
+referenced further unless disaster strikes.
+.LP
+Addresses stored in inodes are capable of addressing fragments
+of \*(lqblocks.\*(rq
+File system blocks of at most size
+.SB MAXBSIZE
+can be optionally broken into 2, 4, or 8 pieces,
+each of which is addressable;
+these pieces may be
+.BR \s-1DEV_BSIZE\s0 ,
+or some multiple of a
+.SB DEV_BSIZE
+unit.
+.LP
+Large files consist of exclusively large data blocks.
+To avoid
+undue wasted disk space, the last data block of a small file is
+allocated as only as many fragments of a large block as are
+necessary.
+The file system format retains only a single pointer
+to such a fragment, which is a piece of a single large block that
+has been divided.
+The size of such a fragment is determinable from
+information in the inode, using the
+.RB ` "blksize(fs, ip, lbn)" '
+macro.
+.LP
+The file system records space availability at the fragment level;
+to determine block availability, aligned fragments are examined.
+.LP
+The root inode is the root of the file system.
+Inode 0 cannot be used for normal purposes and
+historically bad blocks were linked to inode 1,
+thus the root inode is 2 (inode 1 is no longer used for
+this purpose, however numerous dump tapes make this
+assumption, so we are stuck with it).
+The
+.I lost+found
+directory is given the next available
+inode when it is initially created by
+.BR mkfs (8).
+.LP
+.B fs_minfree
+gives the minimum acceptable percentage of file system
+blocks which may be free.
+If the freelist drops below this level
+only the super-user may continue to allocate blocks.
+This may be set to 0 if no reserve of free blocks is
+deemed necessary,
+however severe performance degradations will be observed if the
+file system is run at greater than 90% full; thus the default
+value of
+.B fs_minfree
+is 10%.
+.LP
+Empirically the best trade-off between block fragmentation and
+overall disk utilization at a loading of 90% comes with a
+fragmentation of 4, thus the default fragment size is a fourth
+of the block size.
+.LP
+.I Cylinder group related
+.IR limits :
+Each cylinder keeps track of the availability of blocks at different
+rotational positions, so that sequential blocks can be laid out
+with minimum rotational latency.
+.B fs_nrpos
+is the number of rotational
+positions which are distinguished.
+With the default
+.B fs_nrpos
+of 8 the resolution of the
+summary information is 2ms for a typical 3600 rpm drive.
+.LP
+.B fs_rotdelay
+gives the minimum number of milliseconds to initiate
+another disk transfer on the same cylinder.
+It is used in
+determining the rotationally optimal layout for disk blocks
+within a file; the default value for
+.B fs_rotdelay
+varies from drive to drive, see
+.BR tunefs (8).
+.LP
+.B fs_maxcontig
+gives the maximum number of blocks, belonging to one file, that will be
+allocated contiguously before inserting a rotational delay.
+.LP
+Each file system has a statically allocated number of inodes.
+An inode is allocated for each
+.SB NBPI
+bytes of disk space.
+The inode allocation strategy is extremely conservative.
+.LP
+.SB MINBSIZE
+is the smallest allowable block size.
+With a
+.SB MINBSIZE
+of 4096 it is possible to create files of size
+2^32 with only two levels of indirection.
+.SB MINBSIZE
+must be big enough to hold a cylinder group block,
+thus changes to
+.B (struct cg)
+must keep its size within
+.BR \s-1MINBSIZE\s0.
+Note: super blocks are never more than size
+.BR \s-1SBSIZE\s0 .
+.LP
+The path name on which the file system is mounted is maintained
+in
+.BR fs_fsmnt .
+.SB MAXMNTLEN
+defines the amount of space allocated in
+the super block for this name.
+The limit on the amount of summary information per file system
+is defined by
+.BR \s-1MAXCSBUFS\s0.
+It is currently parameterized for a
+maximum of two million cylinders.
+.LP
+Per cylinder group information is summarized in blocks allocated
+from the first cylinder group's data blocks.
+These blocks are read in from
+.B fs_csaddr
+(size
+.BR fs_cssize )
+in addition to the super block.
+.LP
+Note:
+sizeof
+.B (struct csum)
+must be a power of two in order for
+the
+.B fs_cs
+macro to work.
+.LP
+.IR inode :
+The inode is the focus of all file activity in the
+file system.
+There is a unique inode allocated
+for each active file,
+each current directory, each mounted-on file,
+text file, and the root.
+An inode is \*(lqnamed\*(rq by its device/i-number pair.
+For further information, see the include file
+.BR <ufs/inode.h> .
+.SH SEE ALSO
+.BR mkfs (8),
+.BR newfs (8),
+and 
+.BR tunefs (8).

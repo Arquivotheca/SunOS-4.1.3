@@ -1,0 +1,137 @@
+;
+;      @(#)gouraud_triangles.hasm 1.1 92/07/30 17:40:19
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+;
+; Draw a single triangle with a different color at each vertex
+;
+start:
+
+	set_attribute	hk_view, @perspective
+
+        set_attribute   hk_z_buffer_compare
+        .word           FALSE
+        set_attribute   hk_z_buffer_update
+        .word           HK_Z_UPDATE_NONE
+
+	set_attribute	hk_use_back_props, #FALSE
+	set_attribute	hk_face_culling_mode, #HK_CULL_NONE
+	set_attribute	hk_front_lighting_degree, #HK_NO_LIGHTING
+	set_attribute   hk_front_interior_style
+	.word           HK_POLYGON_SOLID
+
+
+	set_attribute	hk_edge
+	.word		HK_EDGE_ALL
+	set_attribute	hk_edge_antialiasing
+	.word		TRUE
+	set_attribute   hk_edge_style
+	.word           HK_LINESTYLE_SOLID
+	set_attribute   hk_edge_z_offset
+	.word           0.05
+;obsolete in  1.5 HIS
+;	set_attribute	hk_blend_op_aa
+;    	.word		HK_BLEND_AA_CONSTANT
+;    	.word		HK_BLEND_AA_CONSTANT
+
+	set_attribute	hk_tri_geom_format
+	.word		HK_TRI_XYZ_VNORMAL_VCOLOR
+
+	set_attribute	hk_front_shading_method, #HK_SHADING_GOURAUD
+
+	jmpl		triangles, r6
+
+	trap		0
+
+perspective:
+	.fword		-0.5,  -0.5,  0.5,  0.5
+	.matrix_pair \				; VT and IVT
+	<   <  1.0,  0.0,  0.0,  0.0 > , \
+	    <  0.0,  1.0,  0.0,  0.0 > , \
+	    <  0.0,  0.0,  1.0,  0.0 > , \
+	    <  0.0,  0.0,  0.0,  1.0 > >
+
+triangles:
+	set_attribute	hk_edge_color
+	.rgb	< 1.0, 0.0, 0.0 > 
+
+	triangle_list	3
+	.tri_start
+	.xyz	< -0.43258976, 0.9784, 0.7456 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 1.0, 0.0, 0.0 > 
+	.tri_r2
+	.xyz	< -0.789564, 0.342, 0.9870 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.0, 1.0, 0.0 > 
+	.tri_r2
+	.xyz	< -0.423, 0.0987, 0.6754 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.0, 0.0, 1.0 > 
+
+	set_attribute	hk_edge_color
+	.rgb	< 0.0, 1.0, 0.0 > 
+
+	triangle_list	3
+	.tri_start
+	.xyz	< 0.842, 0.635, 0.8796 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 1.0, 1.0, 0.0 > 
+	.tri_r2
+	.xyz	< 0.9452, 0.45637, 0.3421> 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.0, 1.0, 1.0 > 
+	.tri_r2
+	.xyz	< 0.025, 0.5438967, 0.54321 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 1.0, 0.0, 1.0 > 
+
+	set_attribute	hk_edge_color
+	.rgb	< 0.0, 0.0, 1.0 > 
+
+	triangle_list	3
+	.tri_start
+	.xyz	< 0.53467890, -0.97864, 0.456 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 1.0, 1.0, 1.0 > 
+	.tri_r2
+	.xyz	< 0.0987, -0.789, 0.123 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.0, 0.0, 0.0 > 
+	.tri_r2
+	.xyz	< 0.5634, -0.02348957, 0.9078 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.5, 0.5, 0.5 > 
+
+	triangle_list	3
+	.tri_start
+	.xyz	< -0.995826, -0.14756876, 0.5643 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 1.0, 0.2, 0.5 > 
+	.tri_r2
+	.xyz	< -0.03245696708, -0.134712689, 0.8796234 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.2, 1.0, 0.5 > 
+	.tri_r2
+	.xyz	< -0.49568, -0.982346787, 0.0978 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.2, 0.5, 1.0 > 
+
+	triangle_list	3
+	.tri_start
+	.xyz	< -0.195826, -0.10134598876, 0.5643 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.2, 1.0, 0.2 > 
+	.tri_r2
+	.xyz	< 0.7340987, 0.2341689, 0.8796234 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.75, 0.2, 1.0 > 
+	.tri_r2
+	.xyz	< -0.20568, 0.534870, 0.0978 > 
+	.norm	< 0, 0, -1 > 
+	.rgb	< 0.5, 0.75, 0.2 > 
+
+	jmpl	(r6+0), r6

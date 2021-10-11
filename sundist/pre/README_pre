@@ -1,0 +1,190 @@
+@(#)README_pre 1.1 92/07/30 SMI 
+
+	GENERATING THE PRE-INSTALLED OS MASTER
+
+I)   GENERATE THE PRE-INSTALLED MASTER DISK IMAGE
+
+The following are instructions for Release Engineering to build a
+pre-installed disk image from a set of 4.1 full release tapes
+using suninstall.
+
+  1) Boot munix on a Campus/Hydra. 
+     Format your Quantum disk (sd0 on Campus, sd6 on Hydra).
+     Label it with the standard Quantum ProDrive 105S label.
+
+  2) Load the miniroot.
+     Run suninstall to install your system stand-alone, (preferrably no ethernet
+     and no yp), selecting the following software categories:
+	root			 System_V
+	usr			 SunView_Users
+	Kvm			 SunView_Demo
+	Install			 Text
+	Networking		 Demo
+	Sys
+
+    Install the small kernel; remove original vmunix:
+	install_small_kernel
+
+  3) Boot the system single-user:
+	b sd() -s		# for Campus
+	b sd(0,18,0) -s		# for Hydra
+
+  4) Run sys-unconfig to blank out the identity of the system.
+	/usr/etc/install/sys-unconfig
+
+	sys-unconfig will do the following:
+		touch /etc/.UNCONFIGURED
+		cat /etc/hosts >> /etc/hosts.saved
+		restore the generic /etc/hosts file
+		rm /etc/hostname.le0
+		mv /etc/install/sys_info /etc/install/sys_info-
+		generate /usr/share/lib/zoneinfo/localtime-
+		rm /etc/defaultdomain	# if system was installed with yp
+		mv /var/yp /var/yp-	# if system was installed with yp
+
+  5) Clean up after sys-unconfig
+	rm -f /etc/hosts.saved
+	rm -f /etc/install/sys_info-
+	rm -f /usr/share/lib/zoneinfo/localtime-
+	rm -fr /var/yp-		# if system was installed with yp
+	rmdir /usr/export/home/<hostname>
+
+  6) Clean up after suninstall:
+	rm /vmunix.orig
+
+	cd /etc/install
+	mv disk_list disk_list.save
+	# if Campus 
+		grep -v '[1-6]' disk_list.save > disk_list 
+		rm -f *sd[1-6]*
+	# if Hydra
+		grep -v '[0-5]' disk_list.save > disk_list
+		rm -f *sd[0-5]*
+	rm -f disk_list.save
+
+	cd /dev
+	./MAKEDEV cgthree0 cgfour0 cgsix0 bwtwo0
+
+	edit /etc/install/suninstall.log and remove all warnings
+	(on "mknod" and "tar: ./home not found")
+
+  7) Clean up /tmp if need be:
+	rm -f /tmp/*
+
+
+II)  CUT THE PRE-INSTALLED RELEASE TAPE
+
+  1) Find a partition on a server (~ 100 mb, call it "/golden").
+     Create the following directory:
+
+	/golden/RELEASE/ARCH/DISKMODEL 
+
+        Example:  /golden/4.1FCS/sun4c/Quantum_ProDrive_105S
+
+     Export the partition so that it can be written on by the local Campus/Hydra.
+
+     /golden should be structured as outlined below.
+     local/ and RELEASE/bin/ contain the pre-installed os tools.
+     RELEASE/ARCH/DISKMODEL directories contain the dd disk images
+     and their checksums (which will be created in the next step):
+
+	local/disk_build*
+	local/ft_build*
+	local/sat_build*
+
+	4.1/bin/crc.sun3*
+	4.1/bin/crc.sun4*
+
+	4.1/sun3x/Quantum_ProDrive_105S/rootfs
+	4.1/sun3x/Quantum_ProDrive_105S/userfs
+	4.1/sun3x/Quantum_ProDrive_105S/checksum.rootfs
+	4.1/sun3x/Quantum_ProDrive_105S/checksum.userfs
+
+	4.1/sun4c/Quantum_ProDrive_105S/rootfs
+	4.1/sun4c/Quantum_ProDrive_105S/userfs
+	4.1/sun4c/Quantum_ProDrive_105S/checksum.rootfs
+	4.1/sun4c/Quantum_ProDrive_105S/checksum.userfs
+
+  2)  On your local Campus/Hydra (booted diskless), dd the images over to
+      the golden partition.  
+
+	# mkdir /golden
+	# mount -o intr server:/golden /golden
+	# cd  /golden/RELEASE/ARCH/DISKMODEL
+	# dd if=/dev/rsd<n>a of=rootfs bs=1024k
+	# dd if=/dev/rsd<n>g of=userfs bs=1024k
+	  where
+	  <n> is 0 for Campus and 6 for Hydra.
+
+    Now make the checksum files:
+
+	# /golden/RELEASE/bin/crc.ARCH /dev/rsd<n>a > checksum.rootfs
+	# /golden/RELEASE/bin/crc.ARCH /dev/rsd<n>g > checksum.userfs
+
+    To verify, compute the checksum of the dd image files.
+    This should yield the same checksums as above:
+
+	# /golden/RELEASE/bin/crc.ARCH rootfs > /tmp/checksum.rootfs
+	# /golden/RELEASE/bin/crc.ARCH userfs > /tmp/checksum.userfs
+	# diff checksum.rootfs /tmp/checksum.rootfs
+	# diff checksum.userfs /tmp/checksum.userfs
+
+  3)  Generate the release tape:
+
+	# mount server:/golden /golden  (on your build machine)
+	# cd /usr/src/sundist/pre/local
+	# tape_build
+
+
+III)  REBUILD A PRE-INSTALLED DISK AT THE CUSTOMER SITE
+
+This section is designed to help the FEs rebuild a pre-installed
+Campus/Hydra disk on site, should the disk be corrupted.  This will
+save Manufacturing the cost of shipping a new pre-installed disk
+or a pre-installed release tape to the customer site.
+
+With a set of 4.1 full release tapes, execute the steps below to rebuild 
+your pre-installed Campus/Hydra disk:
+
+  1) Boot munix on a Campus/Hydra. 
+     Format your Quantum disk (sd0 on Campus, sd6 on Hydra).
+     Label it with the standard Quantum ProDrive 105S label.
+
+  2) Load the miniroot:
+	b st()install sd(0,0,1)		# Campus
+	b st()install sd(0,18,1)	# Hydra
+
+     Run suninstall to install your system stand-alone, selecting the
+     following eleven (11) software categories to fill out your software
+     form:
+	root			 System_V
+	usr			 SunView_Users
+	Kvm			 SunView_Demo
+	Install			 Text
+	Networking		 Demo
+	Sys
+
+  3) Install the small kernel:
+	install_small_kernel
+
+  4) Boot the system single-user:
+	b sd() -s		# Campus
+	b sd(0,18,0) -s		# Hydra
+
+  5) Tune up:
+     a) Ensure all necessary devices are created:
+	cd /dev
+	./MAKEDEV cgthree cgfour0 cgsix0 bwtwo0 
+
+     b) Cleanup
+	rm /vmunix.orig
+
+NOTE the following difference between a 'new' and a 'rebuilt' pre-installed 
+system:
+ 
+As you rebuild the pre-installed system using suninstall,
+you also configure it via the suninstall forms.  When you first
+reboot a 'rebuilt' pre-installed system, you will not be asked to enter
+information on the system's 'hostname', 'timezone', and 'network 
+configuration', like when you first power up a 'new' pre-installed 
+system shipped from Sun.

@@ -1,0 +1,175 @@
+.\" @(#)dbxtool.1 1.1 92/07/30 SMI;
+.TH DBXTOOL 1 "11 January 1988"
+.SH NAME
+dbxtool \- SunView interface for the dbx source-level debugger
+.SH SYNOPSIS
+.B dbxtool
+[
+.B \-d
+] [
+.B \-i
+] [
+.B \-k
+] [
+.B \-kbd
+] [
+.B \-I
+.I directory
+] [
+.I objectfile
+[
+.I corefile
+] ]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Debugging
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "dbxtool command"  ""  "\fLdbxtool\fP \(em debugger"
+.IX "debug tools"  "dbxtool command"  ""  "\fLdbxtool\fP \(em debugger"
+.IX "programming tools"  "dbxtool command"  ""  "\fLdbxtool\fP \(em debugger"
+.LP
+.BR dbxtool ,
+a source-level debugger for C, Pascal and \s-1FORTRAN\s0 77
+programs, is a standard tool that runs within the
+.I SunView
+environment.
+It accepts the same commands as
+.BR "dbx" ","
+but provides a more convenient user interface.
+.LP
+You can use the mouse to set breakpoints, examine
+the values of variables, control execution, peruse
+source files, and so on.
+.B dbxtool
+has separate subwindows for viewing source code,
+entering commands and other uses.
+.LP
+.I objectfile
+is an object file produced by
+.BR cc (1V),
+any other Sun compiler, (or a combination of them) with the appropriate
+flag
+.RB ( \-g )
+specified to produce symbol information in the object file.
+.SB IMPORTANT:
+every stage of the compilation process, including the linking phase, must
+include the
+.B \-g
+option.
+If no
+.I objectfile
+is specified, you can use the
+.B debug
+command to specify the program to be debugged.
+The object file contains
+a symbol table which includes the names of all the
+source files translated by the compiler to create it.
+These files are available for perusal while
+using the debugger.
+.LP
+If a file named
+.B core
+exists in the current directory or a
+.I corefile
+is specified,
+.B dbxtool
+can be used to examine the
+state of the program when it faulted.
+.LP
+Debugger commands in the file
+.B .\|dbxinit
+are executed
+immediately after the symbolic information is read, if that
+file exists in the current directory, or in the user's home
+directory if
+.B .\|dbxinit
+does not exist in the current directory.
+.SH OPTIONS
+.TP
+.B \-d
+Produce debugging information for the pipeline from which it reads
+.BR dbx (1)
+output.
+.TP
+.B \-i
+Force
+.B dbxtool
+to act as though standard input were a terminal.
+.TP
+.B \-k
+Kernel debugging.
+.TP
+.B \-kbd
+Debugs a program that sets the keyboard into up/down translation
+mode.  This flag is necessary if you are debugging a program
+that uses up/down encoding.
+.TP
+.BI \-I " directory"
+Add
+.I directory
+to the list of directories that are searched when looking
+for a source file.  Normally
+.B dbxtool
+looks for source files in the
+current directory and then in the directory where
+.I objectfile
+is located.
+The directory search path can also be set with the
+.B use
+command.
+Multiple
+.B \-I
+options may be given.
+.SH USAGE
+.LP
+Refer to
+.BR dbx (1)
+for a summary of
+.B dbx
+commands, or
+.TX DEBUG
+for more complete information on using
+.BR dbxtool .
+.SH FILES
+.PD 0
+.TP 20
+.B core
+default core file
+.TP
+.B .\|dbxinit
+local
+.B dbx
+initialization file
+.TP
+.B ~/.\|dbxinit
+user's
+.B dbx
+initialization file
+.SH SEE ALSO
+.BR cc (1V),
+.BR dbx (1)
+.LP
+.TX DEBUG
+.br
+.TX SVPG
+.br
+.ne 6
+.SH BUGS
+.LP
+The bugs for
+.BR dbx (1)
+apply to
+.B dbxtool
+as well.
+.LP
+The interaction between scrolling in the
+.I source
+subwindow and
+.BR dbx 's
+regular expression search commands is wrong.
+Scrolling should affect where the next search begins,
+but it does not.

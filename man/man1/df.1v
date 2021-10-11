@@ -1,0 +1,133 @@
+.\" @(#)df.1v 1.1 92/07/30 SMI;
+.TH DF 1V "16 September 1989"
+.SH NAME
+df \- report free disk space on file systems
+.SH SYNOPSIS
+.B df
+[
+.B \-a
+]
+[
+.B \-i
+]
+[
+.B \-t
+.I type
+] [
+.IR filesystem .\|.\|.
+] [
+.IR filename .\|.\|.
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/df
+[
+.B \-t
+] [
+.IR filesystem .\|.\|.
+] [
+.IR filename .\|.\|.
+]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "df command"  ""  "\fLdf\fP \(em display free space"
+.IX "file system"  "free space display"
+.IX "file system"  "display free space"
+.IX display  "free space in file system"
+.LP
+.B df
+displays the amount of disk space occupied by currently mounted file systems,
+the amount of used and available space,
+and how much of the file system's total capacity has been used.
+Used without arguments,
+.B df
+reports on all mounted file systems, 
+producing something like:
+.LP
+.RS
+.nf
+.ft B
+example% df
+.ta \w'Filesystem'u+2n +\w'kbytes'u+2n +\w'used'u+2n +\w'avail'u+2n +\w'capacity'u+2n
+Filesystem	kbytes	used	avail	capacity	Mounted on
+/dev/ip0a	 7445	 4714	1986	70%		/
+/dev/ip0g	42277	35291	2758	93%		/usr
+.ft R
+.fi
+.RE
+.LP
+Note:
+.BR used + avail
+is less than the amount of space in the file system
+(kbytes); this is because the system
+reserves a fraction of the space
+in the file system to allow its file
+system allocation routines to work well.
+The amount reserved is typically about 10%;
+this may be adjusted using
+.BR tunefs (8).
+When all the space on a file system except for this reserve is
+in use, only the super-user can allocate new files and data blocks
+to existing files.  When a file system is overallocated in this way,
+.B df
+may report that the file system is more than 100% utilized.
+.LP
+If arguments to
+.B df
+are disk partitions (for example,
+.BR /dev/ip0a s
+or path names,
+.B df
+produces a report on the
+file system containing the named file. Thus
+.RB ` "df ." '
+shows the amount of space on the file system containing the current
+directory.
+.SH SYSTEM V DESCRIPTION
+.LP
+The
+.I System V
+version of
+.B df
+works in the same manner as above but prints 
+only the amount of available space 
+(in 512 byte units) and the number of free inodes.
+.SH OPTIONS
+.TP
+.B \-a
+Report on all filesystems including the uninteresting
+ones which have zero total blocks. (that is, 
+.IR automounter )
+.TP
+.B \-i
+Report the number of used and free inodes.
+Print
+.RB ` * '
+if no information is available.
+.TP
+.BI \-t " type"
+Report on filesystems of a given
+.I type
+(for example,
+.B nfs
+or
+.BR 4.2 ).
+.SH SYSTEM V OPTIONS
+.TP 15
+.B \-t
+Report the total allocated space figures.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/mtab
+List of filesystems currently mounted.
+.PD
+.SH "SEE ALSO"
+.BR du (1V),
+.BR mtab (5),
+.BR quot (8),
+.BR tunefs (8)

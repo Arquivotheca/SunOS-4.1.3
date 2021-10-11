@@ -1,0 +1,80 @@
+.\" @(#)kvm_nlist.3k 1.1 92/07/30 SMI
+.TH KVM_NLIST 3K "21 January 1990"
+.SH NAME
+kvm_nlist \- get entries from kernel symbol table
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <kvm.h>
+#include <nlist.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kvm_nlist(kd, nl)
+kvm_t *kd;
+struct nlist *nl;
+.ft R
+.fi
+.IX  "kvm_nlist()"  ""  "\fLkvm_nlist()\fP \(em get entries from kernel symbol table"
+.IX  get "entries from kernel symbol table \(em \fLkvm_nlist()\fP"
+.IX  "kernel symbol table, get entries from \(em \fLkvm_nlist()\fR"
+.SH DESCRIPTION
+.LP
+.B kvm_nlist(\|)
+examines the symbol table from the kernel image identified by
+.I kd
+(see
+.BR kvm_open (3K))
+and selectively extracts a list of values and puts them in the array of
+.B nlist(\|)
+structures pointed to by
+.IR nl .
+The name list pointed to by
+.B nl(\|)
+consists of an array of structures containing names,
+types and values.  The
+.I n_name
+field of each such structure is taken to be a pointer to a
+character string representing a symbol name.  The list is terminated
+by an entry with a
+.SM NULL
+pointer (or a pointer to a
+null
+string) in the
+.I n_name
+field.  For each entry in
+.IR nl ,
+if the named symbol is present in the kernel symbol table,
+its value and type are placed in the
+.I n_value
+and
+.I n_type
+fields.
+If a symbol cannot be located, the corresponding
+.I n_type
+field of
+.B nl(\|)
+is set to zero.
+.SH RETURN VALUES
+.LP
+On success,
+.B kvm_nlist(\|)
+returns
+the number of symbols that were not located in the symbol table.
+On failure,
+it returns
+\-1
+and sets
+all of the
+.I n_type
+fields in members of the array pointed to by
+.B nl
+to zero.
+.SH SEE ALSO
+.BR kvm_open (3K),
+.BR kvm_read (3K),
+.BR nlist (3V),
+.BR a.out (5)

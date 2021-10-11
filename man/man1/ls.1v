@@ -1,0 +1,429 @@
+.\" @(#)ls.1v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH LS 1V "2 October 1989"
+.SH NAME
+ls \- list the contents of a directory
+.SH SYNOPSIS
+.B ls
+[
+.B \-aAcCdfFgilLqrRstu1
+]
+.I filename
+\&.\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/ls
+[
+.B \-abcCdfFgilLmnopqrRstux
+]
+.I filename
+\&.\|.\|.
+.SH AVAILABILITY
+.LP
+The System V version of this command is available with the
+.I System V
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLls\fR"
+.IX  "ls command"  ""  "\fLls\fP \(em list files"
+.IX  display "file names \(em \fLls\fP"
+.IX  files  "display names"  ""  "display names \(em \fLls\fP"
+.IX  directory  "list contents of"  ""  "list contents of \(em \fLls\fP"
+.LP
+For each
+.I filename
+which is a directory,
+.B ls
+lists the contents of the directory; for each
+.I filename
+which is a file,
+.B ls
+repeats its name and any other information
+requested.
+By default, the output is sorted alphabetically.
+When no argument is given, the current directory is listed.
+When several arguments are given,
+the arguments are first sorted
+appropriately, but file arguments are
+processed before directories and their contents.
+.LP
+In order to determine output formats for the
+.BR \-C ,
+.BR \-x ,
+and
+.B \-m
+options,
+.B /usr/5bin/ls
+uses an environment variable,
+.BR \s-1COLUMNS\s0 ,
+to determine the number of character positions available on one
+output line.
+If this variable is not set, the
+.B terminfo
+database is used to determine the number of columns, based on the
+environment variable
+.BR \s-1TERM\s0 .
+If this information cannot be obtained, 80 columns are assumed.
+.SS Permissions Field
+.LP
+The mode printed under the
+.B \-l
+option contains 10 characters interpreted as follows.
+If the first character is:
+.sp .5
+.RS
+.PD 0
+.TP 3
+.B d
+entry is a directory;
+.TP 3
+.B b
+entry is a block-type special file;
+.TP 3
+.B c
+entry is a character-type special file;
+.TP 3
+.B l
+entry is a symbolic link;
+.TP 3
+.B p
+entry is a
+.SM FIFO
+(also known as \*(lqnamed pipe\*(rq) special file;
+.TP 3
+.B s
+entry is an
+.SB AF_UNIX
+address family socket, or
+.TP 3
+.B  \-
+entry is a plain file.
+.PD
+.RE
+.LP
+The next 9 characters are interpreted as three sets of three
+bits each.
+The first set refers to owner permissions; the next refers to
+permissions to
+others in the same user-group; and the last refers to all
+others.
+Within each
+set the three characters indicate permission respectively to
+read, to write, or to execute the file as a program.
+For a
+directory, \*(lqexecute\*(rq
+permission is interpreted to mean permission to search the
+directory.
+The permissions are indicated as follows:
+.sp .5
+.RS
+.PD 0
+.TP 3
+.B  r
+the file is readable;
+.TP 3
+.B  w
+the file is writable;
+.TP 3
+.B  x
+the file is executable;
+.TP 3
+.B  \-
+the indicated permission is not granted.
+.PD
+.RE
+.LP
+The group-execute permission character is given as
+.B s
+if the file has the set-group-id bit set;
+likewise the owner-execute permission character is given as
+.B s
+if the file has the set-user-id bit set.
+.LP
+The last character of the mode (normally
+.B x
+or
+.RB ` \- ')
+is
+.B t
+if the 1000 bit of the mode is on.
+See
+.BR chmod (1V)
+for the meaning of this mode.
+The indications of set-\s-1ID\s0 and 1000 bits of the mode
+are capitalized
+.RB ( S
+and
+.B T
+respectively) if the corresponding execute permission is
+.I not
+set.
+.LP
+When the sizes of the files in a directory are listed, a
+total
+count
+of blocks,
+including indirect blocks is printed.
+.SH OPTIONS
+.TP
+.B \-a
+List all entries; in the absence of this option, entries whose
+names begin with a
+.RB ` . '
+are
+.I not
+listed (except for the super-user, for whom
+.BR ls ,
+but not
+.BR /usr/5bin/ls ,
+normally prints even files that begin with a
+.RB ` . ').
+.TP
+.B \-A
+.RB ( ls
+only)  Same as
+.BR \-a ,
+except that
+.RB ` . '
+and
+.RB ` .\|. '
+are not listed.
+.TP
+.B \-c
+Use time of last edit (or last mode change) for sorting or printing.
+.br
+.ne 5
+.TP
+.B \-C
+Force multi-column output, with entries sorted down the columns;
+for
+.BR ls ,
+this is the default when output is to a terminal.
+.TP
+.B \-d
+If argument is a directory, list only its name
+(not its contents); often used with
+.B \-l
+to get the status of a directory.
+.TP
+.B \-f
+Force each argument to be interpreted as
+a directory and list the name
+found in each slot.
+This option turns off
+.BR \-l ,
+.BR \-t ,
+.BR \-s ,
+and
+.BR \-r ,
+and turns on
+.BR \-a ;
+the order is the order in which entries appear in the directory.
+.TP
+.B \-F
+Mark directories with a trailing slash
+.RB (` / '),
+executable files with a trailing asterisk
+.RB (` * '),
+symbolic links with a trailing at-sign
+.RB (` @ '),
+and
+.SB AF_UNIX
+address family sockets with a trailing equals sign
+.RB (` = ').
+.TP
+.B \-g
+For
+.BR ls ,
+show the group ownership of the file in a
+long output.
+For
+.BR /usr/5bin/ls ,
+print a long listing, the same as
+.BR \-l ,
+except that the owner is not printed.
+.TP
+.B \-i
+For each file, print the i-number in the first column of the report.
+.TP
+.B \-l
+List in long format, giving mode, number
+of links, owner, size in bytes,
+and time of last modification for each file.
+If the file is a special file the size field will instead
+contain the major and minor device numbers.
+If the time of last modification is greater than six months ago,
+it is shown in the format
+.RI ` "month date year" ';
+files modified within six months show
+.RI ` "month date time" '.
+If the file is a symbolic link the pathname of the
+linked-to file is printed preceded by
+.RB ` \(em> '.
+.B /usr/5bin/ls
+will print the group in addition to the owner.
+.TP
+.B \-L
+If argument is a symbolic link, list the file or directory the
+link references rather than the link itself.
+.TP
+.B \-q
+Display non-graphic characters in filenames as
+the character
+.BR ? ;
+for
+.BR ls ,
+this is the default when output is to a terminal.
+.TP
+.B \-r
+Reverse the order of sort to get reverse alphabetic
+or oldest first as appropriate.
+.TP
+.B \-R
+Recursively list subdirectories encountered.
+.TP
+.B \-s
+Give size of each file, including any
+indirect blocks used to map the file,
+in kilobytes
+.RB ( ls )
+or 512-byte blocks
+.RB ( /usr/5bin/ls ).
+.TP
+.B \-t
+Sort by time modified (latest first) instead of by name.
+.TP
+.B \-u
+Use time of last access instead of last modification for sorting
+(with the
+.B \-t
+option) and/or printing (with the
+.B \-l
+option).
+.TP
+.B \-1
+.RB ( ls
+only)
+Force one entry per line output format; this is the default
+when output is not to a terminal.
+.SH SYSTEM V OPTIONS
+.TP
+.B \-b
+Force printing of non-graphic characters to be
+in the octal
+.B \eddd
+notation.
+.TP
+.B \-m
+Stream output format; the file names are printed
+as a list separated by commas, with as many
+entries as possible printed on a line.
+.TP
+.B \-n
+The same as
+.BR \-l ,
+except that the owner's
+.SM UID
+and group's
+.SM GID
+numbers are printed, rather than
+the associated character strings.
+.TP
+.B \-o
+The same as
+.BR \-l ,
+except that the group is not printed.
+.TP
+.B \-p
+Put a slash
+.RB (` / ')
+after each filename if that file is a directory.
+.TP
+.B \-x
+Multi-column output with entries sorted across
+rather than down the page.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR ls .
+On entry to
+.BR ls ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.br
+.ne 8
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+to get user
+.SM ID\s0's
+for
+.RB ` "ls \-l" '
+and
+.RB ` "ls \-o" '.
+.TP
+.B /etc/group
+to get group
+.SM ID\s0
+for
+.RB ` "ls \-g" '
+and
+.RB ` "/usr/5bin/ls \-l" '.
+.TP
+.B /usr/share/lib/terminfo/*
+to get terminal information for
+.BR /usr/5bin/ls .
+.SH "SEE ALSO"
+.PD
+.BR chmod (1V)
+.br
+.ne 5
+.SH BUGS
+.LP
+.SM NEWLINE
+and
+.SM TAB
+are considered printing characters in filenames.
+.LP
+The output device is assumed to be 80 columns wide.
+.LP
+The option setting based on whether the output is a teletype is
+undesirable as
+.RB ` "ls \-s" '
+is much different than
+.RB ` "ls \-s | lpr" '.
+On the other hand, not doing this setting would
+make old shell scripts which used
+.B ls
+almost certain losers.
+.LP
+None of the above apply to
+.BR /usr/5bin/ls .
+.LP
+Unprintable characters in file names may confuse the
+columnar output options.

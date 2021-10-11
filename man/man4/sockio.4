@@ -1,0 +1,66 @@
+.\" @(#)sockio.4 1.1 92/07/30 SMI;
+.TH SOCKIO 4 "23 November 1987"
+.SH NAME
+sockio \- ioctls that operate directly on sockets
+.SH SYNOPSIS
+.nf
+.B #include <sys/sockio.h>
+.fi
+.SH DESCRIPTION
+.IX "socket I/O, see \fLsockio\fP(4)"
+.IX I/O "socket, see \fLsockio\fP(4)"
+.LP
+The
+.SM IOCTL\s0's
+listed in this manual page apply directly to sockets, independent of any
+underlying protocol.
+Note: the
+.B setsockopt
+system call (see
+.BR getsockopt (2))
+is the primary method for operating on sockets as such, rather
+than on the underlying protocol or network interface.
+.BR ioctl s
+for a specific network interface or protocol are documented in the
+manual page for that interface or protocol.
+.TP 20
+.SB SIOCSPGRP
+The argument is a pointer to an
+.BR int .
+Set the process-group ID that will subsequently receive
+.SB SIGIO
+or
+.SB SIGURG
+signals for the socket referred to by the descriptor passed to
+.B ioctl
+to the value of that
+.BR int .
+.TP 20
+.SB SIOCGPGRP
+The argument is a pointer to an
+.BR int .
+Set the value of that
+.B int
+to the process-group
+.SM ID
+that is receiving
+.SB SIGIO
+or
+.SB SIGURG
+signals for the socket referred to by the descriptor passed to
+.BR ioctl .
+.TP 20
+.SB SIOCCATMARK
+The argument is a pointer to an
+.BR int .
+Set the value of that
+.B int
+to 1 if the read pointer for the socket referred to by the descriptor passed
+to
+.B ioctl
+points to a mark in the data stream for an out-of-band message, and to 0 if it
+does not point to a mark.
+.SH SEE ALSO
+.BR ioctl (2),
+.BR getsockopt (2),
+.BR filio (4)

@@ -1,0 +1,154 @@
+.\" @(#)ar.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH AR 5 "18 February 1988"
+.SH NAME
+ar \- archive (library) file format
+.SH SYNOPSIS
+.B #include <ar.h>
+.SH DESCRIPTION
+.IX  "ar file"  ""  "\fLar\fP \(em archive file format"
+.IX  "archive file format"  ""  "archive file format \(em \fLar\fP"
+.IX  "library file format"  ""  "library file format \(em \fLar\fP"
+.LP
+The archive command
+.B ar
+combines several files into one.
+Archives are used mainly as libraries to be searched by the link-editor
+.BR ld (1).
+.LP
+A file produced by
+.B ar
+has a magic string at the start,
+followed by the constituent files, each preceded by a file header.
+The magic number and header layout as described in the include file are:
+.RS
+.LP
+.nf
+.ft B
+.ta \w'#define 'u +\w'SARMAG 'u
+.ec %
+#define	ARMAG	"!<arch>\n"
+#define	SARMAG	8
+
+#define	ARFMAG	"`\n"
+
+struct ar_hdr {
+	char	ar_name[16];
+	char	ar_date[12];
+	char	ar_uid[6];
+	char	ar_gid[6];
+	char	ar_mode[8];
+	char	ar_size[10];
+	char	ar_fmag[2];
+};
+.ec \
+.ft R
+.fi
+.RE
+.LP
+The name is a blank-padded string.
+The
+.B ar_fmag
+field contains
+.SB ARFMAG
+to help verify the presence of a header.
+The other fields are left-adjusted, blank-padded numbers.
+They are decimal except for
+.BR ar_mode ,
+which is octal.
+The date is the modification date of the file
+at the time of its insertion into the archive.
+.LP
+Each file begins on a even (0 mod 2) boundary;
+a
+.SM NEWLINE
+is inserted between files if necessary.
+Nevertheless the size given reflects the
+actual size of the file exclusive of padding.
+.LP
+There is no provision for empty areas in an archive file.
+.LP
+The encoding of the header is portable across machines.
+If an archive contains printable files, the archive itself is printable.
+.SH Sun386i DESCRIPTION
+.LP
+The file produced by
+.I ar
+on Sun386i systems is identical to that described above with the
+following changes:
+.LP
+Each archive containing
+.SM COFF
+files [see
+.BR coff (5)]
+includes an archive symbol table.
+This symbol table is used by the link editor 
+.B ld
+to determine which archive members must be loaded during the link
+edit process.
+The archive symbol table (if it exists) is always the first file
+in the archive (but is never listed) and is automatically
+created and/or updated by
+.BR ar .
+.LP
+The
+.I ar_name\^
+field of the ar_hdr structure described above is blank-padded and slash 
+.RB ( /\| )
+terminated.  
+Common format archives can be moved from system to system as long as the
+portable archive command
+.BR ar
+is used.  Conversion tools such as
+.BR convert
+exist to aid in the transportation
+of non-common format archives to this format.
+.LP
+Each archive file member begins on an even byte boundary; a
+.SM NEWLINE
+is inserted between files if necessary.
+Nevertheless the size given reflects the
+actual size of the file exclusive of padding.
+.LP
+If the archive symbol table exists, the first file in the archive
+has a zero length name (i.e.,
+.B ar_name[0] == '/'
+).  The contents of this file are as follows:
+.TP
+\(bu
+The number of symbols.  Length: 4 bytes.
+.TP
+\(bu
+The array of offsets into the archive file.  Length: 4 bytes \(** \*(lqthe
+number of symbols\*(rq.
+.TP
+\(bu
+The name string table.  Length:
+.I ar_size\^
+\- (4 bytes \(** (\*(lqthe number of symbols\*(rq + 1)).
+.LP
+The number of symbols and the array of offsets are managed with
+.IR sgetl " and " sputl .
+The string table contains exactly as many null terminated strings
+as there are elements in the offsets array.
+Each offset from the array is associated with the corresponding
+name from the string table (in order).
+The names in the string table are all the defined global symbols
+found in the common object files in the archive.
+Each offset is the location of the archive header for the associated symbol.
+.SH "SEE ALSO"
+.BR ar (1V),
+.BR ld (1),
+.BR nm (1)
+.SH Sun386i WARNINGS
+.LP
+.IR strip (1)
+will remove all archive symbol entries from the header.  The archive symbol
+entries must be restored via the \f3ts\f1 option of the
+.IR ar (1V)
+command before the archive can be used with the link editor
+.IR ld (1).
+.SH BUGS
+.LP
+Filenames lose trailing blanks.
+Most software dealing with archives takes even
+an included blank as a name terminator.

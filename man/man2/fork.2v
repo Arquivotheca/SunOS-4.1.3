@@ -1,0 +1,152 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)fork.2v 1.1 92/07/30 SMI; from UCB 6.4 5/22/86
+.TH FORK 2V "21 January 1990"
+.SH NAME
+fork \- create a new process
+.SH SYNOPSIS
+.ft B
+int fork()
+.ft R
+.SH SYSTEM V SYNOPSIS
+.ft B
+pid_t fork()
+.ft R
+.IX  "fork a new process \(em \fLfork()\fP"
+.IX  "processes and protection"  fork()  ""  \fLfork()\fP
+.IX  process  create
+.IX  "create new process"
+.SH DESCRIPTION
+.LP
+.B fork(\|)
+creates a new process.  The new process (child process) is an exact copy of the
+calling process except for the following:
+.TP 3
+\(bu
+The child process has a unique process
+.SM ID\s0.
+The child process
+.SM ID
+also does not match any active process group
+.SM ID\s0.
+.TP 3
+\(bu
+The child process has a different parent process
+.SM ID
+(the process
+.SM ID
+of the parent process).
+.TP 3
+\(bu
+The child process has its own copy of the parent's descriptors.
+These descriptors reference the same underlying objects, so that,
+for instance, file pointers in file objects are shared between
+the child and the parent, so that an
+.BR lseek (2V))
+on a descriptor in the child process can affect a subsequent
+.BR read (2V)
+or
+.BR write (2V)
+by the parent.  This descriptor copying is also used by the shell to
+establish standard input and output for newly created processes
+as well as to set up pipes.
+.TP 3
+\(bu
+The child process has its own copy of the parent's open
+directory streams
+(see
+.BR directory (3V)).
+.\" What does this mean?  It it right as is?
+Each open directory stream in the child process shares
+directory stream positioning with the corresponding directory
+stream of the parent.
+.TP 3
+\(bu
+All
+.I semadj
+values are cleared; see
+.BR semop (2).
+.TP 3
+\(bu
+The child processes resource utilizations are set to 0; see
+.BR getrlimit (2).
+The
+.B it_value
+and
+.B it_interval
+values for the
+.SB ITIMER_REAL
+timer are reset to 0; see
+.BR getitimer (2).
+.TP 3
+\(bu
+The child process's values of
+.BR tms_utime(\|) ,
+.BR tms_stime(\|) ,
+.BR tms_cutime(\|) ,
+and
+.B tms_cstime(\|)
+(see
+.BR times (3V))
+are set to zero.
+.TP 3
+\(bu
+File locks
+(see
+.BR fcntl (2V))
+previously set by the parent are not inherited by the child.
+.TP 3
+\(bu
+Pending alarms
+(see
+.BR alarm (3V))
+are cleared for the child process.
+.TP 3
+\(bu
+The set of signals pending for the child process is cleared
+(see
+.BR sigvec (2)).
+.SH RETURN VALUES
+.LP
+On success,
+.B fork(\|)
+returns
+0 to the child process and returns
+the process
+.SM ID
+of the child process to the parent process.
+On failure,
+.B fork(\|)
+returns
+\-1 to the parent process,
+sets
+.B errno
+to indicate the error, and no child process is created.
+.SH ERRORS
+.LP
+.B fork(\|)
+will fail and no child process will be created if one or more of the
+following are true:
+.TP 15
+.SM EAGAIN
+The system-imposed limit on the total
+number of processes under execution would be exceeded.
+This limit is determined when the system is generated.
+.IP
+The system-imposed limit on the total number of processes under execution by
+a single user would be exceeded.
+This limit is determined when the system is generated.
+.TP
+.SM ENOMEM
+There is insufficient swap space for the new process.
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR getitimer (2),
+.BR getrlimit (2),
+.BR lseek (2V),
+.BR read (2V),
+.BR semop (2),
+.BR wait (2V),
+.BR write (2V)

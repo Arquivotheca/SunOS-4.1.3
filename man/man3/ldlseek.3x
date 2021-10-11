@@ -1,0 +1,68 @@
+.\" @(#)ldlseek.3x 1.1 92/07/30 SMI; from SVID
+.TH LDLSEEK 3X "19 February 1988"
+.SH NAME
+ldlseek, ldnlseek \- seek to line number entries of a section of a COFF file
+.SH SYNOPSIS
+.nf
+.B #include <stdio.h>
+.B #include <filehdr.h>
+.B #include <ldfcn.h>
+.PP
+.B int ldlseek (ldptr, sectindx)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B unsigned short sectindx;
+.PP
+.B int ldnlseek (ldptr, sectname)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B char \(**sectname;
+.fi
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldlseek()" "" "\fLldlseek()\fP function"
+.IX "ldnlseek()" "" "\fLldnlseek()\fP function"
+.LP
+.B ldlseek(\|)
+seeks to the line number entries of the section specified by
+.I sectindx
+of the
+.SM COFF
+file currently associated with
+.IR ldptr .
+.PP
+.B ldnlseek(\|)
+seeks to the line number entries of the section specified by
+.IR sectname .
+.PP
+.B ldlseek(\|)
+and
+.B ldnlseek(\|)
+return
+.SM
+.B SUCCESS
+or
+.SM
+.BR FAILURE .
+.B ldlseek(\|) 
+will fail if 
+.I sectindx
+is greater than the number of sections in the object file;
+.B ldnlseek(\|)
+will fail if there is no section name corresponding with
+.RI \(** sectname .
+Either function will fail if the specified section
+has no line number entries
+or if it cannot seek to the specified line number entries.
+.PP
+Note that the first section has an index of
+.BR one .
+.PP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.SH SEE ALSO
+.BR ldclose (3X),
+.BR ldfcn (3),
+.BR ldopen (3X),
+.BR ldshread (3X)

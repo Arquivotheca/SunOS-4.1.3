@@ -1,0 +1,159 @@
+.\" @(#)rfmaster.5 1.1 92/07/30 SMI; from S5r3
+.TH RFMASTER 5 "30 September 1988"
+.SH NAME
+rfmaster \- Remote File Sharing name server master file
+.SH SYNOPSIS
+.B /usr/nserve/rfmaster
+.SH DESCRIPTION
+.IX "rfmaster" "" "\fLrfmaster\fR \(em RFS name server master file" ""
+.IX RFS "name server master file" "\s-1RFS\s0" "name server master file"
+.IX "master file, RFS name server" "" "master file, \s-1RFS\s0 name server" ""
+.IX server "RFS name server master file" "server" "\s-1RFS\s0 name server master file"
+.IX domain "primary and secondary domain name service"
+The
+.B rfmaster 
+file is an 
+.SM ASCII 
+text file that identifies the hosts that
+are responsible for providing primary and secondary domain name service
+for Remote File Sharing domains.
+This file contains a series
+of entries, each terminated by a
+.SM NEWLINE\s0;
+a record may be extended over more than one line by escaping 
+the
+.SM NEWLINE
+with a backslash.
+Fields in each record are separated by white space.
+Each record has three fields:
+.IR name ", " type ", 
+and 
+.IR data .
+.LP
+The 
+.I type 
+field, which defines the meaning of the
+.I name 
+and
+.I data
+fields, has three possible values:
+.TP 
+.B p
+Primary domain name server.
+In this case,
+.I name 
+is the domain name and
+.I data
+is the full hostname of the primary name server, specified as:
+.RS
+.IP
+.IB domain . nodename
+.RE
+.IP
+There can be only one primary name server per domain.
+.TP 
+.B s
+Define a secondary name server for a domain.
+In this case,
+.I name 
+and
+.I data 
+are the same as for the
+.B p
+type.
+The order of the
+.B s 
+entries in the
+.B rfmaster 
+file determines the
+order in which secondary name servers take over 
+when the current domain name server fails.
+.TP 
+.B a
+Define a network address for a machine.
+In this case,
+.I name 
+is the full domain name for the machine, and
+.I data 
+is the network address.
+The network address can be in plain 
+.SM ASCII 
+text or it can be
+preceded by a
+.RB ` \ex '
+to be interpreted as hexadecimal notation.
+.LP
+There are at least two lines in the
+.B rfmaster 
+file per domain name server:
+one
+.B p 
+line and one
+.B a 
+line.  Together, they define the primary and its network address.
+There should also be at least one secondary name server in each domain.
+.LP
+This file is created and maintained on the primary domain name server.
+When a machine other than the primary tries to start Remote File Sharing,
+this file is read to determine the address of the primary.  If
+this file is missing, the
+.B \-p 
+option of
+.B rfstart 
+must be used to
+identify the primary.  After that, a copy of the primary's
+.B rfmaster
+file is automatically placed on the machine.
+.LP
+Domains not served by the primary can also be listed in the
+.B rfmaster
+file.  By adding primary, secondary, and address information for other
+domains on a network, machines served by the primary will be able to
+share resources with machines in other domains.
+.LP
+A primary name server may be a primary for more than one domain.
+However, the secondaries must then also be the same for each domain
+served by the primary.
+.br
+.ne 5
+.SH EXAMPLE
+.LP
+An example of an
+.B rfmaster 
+file is shown below.
+The network addresses given
+in the example are
+.SM IP
+addresses; 
+for more information on their format and how to generate them,
+see 
+.BR hostrfs (8).
+.LP
+.RS
+.nf
+.ft B
+	sunrfs		p	sunrfs.estale
+	sunrfs		s	sunrfs.ivy
+	sunrfs.estale	a	\ex000214508190320d
+	sunrfs.ivy	a	\ex0002145081903246
+.fi
+.ft R
+.RE
+.LP
+Note:  If a line in the
+.B rfmaster 
+file begins with a
+.RB ` # '
+(pound sign) character,
+the entire line will be treated as a comment.
+.br
+.ne 8
+.SH FILES
+.PD 0
+.TP
+.B /usr/nserve/rfmaster
+.PD
+.SH "SEE ALSO"
+.BR rfstart (8) 
+.LP
+.TX ADMIN

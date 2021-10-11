@@ -1,0 +1,55 @@
+#
+# @(#)ARGON 1.1 92/07/30 SMI
+#
+# ARGON - SUN3
+#
+machine		"sun3"
+cpu		"SUN3_260"
+ident		ARGON
+maxusers	8
+options		INET
+options		SYSACCT
+options		QUOTA
+options		UFS
+options		NFSSERVER
+options		NFSCLIENT
+options		CRYPT
+options		OLDSCSI		# Old SCSI architecture
+
+config		vmunix		swap generic
+
+pseudo-device	pty
+pseudo-device	ether
+pseudo-device	loop
+pseudo-device	clone
+# Streams NIT devices and modules
+pseudo-device	snit
+pseudo-device	pf
+pseudo-device	nbuf
+
+# connections for machine type 3 (SUN3_260)
+controller	virtual 3 at nexus ?
+controller	obmem 3 at nexus ?
+controller	obio 3 at nexus ?
+controller	vme16d16 3 at nexus ?
+controller	vme24d16 3 at nexus ?
+controller	vme32d16 3 at nexus ?
+controller	vme16d32 3 at nexus ?
+controller	vme24d32 3 at nexus ?
+controller	vme32d32 3 at nexus ?
+
+controller	xyc0 at vme16d16 ? csr 0xee40 priority 2 vector xyintr 0x48
+controller	xyc1 at vme16d16 ? csr 0xee48 priority 2 vector xyintr 0x49
+disk		xy0 at xyc0 drive 0
+disk		xy1 at xyc0 drive 1
+disk		xy2 at xyc1 drive 0
+disk		xy3 at xyc1 drive 1
+controller	sc0 at vme24d16 ? csr 0x200000 priority 2 vector scintr 0x40
+disk		sd0 at sc0 drive 0 flags 0
+tape		st0 at sc0 drive 32 flags 1
+device		zs0 at obio ? csr 0x20000 flags 3 priority 3
+device		zs1 at obio ? csr 0x00000 flags 0x103 priority 3
+device		ie0 at obio ? csr 0xc0000 priority 3
+device		ie1 at vme24d16 ? csr 0xe88000 priority 3 vector ieintr 0x75
+controller	xtc0 at vme16d16 ? csr 0xee60 priority 3 vector xtintr 0x64
+tape		xt0 at xtc0 drive 0 flags 1

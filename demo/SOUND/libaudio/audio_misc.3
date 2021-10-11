@@ -1,0 +1,144 @@
+.\" @(#)audio_misc.3 1.1 92/07/30 SMI
+.ds Dc 7/30/92
+.TH AUDIO_MISC 3 "\*(Dc" "" "Audio Library"
+.SH NAME
+audio_misc,
+audio_bytes_to_secs,
+audio_secs_to_bytes,
+audio_str_to_secs,
+audio_secs_to_str,
+audio_cmp_hdr,
+audio_enc_to_str
+\- miscellaneous audio functions
+.SH DISCLAIMER
+.LP
+The manual pages, header files, and object library associated with
+.B /usr/demo/SOUND/libaudio.a
+are furnished on an AS IS basis as a preliminary interface to several
+useful audio data-processing capabilities.  A future release of the
+operating system may redefine the syntax or semantics of some of the
+functions described herein.
+.SH SYNOPSIS
+.nf
+.B #include <multimedia/libaudio.h>
+.LP
+.B double audio_bytes_to_secs(hp, cnt)
+.B Audio_hdr *hp;
+.B unsigned cnt;
+.LP
+.B unsigned audio_secs_to_bytes(hp, secs)
+.B Audio_hdr *hp;
+.B double secs;
+.LP
+.B double audio_str_to_secs(str)
+.B char *str;
+.LP
+.B char *audio_secs_to_str(secs, str, precision)
+.B double secs;
+.B char *str;
+.B int precision;
+.LP
+.B int audio_cmp_hdr(hp1, hp2)
+.B Audio_hdr *hp1;
+.B Audio_hdr *hp2;
+.LP
+.B int audio_enc_to_str(hp, str)
+.B Audio_hdr *hp;
+.B char *str;
+.fi
+.SH DESCRIPTION
+These functions perform some simple, useful transformations.
+.LP
+.B audio_bytes_to_secs(\|)
+converts a byte count into a floating-point time value that is appropriate
+to the encoding described by the given audio header.
+The time value returned indicates the number of seconds of data that
+would correspond to
+.I cnt
+bytes.
+Note that a byte count is not the same as an offset in an audio file, since
+the size of the audio file header is not taken into account.
+.LP
+.B audio_secs_to_bytes(\|)
+converts a floating-point time value into a byte count that is appropriate
+to the encoding described by the given audio header.
+The byte count is rounded down to a sample frame boundary; this guarantees
+that the returned count will not refer to an offset in the middle of a
+multi-byte sample frame.
+.LP
+.B audio_str_to_secs(\|)
+converts an
+.SM ASCII
+string into a floating-point time value, in seconds.
+The string should take the form:
+.RS
+[\fIhh\fP:][\fImm\fP:][\fIss\fP][.\fIdd\fP]
+.RE
+.LP
+For example,
+the following strings all convert to to the floating-point value 90.5:
+.RS
+.ft B
+.LP
+90.5
+.br
+1:30.5
+.br
+0:01:30.500
+.ft P
+.RE
+.LP
+If the given string contains a syntax error, the value
+.SB HUGE_VAL
+is returned.
+.LP
+.B audio_secs_to_str(\|)
+converts a floating-point time value into an
+.SM ASCII
+string of the form
+\fIhh\fP:\fImm\fP:\fIss\fP.\fIdd\fP.
+As a special case, the value
+.SB HUGE_VAL
+is converted to the string \"0\:00\".
+The
+.I precision
+argument specifies the maximum number of digits to appear after the
+decimal point.  A precision of \-1 guarantees the maximum precision
+necessary to represent the given time.  The
+.I str
+argument is a pointer to a buffer of at least
+.SB AUDIO_MAX_TIMEVAL
+bytes.  For convenience, the address of the converted string
+is returned as the function value.
+.LP
+.B audio_cmp_hdr(\|)
+compares the encoding information fields of the two specified audio
+headers, returning 0 if they are identical.  If the encoding
+type and precision match but the sample rates are different, 1 is
+returned.  Otherwise, \-1 is returned.
+.LP
+.B audio_enc_to_str(\|)
+converts the encoding information in the given audio header to a printable
+.SM ASCII
+string, e.g.:
+.RS
+.ft B
+mono 8-bit u-law @ 8kHz
+.br
+stereo 16-bit linear PCM @ 44.1kHz
+.ft P
+.RE
+.LP
+The
+.I str
+argument is a pointer to a buffer of at least
+.SB AUDIO_MAX_ENCODE_INFO
+bytes.
+On successful completion, the value
+.SB AUDIO_SUCCESS
+is returned.
+If any fields of the audio header cannot be interpreted, the value
+.SB AUDIO_ERR_BADHDR
+is returned, with an appropriate string stored in the buffer.
+.SH SEE ALSO
+.BR audio_hdr (3).

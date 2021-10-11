@@ -1,0 +1,118 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)exit.2v 1.1 92/07/30 SMI; from UCB 6.4 5/22/86
+.TH EXIT 2V "21 January 1990"
+.SH NAME
+_exit \- terminate a process
+.SH SYNOPSIS
+.nf
+.ft B
+void _exit(status)
+int status;
+.fi
+.IX  exit()  ""  \fLexit()\fP
+.IX  "processes and protection"  exit()  ""  \fLexit()\fP
+.IX  process  terminate
+.IX  "terminate process"
+.SH DESCRIPTION
+.B _exit(\|)
+terminates a process with the following consequences:
+.LP
+All of the descriptors open in the calling process are closed.
+This may entail delays, for example, waiting for output to drain;
+a process in this state may not be killed, as it is already dying.
+.LP
+If the parent process of the calling process is executing a
+.B wait(\|)
+or
+.BR waitpid(\|) ,
+or is interested in the
+.SB SIGCHLD
+signal,
+then it is notified of the calling process's termination and
+the low-order eight bits of
+.I status
+are made available to it
+(see
+.BR wait (2V)).
+.LP
+If the parent process of the calling process is not executing a
+.B wait(\|)
+or
+.BR waitpid(\|) ,
+.I status
+is saved for return to the parent process whenever the parent process
+executes an appropriate subsequent
+.B wait(\|)
+or
+.BR waitpid(\|) .
+.LP
+The parent process
+.SM ID
+of all of the calling process's existing child
+processes are also set to 1.  This means that the initialization process
+(see
+.BR intro (2))
+inherits each of these processes as well.
+Any stopped children are restarted with
+a hangup signal (\c
+.SB SIGHUP\fR\s0).
+.LP
+If the process is a controlling process,
+.SB SIGHUP
+is sent to each process in the foreground process group of the controlling
+terminal belonging to the calling process, and
+the controlling terminal associated with the session is disassociated
+from the session,
+allowing it to be acquired by a new controlling process (see
+.BR setsid (2V)).
+.\" should there be a ref. to Intro(2) here (re controlling process)?
+.LP
+If
+.B _exit(\|)
+causes a process group to become orphaned,
+and if any member of the newly-orphaned process group is stopped,
+then
+.SB SIGHUP
+followed by
+.SB SIGCONT
+is sent to each process in the newly-orphaned process group
+(see
+.BR setpgid (2V)).
+.LP
+Each attached shared memory segment is detached and the value of
+.B shm_nattach
+in the data structure associated with its shared memory identifier is
+decremented by 1.
+.LP
+For each semaphore for which the calling process has set a
+.I semadj
+value (see
+.BR semop (2)),
+that
+.I semadj
+value is added to the
+.I semval
+of the specified semaphore.
+.LP
+If process accounting is enabled (see
+.BR acct (2V)),
+an accounting record is written to the accounting file.
+.LP
+Most C programs will call the library routine
+.BR exit (3)
+which performs cleanup actions in the standard I/O library before
+calling
+.BR _exit(\|) .
+.SH "RETURN VALUES"
+.B _exit(\|)
+never returns.
+.SH "SEE ALSO"
+.BR intro (2),
+.BR acct (2V),
+.BR fork (2V),
+.BR semop (2),
+.BR wait (2V),
+.BR exit (3)

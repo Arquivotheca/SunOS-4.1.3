@@ -1,0 +1,99 @@
+.\" @(#)ssignal.3 1.1 92/07/30 SMI; from  S5
+.TH SSIGNAL 3 "6 October 1987"
+.SH NAME
+ssignal, gsignal \- software signals
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.LP
+.B int (\(**ssignal (sig, action))(\|)
+.B int sig, (\(**action)(\|);
+.LP
+.B int gsignal (sig)
+.B int sig;
+.fi
+.SH DESCRIPTION
+.IX  "signal()"  ""  "\fLssignal()\fP \(em software signals"
+.IX  "software signal"  ""  "software signal \(em \fLssignal()\fP"
+.IX  "signal()"  ""  "\fLgsignal()\fP \(em software signals"
+.IX  "software signal"  ""  "software signal \(em \fLgsignal()\fP"
+.LP
+.B ssignal(\|)
+and
+.B ssignal(\|)
+implement a software facility similar to
+.BR signal (3V).
+.LP
+Software signals made available to users are associated
+with integers in the inclusive
+range 1 through 15. A call to
+.B ssignal(\|)
+associates a procedure,
+.IR action ,
+with the software signal
+.IR sig ;
+the software signal,
+.IR sig ,
+is raised by a call to
+.BR ssignal(\|) .
+Raising a software signal causes the
+action established for that signal to be
+.IR taken .
+.LP
+The first argument to
+.B ssignal(\|)
+is a number identifying the type of signal for
+which an action is to be established. The second
+argument defines the action; it is either the
+name of a (user-defined)
+.I action function
+or one of the manifest constants
+.SB SIG_DFL
+.BR  (default) or
+.SB SIG_IGN
+.BR  (ignore).
+.B ssignal(\|)
+returns the action previously established for
+that signal type; if no action has been established
+or the signal number is illegal,
+.B ssignal(\|)
+returns
+.BR \s-1SIG_DFL\s0 .
+.LP
+.B ssignal(\|)
+raises the signal identified by its argument,
+.IR sig :
+.RS 5
+.LP
+If an action function has been established for
+.IR sig ,
+then that action is reset to
+.SB SIG_DFL
+and the action function is entered with argument
+.IR sig .
+.B ssignal(\|)
+returns the value returned to it by the action function.
+.LP
+If the action for
+.I sig
+is
+.BR \s-1SIG_IGN\s0 ,
+.B ssignal(\|)
+returns the value 1 and takes no other action.
+.LP
+If the action for
+.I sig
+is
+.BR \s-1SIG_DFL\s0 ,
+.B ssignal(\|)
+returns the value 0 and takes no other action.
+.LP
+If
+.I sig
+has an illegal value or no action was ever specified for
+.IR sig ,
+.B ssignal(\|)
+returns the value 0 and takes no other action.
+.RE
+.SH "SEE ALSO"
+.BR signal (3V)

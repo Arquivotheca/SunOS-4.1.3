@@ -1,0 +1,60 @@
+.\" @(#)spray.8 1.1 92/07/30 SMI;
+.TH SPRAY 8 "5 June 1986"
+.SH NAME
+spray \- spray packets
+.SH SYNOPSIS
+.B /usr/etc/spray
+host
+[
+.B \-c  
+.I count
+]
+[
+.B \-d  
+.I delay
+]
+[
+.B \-i
+.I delay
+]
+[
+.B \-l  
+.I length
+] 
+.SH DESCRIPTION
+.IX  "spray command"  ""  "\fLspray\fP \(em spray packets"
+.I spray
+sends a one-way stream of packets to \fIhost\fP using RPC, and
+then reports how many were received by \fIhost\fP and
+what the transfer rate was.
+The host name can be either a name or an internet address.
+.SH OPTIONS
+.TP
+.BI \-c " count"
+Specifies how many packets to send.
+The default value of \fIcount\fP is the numbers of packets required
+to make the total stream size 100000 bytes.
+.TP
+.BI \-d " delay"
+Specifies how may microseconds to pause between
+sending each packet.  The default is 0.
+.TP
+.BI \-i
+Use ICMP echo packets rather than RPC.  Since ICMP automatically
+echos, this creates a two way stream.
+.TP
+.BI \-l " length"
+The \fIlength\fP parameter is the numbers of bytes in the
+ethernet packet that holds the RPC call message.  Since the data
+is encoded using XDR,
+and XDR only deals with 32 bit quantities,
+not all values of \fIlength\fP are possible, and
+.I spray
+rounds up to the nearest possible value.  When \fIlength\fP
+is greater than 1514, then the RPC call can no longer be
+encapsulated in one Ethernet packet, so the \fIlength\fP field
+no longer has a simple correspondence to Ethernet packet size.
+The default value of \fIlength\fP
+is 86 bytes (the size of the RPC and UDP headers)
+.SH "SEE ALSO"
+icmp(4P), ping(8), sprayd(8)

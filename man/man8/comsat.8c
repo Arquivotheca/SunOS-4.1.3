@@ -1,0 +1,60 @@
+.\" @(#)comsat.8c 1.1 92/07/30 SMI; from UCB 4.2
+.TH COMSAT 8C "9 September 1987"
+.SH NAME
+comsat, in.comsat \- biff server
+.SH SYNOPSIS
+.B /usr/etc/in.comsat
+.SH DESCRIPTION
+.IX  "comsat command"  ""  "\fLcomsat\fP \(em biff server"
+.IX  "mail utilities"  comsat  "\fLmail\fR utilities"  "\fLcomsat\fP \(em biff server"
+.IX  servers  comsat  ""  "\fLcomsat\fP \(em biff server"
+.B comsat
+is the server process which listens for reports of incoming
+mail and notifies users who have requested to be told when
+mail arrives.
+It is invoked as needed by
+.BR inetd (8C),
+and times out if inactive for a few minutes.
+.LP
+.B comsat
+listens on a datagram port associated with the
+.BR biff (1)
+service specification (see
+.BR services (5))
+for one line messages of the form
+.IP
+.B user@mailbox-offset
+.LP
+If the
+.I user
+specified is logged in to the system and the associated terminal has
+the owner execute bit turned on (by a
+.RB ` "biff y" '),
+the
+.I offset
+is used as a seek offset into the appropriate mailbox file and
+the first 7 lines or 560 characters of the message are printed
+on the user's terminal.  Lines which appear to be part of
+the message header other than the
+.BR From ,
+.BR To , 
+.BR Date ,
+or
+.B Subject
+lines are not printed when displaying the
+message.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+to find out who's logged on and on what terminals
+.PD
+.SH "SEE ALSO"
+.BR biff (1),
+.BR services (5),
+.BR inetd (8C)
+.SH BUGS
+The message header filtering is prone to error.
+.LP
+The notification should appear in a separate window so it
+does not mess up the screen.

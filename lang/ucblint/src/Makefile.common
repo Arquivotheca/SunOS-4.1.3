@@ -1,0 +1,67 @@
+#
+# @(#)Makefile.common 1.1 92/07/30 SMI
+# Makefile for 4BSD "lint" libraries
+#
+
+VERSION= 4.0BETA1
+
+LINT1	= /usr/lib/lint/lint1
+SRC=	../src
+
+#
+# sources
+#
+LLSRC=	$(SRC)/llib-lc $(SRC)/llib-lcurses $(SRC)/llib-ltermcap
+
+#
+# objects
+#
+LLOBJ=	llib-lc.ln llib-lcurses.ln llib-ltermcap.ln
+
+#
+# rules
+#
+all:	${LLOBJ}
+
+
+.DEFAULT:
+	sccs get -G$@ $@
+
+#
+# the lint libraries
+# the "cd" is there so that the name of the lint library, when placed
+# in the "compiled" lint library, will not contain "../src"
+# the "-abhx" is there because the "-H" flag is absent, so "lint1" thinks it's
+# being run in 4BSD mode, so those flags are off by default (the "-H" is
+# absent so that error messages get printed rather than being stuffed into
+# an Hfile; since the source file name isn't supplied, "lint1" would think
+# the errors were in a header file).  The "-z" is there because the "-h"
+# causes "struct/union never defined" messages to occur, and they're not
+# errors here.
+#
+llib-lc.ln: $(SRC)/llib-lc $(LINT1)
+	(cd $(SRC); /lib/cpp -C -Dlint -I/usr/include llib-lc) | $(LINT1) -abhxz -L > $@
+
+llib-lcurses.ln: $(SRC)/llib-lcurses $(LINT1)
+	(cd $(SRC); /lib/cpp -C -Dlint -I/usr/include llib-lcurses) | $(LINT1) -abhxz -L > $@
+
+llib-ltermcap.ln: $(SRC)/llib-ltermcap $(LINT1)
+	(cd $(SRC); /lib/cpp -C -Dlint -I/usr/include llib-ltermcap) | $(LINT1) -abhxz -L > $@
+
+install: all
+	-install -d -m 755 ${DESTDIR}/usr/lib/lint
+	cd $(SRC); for i in ${LLSRC}; do \
+		install -c -m 644 `basename $$i` $(DESTDIR)/usr/lib/lint; \
+	done
+	for i in ${LLOBJ}; do \
+		install -c -m 644 $$i $(DESTDIR)/usr/lib/lint; \
+	done
+	-rm -f ${DESTDIR}/usr/lib/lint/llib-ltermlib*
+	ln -s llib-ltermcap ${DESTDIR}/usr/lib/lint/llib-ltermlib
+	ln -s llib-ltermcap.ln ${DESTDIR}/usr/lib/lint/llib-ltermlib.ln
+	rm -f ${DESTDIR}/usr/bin/lint
+	ln -s /usr/lib/compile ${DESTDIR}/usr/bin/lint
+
+clean:
+	rm -f ${LLOBJ}
+

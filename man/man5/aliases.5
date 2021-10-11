@@ -1,0 +1,326 @@
+.\" @(#)aliases.5 1.1 92/07/30 SMI; from UCB 4.2
+.hw sendmail
+.TH ALIASES 5 "18 December 1989"
+.SH NAME
+aliases, addresses, forward \- addresses and aliases for sendmail
+.SH SYNOPSIS
+.ft B
+.nf
+/etc/aliases
+/etc/aliases.dir
+/etc/aliases.pag
+~/.forward
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "forward file"  ""  "\fL.forward\fP \(em mail forwarding file"
+.IX  "aliases file"  ""  "\fLaliases\fP \(em sendmail aliases file"
+.IX  "sendmail aliases file"  ""  "sendmail aliases file \(em \fLaliases\fP"
+.IX  "sendmail forward file"  ""  "sendmail aliases file \(em \fL.forward\fP"
+.LP
+These files contain mail addresses or aliases, recognized by
+.BR sendmail (8),
+for the local host:
+.LP
+.PD 0
+.TP 20
+.B /etc/passwd
+Mail addresses (usernames) of local users.
+.TP
+.B /etc/aliases
+Aliases for the local host, in
+.SM ASCII
+format. 
+This file can be edited to add, update, or delete
+local mail aliases.
+.TP
+.BR /etc/aliases. { dir , pag }
+The aliasing information from
+.BR /etc/aliases ,
+in binary,
+.BR dbm (3X)
+format for use by
+.BR sendmail (8).
+The program
+.BR newaliases (8),
+which is invoked automatically by
+.BR sendmail (8),
+maintains these files.
+.TP
+.B \u\(ap\d/.forward
+Addresses to which a user's mail is forwarded (see
+.BR "Automatic Forwarding" ,
+below).
+.PD
+.LP
+In addition, the 
+Network Information Service
+(\s-1NIS\s0)
+aliases map
+.I mail.aliases
+contains addresses and aliases available for use across the network.
+.SS Addresses
+.LP
+As distributed,
+.BR sendmail (8)
+supports the following types of addresses:
+.SS \fILocal Usernames\fP
+.IP
+.I username
+.LP
+Each local
+.I username
+is listed in the local host's
+.B /etc/passwd
+file.
+.SS \fILocal Filenames\fP
+.IP
+.I pathname
+.LP
+Messages addressed to the absolute
+.I pathname
+of a file are appended to that file.
+.SS \fICommands\fP
+.IP
+.BI |\^ command
+.LP
+If the first character of the address is a vertical bar,
+.RB ( \||\| ),
+.BR sendmail (8)
+pipes the message to the standard input of the
+.I command
+the bar precedes.
+.SS \s-1TCP/IP\s0\fI-standard Addresses\fP
+.IP
+.IB username @ domain
+.LP
+If
+.I domain
+does not contain any
+.RB ` . '
+(dots),
+then it is interpreted as the name of a
+host in the current domain.
+Otherwise, the message is passed to a
+.I mailhost
+that determines how to get to the specified domain.
+Domains are divided into subdomains separated by
+dots, with the top-level domain on the right.
+Top-level domains include:
+.RS
+.TP
+.SM .COM
+Commercial organizations.
+.PD 0
+.TP
+.SM .EDU
+Educational organizations.
+.TP
+.SM .GOV
+Government organizations.
+.TP
+.SM .MIL
+Military organizations.
+.PD
+.RE
+.LP
+For example, the full address of John Smith could be:
+.IP
+.B js@jsmachine.Podunk-\s-1U.EDU\s0
+.LP
+if he uses the machine named
+.B jsmachine
+at Podunk University.
+.SS \fBuucp\fP(1C) \fIAddresses\fP
+.IP
+\&.\|.\|. [\c
+.IB host !\c
+]\c
+.IB host ! username
+.LP
+These are sometimes mistakenly referred to as \*(lqUsenet\*(rq addresses.
+.BR uucp (1C)
+provides links to numerous sites throughout the world for
+the remote copying of files.
+.LP
+Other site-specific forms of addressing can be added by customizing
+the
+.B sendmail
+configuration file.  See the
+.BR sendmail (8),
+and
+.TX ADMIN
+for details.  Standard addresses are recommended.
+.br
+.ne 20
+.SS Aliases
+.SS \fILocal Aliases\fP
+.B /etc/aliases
+is formatted as a series of lines of the form
+.IP
+.IB aliasname : " address"\c
+.RB [ ,
+.IR " address" ]
+.LP
+.I aliasname
+is the name of the alias or alias group, and
+.I address
+is the address of a recipient in the group.
+Aliases can be nested.  That is, an
+.I address
+can be the name of another alias group.
+Because of the way
+.B sendmail
+performs mapping from upper-case to lower-case, an
+.I address
+that is the name of another alias group must not contain any
+upper-case letters.
+.LP
+Lines beginning with white space are treated as continuation lines
+for the preceding alias.
+Lines beginning with
+.B #
+are comments.
+.SS \fISpecial Aliases\fP
+.LP
+An alias of the form:
+.IP
+.BI owner\- aliasname : " address"
+.LP
+directs error-messages resulting from mail to
+.I aliasname
+to
+.IR address ,
+instead of back to the person who sent the
+message.
+.LP
+An alias of the form:
+.IP
+.IB  aliasname :
+.BI :include: pathname
+.LP
+with colons as shown, adds the recipients listed in the file
+.I pathname
+to the
+.I aliasname
+alias.
+This allows a private list to be maintained separately from the
+aliases file.
+.SS \fINIS Domain Aliases\fP
+Normally, the aliases file on the master
+.SM NIS
+server is used for the
+.I mail.aliases
+.SM NIS
+map, which can be made available to every
+.SM NIS
+client.  Thus, the
+.B /etc/aliases*
+files on the various hosts in a network will one day be obsolete.
+Domain-wide aliases should ultimately be resolved into usernames on
+specific hosts.
+For example, if the following were in the domain-wide alias file:
+.IP
+.B jsmith:js@jsmachine
+.LP
+then any
+.SM NIS
+client could just mail to
+.B jsmith
+and not have to
+remember the machine and username for John Smith.
+If an
+.SM NIS
+alias does
+not resolve to an address with a specific host, then the name of the
+.SM NIS
+domain is used.
+There should be an alias of the domain name for a host
+in this case.
+For example, the alias:
+.IP
+.B jsmith:root
+.LP
+sends mail on an
+.SM NIS
+client to
+.B root@podunk-u
+if the name of the
+.SM NIS
+domain is
+.BR podunk-u .
+.SS \fIAutomatic Forwarding\fP
+.LP
+When an alias (or address) is resolved to the name of a user on the
+local host,
+.B sendmail
+checks for a
+.B \&.forward
+file, owned by the intended recipient, in that user's home directory,
+and with universal read access.
+This file can contain one or more addresses or aliases as described
+above, each of which is sent a copy of the user's mail.
+.LP
+Care must be taken to avoid creating addressing loops in the
+.B \&.forward
+file.
+When forwarding mail between machines, be sure that the destination
+machine does not return the mail to the sender through
+the operation of any
+.SM NIS
+aliases.  Otherwise, copies of
+the message may \*(lqbounce\*(rq.
+Usually, the solution is to change the
+.SM NIS
+alias to direct mail to the proper destination.
+.br
+.ne 8
+.LP
+A backslash before a username
+inhibits further aliasing.
+For instance, to invoke the
+.BR vacation (1)
+program, user
+.B js
+creates a
+.B \&.forward
+file that contains the line:
+.IP
+\fB\ejs, "|/usr/ucb/vacation js"\fP
+.LP
+so that one copy of the message is sent to the
+user, and another is piped into the
+.BR vacation (1)
+program.
+.if t .ne 5
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.TP
+.B /etc/aliases
+.TP
+.B \u\(ap\d/.forward
+.PD
+.SH "SEE ALSO"
+.BR uucp (1C),
+.BR vacation (1),
+.BR dbm (3X),
+.BR newaliases (8),
+.BR sendmail (8),
+.LP
+.TX ADMIN
+.SH BUGS
+.LP
+Because of restrictions in
+.BR dbm (3X)
+a single alias cannot contain more than about 1000 characters.
+Nested aliases can be used to circumvent this limit.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

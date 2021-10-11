@@ -1,0 +1,218 @@
+.\" @(#)arp.4p 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH ARP 4P "24 January 1990"
+.SH NAME
+arp \- Address Resolution Protocol
+.SH CONFIG
+.B "pseudo-device ether"
+.SH SYNOPSIS
+.nf
+.B #include <sys/socket.h>
+.B #include <net/if_arp.h>
+.B #include <netinet/in.h>
+.LP
+.B s = socket(\s-1AF_INET\s0, \s-1SOCK_DGRAM\s0, 0);
+.fi
+.SH DESCRIPTION
+.IX  "arp protocol"  ""  "\fLarp\fP \(em Address Resolution Protocol"  "" PAGE START
+.IX  Internet  "to Ethernet address resolution arp"  ""  "to Ethernet address resolution \(em \fLarp\fP"  PAGE START
+.LP
+.SM ARP
+is a protocol used to dynamically map between
+Internet Protocol (\s-1IP\s0)
+and 10Mb/s Ethernet addresses.  It is
+used by all the 10Mb/s Ethernet interface drivers.
+It is not specific to the Internet Protocol
+or to the 10Mb/s Ethernet, but this implementation
+currently supports only that combination.
+.LP
+.SM ARP
+caches
+.SM IP\s0-to-Ethernet
+address mappings.  When an interface
+requests a mapping for an address not in the cache,
+.SM ARP
+queues the
+message which requires the mapping and broadcasts
+a message on the associated network requesting the address mapping.
+If a response is provided, the new mapping is cached and any pending
+message is transmitted.
+.SM ARP
+will queue
+at most one packet while waiting for a mapping request to be responded to;
+only the most recently \(lqtransmitted\(rq packet is kept.
+.LP
+To facilitate communications with systems which do not use
+.SM ARP\s0,
+.B ioctl(\|)
+requests
+are provided to enter and delete entries in the
+.SM IP\s0-to-Ethernet
+tables.
+.SH USAGE
+.LP
+.nf
+.ft B
+	#include <sys/sockio.h>
+	#include <sys/socket.h>
+	#include <net/if.h>
+	#include <net/if_arp.h>
+	struct arpreq arpreq;
+	ioctl(s, \s-1SIOCSARP\s0, (caddr_t)&arpreq);
+	ioctl(s, \s-1SIOCGARP\s0, (caddr_t)&arpreq);
+	ioctl(s, \s-1SIOCDARP\s0, (caddr_t)&arpreq);
+.fi
+.ft R
+.LP
+Each 
+.B ioctl(\|)
+takes the same structure as an argument.
+.IX  "ioctls for sockets"  "SIOCSARP"  "\fLioctl\fP's for sockets"  "\fLSIOCSARP\fP \(em set arp entry"
+.IX  "SIOCSARP set arp entry"  ""  "\fLSIOCSARP\fP \(em set arp entry"
+.IX  set "arp entry ioctl \(em \fLSIOCSARP\fP"
+.IX  "arp ioctl"  "SIOCSARP set arp entry"  "arp \fLioctl\fP" "\fLSIOCSARP\fP \(em set arp entry"
+.SB SIOCSARP
+sets an
+.SM ARP
+entry,
+.SB SIOCGARP
+gets an
+.IX  "ioctls for sockets"  "SIOCGARP"  "\fLioctl\fP's for sockets"  "\fLSIOCGARP\fP \(em get arp entry"
+.IX  "SIOCGARP get arp entry"  ""  "\fLSIOCGARP\fP \(em get arp entry"
+.IX  get "arp entry \fLioctl\fP \(em \fLSIOCGARP\fP"
+.IX  "arp ioctl"  "SIOCGARP get arp entry"  "arp \fLioctl\fP" "\fLSIOCGARP\fP \(em get arp entry"
+.SM ARP
+entry, and
+.SB SIOCDARP
+.IX  "ioctls for sockets"  "SIOCDARP"  "\fLioctl\fP's for sockets"  "\fLSIOCDARP\fP \(em delete arp entry"
+.IX  "SIOCDARP delete arp entry"  ""  "\fLSIOCDARP\fP \(em delete arp entry"
+.IX  "delete arp entry ioctl"  ""  "delete arp entry \fLioctl\fP \(em \fLSIOCDARP\fP"
+.IX  "arp ioctl"  "SIOCDARP delete arp entry"  "arp \fLioctl\fP" "\fLSIOCDARP\fP \(em delete arp entry"
+deletes an
+.SM ARP
+entry.
+These
+.B ioctl(\|)
+requests may be applied to any socket descriptor
+.IR s ,
+but only by the super-user.  The
+.B arpreq
+structure contains:
+.LP
+.nf
+.ft B
+	/*
+	 * \s-1ARP\s0 ioctl request
+	 */
+	struct arpreq {
+		struct sockaddr	arp_pa;		/* protocol address */
+		struct sockaddr	arp_ha;		/* hardware address */
+		int	arp_flags;		/* flags */
+	};
+	/*  arp_flags field values */
+	#define \s-1ATF_COM\s0		0x2	/* completed entry (arp_ha valid) */
+	#define	\s-1ATF_PERM\s0		0x4	/* permanent entry */
+	#define	\s-1ATF_PUBL\s0		0x8	/* publish (respond for other host) */
+	#define	\s-1ATF_USETRAILERS\s0		0x10	/* send trailer packets to host */
+.fi
+.ft R
+.LP
+The address family for the
+.B arp_pa
+sockaddr must be
+.BR \s-1AF_INET\s0 ;
+for the
+.B arp_ha
+sockaddr it must be
+.BR \s-1AF_UNSPEC\s0 .
+The only flag bits which may be written are
+.BR \s-1ATF_PERM\s0 ,
+.SB ATF_PUBL
+and
+.BR \s-1ATF_USETRAILERS\s0 .
+.SB ATF_PERM
+makes the entry permanent if the
+.B ioctl(\|)
+call succeeds.
+The peculiar nature of the
+.SM ARP
+tables may cause the
+.B ioctl(\|)
+to fail if more than 6 (permanent)
+.SM IP
+addresses hash to the same slot.
+.SB ATF_PUBL
+specifies that the
+.SM ARP
+code should respond to
+.SM ARP
+requests for the indicated host coming from
+other machines.  This allows a host to act as an
+\(lq\s-1ARP\s0 server\(rq which may be useful in convincing an
+.SM ARP\s0-only
+machine to talk to a non-\s-1ARP\s0 machine.
+.LP
+.SM ARP
+is also used to negotiate the use of trailer
+.SM IP
+encapsulations; trailers are an alternate
+encapsulation used to allow efficient packet
+alignment for large packets despite variable-sized
+headers.  Hosts which wish to receive trailer
+encapsulations so indicate
+by sending gratuitous
+.SM ARP
+translation replies along with replies to
+.SM IP
+requests; they are also sent in reply to
+.SM IP
+translation replies.  The negotiation is thus
+fully symmetrical, in that either or both hosts
+may request trailers.  The
+.SB ATF_USETRAILERS
+flag is used to record the receipt of such a reply,
+and enables the transmission of trailer packets to that host.
+.LP
+.SM ARP
+watches passively for hosts impersonating the local host (that is, a host
+which responds to an
+.SM ARP
+mapping request for the local host's address).
+.SH SEE ALSO
+.BR ec (4S),
+.BR ie (4S),
+.BR inet (4F),
+.BR arp (8C),
+.BR ifconfig (8C)
+.LP
+Plummer, Dave,
+.RI `` "An Ethernet Address Resolution Protocol -or- Converting Network Protocol Addresses to 48.bit Ethernet Addresses for Transmission on Ethernet Hardware" ,''
+.SM RFC
+826, Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+November 1982. (Sun 800-1059-10)
+.LP
+Leffler, Sam, and Michael Karels,
+.RI `` "Trailer Encapsulations" ,''
+.SM RFC
+893, Network Information Center,
+.SM SRI
+International, Menlo Park, Calif., April 1984.
+.SH DIAGNOSTICS
+.TP
+.B "duplicate \s-1IP\s0 address!! sent from ethernet address: %x:%x:%x:%x:%x:%x."
+.SM ARP
+has discovered another host on the local network which responds to
+mapping requests for its own Internet address.
+.SH BUGS
+.SM ARP
+packets on the Ethernet use only 42 bytes of data, however, the smallest
+legal Ethernet packet is 60 bytes (not including
+.SM CRC\s0).
+Some systems may not enforce the minimum packet size, others will.
+.IX  "arp protocol"  ""  "\fLarp\fP \(em Address Resolution Protocol"  "" PAGE END
+.IX  Internet  "to Ethernet address resolution arp"  ""  "to Ethernet address resolution \(em \fLarp\fP"  PAGE END

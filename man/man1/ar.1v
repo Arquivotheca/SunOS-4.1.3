@@ -1,0 +1,277 @@
+.\" @(#)ar.1v 1.1 92/07/30 SMI; from UCB 24 Feb 1979
+.TH AR 1V "18 February 1988"
+.SH NAME
+ar \- create library archives, and add or extract files
+.SH SYNOPSIS
+.B ar
+.BR d " | " m " | "
+.BR p " | " q " | "
+.BR r " | " t " | " x
+[ [
+.B clouv
+]
+[
+.BR abi
+.I position-name
+] ]
+.I archive
+[
+.IR member-file .\|.\|.
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/ar
+.RB [ \- ]
+.BR d " | " m " | "
+.BR p " | " q " | "
+.BR r " | " t " | " x
+[ [
+.B clouvs
+]
+[
+.BR abi
+.I position-name
+] ]
+.I archive
+[
+.IR member-file .\|.\|.
+]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  ar  ""  "\fLar\fP \(em library maintenance"
+.IX  archive  "ar command"  ""  "\fLar\fP \(em library maintenance"
+.IX  "library management"  "ar command"  ""  "\fLar\fP \(em library maintenance"
+.IX  "object code management"  "ar command"  ""  "\fLar\fP \(em library maintenance"
+.IX  "programming tools"  "maintain object libraries"
+.LP
+.B ar
+maintains groups of files combined into a single archive file.
+An archive file comprises a set of
+member files and header information for each file.
+The archive header and the headers for the file consist of printable
+characters
+(assuming that the names of the files in the archive contain printable
+characters),
+and are in a format portable across all machines.
+This format is described in detail in
+.BR ar (5)).
+If an archive is composed of printable files, with printable file names,
+the entire archive is printable.
+.LP
+.B ar
+is normally used to create and update library files used by the
+link editor
+.BR ld (1),
+but can be used for any similar purpose.
+.LP
+.I archive
+is the name of the archive file.
+.I member-file
+is a member file contained in the archive. 
+If this argument is omitted, the command applies to all entries
+in the archive.  Member names have a maximum of 15 characters,
+except on Sun386i systems, where they have a
+maximum of 14 characters, longer names are truncated.
+.SH SYSTEM V DESCRIPTION
+.B ar
+runs
+.B ranlib
+after modifying an archive, so that the symbol table member of the
+archive is kept up-to-date.
+.SH OPTIONS
+You must indicate only one of:
+.BR d ,
+.BR m ,
+.BR p ,
+.BR q ,
+.BR r ,
+.BR t ,
+or
+.BR x ,
+which may be followed by one or more
+.BR Modifiers .
+.TP
+.B d
+Delete the named files from the archive file.
+.TP
+.B m
+Move the named files to the end of the archive.
+.TP
+.B p
+Print. If no names are given, all files in the archive are written to the
+standard output; if no names are given, only those files are written, and they
+are written in the order that they appear in the archive.
+.TP
+.B q
+Quick append. Append the named files to the end of the archive file
+without searching the archive for duplicate names.
+Useful only to avoid
+quadratic behavior when creating a large archive piece-by-piece.
+If this option is used to add a member to an archive, and a member with the
+same name as that member already exists in the archive, the old member will
+not be removed; two members with the same name will exist in the archive.
+.TP
+.B r
+Replace the named files in the archive.
+.TP
+.B t
+Table of contents.
+If no names are given, all files in the archive are listed;
+if names are given, only those files are listed.
+.TP
+.B x
+Extract. If no names are given, all files in the archive
+are extracted into the current directory; if names are given,
+only those files are extracted. In neither case does
+.B x
+alter the archive file.
+.LP
+.SS Modifiers
+.TP
+.B c
+Create.
+Suppress the message that is produced by default when
+.I archive
+is created.
+.TP
+.B l
+Local.
+Place temporary files in the current working directory rather than
+in the default temporary directory,
+.BR /tmp .
+.br
+.ne 3
+.TP
+.B o
+Old date.
+When files are extracted with the
+.B x
+option, set the ``last modified'' date to the date recorded in the archive.
+.TP
+.B u
+Update.
+Replace only those files that have changed since they were put in the
+archive.  Used with the
+.B r
+option.
+.TP
+.B v
+Verbose.
+When used with the
+.BR r ,
+.BR d ,
+.BR m ,
+or
+.B q
+option, give a file-by-file description of the creation of a
+new archive file from the old archive and the constituent files.
+When used with
+.BR x ,
+give a file-by-file description of the extraction of archive files.
+When used with
+.BR t ,
+give a long listing of information about the
+files.  When used with
+.BR p ,
+write each member's name to the standard output before writing the member
+to the standard output.
+.TP
+.BI a " position-name"
+Place new files after
+.I position-name
+.RI ( position-name
+argument must be present).
+Applies only to the
+.B r
+and
+.B m
+options.
+.TP
+.BI b " position-name"
+Place new files before
+.I position-name
+.RI ( position-name
+argument must be present).
+Applies only to the
+.B r
+and
+.B m
+options.
+.TP
+.BI i " position-name"
+Identical to the
+.B b
+modifier.
+.SH SYSTEM V OPTIONS
+.LP
+The options may be preceded by
+.RB ` \- '.
+.SS Modifiers
+.TP
+.B s
+Force the regeneration of the archive symbol table even if
+.B ar
+is not invoked with a command that will modify the archive contents.
+.SH EXAMPLES
+.LP
+Creating a new archive:
+.RS
+.nf
+.ft B
+example% ar rcv archive file.o
+a \- file.o
+.ft R
+.RE
+.br
+.ne 4
+Adding to an archive:
+.RS
+.ft B
+example% ar rav file.o archive next.c
+a \- next.c
+.ft R
+.RE
+Extracting from an archive:
+.RS
+.ft B
+example% ar xv archive file.o
+x \- file.o
+example% ls file.o
+file.o
+.ft R
+.RE
+Seeing the table of contents:
+.RS
+.ft B
+example% ar t archive
+file.o
+next.c
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.BR /tmp/v* .
+temporary files
+.TP
+.B /tmp
+.PD
+.SH "SEE ALSO"
+.BR ld (1),
+.BR lorder (1),
+.BR ranlib (1),
+.BR ar (5)
+.SH BUGS
+.LP
+If the same file is mentioned twice in an argument list,
+it is put in the archive twice.
+.LP
+The ``last-modified'' date of a file will not be altered by the
+.B o
+option unless the user is either the owner of the extracted file or the
+super-user.

@@ -1,0 +1,426 @@
+.\" @(#)cdromio.4 1.1 92/07/30 SMI; by Edward Un
+.TH CDROMIO 4S "7 October 1990"
+.SH NAME
+cdromio \- CDROM control operations
+.SH DESCRIPTION
+.IX "cdromio" "" "\fLcdromio\fP\(em CDROM control operations" ""
+.IX "CDROM" "" "control operations \(em\fLcdromio\fP" ""
+.LP
+The Sun
+.SM CDROM 
+device driver supports a set of
+.BR ioctl (2)
+commands for audio operations and 
+.SM CDROM 
+specific operations.
+It also supports the 
+.BR dkio (4S)
+operations \(em generic disk control operation for 
+all Sun disk drivers. 
+See 
+.BR dkio(4S)
+Basic to these 
+.B cdromio
+.B ioctl(\|)
+requests are the definitions in
+.B <scsi/targets/srdef.h>
+or
+.B <sundev/srreg.h>
+.nf
+.sp
+.ft B
+/* 
+ * \s-1CDROM\s0 I/O controls type definitions
+ */
+
+/* definition of play audio msf structure */
+struct cdrom_msf {
+	unsigned char	cdmsf_min0;	/* starting minute */
+	unsigned char	cdmsf_sec0;	/* starting second */
+	unsigned char	cdmsf_frame0;	/* starting frame  */
+	unsigned char	cdmsf_min1;	/* ending minute   */
+	unsigned char	cdmsf_sec1;	/* ending second   */
+	unsigned char	cdmsf_frame1;	/* ending frame	   */
+};
+
+/* definition of play audio track/index structure */
+struct cdrom_ti {
+	unsigned char	cdti_trk0;	/* starting track */
+	unsigned char	cdti_ind0;	/* starting index */
+	unsigned char	cdti_trk1;	/* ending track */
+	unsigned char	cdti_ind1;	/* ending index */
+};
+
+/* definition of read toc header structure */
+struct cdrom_tochdr {
+	unsigned char	cdth_trk0;	/* starting track */
+	unsigned char	cdth_trk1;	/* ending track */
+};
+
+/* definition of read toc entry structure */
+struct cdrom_tocentry {
+	unsigned char	cdte_track;
+	unsigned char	cdte_adr	:4;
+	unsigned char	cdte_ctrl	:4;
+	unsigned char	cdte_format;
+	union {
+		struct {
+			unsigned char	minute;
+			unsigned char	second;
+			unsigned char	frame;
+		} msf;
+		int	lba;
+	} cdte_addr;
+	unsigned char	cdte_datamode;
+};
+
+/*
+ * Bitmask for \s-1CDROM\s0 data track in the cdte_ctrl field
+ * A track is either data or audio.
+ */
+#define \s-1CDROM_DATA_TRACK\s0	0x04
+
+/*
+ * \s-1CDROM\s0 address format definition, for use with struct cdrom_tocentry 
+ */
+#define \s-1CDROM_LBA\s0	0x01
+#define \s-1CDROM_MSF\s0	0x02
+
+/*
+ * For \s-1CDROMREADTOCENTRY\s0, set the cdte_track to \s-1CDROM_LEADOUT\s0 to get
+ * the information for the leadout track.
+ */
+#define \s-1CDROM_LEADOUT\s0	0xAA
+
+struct cdrom_subchnl {
+	unsigned char	cdsc_format;
+	unsigned char	cdsc_audiostatus;	
+	unsigned char	cdsc_adr:	4;
+	unsigned char	cdsc_ctrl:	4;
+	unsigned char	cdsc_trk;
+	unsigned char	cdsc_ind;
+	union {
+		struct {
+			unsigned char	minute;
+			unsigned char	second;
+			unsigned char	frame;
+		} msf;
+		int	lba;
+	} cdsc_absaddr;
+	union {
+		struct {
+			unsigned char	minute;
+			unsigned char	second;
+			unsigned char	frame;
+		} msf;
+		int	lba;
+	} cdsc_reladdr;
+};
+
+/*
+ * Definition for audio status returned from Read Sub-channel
+ */
+#define \s-1CDROM_AUDIO_INVALID\s0     0x00    /* audio status not supported */
+#define \s-1CDROM_AUDIO_PLAY\s0        0x11    /* audio play operation in progress */
+#define \s-1CDROM_AUDIO_PAUSED\s0      0x12    /* audio play operation paused */
+#define \s-1CDROM_AUDIO_COMPLETED\s0   0x13    /* audio play successfully completed */
+#define \s-1CDROM_AUDIO_ERROR\s0       0x14    /* audio play stopped due to error */
+#define \s-1CDROM_AUDIO_NO_STATUS\s0   0x15    /* no current audio status to return */
+
+/* definition of audio volume control structure */
+struct cdrom_volctrl {
+	unsigned char	cdvc_chnl0;
+	unsigned char	cdvc_chnl1;
+	unsigned char	cdvc_chnl2;
+	unsigned char	cdvc_chnl3;
+};
+
+struct cdrom_read {
+        int     cdread_lba;
+        caddr_t cdread_bufaddr;
+        int     cdread_buflen;
+};
+
+#define \s-1CDROM_MODE1_SIZE\s0        2048
+#define \s-1CDROM_MODE2_SIZE\s0        2336
+
+/*
+ * \s-1CDROM\s0 I/O control commands 
+ */
+#define \s-1CDROMPAUSE\s0   _\s-1IO\s0(c, 10)   /* Pause Audio Operation */
+
+#define \s-1CDROMRESUME\s0  _\s-1IO\s0(c, 11)	  /* Resume paused Audio Operation */
+
+#define \s-1CDROMPLAYMSF\s0 _\s-1IOW\s0(c, 12, struct cdrom_msf)     /* Play Audio MSF */
+
+#define \s-1CDROMPLAYTRKIND\s0  _\s-1IOW\s0(c, 13, struct cdrom_ti)  /* Play Audio Trk/ind */
+
+#define \s-1CDROMREADTOCHDR\s0  _\s-1IOR\s0(c, 103, struct cdrom_tochdr) /* Read TOC hdr */
+
+#define \s-1CDROMREADTOCENTRY\s0 _\s-1IOWR\s0(c, 104, struct cdrom_tocentry) /* Read TOC */
+
+#define \s-1CDROMSTOP\s0        _\s-1IO\s0(c, 105)               /* Stop the cdrom drive */
+
+#define \s-1CDROMSTART\s0       _\s-1IO\s0(c, 106)               /* Start the cdrom drive */
+
+#define \s-1CDROMEJECT\s0       _\s-1IO\s0(c, 107)               /* Ejects the cdrom caddy */
+
+#define \s-1CDROMVOLCTRL\s0     _\s-1IOW\s0(c, 14, struct cdrom_volctrl) /* volume control */
+
+#define \s-1CDROMSUBCHNL\s0  _\s-1IOWR\s0(c, 108, struct cdrom_subchnl) /* read subchannel */
+
+#define \s-1CDROMREADMODE2\s0          _\s-1IOW\s0(c, 110, struct cdrom_read) /* mode 2 */
+
+#define \s-1CDROMREADMODE1\s0          _\s-1IOW\s0(c, 111, struct cdrom_read) /* mode 1 */
+.fi
+.ft R
+.LP
+The
+.SB CDROMPAUSE
+.B ioctl(\|)
+pauses the current audio play operation and the
+.SB CDROMRESUME
+.B ioctl(\|)
+resumes the paused audio play operation.
+The
+.SB CDROMSTART 
+.B ioctl(\|)
+spins up the disc and seeks to the last address requested, while
+the 
+.SB CDROMSTOP
+.B ioctl(\|)
+spins down the disc and the
+.SB CDROMEJECT
+.B ioctl(\|)
+ejects the caddy with the disc.
+All of the above
+.B ioctl(\|)
+calls only take a file descriptor and a command as arguments.
+They have the form:
+.RS
+.nf
+.ft B
+ioctl(fd, cmd)
+	int	fd;
+	int	cmd;
+.fi
+.ft R
+.RE
+.LP
+The rest of the 
+.B ioctl(\|)
+calls have the form:
+.RS
+.nf
+.ft B
+ioctl(fd, cmd, ptr)
+	int	fd;
+	int	cmd;
+	char	*ptr;
+.fi
+.ft R
+.RE
+where
+.I ptr
+is a pointer to a struct or an integer.
+.LP
+The
+.SB CDROMPLAYMSF
+.B ioctl(\|)
+command requests the drive to output the audio signals staring
+at the specified starting address and continue the audio play until the
+specified ending address is detected.
+The address is in 
+.SB MSF
+(minute, second, frame) format.
+The third argument of the function call
+is a pointer to the type
+.BR "struct cdrom_msf" .
+.LP
+The
+.SB CDROMPLAYTRKIND
+.B ioctl(\|)
+command is similar to 
+.BR \s-1CDROMPLAYMSF\s0 .
+The starting and ending address is in track/index format.
+The third argument of the function call is a pointer to the type
+.BR "struct cdrom_ti" .
+.LP
+The
+.SB CDROMREADTOCHDR
+.B ioctl(\|)
+command returns the header of the 
+.SB TOC
+(table of contents).
+The header consists of the starting tracking number
+and the ending track number of the disc.
+These two numbers are returned through a pointer of 
+.BR "struct cdrom_tochdr" .
+While the disc can start at
+any number, all tracks between the first and last tracks are in 
+contiguous ascending order.
+A related
+.B ioctl(\|)
+command is
+.BR \s-1CDROMREADTOCENTRY\s0 .
+This command returns the information of a specified track.
+The third argument of the function call is a pointer to the type
+.BR "struct cdrom_tocentry" .
+The caller need to supply the track number and the address format.
+This command will return a 4-bit 
+.B adr 
+field, a 4-bit 
+.B ctrl
+field, the starting address in
+.SB MSF
+format or
+.SB LBA
+format, and the data mode if the track is a data track.
+The
+.B ctrl
+field specifies whether the track is data or audio.
+To get information for the lead-out area, supply the 
+.B ioctl(\|)
+command with the track field set to 
+.SB CDROM_LEADOUT 
+(0xAA).
+.LP
+The 
+.SB CDROMVOLCTRL
+.B ioctl(\|)
+command controls the audio output level.
+The
+.SM SCSI
+command allows the control of up to 4 channels.
+The current implementation of the supported 
+.SB CDROM
+drive only uses channel 0 and channel 1.
+The valid values of volume control
+are between 0x00 and 0xFF, with a value of 0xFF indicating maximum volume.
+The third argument of the function call is a pointer to 
+.B struct cdrom_volctrl
+which contains the output volume values.
+.LP
+The
+.SB CDROMSUBCHNL
+.B ioctl(\|)
+command reads the Q sub-channel data of the current block.
+The sub-channel data includes track number, index number, absolute
+.SB CDROM
+address, track relative 
+.SB CDROM
+address, control data and audio status.
+All information is returned 
+through a pointer to 
+.BR "struct cdrom_subchnl" .
+The caller needs to supply
+the address format for the returned address.
+.LP
+The
+.SB CDROMREADMODE2
+and
+.SB CDROMREADMODE1
+.BR ioctl(\|)
+commands are only available on
+.SM SPARC\s0station 1
+systems.
+.LP
+Finally, on 
+.SM SPARC\s0station 1
+systems only, the driver supports the user
+.SM SCSI
+command interface.
+By issuing the
+.B ioctl(\|)
+command,
+.BR \s-1USCSICMD\s0 ,
+The caller can supply any 
+.SB SCSI-2 
+commands that the 
+.SB CDROM
+drive supports.
+The caller has to provide all the parameters in the
+.SM SCSI
+command block, as well as other information such as the
+user buffer address and buffer length.
+See the definitions in
+.BR <scsi/impl/uscsi.h> .
+The
+.B ioctl(\|)
+call has the
+form:
+.RS
+.nf
+.ft B
+ioctl(fd, cmd, ptr)
+	int	fd;
+	int	cmd;
+	char	*ptr;
+.fi
+.ft R
+.RE
+.br
+.ne 10
+where
+.I ptr
+is a pointer to the type:
+.RS
+.nf
+.ft B
+struct uscsi_scmd {
+	caddr_t	uscsi_cdb;
+	int	uscsi_cdblen;
+	caddr_t	uscsi_bufaddr;
+	int	uscsi_buflen;
+	unsigned char	uscsi_status;
+	int	uscsi_flags;
+};
+.fi
+.ft R
+.RE
+.LP
+.B uscsi_cdb 
+is a pointer to the
+.SM SCSI
+command block.
+Group 0 
+.B cdb's 
+are 6 bytes long while the other groups are 10 bytes or 12 bytes.
+.B uscsi_cdblen
+is the length of the 
+.BR cdb .
+.B uscsi_bufaddr 
+is the pointer to the user buffer for parameter passing or data input/output.
+.I buflen
+is the length of the user buffer.
+.B uscsi_flags
+are the execution flags for
+.SM SCSI
+input/output.
+The possible flags are
+.BR \s-1USCSI_SILENT\s0 ,
+.BR \s-1USCSI_DIAGNOSE\s0 ,
+.BR \s-1USCSI_ISOLATE\s0 ,
+.BR
+.BR \s-1USCSI_READ\s0 ,
+and
+.BR \s-1USCSI_WRITE\s0 .
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/include/scsi/targets/srdef.h
+.TP
+.B /usr/include/scsi/impl/uscsi.h
+.TP
+.B /usr/include/sundev/srreg.h
+.PD
+.SH "SEE ALSO"
+.BR ioctl (2),
+.BR dkio (4S),
+.BR sr (4S)
+.SH BUGS
+.LP
+The interface to this device is preliminary and subject to change
+in future releases.
+You are encouraged to write your programs in 
+a modular fashion so that you can easily incorporate future changes.

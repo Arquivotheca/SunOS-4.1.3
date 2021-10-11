@@ -1,0 +1,448 @@
+.\" @(#)boot.8s 1.1 92/07/30 SMI;
+.TH BOOT 8S "29 April 1992"
+.SH NAME
+boot \- start the system kernel or a standalone program
+.SH SYNOPSIS
+.SS "SUN-3, SUN-4 SYSTEMS"
+.B >b
+[
+.I device
+[
+.BI ( c , \|u\c
+.BI ,\| p )
+] ] [
+.I filename
+] [
+.B \-av
+]
+.I boot-flags
+.br
+.B >b
+.I tapedev
+.BR ( [\fIc\fB,\|\fIu\fB,\|\fIp\fR\^] )install
+[
+.I filenum 
+]
+.if n .ti +5n
+.I diskdev\c
+.BR ( [\fIc\fP\^]\fB,\fP[\fIu\fP\^]\fB,\fP[\fIp\fP\^] )\c
+[\c
+.BR vmunix [\^\fIboot-flags\fR\^]]
+.br
+.B >b?
+.br
+.B >b!
+.SS "SPARCstation 1 SYSTEMS"
+.LP
+.B >b
+[
+.I device
+[
+.BI ( c , \|u\c
+.BI ,\| p )
+] ] [
+.I filename
+]
+.I boot-flags
+.SS "SPARCstation 2, SPARCstation 10 SYSTEMS, SPARCsystem 600MP SERIES"
+.LP
+.B >b
+[
+.I device-specifier
+] [
+.I filename
+]
+.I boot-flags
+.SH DESCRIPTION
+.IX  "boot command"  ""  "\fLboot\fP \(em system startup procedures"
+.IX  "bootstrap procedures"  ""  "bootstrap procedures \(em \fLboot\fP"
+.IX  "autoboot procedures"  ""  "autoboot procedures \(em \fLboot\fP"
+.IX  "startup procedures"  ""  "startup procedures \(em \fLboot\fP"
+.LP
+The boot program is started by the
+.SM PROM
+monitor and loads the
+kernel, or another executable program, into memory.
+.LP
+The following applies to all Sun systems
+.I except
+Desktop \s-1SPARC\s0systems and
+\s-1SPARC\s0system 600MP series.
+See
+.BR openboot (8S)
+for those systems.
+.LP
+The form
+.BI b \|.\|.\|. install
+loads the miniroot from a SunOS distribution tape or
+.SM CDROM
+into the designated partition of 
+.I diskdev
+(commonly 
+.BR 1 ,
+the swap partition), and then boots the mini-root 
+kernel in preparation for a
+software installation.
+.LP
+The form
+.B b?
+displays all boot devices and their device arguments.
+.LP
+The form
+.B b!
+boots, but does not perform a
+.SM RESET\s0.
+.SH USAGE
+.SS "Booting Standalone"
+.LP
+When booting standalone, the boot program
+.RB ( /boot )
+is brought in by the
+.SM PROM
+from the file system. 
+This program contains drivers for all devices.
+.SS "Booting a Sun-3 System Over the Network"
+.LP
+When booting over the network, the Sun-3 system
+.SM PROM
+obtains a version of the boot program from
+a server using the Trivial File
+Transfer Protocol (\s-1TFTP\s0).
+The client broadcasts a
+.SM RARP
+request containing its Ethernet address.
+A server responds with the client's
+Internet address.
+The client then sends a
+.SM TFTP
+request for its boot program to that
+server (or if that fails, it broadcasts the request).
+The filename requested
+(unqualified \(em not a pathname)
+is the hexadecimal, uppercase representation
+of the client's Internet address; for example:
+.IP
+.ta +20n
+.ft B
+Using \s-1IP\s0 Address		192.9.1.17 = C0090111
+.ft R
+.LP
+When the Sun server receives the request, it looks in the directory
+.B /tftpboot
+for
+.IR filename .
+That file is typically a symbolic link to the client's boot program,
+normally
+.BR boot.sun3 ,
+in the same directory.
+The server invokes the
+.SM TFTP
+server,
+.BR tftpd (8C),
+to transfer the file to the client.
+.LP
+When the file is successfully read in by the client,
+the boot program jumps to the load-point and loads
+.B vmunix
+(or a standalone program). 
+In order to do this,
+the boot program makes a broadcast
+.SM RARP
+request to find the client's
+.SM IP
+address,
+and then makes a second broadcast request to a
+.BR bootparamd (8)
+bootparams daemon, for information necessary to boot the client.
+The bootparams daemon obtains this information either from a local
+.B /etc/bootparams
+database file, or from an NIS
+map.  The boot program sends two requests
+to the bootparams daemon \(em the first,
+.BR whoami ,
+to obtain its hostname, and the second,
+.BR getfile ,
+to obtain the name of the client's server and the pathname of
+the client's root partition.
+.LP
+The boot program then performs a
+.BR mount (8)
+operation to mount the client's root partition,
+after which it can read in and execute
+any program within that partition by pathname
+(including a symbolic link to another file within that same
+partition).
+Typically, it reads in the file
+.BR /vmunix .
+If the program is not read in successfully,
+.B boot
+responds with a short diagnostic message.
+.SS "Booting Other Sun Systems Over the Network"
+.LP
+Other Sun systems boot over the network in a similar
+fashion.
+However, the filename requested from a server must
+have a suffix that reflects the 
+.I kernel
+architecture of the
+machine being booted.
+For these systems, the requested filename
+has the form:
+.IP
+.IB ip-address . arch
+.LP
+where
+.I ip-address
+is the machine's Internet Protocol
+(\s-1IP\s0) address in hex, and
+.I arch
+is a suffix representing its kernel architecture.
+Only Sun-3 systems may omit the
+.I arch
+suffix.
+These filenames are restricted to 14 characters
+for compatibility with 
+.SM UNIX
+System V and other operating systems.
+Therefore, the architecture suffix is limited to 5 characters;
+it must be in upper case.  At present, the following suffixes are
+recognized:
+.SB SUN3
+for Sun-3 systems,
+.SB SUN3X
+for Sun-3x systems,
+.SB SUN4
+for Sun-4 systems,
+.SB S386 
+for Sun386i systems,
+and
+.SB PCNFS
+for
+.BR \s-1PC-NFS\s0.
+.BR arch (1)
+may be used to determine the kernel architecture of a machine.
+.SS "System Startup"
+.LP
+Once the system is loaded and running, the
+kernel performs some internal housekeeping, configures its
+device drivers, and allocates its internal tables and buffers.
+The kernel then starts process number 1 to run
+.BR init (8),
+which performs file system housekeeping, starts system daemons,
+initializes the system console, and begins multiuser operation.
+Some of these activities are omitted when
+.B init
+is invoked with certain
+.IR boot-flags .
+These are typically entered as arguments to the boot command
+and passed along by the kernel to
+.BR init .
+.SH OPTIONS
+.TP 12
+.I device
+One of:
+.RS
+.TP
+.B le
+.PD 0
+Lance Ethernet
+.TP
+.B ie
+Intel Ethernet (Sun-3, Sun-4 systems only)
+.TP
+.B sd
+.SM SCSI
+disk, \s-1CDROM\s0
+.TP
+.B st
+.SM SCSI
+1/4" or 1/2" tape
+.TP
+.B fd
+Diskette (Sun386i, Sun-3/80 systems and Desktop \s-1SPARC\s0systems only)
+.TP
+.B id
+\s-1IPI\s0 disk (Sun-4 systems and \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B mt
+Tape Master 9-track 1/2" tape (Sun-3, Sun-4 systems only)
+.TP
+.B xd
+Xylogics 7053 disk (Sun-3, Sun-4 systems only)
+.TP
+.B xt
+Xylogics 1/2" tape (Sun-3, Sun-4 systems only)
+.TP
+.B xy
+Xylogics 440/450 disk (Sun-3, Sun-4 systems only)
+.PD
+.RE
+.TP
+.I diskdev
+Disk or
+.SM CDROM\s0;
+one of 
+.BR sd , 
+.BR id , 
+.B xy
+from the above device set.
+.TP
+.I tapedev
+Tape; one of 
+.BR st , 
+.BR xt , 
+.B mt
+from the above device set.
+.TP
+.I c
+Controller number,
+.B 0
+if there is only one controller for the indicated
+type of device.
+.TP
+.I u
+Unit number,
+.B 0
+if there is only one driver.
+.TP
+.I p
+Partition number when booting off a disk, or
+tape file number when booting from a tape.
+Defaults to 
+.BR 0 .
+.TP
+.I filename
+Name of a standalone program in the selected partition, such as
+.BR stand/diag
+or
+.BR vmunix .
+Note:
+.I filename
+is relative to the root of the selected
+device and partition.
+It never begins with a
+.RB ` / '
+(slash).
+If
+.I filename
+is not given, the boot program uses a default value (normally
+.BR vmunix ).
+This is stored in the
+.B vmunix
+variable in the
+.B boot
+executable file supplied by Sun, but can
+be patched to indicate another
+standalone program loaded using
+.BR adb (1).
+.TP
+.I filenum
+Filenumber to load from 
+.I tapedev
+to
+.IR diskdev .
+Defaults to
+.BR 3 ,
+which is the location of the miniroot on current SunOS
+distribution tapes.
+.TP
+.B \-a
+Prompt interactively for the device and name of the file to boot.
+For more information on how to boot from a specific device, refer to
+.TX INSTALL .
+.TP
+.B \-v
+Verbose.  
+Print more detailed information to assist in
+diagnosing diskless booting problems.
+.TP
+.I boot-flags
+The boot program passes all
+.I boot-flags
+to the kernel or standalone program.
+They are typically  arguments to
+that program or, as with those listed below, arguments to programs
+that it invokes.
+.RS
+.TP
+.B \-b
+Pass the
+.B \-b
+flag through the kernel to
+.BR init (8)
+to skip execution of the
+.B /etc/rc.local
+script.
+.TP
+.B \-h
+Halt after loading the system.
+.TP
+.B \-s
+Pass the
+.B \-s
+flag through the kernel to
+.BR init (8)
+for single-user operation.
+.TP
+.BI \-i " initname"
+Pass the
+.BI \-i " initname"
+to the kernel to tell it to run
+.I initname
+as the first program rather than the default
+.BR /sbin/init .
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /boot
+standalone boot program
+.TP
+.BI /tftpboot/ address
+symbolic link to the boot program for the client whose Internet address,
+in uppercase hexadecimal, is
+.I address
+.TP
+.B /tftpboot/boot.sun3
+Sun-3 first stage boot program
+.TP
+.B /tftpboot/boot.sun4
+Sun-4 first stage boot program
+.TP
+.B /usr/etc/in.tftpd
+\s-1TFTP\s0
+server
+.TP
+.B /usr/kvm/mdec/installboot
+program to install boot blocks from a remote host
+.TP
+.B /vmunix
+kernel file that is booted by default
+.TP
+.B /usr/kvm/boot
+.TP
+.B /etc/bootparams
+file defining root and swap paths for clients
+.PD
+.SH SEE ALSO
+.BR adb (1),
+.BR arch (1),
+.BR tftp (1C),
+.BR bootparamd (8),
+.BR init (8),
+.BR kadb (8S),
+.BR monitor (8S),
+.BR mount (8),
+.BR ndbootd (8C),
+.BR openboot (8S),
+.BR rc (8),
+.BR reboot (8),
+.BR tftpd (8C)
+.LP
+.TX INSTALL
+.br
+.TX ADMIN
+.SH NOTES
+.LP
+NIS was formerly known as Sun Yellow Pages (\s-1YP\s0).  The
+functionality of the two remains the same; only the name has changed.

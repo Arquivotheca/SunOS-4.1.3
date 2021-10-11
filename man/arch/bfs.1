@@ -1,0 +1,315 @@
+.\"	@(#)bfs.1 1.1 92/07/30 SMI; from S5R2 6.2 83/09/02
+.TH BFS 1 "9 April 1986"
+.SH NAME
+bfs \- big file scanner
+.SH SYNOPSIS
+.B bfs
+.RB [ " \- " ]
+.I  filename
+.SH DESCRIPTION
+.IX "bfs command" "" "\fLbfs\fP \(em scan big file"
+.I bfs
+allows you to scan through large files using 
+line addresses similar to those for
+.IR ed (1).
+.I bfs
+is read-only and processes 
+files as large as 1024K bytes, or
+32K lines with up to 512 characters each, including the newline.
+.I bfs
+is usually more efficient for scanning than
+.I ed,
+since the file is not copied to a buffer.
+It is useful for identifying places in a large file where
+it can be divided using
+.IR csplit (1).
+.PP
+Normally, the size of the file being scanned is printed,
+as is the size of any file written with the
+.B w
+command.
+.LP
+With the
+.B \-
+flag, suppress printing of file sizes.
+.SH USAGE
+.SS Line Addressing
+.PP
+All address expressions described under
+.I ed
+are supported.
+In addition, regular expressions may be surrounded with two
+symbols besides
+.B /
+and
+.BR ? :
+.B >
+indicates
+downward search without wrap-around,
+and
+.B <
+indicates upward search without wrap-around.
+There is a slight difference in mark names: only the letters
+.B a
+through
+.B z
+may be used,
+and all 26 marks are remembered.
+.SS Commands
+.PP
+The commands
+.BR e ,
+.BR g ,
+.BR v ,
+.BR k ,
+.BR p ,
+.BR q ,
+.BR = ,
+.BR ! ,
+and the null command operate as described in
+.IR ed (1).
+Commands such as \fB\-\-\-\fP, \fB+++\-\fP,
+\fB+++=\fP, \fB\-12\fP, and \fB+4p\fP are accepted.
+Note that \fB1,10p\fP and \fB1,10\fP both print 
+the first ten lines.
+.TP .85i
+.BR P " \s-1RETURN\s0"
+toggle prompting for input (with
+.BR * )
+and display of error messages.
+.TP
+.B f
+print the name of the file being scanned;
+there is no 
+.I remembered\^
+file name.
+.TP
+.B w
+command is similar to that of 
+.IR ed (1), 
+but is independent of output diversion, truncation, or crunching
+(see the
+.BR xo , \ xt \ and \ xc
+commands, below).
+.TP 
+.BI xf " file"\^
+Further commands are taken from the named
+.IR file .
+When an end-of-file is reached,
+an interrupt signal is received or an error occurs,
+reading resumes with the
+file containing the
+.BR xf .
+The
+\f3xf\fR
+commands may be nested to a depth of 10.
+.TP
+.B xn
+List the marks currently in use (marks are set by the
+.B k
+command).
+.TP 
+.BI xo " \fR[\|\fPfile\fR\|]\fP"\^
+Further output from the
+.B p
+and null
+commands is diverted to the named
+.IR file ,
+which, if necessary, is created mode 666.
+If
+.I file
+is missing, output is diverted to the standard output.
+Note that each diversion causes truncation
+or creation of the file.
+.TP 
+.BI : " label"
+This positions a
+.I label
+in a command file.
+The
+.I label
+is terminated by newline.  Blanks between the
+.B :
+and the start of 
+.I label
+are ignored.
+This command may also be used to insert comments
+into a command file, since labels need not be referenced.
+.TP 
+( \fB. \fR, \fB. \fR)\fBxb/\fIregular expression\fB/\fIlabel\fR
+Jump to \fIlabel\fP if the command succeeds.
+It fails under any of the following conditions:
+.RS 
+.PD 0
+.TP
+1. 
+Either address is not between
+.B 1
+and
+.BR $ .
+.TP
+2. 
+The second address is less than the first.
+.TP
+3. 
+The regular expression does not match at least one line
+in the specified range, including the first and last lines.
+.RE
+.IP
+This command does not issue an error message on bad addresses. 
+Note that the command
+.RS 
+.IP
+xb/^/ label
+.RE
+.TP
+\&
+is an unconditional jump.
+.br
+.IP
+The
+.B xb
+command is allowed only if
+it is read from someplace other than a terminal.
+If it is read from a pipe only a downward jump is possible.
+.TP
+.BI xt " number"
+Output from the
+.B p
+and null commands is
+truncated to at most
+.I number
+characters.
+The initial number is 255.
+.TP
+\fBxv\fR[\^\fIdigit\fR\^] [\^\fIvalue\fR\^]
+Assign a
+.I value
+to the variable named
+.IR digit
+following the \fBxv\fP.
+.RS
+The commands
+.IP
+\fBxv5100\fP 
+.LP
+and 
+.IP
+\fBxv5 100p\fP 
+assign the value \fB100\fP to the variable
+.BR 5 ,
+and the value \fB100p\fP to the variable
+.BR 6 ,
+respectively.
+.LP
+To express a variable's value, prepend a
+.B %
+to the variable name.
+For example, using the above assignments
+for variables \fB5\fP and \fB6\fP:
+.RS 
+1,%5p
+.br 
+1,%5p
+.br 
+%6
+.RE
+.LP
+will each print the first 100 lines.
+.LP
+Another feature of the
+.B xv
+command is that the first line
+of output from a \s-1UNIX\s0 system command can
+be stored into a variable.  The only
+requirement is that the first character of
+.I value
+be a
+\fB!\fP.
+For example:
+.RS 
+\fB\&.\fRw junk
+.br
+xv5!cat junk
+.br 
+!rm junk
+.RE
+.IP
+To include 
+.B !
+as the first character of
+.IR value ,
+precede it with a
+\fB\e\fP.
+.RS 
+.IP
+xv7\e!date
+.RE
+This stores the value \fB!date\fP in variable \fB7\fP.
+.RE
+.TP
+.BI xbz " label"\^
+.PD 0
+.TP
+.BI xbn " label"\^
+.PD
+These two commands will test the last saved
+.I "return code\^"
+from the execution of a
+.SM UNIX
+system command
+(\fB!\fIcommand\^\fR)
+or nonzero value, respectively, to the
+specified label.
+The two examples below both 
+search for the next five lines containing
+the string \fBsize\fP.
+.RS 
+xv55
+.br 
+: l
+.br 
+/size/
+.br 
+xv5!expr %5 \- 1
+.br 
+!if 0%5 != 0 exit 2
+.br 
+xbn l
+.br
+xv45
+.br 
+: l
+.br 
+/size/
+.br 
+xv4!expr %4 \- 1
+.br 
+!if 0%4 = 0 exit 2
+.br 
+xbz l
+.br
+.RE
+.TP
+\fBxc\fP\ [\fIswitch\fP\^]
+If
+.I switch\^
+is \fB1\fP, output from the
+.B p
+and null commands is crunched;
+if
+.I switch\^
+is \fB0\fP it is not.
+Without an argument,
+.B xc
+reverses \fIswitch\fP.
+Initially \fIswitch\fP is set for no crunching.
+Crunched output has strings of tabs and blanks reduced
+to one blank and blank lines suppressed.
+.SH "SEE ALSO"
+csplit(1), ed(1), regcmp(3X)
+.SH DIAGNOSTICS
+.TP
+?
+for errors in commands, if prompting is turned off.
+Self-explanatory error messages when prompting is on.

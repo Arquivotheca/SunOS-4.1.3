@@ -1,0 +1,255 @@
+.\" @(#)lwp_create.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH LWP_CREATE 3L "21 January 1990"
+.SH NAME
+lwp_create, lwp_destroy, SAMETHREAD, pod_setexit, pod_getexit, pod_exit \- LWP thread creation and destruction primitives
+.SH SYNOPSIS
+.nf
+.ft B
+#include <lwp/lwp.h>
+#include <lwp/stackdep.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_create(tid, func, prio, flags, stack, nargs, arg1, .\|.\|., argn)
+thread_t *tid;
+void (*func)(\|);
+int prio;
+int flags;
+stkalign_t *stack;
+int nargs;
+int arg1, .\|.\|.\|, argn;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_destroy(tid)
+thread_t tid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void pod_setexit(status)
+int status;
+.ft
+.fi
+.LP
+.ft B
+.nf
+int pod_getexit(status)
+int status;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void pod_exit(status)
+int status
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1SAMETHREAD\s0(t1, t2)
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "lwp_create()" "" "\fLlwp_create()\fP function"
+.IX "lwp_destroy()" "" "\fLlwp_destroy()\fP function"
+.IX "SAMETHREAD()" "" "\fLSAMETHREAD()\fP function"
+.IX "pod_setexit()" "" "\fLpod_setexit()\fP function"
+.IX "pod_getexit()" "" "\fLpod_getexit()\fP function"
+.IX "pod_exit()" "" "\fLpod_exit()\fP function"
+.LP
+.B lwp_create(\|)
+creates a lightweight process which starts at address
+.I func
+and has stack segment
+.IR stack .
+If
+.I stack
+is
+.SM NULL\s0,
+the thread is created in a suspended state (see below)
+and no stack or pc is bound to the thread.
+.I prio
+is the scheduling priority of the thread (higher
+priorities are favored by the scheduler).
+The identity of the new thread is filled in
+the reference parameter
+.IR tid .
+.I flags
+describes some options on the new thread.
+.SB LWPSUSPEND
+creates the thread in suspended state
+(see
+.BR lwp_yield (3L)).
+.SB LWPNOLASTRITES
+will disable the
+.SB LASTRITES
+agent message when the thread dies.
+The default (0) is to create the thread in running state with
+.SB LASTRITES
+reporting enabled.
+.SB LWPSERVER
+indicates that a thread is only viable as long
+as
+non-\s-1LWPSERVER\s0
+threads are alive.
+The pod will terminate if the only living threads are marked
+.SB LWPSERVER
+and blocked on a lwp resource (for instance,
+waiting for a message to be sent).
+.I nargs
+is the number (0 or more)
+of simple-type (int) arguments supplied to the thread.
+.LP
+The first time a lwp primitive is used, the lwp library automatically
+converts the caller (i.e.,
+.BR main )
+into a thread with
+the highest available scheduling priority (see
+.BR pod_getmaxpri (3L)).
+The identity of this thread can be retrieved using
+.B lwp_self
+(see
+.BR lwp_status (3L)).
+This thread has the normal Sun\s-1OS\s0 stack given to any
+.I forked
+process.
+.LP
+Scheduling is, by default, non-preemptive within a priority, and
+within a priority, threads enter the run queue on a
+.SM FIFO
+basis (that is, whenever a thread becomes eligible to run, it goes to
+the end of the run queue of its particular priority).
+Thus, a thread continues to run until it voluntarily relinquishes control
+or an event (including thread creation)
+occurs to enable a higher priority thread.
+Some primitives may cause the current thread to block, in which
+case the unblocked thread with the highest priority runs next.
+When several threads are created with the same priority,
+they are queued for execution in the order of creation.
+This order may not be preserved as threads yield and block within a priority.
+If an agent owned by a thread with a higher priority is invoked,
+that thread will preempt the currently running one.
+.LP
+There is no concept of ancestry in threads:
+the creator of a thread has no special relation to the thread it created.
+When all threads have died, the pod terminates.
+.LP
+.B lwp_destroy(\|)
+is a way to explicitly terminate
+a
+thread or agent (instead of having an executing thread \*(lqfall though\*(rq,
+which also terminates the thread).
+.I tid
+specifies the id of the thread or agent to be terminated.
+If
+.I tid
+is
+.BR \s-1SELF\s0 ,
+the invoking thread is destroyed.
+Upon termination, the resources (messages, monitor locks, agents)
+owned by the thread are released, in some cases
+resulting in another thread being notified of the death of its peer
+(by having a blocking primitive become unblocked with an error indication).
+A thread may terminate itself explicitly, although self-destruction
+is automatic when it returns from the procedure specified in
+the
+.B lwp_create(\|)
+primitive.
+.LP
+.B pod_setexit(\|)
+sets the exit status for a
+pod.
+This value will be returned to the parent
+process of the pod
+when the pod dies (default is 0).
+.BR exit (3)
+terminates the current
+.IR thread ,
+using the argument supplied to
+.I exit
+to set the current value of the exit status.
+.BR on_exit (3)
+establishes an action that will be taken when
+the entire pod terminates.
+.B pod_exit(\|)
+is available to terminate the pod immediately
+with the final actions established by
+.BR on_exit .
+If you wish to terminate the pod immediately,
+.B pod_exit(\|)
+or
+.BR exit (2V)
+should be used.
+.LP
+.B pod_getexit(\|)
+returns the current value of the pod's exit status.
+.LP
+.B \s-1SAMETHREAD\s0(\|)
+is a convenient predicate used to compare
+two threads for equality.
+.SH RETURN VALUES
+.LP
+.BR lwp_create(\|) ,
+and
+.B lwp_destroy(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+.B pod_getexit(\|)
+returns the current exit status of the pod.
+.SH ERRORS
+.LP
+.B lwp_create(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_ILLPRIO
+Illegal priority.
+.TP
+.SM LE_INVALIDARG
+Too many arguments (> 512).
+.TP
+.SM LE_NOROOM
+Unable to allocate memory for thread context.
+.LP
+.B lwp_destroy(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to destroy a thread or agent that does not exist.
+.SH SEE ALSO
+.BR exit (2V),
+.BR exit (3),
+.BR lwp_yield (3L),
+.BR on_exit (3),
+.BR pod_getmaxpri (3L)
+.SH WARNINGS
+.LP
+Some special threads may be created silently by the lwp library.
+These include an
+.I idle
+thread that runs when no other
+activity is going on, and a
+.I reaper
+thread that frees
+stacks allocated by
+.BR lwp_newstk .
+.\" no synchronous deallocation because the dying thread has no stack to
+.\" work with. Cannot do it in nugget because nugget knows nothing about
+.\" stack. This could change when domain stuff is added.
+These special threads will show up in status calls.
+A pod will terminate if these special threads are the only ones extant.

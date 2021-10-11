@@ -1,0 +1,31 @@
+#!/bin/sh
+# %Z%%M% %I% %E% SMI
+#
+# unpopulate a populated SCCS tree
+#
+preserve="Makefile SCCS SCCS_DIRECTORIES lost+found RELEASE populate err*"
+list=
+
+echo "Finding sub-directories in SCCS_DIRECTORIES...."
+rm -f SCCS
+find SCCS_DIRECTORIES/* -type d -print -prune | sed -e '/lost+found/d' \
+	-e '/^SCCS_DIRECTORIES$/d' -e '/^SCCS_DIRECTORIES\/SCCS/d' > major_list
+#
+# Remove directories
+#
+for i in `grep -v 'SCCS$' major_list| sed 's/^SCCS_DIRECTORIES\///'`
+do
+	keep=NO
+	for j in $preserve
+	do
+		if [ $i = $j ]
+		then
+			keep=YES
+		fi
+	done
+	if [ $keep = NO ]
+	then
+		list=${list}" "${i}
+	fi
+done
+rm -rf $list

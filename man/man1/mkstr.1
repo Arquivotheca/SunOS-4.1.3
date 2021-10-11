@@ -1,0 +1,122 @@
+.\" @(#)mkstr.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH MKSTR 1 "9 September 1987"
+.SH NAME
+mkstr \- create an error message file by massaging C source files
+.SH SYNOPSIS
+.B mkstr
+[
+.B \-
+]
+.I messagefile
+.I prefix
+.IR filename .\|.\|.
+.SH DESCRIPTION
+.IX  directory  make  ""  "make \(em \fLmkdir\fP"
+.IX  "mkstr command"  ""  "\fLmkstr\fP \(em create C error messages"
+.IX  "programming tools"  mkstr  ""  "\fLmkstr\fP \(em create C error messages"
+.IX  "C programming language"  mkstr  ""  "\fLmkstr\fP \(em create C error messages"
+.IX  languages  mkstr  ""  "\fLmkstr\fP \(em create C error messages"
+.B mkstr
+creates files of error messages.
+You can use
+.B mkstr
+to make programs with large numbers of error
+diagnostics much smaller, and to reduce
+system overhead in running the
+program \(em as the error messages
+do not have to be constantly swapped in
+and out.
+.LP
+.B mkstr
+processes each of the specified
+.IR filename s,
+placing a massaged version of the input file in a file with
+a name consisting of the specified
+.I prefix
+and the original source file name.
+A typical example of using
+.B mkstr
+would be:
+.IP
+.B mkstr pistrings processed *.c
+.LP
+This command would cause all the error messages from the C source
+files in the current directory to be placed in the file
+.B pistrings
+and processed copies of the source for these files to be placed in
+files whose names are prefixed with
+.IR processed .
+.LP
+To process the error messages in the source to the message file,
+.B mkstr
+keys on the string `\fBerror("\fR'
+in the input stream.
+Each time it occurs, the C string starting at the `\fB"\fR'
+is placed in the message file followed by a null character and a
+.SM NEWLINE
+character; the null character terminates
+the message so it can be easily used
+when retrieved, the
+.SM NEWLINE
+character makes it possible to sensibly
+.B cat
+the error message file to see its contents.
+The massaged copy of the input file then contains a
+.B lseek
+pointer into the file which can be used
+to retrieve the message, that is:
+.RS
+.IP
+.nf
+.ft B
+char efilname[\|] = "/usr/lib/pi_strings";
+int efil = \-1;
+.sp
+error(a1, a2, a3, a4)
+{
+.RS
+.IP
+.ft B
+char
+buf[256];
+if (efil < 0) {
+.RS
+.RS
+.IP
+.ft B
+efil = open(efilname, 0);
+if (efil < 0) {
+.RE
+.RE
+.RE
+.B oops:
+.RS
+.RS
+.RS
+.IP
+.B perror (efilname);
+.B exit (\&1);
+.RE
+.B }
+.RE
+.ft B
+}
+if (lseek(efil, (long) a1, 0) |\|| read(efil, buf, 256) <= 0)
+.RS
+.B goto oops;
+.RE
+.B printf(buf, a2, a3, a4);
+.RE
+.B }
+.fi
+.ft R
+.RE
+.SH OPTIONS
+.TP 3
+.B \-
+Place error messages at the end of the specified
+message file for recompiling part of a large
+\fBmkstr\fPed
+program.
+.SH SEE\ ALSO
+.BR xstr (1)

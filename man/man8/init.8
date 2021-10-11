@@ -1,0 +1,217 @@
+.\" @(#)init.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH INIT 8 "6 December 1988"
+.UC 4
+.SH NAME
+init \- process control initialization
+.SH SYNOPSIS
+.B /usr/etc/init
+[
+.B \-bs
+]
+.SH DESCRIPTION
+.LP
+.IX  "init command"  ""  "\fLinit\fP \(em process control initialization"
+.B init
+is invoked inside
+the operating system as the last step in the boot procedure.
+It normally runs the sequence of commands in the script
+.B /etc/rc.boot 
+(see
+.BR rc (8))
+to check the file system.  If passed the 
+.B \-b
+option from the boot program, 
+.B init
+skips this step.
+If the file system check succeeds or is skipped, 
+.B init
+runs the commands in
+.B /etc/rc
+and 
+.B /etc/rc.local
+to begin multiuser operation; otherwise it commences single-user 
+operation by giving the super-user a shell on the console.  It is 
+possible to pass the 
+.B \-s
+parameter from the boot program to
+.B init
+so that single-user operation is commenced immediately.
+.LP
+Whenever a single-user shell is created, and the system is running
+as a secure system, the
+.B init
+program demands the super-user password.
+This is to prevent an ordinary user from invoking a single-user shell
+and thereby circumventing the system's security.
+Logging out (for instance, by entering an
+.SM EOT\s0)
+causes
+.B init
+to proceed with a multi-user boot.
+The super-user password is demanded whenever the system is running secure
+as determined by
+.BR issecure (3),
+or the console terminal is not labeled \*(lqsecure\*(rq in
+.BR /etc/ttytab .
+.LP
+Whenever single-user operation is terminated (for instance by killing 
+the single-user shell)
+.B init
+runs the scripts mentioned above.
+.PP
+In multi-user operation, 
+.BR init 's
+role is to create a process for each
+terminal port on which a user may log in.
+To begin such operations, it reads the file
+.B /etc/ttytab
+and executes a command for each terminal specified in the file.
+This command will usually be
+.BR /usr/etc/getty .
+.BR getty (8)
+opens and initializes the terminal line,
+reads the user's name and invokes
+.BR login (1)
+to log in the user and execute the shell.
+.LP
+Ultimately the shell will terminate because it received
+.SM EOF\s0,
+either explicitly, as a result of hanging up, or from the user
+logging out.  The main path of
+.BR init ,
+which has been waiting for such an event,
+wakes up and removes the appropriate entry from the file
+.BR /etc/utmp ,
+which records current users.
+.B init
+then makes an entry in
+.BR /var/adm/wtmp ,
+which maintains a history of logins and logouts.  The
+.B /var/adm/wtmp
+entry is made only if a user logged in successfully on the line.
+Then the appropriate terminal is reopened and the command for that terminal
+is reinvoked.
+.LP
+.B init
+catches the
+.I hangup
+signal (\s-1SIGHUP\s0) and interprets it to mean that the file
+.B /etc/ttytab
+should be read again.
+The shell process on each line which used to be active in
+.B /etc/ttytab
+but is no longer there is terminated;
+a new process is created for each added line;
+lines unchanged in the file are undisturbed.
+Thus it is possible to drop or add terminal lines without
+rebooting the system by changing
+.B /etc/ttytab
+and sending a
+.I hangup
+signal to the
+.B init
+process: use
+.RB ` "kill\ \-\s-1HUP\s0\ 1" '.
+.LP
+.B init
+terminates multi-user operations and resumes single-user mode
+if sent a terminate (\s-1SIGTERM\s0) signal: use
+.RB ` "kill\ \-\s-1TERM\s0\ 1" '.
+If there are processes outstanding which are deadlocked (due to
+hardware or software failure),
+.B init
+does not wait for them all to die (which might take forever), but
+times out after 30 seconds and prints a warning message.
+.LP
+.B init
+ceases to create new processes, and allows the system to slowly die away,
+when sent a terminal stop (\s-1SIGTSTP\s0) signal: use
+.RB ` "kill\ \-\s-1TSTP\s0\ 1" '.
+A later hangup will resume full
+multi-user operations, or a terminate will initiate a single-user shell.
+This hook is used by
+.BR reboot (8)
+and
+.BR halt (8).
+.LP
+Whenever it reads
+.BR /etc/ttytab ,
+.B init
+will normally write out an old-style
+.B /etc/ttys
+file reflecting the contents of
+.BR /etc/ttytab .
+This is required in order that programs built on earlier versions of
+Sun\s-1OS\s0 that read the
+.B /etc/ttys
+file (for example, programs using the
+.BR ttyslot (3V)
+routine, such as
+.B shelltool (1))
+may continue to run.
+If it is not required that such programs run,
+.B /etc/ttys
+may be made a link (hard or symbolic) to
+.B /etc/ttytab
+and
+.B init
+will not write to
+.BR /etc/ttys .
+.LP
+.BR init 's
+role is so critical that if it dies, the system will reboot itself
+automatically.
+If, at bootstrap time, the
+.B init
+program cannot be located, the system will print an error message and panic.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/console
+.TP
+.B /dev/tty*
+.TP
+.B /etc/utmp
+.TP
+.B /var/adm/wtmp
+.TP
+.B /etc/ttytab
+.TP
+.B /etc/rc
+.TP
+.B /etc/rc.local
+.TP
+.B /etc/rc.boot
+.TP
+.B /usr/etc/getty
+.PD
+.SH SEE ALSO
+.BR kill (1),
+.BR login (1),
+.BR sh (1),
+.BR shelltool (1),
+.BR issecure (3),
+.BR ttyslot (3V),
+.BR ttytab (5),
+.BR getty (8),
+.BR halt (8),
+.BR rc (8),
+.BR reboot (8),
+.BR shutdown (8)
+.SH DIAGNOSTICS
+.TP
+.IB command " failing, sleeping."
+A process being started to service a line is exiting quickly
+each time it is started.
+This is often caused by a ringing or noisy terminal line.
+.B init
+will sleep for 30 seconds, then continue trying to start the process.
+.TP
+.B "\s-1WARNING\s0: Something is hung (won't die); ps axl advised."
+A process is hung and could not be killed when the system was shutting down.
+This is usually caused by a process
+which is stuck in a device driver due to a persistent device error condition.

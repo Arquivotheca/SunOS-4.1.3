@@ -1,0 +1,192 @@
+'\" t
+.\" @(#)ext_ports.5 1.1 92/07/30 SMI;
+.TH EXT_PORTS 5 "25 September 1989"
+.SH NAME
+ext_ports \- external ports file for network printers, terminals, and modems
+.SH SYNOPSIS
+.B /etc/ext_ports
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ext_ports" "" "\fLext_ports\fP \(em EXT_PORTS for network printers, terminals and modems" ""
+.LP
+The
+.B ext_ports
+external ports file is an
+.SM ASCII
+file in the
+.B /etc
+directory on the
+Network Information Service
+(\s-1NIS\s0)
+master server.
+.B ext_ports
+is used only by
+.SM SNAP\s0,
+and contains basic information about each printer,
+terminal, and modem on the network. 
+This file contains a one-line entry for each device,
+and each field
+.I must
+be separated by a
+.SM TAB
+character:
+.if n .sp
+.in +.5i
+.if n .ti -.5i
+.I "system:port\ \ type\ \ status\ \ baud\ \ model\ \ name\ \ #comment"
+.in -.5i
+.TP
+.I system
+names the system to which the device is attached.
+This field contains only
+lower case and numeric characters,
+must start with a lower case character, and
+must not be longer than 32 characters.
+.TP
+.I port
+names the port in
+.B /dev
+on the
+.IR system :
+.B ttya
+for the Sun386i serial port,
+.B pp0
+for the parallel port, and
+.B ttym0
+and
+.B ttym1
+for ports on an
+.SM AT
+bus serial card.
+.TP
+.I type
+.BR printer ,
+.BR terminal ,
+or 
+.BR modem .
+.TP
+.I status
+indicates the device status.
+For terminals and printers, this can be
+.B on 
+or
+.BR off .
+An
+.B off
+status means the device is disabled from access by the
+SunOS operating system, but can still be accessed by \s-1DOS\s0.
+For modems, this can be
+.B in
+to enable dialin,
+.B out
+to enable dialout,
+.B in_out
+to enable dialin and dialout, or
+.BR off .
+An
+.B off
+status means the device is disabled from access by the
+SunOS operating system, but it can still be accessed by 
+.SM DOS\s0.
+.TP
+.I baud
+is the baud rate.
+.TP
+.I model
+indicates the manufacturer or kind of device.
+For printers, this can be
+.BR epson ,
+.BR hp ,
+or
+.BR text ,
+for Epson and compatibles,
+.SM HP
+Laserjet and compatibles, or
+for text-only printers.
+For terminals, this can be
+.B vt100
+or
+.BR wyse-50
+for 
+.SM DEC VT\s0-100
+and compatibles or
+for Wyse WY-50 and compatibles.
+For modems, this can be
+.B hayes
+for Hayes and compatibles.
+.TP
+.I name
+is only used for unique naming of printers on the network.
+Up to 16 characters can be entered.
+This field is blank for terminals and modems \(em simply insert a
+.SM TAB 
+character.
+.TP
+.I #comment
+can contain anything you want, up to a maximum of 96 characters.
+.br
+.ne 8
+.SH EXAMPLE
+.LP
+In this example of an
+.B ext_ports
+file, the system vulcan has an epson printer attached
+to its parallel port, and a Wyse-50 terminal attached to its 
+serial port, but with logins currently disabled.
+The system android has a
+.SM VT\s0100
+attached to its serial port,
+with logins enabled.
+The system polaris has a
+.B hayes
+modem set for dialing out on
+an installed
+.SM AT
+bus serial card.
+.LP
+.RS
+.if n .in -1i
+.TS
+;
+lB lB lB lB lB lB lB .
+vulcan:pp0	printer	on	9600	epson	lp	#Engineering lab
+android:ttya	terminal	on	9600	vt100		#Reception
+vulcan:ttya	terminal	off	9600	wyse-50		#Engineering lab
+polaris:ttym0	modem	in_out	2400	hayes		#QA lab
+.TE
+.if n .in +1i
+.ft P
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/ext_ports
+.PD
+.br
+.ne 5
+.SH SEE ALSO
+.BR snap (1),
+.BR vipw (8)
+.LP
+.IR "Sun386i System and Network Administration" ,
+.br
+.I Sun386i Advanced Administration
+.SH BUGS
+.LP
+The
+.B /etc/ext_ports
+file must be locked against simultaneous changes when it is edited;
+.BR vipw (8)
+does the necessary locking.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

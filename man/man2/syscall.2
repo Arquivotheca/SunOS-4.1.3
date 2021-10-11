@@ -1,0 +1,62 @@
+.\" @(#)syscall.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SYSCALL 2 "21 January 1990"
+.SH NAME
+syscall \- indirect system call
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/syscall.h>
+.LP
+.nf
+.BR "int syscall(number" [ " , arg," " .\|.\|. ]" " )"
+.ft B
+int number;
+.fi
+.IX  syscall()  ""  "\fLsyscall()\fP \(em indirect system call"
+.IX  "indirect system call"
+.SH DESCRIPTION
+.LP
+.B syscall(\|)
+performs the system call whose assembly language
+interface has the specified
+.IR number ,
+and arguments
+.IR "arg \&.\|.\|." \&.
+Symbolic constants for system calls can be found in the header file
+.BR <sys/syscall.h> .
+.\".LP
+.\" Sun386i systems
+.\"On Sun-3 systems, the value of register d0 after 
+.\"the system call is returned.
+.\"On Sun-4 systems, the value of register %o0 is returned.
+.\"On Sun386i systems, the value of register %eax is returned.
+.SH RETURN VALUES
+.LP
+.B syscall(\|)
+returns the return value of the system call specified by
+.IR number .
+.SH SEE ALSO
+.BR intro (2),
+.BR pipe (2V)
+.SH WARNINGS
+There is no way to use
+.B syscall(\|)
+to call functions such as
+.BR pipe (2V) ,
+which return values that do not fit into one hardware register.
+.LP
+Since many system calls are implemented as library
+wrappers around traps to the kernel,
+these calls may not behave as documented when called from
+.BR syscall(\|) ,
+which bypasses these wrappers.
+For these reasons, using
+.B syscall(\|)
+is not recommended.
+.\"in register d1 
+.\"on Sun-3 systems, in register %o1 on Sun-4 systems, or
+.\"in register %edx on Sun386i systems.

@@ -1,0 +1,188 @@
+.\" @(#)uustat.1c 1.1 92/07/30 SMI; from S5R3
+.TH UUSTAT 1C "8 June 1988"
+.SH NAME
+uustat \- UUCP status inquiry and job control
+.SH SYNOPSIS
+.B uustat
+.BR \-a \||\c
+.BR \-m \||\c
+.BR \-p \||\c
+.BR \-q \||\c
+.B \-k\c
+.IR jobid \||\c
+.B \-r\c
+.I jobid
+.LP
+.B uustat
+.RB "[ " \-s\c
+.IR system " ]"
+.RB "[ " \-u\c
+.IR user " ]"
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I uucp
+software  installation  option.   Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "uustat command" "" "\fLuustat\fR command"  
+.LP
+.B uustat
+displays the status of, or cancels, previously specified 
+.BR uucp (1C)
+commands.
+It also reports the status of
+.B uucp
+connections to other systems.
+When no options are given,
+.B uustat
+displays the status of all
+.B uucp
+requests issued by the current user.
+.SH OPTIONS
+.LP
+Only one of the following options can be specified at a time:
+.TP
+.B \-a
+Output all jobs in queue.
+.TP
+.B \-m
+Report the status of accessibility of all machines.
+.TP
+.B \-p
+Execute a
+.B ps
+for all the
+.SM PID\s0s
+listed in the lock files.
+.TP
+.B \-q
+List the jobs queued for each machine.
+If a status file exists for the machine, its date, time and
+status information are reported.
+In addition, if a number appears in parentheses next to the number of
+.B C.
+or
+.B X.
+files, it is the age in days of the oldest
+.BR C. / X.
+file for that system.
+The
+.B Retry
+field represents the number of hours until the next possible call.
+The
+.B Count
+is the number of failure attempts.
+For systems with a moderate number of outstanding jobs, this
+could take 30 seconds or more to execute.
+An example of the output from
+.B \-q
+is:
+.RS
+.RS
+.sp .5v
+.nf
+.ft B
+.if t .ta .75i 1.15i 2.0i
+.if n .ta 8n +4n +12n
+eagle	3C	04/07\-11:07	\s-1NO DEVICES AVAILABLE\s0
+mh3bs3	2C	07/07\-10:42	\s-1SUCCESSFUL\s0
+.ft R
+.fi
+.RE
+.RE
+.IP
+This indicates the number of command files that are waiting for each system.
+Each command file may have zero or more files to be sent (zero means to call
+the system and see if work is to be done).
+The date and time refer to the previous interaction
+with the system followed by the status of the interaction.
+.TP
+.BI \-k jobid
+Kill the
+.SM UUCP
+request with job identification of
+.IR jobid .
+You must either own the job to be killed, or be the super-user.
+.TP
+.BI \-r jobid
+Rejuvenate
+.IR jobid .
+The files associated with
+.I jobid
+are touched so that 
+their modification time is set to the current time.
+This prevents the cleanup daemon
+from deleting the job until the jobs modification
+time reaches the next limit imposed by the daemon.
+.LP
+The following  options  can  be  specified separately or
+together:
+.TP
+.BI \-s system
+Report the status of all
+.SM UUCP
+requests for remote system
+.IR system .
+.TP
+.BI \-u user
+Report the status of all
+.SM UUCP
+requests issued by
+.IR user .
+.br
+.ne 6
+.IP
+Output for both the
+.B \-s
+and
+.B \-u
+options has the following format:
+.RS
+.RS
+.sp .5v
+.ft B
+.nf
+.if t .ta .75i 1.15i 2.0i 2.5i 2.9i 3.2i 3.5i
+.if n .ta 12n +15n +8n +8n +8n +8n +8n +8n
+eaglen0000	4/07\-11:01:03	(\s-1POLL\s0)
+eagleN1bd7	4/07\-11:07	S	eagle	dan	522 /usr/dan/A
+eagleC1bd8	4/07\-11:07	S	eagle	dan	59 D.3b2al2ce4924
+\0	4/07\-11:07	S	eagle	dan	rmail mike
+.fi
+.ft R
+.RE
+.RE
+.IP
+The first field is the job
+.SM ID
+of the job.
+This is followed by the date and time.
+The next field is either an
+.B S
+or
+.B R
+depending on whether the job is to
+send or request a file.
+This is followed by the user
+.SM ID
+of the user who queued the job.
+The next field contains the size of the file,
+or in the case of a remote execution request,
+the name of the command.
+When the size appears in this field,
+the file name is also given.
+This can either be the name given by the user, or an
+internal name created for data files associated with remote executions
+.RB ( rmail
+in this example).
+.SH FILES
+.PD 0
+.TP 20
+.B /var/spool/uucp/*
+.SM UUCP
+spool directories
+.PD
+.SH SEE ALSO
+.BR uucp (1C)

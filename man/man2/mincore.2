@@ -1,0 +1,61 @@
+.\" @(#)mincore.2 1.1 92/07/30 SMI;
+.TH MINCORE 2 "21 January 1990"
+.SH NAME
+mincore \- determine residency of memory pages
+.SH SYNOPSIS
+.nf
+.ft B
+int mincore(addr, len, vec)
+caddr_t addr; int len; result char *vec;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "mincore()" "" "\fLmincore()\fP \(em determine residency of memory pages"
+.LP
+.B mincore(\|)
+returns the primary memory
+residency status of pages in the address space
+covered by mappings in the range
+[\fIaddr\fP, \fIaddr\fP + \fIlen\fP).
+The status is returned as a char-per-page in the character array referenced
+by
+.I *vec
+(which the system assumes to be large enough to encompass
+all the pages in the address range).  The least significant bit of each
+character is set to 1 to indicate that the referenced page is in primary
+memory, 0 if it is not.  The settings of other bits in each character is
+undefined and may contain other information in the future.
+.SH RETURN VALUES
+.LP
+.B mincore(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B mincore(\|)
+will fail if:
+.TP 20
+.SM EFAULT
+A part of the buffer pointer to by
+.I vec
+is out-of-range or otherwise inaccessible.
+.TP
+.SM EINVAL
+.I addr
+is not a multiple of the page size as returned by
+.BR getpagesize (2).
+.TP
+.SM ENOMEM
+Addresses in the range [\fIaddr, addr + len\fP\^)
+are invalid for
+the address space of a process, or specify one or more pages which are not
+mapped.
+.SH SEE ALSO
+.BR mmap (2)

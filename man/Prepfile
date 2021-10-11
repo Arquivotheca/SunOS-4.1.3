@@ -1,0 +1,178 @@
+#	@(#)Prepfile 1.1 92/07/30 SMI;
+#
+#	Makefile for preparing man pages prior to final printing.
+#
+
+SECTIONS= 1 2 3 4 5 6 7 8
+DIRS  	= $(SECTIONS:%=man%)
+SUBS	= 3[lrv]
+MAKEFILE=
+
+.INIT:
+	-@mkdir tmp
+
+all: files update pagelist badpaths badpgrefs titles no.ix badnames \
+	badhf spell badtroff 
+
+#	Extract all printable files from SCCS.
+files:
+	-set -x ; for i in $(DIRS) ; \
+		do ( cd $$i ; $(MAKE) -f Printfile all ) ; done
+
+#	Add lists of pages to add and delete from Makefiles, Printfiles
+#	and List.* files
+update:
+	-set -x ; for i in $(DIRS) ; \
+		do ( cd $$i ; $(MAKE) -f Printfile $@ ) ; done
+	@echo "Be sure to update all List.* files"
+
+#	Build list of pages to check in each subdir
+pagelist:
+	-for i in $(DIRS) ; do rm -f tmp/$$i.pagelist ; \
+		cd $$i ; make showprint > ../tmp/$$i.pagelist ; cd .. ; \
+	done
+	touch pagelist
+
+#	Find bad pathname references.
+badpaths: pagelist bin/hier 
+	-for i in `cat tmp/$$i.pagelist` ; do rm -f tmp/$$i.badpaths ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; \
+		do (	echo "	$$j" ; grep / $$j | tr ' ' '\012' \
+				| grep '^/' | sed -e 's/[^a-zA-Z0-9]*$$//' \
+				-e 's/\\fI.*//' | sort -u | comm -23 - ../bin/hier \
+			) >> ../tmp/$$i.badpaths ; \
+		done ; cd .. ;  \
+	done ; touch badpaths
+
+bin/hier:
+	cd bin ; sccs edit -s hier
+	cd /proto ; find . -name '*' -print | sed s/^\.// \
+		> /usr/src/man/bin/hier
+
+#	Find bad man page references. (needs to get self-referents)
+badpgrefs: pagelist
+	-for i in $(DIRS) ; do rm -f tmp/$$i.badpgrefs ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; \
+		do  (	echo "	$$j" ; grep '^\.BR.*([1-8]' $$j \
+				| sed -e 's/\.BR *//' -e 's/  *//g' -e 's/).*$$/)/' \
+				| sort -u | comm -23 - ../tmp/print.all \
+			) >> ../tmp/$$i.badpgrefs ; \
+		done ;  cd .. ; \
+	done ; touch badpgrefs
+
+#	Find bad title references.
+titles: pagelist
+	-for i in $(DIRS) ; do rm -f tmp/$$i.titles ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; do \
+		(	echo "	$$j" ; \
+			egrep '^\.I[^XP].*[A-Z]|^[^.].*fI[A-Z].* .*fP|^[A-Z][^.]*[A-Z]' \
+			$$j | egrep -v 'System V|Sun-|Sun386|[[]|' \
+		) >> ../tmp/$$i.titles ; \
+		done ;  cd .. ; \
+	done ; touch titles
+
+#	Find pages with no index entries.
+no.ix: pagelist
+	-for i in $(DIRS) ; do rm -f tmp/$$i.no.ix ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; do \
+			awk '/^.IX/ { exit(1) }' $$j && echo $$j >> ../tmp/$$i.no.ix ; \
+		done ;  cd .. ; \
+	done ; touch no.ix
+
+#	Find bad NAME lines (still needs some awk to get lines with no '\-')
+badnames: pagelist
+	-for i in $(DIRS) ; do rm -f tmp/$$i.badnames ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; \
+		do	(	echo "	$$j" ; \
+				awk '/^\.SH.*NAME/,/^\.SH [^N]/ { if ($$1 !~ /^\.SH/) \
+					print $0 ; i++ } END { if (i > 3) \
+					print "line breaks" \
+				}' $$j | egrep '\\[fsnc|^]|^\.|line breaks|bad dash' \
+			) >> ../tmp/$$i.badnames ; \
+		done ;  cd .. ; \
+	done ;  touch badnames
+
+#	Find bad TH lines and ']W' string defs
+badhf: pagelist
+	-for i in $(DIRS) ; do rm -f tmp/$$i.badhf ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; \
+		do	(	echo "	$$j" ; \
+				awk 'BEGIN {FS="\""} /^\.TH/ { \
+					F1 = split($$1,F," ") ; \
+					F2 = split($$2,F," ") ; \
+					F3 = split($$3,F," ") ; \
+					if ( NF != 3 || F1 != 3 || F2 != 3 || F3 != 0 ) \
+						print $$0 \
+				}' $$j ; \
+				grep -n '\.nr.*]W' $$j \
+			) >> ../tmp/$$i.badhf ; \
+		done ;  cd .. ; \
+	done ;  touch badhf
+
+#	Run spell on the man pages.
+spell: pagelist ../bin/spell.ok
+	-for i in $(DIRS) ; do rm -f tmp/$$i.spell ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; \
+		do	(	echo "	$$j" ; spell $$j | sort \
+				| comm -23 - ../bin/spell.ok  \
+			) >> ../tmp/$$i.spell ; \
+		done ;  cd .. ; \
+	done ; sed '/^	/d' tmp/man?.spell | sort -u \
+		> bin/spell.new ; touch spell
+	echo "# be sure to edit ../bin/spell.new and merge it with spell.ok"
+
+#	Find bad troff calls.
+badtroff: pagelist
+	-for i in $(DIRS) ; do rm -f tmp/$$i.badtroff ; \
+		cd $$i ; for j in `cat ../tmp/$$i.pagelist` ; \
+		do  (	echo "	$$j" ; egrep \
+			'\\\\|^.nr|^.ds|^.so|^.tr|^.cs|^.na|^.ad|^.bp|^.de|^.ig' $$j ; \
+				tail -1 $$j | awk '/^\.[ILT]P/ {print $0 " on last line"}' \
+			) >> ../tmp/$$i.badtroff ; \
+		done ;  cd .. ; \
+	done ; touch badtroff
+
+# -------------------------
+#	List pages that have preprocessing macros in them.
+pps: pagelist
+	grep -l ".TS" `sed 's/^/man?/' pagelist` > tmp/Tbl.list
+	grep -l ".EQ" `sed 's/^/man?/' pagelist` > tmp/Eqn.list
+
+#	Find commands and files for which there is no man page.
+nopage:
+	cd /proto/usr/bin ; ls -R | sort -u > /tmp/commands
+	cd /usr/src/man/man1 ; for i in `cat /tmp/commands` ; \
+	do \
+		echo -n $$i "	" >> ../tmp/commands.missing ; \
+		ls $${i}* >> ../tmp/commands.missing 2>>&1 ; \
+	done
+	cd /proto/usr/etc ; ls -R | sort -u > /tmp/maint
+	cd /usr/src/man/man8 ; for i in `cat /tmp/maint` ; \
+	do \
+		echo -n $$i "	" >> ../tmp/maint.missing ; \
+		ls $${i}* >> ../tmp/maint.missing 2>>&1 ; \
+	done
+	cd /proto/etc ; ls -R | sort -u > /tmp/sysfiles
+	cd /usr/src/man/man5 ; for i in `cat /tmp/sysfiles` ; \
+	do \
+		echo -n $$i "	" >> ../tmp/sysfiles.missing ; \
+		ls $${i}* >> ../tmp/sysfiles.missing 2>>&1 ; \
+	done
+	cd /proto/usr/games ; ls -R | sort -u > /tmp/games
+	cd /proto/usr/demo ; ls -R | sort -u >> /tmp/games
+	cd /usr/src/man/man6 ; for i in `cat /tmp/games` ; \
+	do \
+		echo -n $$i "	" >> ../tmp/games.missing ; \
+		ls $${i}* >> ../tmp/games.missing 2>>&1 ; \
+	done
+
+#	Find all title references by man page.
+titles:
+
+#	Build list of current printed pages.
+#pages: Pages.list
+#Pages.list
+#	This won't be up to date if you haven't done `changes'.
+#	-(	for i in $(DIRS) ; do cd $$i ; $(MAKE) showprint ; done \
+#	) | sed -e '/_functions/d' -e '/LASTPAGE/d' -e '/_builtins/d' \
+#	> Pages.list 

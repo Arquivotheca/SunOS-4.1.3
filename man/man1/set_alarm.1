@@ -1,0 +1,133 @@
+.\" @(#)set_alarm.1 1.1 92/07/30 SMI; 
+.TH SET_ALARM 1 "30 September 1989"
+.SH NAME
+set_alarm, get_alarm, ring_alarm \- SunView programmable alarms
+.SH SYNOPSIS
+.LP
+.B set_alarm
+[
+.B \-b
+.I number
+] 
+[
+.B \-f
+.I number
+] 
+[ 
+.B \-d
+.I duration
+]
+.LP
+.B get_alarm
+.LP
+.B ring_alarm
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I SunView User's
+software installation option.
+Refer to
+.TX INSTALL
+for more information on how to 
+install optional software.
+.SH DESCRIPTION
+.IX "set_alarm" "" "\fLset_alarm\fR \(em SunView programmable alarms"
+.IX "get_alarm" "" "\fLset_alarm\fR \(em SunView programmable alarms"
+.IX "ring_alarm" "" "\fLset_alarm\fR \(em SunView programmable alarms"
+.IX "programmable alarms" "" "SunView programmable alarms \(em \fLset_alarm\fR"
+.LP
+.B set_alarm
+sets the
+.SB WINDOW_ALARM
+environment variable according to the options specified.
+.LP
+.B get_alarm
+returns the setting of
+.SB WINDOW_ALARM
+in the form:
+.IP
+.BI \s-1WINDOW_ALARM\s0= setting
+.LP
+.B ring_alarm
+performs the actual beeping and flashing of the alarm.
+Note: the
+occurrence of the alarm is controlled by the 
+.B SunView/Visible_Bell
+and
+.B SunView/Audible_Bell
+settings in
+.BR defaultsedit (1).
+If either of these is disabled,
+the respective feature of the alarm will not occur,
+regardless of how it is specified by 
+.BR \s-1WINDOW_ALARM\s0 .
+.LP
+In the C shell,
+.B set_alarm
+echoes the following command to set the
+.SB WINDOW_ALARM
+environment variable:
+.IP
+.BI "set noglob;setenv \s-1WINDOW_ALARM\s0 " setting ";unset noglob;"
+.LP
+In the Bourne shell,
+.B set_alarm
+echos the following:
+.IP
+.BI "export \s-1WINDOW_ALARM;WINDOW_ALARM\s0=" setting ;
+.LP
+Consequently, 
+.B set_alarm
+is should be used as follows:
+.IP
+.BI "eval `set_alarm \fR[" options\fR]\fB`
+.SH OPTIONS
+.TP 15
+.BI \-b " number"
+Specify the number of beeps.
+The default is 1.
+.TP
+.BI \-f " number"
+Specify the number of flashes.
+The default is 1.
+.TP
+.BI \-d " duration"
+Specify the duration of the beep in milliseconds.
+The default is 1000.
+.SH ENVIRONMENT
+.LP
+The SunView programmable alarms use the
+.SB WINDOW_ALARM
+environment variable to define the characteristics of the alarm.
+The variable is set with a string argument of the following form:
+.IP
+.BI :beeps= b :flashes= f :dur= t\fB: 
+.SH SEE ALSO
+.BR csh (1),
+.BR defaultsedit (1),
+.BR sh(1)
+.LP
+.TX SVBG
+.SH DIAGNOSTICS
+.TP
+.B "get_alarm:  the \s-1WINDOW_ALARM\s0 environment variable is \s-1NULL\s0."
+This message is self-explanatory.
+.TP
+.B "ring_alarm: \s-1WINDOW_ALARM\s0 is \s-1NULL\s0; using default values."
+.B set_alarm
+was not used to set values
+for the
+.SM WINDOW_ALARM
+environment variable.
+See
+.SM OPTIONS
+for default values.
+.TP
+.B "ring_alarm: \s-1WINDOW_ME\s0 not found"
+Attempted to ring the alarm when
+SunView is not running.
+.SH BUGS and LIMITATIONS
+.LP
+The user must be running SunView 
+in order to ring the alarm; consequently,
+the alarms cannot be used with Open Windows.

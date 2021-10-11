@@ -1,0 +1,223 @@
+.\" @(#)su.1v 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SU 1V "21 September 1989"
+.SH NAME
+su \- super-user, temporarily switch to a new user ID
+.SH SYNOPSIS
+.B su
+[
+.B \-
+]
+[
+.B \-f
+]
+[
+.I username
+[
+.IR arg .\|.\|.
+]
+]
+.SH SYSTEM V SYNOPSIS
+.B su
+[
+.B \-
+]
+[
+.I username
+[
+.IR arg .\|.\|.
+]
+]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "su command"  ""  "\fLsu\fP \(em substitute user id"
+.IX  "substitute user id \(em \fLsu\fP"
+.IX  "super-user command"  ""  "super-user command  \(em \fLsu\fP"
+.IX  "user ID"  "substitute \(em \fLsu\fP"
+.LP
+.B su
+creates a new shell process that has the user
+.SM ID
+for the specified
+.I username
+as its real and effective user
+.SM ID\s0.
+.B su
+asks for the password, just as if you were logging in as
+.IR username ,
+and, if the password is given, changes the real and effective user
+.SM ID\s0s
+and group
+.SM ID\s0s
+and group set to those of
+.I username
+and invokes
+the shell specified in the password file for that
+.IR username ,
+without
+changing the current directory.
+The user environment is thus unchanged except for
+.SB HOME
+and
+.BR \s-1SHELL\s0 ,
+which are taken from the password file
+for the user being substituted (see
+.BR environ (5V)).
+If
+.I username
+is not
+.BR root ,
+.SB USER
+is changed to
+.IR username .
+The new user
+.SM ID
+stays in force until the shell exits.
+.LP
+The new shell will not be a login shell, so it will not read
+.IR username 's
+.B .login
+or
+.B .profile
+files, but it will read any other configuration files for that user
+(for instance, the
+.B .cshrc
+file for the C shell) just as if that user had invoked a new shell.
+.LP
+If no
+.I username
+is specified,
+.B root
+is assumed.  If the
+.B wheel
+group (group 0) does not contain a null user
+list and has members, only they can
+.B su
+to
+.BR root ,
+even with the root password.
+To remind the super-user of his responsibilities,
+the shell substitutes
+.RB ` # '
+for
+.RB ' $ '
+or
+.RB ' % '
+in its 
+usual prompt (except if you will be running 
+.BR sh (1)
+and 
+.SB PS1
+is set - 
+in this case, 
+the prompt will not be modified).
+If
+.IR arg s
+are given,
+they are passed to
+.IR username 's
+shell.
+.LP
+Any additional arguments given on the command line are
+passed to the program invoked as the shell.
+When using programs like
+.BR sh (1)
+and
+.BR csh (1),
+an
+.I arg
+of the form
+.B \-c
+.I string
+executes
+.I string
+via the shell.
+.SH OPTIONS
+.TP 15
+.B \-
+Perform a complete login.
+Remove all variables from the environment except for
+.BR \s-1TERM\s0 ,
+set
+.SB USER
+to
+.IR username ,
+set
+.SB HOME
+and
+.SB SHELL
+as specified above, set
+.SB PATH
+to
+.BR :/usr/ucb:/bin:/usr/bin ,
+change directories to
+.IR username 's
+home directory, and tell the shell to read
+.IR username 's
+.B \&.login
+or
+.B \&.profile
+file.
+.TP
+.B \-f
+Perform a fast
+.B su
+by passing the
+.B \-f
+flag to the shell.  This flag is only meant for use with the C shell; it will
+prevent the C shell from reading
+.IR username 's
+.B \&.cshrc
+file.
+If it is used with the Bourne shell,
+it will disable filename generation.
+.SH FILES
+.PD 0
+.TP 20
+.B \&.cshrc
+.TP
+.B \&.login
+.TP
+.B \&.profile
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR login (1),
+.BR sh (1),
+.BR environ (5V)
+.SH NOTES
+.LP
+.B su
+does not accept 8-bit user
+.SM ID\s0s.
+See
+.BR login (1)
+for explanations about why 
+8-bit
+.B login
+names are not acceptable.
+.SH BUGS
+.LP
+.B su
+fails when run from within a subdirectory of a directory that
+.I username
+either cannot search, or cannot read (that is,
+.I username
+does not have both read and execute permission).
+.LP
+.B su
+fails to reset the user
+.SM ID
+to root when the current working
+directory is in an
+.SM NFS\s0-mounted
+file system, and does not
+have its search permission set for \*(lqother\*(rq users.

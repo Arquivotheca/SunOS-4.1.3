@@ -1,0 +1,181 @@
+'\" t
+.\" @(#)ugid_alloc.range.5 1.1 92/07/30 SMI
+.TH UGID_ALLOC.RANGE 5 "25 September 1989"
+.SH NAME
+ugid_alloc.range \- range of user IDs and group IDs to allocate
+.SH SYNOPSIS 
+.B /etc/ugid_alloc.range
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ugid_alloc.range file" "" "user and group ID range specification file"
+.LP
+The
+.B /etc/ugid_alloc.range
+file, if it exists on the
+Network Information Service
+(\s-1NIS\s0)
+master of the
+.B passwd.byuid
+map (or the
+.B group.bygid
+map for group
+.SM ID\s0s),
+specifies the user
+.SM ID\s0s
+and group
+.SM ID\s0s
+that can be allocated for the local
+.SM NIS
+domain by the
+.BR uid_allocd (8C)
+daemons.
+If the file does not exist, user
+.SM ID\s0s
+or group
+.SM ID\s0s
+may be allocated beginning at 100 and ending at 60,000;
+no user
+.SM ID\s0s
+or group
+.SM ID\s0s
+are allocated out of that range in any case.
+If the local
+.SM NIS 
+domain is not listed in this file, no user
+.SM ID\s0s
+or group
+.SM ID\s0s
+will be allocated.
+Otherwise, this file specifies ranges of user
+.SM ID\s0s
+or group
+.SM ID\s0s
+that may be allocated.
+The different
+.SM NIS
+domains on a network can use identical copies of
+this file.
+.LP
+If a network has multiple
+.SM NIS
+domains, each one will typically
+use ranges for its user
+.SM ID\s0s
+and group
+.SM ID\s0s
+that do not overlap with the other
+.SM NIS
+domains, guaranteeing that user
+.SM ID\s0s
+and group
+.SM ID\s0s
+are unique throughout the network.
+Without guarantees of user
+.SM ID
+and group
+.SM ID
+uniqueness, network tools
+and services which rely on that uniqueness for security
+or authentication will not work as intended.
+Such services include
+.SM NFS\s0,
+except for the \*(lqSecure \s-1NFS\s0,\*(rq
+which has other solutions for security and authentication.
+Note: the required uniqueness could be guaranteed by
+mechanisms other than automatic allocation within manually
+configured ranges.
+For example, some sites can use a function
+of their employee numbers during manual user
+.SM ID
+allocation, and coordinate group
+.SM ID
+assignment verbally.
+.LP
+This file can contain blank lines.
+Comments begin with a
+.RB ` # '
+character and extend to the end of the current line.
+The first token on the line is an
+.SM NIS
+domain name.
+It is separated from the second token by white space (\s-1SPACE
+or 
+.SM TAB
+characters).
+The second token is either
+.I user
+or
+.IR group ,
+indicating that the line specifies user
+.SM ID
+or group
+.SM ID
+ranges, respectively.
+The third token is a comma-separated list of user or group
+.SM ID
+ranges in that domain.
+These ranges take two forms:
+a single number specifies just that 
+.SM ID\s0,
+and two numbers separated by a dash specify all
+.SM ID\s0s
+starting at the first number and ending with the second.
+.LP
+For example, the following file would direct that the manufacturing
+department at a particular company use user
+.SM ID\s0s
+from 700 to 999 or
+1200 to 1499.
+Accounts created by tools in the
+.SM NIS
+domain for manufacturing would use a user
+.SM ID
+in those ranges, and those user accounts could safely
+be added to one of the other
+.SM NIS
+domains if desired (by manually transferring
+.SM NIS
+map data between the domains).
+Group
+.SM ID\s0s
+are allocated only within the administration domain.
+.LP
+.RS
+.ft B
+.nf
+# Three departments share our site's network, and each has its
+# own Ethernet and master server connected with \s-1IP\s0 routers.
+# This file sets the user \s-1ID\s0 ranges assigned to each department.
+# Groups are defined by the administration group only.
+.fi
+.ft P
+.TS
+lfB lfB lfB .
+YP.admin.company.com	user	500-699
+YP.manufacturing.company.com	user	700-999
+YP.engineering.company.com	user	100-499,1000-1199
+YP.manufacturing.company.com	user	1200-1499
+YP.admin.company.com	group	100-60000
+.TE
+.RE
+.SH "SEE ALSO"
+.BR passwd (5),
+.BR group (5),
+.BR uid_allocd (8C)
+.SH BUGS
+.LP
+There is a limit of forty ranges for each domain;
+more ranges are silently ignored.
+.br 
+.ne 4
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

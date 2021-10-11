@@ -1,0 +1,133 @@
+.\" @(#)gaintool.6 1.1 92/07/30 SMI; new for 4.1
+.TH GAINTOOL 6 "15 January 1990"
+.SH NAME
+gaintool \- audio control panel
+.SH SYNOPSIS
+.B gaintool
+.SH AVAILABILITY
+.LP
+This command is only available with the
+.I Demos
+installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "gaintool" "" "\fLgaintool\fR \(em audio control panel" ""
+.IX "audio" "control panel" "audio" "control panel \(em \fLgaintool\fR"
+.LP
+.B gaintool
+is a SunView demonstration program that controls various characteristics
+of the
+.SM SPARC\s0station 1
+audio device,
+see
+.BR audio (4S).
+Operations performed by
+.B gaintool
+affect all audio programs;
+for instance, adjusting the
+.B Play Volume
+instantly changes the output gain, regardless of which program is playing.
+.B gaintool
+also detects audio state changes made by other programs,
+and updates its display accordingly, keeping
+.B gaintool
+in sync with the current device configuration.
+.LP
+.B gaintool
+demonstrates an important principle involved in the integration of
+audio in the desktop environment:
+by enabling global control of important
+characteristics, it is not necessary for every application to
+provide an interface for these parameters.
+For instance, since audio output
+may be paused from the control panel, it is not strictly necessary that
+output applications display a
+.B Pause
+button of their own.
+However, such applications may detect that audio
+output has been paused, and take appropriate action.
+.SS Control Panel
+.TP
+.B "Play Volume"
+This slider adjusts the output volume.
+Volume levels between 0 and 100 may be selected, where 0 represents
+infinite attenuation and 100 is maximum gain.
+.TP
+.B "Record Volume"
+This slider adjusts the recording gain level in the range 0 to 100.
+.TP
+.B "Monitor Volume"
+This slider adjusts the monitor gain level in the range 0 to 100.
+Monitor gain controls the amount of audio input signal that is
+fed through to the output port.
+For instance, if an audio source
+(such as a radio or
+.SM CD\s0-player)
+is connected directly to the input port,
+the input signal may be monitored
+through either the built-in speaker or the headphone jack.
+.TP
+.B Output
+This selector switches the audio output port between
+the built-in speaker and the external headphone jack.
+.TP
+.B "Pause Play"
+This button may be used to suspend and resume audio output.
+If audio output is in progress when
+.B Pause
+is clicked, it is stopped immediately and subsequent output data remains
+queued.
+The button then switches to a
+.B Resume
+button that, when clicked, resumes audio output at the point that
+it was suspended.
+.IP
+If no process has the device open for output when
+.B Pause
+is clicked,
+.B gaintool
+holds the device open itself, thereby denying other processes output access.
+Audio programs that simply open and write to the audio device will
+typically be suspended when they attempt to open the device.
+Programs that asynchronously poll the device will discover that it is
+\*(lqbusy\*(rq and may take appropriate action.
+.SS "Audio Device Status Panel"
+.IP
+Pressing the
+.SB PROPS
+(L3) key brings up a status panel that shows the current state
+with the
+its display accordingly,
+audio applications.
+Selecting \*(lqDone\*(rq from the panel menu
+(or pressing the (L7) key) removes the panel.
+.IP
+Ordinarily, the device status is updated only when a
+.SB SIGPOLL
+signal is delivered to
+.B gaintool 
+(see
+.BR audio (4S)).
+Because of this, the
+.B Active
+and 
+.B Samples
+indicators are not necessarily kept up-to-date.
+However, when the mouse is positioned over the panel, status is
+continually updated.
+.SH SEE ALSO
+.BR audio (4S),
+.BR soundtool (6)
+.SH BUGS
+.LP
+.B Record Volume
+should be controlled by a separate panel that also provides automatic
+gain level adjustment capabilities.
+.SH WARNINGS
+.LP
+This program is furnished on an
+.I "as is"
+basis as a demonstration
+of audio applications programming.

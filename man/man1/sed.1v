@@ -1,0 +1,631 @@
+.\" @(#)sed.1v 1.1 92/07/30 SMI; from UCB 4.3 and S5R2
+.TH SED 1V "3 February 1989"
+.SH NAME
+sed \- stream editor
+.SH SYNOPSIS
+.LP
+.B sed
+[
+.B \-n
+] [
+.BI \-e " script"
+] [
+.BI \-f " sfilename"
+] [
+.IR filename " ].\|.\|."
+.SH SYSTEM V SYNOPSIS
+.LP
+.B /usr/5bin/sed
+[
+.B \-n
+] [
+.BI \-e " script"
+] [
+.BI \-f " sfilename"
+] [
+.IR filename " ].\|.\|."
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLsed\fR"
+.IX  "sed command"  ""  "\fLsed\fP \(em stream editor"
+.IX  "stream editor"  ""  "stream editor \(em \fLsed\fP"
+.IX  "text editing"  sed   ""  "\fLsed\fP \(em stream editor"
+.IX  "editing text"  sed   ""  "\fLsed\fP \(em stream editor"
+.IX  display "selected lines from file \(em \fLsed\fP"
+.LP
+.B sed
+copies the 
+.IR filename s
+(standard input default) to the
+standard output, edited according to a script of commands.
+.SH OPTIONS
+.TP 15
+.B \-n
+Suppress the default output.
+.TP
+.BI \-e " script"
+.I script
+is an edit command for
+.BR sed .
+If there is just one
+.B \-e
+option and no
+.B \-f 
+options, the
+.B \-e
+flag may be omitted.
+.TP
+.BI \-f " sfilename"
+Take the script from
+.IR sfilename .
+.SH USAGE
+.SS "sed Scripts"
+.LP
+.B sed " scripts"
+consist of editing commands, one per line, of the
+following form:
+.IP
+[ \fIaddress\fR [\fB,\fR \fIaddress\fR ] ] \fIfunction\fR [ \fIarguments\fR ]
+.LP
+In normal operation
+.B sed
+cyclically copies a line of input into a
+\fIpattern space\fP (unless there is something left after a
+.B D
+command),
+sequentially applies all commands with 
+.I addresses
+matching that pattern
+space until reaching the end of the script, copies the pattern space
+to the standard output (except under
+.BR \-n ),
+and finally, deletes the pattern space.
+.LP
+Some commands use a
+.I hold space
+to save all or part of the pattern space
+for subsequent retrieval.
+.LP
+An 
+.I address
+is either:
+.IP
+a decimal number linecount, which is cumulative across input files;
+.IP
+a
+.BR $ ,
+which addresses the last input line;
+.IP
+or a context address, which is a
+.BI / "regular expression" /
+in the style of
+.BR ed (1);
+.LP
+with the following exceptions:
+.RS
+.TP
+\fB\e\fP\fI?\fPRE\fI?\fP
+In a context address, the construction
+.I \e ?regular expression?\fR,
+where
+.I ?
+is any character,
+is identical to
+.BI / "regular expression" /\fR.
+Note: in the context address
+.BR \exabc\exdefx ,
+the second
+.B x
+stands for itself, so that the
+regular expression is
+.BR abcxdef .
+.TP
+.B \en
+Matches a 
+.SM NEWLINE 
+embedded in the pattern space.
+.TP
+.B .
+Matches any character except the 
+.SM NEWLINE 
+ending the pattern space.
+.TP
+.I null
+A command line with no address selects every pattern space.
+.TP
+.I address
+Selects each pattern space that matches.
+.br
+.ne 5
+.TP
+.I address1 ,\|address2
+Selects the inclusive range from the first
+pattern space matching 
+.I addrress1
+to the first pattern space matching 
+.IR address2 .
+Selects only one line if 
+.I address1
+is greater than or equal to 
+.IR address2 .
+.RE
+.br
+.ne 10
+.SS Comments
+If the first nonwhite character in a line is a 
+.RB ` # '
+(pound sign),
+.B sed
+treats that line as a comment, and ignores it.  If, however, the
+first such line is of the form:
+.IP
+.B #n
+.LP
+.B sed
+runs as if the 
+.B \-n
+flag were specified.
+.SS Functions
+The maximum number of permissible addresses
+for each function is indicated in parentheses in the list below.
+.LP
+An argument denoted 
+.I text
+consists of one or more lines,
+all but the last of which end with
+.B \e
+to hide the 
+.SM NEWLINE\s0.
+Backslashes in text are treated like backslashes in the replacement string
+of an
+.B s
+command, and may be used to protect initial 
+.SM SPACE
+and
+.SM TAB
+characters
+against the stripping that is done on every script line.
+.LP
+An argument denoted 
+.I rfilename
+or 
+.I wfilename
+must terminate the command
+line and must be preceded by exactly one 
+.SM SPACE\s0. 
+Each 
+.I wfilename
+is created before processing begins.  There can be at most 10 distinct
+.I wfilename
+arguments.
+.TP 12
+.RB (1) a\e
+.PD 0
+.TP
+.I text
+.PD
+Append: place 
+.I text
+on the output before reading the next input line.
+.TP
+.RI (2)\|\fBb\fP " label"
+Branch to the
+.RB ` : '
+command bearing the
+.IR label .
+Branch to the end of the script if 
+.I label
+is empty.
+.TP
+.PD 0
+(2)\|\fBc\e\fP
+.TP
+.I text
+.PD
+Change: delete the pattern space.
+With 0 or 1 address or at the end of a 2 address range, place 
+.I text
+on the output.  Start the next cycle.
+.TP
+(2)\|\fBd\fP
+Delete the pattern space.  Start the next cycle.
+.TP
+(2)\|\fBD\fP
+Delete the initial segment of the 
+pattern space through the first 
+.SM NEWLINE\s0.
+Start the next cycle.
+.TP
+(2)\|\fBg\fP
+Replace the contents of the pattern space by the contents of the hold space.
+.TP
+(2)\|\fBG\fP
+Append the contents of the hold space to the pattern space.
+.TP
+(2)\|\fBh\fP
+Replace the contents of the hold space by the contents of the pattern space.
+.TP
+(2)\|\fBH\fP
+Append the contents of the pattern space to the hold space.
+.TP
+.PD 0
+(1)\|\fBi\e\fP
+.TP
+.I text
+.PD
+Insert: place 
+.I text
+on the standard output.
+.TP
+(2)\|\fBl\fP
+List the pattern space on the standard output in an
+unambiguous form.
+Non-printing characters are spelled in two digit
+.SM ASCII
+and long lines are folded.
+.br
+.ne 3
+.TP
+(2)\|\fBn\fP
+Copy the pattern space to the standard output.
+Replace the pattern space with the next line of input.
+.TP
+(2)\|\fBN\fP
+Append the next line of input to the pattern space
+with an embedded newline.  (The current line number changes.)
+.TP
+(2)\|\fBp\fP
+Print: copy the pattern space to the standard output.
+.TP
+(2)\|\fBP\fP
+Copy the initial segment of the pattern space through
+the first 
+.SM NEWLINE 
+to the standard output.
+.TP
+(1)\|\fBq\fP
+Quit: branch to the end of the script.  Do not start a new cycle.
+.TP
+.RI (2)\|\fBr\fP " rfilename"
+Read the contents of
+.IR rfilename .
+Place them on the output before reading
+the next input line.
+.br
+.ne 14
+.TP
+.RI (2)\|\fBs\fP /regular\ expression/replacement/flags
+Substitute the 
+.I replacement
+string for instances of the
+.I "regular expression"
+in the pattern space.
+Any character may be used instead of
+.RB ` / '.
+For a fuller description see
+.BR ed (1).
+.I flags
+is zero or more of:
+.RS
+.TP 12
+.I n
+\fIn\fP= 1 \- 512.
+Substitute for just the 
+.IR n th 
+occurrence of the
+.IR regular expression .
+.TP
+.B g
+Global: substitute for all nonoverlapping instances of the
+.I "regular expression"
+rather than just the first one.
+.TP
+.B p
+Print the pattern space if a replacement was made.
+.TP
+.BI w " wfilename"
+Write: append the pattern space to 
+.I wfilename
+if a replacement was made.
+.RE
+.TP 12
+.RI (2)\|\fBt\fP " label"
+Test: branch to the
+.RB ` : '
+command bearing the 
+.I label
+if any
+substitutions have been made since the most recent
+reading of an input line or execution of a
+.BR t .
+If 
+.I label
+is empty, branch to the end of the script.
+.TP
+.RI (2)\|\fBw\fP " wfilename"
+Write: append the pattern space to
+.IR wfilename .
+.TP
+.RI (2)\|\fBx\fP
+Exchange the contents of the pattern and hold spaces.
+.TP
+.RI (2)\|\fBy\fP /string1/string2/
+Transform: replace all occurrences of characters in 
+.I string1
+with the corresponding character in 
+.IR string2 .  
+The lengths of
+.I string1
+and 
+.I string2
+must be equal.
+.TP
+.RI (2)\fB!\fP " function"
+Do not: apply the 
+.I function
+(or group, if 
+.I function
+is
+.RB ` { '\|)
+only to lines 
+.I not
+selected by the address(es).
+.TP
+.RI (0)\|\fB:\fP " label"
+This command does nothing; it bears a 
+.I label
+for
+.B b
+and
+.B t
+commands to branch to.
+Note: the maximum length of 
+.I label
+is seven characters.
+.TP
+(1)\|\fB=\fP
+Place the current line number on the standard output as a line.
+.TP
+(2)\|\fB{\fP
+Execute the following commands through a matching
+.RB ` } '
+only when the pattern space is selected.  Commands are separated by
+.RB ` ; '.
+.TP
+(0)\|
+An empty command is ignored.
+.SS System V sed Scripts
+Initial 
+.SM SPACE
+and
+.SM TAB
+characters are
+.I not
+stripped from text lines.
+.SH DIAGNOSTICS
+.TP
+.B Too many commands
+The command list contained more than 200 commands.
+.TP
+.B Too much command text
+The command list was too big for
+.B sed
+to handle.  Text in the
+.BR a ,
+.BR c ,
+and
+.B i
+commands, text read in by
+.B r
+commands, addresses, regular expressions and replacement strings in
+.B s
+commands, and translation tables in
+.B y
+commands all require
+.B sed
+to store data internally.
+.TP
+.B Command line too long
+A command line was longer than 4000 characters.
+.TP
+.B Too many line numbers
+More than 256 decimal number linecounts were specified as addresses in the
+command list.
+.TP
+.B Too many files in w commands
+More than 10 different files were specified in
+.B w
+commands or
+.B w
+options for
+.B s
+commands in the command list.
+.TP
+.B Too many labels
+More than 50 labels were specified in the command list.
+.br
+.ne 3
+.TP
+.B Unrecognized command
+A command was not one of the ones recognized by
+.BR sed .
+.TP
+.B Extra text at end of command
+A command had extra text after the end.
+.br
+.ne 4
+.TP
+.B Illegal line number
+An address was neither a decimal number linecount, a
+.BR $ ,
+nor a context address.
+.TP
+.B Space missing before filename
+There was no space between a
+.B r
+or
+.B w
+command, or the
+.B w
+option for a
+.B s
+command, and the filename specified for that command.
+.TP
+.B "Too many {'s"
+There were more
+.B {
+than
+.B }
+in the list of commands to be executed.
+.TP
+.B "Too many }'s"
+There were more
+.B }
+than
+.B {
+in the list of commands to be executed.
+.TP
+.B No addresses allowed
+A command that takes no addresses had an address specified.
+.TP
+.B Only one address allowed
+A command that takes one address had two addresses specified.
+.TP
+\fB\*(lq\edigit\*(rq\fP out of range
+The number in a
+.BI \e n
+item in a regular expression or a replacement string in a
+.B s
+command was greater than 9.
+.TP
+.B Bad number
+One of the endpoints in a range item in a regular expression (that is, an item
+of the form \fB{\fIn\fB}\fR or \fB{\fIn\fB,\fIm\fB}\fR) was not a number.
+.TP
+.B Range endpoint too large
+One of the endpoints in a range item in a regular expression was greater than
+255.
+.TP
+.B "More than 2 numbers given in \e{ \e}"
+More than two endpoints were given in a range expression.
+.TP
+.B } expected after \e
+A
+.B \e
+appeared in a range expression and was not followed by a
+.BR } .
+.br
+.ne 3
+.TP
+.B "First number exceeds second in \e{ \e}"
+The first endpoint in a range expression was greater than the second.
+.br
+.ne 3
+.TP
+.B Illegal or missing delimiter
+The delimiter at the end of a regular expression was absent.
+.TP
+.B \e( \e) imbalance
+There were more
+.B \e(
+than
+.BR \e) ,
+or more
+.B \e)
+than
+.BR \e( ,
+in a regular expression.
+.TP
+.B [ ] imbalance
+There were more
+.B [
+than
+.BR ] ,
+or more
+.B ]
+than
+.BR [ ,
+in a regular expression.
+.TP
+.B First RE may not be null
+The first regular expression in an address or in a
+.B s
+command was null (empty).
+.TP
+.B Ending delimiter missing on substitution
+The ending delimiter in a
+.B s
+command was absent.
+.TP
+.B Ending delimiter missing on string
+The ending delimiter in a
+.B y
+command was absent.
+.TP
+.B Transform strings not the same size
+The two strings in a
+.B y
+command were not the same size.
+.TP
+.B Suffix too large - 512 max
+The suffix in a
+.B s
+command, specifying which occurrence of the regular expression should be
+replaced, was greater than 512.
+.TP
+.B Label too long
+A label in a command was longer than 8 characters.
+.TP
+.B Duplicate labels
+The same label was specified by more than one
+.B :
+command.
+.TP
+.B File name too long
+The filename specified in a
+.B r
+or
+.B w
+command, or in the
+.B w
+option for a
+.B s
+command, was longer than 1024 characters.
+.TP
+.B Output line too long.
+An output line was longer than 4000 characters long.
+.TP
+.BI "Too many appends or reads after line" " n"
+More than 20
+.B a
+or
+.B r
+commands were to be executed for line
+.IR n .
+.TP
+.B Hold space overflowed.
+More than 4000 characters were to be stored in the
+.IR "hold space" .
+.SH SEE ALSO
+.BR awk (1),
+.BR ed (1),
+.BR grep (1V),
+.BR lex (1)
+.LP
+.TX TEXT
+.SH BUGS
+There is a combined limit of 200 
+.B \-e
+and
+.B \-f
+arguments.  In addition, there are various internal size limits which,
+in rare cases, may overflow.  To overcome these limitations, either
+combine or break out scripts, or use a pipeline of
+.B sed
+commands.
+

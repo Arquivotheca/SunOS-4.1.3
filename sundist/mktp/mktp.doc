@@ -1,0 +1,469 @@
+.ds CF Version 1.1 of \\*(MO \\n(dy, 19\\n(yr OBSOLETE
+.TL 
+\fImktp\fR - a tool for making software distributions
+.AU "5-44" ????
+Matthew Jacob
+.sp
+\fR\s24\(su\s0
+.sp
+Sun Microsystems, Inc.
+.br
+2550 Garcia Ave.
+.br
+Mountain View, California, 94043
+.SH
+Introduction
+.PP
+With SunOS, release 4.0, the installation tool \fIsetup\fR
+changed and required a different tape format with an XDR\u\s-21\s0\d
+.FS 1.
+XDR - short for eXternal Data Representation
+.FE
+table
+of contents. \fImktp\fR is a set of programs that can create
+tapes in this format. Moreover, it is also intended to be a general
+tool for helping organize software distributions. This paper is
+a description of both the design goals and the implementation of
+\fImktp\fR. The detailed description of the XDR table of contents
+structures are are not covered here, but in a separate paper\u\s-22\s0\d.
+.FS 2.
+Matthew Jacob, "New Table of Contents Structure For Release Tapes",
+Sun Internal Memorandum, March 1987
+.FE
+.SH
+Design Goals
+.PP
+The design goals for \fImktp\fR were initially quite simple: to make
+a tape that the new \fIsetup\fR program could read the new XDR table
+of contents format. From that beginning \fImktp\fR has grown into
+a mostly complete set of tools for making software distributions.
+The final design goals settled into:
+.IP \(bu
+Using as much as possible screen-oriented features, but not to use
+any sun-specific window features (hence limited to \fItermcap(5)\fR
+capabilities).
+.IP \(bu
+Like the XDR table of contents itself, \fImktp\fR only knows about
+large \fBfiles\fR which may be tar files, standalone programs, and
+so on. The goals of not knowing the internal format of each file
+and not having any fixed way of making each file were considered important.
+.IP \(bu
+The process of making a software distribution can be broken up into
+several phases: 1) collecting information about the target distribution
+media, 2) collecting information about the files that are to go into
+the distribution, 3) estimating the size of each file as it would
+appear on the distribution medium, 4) given a particular distribution
+medium, finding the best fit of the files onto separate volumes, and
+finally, 5) making the distribution itself. The design of \fImktp\fR
+was to follow this separation of phases by having a driver program
+and several subprograms which would communicate through a common data file
+as to the progress toward making the distribution.
+.IP \(bu
+Because \fImktp\fR was not designed to know about the internal components
+of any distribution file, it also could not automatically determine
+any preferred location on the distribution medium for a file, or whether files
+needed to be duplicated at several places in the distribution
+(e.g., copyright notices). Therefore, a phase which allowed the editting
+of the table of contents was planned. This phase would also have
+the user find the 'best' fit for packing files onto the distribution
+media.
+.SH
+Overview
+.PP
+The \fImktp\fR utility is broken up into a driver program and several
+subprograms. Initially, \fImktp\fR reads a prototype description file.
+The general format of this prototype file is a header which names the
+distribution, names the device and kind for the distribution to be
+placed on, and then names entries that will be placed in the
+distribution. Each entry has various information describing itself
+which is to be passed through directly to an extraction program (e.g.,
+\fIsetup\fR), and a \fIcommand\fR, which is a \fIsh(1)\fR command for
+actually making the file in the desired format This \fIcommand\fR will
+package up the source data and send it to its standard output. The
+\fImktp\fR program will then pick that up through a pipe (see below for
+the input syntax details).
+From this prototype file \fImktp\fR produces an XDR format file which
+is then modified by several of the subprograms. The state of progress
+is watched by the driver program, which then presents a set of choices
+as to what can be done next. Ultimately, the last-phase program takes
+the information in the XDR file and creates the distribution on the
+distribution media.
+.SH
+Usage
+.LP
+\fImktp\fR is invoked simply by:
+.DS C
+\fBmktp proto-file\fR
+.DE
+where \fBproto-file\fR is the name of the prototype file. Based upon
+the existence of an XDR intermediate file, and a state word inside
+the XDR file, \fImktp\fR will present a screen of varying choices
+to you. Each choice will cause \fImktp\fR to either exit or to
+invoke a sub-program which will execute the associated phase (see below).
+The main program \fImktp\fR and the subprograms communicate information
+to each other through the intermediate XDR file, exec arguments and
+shell exit valuse. Past the initial parsing, the prototype file is not
+referred to, although when \fImktp\fR starts up, and
+the modification time of the XDR file is earlier than the prototype file,
+\fImktp\fR will recommend that you reparse the prototype file.
+.SH
+Phases
+.LP
+Each phase has a separate program to manage it.
+.IP Parsing 12
+This phase reads the prototype file, checks the syntax,
+and converts it to the XDR file.
+.IP Sizing 12
+This phase is where the entire table of contents, as read from
+the prototype file, is gone through. Each entry's associated
+command is run, but the resultant output is only counted by
+the sizing program, and then possibly rounded up to a distribution
+medium's record size. The purpose is to generate the size that
+that entry will have when actually put onto the distribution medium.
+.IP Fitting 12
+The purpose of this phase is two-fold: to perform an initial 'first-fit'
+of entries to volumes of the distribution media, and
+to generate 'fake' entries for the table of contents (and an
+ascii copy of it) at the head of each volume in the distribution.
+.IP Editting 12
+After sizing and fitting, this phase allows the user to move
+files around the distribution, duplicate, delete, copy, resize
+single entries. The table of contents is displayed on the screen,
+and each change made is shown along with a percentage utilization
+of each volume in the distribution.
+.IP Making 12
+The final phase is where the tapes are 'cut'. The XDR file is read, and
+choices are presented about which volume to make. The command
+associated with each entry is run again, but this time its output is
+sent through an auxillary program (\fItapeblock\fR in the case of
+tapes) which does the appropriate post processing necessary to writing to the
+distribution media. In the case of tapes, this consists of
+buffering up input to the blocking factor specified for the tape device.
+The last record of a file written to tape will, if necessary,
+be padded with nulls out to the device block size. Any time this phase
+encounters either an XDR table of contents entry (or its ascii copy),
+the program then does the actual generation of this data to be placed
+on the distribution media. At all other times, these entries exist
+only internally.
+.SH
+Prototype File Syntax
+.LP
+This file has a general form of:
+.TS
+center;
+l.
+Distribution Information
+*==================
+Entry Information
+*==================
+Entry Information
+.
+.
+.
+(etc.)
+.TE
+.PP
+A Comment line is introduced with a '\fB#\fR', e.g.
+.DS C
+# This is a Comment Line.
+.DE
+.PP
+Lines begining with '*' are taken to be the beginning
+of command tokens, or the separator token '*='.
+Command tokens are followed by the '='
+character, and then by zero or more user supplied strings,
+numbers, etc. The user supplied strings may \fBnot\fR spill over
+to the next line. Not all Command tokens require a user supplied value.
+.LP
+The following conventions will be observed below:
+.IP STRING 17
+means any appropriate string. Leading and trailing 'white' space
+(tabs and spaces) to a string will be discarded.
+.IP STRING-LIST 17
+is a STRING which will then
+be parsed into a list of strings. The separator
+tokens are tabs and spaces. These will not be
+included within strings.
+.IP SIZE 17
+means a number which may qualified by the trailing
+chars of 'mb' or  'kb' meaning to mean, resp., megabytes
+or kilobytes. No qualifier will have SIZE measured in bytes.
+.IP "{ A | B | C ...}" 17
+means that one of A, B, C, etc., must be specified.
+.LP
+The Distribution Information will be of the form:
+.TS
+center;
+l l.
+*Title=	STRING
+*Version=	STRING
+*Date=	STRING
+*Source=	STRING
+.TE
+Note that when I say STRING, I mean any STRING. It is up to the
+user to supply a sensible string. None of these strings are \fIrequired\fR
+by \fImktp\fR. That is, you may just specify:
+.TS
+center;
+l.
+*Title=
+*Version=
+*Date=
+*Source=
+.TE
+.LP
+Following Distribution Information is Target Information, which
+specifies the media type and location where you plan to put the
+distribution. All of this information is (obviously) required.
+The first command is the '*Device-Type' command:
+.DS C
+*Device-Type=	{cartridge SIZE | 9track FEET DENSITY }
+.DE
+Device-Type specifies the kind of output device
+For cartridge tapes, a SIZE of the tape (in terms
+of how many bytes it can store) needs to be specified.
+For nine-track (1/2" reel) tapes, reel size and density
+need to be specified: actual
+amount of storage will be determined by Device-block (see below).
+.LP
+Following the device type is the '*Device-Location' specifier.
+The Device-Location Command token specifies local devices or
+remote devices.  The remote qualifier needs to be followed by
+a hostname string\u\s-23\s0\d.
+.FS 3.
+The remote feature is not implemented yet.
+.FE
+.DS C
+*Device-Location=	{local |remote STRING}
+.DE
+.LP
+Following the device location is the
+Device-Name. This is the last component to the basic
+.UX
+pathname
+of the device. That is, /dev/st8 is specified as 'st8', /dev/mt01 is specified
+as 'mt01'. For all devices, it is assumed that a prepended 'r' specifies
+the 'Raw' interface, and that a prepended 'nr' for tape devices specifies
+the 'No Rewind, Raw' interface.
+.DS C
+*Device-Name=	STRING
+.DE
+.LP
+Following the device name is the
+Device-Block. This specifies the size at which to write
+to the output device.
+.DS C
+*Device-Block=	SIZE
+.DE
+.LP
+After the Device Block comes the per-entry information.
+Remember that each entry starts with the separator token:
+.DS C
+*=
+.DE
+The separator token can be any line that starts with a '*=': the
+rest of the line is discarded and may be considered as an alternate
+comment line.
+.LP
+Common to all types of entries are Name, Description (a long name),
+the \fItype\fR of file,
+and the \fIkind\fR of file it is. Description may be omitted. Name
+may also be omitted, but the behaviour of the editting program
+is not then guaranteed.
+.TS
+center;
+l l.
+*Name=	STRING
+*Description=	STRING
+*File-Type=	{tar | cpio | image}
+*File-Kind=	{amorphous | standalone | executable | installable | install-tool}
+.TE
+.LP
+The File-Type states (for an installation program) what format the file
+is in, which will be one of \fItar\fR, \fIcpio\fR or \fIimage\fR (which
+means byte-for-byte image). The File-Kind states (for an installation program
+as well as to \fImktp\fR) what the \fBintended use\fR of the
+file is. \fImktp\fR
+doesn't really care, but it needs to know, as each one
+of the file kinds requires different additional information.
+.LP
+If the File-Kind is \fBamorphous\fR, the following additional information
+will be required:
+.DS C
+Size=	SIZE
+.DE
+.LP
+If the File-Kind is \fBstandalone\fR or \fBexecutable\fR, the following will
+be required (although the Architectures list may be empty):
+.TS
+center;
+l l.
+*Architectures=	STRING-LIST
+*Size=	SIZE
+.TE
+.LP
+If the File-Kind is \fBinstallable\fR, the following will be required:
+.TS
+center;
+l l.
+*Architectures=	STRING-LIST
+*Depends-on=	STRING-LIST
+*Required=	{true | false}
+*Desirable=	{true | false}
+*Common=	{true | false}
+*Loadpoint=	STRING
+*Moveable=	{true | false}
+*Size=	SIZE
+*Pre-install=	STRING
+*Install=	STRING
+.TE
+Of the above command tokens, only Size, Required, Desirable, Common
+and Moveable must have a user-supplied value.
+.LP
+If the File-Kind is \fBinstall-tool\fR, the following will be required:
+.TS
+center;
+l l.
+*Belongs-to=	STRING-LIST
+*Loadpoint=	STRING
+*Moveable=	{true | false}
+*Size=	SIZE
+*Worksize=	SIZE
+.TE
+Only Moveable, Worksize and Size require user-supplied values.
+.LP
+After the above information is specified, for each
+entry, comes the token which specifies
+how to create the file itself. The command
+specified here will be fed to the Bourne Shell,
+and their purpose is to take the desired source
+data, format it into the desired format, and to
+send the data to the standard output, which
+will (ultimately) be a pipe to the actual device specified
+up at the head of the prototype file.
+.DS C
+*Command= STRING
+.DE
+For obvious reasons, you \fBshould\fR supply a value here,
+although \fImktp\fR will happily allow you to forget to do so,
+essentially specifying an entry in the table of contents that
+points of zero size; this could cause a fatal problem for some
+tape distributions because two file marks would occur in a row,
+implying end-of-tape.
+.SH
+Bugs and Limitations
+.LP
+There are quite a few known bugs and limitations (so sue me...).
+.IP \(bu
+When making distributions on 9-track tape, don't specify a device
+blocking factor greater than 10 kilobytes. The problem here is
+that Sun's standalone tape copy program gets very confused then.
+.IP \(bu
+This may be a feature, rather than a bug or limitation, but any
+attempts to try and make files of either different or variable
+records sizes on tapes can't be done (yet). This is because all
+the output from the Commands gets sent through to a program that
+writes a single specified size. This also has a strange
+side effect for small ascii image files (e.g., the ascii copy of
+the table of contents) written to cartridge tape with large
+record sizes: a couple hundred bytes of reasonable
+data, which is all there is of the table of contents, followed by
+the rest of the record size in null bytes. This may have dilatory
+effects on sed or awk.
+.IP \(bu
+I put in the design for use of remote tape drives, but never implemented
+it. It may never be implemented. Sun needs to figure out a more reasonable
+method of sharing tape drives across machines anyway.
+.IP \(bu
+There really isn't a consistent error logging method. The program
+that actually cuts the tapes does a good job of logging to a file,
+but the program that goes and does the initial sizing of the entries
+doesn't capture standard error in a log file.
+.IP \(bu
+The editting program is pretty limited, and has some serious pitfalls.
+The distribution is limited by the editting program in that the editting
+program will not run on a file where there are more than four distribution
+volumes or handle a situation where a volume has a number of entries
+greater than the number of lines on the screen minus four (e.g., for
+a Wyse terminal at 24 lines, no volume may have more than 20 entries).
+This needs to be fixed by someone.
+.IP \(bu
+The parser of the prototype file is pretty stupid, and is often
+no more informative of error than 'syntax error at line nn'.
+.SH
+Sample Prototype File
+.LP
+Here is a sample protytpe file:
+.LD
+#
+# mktp Prototype file for mktp itself
+#
+*Title= mktp program
+*Version= 1.0
+*Date= Sat Jun  6 17:22:02 PDT 1987
+*Source= Matt Jacob
+#
+# This release for cartridge tape..
+#
+*Device-Type= cartridge 20mb
+*Device-Location= local
+*Device-Name= st0
+*Device-Block= 100kb
+*================
+*Name= mktp
+*Description= mktp program source
+*File-Type= tar
+*File-Kind= installable
+#
+# This is an installable tool for all architectures
+# since it has to be compiled.
+#
+*Architectures= sun2 sun3 sun4 vax
+#
+# It doesn't depend upon another installable
+# file within THIS distribution.
+#
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+#
+# This is where the source will go...
+#
+*Loadpoint= /usr/src/mktp
+#
+# but we can put it where we like.
+# Must change the install tool below if we do, though....
+#
+*Moveable= true
+*Size= 977kb
+#
+# It doesn't require a pre-installation step
+#
+*Pre-install=
+#
+# but we will tell the installation program that we
+# have a installation step for it in this release
+#
+*Install= mktpinstall
+#
+# Command to go fetch the source.
+#
+*Command= cd /usr2/mjacob/projects/setup/mktp; tar cfFF - .
+*================
+*Name= mktpinstall
+*Description= install tool for mktp
+*File-Type= image
+*File-Kind= install-tool
+*Belongs-to= mktp
+*Loadpoint= /usr/tmp
+*Moveable= true
+*Size= 1kb
+*Worksize= 950kb
+#
+# Although this will likely make a file on the tape with a bunch
+# of trailing nulls, feeding it back to the sh(1) seems to not
+# cause any problems..
+#
+*Command= echo "mkdir /usr/src/mktp; cd /usr/src/mktp; make ROOT= install"
+.DE

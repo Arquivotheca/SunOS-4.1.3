@@ -1,0 +1,134 @@
+.\" @(#)gethostent.3n 1.1 92/07/30 SMI; from UCB 4.2 BSD
+.TH GETHOSTENT 3N "7 September 1988"
+.SH NAME
+gethostent, gethostbyaddr, gethostbyname, sethostent, endhostent \- get network host entry
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+.LP
+.ft B
+struct hostent *gethostent(\|)
+.LP
+.ft B
+struct hostent *gethostbyname(name)
+char *name;
+.LP
+.ft B
+struct hostent *gethostbyaddr(addr, len, type)
+char *addr;
+int len, type;
+.LP
+.ft B
+sethostent(stayopen)
+int stayopen
+endhostent(\|)
+.ft R
+.fi
+.IX  get "network host entry \(em \fLgethostent()\fR"
+.IX  "network host entry, get \(em \fLgethostent()\fR"
+.IX  host "get network entry \(em \fLgethostent()\fR"
+.IX  "gethostent()"  ""  "\fLgethostent()\fP \(em get network host entry"
+.IX  "gethostbyaddr()"  ""  "\fLgethostbyaddr()\fP \(em get network host entry"
+.IX  "gethostbyname()"  ""  "\fLgethostbyname()\fP \(em get network host entry"
+.IX  "sethostent()"  ""  "\fLsethostent()\fP \(em get network host entry"
+.IX  "endhostent()"  ""  "\fLendhostent()\fP \(em get network host entry"
+.SH DESCRIPTION
+.LP
+.BR gethostent ,
+.BR gethostbyname ,
+and
+.B gethostbyaddr(\|)
+each return a pointer to an object with the
+following structure
+containing the broken-out
+fields of a line in the network host data base,
+.BR /etc/hosts .
+In the case of
+.BR gethostbyaddr(\|) ,
+.I addr
+is a pointer to the binary format address of
+length
+.I len
+(not a character string).
+.RS
+.LP
+.nf
+.ft B
+struct	hostent {
+	char	*h_name;	/* official name of host */
+	char	**h_aliases;	/* alias list */
+	int	h_addrtype;	/* address type */
+	int	h_length;	/* length of address */
+	char	**h_addr_list;	/* list of addresses from name server */
+};
+.ft R
+.fi
+.RE
+.LP
+The members of this structure are:
+.TP 20
+.B h_name
+Official name of the host.
+.TP
+.B h_aliases
+A zero terminated array of alternate names for the host.
+.TP
+.B h_addrtype
+The type of address being returned; currently always
+.BR \s-1AF_INET\s0.
+.TP
+.B h_length
+The length, in bytes, of the address.
+.TP
+.B h_addr_list
+A pointer to a list of network addresses for the named host.
+Host addresses are returned in network byte order.
+.LP
+.B gethostent(\|)
+reads the next line of the file, opening the file if necessary.
+.LP
+.B sethostent(\|)
+opens and rewinds the file.  If the
+.I stayopen
+flag is non-zero,
+the host data base will not be closed after each call to
+.B gethostent(\|)
+(either directly, or indirectly through one of the other
+\*(lqgethost\*(rq calls).
+.LP
+.B endhostent(\|)
+closes the file.
+.LP
+.B gethostbyname(\|)
+and
+.B gethostbyaddr(\|)
+sequentially search from the beginning
+of the file until a matching
+host name or host address is found,
+or until end-of-file is encountered.
+Host addresses are supplied in network order.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/hosts
+.\" .TP
+.\" .BI /var/yp/ domainname /hosts.byname
+.\" .TP
+.\" .BI /var/yp/ domainname /hosts.byaddr
+.PD
+.SH "SEE ALSO"
+.BR hosts (5),
+.BR ypserv (8)
+.SH DIAGNOSTICS
+A
+.SM NULL
+pointer is returned on end-of-file or error.
+.SH BUGS
+All information
+is contained in a static area
+so it must be copied if it is
+to be saved.  Only the Internet
+address format is currently understood.

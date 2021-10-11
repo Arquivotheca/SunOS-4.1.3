@@ -1,0 +1,622 @@
+.\" @(#)pstat.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH PSTAT 8 "27 January 1988"
+.SH NAME
+pstat \- print system facts
+.SH SYNOPSIS
+.B /usr/etc/pstat
+[
+.B \-afipSsT
+] [
+.B \-u
+.I pid
+] [
+.I system
+[
+.I corefile
+] ]
+.SH DESCRIPTION
+.IX  "pstat command"  ""  "\fLpstat\fP \(em display system statistics"
+.LP
+.B pstat
+interprets the contents of certain system tables.  If
+.I corefile
+is given, the tables are sought there, otherwise in
+.BR /dev/kmem .
+The required namelist is taken from
+.B /vmunix
+unless 
+.I system
+is specified.
+.SH OPTIONS
+.LP
+.TP
+.B \-a
+Under
+.BR \-p ,
+describe all process slots rather than just active ones.
+.TP
+.B \-f
+Print the open file table with these headings:
+.RS
+.RS
+.TP 12
+.PD 0
+.SM LOC
+The memory address of this table entry.
+.TP
+.SM TYPE
+The type of object the file table entry points to.
+.TP
+.SM FLG
+Miscellaneous state variables encoded thus:
+.RS
+.RS
+.TP 4
+R
+open for reading
+.TP
+W
+open for writing
+.TP
+A
+open for appending
+.TP
+S
+shared lock present
+.TP
+X
+exclusive lock present
+.TP
+I
+signal pgrp when data ready
+.RE
+.RE
+.TP
+.SM CNT
+Number of processes that know this open file.
+.TP
+.SM MSG
+Number of references from message queue.
+.TP
+.SM DATA
+The location of the vnode table entry or socket for this file.
+.TP
+.SM OFFSET
+The file offset (see
+.BR lseek (2V)).
+.PD
+.RE
+.RE
+.TP
+.B \-i
+Print the inode table including the associated vnode entries
+with these headings:
+.RS
+.RS
+.TP 12
+.PD 0
+.SM ILOC
+The memory address of this table entry.
+.TP
+.SM IFLAG
+Miscellaneous inode state variables encoded thus:
+.RS
+.RS
+.TP 4
+A
+inode access time must be corrected
+.TP
+C
+inode change time must be corrected
+.TP
+L
+inode is locked
+.TP
+R
+inode is being referenced
+.TP
+U
+update time
+.RB ( fs (5))
+must be corrected
+.TP
+W
+wanted by another process (L flag is on)
+.RE
+.RE
+.TP
+.SM IDEVICE
+Major and minor device number of file system in which
+this inode resides.
+.TP
+.SM INO
+I-number within the device.
+.TP
+.SM MODE
+Mode bits in octal, see
+.BR chmod (2V).
+.TP
+.SM NLK
+Number of links to this inode.
+.TP
+.SM UID
+User
+.SM ID
+of owner.
+.TP
+.SM SIZE/DEV
+Number of bytes in an ordinary file,
+or major and minor device of special file.
+.TP
+.SM VFLAG
+Miscellaneous vnode state variables encoded thus:
+.RS
+.RS
+.TP 4
+R
+root of its file system
+.TP
+S
+shared lock applied
+.TP
+E
+exclusive lock applied
+.TP
+Z
+process is waiting for a shared or exclusive lock
+.RE
+.RE
+.TP
+.SM CNT
+Number of open file table entries for this vnode.
+.TP
+.SM SHC
+Reference count of shared locks on the vnode.
+.TP
+.SM EXC
+Reference count of exclusive locks on the vnode (this may be
+.RB ` "> 1" '
+if, for example, a file descriptor is inherited across a fork).
+.TP
+.SM TYPE
+Vnode file type, either
+.SM VNON
+(no type),
+.SM VREG
+(regular),
+.SM VDIR
+(directory),
+.SM VBLK
+(block device),
+.SM VCHR
+(character device),
+.SM VLNK
+(symbolic link),
+.SM VSOCK
+(socket),
+.SM VFIFO
+(named pipe), or
+.SM VBAD
+(bad).
+.PD
+.RE
+.RE
+.TP
+.B \-p
+Print process table for active processes with these headings:
+.RS
+.RS
+.TP 12
+.PD 0
+.SM LOC
+The memory address of this table entry.
+.TP
+S
+Run state encoded thus:
+.RS
+.RS
+.TP 4
+0
+no process
+.TP
+1
+awaiting an event
+.TP
+2
+(abandoned state)
+.TP
+3
+runnable
+.TP
+4
+being created
+.TP
+5
+being terminated
+.TP
+6
+stopped (by signal or under trace)
+.RE
+.RE
+.TP
+F
+Miscellaneous state variables,
+.SM OR\s0ed
+together (hexadecimal):
+.RS
+.RS
+.TP 12
+0000001
+loaded
+.TP
+0000002
+a system process (scheduler or page-out daemon)
+.TP
+0000004
+locked for swap out
+.TP
+0000008
+swapped out during process creation
+.TP
+0000010
+process is being traced
+.TP
+0000020
+tracing parent has been told that process is stopped
+.TP
+0000040
+user settable lock in memory
+.TP
+0000080
+in page-wait
+.TP
+0000100
+prevented from swapping during
+.BR fork (2V)
+.TP
+0000200
+will restore old mask after taking signal
+.TP
+0000400
+exiting
+.TP
+0000800
+doing physical I/O
+.TP
+0001000
+process resulted from a
+.BR vfork (2)
+which is not yet complete
+.TP
+0002000
+another flag for
+.BR vfork (2)
+.TP
+0004000
+process has no virtual memory, as it is a parent in the context of
+.BR vfork (2)
+.TP
+0008000
+process is demand paging pages from its executable image vnode
+.TP
+0010000
+process has advised of sequential
+.SM VM
+behavior with
+.BR vadvise (2)
+.TP
+0020000
+process has advised of random
+.SM VM
+behavior with
+.BR vadvise (2)
+.TP
+0080000
+process is a session process group leader
+.TP
+0100000
+process is tracing another process
+.TP
+0200000
+process needs a profiling tick
+.TP
+0400000
+process is scanning descriptors during select
+.TP
+4000000
+process has done record locks
+.TP
+8000000
+process is having its system calls traced
+.RE
+.RE
+.TP
+.SM PRI
+Scheduling priority, see
+.BR getpriority (2).
+.TP
+.SM SIG
+Signals received (signals 1-32 coded in bits 0-31).
+.TP
+.SM UID
+Real user
+.SM ID\s0.
+.TP
+.SM SLP
+Amount of time process has been blocked.
+.TP
+.SM TIM
+Time resident in seconds; times over 127 coded as 127.
+.TP
+.SM CPU
+Weighted integral of
+.SM CPU
+time, for scheduler.
+.TP
+.SM NI
+Nice level, see
+.BR getpriority (2).
+.TP
+.SM PGRP
+Process number of root of process group.
+.TP
+.SM PID
+The process
+.SM ID number.
+.TP
+.SM PPID
+The process
+.SM ID
+of parent process.
+.TP
+.SM RSS
+Resident set size \(em the number of physical page frames allocated
+to this process.
+.TP
+.SM SRSS
+.SM RSS
+at last swap (0 if never swapped).
+.TP
+.SM SIZE
+The size of the process image.  That is, the sum of the data and
+stack segment sizes, not including the sizes of any shared libraries.
+.TP
+.SM WCHAN
+Wait channel number of a waiting process.
+.TP
+.SM LINK
+Link pointer in list of runnable processes.
+.PD
+.RE
+.RE
+.TP
+.B \-S
+Print the streams table with these headings:
+.RS
+.RS
+.TP 12
+.PD 0
+.SM LOC
+The memory address of this table entry.
+.TP
+.SM WRQ
+The address of this stream's write queue.
+.TP
+.SM VNODE
+The address of this stream's vnode.
+.TP
+.SM DEVICE
+Major and minor device number of device to which this stream refers.
+.TP
+.SM PGRP
+This stream's process group number.
+.TP
+.SM SIGIO
+The process id or process group that has this stream
+.BR open(\|) .
+.TP
+.SM FLG
+Miscellaneous stream state variables encoded thus:
+.RS
+.RS
+.TP 4
+I
+waiting for
+.BR ioctl (\|)
+to finish
+.TP
+R
+read/recvmsg is blocked
+.TP
+W
+write/putmsg is blocked
+.TP
+P
+priority message is at stream head
+.TP
+H
+device has been ``hung up'' (\fB\s-1M_HANGUP\s0\fR)
+.TP
+O
+waiting for open to finish
+.TP
+M
+stream is linked under multiplexor
+.TP
+D
+stream is in message-discard mode
+.TP
+N
+stream is in message-nondiscard mode
+.TP
+E
+fatal error has occurred (\fB\s-1M_ERROR\s0\fR)
+.TP
+T
+waiting for queue to drain when closing
+.TP
+2
+waiting for previous
+.BR ioctl (\|)
+to finish before starting new one
+.TP
+3
+waiting for acknowledgment for
+.BR ioctl (\|)
+.TP
+B
+stream is in non-blocking mode
+.TP
+A
+stream is in asynchronous mode
+.TP
+o
+stream uses old-style no-delay mode
+.TP
+S
+stream has had
+.SB TOSTOP
+set
+.TP
+C
+VTIME clock running
+.TP
+V
+VTIME timer expired
+.TP
+r
+collision on
+.BR select (\|)
+for reading
+.TP
+w
+collision on
+.BR select (\|)
+for writing
+.TP
+e
+collision on
+.BR select (\|)
+for exceptional condition
+.PD
+.RE
+.RE
+.RE
+.RE
+.IP
+The queues on the write and read sides of the stream are listed for each
+stream.  Each queue is printed with  these headings:
+.RS
+.RS
+.TP 12
+.PD 0
+.SM NAME
+The name of the module or driver for this queue.
+.TP
+.SM COUNT
+The approximate number of bytes on this queue.
+.TP
+.SM FLG
+Miscellaneous state variables encoded thus:
+.RS
+.RS
+.TP 4
+E
+queue is enabled to run
+.TP
+R
+someone wants to get from this queue when it becomes non-empty
+.TP
+W
+someone wants to put on this queue when it drains
+.TP
+F
+queue is full
+.TP
+N
+queue should not be enabled automatically by a putq
+.RE
+.RE
+.TP
+.SM MINPS
+The minimum packet size for this queue.
+.TP
+.SM MAXPS
+The maximum packet size for this queue, or
+.SB INF
+if there is no maximum.
+.TP
+.SM HIWAT
+The high-water mark for this queue.
+.TP
+.SM LOWAT
+The low-water mark for this queue.
+.PD
+.RE
+.RE
+.br
+.ne 10
+.TP
+.B \-s
+Print information about swap space usage:
+.RS
+.RS
+.TP 12
+allocated:
+The amount of swap space (in bytes) allocated to private pages.
+.TP
+reserved:
+The number of swap space bytes not currently allocated, but
+claimed by memory mappings that have not yet created private
+pages.
+.TP
+used:
+The total amount of swap space, in bytes, that is either allocated
+or reserved.
+.TP
+available: 
+The total swap space, in bytes, that is currently available for
+future reservation and allocation.
+.RE
+.RE
+.TP
+.B \-T
+Print the number of used and free slots in the several system tables.
+This is useful for checking to see how full system tables have become if the
+system is under heavy load.  Shows both used and cached inodes.
+.TP
+.BI \-u " pid"
+Print information about the process with
+.SM ID
+.IR pid .
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+namelist
+.TP
+.B /dev/kmem
+default source of tables
+.PD
+.SH SEE ALSO
+.BR ps (1),
+.BR chmod (2V),
+.BR fork (2V),
+.BR getpriority (2),
+.BR lseek (2V),
+.BR stat (2V),
+.BR vadvise (2),
+.BR vfork (2),
+.BR fs (5)
+.BR iostat (8),
+.BR vmstat (8),
+.SH BUGS
+.LP
+It would be very useful if the system recorded \*(lqmaximum occupancy\*(rq
+on the tables reported by
+.BR \-T ;
+even more useful if these tables were dynamically allocated.

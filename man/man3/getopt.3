@@ -1,0 +1,144 @@
+.\" @(#)getopt.3 1.1 92/07/30 SMI; from S5R3
+.TH GETOPT 3 "6 October 1987"
+.SH NAME
+getopt, optarg, optind \- get option letter from argument vector
+.SH SYNOPSIS
+.nf
+.ft B
+int getopt(argc, argv, optstring)
+int argc;
+char **argv;
+char *optstring;
+.ft P
+.LP
+.ft B
+extern char *optarg;
+extern int optind, opterr;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "getopt()" "" "\fLgetopt()\fP function"
+.IX "optarg()" "" "\fLoptarg()\fP function"
+.LP
+.B getopt(\|)
+returns the next option letter in
+.I argv
+that matches a letter in
+.IR optstring .
+.I optstring
+must contain the option letters the command using
+.B getopt(\|)
+will recognize;
+if a letter is followed by a colon, the option
+is expected to have an argument, or group of arguments,
+which must
+be separated from it by white space.
+.LP
+.I optarg
+is set to point to the start of the option argument on return
+from
+.BR getopt .
+.LP
+.B getopt(\|)
+places in
+.B optind
+the
+.I argv
+index of the next argument to be processed.
+.B optind
+is external and is initialized to
+.B 1
+before the first call to
+.BR getopt .
+.LP
+When all options have been processed (that is,
+up to the first non-option argument),
+.B getopt(\|)
+returns
+.BR \-1 .
+The special option
+.BR `` \-\- ''
+may be used to delimit the end
+of the options;
+when it is encountered,
+.B \-1
+will be returned, and
+.BR `` \-\- ''
+will be skipped.
+.SH DIAGNOSTICS
+.B getopt(\|)
+prints an error message on the standard error
+and returns a question mark
+.RB ( ? )
+when it encounters an option letter not included in
+.I optstring
+or no option-argument after an option that expects one.
+This error message may be disabled by setting
+.B opterr
+to
+.BR 0 .
+.SH EXAMPLE
+The following code fragment shows how one might process the arguments for a
+command that can take the mutually exclusive options
+.B a
+and
+.BR b ,
+and the option
+.BR o ,
+which requires an option argument:
+.LP
+.nf
+.DT
+.ft B
+	main(argc, argv)
+	int argc;
+	char **argv;
+	{
+		int c;
+		extern char *optarg;
+		extern int optind;
+		\&.
+		\&.
+		\&.
+		while ((c = getopt(argc, argv, "abo:")) != \-1)
+			switch (c) {
+			case 'a':
+				if (bflg)
+					errflg++;
+				else
+					aflg++;
+				break;
+			case 'b':
+				if (aflg)
+					errflg++;
+				else
+ 					bproc (\|);
+				break;
+			case 'o':
+				ofile = optarg;
+				break;
+			case '?':
+				errflg++;
+			}
+		if (errflg) {
+			(void)fprintf(stderr, "usage: . . . ");
+ 			exit (2);
+		}
+		for (; optind < argc; optind++) {
+			if (access(argv[optind], 4)) {
+		\&.
+		\&.
+		\&.
+	}
+.ft R
+.fi
+.SH SEE ALSO
+.BR getopts (1)
+.SH WARNING
+Changing the value of the variable
+.BR optind ,
+or calling
+.B getopt(\|)
+with different values of
+.IR argv ,
+may lead to unexpected results.

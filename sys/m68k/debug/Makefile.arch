@@ -1,0 +1,100 @@
+#	@(#)Makefile.arch 1.1 92/07/30 SMI
+#
+# Sun-2/3 kernel debugger makefile
+#
+ARCH:sh = arch -k
+MACH:sh = mach
+CPP=	/lib/cpp -undef -Dmc68000 -D${MACH} -Dsun -Dunix
+CC=	cc
+AS=	as -${MACH}
+LD=	ld
+AR=	ar
+RM=	rm -f
+TOUCH=	touch -cf
+GREP=	egrep
+
+SYSDIR= ../..
+ARCHHDR= ${SYSDIR}/${ARCH}
+STANDHDR= ${SYSDIR}/stand/lib/common
+CPPOPTS= -DKADB -D${ARCH} -DKERNEL -I${SYSDIR} -I${ARCHHDR} -I${STANDHDR}
+COPTS=	-O
+CFLAGS=	${COPTS} ${CPPOPTS}
+
+MACHDIR= ${SYSDIR}/${ARCH}/debug
+CPUDIR= ${SYSDIR}/m68k/debug
+DEBUGDIR= ${SYSDIR}/debug
+
+HFILES=\
+	${DEBUGDIR}/debug.h\
+	${DEBUGDIR}/debugger.h
+
+CFILES=\
+	${DEBUGDIR}/main.c\
+	${DEBUGDIR}/support.c\
+	${CPUDIR}/machdep.c
+
+SFILES=\
+	${CPUDIR}/locore.s\
+	${MACHDIR}/map.s
+
+OBJ=\
+	locore.o\
+	machdep.o\
+	main.o\
+	map.o\
+	support.o
+
+debug.o: ${OBJ}
+	${LD} -r -o $@ ${OBJ}
+
+# make a list of files suitable for ctags use
+tags.list: FRC
+	@echo ${HFILES} ${CFILES} ${SFILES}
+
+clean:
+	${RM} a.out *.o *.i tags.list errs
+
+install:
+FRC:
+
+reloc:
+	@echo ${RELOC}
+
+.s.o:
+	${CPP} -DLOCORE ${CPPOPTS} $*.s > $*.i
+	${AS} -o $*.o $*.i
+	${RM} $*.i
+
+# stupid make can't figure out how to make from sources in other directories
+locore.o:
+	${CPP} -DLOCORE ${CPPOPTS} ${CPUDIR}/locore.s > locore.i
+	${AS} -o $@ locore.i
+	${RM} locore.i
+
+main.o:
+	${CC} ${CFLAGS} -c ${DEBUGDIR}/main.c
+
+support.o:
+	${CC} ${CFLAGS} -c ${DEBUGDIR}/support.c
+
+machdep.o:
+	${CC} ${CFLAGS} -c ${CPUDIR}/machdep.c
+
+depend:
+	${RM} makedep
+	for i in ${CFILES}; do \
+		(${CPP} -M ${CPPOPTS} $$i >> makedep); done
+	for i in ${SFILES}; do \
+		(${CPP} -M -DLOCORE ${CPPOPTS} $$i >> makedep); done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	@echo 'ed - Makefile < eddep'
+	@if [ -w Makefile ]; then \
+		ed - Makefile < eddep; \
+	    else \
+		chmod +w Makefile; \
+		ed - Makefile < eddep; \
+		chmod -w Makefile; \
+	    fi
+	${RM} eddep makedep

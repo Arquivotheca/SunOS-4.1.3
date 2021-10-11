@@ -1,0 +1,45 @@
+.\" @(#)chroot.8 1.1 92/07/30 SMI; from S5R2 6.2
+.TH CHROOT 8 "9 September 1987"
+.SH NAME
+chroot \- change root directory for a command
+.SH SYNOPSIS
+.B /usr/etc/chroot
+.I newroot command
+.SH DESCRIPTION
+.IX chroot "" "\fLchroot\fR \(em change root directory for a command"
+.IX "root directory, change for a command \(em \fLchroot\fR"
+.LP
+The given command is executed
+.IR relative
+to the new root.  The meaning of any initial
+.RB ` /\^ '
+(slashes) in path names is changed for a
+command and any of its children to
+.IR newroot .
+Furthermore, the initial working directory is
+.IR newroot .
+.LP
+Input and output redirections on the
+command line are made with respect to  the
+.I original
+root:
+.IP
+.B chroot \|newroot \|command \|>x
+.LP
+creates the file
+.I x
+relative to the original root, not the new one.
+.LP
+This command is restricted to the super-user.
+.LP
+The new root path name is always relative
+to the current root: even if a
+.B chroot
+is already in effect; the
+.I newroot
+argument is relative to the current root of the running process.
+.SH SEE ALSO
+.BR chdir (2V)
+.SH BUGS
+One should exercise extreme caution when referring to special files
+in the new root file system.

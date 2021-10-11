@@ -1,0 +1,978 @@
+
+;
+;      @(#)text.hasm 1.1 92/07/30 17:42:08
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+;
+; Text test file
+;
+; Tests nearly all attributes of regular text.
+;
+;	set_attribute	hk_view
+;	.fword		-0.5,  0.5,  0.5,  0.5
+;	.matrix_pair \				; VT and IVT
+;	<   < 1.0, 0.0, 0.0,  0.0 > , \
+;	    < 0.0, 1.0, 0.0,  0.0 > , \
+;	    < 0.0, 0.0, 1.0,  0.0 > , \
+;	    < 0.0, 0.0, 0.0,  1.0 > >
+
+	set_attribute	hk_load_lmt
+	.scale		0.98			; Leave a border
+	set_attribute	hk_line_antialiasing
+	.word		TRUE
+	set_attribute	hk_text_antialiasing
+	.word		TRUE
+	set_attribute	hk_marker_antialiasing
+	.word		TRUE
+;
+	set_attribute	hk_z_buffer_compare
+	.word		FALSE
+	set_attribute	hk_z_buffer_update
+	.word		HK_Z_UPDATE_NONE
+;
+	set_attribute	hk_line_color
+	.rgb		< 0.1, 0.1, 0.3 >
+
+	set_attribute	hk_text_font_table
+	.word		hasm_font1
+	set_attribute	hk_text_character_set
+	.word		0
+	.word		0
+	set_attribute	hk_text_font
+	.word		0
+	.word		0
+;
+	set_attribute	hk_text_line_width
+	.word		1.0
+	set_attribute	hk_text_cap
+	.word		HK_CAP_ROUND		; Not working yet
+	set_attribute	hk_text_join
+	.word		HK_JOIN_BEVEL
+;
+	set_attribute	hk_text_expansion_factor
+	.word		1.0
+	set_attribute	hk_text_spacing
+	.word		0.0
+	set_attribute	hk_rtext_up_vec
+	.word		0.0
+	.word		1.0
+	set_attribute	hk_rtext_path
+	.word		HK_TP_RIGHT
+	set_attribute	hk_rtext_height
+	.word		0.05			; The character size
+
+;	set_attribute	hk_marker_size
+;	.word		8.0
+;
+	jmpl		grid, r6		; Draw a grid in the background
+	jmpl		text, r6		; Draw the text
+;
+	trap		0			; Exit
+;
+; The text strings
+;
+text:
+;
+; First do horizontal strings
+;
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.94270333, 0.34360195, 0.32436604 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.97319759, 0.58080012, 0.15425338 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_plus
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; (horizontal)
+	.word		HK_AV_TOP		; (vertical)
+	rtext
+	.xyz		<-0.9, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Top"
+	polymarker	1
+	.xyz		<-0.9, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.60993629, 0.82045624, 0.96044301 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.37122990, 0.44787617, 0.71170769 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_star
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; (horizontal)
+	.word		HK_AV_TOP		; (vertical)
+	rtext
+	.xyz		<-0.7, 0.90, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Top"
+	polymarker	1
+	.xyz		<-0.7, 0.90, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.71504772, 0.94105874, 0.71282287 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.73691476, 0.97918600, 0.80481144 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; (horizontal)
+	.word		HK_AV_TOP		; (vertical)
+	rtext
+	.xyz		<-0.5, 0.80, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Top"
+	polymarker	1
+	.xyz		<-0.5, 0.80, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.65336023, 0.53606662, 0.09277240 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.83427568, 0.39567351, 0.07650263 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_plus
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; (horizontal)
+	.word		HK_AV_CAP		; (vertical)
+	rtext
+	.xyz		<-0.9, 0.70, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Cap"
+	polymarker	1
+	.xyz		<-0.9, 0.70, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.16907264, 0.98146137, 0.27419140 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.49783831, 0.14668181, 0.29474777 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_star
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; (horizontal)
+	.word		HK_AV_CAP		; (vertical)
+	rtext
+	.xyz		<-0.7, 0.60, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Cap"
+	polymarker	1
+	.xyz		<-0.7, 0.60, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.08456371, 0.08938514, 0.63834972 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.40892975, 0.06258273, 0.21914984 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; (horizontal)
+	.word		HK_AV_CAP		; (vertical)
+	rtext
+	.xyz		<-0.5, 0.50, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Cap"
+	polymarker	1
+	.xyz		<-0.5, 0.50, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.56318313, 0.67251902, 0.03960608 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.52362614, 0.04374892, 0.48748225 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_plus
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; (horizontal)
+	.word		HK_AV_HALF		; (vertical)
+	rtext
+	.xyz		<-0.9, 0.35, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Half"
+	polymarker	1
+	.xyz		<-0.9, 0.35, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.23533383, 0.75879663, 0.42854100 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.94815669, 0.49571139, 0.40772700 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_star
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; (horizontal)
+	.word		HK_AV_HALF		; (vertical)
+	rtext
+	.xyz		<-0.7, 0.25, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Half"
+	polymarker	1
+	.xyz		<-0.7, 0.25, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.75296813, 0.14907162, 0.94379363 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.84574053, 0.98334730, 0.33946713 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; (horizontal)
+	.word		HK_AV_HALF		; (vertical)
+	rtext
+	.xyz		<-0.5, 0.15, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Half"
+	polymarker	1
+	.xyz		<-0.5, 0.15, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.92224316, 0.15241994, 0.32092850 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.19643456, 0.65025825, 0.46761031 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_plus
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; (horizontal)
+	.word		HK_AV_BASE		; (vertical)
+	rtext
+	.xyz		<-0.9, 0.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Base"
+	polymarker	1
+	.xyz		<-0.9, 0.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.49118232, 0.73482196, 0.55699545 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.12953204, 0.14375171, 0.61957818 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_star
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; (horizontal)
+	.word		HK_AV_BASE		; (vertical)
+	rtext
+	.xyz		<-0.7,-0.10, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Base"
+	polymarker	1
+	.xyz		<-0.7,-0.10, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.34868189, 0.70693484, 0.29209720 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.38828797, 0.23056098, 0.33584611 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; (horizontal)
+	.word		HK_AV_BASE		; (vertical)
+	rtext
+	.xyz		<-0.5,-0.20, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Base"
+	polymarker	1
+	.xyz		<-0.5,-0.20, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.87577022, 0.46589480, 0.09464274 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.30431122, 0.41405150, 0.59035414 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_plus
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; (horizontal)
+	.word		HK_AV_BOTTOM		; (vertical)
+	rtext
+	.xyz		<-0.9,-0.30, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Bottom"
+	polymarker	1
+	.xyz		<-0.9,-0.30, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.31622748, 0.13143787, 0.52545125 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.78383780, 0.62262019, 0.26027320 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_star
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; (horizontal)
+	.word		HK_AV_BOTTOM		; (vertical)
+	rtext
+	.xyz		<-0.7,-0.40, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Bottom"
+	polymarker	1
+	.xyz		<-0.7,-0.40, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.34083325, 0.75215224, 0.40402491 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.96041143, 0.10083412, 0.11095975 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; (horizontal)
+	.word		HK_AV_BOTTOM		; (vertical)
+	rtext
+	.xyz		<-0.45,-0.50, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Bottom"
+	polymarker	1
+	.xyz		<-0.45,-0.50, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.25250863, 0.48912209, 0.34152073 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.58835474, 0.36489232, 0.80741553 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_NORMAL		; (horizontal)
+	.word		HK_AV_NORMAL		; (vertical)
+	rtext
+	.xyz		<-0.9,-0.60, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Normal Normal"
+	polymarker	1
+	.xyz		<-0.9,-0.60, 0.0 >
+;---------------------------------------------------------------------;
+; Now do vertical strings
+;
+;
+	set_attribute	hk_rtext_path
+	.word		HK_TP_DOWN		; Down
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.68299748, 0.66920354, 0.22146703 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.27335162, 0.38124176, 0.38848665 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; Left (horizontal)
+	.word		HK_AV_TOP		; Top (vertical)
+	rtext
+	.xyz		<-0.4, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Top"
+	polymarker	1
+	.xyz		<-0.4, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.01277738, 0.03707361, 0.40124681 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.73555044, 0.03237259, 0.33625012 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; Center (horizontal)
+	.word		HK_AV_TOP		; Top (vertical)
+	rtext
+	.xyz		<-0.3, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Top"
+	polymarker	1
+	.xyz		<-0.3, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.61074344, 0.34860007, 0.46768799 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.13619468, 0.13243787, 0.09030818 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; Right (horizontal)
+	.word		HK_AV_TOP		; Top (vertical)
+	rtext
+	.xyz		<-0.2, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Top"
+	polymarker	1
+	.xyz		<-0.2, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.39646789, 0.47327111, 0.84246042 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.80049280, 0.43368254, 0.94329454 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; Left (horizontal)
+	.word		HK_AV_CAP		; Cap (vertical)
+	rtext
+	.xyz		<-0.15, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Cap"
+	polymarker	1
+	.xyz		<-0.15, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.91145255, 0.68619117, 0.43241663 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.25297328, 0.27454591, 0.79730894 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; Center (horizontal)
+	.word		HK_AV_CAP		; Cap (vertical)
+	rtext
+	.xyz		<-0.05, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Cap"
+	polymarker	1
+	.xyz		<-0.05, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.06038881, 0.95754339, 0.46651248 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.28185584, 0.23089501, 0.84775424 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; Right (horizontal)
+	.word		HK_AV_CAP		; Cap (vertical)
+	rtext
+	.xyz		< 0.05, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Cap"
+	polymarker	1
+	.xyz		< 0.05, 1.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.67034249, 0.24367239, 0.88482785 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.07158930, 0.97922283, 0.91720044 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; Left (horizontal)
+	.word		HK_AV_HALF		; Half (vertical)
+	rtext
+	.xyz		< 0.1, 0.60, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Half"
+	polymarker	1
+	.xyz		< 0.1, 0.60, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.40783942, 0.58996626, 0.26580051 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.87552741, 0.72616094, 0.39823838 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; Center (horizontal)
+	.word		HK_AV_HALF		; Half (vertical)
+	rtext
+	.xyz		< 0.2, 0.60, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Half"
+	polymarker	1
+	.xyz		< 0.2, 0.60, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.96583559, 0.12262883, 0.87150949 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.80829600, 0.92312163, 0.30519203 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; Right (horizontal)
+	.word		HK_AV_HALF		; Half (vertical)
+	rtext
+	.xyz		< 0.3, 0.60, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Half"
+	polymarker	1
+	.xyz		< 0.3, 0.60, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.75159054, 0.83457419, 0.99138320 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.18400717, 0.08754747, 0.26592911 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; Left (horizontal)
+	.word		HK_AV_BASE		; Base (vertical)
+	rtext
+	.xyz		< 0.35, 0.20, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Base"
+	polymarker	1
+	.xyz		< 0.35, 0.20, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.98131611, 0.14793628, 0.22347250 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.44782859, 0.42979212, 0.45436751 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; Center (horizontal)
+	.word		HK_AV_BASE		; Base (vertical)
+	rtext
+	.xyz		< 0.45, 0.20, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Base"
+	polymarker	1
+	.xyz		< 0.45, 0.20, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.29558283, 0.10013462, 0.69803989 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.18041069, 0.17172392, 0.67726272 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; Right (horizontal)
+	.word		HK_AV_BASE		; Base (vertical)
+	rtext
+	.xyz		< 0.55, 0.20, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Base"
+	polymarker	1
+	.xyz		< 0.55, 0.20, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.09761113, 0.57956334, 0.26722898 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.36341164, 0.45509074, 0.99338992 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_LEFT		; Left (horizontal)
+	.word		HK_AV_BOTTOM		; Bottom (vertical)
+	rtext
+	.xyz		< 0.6, 0.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Left Bottom"
+	polymarker	1
+	.xyz		< 0.6, 0.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.76165001, 0.42092633, 0.11601876 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.63315950, 0.22922233, 0.03914039 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_CENTER		; Center (horizontal)
+	.word		HK_AV_BOTTOM		; Bottom (vertical)
+	rtext
+	.xyz		< 0.7, 0.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Center Bottom"
+	polymarker	1
+	.xyz		< 0.7, 0.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.93835153, 0.98081287, 0.87371457 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.92973473, 0.16482004, 0.96126204 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_circle
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_RIGHT		; Right (horizontal)
+	.word		HK_AV_BOTTOM		; Bottom (vertical)
+	rtext
+	.xyz		< 0.8, 0.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Right Bottom"
+	polymarker	1
+	.xyz		< 0.8, 0.00, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_color
+	.rgb		< 0.19566384, 0.54613615, 0.10919832 >
+	set_attribute	hk_marker_color
+	.rgb		< 0.41913634, 0.59396474, 0.53899044 >
+;
+	set_attribute	hk_marker_type
+	.word		marker_cross
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_NORMAL		; Normal (horizontal)
+	.word		HK_AV_NORMAL		; Normal (vertical)
+	rtext
+	.xyz		< 0.9, 1.00, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Normal Normal"
+	polymarker	1
+	.xyz		< 0.9, 1.00, 0.0 >
+
+;---------------------------------------------------------------------;
+
+	set_attribute	hk_text_color
+        .rgb            < 0.9, 0.7, 0.2 >
+	set_attribute	hk_marker_color
+        .rgb            < 1.0, 0.0, 0.0 >
+
+;---------------------------------------------------------------------;
+; Check out drawing left
+;
+	set_attribute	hk_rtext_alignment
+	.word		HK_AH_NORMAL		; Normal (horizontal)
+	.word		HK_AV_NORMAL		; Normal (vertical)
+	set_attribute	hk_rtext_path
+	.word		1			; Left
+	rtext
+	.xyz		< 0.0, 0.1, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Backwards"
+	polymarker	1
+	.xyz		< 0.0, 0.1, 0.0 >
+;---------------------------------------------------------------------;
+; Check out drawing up
+;
+	set_attribute	hk_rtext_path
+	.word		HK_TP_UP		; Up
+	rtext
+	.xyz		<-0.35,-0.5, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Upwards"
+	polymarker	1
+	.xyz		<-0.35,-0.5, 0.0 >
+;---------------------------------------------------------------------;
+; Test other text features
+;
+	set_attribute	hk_rtext_path
+	.word		HK_TP_RIGHT		; Normal
+;
+	set_attribute	hk_text_expansion_factor
+	.word		0.8
+	rtext
+	.xyz		<-0.2, 0.0, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Expansion factor 0.8"
+	polymarker	1
+	.xyz		<-0.2, 0.0, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_expansion_factor
+	.word		4.2
+	rtext
+	.xyz		<-0.2,-0.1, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"4.2"
+	polymarker	1
+	.xyz		<-0.2,-0.1, 0.0 >
+	set_attribute	hk_text_expansion_factor
+	.word		1.0
+;---------------------------------------------------------------------;
+	set_attribute	hk_rtext_slant
+	.word		0.267949		; Tan(15)
+	rtext
+	.xyz		<-0.2,-0.2, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Slanted 15 degrees"
+	polymarker	1
+	.xyz		<-0.2,-0.2, 0.0 >
+	set_attribute	hk_rtext_slant
+	.word		0.0
+;---------------------------------------------------------------------;
+	set_attribute	hk_text_spacing
+	.word		1.5
+	rtext
+	.xyz		<-0.2,-0.3, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Spacing 1.5"
+	polymarker	1
+	.xyz		<-0.2,-0.3, 0.0 >
+	set_attribute	hk_text_spacing
+	.word		0.0
+;---------------------------------------------------------------------;
+	rtext
+	.xyz		<-0.2,-0.4, 0.0 >	; Position
+	.xyz		< 0.996195,-0.087156, 0.0 >	; Direction 0
+	.xyz		< 0.087156, 0.996195, 0.0 >	; Direction 1
+	.string		"Down 5 degrees"
+	polymarker	1
+	.xyz		<-0.2,-0.4, 0.0 >
+;---------------------------------------------------------------------;
+	set_attribute	hk_rtext_height
+	.word		0.10			; Double the size
+	set_attribute	hk_text_line_width
+	.word		3.0
+	rtext
+	.xyz		<-0.2,-0.6, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Line width 3"
+	polymarker	1
+	.xyz		<-0.2,-0.6, 0.0 >
+	set_attribute	hk_text_line_width
+	.word		1.0
+;---------------------------------------------------------------------;
+; Finish off with a label for this test
+;
+	set_attribute	hk_text_color
+        .rgb            < 0.60199526, 0.28574522, 0.03092304 >
+
+	set_attribute	hk_text_font_table
+	.word		hasm_font2
+	set_attribute	hk_text_character_set
+	.word		0
+	.word		0
+	set_attribute	hk_text_font
+	.word		0
+	.word		0
+
+	set_attribute	hk_rtext_height
+	.word		0.14
+	set_attribute	hk_text_color
+	.rgb		< 0.87350384, 0.88954757, 0.63912506 >
+	set_attribute	hk_rtext_alignment
+	.word		2			; Center (horizontal)
+	.word		4			; Base (vertical)
+	rtext
+	.xyz		< 0.0,-0.85, 0.0 >	; Position
+	.xyz		< 1.0, 0.0, 0.0 >	; Direction 0
+	.xyz		< 0.0, 1.0, 0.0 >	; Direction 1
+	.string		"Regular text test"
+;
+	jmpl		(r6 + 0), r6		; Return
+;
+; Draw a grid
+;
+grid:
+	set_attribute	hk_line_geom_format
+	.word		HK_LINE_XYZ
+; Draw some horizontal lines
+	polyline	2
+	.xyz		<-1.0, 1.0, 0.0 >
+	.xyz		< 1.0, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.9, 0.0 >
+	.xyz		< 1.0, 0.9, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.8, 0.0 >
+	.xyz		< 1.0, 0.8, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.7, 0.0 >
+	.xyz		< 1.0, 0.7, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.6, 0.0 >
+	.xyz		< 1.0, 0.6, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.5, 0.0 >
+	.xyz		< 1.0, 0.5, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.4, 0.0 >
+	.xyz		< 1.0, 0.4, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.3, 0.0 >
+	.xyz		< 1.0, 0.3, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.2, 0.0 >
+	.xyz		< 1.0, 0.2, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.1, 0.0 >
+	.xyz		< 1.0, 0.1, 0.0 >
+	polyline	2
+	.xyz		<-1.0, 0.0, 0.0 >
+	.xyz		< 1.0, 0.0, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.1, 0.0 >
+	.xyz		< 1.0,-0.1, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.2, 0.0 >
+	.xyz		< 1.0,-0.2, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.3, 0.0 >
+	.xyz		< 1.0,-0.3, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.4, 0.0 >
+	.xyz		< 1.0,-0.4, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.5, 0.0 >
+	.xyz		< 1.0,-0.5, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.6, 0.0 >
+	.xyz		< 1.0,-0.6, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.7, 0.0 >
+	.xyz		< 1.0,-0.7, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.8, 0.0 >
+	.xyz		< 1.0,-0.8, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-0.9, 0.0 >
+	.xyz		< 1.0,-0.9, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-1.0, 0.0 >
+	.xyz		< 1.0,-1.0, 0.0 >
+; Draw some vertical lines
+	polyline	2
+	.xyz		< 1.0,-1.0, 0.0 >
+	.xyz		< 1.0, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.9,-1.0, 0.0 >
+	.xyz		< 0.9, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.8,-1.0, 0.0 >
+	.xyz		< 0.8, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.7,-1.0, 0.0 >
+	.xyz		< 0.7, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.6,-1.0, 0.0 >
+	.xyz		< 0.6, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.5,-1.0, 0.0 >
+	.xyz		< 0.5, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.4,-1.0, 0.0 >
+	.xyz		< 0.4, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.3,-1.0, 0.0 >
+	.xyz		< 0.3, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.2,-1.0, 0.0 >
+	.xyz		< 0.2, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.1,-1.0, 0.0 >
+	.xyz		< 0.1, 1.0, 0.0 >
+	polyline	2
+	.xyz		< 0.0,-1.0, 0.0 >
+	.xyz		< 0.0, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.1,-1.0, 0.0 >
+	.xyz		<-0.1, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.2,-1.0, 0.0 >
+	.xyz		<-0.2, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.3,-1.0, 0.0 >
+	.xyz		<-0.3, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.4,-1.0, 0.0 >
+	.xyz		<-0.4, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.5,-1.0, 0.0 >
+	.xyz		<-0.5, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.6,-1.0, 0.0 >
+	.xyz		<-0.6, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.7,-1.0, 0.0 >
+	.xyz		<-0.7, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.8,-1.0, 0.0 >
+	.xyz		<-0.8, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-0.9,-1.0, 0.0 >
+	.xyz		<-0.9, 1.0, 0.0 >
+	polyline	2
+	.xyz		<-1.0,-1.0, 0.0 >
+	.xyz		<-1.0, 1.0, 0.0 >
+	
+	jmpl		(r6 + 0), r6		; Return
+;
+; Include the marker table here
+;
+#include "/usr/shbam2/tests/text/marker_table.hasm"
+;
+; Include the font here
+;
+hasm_font1:
+#include "/usr/shbam/data/hershey_fonts/romanc.hasm"
+hasm_font2:
+#include "/usr/shbam/data/hershey_fonts/gothgbt.hasm"

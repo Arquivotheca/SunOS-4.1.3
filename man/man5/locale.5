@@ -1,0 +1,141 @@
+.\" @(#)locale.5 1.1 92/07/30 SMI; from S5R3
+.TH LOCALE 5 "2 February 1990"
+.SH NAME
+locale \- locale database 
+.SH SYNOPSIS
+.BI /usr/share/lib/locale/ category/locale
+.LP
+.BI /etc/locale/ category/locale
+.SH DESCRIPTION
+.IX  "locale file"  ""  "\fLlocale\fP \(em localization data base"
+.LP
+The
+.I category
+directory contains information relating to one category
+of the complete list of categories that comprise a full locale for 
+all systems sharing this directory.
+.I locale
+is either a file or a directory that contains information relating to the 
+relevant category indicated by its parent directory
+.IR category .
+.I locale 
+is the name that is given to describe the style of operation required by an
+application in a particular language, territory or code-set.
+.LP
+At runtime these directories will be accessed if the application has made a 
+valid call to:
+.IP
+\fBsetlocale(\fP\fIcategory,\|locale\fP\fB)\fP
+.LP
+where 
+.I category
+can be any one of the following settings:
+.TP 15
+.SB LC_COLLATE
+Collation order.
+Affects the behavior of regular expressions and the string functions
+defined in
+.BR strcoll (3).
+.TP
+.SB LC_CTYPE
+Character classification and case conversion.
+Affects the behavior of regular expressions and the character handling
+functions defined in
+.BR toascii (3),
+and
+.BR ctime (3V).
+.TP
+.SB LC_MONETARY
+Monetary formatting.
+Affects the behavior of functions that handle monetary values.
+.TP
+.SB LC_NUMERIC
+Numeric delimiters.
+Affects the radix character of the formatted input/output
+functions defined in
+.BR printf (3V)
+and
+.BR scanf (3V),
+and the conversion functions defined in
+.BR strtod (3).
+.TP
+.SB LC_TIME
+Date and time formats.
+Affects the behavior of the time functions defined in
+.BR ctime (3V).
+.TP
+.SB LC_MESSAGES
+Message presentation style.
+Affects the behavior of the string access functions defined in
+.BR catgets (3C)
+and 
+.BR gettext (3).
+.TP
+.SB NLSPATH
+Contains a sequence of pseudo-pathnames which 
+.BR catopen (3C)
+uses when attempting to locate message catalogs.
+Each pseudo-pathname
+contains a name template consisting of an optional path-prefix, one or more
+substitution fields, a filename
+and an optional filename suffix.
+.LP
+Substitution fields consist of a
+.B % 
+symbol, followed by a single-letter keyword.
+The following keywords are currently defined:
+.RS
+.TP 6
+.B %N
+The value of the 
+.I name 
+parameter passed to
+.BR catopen (3C).
+.TP 6
+.B %L
+The value of the 
+.SB LANG
+environment variable.
+.TP 6
+.B %%
+A single
+.B %
+character.
+.RE
+.LP
+A null string is sustituted if the specified value is not defined.
+Pathnames defined in 
+.SB NLSPATH
+are separated by colons 
+.RB ( : ).
+A leading or two adjacent colons indicate the current directory.
+For example:
+.IP 
+.ft B
+\s-1NLSPATH\s0=":%N.cat:/nlslib/%L/%N.cat"
+.ft R
+.LP
+Indicates to 
+.BR catopen (3C)
+that it should look for the requested message catalog in
+.I name, name.cat
+and
+.I /nlslib/\fB\s-1$LANG\s+1\fP/name.cat.
+The
+.SB LC_ALL
+and
+.SB LANG
+environment variables do not commute to real directories or files but
+instead relate to a locale that is a assumed to be valid
+for all of the above categories. 
+.SH SEE ALSO
+.BR catgets (3C),
+.BR catopen (3C),
+.BR ctime (3V),
+.BR gettext (3),
+.BR printf (3V),
+.BR scanf (3V),
+.BR setlocale (3V),
+.BR strcoll (3)
+.BR strtod (3),
+.BR toascii (3V)

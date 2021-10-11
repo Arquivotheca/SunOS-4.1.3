@@ -1,0 +1,86 @@
+.\" @(#)mktemp.3 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH MKTEMP 3  "6 September 1989"
+.SH NAME
+mktemp, mkstemp \- make a unique file name
+.SH SYNOPSIS
+.nf
+.B char *mktemp(template)
+.B char *template;
+.LP
+.B mkstemp(template)
+.B char *template;
+.fi
+.IX  "mktemp()"  ""  "\fLmktemp()\fP \(em make unique file name"
+.IX  "create" "unique file name \(em \fLmktemp()\fP"
+.IX  "unique file name"  create  "unique file name"  "create \(em \fLmktemp()\fP"
+.SH DESCRIPTION
+.LP
+.B mktemp(\|)
+creates a unique file name, typically in a
+temporary filesystem, by replacing
+.I template
+with a unique file name, and returns the address of
+.IR template .
+The string in
+.I template
+should contain a file name with six trailing
+.BR X s;
+.B mktemp(\|)
+replaces the
+.BR X s
+with a letter and the current process
+.SM ID\s0.
+The letter will be chosen so that the resulting
+name does not duplicate an existing file.
+.B mkstemp(\|)
+makes the same replacement to the template
+but returns a file descriptor
+for the template file open for reading and writing.
+.B mkstemp(\|)
+avoids the race between testing whether the
+file exists and opening it for use.
+.LP
+Notes:
+.TP 2
+\(bu
+.B mktemp(\|)
+and
+.B mkstemp(\|)
+actually
+.I change
+the template string which you pass; this
+means that you cannot use the same template
+string more than once \(em you need a fresh
+template for every unique file you want to open.
+.TP 2
+\(bu
+When
+.B mktemp(\|)
+or
+.B mkstemp(\|)
+are creating a new unique filename they check
+for the prior existence of a file with that name.
+This means that if you are creating more than one
+unique filename, it is bad practice to use the
+same root template for multiple invocations of
+.B mktemp(\|)
+or
+.BR mkstemp(\|) .
+.SH "SEE ALSO"
+.BR getpid (2V),
+.BR open (2V),
+.BR tmpfile (3S),
+.BR tmpnam (3S)
+.SH DIAGNOSTICS
+.B mkstemp(\|)
+returns an open file descriptor upon success.
+It returns \-1 if no suitable file could be created.
+.LP
+.B mktemp(\|)
+assigns the
+null
+string to
+.I template
+when it cannot create a unique name.
+.SH BUGS
+It is possible to run out of letters.

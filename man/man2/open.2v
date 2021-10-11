@@ -1,0 +1,497 @@
+.\" @(#)open.2v 1.1 92/07/30 SMI; from UCB 4.3 and S5R3
+.TH OPEN 2V "21 January 1990"
+.SH NAME
+open \- open or create a file for reading or writing
+.SH SYNOPSIS
+.nf
+.ft B
+#include <fcntl.h>
+.ft
+.fi
+.LP
+.nf
+.BR "int open(path, flags" [ " , mode " ] " )"
+.ft B
+char *path;
+int flags;
+int mode;
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+.ft
+.fi
+.LP
+.nf
+.BR "int open(path, flags" [ " , mode " ] " )"
+.ft B
+char *path;
+int flags;
+mode_t mode;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "System V library, system call versions" "\fLopen()\fR"
+.IX  open()  ""  \fLopen()\fP
+.IX  "file system"  open()  ""  \fLopen()\fP
+.IX  "file system"  "create file"  ""  "create file \(em \fLopen()\fP"
+.IX  "create" "file \(em \fLopen()\fP"
+.LP
+.I path
+points to the pathname of a file.
+.B open(\|)
+opens the named file
+for reading and/or writing, as specified by the
+.I flags
+argument, and returns a descriptor for that file.  The
+.I flags
+argument may indicate the file is to be
+created if it does not already exist (by specifying the
+.SB O_CREAT
+flag), in which case the file is created with mode
+.I mode
+as described in
+.BR chmod (2V)
+and modified by the process' umask value (see
+.BR umask (2V)).
+If the path is an empty string, the kernel maps this empty pathname to
+.RB ` . ',
+the current directory.
+.I flags
+values are constructed by
+.SM OR\s0ing
+flags from the following list (one and only one of
+the first three flags below must be used):
+.LP
+.TP 15
+.SB O_RDONLY
+Open for reading only.
+.TP
+.SB O_WRONLY
+Open for writing only.
+.TP
+.SB O_RDWR
+Open for reading and writing.
+.TP
+.SB O_NDELAY
+When opening a
+.SM FIFO
+(named pipe \- see
+.BR mknod (2V))
+with
+.SB O_RDONLY
+or
+.SB O_WRONLY
+set:
+.IP
+If
+.SB O_NDELAY
+is set:
+.RS
+.IP
+An
+.B open(\|)
+for reading-only returns without delay.
+An
+.B open(\|)
+for writing-only returns an error if no process
+currently has the file open for reading.
+.RE
+.IP
+If
+.SB O_NDELAY
+is clear:
+.RS
+.IP
+A call to
+.B open(\|)
+for reading-only blocks until a process
+opens the file for writing.
+A call to
+.B open(\|)
+for writing-only blocks until a process
+opens the file for reading.
+.RE
+.IP
+When opening a file associated with a communication line:
+.IP
+If
+.SB O_NDELAY
+is set:
+.RS
+.IP
+A call to
+.B open(\|)
+returns without waiting for carrier.
+.RE
+.IP
+If
+.SB O_NDELAY
+is clear:
+.RS
+.IP
+A call to
+.B open(\|)
+blocks until carrier is present.
+.RE
+.TP 15
+.SB O_NOCTTY
+When this flag is set, and
+.I path
+refers to a terminal device,
+.B open(\|)
+prevents the terminal device from becoming the controlling
+terminal for the process.
+.TP
+.SB O_NONBLOCK
+Same as
+.SB O_NDELAY
+above.
+.\" This is not quite true...
+.br
+.ne 3
+.TP
+.SB O_SYNC
+When opening a regular file, this flag affects subsequent writes.  If
+set, each
+.BR write (2V)
+will wait for both the file data and file status to be physically
+updated.
+.TP
+.SB O_APPEND
+If set, the seek pointer will be set to the end of the file
+prior to each write.
+.TP
+.SB O_CREAT
+If the file exists, this flag has no effect.
+Otherwise, the file is created, and the owner
+.SM ID
+of the file is set to the effective user
+.SM ID
+of the process.
+The group
+.SM ID
+of the file is set to either:
+.RS
+.TP 3
+\(bu
+the effective group
+.SM ID
+of the process, if the filesystem was not
+mounted with the
+.SM BSD
+file-creation semantics flag (see
+.BR mount (2V))
+and the set-gid bit of the parent directory is clear, or
+.TP 3
+\(bu
+the group
+.SM ID
+of the directory in which the file is created.
+.LP
+The low-order 12 bits of the file mode are set to the value of
+.IR mode ,
+modified as follows (see
+.BR creat (2V)):
+.TP 3
+\(bu
+All bits set in the file mode creation mask of the process are cleared.
+See
+.BR umask (2V).
+.TP 3
+\(bu
+The \*(lqsave text image after execution\*(rq bit of the mode is cleared.
+See
+.BR chmod (2V).
+.TP 3
+\(bu
+The \*(lqset group
+.SM ID
+on execution\*(rq bit of the mode is cleared if the
+effective user
+.SM ID
+of the process is not super-user and the process
+is not a member of the group of the created file.
+.RE
+.TP 15
+.SB O_TRUNC
+If the file exists and is a regular file,
+and the file is successfully opened
+.SB O_RDWR
+or
+\fB\s-1O_WRONLY\s0\fP,
+its length is truncated to zero and the mode and owner
+are unchanged.
+.SB O_TRUNC
+has no effect on
+.SM FIFO
+special files or directories.
+.\" Waiting for Don's answer about other file types.
+.TP
+.SB O_EXCL
+If
+.SB O_EXCL
+and
+.SB O_CREAT
+are set,
+.B open(\|)
+will fail if the file exists.  This can be used to implement a simple
+exclusive access locking mechanism.
+.LP
+The seek pointer used to mark the current position within the
+file is set to the beginning of the file.
+.LP
+The new descriptor is set to remain open across
+.BR execve (2V)
+system calls; see
+.BR close (2V)
+and
+.BR fcntl (2V).
+.LP
+There is a system enforced limit on the number of open file descriptors
+per process, whose value is returned by the
+.BR getdtablesize (2)
+call.
+.LP
+If
+.SB O_CREAT
+is set and the file did not previously exist,
+upon successful completion,
+.B open(\|)
+marks for update the
+.BR st_atime ,
+.BR st_ctime ,
+and
+.B st_mtime
+fields of the file and the
+.B st_ctime
+and
+.B st_mtime
+fields of the parent directory.
+.LP
+If
+.SB O_TRUNC
+is set and the file previously existed,
+upon successful completion,
+.B open(\|)
+marks for update the
+.B st_ctime
+and
+.B st_mtime
+fields of the file.
+.SH SYSTEM V DESCRIPTION
+.LP
+If
+.I path
+points to an empty string an error results.
+.LP
+The flags above behave as described, with the following exception:
+.LP
+If the
+.SB O_NDELAY
+or
+.SB O_NONBLOCK
+flag is set on a call to
+.BR open(\|) ,
+the corresponding flag is set for that file descriptor (see
+.BR fcntl (2V))
+and subsequent reads and writes to that descriptor will not block
+(see
+.BR read (2V)
+and
+.BR write (2V)).
+.SH RETURN VALUES
+.LP
+.B open(\|)
+returns
+a non-negative file descriptor
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.br
+.ne 12
+.SH ERRORS
+.br
+.ne 9
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.IP
+The file referred to by
+.I path
+does not exist,
+.SB O_CREAT
+is specified, and the directory
+in which it is to be created does not permit writing.
+.IP
+.SB O_TRUNC
+is specified and write permission is denied for the file named by
+.IR path .
+.IP
+The required permissions (for reading and/or writing)
+are denied for the file named by
+.IR path .
+.TP
+.SM EDQUOT
+The file does not exist,
+.SB O_CREAT
+is specified, and
+the directory in which the entry for the new file
+is being placed cannot be extended because the user's
+quota of disk blocks on the file system containing
+the directory has been exhausted.
+.IP
+The file does not exist,
+.SB O_CREAT
+is specified, and
+the user's quota of inodes on the file system on
+which the file is being created has been exhausted.
+.TP
+.SM EEXIST
+.SB O_EXCL
+and
+.SB O_CREAT
+were both specified and the file exists.
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EINTR
+A signal was caught during the
+.B open(\|)
+system call.
+.TP
+.SM EIO
+A hangup or error occurred during a
+.SM STREAMS
+.BR open(\|) .
+.IP
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM EISDIR
+The named file is a directory, and the arguments specify
+it is to be opened for writing.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM EMFILE
+The system limit for open file descriptors per process has already been reached.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENFILE
+The system file table is full.
+.br
+.ne 5
+.TP
+.SM ENOENT
+.SB O_CREAT
+is not set and the named file does not exist.
+.IP
+A component of the path prefix of
+.I path
+does not exist.
+.TP
+.SM ENOSPC
+The file does not exist,
+.SB O_CREAT
+is specified, and
+the directory in which the entry for the new file
+is being placed cannot be extended because there
+is no space left on the file system containing the
+directory.
+.IP
+The file does not exist,
+.SB O_CREAT
+is specified,
+and there are no free inodes on the file system on which
+the file is being created.
+.TP
+.SM ENOSR
+A
+.I stream
+could not be allocated.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM ENXIO
+.SB O_NDELAY
+is set, the named file is a
+.SM FIFO\s0,
+.SB O_WRONLY
+is set, and no process has the file open for reading.
+.IP
+The file is a character special or block special file, and
+the associated device does not exist.
+.IP
+.\" Check on O_NDELAY
+.\".SB O_NDELAY
+.\"or
+.SB O_NONBLOCK
+is set, the named file is a
+.SM FIFO\s0,
+.SB O_WRONLY
+is set, and no process has the file open for reading.
+.IP
+A
+.SM STREAMS
+module or driver open routine failed.
+.TP
+.SM EOPNOTSUPP
+An attempt was made to open a socket (not currently implemented).
+.TP
+.SM EROFS
+The named file does not exist,
+.SB O_CREAT
+is specified, and the file system on
+which it is to be created is a read-only file system.
+.IP
+The named file resides on a read-only file system,
+and the file is to be opened for writing.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to an empty string.
+.SH SEE ALSO
+.BR chmod (2V),
+.BR close (2V),
+.BR creat (2V),
+.BR dup (2V),
+.BR fcntl (2V),
+.BR getdtablesize (2),
+.BR getmsg (2),
+.BR lseek (2V),
+.BR mknod (2V),
+.BR mount (2V),
+.BR putmsg (2),
+.BR read (2V),
+.BR umask (2V)
+.BR write (2V)

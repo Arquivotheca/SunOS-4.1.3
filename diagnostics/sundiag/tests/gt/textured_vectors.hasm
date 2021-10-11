@@ -1,0 +1,120 @@
+;
+;      @(#)textured_vectors.hasm 1.1 92/07/30 17:42:09
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+;
+; Test wide line support.
+;
+
+	set_attribute	hk_view, @perspective
+
+	set_attribute	hk_line_antialiasing
+	.word		FALSE
+
+	set_attribute	hk_line_geom_format
+	.word		HK_LINE_XYZ_RGB
+
+	set_attribute	hk_line_width
+	.word		5.0
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_UNBALANCE
+	set_attribute	hk_line_pattern
+	.word		phant_pat
+	jmpl		star, r6
+
+	set_attribute	hk_line_width
+	.word		4.0
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_UNBALANCE_OFFCOLOR
+	set_attribute	hk_line_pattern
+	.word		cen_pat
+	set_attribute	hk_line_off_color
+	.rgb		<1.0, 1.0, 0.0>
+	jmpl		star, r6
+
+	set_attribute	hk_line_width
+	.word		3.0
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_BALANCE
+	set_attribute	hk_line_pattern
+	.word		cen_pat
+	set_attribute	hk_line_off_color
+	.rgb		<1.0, 1.0, 0.0>
+	jmpl		star, r6
+
+	set_attribute	hk_line_width
+	.word		2.0
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_BALANCE_OFFCOLOR
+	set_attribute	hk_line_pattern
+	.word		ldsh_pat
+	set_attribute	hk_line_off_color
+	.rgb		<1.0, 1.0, 0.0>
+	jmpl		star, r6
+
+	set_attribute	hk_line_width
+	.word		1.0
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_UNBALANCE_OFFCOLOR
+	set_attribute	hk_line_pattern
+	.word		dsh_pat
+	set_attribute	hk_line_off_color
+	.rgb		<1.0, 1.0, 0.0>
+	jmpl		star, r6
+
+	set_attribute	hk_line_width
+	.word		0.8
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_UNBALANCE_OFFCOLOR
+	set_attribute	hk_line_pattern
+	.word		dot_pat
+	set_attribute	hk_line_off_color
+	.rgb		<1.0, 1.0, 0.0>
+	jmpl		star, r6
+
+	set_attribute	hk_line_width
+	.word		0.5
+	set_attribute	hk_line_style
+	.word		HK_LINESTYLE_UNBALANCE_OFFCOLOR
+	set_attribute	hk_line_pattern
+	.word		dshdot_pat
+	set_attribute	hk_line_off_color
+	.rgb		<1.0, 1.0, 0.0>
+	jmpl		star, r6
+
+	trap		0
+
+; Set up perspective #4
+perspective:
+	.fword		0.5,  -0.5,  0.5,  0.5
+	.matrix_pair \				; VT and IVT
+	<   <  1.0,  0.0,  0.0,  0.0 > , \
+	    <  0.0,  1.0,  0.0,  0.0 > , \
+	    <  0.0,  0.0,  1.0,  0.0 > , \
+	    <  0.0,  0.0,  0.0,  1.0 > >
+
+; Draw star
+star:
+	polyline 6			; Draw a vector
+	.xyz		< 0.0, 1.0, 0.0 >
+	.rgb		<1.0, 0.0, 0.0>
+	.xyz		< 0.587785252, -0.809016994, 0.0 >
+	.rgb		<1.0, 0.0, 0.0>
+	.xyz		< -0.951056516, 0.309016994, 0.0 >
+	.rgb		<1.0, 1.0, 1.0>
+	.xyz		< 0.951056516, 0.309016994, 0.0 >
+	.rgb		<1.0, 1.0, 1.0>
+	.xyz		< -0.587785252, -0.809016994, 0.0 >
+	.rgb		<0.0, 0.0, 1.0>
+	.xyz		< 0.0, 1.0, 0.0 >
+	.rgb		<0.0, 0.0, 1.0>
+
+	set_attribute	hk_pre_concat_lmt
+	.scale		0.8
+
+	jmpl		(r6 + 0), r6		; Return
+;
+#include "/usr/shbam2/tests/lines/hk_pattern.hasm"

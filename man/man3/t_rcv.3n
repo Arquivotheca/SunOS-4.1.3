@@ -1,0 +1,166 @@
+.\" @(#)t_rcv.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_RCV 3N "21 January 1990"
+.SH NAME
+t_rcv \- receive normal or expedited data sent over a connection
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int t_rcv(fd, buf, nbytes, flags)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int fd;
+char *buf;
+unsigned nbytes;
+int *flags;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_rcv()" "" "\fLt_rcv()\fR \(em receive data over a connection" ""
+.IX transport "receive data over a connection"
+.LP
+.B t_rcv(\|)
+receives either normal or expedited data.
+.I fd
+identifies the local transport endpoint through which data will arrive,
+.I buf
+points to a receive buffer where user data will be placed, and
+.I nbytes
+specifies the size of the receive buffer.
+.I flags
+may be set on return from
+.B t_rcv(\|)
+and specifies optional flags as described below.
+.LP
+By default,
+.B t_rcv(\|)
+operates in synchronous mode and will
+wait for data to arrive if none is currently available.
+However, if
+.SB T_NDELAY
+is set (using
+.BR t_open (3N)
+or
+.BR fcntl(\|) ),
+.B t_rcv(\|)
+will execute in asynchronous mode and will
+fail if no data is available.
+See
+.SM TNODATA
+below.
+.LP
+On return from the call,
+if
+.SB T_MORE
+is set in
+.I flags
+this indicates that there is more data and the current
+transport service data unit
+(\s-1TSDU\s0) or expedited transport
+service data unit (\s-1ETSDU\s0)
+must be received in multiple
+.B t_rcv(\|)
+calls.
+Each
+.B t_rcv(\|)
+with the
+.SB T_MORE
+flag set indicates that another
+.B t_rcv(\|)
+must follow immediately to get more data for the current
+.SM TSDU\s0.
+The end of the
+.SM TSDU
+is identified by the return of a
+.B t_rcv(\|)
+call with the
+.SB T_MORE
+flag not set.
+If the transport provider does not support the concept of a
+.SM TSDU
+as indicated in the
+.I info
+argument on return from
+.BR t_open (3N)
+or
+.BR t_getinfo (3N),
+the
+.SB T_MORE
+flag is not meaningful and should be ignored.
+.LP
+On return,
+the data returned is expedited data if
+.SB T_EXPEDITED
+is set in
+.IR flags .
+If the number of bytes of expedited data exceeds
+.IR nbytes ,
+.B t_rcv(\|)
+will set
+.SB T_EXPEDITED
+and
+.SB T_MORE
+on return from the initial call.
+Subsequent calls to retrieve the remaining
+.SM ETSDU
+will not have
+.SB T_EXPEDITED
+set on return.
+The end of the
+.SM ETSDU
+is identified by the return of a
+.B t_rcv(\|)
+call with the
+.SB T_MORE
+flag not set.
+.LP
+If expedited data arrives after part of a
+.SM TSDU
+has been retrieved, receipt of the remainder of the
+.SM TSDU
+will be suspended until the
+.SM ETSDU
+has been processed.
+Only after the full
+.SM ETSDU
+has been retrieved (\s-1T_MORE\s0 not set)
+will the remainder of the
+.SM TSDU
+be available to the user.
+.SH RETURN VALUES
+.LP
+On success,
+.B t_rcv(\|)
+returns the number of bytes received.
+On failure,
+it returns
+\-1.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on this transport endpoint and requires
+immediate attention.
+.TP
+.SM TNODATA
+.SB T_NDELAY
+was set, but
+no data is currently available from the transport provider.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR t_open (3N),
+.BR t_snd (3N)
+.LP
+.TX NETP

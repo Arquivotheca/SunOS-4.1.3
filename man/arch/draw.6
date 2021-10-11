@@ -1,0 +1,89 @@
+.\" @(#)draw.6 1.1 92/07/30 SMI
+.TH DRAW 6 "8 March 1984"
+.UC 4
+.SH NAME
+draw \- interactive graphics drawing
+.SH SYNOPSIS
+.B /usr/demo/bdraw
+.br
+.B /usr/demo/cdraw
+.SH DESCRIPTION
+.IX  "bdraw command"  ""  "\fLbdraw\fP \(em interactive graphics drawing"draw.6:
+.IX  "cdraw command"  ""  "\fLcdraw\fP \(em interactive graphics drawing"draw.6:
+.IX  "interactive graphics drawing"  ""  "interactive graphics drawing \(em \fLbdraw\fP
+The
+.I draw
+programs are menu-driven programs which use the mouse, keyboard, bitmap display
+and optionally the color display to draw objects, drag them around, save them
+on disk, and so on.
+.I Bdraw
+is the draw program for the black and white display and
+.I cdraw
+is the program for driving the color display.
+.LP
+The main menu items are selected by moving the mouse cursor and pressing the
+left mouse button.  To redraw the display, point at the left edge of the main
+menu box and press the left button.  The main menu items are:
+.IP "\fBNew Seg xlate\fP" 10
+Open a new translatable segment. A segment is a collection of attributes and
+primitives (lines, text, polygons, etc.).  A translatable segment may 
+subsequently be positioned.
+.IP "\fBNew Seg xform\fP" 10
+Open a new transformable segment.  A transformable segment may subsequently
+be rotated, scaled, or positioned.
+.IP "\fBDelete Seg\fP" 10
+To delete a segment, point at any primitive in the segment and press the left
+button.
+.IP "\fBLines\fP" 10
+To add line primitives to the currently open segment, position cursor, press
+the left button, ... press right button to quit.
+.IP "\fBPolygon\fP" 10
+To add a polygon primitive to the currently open segment, position the cursor,
+press the left button, \fB.\|.\|.\fP press the right button to terminate
+the boundary definition.  Polygons are filled with the current fill attribute.
+.IP "\fBRaster\fP" 10
+To add a raster primitive to the currently open segment, position the cursor,
+press the left button to reposition the box, adjust the box by moving the
+mouse, press the right button to create the raster primitive comprising the
+boxed bitmap.  A `rasterfile' is also created on disk for hardcopy
+purposes (see \fI/usr/include/rasterfile.h\fP).  This `rasterfile' file
+may be spooled to a Versatec printer/plotter for  hardcopy after exiting
+from the draw program.  The command to do this is \fBlpr\ \ \-v\ \ rasterfile\fP.
+.IP "\fBText\fP" 10
+To add a text primitive to the currently open segment, position cursor, press
+left button, type the text string at the keyboard (back space works), hit
+return.  Text is drawn with the current text attributes.
+.IP "\fBMarker\fP" 10
+To add marker primitives to the currently open segment, position cursor, press
+the left button to place marker, ... press the right button to quit.
+.IP "\fBPosition\fP" 10
+To position a segment, point at any primitive in the segment, press left
+button, position the segment, press right button to quit.
+.IP "\fBRotate\fP" 10
+To rotate a transformable segment, point at any primitive in the segment,
+press left button, move mouse to rotate, press right button to quit.
+.IP "\fBScale\fP" 10
+To scale a transformable segment, point at any primitive in the segment, press
+the left button, move mouse to scale in x or y, press right button to quit.
+.IP "\fBAttributes\fP" 10
+This item brings up the attribute menu.  To select an attribute such as text
+font, region fill texture (color), linestyle, or line width, point at the
+item and press the left button.  Point at the left edge of the menu box to
+quit.
+.IP "\fBSave Seg\fP" 10
+To save a segment on a disk file, point at the segment, press the left button,
+type the disk file name, hit return.
+.IP "\fBRestore Seg\fP" 10
+To restore a previously saved segment from disk, type file name, hit return.
+.IP "\fBExit\fP" 10
+Exit the draw program.
+.SH BUGS
+.LP
+Rasters and raster text do not scale or rotate.
+If segments completely overlap, only the last one drawn may be picked by
+pointing with the mouse.  This also applies to the menu segments!  Therefore,
+don't cover them up with polygons.
+If aborted with your interrupt character, you must give the 
+`reset' command to turn
+keyboard echo back on and to reset -cbreak.  Therefore, use the Exit item
+in the main menu to exit the program.

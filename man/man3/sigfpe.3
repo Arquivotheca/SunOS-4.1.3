@@ -1,0 +1,176 @@
+.\" @(#)sigfpe.3 1.1 92/07/30 SMI;
+.TH SIGFPE 3 "21 October 1987"
+.SH NAME
+sigfpe \- signal handling for specific SIGFPE codes
+.SH SYNOPSIS
+.nf
+.B #include <signal.h>
+.LP
+.B #include <floatingpoint.h>
+.LP
+.B sigfpe_handler_type sigfpe(code, hdl)
+.B sigfpe_code_type code;
+.B sigfpe_handler_type hdl;
+.fi
+.SH DESCRIPTION
+.IX "sigfpe()" "" "\fLsigfpe()\fP \(em signal handling for specific SIGFPE codes"
+.LP
+This function allows signal handling to be specified for particular
+.SB SIGFPE
+codes.  A call to
+.B sigfpe(\|)
+defines a new handler
+.I hdl
+for a particular
+.SB SIGFPE
+.I code
+and returns the old handler as the value of the function
+.B sigfpe(\|) .
+Normally handlers are specified as pointers to functions;
+the special cases
+.BR \s-1SIGFPE_IGNORE\s0 ,
+.BR \s-1SIGFPE_ABORT\s0 ,
+and
+.SB SIGFPE_DEFAULT
+allow ignoring, specifying core dump using
+.BR abort (3),
+or default handling respectively.
+.LP
+For these
+.SM IEEE\s0-related
+codes:
+.nf
+	\fB\s-1FPE_FLTINEX_TRAP\s0\fR	fp_inexact - floating inexact result
+	\fB\s-1FPE_FLTDIV_TRAP\s0\fR	fp_division - floating division by zero
+	\fB\s-1FPE_FLTUND_TRAP\s0\fR	fp_underflow - floating underflow
+	\fB\s-1FPE_FLTOVF_TRAP\s0\fR	fp_overflow - floating overflow
+	\fB\s-1FPE_FLTBSUN_TRAP\s0\fR	fp_invalid - branch or set on unordered
+	\fB\s-1FPE_FLTOPERR_TRAP\s0\fR	fp_invalid - floating operand error
+	\fB\s-1FPE_FLTNAN_TRAP\s0\fR	fp_invalid - floating Not-A-Number
+.fi
+.LP
+default handling is defined to be to call the handler specified to
+.BR ieee_handler (3M).
+.LP
+For all other
+.SB SIGFPE
+codes, default handling is to core dump using
+.BR abort (3).
+.LP
+The compilation option
+.B \-ffpa
+causes fpa recomputation to replace
+the default abort action
+for code
+.BR \s-1FPE_FPA_ERROR\s0 .
+Note:
+.SB SIGFPE_DEFAULT
+will restore abort rather than
+.SM FPA
+recomputation for this code.
+.LP
+Three steps are required to intercept an
+.SM IEEE\s0-related
+.SB SIGFPE
+code with
+.BR sigfpe(\|) :
+.RS
+.TP
+1)
+Set up a handler with
+.BR sigfpe(\|) .
+.TP
+2)
+Enable the relevant
+.SM IEEE
+trapping capability in the hardware, perhaps
+by using assembly-language instructions.
+.TP
+3)
+Perform a floating-point operation that generates the intended
+.SM IEEE
+exception.
+.RE
+.LP
+Unlike
+.BR ieee_handler (3M),
+.B sigfpe(\|)
+never changes floating-point hardware mode bits affecting
+.SM IEEE
+trapping.  No
+.SM IEEE\s0-related
+.SB SIGFPE
+signals will be generated unless those hardware mode
+bits are enabled.
+.LP
+.SB SIGFPE
+signals can be handled using
+.BR sigvec (2),
+.BR signal (3V),
+.BR sigfpe (3),
+or
+.BR ieee_handler (3M).
+In a particular program, to avoid confusion,
+use only one of these interfaces to handle
+.SB SIGFPE
+signals.
+.br
+.ne 20
+.SH EXAMPLE
+.LP
+A user-specified signal handler might look like this:
+.nf
+.ft B
+void sample_handler( sig, code, scp, addr )
+	int sig ;		/* sig == \s-1SIGFPE\s0 always */
+	int code ;
+	struct sigcontext *scp ;
+	char *addr ;
+	{
+		/*
+		   Sample user-written sigfpe code handler.
+		   Prints a message and continues.
+		   struct sigcontext is defined in <signal.h>.
+		 */
+		printf(" ieee exception code %x occurred at pc %X \\n",code,scp->sc_pc);
+	}
+.LP
+and it might be set up like this:
+.ft B
+	extern void sample_handler(\|);
+ 	main(\|)
+	{
+		sigfpe_handler_type hdl, old_handler1, old_handler2;
+	/*
+	 * save current overflow and invalid handlers; set the new
+	 * overflow handler to sample_handler(\|) and set the new
+	 * invalid handler to \s-1SIGFPE_ABORT\s0 (abort on invalid)
+	 */
+		hdl = (sigfpe_handler_type) sample_handler;
+		old_handler1 = sigfpe(\s-1FPE_FLTOVF_TRAP\s0, hdl);
+		old_handler2 = sigfpe(\s-1FPE_FLTOPERR_TRAP\s0, \s-1SIGFPE_ABORT\s0);
+		\&.\|.\|.
+	/*
+	 * restore old overflow and invalid handlers
+	 */
+		sigfpe(\s-1FPE_FLTOVF_TRAP\s0,   old_handler1);
+		sigfpe(\s-1FPE_FLTOPERR_TRAP\s0, old_handler2);
+	}
+.ft R
+.fi
+.SH "SEE ALSO"
+.BR sigvec (2),
+.BR abort (3),
+.BR floatingpoint (3),
+.BR ieee_handler (3M),
+.BR signal (3V)
+.SH DIAGNOSTICS
+.LP
+.B sigfpe(\|)
+returns
+.SM BADSIG
+if
+.I code
+is not zero or a defined
+.SB SIGFPE
+code.

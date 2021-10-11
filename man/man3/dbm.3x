@@ -1,0 +1,201 @@
+.\" @(#)dbm.3x 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH DBM 3X  "24 November 1987"
+.SH NAME
+dbm, dbminit, dbmclose, fetch, store, delete, firstkey, nextkey \- data base subroutines
+.SH SYNOPSIS
+.LP
+.B "#include <dbm.h>"
+.LP
+.nf
+.B typedef struct {
+.B "	char *dptr;"
+.B "	int dsize;"
+.B } datum;
+.fi
+.LP
+.nf
+.B dbminit(file)
+.B char *file;
+.fi
+.LP
+.B dbmclose(\|)
+.LP
+.nf
+.B datum fetch(key)
+.B datum key;
+.fi
+.LP
+.nf
+.B store(key, content)
+.B datum key, content;
+.fi
+.LP
+.nf
+.B delete(key)
+.B datum key;
+.fi
+.LP
+.B datum firstkey(\|)
+.LP
+.nf
+.B datum nextkey(key)
+.B datum key;
+.fi
+.SH DESCRIPTION
+.LP
+Note: the
+.B dbm(\|)
+library has been superceded by
+.BR ndbm (3),
+and is now implemented using
+.BR ndbm(\|) .
+.LP
+These functions maintain key/content pairs in a data base.
+The functions will handle very large (a billion blocks)
+databases and will access a keyed item in one or two file system accesses.
+.IX  "database library"  "ldbm option"  ""  "\fL\-ldbm\fR option to \fLcc\fR"
+The functions are obtained with the loader option
+.BR \-ldbm .
+.LP
+.IR key s
+and
+.IR content s
+are described by the
+.B datum
+typedef.  A
+.B datum
+specifies a string of
+.I dsize
+bytes pointed to by
+.IR dptr .
+Arbitrary binary data, as well as normal
+.SM ASCII
+strings, are allowed.
+The data base is stored in two files.
+One file is a directory containing a bit map and has
+.B .dir
+as its suffix.  The second file contains all data and has
+.B .pag
+as its suffix.
+.LP
+.IX "dbminit()"  ""  "\fLdbminit()\fP \(em open database"
+.IX "open database \(em \fLdbminit()\fP"
+.IX "database functions \(em \fLdbm()\fR"  dbminit()  ""  \fLdbminit()\fP
+Before a database can be accessed, it must be opened by
+.BR dbminit .
+At the time of this call, the files
+.IB file .dir
+and
+.IB file .pag
+must exist.
+(An empty database is created by creating zero-length
+.B .dir
+and
+.B .pag
+files.)
+.LP
+.IX "close()"  ""  "\fLclose()\fP \(em close database"
+.IX "close database \(em \fLclose()\fP"
+.IX "database functions \(em \fLdbm()\fR"  close()  ""  \fLclose()\fP
+A database may be closed by calling
+.BR dbmclose .
+You must close a database before opening a new one.
+.LP
+.IX "fetch()"  ""  "\fLfetch()\fP \(em retrieve datum under key"
+.IX "retrieve datum under key \(em \fLfetch()\fP"
+.IX "database functions \(em \fLdbm()\fR"  fetch()  ""  \fLfetch()\fP
+Once open, the data stored under a key is accessed by
+.B fetch(\|)
+and data is placed under a key by
+.BR store .
+.IX "store()"  ""  "\fLstore()\fP \(em store datum under key"
+.IX "store datum under key \(em \fLstore()\fP"
+.IX "database functions \(em \fLdbm()\fR"  store()  ""  \fLstore()\fP
+A key (and its associated contents) is deleted by
+.BR delete .
+.IX "delete()"  ""  "\fLdelete()\fP \(em delete datum and key"
+.IX "delete datum and key \(em \fLdelete()\fP"
+.IX "database functions \(em \fLdbm()\fR"  delete()  ""  \fLdelete()\fP
+A linear pass through all keys in a database may be made,
+in an (apparently) random order, by use of
+.B firstkey(\|)
+and
+.BR nextkey .
+.IX "firstkey()"  ""  "\fLfirstkey()\fP \(em find first key"
+.IX find "first key in \fLdbm()\fR database \(em \fLfirstkey()\fP"
+.IX "database functions \(em \fLdbm()\fR"  firstkey()  ""  \fLfirstkey()\fP
+.IX "nextkey()"  ""  "\fLnextkey()\fP \(em find next key"
+.IX find "next key in \fLdbm()\fR database \(em \fLnextkey()\fP"
+.IX "database functions \(em \fLdbm()\fR"  nextkey()  ""  \fLnextkey()\fP
+.B firstkey(\|)
+will return the first key in the database.  With any key
+.B nextkey(\|)
+will return the next key in the database.
+This code will traverse the data base:
+.IP
+.ft B
+for
+(key = firstkey(\|); key.dptr != \s-1NULL\s0; key = nextkey(key))
+.ft R
+.SH SEE ALSO
+.BR ar (1V),
+.BR cat (1V),
+.BR cp (1),
+.BR tar (1),
+.BR ndbm (3)
+.SH DIAGNOSTICS
+All functions that return an
+.B int
+indicate errors with negative values.  A zero return indicates no error.
+Routines that return a
+.B datum
+indicate errors with a
+.SM NULL
+.BR  (0)
+.IR dptr .
+.br
+.ne 8
+.SH BUGS
+.LP
+The
+.B .pag
+file will contain holes so that its apparent size is about
+four times its actual content.  Older
+versions of the
+.SM UNIX
+operating system may create real
+file blocks for these holes when touched.
+These files cannot be copied
+by normal means (\c
+.BR cp (1),
+.BR cat (1V),
+.BR tar (1),
+.BR ar (1V))
+without filling in the holes.
+.LP
+.I dptr
+pointers returned by these subroutines point into static storage
+that is changed by subsequent calls.
+.LP
+The sum of the sizes of a key/content pair must not exceed
+the internal block size (currently 1024 bytes).
+Moreover all key/content pairs that hash together must fit on a single block.
+.B store(\|)
+will return an error in the event that a disk block fills with inseparable data.
+.LP
+.B delete(\|)
+does not physically reclaim file space,
+although it does make it available for reuse.
+.LP
+The order of keys presented by
+.B firstkey(\|)
+and
+.B nextkey(\|)
+depends on a hashing function, not on anything interesting.
+.LP
+There are no interlocks and no reliable cache flushing;
+thus concurrent updating and reading is risky.

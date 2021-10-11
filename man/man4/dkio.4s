@@ -1,0 +1,160 @@
+.\" @(#)dkio.4s 1.1 92/07/30 SMI;
+.TH DKIO 4S "24 January 1990"
+.SH NAME
+dkio \- generic disk control operations
+.SH DESCRIPTION
+.IX  "dkio device"  ""  "\fLdkio\fP \(em disk control operations"
+.IX  disk "control operations \(em \fLdkio\fP" 
+.IX  "generic disk control operations"  ""  "generic disk control operations \(em \fLdkio\fP"
+.LP
+All Sun disk drivers support a set of
+.BR ioctl (2)
+requests for disk formatting and labeling operations.
+Basic to these 
+.B ioctl(\|)
+requests are the definitions in
+.BR /usr/include/sun/dkio.h :
+.nf
+.sp
+.ft B
+/*
+* Structures and definitions for disk I/O control commands
+*/
+/* Controller and disk identification */
+struct dk_info {
+	int	dki_ctlr;		/* controller address */
+	short	dki_unit;		/* unit (slave) address */
+	short	dki_ctype;		/* controller type */
+	short	dki_flags;		/* flags */
+};
+/* controller types */
+#define \s-1DKC_UNKNOWN\s0		0
+#define \s-1DKC_DSD\s05215		5
+#define \s-1DKC_XY\s0450		6
+#define \s-1DKC_ACB\s04000		7
+#define \s-1DKC_MD\s021		8
+#define \s-1DKC_XD\s07053		11
+#define \s-1DKC_CSS\s0		12
+#define \s-1DKC_NEC\s0765		13	/* floppy on Sun386i */
+#define \s-1DKC_INTEL\s082072	14
+/* flags */
+#define	\s-1DKI_BAD\s0144	0x01	/* use \s-1DEC\s0 std 144 bad sector fwding */
+#define	\s-1DKI_MAPTRK\s0	0x02	/* controller does track mapping */
+#define	\s-1DKI_FMTTRK\s0	0x04	/* formats only full track at a time */
+#define	\s-1DKI_FMTVOL\s0	0x08	/* formats only full volume at a time */
+/* Definition of a disk's geometry */
+struct dk_geom {
+	unsigned short	dkg_ncyl;	/* # of data cylinders */
+	unsigned short	dkg_acyl;	/* # of alternate cylinders */
+	unsigned short	dkg_bcyl;	/* cyl offset (for fixed head area) */
+	unsigned short	dkg_nhead;	/* # of heads */
+	unsigned short	dkg_bhead;	/* head offset (for Larks, etc.) */
+	unsigned short	dkg_nsect;	/* # of sectors per track */
+	unsigned short	dkg_intrlv;	/* interleave factor */
+	unsigned short	dkg_gap1;	/* gap 1 size */
+	unsigned short	dkg_gap2;	/* gap 2 size */
+	unsigned short	dkg_apc;	/* alternates per cyl (\s-1SCSI\s0 only) */
+	unsigned short	dkg_extra[9];	/* for compatible expansion */
+};
+/* Partition map (part of dk_label) */
+struct dk_map {
+	long	dkl_cylno;	/* starting cylinder */
+	long	dkl_nblk;	/* number of blocks */
+};
+.br
+.ne 8
+/* Floppy characteristics */
+struct fdk_char {
+	u_char	medium;	/* medium type (scsi floppy only) */
+	int	transfer_rate;	/* transfer rate */
+	int	ncyl;		/* number of cylinders */
+	int	nhead;		/* number of heads */
+	int	sec_size;	/* sector size */
+	int	secptrack;	/* sectors per track */
+	int	steps;		/* number of steps per */
+};
+/* Used by \s-1FDKGETCHANGE\s0, returned state of the sense disk change bit. */
+#define \s-1FDKGC_HISTORY\s0	0x01	/* disk has changed since last call */
+#define \s-1FDKGC_CURRENT\s0	0x02	/* current state of disk change */
+/* disk I/O control commands */
+#define	\s-1DKIOCINFO\s0		_\s-1IOR\s0(d, 8, struct dk_info)	/* Get info */
+#define	\s-1DKIOCGGEOM\s0		_\s-1IOR\s0(d, 2, struct dk_geom)	/* Get geometry */
+#define	\s-1DKIOCSGEOM\s0		_\s-1IOW\s0(d, 3, struct dk_geom)	/* Set geometry */
+#define	\s-1DKIOCGPART\s0		_\s-1IOR\s0(d, 4, struct dk_map)	/* Get partition info */
+#define	\s-1DKIOCSPART\s0		_\s-1IOW\s0(d, 5, struct dk_map)	/* Set partition info */
+#define	\s-1DKIOCWCHK\s0		_\s-1IOWR\s0(d, 115, int)		/* Toggle write check */
+/* floppy I/O control commands */
+#define	\s-1FDKIOGCHAR\s0		_\s-1IOR\s0(d, 114, struct fdk_char)	/* Get floppy characteristics */
+#define	\s-1FDKEJECT\s0		_\s-1IO\s0(d, 112)			/* Eject floppy */
+#define	\s-1FDKGETCHANGE\s0	_\s-1IOR\s0(d, 111, int)			/* Get disk change status */
+.fi
+.ft R
+.LP
+.IX  "ioctls for disks"  "DKIOCGGEOM"  "" "\fLDKIOCGGEOM\fP \(em get disk geometry"
+.IX  "DKIOCGGEOM get disk geometry"  ""  "\fLDKIOCGGEOM\fP \(em get disk geometry"
+.IX  get "disk geometry ioctl \(em \fLDKIOCGGEOM\fP"
+.IX  "ioctls for disks"  "DKIOCSGEOM"  ""  "\fLDKIOCSGEOM\fP \(em set disk geometry"
+.IX  "DKIOCSGEOM set disk geometry"  ""  "\fLDKIOCSGEOM\fP \(em set disk geometry"
+.IX  set "disk geometry ioctl \(em \fLDKIOCSGEOM\fP"
+.IX  "ioctls for disks"  "DKIOCGPART"  ""  "\fLDKIOCGPART\fP \(em get disk partition info"
+.IX  "DKIOCGPART get disk partition info"  ""  "\fLDKIOCGPART\fP \(em get disk partition info"
+.IX  get "disk partition info ioctl \(em \fLDKIOCGPART\fP"
+.IX  "ioctls for disks"  "DKIOCSPART"  ""  "\fLDKIOCSPART\fP \(em set disk partition info"
+.IX  "DKIOCSPART set disk partition info"  ""  "\fLDKIOCSPART\fP \(em set disk partition info"
+.IX  set "disk partition info \fLioctl\fP \(em \fLDKIOCSPART\fP"
+.IX  "ioctls for disks"  "DKIOCINFO"  ""  "\fLDKIOCINFO\fP \(em get disk info"
+.IX  "DKIOCINFO get disk info"  ""  "\fLDKIOCINFO\fP \(em get disk info"
+.IX  get "disk info ioctl \(em \fLDKIOCINFO\fP"
+.IX  "ioctls for disks"  "DKIOCWCHK"  ""  "\fLDKIOCWCHK\fP \(em disk write check"
+.IX  "DKIOCWCHK disk write check"  ""  "\fLDKIOCWCHK\fP \(em disk write check"
+.IX  "ioctls for floppy"  "FDKIOGCHAR"  ""  "\fLFDKIOGCHAR\fP \(em get floppy characteristics"
+.IX  "FDKIOGCHAR get floppy characteristics"  ""  "\fLFDKIOGCHAR\fP \(em get floppy characteristics"
+.IX  "ioctls for floppy"  "FDKEJECT"  ""  "\fLFDKEJECT\fP \(em eject floppy"
+.IX  "FDKEJECT eject floppy"  ""  "\fLFDKEJECT\fP \(em eject floppy"
+.IX  "ioctls for floppy"  "FDKIOGETCHANGE"  ""  "\fLFDKIOGETCHAGE\fP \(em get status of disk changed"
+.IX  "FDKIOGETCHANGE get status of disk changed"  ""  "\fLFDKIOGETCHANGE\fP \(em get status of disk changed"
+.LP
+The
+.SB DKIOCINFO
+ioctl returns a
+.B dk_info
+structure which tells the type of the controller
+and attributes about how bad-block
+processing is done on the controller.  The
+.SB DKIOCGPART
+and
+.SB DKIOCSPART
+get and set the controller's current notion of the partition
+table for the disk (without changing the partition table on the disk itself),
+while the
+.SB DKIOCGGEOM
+and
+.SB DKIOCSGEOM
+ioctls do similar things for the
+per-drive geometry information.
+The
+.SB DKIOCWCHK
+enables or disables a disk's write check capabilities.
+The
+.SB FDKIOGCHAR
+ioctl returns an
+.B fdk_char
+structure which gives the characteristics of the floppy diskette.
+The
+.SB FDKEJECT
+ioctl ejects the floppy diskette.
+The
+.SB FDKGETCHANGE
+returns the status of the diskette changed signal from the floppy interface.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/include/sun/dkio.h
+.PD
+.SH "SEE ALSO"
+.BR fd (4S),
+.BR ip (4P),
+.BR sd (4S),
+.BR xd (4S),
+.BR xy (4S),
+.BR dkctl (8)

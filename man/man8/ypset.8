@@ -1,0 +1,186 @@
+.\" @(#)ypset.8 1.1 92/07/30 SMI
+.TH YPSET 8 "23 August 1989"
+.SH NAME
+ypset \- point ypbind at a particular server
+.SH SYNOPSIS
+.B /usr/etc/yp/ypset
+[
+.BR \-V1\| | \|\-V2
+] [
+.B \-d
+.I domain
+] [
+.B \-h
+.I host
+]
+.I server
+.SH DESCRIPTION
+.IX ypset "" "\fLypset\fR \(em direct \fLypbind\fR to a server"
+.LP
+.B ypset
+tells
+.B ypbind
+to get the
+Network Information Service
+(\s-1NIS\s0)
+for the specified
+.I domain
+from the
+.B ypserv
+process running on
+.IR server .
+If
+.I server
+is down, or is not running
+.BR ypserv ,
+this is not discovered until an
+.SM NIS
+client process tries to
+get a binding for the domain.  At this point, the binding set by
+.B ypset
+is tested by
+.BR ypbind .
+If
+the binding is invalid,
+.B ypbind
+attempts to rebind for the same domain.
+.LP
+.B ypset
+is useful for binding a client node which is not on a broadcast net,
+or is on a broadcast net which is not running an
+.SM NIS
+server host.
+It also is useful for debugging
+.SM NIS
+client applications, for instance
+where an
+.SM NIS
+map only exists at a single
+.SM NIS
+server host.
+.LP
+In cases where several hosts on the local net are supplying
+.SM NIS
+services, it is possible for
+.B ypbind
+to rebind to another host even while you attempt to
+find out if the
+.B ypset
+operation succeeded.  For example, you can type:
+.RS
+.nf
+.ft B
+example% ypset host1
+example% ypwhich
+host2
+.fi
+.ft R
+.RE
+.LP
+which can be confusing.  This is a function of the
+.SM NIS
+service subsystem's attempt to
+load-balance among the available
+.SM NIS
+servers, and occurs when
+.I host1
+does not respond to
+.B ypbind
+because it is not running
+.B ypserv
+(or is overloaded), and
+.IR host2 ,
+running
+.BR ypserv ,
+gets the binding.
+.LP
+.I server
+indicates the
+.SM NIS
+server to bind to, and can be specified as a name or an
+.SM IP
+address.  If specified as a name,
+.B ypset
+attempts to use
+.SM NIS
+services to resolve the name to an
+.SM IP
+address.  This works only if
+the node has a current valid binding for the domain in question.
+In most cases,
+.I server
+should be specified as an
+.SM IP
+address.
+.LP
+Refer to
+.BR ypfiles (5)
+and
+.BR ypserv (8)
+for an overview of the 
+.SM NIS
+service.
+.SH OPTIONS
+.TP
+.B \-V1
+Bind
+.I server
+for the (old) v.1
+.SM NIS
+protocol.
+.TP
+.B \-V2
+Bind
+.I server
+for the (current) v.2
+.SM NIS
+protocol.
+.IP
+If no version is supplied,
+.BR ypset ,
+first attempts to set the domain for the (current) v.2 protocol.
+If this attempt fails,
+.BR ypset ,
+then attempts to set the domain for the (old) v.1 protocol.
+.TP
+.BI \-h  host
+Set ypbind's binding on
+.IR host ,
+instead of locally.
+.I host
+can be specified as a name or as an
+.SM IP
+address.
+.TP
+.BI \-d  domain
+Use
+.I domain ,
+instead of the default domain.
+.SH DIAGNOSTICS
+.TP
+.BI "Sorry, I couldn't send my rpc message to ypbind on host" " name"
+The user is not root, or
+.B ypbind
+was run without one of the 
+.B \-ypset
+flags.
+See
+.BR ypserv (8)
+for explanations of the 
+.B \-ypset
+flags.
+.SH "SEE ALSO"
+.BR ypwhich (1),
+.BR ypfiles (5),
+.BR ypserv (8)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

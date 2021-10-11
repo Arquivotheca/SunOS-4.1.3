@@ -1,0 +1,116 @@
+.\" @(#)getcwd.3v 1.1 92/07/30 SMI; from S5R2
+.TH GETCWD 3V "21 January 1990"
+.SH NAME
+getcwd \- get pathname of current working directory
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+char *getcwd(buf, size)
+char *buf;
+int size;
+.ft
+.fi
+.SH DESCRIPTION
+.IX get "pathname of current working directory \(em \fLgetcwd()\fR"
+.IX "getcwd function" "" "\fLgetcwd()\fR \(em get pathname of current directory"
+.IX "current working directory getcwd()" "" "current working directory \(em \fLgetcwd()\fR"
+.LP
+.B getcwd(\|)
+returns a pointer to the current directory pathname.
+The value of
+.I size
+must be at least two greater than the length of the
+pathname to be returned.
+.LP
+If
+.I buf
+is a
+.SM NULL
+pointer,
+.B getcwd(\|)
+will obtain
+.I size
+bytes of space using
+.BR malloc (3V).
+In this case, the pointer returned by
+.B getcwd(\|)
+may be used as the argument in a subsequent call to
+.BR free(\|) .
+.LP
+The function is implemented by using
+.BR popen (3S)
+to pipe the output of the
+.BR pwd (1)
+command into the specified string space.
+.SH RETURN VALUES
+.LP
+.B getcwd(\|)
+returns a pointer to the current directory pathname
+on success.
+If
+.I size
+is not large enough, or if an error occurs
+in a lower-level function,
+.B getcwd(\|)
+returns
+.SM NULL
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+.I size
+is less than or equal to zero.
+.TP
+.SM ERANGE
+.I size
+is greater than zero, but is smaller than the length of the pathname plus 1.
+.LP
+If the following condition is detected,
+.B getcwd(\|)
+sets
+.B errno
+to:
+.TP 15
+.SM EACCES
+Read or search permission is denied for a component of the pathname.
+.SH EXAMPLES
+.RS
+.nf
+.ft B
+char *cwd, *getcwd(\|);
+\&.
+\&.
+\&.
+if ((cwd = getcwd((char *)\s-1NULL\s0, 64)) == \s-1NULL\s0) {
+.RS
+.ft B
+perror ("pwd");
+exit (1);
+.RE
+.ft B
+}
+printf("%s\en", cwd);
+.fi
+.ft R
+.RE
+.SH "SEE ALSO"
+.BR pwd (1),
+.BR getwd (3),
+.BR malloc (3V),
+.BR popen (3S)
+.SH BUGS
+.LP
+Since this function uses
+.B popen(\|)
+to create a pipe to the
+.B pwd
+command, it is slower than
+.B getwd(\|)
+and gives poorer error diagnostics.
+.B getcwd(\|)
+is provided only for compatibility with other
+.SM UNIX
+operating systems.

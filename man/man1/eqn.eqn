@@ -1,0 +1,837 @@
+'\" e
+.\" @(#)eqn.eqn 1.1 92/07/30 SMI; 
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ps \n(99
+.ft \n(98
+.EN
+.TH EQN 1 "31 January 1990"
+.SH NAME
+eqn, neqn, checkeq \- typeset mathematics
+.SH SYNOPSIS
+.B eqn
+[
+.BI \-d xy
+] 
+[
+.BI \-f n
+] 
+[
+.BI \-p n
+] 
+[
+.BI \-s n
+] 
+[
+.I filename
+] .\|.\|.
+.LP
+.B neqn
+[
+.I filename
+] .\|.\|.
+.LP
+.B checkeq
+[
+.I filename
+] .\|.\|.
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "eqn command"  ""  "\fLeqn\fP \(em mathematical typesetting"
+.IX "neqn command"  ""  "\fLneqn\fP \(em mathematical typesetting"
+.IX "checkeq command"  ""  "\fLcheckeq\fP \(em check \fLeqn\fP constructs"
+.IX "document production" eqn "" "\fLeqn\fR \(em set mathematical equations"
+.LP
+.B eqn
+(and
+.BR neqn )
+are language processors to assist in
+describing equations.
+.B eqn
+is a preprocessor for
+.BR troff (1)
+and is intended for devices that can print 
+.BR troff 's
+output.
+.B neqn
+is a preprocessor for
+.BR nroff (1)
+and is intended for use with terminals.  Usage is almost always:
+.RS
+.sp .5
+.nf
+.ft B
+example% eqn \fIfilename\fP .\|.\|. | troff
+example% neqn \fIfilename\fP .\|.\|. | nroff
+.RE
+.ft R
+.fi
+.LP
+If no
+.IR filename s
+are specified, 
+.B eqn
+and
+.B neqn
+read from the standard input.
+A line beginning with
+.SB \&.EQ
+marks the start of an equation;
+the end of an equation is marked by a line beginning with
+.BR \&.\s-1EN\s0 .
+Neither of these lines is altered, so they may be defined in macro packages
+to get centering, numbering, etc.  It is also possible to set two characters
+as ``delimiters''; subsequent text between delimiters is also treated as
+.B eqn
+input.
+.LP
+.B checkeq
+reports missing or unbalanced delimiters and
+.SB \&.EQ/.EN
+pairs.
+.SH OPTIONS
+.TP
+.BI \-d "xy"
+Set equation delimiters set to characters
+.I x
+and
+.I y
+with the command-line argument.  The more common way to do this is with
+.BI delim xy
+between
+.SB \&.EQ
+and
+.BR \&.\s-1EN\s0 .
+The left and right delimiters may be identical.
+Delimiters are turned off by
+.B delim off
+appearing in the text.  All text
+that is neither between delimiters nor between
+.SB \&.EQ
+and
+.SB \&.EN
+is passed through untouched.
+.TP
+.BI \-f "n"
+Change font to
+.I n
+globally in the document.
+The font can also be changed globally in the body of the document
+by using the
+.B gfont
+directive.
+.TP
+.BI \-p "n"
+Reduce subscripts and superscripts by
+.I n
+point sizes from the
+previous size.  In the absence of the
+.B \-p
+option, subscripts and
+superscripts are reduced by 3 point sizes from the previous size.
+.TP
+.BI \-s "n"
+Change point size to
+.I n
+globally in the document.
+The point size can also be changed globally in the body of the document
+by using the
+.B gsize
+directive.
+.SH "EQN LANGUAGE"
+.LP
+Tokens within
+.B eqn
+are separated by
+braces, double quotes, tildes, circumflexes,
+.SM SPACE\s0,
+.SM TAB\s0,
+or
+.SM NEWLINE\s0
+characters.  Braces {\|} are used for grouping;
+generally speaking, anywhere a single character like
+.I x
+could appear, a
+complicated construction enclosed in braces may be used instead. 
+Tilde (\s+2\^~\^\s0) represents a full
+.SM SPACE
+in the output, circumflex (\s+2\^^\^\s0) half as much.
+.LP
+Subscripts and superscripts are produced with the keywords
+.B sub
+and
+.BR sup .
+Thus
+.RB ` "x sub i" '
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.as 11 "makes  
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 13 "i
+.as 12 \v'18u'\s-3\*(13\s+3\|\v'-18u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98\x'3u'
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " ,
+.ps \n(99
+.ft \n(98
+\*(11
+.RB ` "a sub i sup 2" '
+produces
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "a
+.ds 13 "i
+.ds 14 "\f12\fP
+.as 13 \|
+.nr 13 \w'\s7\*(13'
+.ds 14 \|\|\*(14
+.nr 14 \w'\s7\*(14'
+.nr 15 \n(14
+.if \n(13>\n(15 .nr 15 \n(13
+.as 12 \v'18u'\s7\*(13\h'-\n(13u'\v'-51u'\
+\s7\*(14\h'-\n(14u+\n(15u'\s10\v'33u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98\x'3u'
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+and
+.RB ` "e sup {x sup 2 + y sup 2}" '
+gives
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "e
+.ds 13 "x
+.ds 14 "\f12\fP
+.as 13 \v'-30u'\s-3\|\*(14\s+3\v'30u'
+.ds 14 "\(pl
+.as 13 "\*(14
+.ds 14 "y
+.ds 15 "\f12\fP
+.as 14 \v'-30u'\s-3\|\*(15\s+3\v'30u'
+.as 13 "\*(14
+.as 12 \v'-33u'\s-3\|\*(13\s+3\v'33u'
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+.LP
+Fractions are made with
+.BR over :
+.RB ` "a over b" '
+yields
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "a
+.ds 13 "b
+.nr 12 \w'\s10\*(12'
+.nr 13 \w'\s10\*(13'
+.nr 14 \n(12
+.if \n(13>\n(14 .nr 14 \n(13
+.nr 14 \n(14+\s10.5m\s0
+.ds 12 \v'57u'\h'\n(14u-\n(13u/2u'\*(13\
+\h'-\n(13u-\n(12u/2u'\v'-105u'\*(12\
+\h'-\n(14u-\n(12u/2u+.1m'\v'24u'\l'\n(14u-.2m'\h'.1m'\v'24u'
+.ds 12 \x'0'\x'0-33u'\f2\s10\*(12\s\n(99\f\n(98\x'42u'
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+.LP
+.B sqrt
+makes square roots:
+.RB ` "1 over sqrt {ax sup 2 +bx+c}" '
+results in
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\f11\fP
+.ds 13 "ax
+.ds 14 "\f12\fP
+.as 13 \v'-33u'\s-3\|\*(14\s+3\v'33u'
+.ds 14 "\(plbx\|\(plc
+.as 13 "\*(14
+.as 13 \|
+.nr 13 \w'\s10\*(13'
+.ds 13 \v'0u'\s11\v'-.2m'\(sr\l'\n(13u\(rn'\v'.2m'\s10\v'0u'\h'-\n(13u'\*(13
+.nr 12 \w'\s10\*(12'
+.nr 13 \w'\s10\*(13'
+.nr 14 \n(12
+.if \n(13>\n(14 .nr 14 \n(13
+.nr 14 \n(14+\s10.5m\s0
+.ds 12 \v'81u'\h'\n(14u-\n(13u/2u'\*(13\
+\h'-\n(13u-\n(12u/2u'\v'-129u'\*(12\
+\h'-\n(14u-\n(12u/2u+.1m'\v'24u'\l'\n(14u-.2m'\h'.1m'\v'24u'
+.ds 12 \x'0'\x'0-33u'\f2\s10\*(12\s\n(99\f\n(98\x'66u'
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 " .
+.ps \n(99
+.ft \n(98
+\*(11
+.LP
+The keywords
+.B from
+and
+.B to
+introduce lower and upper
+limits on arbitrary things:
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "\f1lim\fP
+.ds 13 "n\|\(->
+.ds 14 "\(if
+.as 13 "\*(14
+.nr 12 \w'\s10\*(12'
+.nr 14 \n(12
+.nr 13 \w'\s7\*(13'
+.if \n(13>\n(14 .nr 14 \n(13
+.ds 14 \v'57u'\h'\n(14u-\n(13u/2u'\s7\*(13\s10\h'-\n(14u-\n(13u/2u'\v'-57u'\
+\h'\n(14u-\n(12u/2u'\*(12\h'\n(14u-\n(12u/2u'\
+
+.ds 12 \s10\v'.3m'\s+5\(*S\s-5\v'-.3m'\s10
+.ds 13 "\f10\fP
+.ds 15 "n
+.nr 12 \w'\s10\*(12'
+.nr 16 \n(12
+.nr 13 \w'\s7\*(13'
+.if \n(13>\n(16 .nr 16 \n(13
+.nr 15 \w'\s7\*(15'
+.if \n(15>\n(16 .nr 16 \n(15
+.ds 16 \v'81u'\h'\n(16u-\n(13u/2u'\s7\*(13\s10\h'-\n(16u-\n(13u/2u'\v'-81u'\
+\h'\n(16u-\n(12u/2u'\*(12\h'\n(16u-\n(12u/2u'\
+\v'-81u'\h'-\n(16u-\n(15u/2u'\s7\*(15\s10\h'\n(16u-\n(15u/2u'\v'81u'\
+
+.as 14 "\*(16
+.ds 12 "x
+.ds 13 "i
+.as 12 \v'18u'\s-3\*(13\s+3\|\v'-18u'
+.as 14 "\*(12
+.ds 14 \x'0'\x'0-42u'\f2\s10\*(14\s\n(99\f\n(98\x'66u'
+.as 11 \*(14
+.ps \n(99
+.ft \n(98
+.as 11 "
+.ps \n(99
+.ft \n(98
+\*(11
+is made with
+.RB ` "lim from {n\-> inf } sum from 0 to n x sub i" '.
+.br
+.ne 5
+.LP
+Left and right brackets, braces, etc., of the right height are made with
+.B left
+and
+.BR right :
+.RB ` "left [ x sup 2 + y sup 2 over alpha right ] ~=~1" '
+produces
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 13 "\f12\fP
+.as 12 \v'-33u'\s-3\|\*(13\s+3\v'33u'
+.ds 13 "\(pl
+.as 12 "\*(13
+.ds 13 "y
+.ds 14 "\f12\fP
+.as 13 \v'-33u'\s-3\|\*(14\s+3\v'33u'
+.ds 14 "\(*a
+.nr 13 \w'\s10\*(13'
+.nr 14 \w'\s10\*(14'
+.nr 15 \n(13
+.if \n(14>\n(15 .nr 15 \n(14
+.nr 15 \n(15+\s10.5m\s0
+.ds 13 \v'57u'\h'\n(15u-\n(14u/2u'\*(14\
+\h'-\n(14u-\n(13u/2u'\v'-105u'\*(13\
+\h'-\n(15u-\n(13u/2u+.1m'\v'24u'\l'\n(15u-.2m'\h'.1m'\v'24u'
+.as 12 "\*(13
+.ds 12 \|\v'0u'\b'\(lc\(bv\(lf'\v'0u'\*(12\|\v'0u'\b'\(rc\(bv\(rf'\v'0u'
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "\(eq
+.as 12 "\*(13
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "\f11\fP
+.as 12 "\*(13
+.ds 12 \x'0'\x'0-65u'\f2\s10\*(12\s\n(99\f\n(98\x'64u'
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+The
+.B right
+clause is optional.  Legal characters after
+.B left
+and
+.B right
+are braces, brackets, bars,
+.B c
+and
+.B f
+for ceiling and floor,
+and \fB""\fR for nothing at all (useful for a right-side-only bracket).
+.br
+.ne 4
+.LP
+Vertical piles of things are made with 
+.BR pile ,
+.BR lpile ,
+.BR cpile ,
+and
+.BR rpile :
+.RB ` "pile {a above b above c}" '
+produces
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "a
+.ds 13 "b
+.ds 14 "c
+.nr 12 \w'\s10\*(12'
+.nr 15 \n(12
+.nr 13 \w'\s10\*(13'
+.if \n(13>\n(15 .nr 15 \n(13
+.nr 14 \w'\s10\*(14'
+.if \n(14>\n(15 .nr 15 \n(14
+.ds 15 \v'81u'\h'0u*\n(15u'\
+\v'0u'\h'\n(15u-\n(14u/2u'\*(14\h'-\n(15u-\n(14u/2u'\v'0-81u'\
+\v'0u'\h'\n(15u-\n(13u/2u'\*(13\h'-\n(15u-\n(13u/2u'\v'0-81u'\
+\v'0u'\h'\n(15u-\n(12u/2u'\*(12\h'-\n(15u-\n(12u/2u'\v'0-81u'\
+\v'162u'\h'1u*\n(15u'
+.ds 15 \x'0'\x'0-66u'\f2\s10\*(15\s\n(99\f\n(98\x'66u'
+.as 11 \*(15
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+There can be an arbitrary number of elements in a pile. 
+.B lpile
+left-justifies,
+.B pile
+and
+.B cpile
+center, with different vertical spacing, and
+.B rpile
+right justifies.
+.LP
+Matrices are made with
+.BR matrix :
+.RB ` "matrix { lcol { x sub i above y sub 2 } ccol { 1 above 2 } }" '
+produces
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "x
+.ds 13 "i
+.as 12 \v'18u'\s-3\*(13\s+3\|\v'-18u'
+.ds 13 "y
+.ds 14 "\f12\fP
+.as 13 \v'18u'\s-3\|\*(14\s+3\v'-18u'
+.ds 14 "\f11\fP
+.ds 15 "\f12\fP
+.nr 12 \w'\s10\*(12'
+.nr 16 \n(12
+.nr 13 \w'\s10\*(13'
+.if \n(13>\n(16 .nr 16 \n(13
+.ds 16 \v'60u'\h'0u*\n(16u'\
+\v'-18u'\*(13\h'-\n(13u'\v'0-114u'\
+\v'-18u'\*(12\h'-\n(12u'\v'0-114u'\
+\v'204u'\h'1u*\n(16u'
+.nr 14 \w'\s10\*(14'
+.nr 12 \n(14
+.nr 15 \w'\s10\*(15'
+.if \n(15>\n(12 .nr 12 \n(15
+.ds 12 \v'60u'\h'0u*\n(12u'\
+\v'-18u'\h'\n(12u-\n(15u/2u'\*(15\h'-\n(12u-\n(15u/2u'\v'0-114u'\
+\v'-18u'\h'\n(12u-\n(14u/2u'\*(14\h'-\n(12u-\n(14u/2u'\v'0-114u'\
+\v'204u'\h'1u*\n(12u'
+.ds 13 "\*(16\ \ \*(12
+.ds 13 \x'0'\x'0-75u'\f2\s10\*(13\s\n(99\f\n(98\x'45u'
+.as 11 \*(13
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+In addition, there is
+.B rcol
+for a right-justified column.
+.LP
+Diacritical marks are made with
+.BR dot ,
+.BR dotdot ,
+.BR hat ,
+.BR tilde ,
+.BR bar ,
+.BR vec ,
+.BR dyad ,
+and
+.BR under :
+.RB ` "x dot = f(t) bar" '
+is
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "x
+.nr 12 \w'\s10\*(12'
+.nr 10 0u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 14 \s10.1m\s0
+.if \n(ct>1 .nr 14 \s10.15m\s0
+.ds 13 \s10\v'-.67m'.\v'.67m'\s0
+.nr 13 \w'\s10\*(13'
+.as 12 \h'-\n(12u-\n(13u/2u+\n(14u'\v'0-\n(10u'\*(13\v'\n(10u'\h'-\n(13u+\n(12u/2u-\n(14u'
+.ds 13 "\(eq
+.as 12 "\|\*(13
+.ds 13 "\^f\|\|\f1(\fPt\|\f1)\fP
+.nr 13 \w'\s10\*(13'
+.nr 10 0u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 15 \s10.1m\s0
+.if \n(ct>1 .nr 15 \s10.15m\s0
+.ds 14 \s10\v'-.68m'\h'.05m'\l'\n(13u-.1m'\h'.05m'\v'.68m'\s0
+.nr 14 \w'\s10\*(14'
+.as 13 \h'-\n(13u-\n(14u/2u+\n(15u'\v'0-\n(10u'\*(14\v'\n(10u'\h'-\n(14u+\n(13u/2u-\n(15u'
+.as 12 "\*(13
+.ds 12 \x'0'\f2\s10\*(12\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+.RB ` "y dotdot bar ~=~ n under" '
+is
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "y
+.nr 12 \w'\s10\*(12'
+.nr 10 0u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 14 \s10.1m\s0
+.if \n(ct>1 .nr 14 \s10.15m\s0
+.ds 13 \s10\v'-.67m'..\v'.67m\s0'
+.nr 13 \w'\s10\*(13'
+.as 12 \h'-\n(12u-\n(13u/2u+\n(14u'\v'0-\n(10u'\*(13\v'\n(10u'\h'-\n(13u+\n(12u/2u-\n(14u'
+.nr 12 \w'\s10\*(12'
+.nr 10 12u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 14 \s10.1m\s0
+.if \n(ct>1 .nr 14 \s10.15m\s0
+.ds 13 \s10\v'-.68m'\h'.05m'\l'\n(12u-.1m'\h'.05m'\v'.68m'\s0
+.nr 13 \w'\s10\*(13'
+.as 12 \h'-\n(12u-\n(13u/2u+\n(14u'\v'0-\n(10u'\*(13\v'\n(10u'\h'-\n(13u+\n(12u/2u-\n(14u'
+.ds 13 "\ 
+.as 12 "\|\*(13
+.ds 13 "\(eq
+.as 12 "\*(13
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "n
+.nr 13 \w'\s10\*(13'
+.nr 10 0u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 15 \s10.1m\s0
+.if \n(ct>1 .nr 15 \s10.15m\s0
+.ds 14 \l'\n(13u\(ul'
+.nr 15 0
+.nr 10 0-0
+.if \n(ct%2=1 .nr 10 \n(10-.25m
+.nr 14 \w'\s10\*(14'
+.as 13 \h'-\n(13u-\n(14u/2u+\n(15u'\v'0-\n(10u'\*(14\v'\n(10u'\h'-\n(14u+\n(13u/2u-\n(15u'
+.as 12 "\*(13
+.ds 12 \x'0'\x'0-9u'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ",
+.ps \n(99
+.ft \n(98
+\*(11
+and
+.RB ` "x vec ~=~ y dyad" '
+is
+.nr 99 \n(.s
+.nr 98 \n(.f
+.rm 11 
+.ps 10
+.ft 2
+.ds 12 "x
+.nr 12 \w'\s10\*(12'
+.nr 10 0u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 14 \s10.1m\s0
+.if \n(ct>1 .nr 14 \s10.15m\s0
+.ds 13 \v'-.4m'\s7\(->\s0\v'.4m'
+.nr 13 \w'\s10\*(13'
+.as 12 \h'-\n(12u-\n(13u/2u+\n(14u'\v'0-\n(10u'\*(13\v'\n(10u'\h'-\n(13u+\n(12u/2u-\n(14u'
+.ds 13 "\ 
+.as 12 "\|\*(13
+.ds 13 "\(eq
+.as 12 "\*(13
+.ds 13 "\ 
+.as 12 "\*(13
+.ds 13 "y
+.nr 13 \w'\s10\*(13'
+.nr 10 0u
+.if \n(ct>1 .nr 10 \n(10+\s10.25m\s0
+.nr 15 \s10.1m\s0
+.if \n(ct>1 .nr 15 \s10.15m\s0
+.ds 14 \v'-.4m'\s7\z\(<-\(->\s0\v'.4m'
+.nr 14 \w'\s10\*(14'
+.as 13 \h'-\n(13u-\n(14u/2u+\n(15u'\v'0-\n(10u'\*(14\v'\n(10u'\h'-\n(14u+\n(13u/2u-\n(15u'
+.as 12 "\*(13
+.ds 12 \x'0'\f2\s10\*(12\|\s\n(99\f\n(98
+.as 11 \*(12
+.ps \n(99
+.ft \n(98
+.as 11 ".
+.ps \n(99
+.ft \n(98
+\*(11
+.LP
+Sizes and font can be changed with
+.B size
+.I n
+or
+.B size
+.BI \(+- n,
+.BR roman ,
+.BR italic ,
+.BR bold ,
+and
+.BR font
+.IR n .
+Size and fonts can be changed globally in a document by
+.B gsize
+.I n
+and
+.B gfont
+.IR n ,
+or by the command-line arguments
+.BI \-s n
+and
+.BI \-f n\fR.
+.LP
+Successive display arguments can be lined up.  Place
+.B mark
+before the desired lineup point in the first equation; place
+.B lineup
+at the place that is to line up vertically in subsequent equations.
+.LP
+Shorthands may be defined or existing keywords redefined with
+.BI define :
+.IP
+.BI define " thing " % " replacement " %
+.LP
+defines a new token called
+.I thing
+which will be replaced by
+.I replacement
+whenever it appears thereafter.
+The
+.B %
+may be any character that does not occur in
+.IR replacement .
+.LP
+Keywords like
+.B sum
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ds 11 "\f1(\fP
+.ds 12 \s10\v'.3m'\s+5\(*S\s-5\v'-.3m'\s10
+.as 11 "\*(12
+.ds 12 "\f1)\fP\f1,\fP
+.as 11 "\*(12
+.ds 11 \x'0'\f2\s10\*(11\s\n(99\f\n(98\x'9u'
+.nr 11 \w'\*(11'
+.nr MK 0
+.if 105>\n(.v .ne 105u
+.rn 11 10
+\*(10
+.ps \n(99
+.ft \n(98
+.EN
+.B int
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ds 11 "\f1(\fP
+.ds 12 \s10\v'.1m'\s+4\(is\s-4\v'-.1m'\s10
+.as 11 "\*(12
+.ds 12 "\f1)\fP\f1,\fP
+.as 11 "\*(12
+.ds 11 \x'0'\x'0-9u'\f2\s10\*(11\s\n(99\f\n(98\x'9u'
+.nr 11 \w'\*(11'
+.nr MK 0
+.if 129>\n(.v .ne 129u
+.rn 11 10
+\*(10
+.ps \n(99
+.ft \n(98
+.EN
+.B inf
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ds 11 "\f1(\fP
+.ds 12 "\(if
+.as 11 "\*(12
+.ds 12 "\f1)\fP\f1,\fP
+.as 11 "\*(12
+.ds 11 \x'0'\f2\s10\*(11\s\n(99\f\n(98
+.nr 11 \w'\*(11'
+.nr MK 0
+.if 81>\n(.v .ne 81u
+.rn 11 10
+\*(10
+.ps \n(99
+.ft \n(98
+.EN
+and shorthands like
+.B >=
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ds 11 "\f1(\fP\(>=\f1)\fP\f1,\fP
+.ds 11 \x'0'\f2\s10\*(11\s\n(99\f\n(98
+.nr 11 \w'\*(11'
+.nr MK 0
+.if 81>\n(.v .ne 81u
+.rn 11 10
+\*(10
+.ps \n(99
+.ft \n(98
+.EN
+.B \->
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ds 11 "\f1(\fP\(->\f1)\fP\f1,\fP
+.ds 11 \x'0'\f2\s10\*(11\s\n(99\f\n(98
+.nr 11 \w'\*(11'
+.nr MK 0
+.if 81>\n(.v .ne 81u
+.rn 11 10
+\*(10
+.ps \n(99
+.ft \n(98
+.EN
+and
+.B !=
+.EQ
+.nr 99 \n(.s
+.nr 98 \n(.f
+.ps 10
+.ft 2
+.ds 11 "\f1(\fP
+.ds 12 "\(!=
+.as 11 "\*(12
+.ds 12 "\f1)\fP
+.as 11 "\*(12
+.ds 11 \x'0'\f2\s10\*(11\s\n(99\f\n(98
+.nr 11 \w'\*(11'
+.nr MK 0
+.if 81>\n(.v .ne 81u
+.rn 11 10
+\*(10
+.ps \n(99
+.ft \n(98
+.EN
+are recognized.
+Greek letters are spelled out in the desired case, as in
+.B alpha
+or
+.BR \s-1GAMMA\s0 .
+Mathematical words like sin, cos,
+and log are made Roman automatically.
+.BR troff (1)
+four-character escapes like \e(bu (\^\(bu\^) can be used anywhere.
+Strings enclosed in double quotes
+\fB"\fP.\|.\|.\fB"\fP
+are passed through untouched;
+this permits keywords to be entered as text, and can be used to communicate
+with
+.B troff
+when all else fails.
+.SH "SEE ALSO"
+.BR tbl (1),
+.BR troff (1),
+.BR eqnchar (7),
+.BR ms (7)
+.LP
+.TX DOCS
+.SH BUGS
+To embolden digits, parens, etc., it is necessary to quote them,
+as in `\fBbold "12.3"\fP'.

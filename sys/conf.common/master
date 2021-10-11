@@ -1,0 +1,2507 @@
+/*
+
+@(#) master 1.1 92/07/30 SMI
+
+Master kernel configuration file
+
+Supported configurations:
+
+	all architectures:
+		GENERIC GENERIC_SMALL LINT MINIROOT MUNIX
+
+	sun3
+		DL DL50 DL60 DL75 DL110
+		SDST50 SDST60 SDST110 SDST160 SDST260
+		XYMT160 XYMT260 XDMT160 XDMT260
+
+	sun3x
+		DL DL80 DL470
+		SDST80
+		XYXT470 XDXT470
+
+	sun4
+		DL DL110 DL330
+		SDST110 SDST330 SDST470
+		XDXT260 XYXT260
+		IDST390 IDST490
+
+	sun4c
+		DL60 NFS60 SDST60 DLS60
+
+	sun4m
+		DL NFS SDST IDST690
+
+
+Syntax notes:
+
+	cpp directives work normally
+	lines starting with "#[whitespace]" are copied to the output
+	blank input lines are deleted
+	"=" generates a blank output line
+	"%#" is translated to "#"
+	"+" continues a cpp directive
+
+*/
+
+/*
+ * utility macros
+ */
+
+/* installation only configuration */
+#define	_MINI_		(defined(MUNIX) || defined(MINIROOT))
+
+/* completely generic kernel */
+#define	_GENALL_	(defined(GENERIC) || defined(LINT))
+
+/* somewhat generic kernel */
+#define	_GENERIC_	(_GENDEV_ || defined(GENERIC_SMALL))
+
+/* include all devices */
+#define	_GENDEV_	(_GENALL_)
+
+/* include all disks etc. */
+#define	_GENDISK_	(_GENDEV_ || _MINI_)
+
+/* include extra SCSI units */
+#define	_GENSCSI_	(_GENDISK_ || defined(XDXT470) || defined(XYXT470))
+
+/* include all network interfaces */
+#define	_GENNET_	(_GENDEV_ || defined(MINIROOT))
+
+/* definition of a server (assumed to be VME) */
+#define	_SERVER_	(_DISKXD_ || _DISKXY_ || _DISKID_)
+
+/* small-memory (4M) system */
+/* note sun3/GENERIC_SMALL is small, sun3x/DL80 is not small */
+#define	_SMALL_		(defined(sun3) && !_CPU3_260_ && !_SERVER_)
+
+/* _GSCOMM_ is used to comment out lines in GENERIC_SMALL */
+#ifdef GENERIC_SMALL
+#define	_GSCOMM_()	#
+#else
+#define	_GSCOMM_()
+#endif
+
+/* include long commentary */
+#define	_COMMENT_	_GENERIC_
+
+/* explicit root on nfs */
+#define	_NFSROOT_	(_DL_ || defined(NFS60))
+
+/* RFS support */
+#define	_RFS_		(_GENALL_)
+
+/* Streams NIT support */
+#define	_SNIT_		(_GENALL_ || _SERVER_ || defined(GENERIC_SMALL) ||\
+			(defined(sun4c) && defined(SDST60)))
+
+/* old config architecture */
+#define	_OLDCONFIG_	(!defined(sun4c))
+
+/* old SCSI architecture */
+#define	_OLDSCSI_	(!defined(sun4c) && !defined(sun4m))
+
+/* Sun-3 or Sun-3x */
+#define	_SUN3_		(defined(sun3) || defined(sun3x))
+
+/* MCPs present */
+#define	_MCP_		(_GENDEV_ && _BUSVME_)
+
+/* 8 MCPs instead of 4 */
+#define	_MCP8_		1
+
+/* special macro for CDROM config lines */
+#if _GENDISK_ || defined(GENERIC_SMALL) || defined(SDST470) \
++	|| defined(IDST390) || defined(IDST490)
+#define	_CDCONF_(line)	line
+#else
+#define	_CDCONF_(line)
+#endif
+
+/*
+ * architecture specific macros
+ */
+
+/*
+ * Sun-3
+ */
+
+#ifdef sun3
+#define	_ARCHNAME_	Sun-3
+
+/* CPU support */
+#define	_ONLY50_	(defined(DL50) || defined(SDST50))
+#define	_ONLY60_	(defined(DL60) || defined(SDST60))
+#define	_ONLY110_	(defined(DL110) || defined(SDST110))
+#define	_ONLY160_	(defined(DL75) || defined(SDST160) || \
++			defined(XDMT160) || defined(XYMT160))
+#define	_ONLY260_	(defined(SDST260) || \
++			defined(XDMT260) || defined(XYMT260))
+
+#define	_ONLY_SMALL_	(_ONLY50_ || _ONLY60_ || defined(GENERIC_SMALL))
+
+#define	_CPU3_50_	(!_ONLY60_ && !_ONLY110_ && !_ONLY160_ && !_ONLY260_)
+#define	_CPU3_60_	(!_ONLY50_ && !_ONLY110_ && !_ONLY160_ && !_ONLY260_)
+#define	_CPU3_110_	(!_ONLY_SMALL_ && !_ONLY160_ && !_ONLY260_)
+#define	_CPU3_160_	(!_ONLY_SMALL_ && !_ONLY110_ && !_ONLY260_)
+#define	_CPU3_260_	(!_ONLY_SMALL_ && !_ONLY110_ && !_ONLY160_)
+#define	_CPU3_E_	(_GENALL_ || _MINI_ || defined(DL))
+
+/* disk configuration */
+#define	_DL_		(defined(DL) || defined(DL50) || defined(DL60) || \
++			defined(DL75) || defined(DL110))
+#define	_DISKSD_	(defined(SDST50) || defined(SDST60) || \
++			defined(SDST110) || defined(SDST160) || \
++			defined(SDST260))
+#define	_DISKXD_	(defined(XDMT160) || defined(XDMT260))
+#define	_DISKXY_	(defined(XYMT160) || defined(XYMT260))
+
+/* bus configuration */
+#define	_BUSP4_		(_CPU3_60_)
+#define	_BUSVME_	(_CPU3_110_ || _CPU3_160_ || _CPU3_260_ || _CPU3_E_)
+
+/* misc. configuration */
+#define	_ETHERI_	(_CPU3_110_ || _CPU3_160_ || _CPU3_260_)
+#define	_ETHERL_	(_CPU3_50_ || _CPU3_60_)
+#define	_SCSISI_	(_CPU3_50_ || _CPU3_60_)
+
+#endif sun3
+
+
+/*
+ * Sun-3x
+ */
+
+#ifdef sun3x
+#define	_ARCHNAME_	Sun-3x
+
+/* CPU support */
+#define	_ONLY80_	(defined(DL80) || defined(SDST80))
+#define	_ONLY470_	(defined(DL470) || \
++			defined(XDXT470) || defined(XYXT470))
+
+#define	_CPU3_80_	(!_ONLY470_)
+#define	_CPU3_470_	(!_ONLY80_ && !defined(GENERIC_SMALL))
+
+/* disk configuration */
+#define	_DL_		(defined(DL) || defined(DL80) || defined(DL470))
+#define	_DISKXD_	(defined(XDXT470))
+#define	_DISKXY_	(defined(XYXT470))
+
+/* bus configuration */
+#define	_BUSP4_		(1)
+#define	_BUSVME_	(_CPU3_470_)
+
+/* misc. configuration */
+#define	_ETHERI_	(_CPU3_470_)
+#define	_ETHERL_	(_CPU3_80_)
+#define	_SCSIESP_	(_CPU3_80_)
+
+#endif sun3x
+
+
+/*
+ * Sun-4
+ */
+
+#ifdef sun4
+#define	_ARCHNAME_	Sun-4
+
+/* CPU support */
+#define	_ONLY110_	(defined(DL110) || defined(SDST110))
+#define	_ONLY260_	(defined(XDXT260) || defined(XYXT260))
+#define	_ONLY330_	(defined(DL330) || defined(SDST330) || defined(IDST390))
+#define	_ONLY470_	(defined(SDST470) || defined(IDST490))
+
+#define	_ONLY_SMALL_	(_ONLY110_ || _ONLY330_ || defined(GENERIC_SMALL))
+
+#define	_CPU4_110_	(!_ONLY260_ && !_ONLY330_ && !_ONLY470_)
+#define	_CPU4_260_	(!_ONLY_SMALL_ && !_ONLY470_)
+#define	_CPU4_330_	(!_ONLY110_ && !_ONLY260_ && !_ONLY470_)
+#define	_CPU4_470_	(!_ONLY_SMALL_ && !_ONLY260_)
+
+/* disk configuration */
+#define	_DL_		(defined(DL) || defined(DL110) || defined(DL330))
+#define	_DISKSD_	(defined(SDST110))
+#define	_DISKXD_	(defined(XDXT260))
+#define	_DISKXY_	(defined(XYXT260))
+#define	_DISKID_	(defined(IDST390) || defined(IDST490))
+
+/* bus configuration */
+#define	_BUSP4_		(!_ONLY260_)
+#define	_BUSVME_	(1)
+
+/* misc. configuration */
+#define	_ETHERI_	(_CPU4_110_ || _CPU4_260_ || _CPU4_470_)
+#define	_ETHERL_	(_CPU4_330_)
+#define	_SCSIESP_	(_CPU4_330_)
+#define	_SCSISW_	(_CPU4_110_)
+#define	_TTYCD_		(_CPU4_330_)
+#endif sun4
+
+
+/*
+ * Sun-4c
+ */
+
+#ifdef sun4c
+#define	_ARCHNAME_	Sun-4c
+
+/* CPU support */
+/* always support all sun4c CPUs */
+
+/* disk configuration */
+#define	_DL_		(defined(DL) || defined(DL60))
+#define _DLS_		(defined(DLS60))
+#define	_DISKSD_	(defined(SD60))
+
+/* audio support */
+#define	_AUDIO_		(!(_MINI_))
+
+#endif sun4c
+
+/*
+ * Sun-4m
+ */
+#ifdef sun4m
+#define	_ARCHNAME_	Sun-4m
+
+/* CPU support */
+#define	_ONLY690_	(defined(IDST690))
+
+#define	_CPU4M_690_	(1)
+#define _CPU4M_50_	(!_ONLY690_)
+
+/* disk configuration */
+#define	_DL_		(defined(DL))
+#define	_DISKID_	(defined(IDST690))
+
+/* bus configuration */
+#define	_BUSVME_	(1)
+
+/* VME-based SCSI, Ethernet, and Frame Buffers are not supported. */
+#define	_VMESCSI_	(0)
+#define	_VMEETHER_	(0)
+#define	_VMEVIDEO_	(0)
+
+/* audio support */
+#define	_AUDIO_		(!(_MINI_))
+
+/* multiprocessor support */
+#define _UNIPROCESSOR_          (defined(MUNIX))
+#define _MULTIPROCESSOR_        (!defined(MUNIX))
+
+
+/* keyboard and mouse via openprom stuff */
+#define	_TTYAB_		(0)
+#define	_KBDMS_		(0)
+#endif sun4m
+
+#ifndef	_ARCHNAME_
+@@@ error "No architecture specified!" @@@
+#endif
+
+#ifndef	_AUDIO_
+#define	_AUDIO_		(0)
+#endif
+
+#ifndef	_UNIPROCESSOR_
+#define	_UNIPROCESSOR_		(0)
+#endif
+
+#ifndef	_MULTIPROCESSOR_
+#define	_MULTIPROCESSOR_		(0)
+#endif
+
+#ifndef	_DEBUG_
+#define	_DEBUG_		(0)
+#endif
+
+#ifndef _TTYAB_
+#define	_TTYAB_		(1)
+#endif
+
+#ifndef _KBDMS_
+#define	_KBDMS_		(1)
+#endif
+
+#ifndef _TTYCD_
+#define	_TTYCD_		(0)
+#endif
+
+#ifndef	_BUSVME_
+#define	_BUSVME_	(0)
+#endif
+
+#ifndef	_VMEDISK_
+#define	_VMEDISK_	(_BUSVME_)
+#endif
+
+#ifndef	_VMEVIDEO_
+#define	_VMEVIDEO_	(_BUSVME_)
+#endif
+
+/* include VME SCSI controllers */
+#if !defined(_VMESCSI_)
+#define	_VMESCSI_	(_GENDISK_ || _BUSVME_ && !_SCSICPU_ && !_DL_)
+#endif
+
+#ifndef	_VMEETHER_
+#define	_VMEETHER_	(_BUSVME_)
+#endif
+
+/* _SCOMM_ is used to comment out lines in "small" config files */
+#if _SMALL_
+#define	_SCOMM_()	#
+#else
+#define	_SCOMM_()
+#endif
+
+/* integral SCSI controller */
+#define	_SCSICPU_	(_SCSISI_ || _SCSISW_ || _SCSIESP_)
+
+/*
+ * config file template starts here
+ */
+
+#
+# @(#) _NAME_ from master 1.47 91/08/05 SMI
+#
+
+/*
+ * blurbs for the top of each config file
+ */
+
+#if defined(GENERIC) || defined(LINT)
+# This config file describes a generic _ARCHNAME_ kernel, including all
+# possible standard devices and software options.
+#
+# The following lines include support for all _ARCHNAME_ CPU types.
+# There is little to be gained by removing support for particular
+# CPUs, so you might as well leave them all in.
+#endif defined(GENERIC) || defined(LINT)
+
+#ifdef GENERIC_SMALL
+
+#ifdef sun3
+# This config file describes a generic Sun-3/50 and Sun-3/60 kernel,
+# including software options and support for the following hardware:
+#	2 ESDI or Embedded SCSI disks, 1 SCSI tape
+#endif sun3
+
+#ifdef sun3x
+# This config file describes a generic Sun-3/80 kernel,
+# including software options and support for the following hardware:
+#	4 SCSI disks, 1 SCSI tape
+#endif sun3x
+
+#ifdef sun4
+# This config file describes a generic Sun-4/110 and Sun-4/330 kernel,
+# including software options and support for the following hardware:
+#	Sun4/110 - 2 ESDI or Embedded SCSI disks, 1 SCSI tape
+#	Sun4/330 - 4 Embedded SCSI disks, 1 SCSI tape
+#endif sun4
+
+#ifdef sun4c
+# This config file describes a generic Sun-4/60 kernel,
+# including software options and support for the following hardware:
+#	8 SCSI disks, 4 SCSI tapes, 2 CD-ROM drives
+#endif sun4c
+
+#ifdef sun4m
+# This config file describes a generic Sun-4m kernel,
+# including software options and support for the following hardware:
+#	21 SCSI disks, 8 SCSI tapes, 6 CD-ROM drives
+#endif sun4m
+
+#
+# Some software options are commented out to generate a smaller kernel.
+#endif GENERIC_SMALL
+
+#ifdef MINIROOT
+# This config file describes a _ARCHNAME_ kernel supplied as part of the
+# SunOS miniroot.  It is used for software installation only.
+#endif MINIROOT
+
+#ifdef MUNIX
+# This config file describes a memory based _ARCHNAME_ kernel.
+# It is used for disk formatting and other system administration tasks.
+#endif MUNIX
+
+#ifdef DL
+# Diskless _ARCHNAME_
+#endif DL
+
+/*
+ * Sun-3 blurbs
+ */
+
+#ifdef sun3
+
+#ifdef DL50
+# Diskless Sun-3/50
+#endif DL50
+
+#ifdef SDST50
+# Sun-3/50 with 1 SCSI disk and 1 SCSI tape
+#endif SDST50
+
+#ifdef DL60
+# Diskless Sun-3/60
+#endif DL60
+
+#ifdef SDST60
+# Sun-3/60 with 1 SCSI disk and 1 SCSI tape
+#endif SDST60
+
+#ifdef DL75
+# Diskless Sun-3/75
+#endif DL75
+
+#ifdef DL110
+# Diskless Sun-3/110
+#endif DL110
+
+#ifdef SDST110
+# Sun-3/110 with 1 or 2 SCSI disks and 1 SCSI tape
+#endif SDST110
+
+#ifdef SDST160
+# Sun-3/160 with 1 or 2 SCSI disks and 1 SCSI tape
+#endif SDST160
+
+#ifdef XDMT160
+# Sun-3/160 with up to 4 Xylogics 7053 controllers and 1/2" tape
+# plus 1 or 2 SCSI disks and 1 SCSI tape
+#endif XDMT160
+
+#ifdef XYMT160
+# Sun-3/160 with up to 2 Xylogics 451 controllers and 1/2" tape
+# plus 1 or 2 SCSI disks and 1 SCSI tape
+#endif XYMT160
+
+#ifdef SDST260
+# Sun-3/260 with 1 or 2 SCSI disks and 1 SCSI tape
+#endif SDST260
+
+#ifdef XDMT260
+# Sun-3/260 with up to 4 Xylogics 7053 controllers and 1/2" tape
+# plus 1 or 2 SCSI disks and 1 SCSI tape
+#endif XDMT260
+
+#ifdef XYMT260
+# Sun-3/260 with up to 2 Xylogics 451 controllers and 1/2" tape
+# plus 1 or 2 SCSI disks and 1 SCSI tape
+#endif XYMT260
+
+#endif sun3
+
+/*
+ * Sun-3x blurbs
+ */
+
+#ifdef sun3x
+
+#ifdef DL80
+# Diskless Sun-3/80
+#endif DL80
+
+#ifdef SDST80
+# Sun-3/80 with 1 to 4 SCSI disks and 1 or 2 SCSI tapes
+#endif SDST80
+
+#ifdef DL470
+# Diskless Sun-3/470
+#endif DL470
+
+#ifdef XDXT470
+# Sun-3/470 with up to 4 Xylogics 7053 controllers and 1/2" tape
+# plus SCSI disks and SCSI tapes
+#endif XDXT470
+
+#ifdef XYXT470
+# Sun-3/470 with up to 2 Xylogics 451 controllers and 1/2" tape
+# plus SCSI disks and SCSI tapes
+#endif XYXT470
+
+#endif sun3x
+
+/*
+ * Sun-4 blurbs
+ */
+
+#ifdef sun4
+
+#ifdef DL110
+# Diskless Sun-4/110
+#endif DL110
+
+#ifdef SDST110
+# Sun-4/110 with 1 to 4 SCSI disks and 1 SCSI tape
+#endif SDST110
+
+#ifdef XDXT260
+# Sun-4/260 with up to 4 Xylogics 7053 controllers and 1/2" tape
+# plus 1 or 2 SCSI disks and 1 SCSI tape
+#endif XDXT260
+
+#ifdef XYXT260
+# Sun-4/260 with up to 2 Xylogics 451 controllers and 1/2" tape
+# plus 1 or 2 SCSI disks and 1 SCSI tape
+#endif XDXT260
+
+#ifdef DL330
+# Diskless Sun-4/330
+#endif DL330
+
+#ifdef SDST330
+# Sun-4/330 with 1 to 4 SCSI disks and 1 or 2 SCSI tapes
+#endif SDST330
+
+#ifdef IDST390
+# Sun-4/390 with 2 Sun VME IPI-2 Controllers with 8 drives each
+# and 4 SCSI tape devices.
+#endif IDST390
+
+#ifdef SDST470
+# Sun-4/470 with 1 SCSI controller with disks, tape and CDROM
+#endif SDST470
+
+#ifdef IDST490
+# Sun-4/490 with 4 Sun VME IPI-2 Controllers with 8 drives each
+# and 8 SCSI tape devices.
+#endif
+
+#endif sun4
+
+/*
+ * Sun-4c blurbs
+ */
+
+#ifdef sun4c
+
+#ifdef DL60
+# Diskless SPARCstation (Sun-4/60 etc.)
+#endif DL60
+
+#ifdef NFS60
+# SPARCstation (Sun-4/60 etc.) with SCSI disks and tape
+# This configuration is used to boot a disk-equipped machine from a server.
+#endif NFS60
+
+#ifdef SDST60
+# SPARCstation (Sun-4/60 etc.) with SCSI disks and tape
+#endif SDST60
+
+#ifdef DLS60
+# SPARCstation (Sun-4/60 etc.) running Diskless (via NFS) with local swap
+#endif DLS60
+
+#endif sun4c
+
+/*
+ * Sun-4m blurbs
+ */
+
+#ifdef sun4m
+
+#ifdef DL
+# Diskless Sun-4M
+#endif DL
+
+#ifdef NFS
+# Sun-4M with SCSI disks and tape
+# This configuration is used to boot a disk-equipped machine from a server.
+#endif NFS
+
+#ifdef SDST
+# Sun-4M with SCSI disks and tape
+#endif SDST
+
+#ifdef IDST690
+# Sun-4/690 with IPI disks and SCSI tape
+#endif IDST690
+
+#endif sun4m
+
+#if _SMALL_ && !defined(GENERIC_SMALL)
+#
+# Stripped down for best performance on 4 meg systems.
+#endif _SMALL_ && !defined(GENERIC_SMALL)
+
+/*
+ * end of the blurb
+ */
+#
+
+/*
+ * machine type and CPU support
+ */
+
+machine		_QARCH_
+
+#ifdef sun3
+#if _CPU3_50_
+cpu		"SUN3_50"	# Sun-3/50
+#endif
+#if _CPU3_60_
+cpu		"SUN3_60"	# Sun-3/60
+#endif
+#if _CPU3_110_
+cpu		"SUN3_110"	# Sun-3/110
+#endif
+#if _CPU3_160_
+cpu		"SUN3_160"	# Sun-3/75, Sun-3/140, Sun-3/160
+#endif
+#if _CPU3_260_
+cpu		"SUN3_260"	# Sun-3/260, Sun-3/280
+#endif
+#if _CPU3_E_
+cpu		"SUN3_E"	# Sun-3E (Eurocard VMEbus cpu)
+#endif
+#endif sun3
+
+#ifdef sun3x
+#if _CPU3_80_
+cpu		"SUN3X_80"	# Sun-3/80
+#endif
+#if _CPU3_470_
+cpu		"SUN3X_470"	# Sun-3/460, Sun-3/470, Sun-3/480
+#endif
+#endif sun3x
+
+#ifdef sun4
+#if _CPU4_110_
+cpu		"SUN4_110"	# Sun-4/110, Sun-4/150
+#endif
+#if _CPU4_260_
+cpu		"SUN4_260"	# Sun-4/260, Sun-4/280
+#endif
+#if _CPU4_330_
+cpu		"SUN4_330"	# Sun-4/330, Sun-4/370, Sun-4/390
+#endif
+#if _CPU4_470_
+cpu		"SUN4_470"	# Sun-4/470, Sun-4/490
+#endif
+#endif sun4
+
+#ifdef sun4c
+cpu		"SUN4C_60"	# Sun-4/60  (it's really for all the Sun-4c's)
+#endif sun4c
+
+#ifdef sun4m
+#if _CPU4M_690_
+cpu		"SUN4M_690"	# Sun-4M/630, Sun-4M/670, Sun-4M/690
+#endif
+#if _CPU4M_50_
+cpu		"SUN4M_50"	# Sun-4M/Sparcstation 3
+#endif
+#endif sun4m
+
+#if _COMMENT_
+=
+#
+# Name this kernel _NAME_.
+#
+#endif _COMMENT_
+ident		_QNAME_
+
+
+/*
+ * figure out maxusers
+ */
+
+#ifndef _MAXUSERS_
+
+#ifdef MUNIX
+#define	_MAXUSERS_ 2
+#endif
+
+#ifdef MINIROOT
+#define	_MAXUSERS_ 4
+#endif
+
+#ifdef GENERIC_SMALL
+#define	_MAXUSERS_ 4
+#endif
+
+#if _SMALL_
+#define	_MAXUSERS_ 4
+#endif
+
+#ifdef IDST390
+#define _MAXUSERS_ 16
+#endif
+
+#if defined(SDST470) || defined(IDST490)
+#define _MAXUSERS_ 24
+#endif
+
+#ifndef _MAXUSERS_
+#if _CPU4M_690_
+#define	_MAXUSERS_ 16
+#else
+#define	_MAXUSERS_ 8
+#endif
+#endif
+
+#endif _MAXUSERS_
+
+#if _COMMENT_
+=
+#
+# This kernel supports about _MAXUSERS_ users.  Count one user for each
+# timesharing user, one for each window that you typically use, and one
+# for each diskless client you serve.  This is only an approximation used
+# to control the size of various kernel data structures, not a hard limit.
+#
+#endif _COMMENT_
+maxusers	_MAXUSERS_
+=
+
+
+/*
+ * Software options
+ */
+
+#if _GENERIC_
+#
+# Include all possible software options.
+#endif _GENERIC_
+
+#if _MULTIPROCESSOR_
+#if _COMMENT_
+#
+# This kernel may run on a multi-processor system;
+# include multi-processor support. This option is mandatory.
+#
+#endif _COMMENT_
+options	MULTIPROCESSOR		# Multi-Processor support
+=
+#endif _MULTIPROCESSOR_
+
+#if _UNIPROCESSOR_
+#if _COMMENT_
+#
+# This kernel may run on a multi-processor system;
+# force the kernel into uniprocessor mode anyway.
+#
+#endif _COMMENT_
+options	UNIPROCESSOR		# Disable Multi-Processor support
+=
+#endif _UNIPROCESSOR_
+
+#if _DEBUG_
+#if _COMMENT_
+#
+# The following options are included to enable debugging of a
+# large number of things in the kernel.
+#
+#endif _COMMENT_
+options	DLYPRF			# enable delayed printf stuff
+options	TRAPDEBUG		# enable trap debugging
+options	TRAPWINDOW		# save window at trap time
+options	SYSCALLTRACE		# enable system call trace
+options	TRAPTRACE		# enable system trap trace
+options	PAGE_DEBUG		# page debugging
+options	SYSCALL_TRACE_STRINGS	# print strings in syscall args
+options	PROVIDE_SYMBOLS		# include extra entries in symbol table
+options	PROM_PARANOIA		# add some prom_enter_mon calls
+=
+#endif _DEBUG_
+
+#if defined(sun4m) && defined(PROMDEBUG)
+#if _COMMENT_
+#
+# The following option disallows compatibility mode in the
+# kernel for old style "range" properties in the PROM
+#
+#endif _COMMENT_
+options	NO_RANGE_COMPATIBILITY	# No compatibility with old style range property
+=
+#endif _GENERIC_
+
+#if _COMMENT_
+#
+# The INET option is not really optional; every kernel must include it.
+#
+#endif _COMMENT_
+options	INET		# basic networking support - mandatory
+#if _COMMENT_
+=
+#
+# The following options are all filesystem related.  You only need
+# QUOTA if you have UFS.  You only need UFS if you have a disk.
+# Diskless machines can remove QUOTA, UFS, and NFSSERVER.  LOFS and TFS
+# are only needed if you're using the Sun Network Software Environment.
+# HSFS is only needed if you have a CD-ROM drive and want to access
+# ISO-9660, High Sierra, or Rock Ridge format CD discs.
+#
+#endif _COMMENT_
+
+#if !_DL_ && !_MINI_ && !_DLS_
+_GSCOMM_()options	QUOTA		# disk quotas for local disks
+#endif
+
+#if !_DL_ && !_DLS_
+options	UFS		# filesystem code for local disks
+#endif
+
+#ifndef MUNIX
+options	NFSCLIENT	# NFS client side code
+#endif
+
+#if !_DL_ && !_MINI_ && !_DLS_
+options	NFSSERVER	# NFS server side code
+#endif
+#if _GENALL_ || _DLS_ 
+_GSCOMM_()options	LOFS		# loopback filesystem - needed by NSE
+#endif
+#if _GENALL_ 
+_GSCOMM_()options	TFS		# translucent filesystem - needed by NSE
+#endif
+#if _GENERIC_ || _DLS_
+_GSCOMM_()options	TMPFS		# tmp (anonymous memory) file system
+#endif
+#ifndef MUNIX
+_CDCONF_(options	HSFS		# High Sierra (ISO 9660) with Rock Ridge extensions CD-ROM file system)
+#endif
+
+#if (defined(sun4c) || _CPU3_80_ || _CPU4M_50_)
+#if (!_MINI_ && !_DL_ && !_DLS_)
+options	PCFS		# Unix access to MS-DOS file system
+#endif
+#endif
+
+#ifdef MUNIX
+options	ROOT_ON_TAPE	# required for MUNIX
+#if	defined(sun4c) || defined(sun4m)
+options RAMDISK_PRELOADED	# for new OPENPROMS without tpboot
+#endif
+#endif MUNIX
+
+#if !_DL_ && !_MINI_ && !_DLS_
+#if _COMMENT_
+=
+#
+# The following options are for accounting and auditing.  SYSAUDIT
+# should be removed unless you are using the C2 security features.
+#
+#endif _COMMENT_
+_GSCOMM_()options	SYSACCT		# process accounting, see acct(2) & sa(8)
+#if _GENERIC_
+_GSCOMM_()options	SYSAUDIT	# C2 auditing for security
+#endif
+#endif !_DL_ && !_MINI_ && !_DLS_
+
+
+#if _GENERIC_
+#if _COMMENT_
+=
+#
+# The following options are for various System V IPC facilities.
+# Most standard software does not need them, although they are
+# used by SunGKS and some third-party software.
+#
+#endif _COMMENT_
+_GSCOMM_()options	IPCMESSAGE	# System V IPC message facility
+_GSCOMM_()options	IPCSEMAPHORE	# System V IPC semaphore facility
+_GSCOMM_()options	IPCSHMEM	# System V IPC shared-memory facility
+#endif _GENERIC_
+
+
+#if _GENERIC_
+#if _COMMENT_
+=
+#
+# The following option is only needed if you want to use the trpt
+# command to debug TCP problems.
+#
+#endif _COMMENT_
+_GSCOMM_()options	TCPDEBUG	# TCP debugging, see trpt(8)
+#endif _GENERIC_
+
+
+#if !_MINI_
+#if _COMMENT_
+=
+#
+# The following option includes the software DES support, needed if
+#ifndef sun4c
+# you're using secure NFS or secure RPC and you don't have a DES chip.
+#else
+# you're using secure NFS or secure RPC.
+#endif
+#
+#endif _COMMENT_
+options	CRYPT		# software encryption
+#endif !_MINI_
+
+
+#if _RFS_
+#if _COMMENT_
+=
+#
+# The following two options are only needed if you want to use RFS.
+#
+#endif _COMMENT_
+_GSCOMM_()options	RFS
+_GSCOMM_()options	VFSSTATS
+#endif _RFS_
+
+
+#if _GENERIC_
+#if _COMMENT_
+=
+#
+# The following two options are needed for asynchronous I/O.
+#
+#endif _COMMENT_
+_GSCOMM_()options	LWP		# kernel threads
+_GSCOMM_()options	ASYNCHIO	# asynch I/O (requires LWP)
+#endif _GENERIC_
+
+
+#if _GENERIC_
+#if _COMMENT_
+=
+#
+# The following option adds support for loadable kernel modules.
+#
+#endif _COMMENT_
+options	VDDRV		# loadable modules
+#endif _GENERIC_
+
+
+#if _OLDSCSI_ && !_DL_ && !_DLS_
+#if _COMMENT_
+=
+#
+# The following option adds support for the old SCSI architecture.
+#
+#endif _COMMENT_
+options	OLDSCSI		# Old SCSI architecture - mandatory
+#endif _OLDSCSI && !_DL_ && !_DLS_
+
+
+#if _GENERIC_
+#if _COMMENT_
+=
+#
+# The following option adds support for SunView 1 journaling.
+#
+#endif _COMMENT_
+_GSCOMM_()options	WINSVJ		# SunView 1 journaling support
+#endif
+
+
+=
+#if _COMMENT_
+#
+# Build one kernel based on this basic configuration.
+#if _GENERIC_
+# It will use the generic swap code so that you can have
+# your root filesystem and swap space on any supported device.
+#endif _GENERIC_
+# Put the kernel configured this way in a file named "vmunix".
+#
+#endif _COMMENT_
+#if _NFSROOT_
+#ifdef sun4c
+#define	_ROOTSWAP_ root on type nfs swap on type nfs
+#else
+#define	_ROOTSWAP_ root on type nfs
+#endif
+#endif _NFSROOT_
+#ifdef MUNIX
+#define	_ROOTSWAP_ root on rd0 swap on ns0
+#endif
+#if _DISKSD_
+#define	_ROOTSWAP_ root on sd0 swap on sd0
+#endif
+#if _DISKXD_
+#define	_ROOTSWAP_ root on xd
+#endif
+#if _DISKXY_
+#define	_ROOTSWAP_ root on xy
+#endif
+#if _DLS_
+#define _ROOTSWAP_ root on type nfs swap on type spec sd0b
+#endif
+#ifndef _ROOTSWAP_
+#define	_ROOTSWAP_ swap generic
+#endif
+#ifdef MUNIX
+#define	_CONFIGNAME_ munix
+#endif
+#ifdef MINIROOT
+#define	_CONFIGNAME_ vmunix_miniroot
+#endif
+#ifdef GENERIC_SMALL
+#define	_CONFIGNAME_ vmunix_small
+#endif
+#ifndef _CONFIGNAME_
+#define	_CONFIGNAME_ vmunix
+#endif
+config	_CONFIGNAME_	_ROOTSWAP_
+
+
+=
+#if _COMMENT_
+#
+# Include support for all possible pseudo-devices.
+#
+# The first few are mostly concerned with networking.
+# You should probably always leave these in.
+#
+#endif _COMMENT_
+#if !_MINI_
+#if _SMALL_
+pseudo-device	pty		# pseudo-tty's, also needed for SunView
+#else
+#if !defined(sun4m)
+pseudo-device	pty		# pseudo-tty's, also needed for SunView
+#else
+pseudo-device	pty256		# pseudo-tty's, also needed for SunView
+#endif
+#endif
+#endif
+pseudo-device	ether		# basic Ethernet support
+pseudo-device	loop		# loopback network - mandatory
+
+
+#if !_MINI_
+#if _COMMENT_
+=
+#
+# The next few are for SunWindows support, needed to run SunView 1.
+#
+#endif _COMMENT_
+#if _SMALL_
+pseudo-device	win64		# window devices, allow 64 windows
+#else
+#if !defined(sun4m)
+pseudo-device	win128		# window devices, allow 128 windows
+#else
+pseudo-device	win256		# window devices, allow 256 windows
+#endif
+#endif
+#if _SMALL_
+#if _CPU3_60_ || _CPU3_110_
+pseudo-device	dtop2		# desktops (screens), allow 2
+#else
+pseudo-device	dtop1		# desktops (screens), allow 1
+#endif
+#else _SMALL_
+pseudo-device	dtop4		# desktops (screens), allow 4
+#endif _SMALL_
+pseudo-device	ms		# mouse support
+#endif !_MINI_
+
+
+#if _COMMENT_
+=
+#
+# The following is needed to support the Sun keyboard, with or
+# without the window system.
+#
+#endif _COMMENT_
+pseudo-device	kb		# keyboard support
+
+
+#if defined(sun4c) || defined(sun4m)
+#if _COMMENT_
+=
+#
+# The "open EEPROM" pseudo-device is required to support the
+# eeprom command.
+#
+#endif _COMMENT_
+pseudo-device	openeepr	# onboard configuration NVRAM
+#endif sun4c || sun4m
+
+#if _GENERIC_
+#if _COMMENT_
+=
+#
+# The following is needed to support the Sun dialbox.
+#
+#endif _COMMENT_
+_GSCOMM_()pseudo-device	db	# dialbox support
+#endif _GENERIC_
+
+
+#if _MCP_
+#if _COMMENT_
+=
+#
+# The following is for asynchronous tty support for the ALM-2 (aka MCP).
+# If you have an ALM-2 (MCP) and it is being used to connect timesharing
+# terminals, you will need this.
+# The number appended to mcpa should be the total number of serial lines
+# provided by the ALM-2s in the system.  For example, if you have four
+# ALM-2s this should read "mcpa64".
+#
+#endif _COMMENT_
+#if _MCP8_
+pseudo-device	mcpa128		# support for 128 async lines on 8 alm-2 boards
+#else
+pseudo-device	mcpa64		# support for 64 async lines on 4 alm-2 boards
+#endif
+#endif _MCP_
+
+
+#if _RFS_
+#if _COMMENT_
+=
+#
+# The following is for the streams pipe device, which is required by RFS.
+#
+#endif _COMMENT_
+_GSCOMM_()pseudo-device	sp		# streams pipe device
+#endif _RFS_
+
+#if _SNIT_
+=
+#if _COMMENT_
+#
+# The following are for streams NIT support.  NIT is used by
+# etherfind, traffic, rarpd, and ndbootd.  As a rule of thumb,
+# NIT is almost always needed on a server and almost never
+# needed on a diskless client.
+#
+#endif _COMMENT_
+pseudo-device	snit		# streams NIT
+pseudo-device	pf		# packet filter
+pseudo-device	nbuf		# NIT buffering module
+#endif _SNIT_
+
+
+#if _AUDIO_ || _RFS_ || _SNIT_
+#if _COMMENT_
+=
+#
+# The following is for the "clone" device, used with streams devices.
+#ifdef sun4c
+# This is required if you include streams NIT support, RFS, or an audio
+# device.
+#else sun4c
+# This is required if you include streams NIT support or RFS.
+#endif sun4c
+#
+#endif _COMMENT_
+pseudo-device	clone		# clone device
+
+#endif _AUDIO_ || _RFS_ || _SNIT_
+
+
+#if _RFS_
+#if _COMMENT_
+=
+#
+# The following is for TLI. Include these if you want to use RFS and/or
+# the TLI library.
+#
+#endif _COMMENT_
+_GSCOMM_()pseudo-device	tim64
+_GSCOMM_()pseudo-device	tirw64
+
+#if _COMMENT_
+=
+#
+# The following is for the TCP TLI stream head. This provides a TLI-conforming
+# interface on top of which you can run RFS and/or the TLI library. This is
+# required by RFS.
+#
+#endif _COMMENT_
+_GSCOMM_()pseudo-device	tcptli32
+#endif _RFS_
+
+
+#ifdef MUNIX
+=
+#if _COMMENT_
+#
+# Special MUNIX devices.
+#
+#endif _COMMENT_
+pseudo-device	ns		# 'noswap' pseudo-device
+pseudo-device	rd		# RAM disk
+#endif MUNIX
+
+#if _OLDCONFIG_
+
+/*
+ * Nexuses (nexii??)
+ */
+#if _COMMENT_
+=
+#
+# The following sections describe what kinds of buses each cpu type supports.
+# You should never need to change this.  (The word "nexus" is historical.)
+#
+# Controller (bus) descriptions:
+#
+#if _SUN3_
+# virtual	virtually addressed devices
+#endif
+# obmem		memory-like devices on the cpu board
+# obio		I/O devices on the cpu board
+#if _BUSVME_
+# vme16d16	VME 16 bit address 16 bit data devices
+# vme24d16	VME 24 bit address 16 bit data devices
+#ifndef sun3x
+# vme32d16	VME 32 bit address 16 bit data devices
+#endif
+# vme16d32	VME 16 bit address 32 bit data devices
+# vme24d32	VME 24 bit address 32 bit data devices
+# vme32d32	VME 32 bit address 32 bit data devices
+#if (defined(sun4) || defined(sun4m)) && (_GENDISK_ || _DISKID_)
+# ipi		IPI pseudo bus
+#endif
+#endif _BUSVME_
+#
+#endif _COMMENT_
+
+/*
+ * Type 1
+ */
+
+#if _CPU3_160_ || _CPU3_470_ || _CPU4_260_ || _CPU4M_690_
+=
+#if _CPU3_160_
+# connections for machine type 1 (SUN3_160)
+#endif
+#if _CPU3_470_
+# connections for machine type 1 (SUN3X_470)
+#endif
+#if _CPU4_260_
+# connections for machine type 1 (SUN4_260)
+#endif
+#if _CPU4M_690_
+# connections for machine type 1 (SUN4M_690)
+#endif
+#if _SUN3_
+controller	virtual 1 at nexus ?
+#endif
+controller	obmem 1 at nexus ?
+controller	obio 1 at nexus ?
+controller	vme16d16 1 at nexus ?
+controller	vme24d16 1 at nexus ?
+#ifndef sun3x
+controller	vme32d16 1 at nexus ?
+#endif
+controller	vme16d32 1 at nexus ?
+controller	vme24d32 1 at nexus ?
+controller	vme32d32 1 at nexus ?
+#if defined(sun4m) && (_GENDISK_ || _DISKID_)
+controller	ipi 1 at nexus ?
+#endif
+#endif _CPU3_160_ || _CPU3_470_ || _CPU4_260_
+
+/*
+ * Type 2
+ */
+
+#if _CPU3_50_ || _CPU3_80_ || _CPU4_110_ || _CPU4M_50_
+=
+#if _CPU3_50_
+# connections for machine type 2 (SUN3_50)
+#endif
+#if _CPU3_80_
+# connections for machine type 2 (SUN3X_80)
+#endif
+#if _CPU4_110_
+# connections for machine type 2 (SUN4_110)
+#if _COMMENT_
+#
+# The Sun-4/110 VME implementation does not support full 32 bit addressing.
+# Bit 27 is sign extended into bits 28-31.  Only VME slave boards can be used.
+#
+#endif _COMMENT_
+#endif
+#if _CPU4M_50_
+# connections for machine type 2 (SUN4M_50)
+#endif
+#if _SUN3_
+controller	virtual 2 at nexus ?
+#endif
+controller	obmem 2 at nexus ?
+controller	obio 2 at nexus ?
+#if _CPU4_110_
+controller	vme16d16 2 at nexus ?
+controller	vme24d16 2 at nexus ?
+controller	vme32d16 2 at nexus ?
+controller	vme16d32 2 at nexus ?
+controller	vme24d32 2 at nexus ?
+controller	vme32d32 2 at nexus ?
+#endif _CPU4_110_
+#endif _CPU3_50_ || _CPU3_80_ || CPU4_110_
+
+/*
+ * Type 3
+ */
+
+#if _CPU3_260_ || _CPU4_330_
+=
+#if _CPU3_260_
+# connections for machine type 3 (SUN3_260)
+#endif
+#if _CPU4_330_
+# connections for machine type 3 (SUN4_330)
+#endif
+#if _SUN3_
+controller	virtual 3 at nexus ?
+#endif
+controller	obmem 3 at nexus ?
+controller	obio 3 at nexus ?
+controller	vme16d16 3 at nexus ?
+controller	vme24d16 3 at nexus ?
+controller	vme32d16 3 at nexus ?
+controller	vme16d32 3 at nexus ?
+controller	vme24d32 3 at nexus ?
+controller	vme32d32 3 at nexus ?
+#if defined(sun4) && (_GENDISK_ || _DISKID_)
+controller	ipi 3 at nexus ?
+#endif
+#endif _CPU3_260_ || _CPU4_330_
+
+/*
+ * Type 4
+ */
+
+#if _CPU3_110_ || _CPU4_470_
+=
+#if _CPU3_110_
+# connections for machine type 4 (SUN3_110)
+#endif
+#if _CPU4_470_
+# connections for machine type 4 (SUN4_470)
+#endif
+#if _SUN3_
+controller	virtual 4 at nexus ?
+#endif
+controller	obmem 4 at nexus ?
+controller	obio 4 at nexus ?
+controller	vme16d16 4 at nexus ?
+controller	vme24d16 4 at nexus ?
+controller	vme32d16 4 at nexus ?
+controller	vme16d32 4 at nexus ?
+controller	vme24d32 4 at nexus ?
+controller	vme32d32 4 at nexus ?
+#if defined(sun4) && (_GENDISK_ || _DISKID_)
+controller	ipi 4 at nexus ?
+#endif
+#endif _CPU3_110_ || _CPU4_470_
+
+/*
+ * Type 7
+ */
+
+#if _CPU3_60_
+=
+# connections for machine type 7 (SUN3_60)
+controller	virtual 7 at nexus ?
+controller	obmem 7 at nexus ?
+controller	obio 7 at nexus ?
+#endif _CPU3_60_
+
+/*
+ * Type 8
+ */
+
+#if _CPU3_E_
+=
+# connections for machine type 8 (SUN3_E)
+controller	virtual 8 at nexus ?
+controller	obmem 8 at nexus ?
+controller	obio 8 at nexus ?
+controller	vme16d16 8 at nexus ?
+controller	vme24d16 8 at nexus ?
+controller	vme32d16 8 at nexus ?
+controller	vme16d32 8 at nexus ?
+controller	vme24d32 8 at nexus ?
+controller	vme32d32 8 at nexus ?
+#endif _CPU3_E_
+
+=
+
+/*
+ * Devices start here...
+ */
+
+#if _COMMENT_
+#
+# The following (large) section describes the standard devices supported
+# by this kernel.
+#
+#endif _COMMENT_
+
+#if _VMEDISK_
+/*
+ * VME disk controllers
+ */
+
+#if (defined(sun4) || defined(sun4m)) && (_GENDISK_ || _DISKID_)
+#if _COMMENT_
+=
+#
+#if _CPU4_470_ || _CPU4M_690_
+#if _CPU4M_690_
+# Support for 5 IPI-2 Channel adaptors.
+#else
+# Support for 4 IPI-2 Channel adaptors.
+#endif
+#else
+# Support for 2 IPI-2 Channel adaptors.
+#endif _CPU4_470_ || _CPU4M_690_
+# This declares the channel driver part of the VME IPI-2 controller support.
+#
+#endif _COMMENT_
+controller	isc0	at vme32d32 ? csr 0x01080000 priority 2 
+				vector isintr 0x4c
+channel		is0	at isc0 ipi_addr 0x00000	  # channel 0 slave 0
+controller	isc1	at vme32d32 ? csr 0x01080400 priority 2
+				vector isintr 0x4d
+channel		is1	at isc1 ipi_addr 0x00100	  # channel 0 slave 1
+#if _CPU4_470_ || _CPU4M_690_
+controller	isc2	at vme32d32 ? csr 0x01080800 priority 2
+				vector isintr 0x4e
+channel		is2	at isc2 ipi_addr 0x00200	  # channel 0 slave 2
+controller	isc3	at vme32d32 ? csr 0x01080c00 priority 2
+				vector isintr 0x4f
+channel		is3	at isc3 ipi_addr 0x00300	  # channel 0 slave 3
+#if _CPU4M_690_
+controller	isc4	at vme32d32 ? csr 0x01081000 priority 2
+				vector isintr 0x50
+channel		is4	at isc4 ipi_addr 0x00400	  # cha     0 slave 4
+#endif
+#endif _CPU4_470_ || _CPU4M_690_
+#if _COMMENT_
+=
+#if _CPU4_470_ || _CPU4M_690_
+#if _CPU4M_690_
+# Support for 5 VME IPI-2 Controllers with 8 drives each.
+#else
+# Support for 4 VME IPI-2 Controllers with 8 drives each.
+#endif
+#else !(_CPU4_470_ || _CPU4M_690_)
+# Support for 2 VME IPI-2 Controllers with 8 drives each.
+#endif _CPU4_470_ || _CPU4M_690_
+# This declares the disk driver part of the VME IPI-2 controller support
+=
+# IPI Disk controllers and drives.   
+=
+#endif _COMMENT_
+controller	idc0	at ipi ? csr 0x0000ff priority 2  # channel 0 slave 0
+disk		id 0	at idc0 drive 0			  # facility 0
+disk		id 1	at idc0 drive 1
+disk		id 2	at idc0 drive 2
+disk		id 3	at idc0 drive 3
+disk		id 4	at idc0 drive 4
+disk		id 5	at idc0 drive 5
+disk		id 6	at idc0 drive 6
+disk		id 7	at idc0 drive 7
+#if _COMMENT_
+=
+#endif _COMMENT_
+controller	idc1	at ipi ? csr 0x0001ff priority 2  # channel 0 slave 1
+disk		id 0x10	at idc1 drive 0 		  # facility 0
+disk		id 0x11	at idc1 drive 1
+disk		id 0x12	at idc1 drive 2
+disk		id 0x13	at idc1 drive 3
+disk		id 0x14	at idc1 drive 4
+disk		id 0x15	at idc1 drive 5
+disk		id 0x16	at idc1 drive 6
+disk		id 0x17	at idc1 drive 7
+#if _CPU4_470_ || _CPU4M_690_
+#if _COMMENT_
+=
+#endif _COMMENT_
+controller	idc2	at ipi ? csr 0x0002ff priority 2  # channel 0 slave 2
+disk		id 0x20 at idc2 drive 0 		  # facility 0
+disk		id 0x21	at idc2 drive 1
+disk		id 0x22	at idc2 drive 2
+disk		id 0x23	at idc2 drive 3
+disk		id 0x24	at idc2 drive 4
+disk		id 0x25	at idc2 drive 5
+disk		id 0x26	at idc2 drive 6
+disk		id 0x27	at idc2 drive 7
+#if _COMMENT_
+=
+#endif _COMMENT_
+controller	idc3	at ipi ? csr 0x0003ff priority 2  # channel 0 slave 3
+disk		id 0x30	at idc3 drive 0 		  # facility 0
+disk		id 0x31	at idc3 drive 1
+disk		id 0x32	at idc3 drive 2
+disk		id 0x33	at idc3 drive 3
+disk		id 0x34	at idc3 drive 4
+disk		id 0x35	at idc3 drive 5
+disk		id 0x36	at idc3 drive 6
+disk		id 0x37	at idc3 drive 7
+#endif _CPU4_470_
+#if _CPU4M_690_
+#if _COMMENT_
+=
+#endif _COMMENT_
+controller	idc4	at ipi ? csr 0x0004ff priority 2  # channel 0 slave 4
+disk		id 0x40 at idc4 drive 0                   # facility 0
+disk		id 0x41 at idc4 drive 1
+disk		id 0x42 at idc4 drive 2
+disk		id 0x43 at idc4 drive 3
+disk		id 0x44 at idc4 drive 4
+disk		id 0x45 at idc4 drive 5
+disk		id 0x46 at idc4 drive 6
+disk		id 0x47 at idc4 drive 7
+#endif
+#endif (defined(sun4) || defined(sun4m)) && (_GENDISK_ || _DISKID_)
+
+#if !defined(sun4m)		/* sun4m does not support this device */
+#if _GENDISK_ || _DISKXD_
+#if _COMMENT_
+=
+#
+# Support for 4 Xylogics 7053 controllers with 4 drives each.
+#
+#endif _COMMENT_
+controller	xdc0 at vme16d32 ? csr 0xee80 priority 2 vector xdintr 0x44
+controller	xdc1 at vme16d32 ? csr 0xee90 priority 2 vector xdintr 0x45
+controller	xdc2 at vme16d32 ? csr 0xeea0 priority 2 vector xdintr 0x46
+controller	xdc3 at vme16d32 ? csr 0xeeb0 priority 2 vector xdintr 0x47
+disk		xd0 at xdc0 drive 0
+disk		xd1 at xdc0 drive 1
+disk		xd2 at xdc0 drive 2
+disk		xd3 at xdc0 drive 3
+disk		xd4 at xdc1 drive 0
+disk		xd5 at xdc1 drive 1
+disk		xd6 at xdc1 drive 2
+disk		xd7 at xdc1 drive 3
+disk		xd8 at xdc2 drive 0
+disk		xd9 at xdc2 drive 1
+disk		xd10 at xdc2 drive 2
+disk		xd11 at xdc2 drive 3
+disk		xd12 at xdc3 drive 0
+disk		xd13 at xdc3 drive 1
+disk		xd14 at xdc3 drive 2
+disk		xd15 at xdc3 drive 3
+#endif _GENDISK_ || _DISKXD_
+#endif sun4m
+
+#if !defined(sun4m)		/* sun4m does not support this device */
+#if _GENDISK_ || _DISKXY_
+#if _COMMENT_
+=
+#
+# Support for 2 Xylogics 450/451 controllers with 2 drives each.
+#
+#endif _COMMENT_
+controller	xyc0 at vme16d16 ? csr 0xee40 priority 2 vector xyintr 0x48
+controller	xyc1 at vme16d16 ? csr 0xee48 priority 2 vector xyintr 0x49
+disk		xy0 at xyc0 drive 0
+disk		xy1 at xyc0 drive 1
+disk		xy2 at xyc1 drive 0
+disk		xy3 at xyc1 drive 1
+#endif _GENDISK_ || _DISKXY_
+#endif _VMEDISK_
+#endif sun4m
+
+/*
+ * SCSI host adapters
+ */
+
+#if _VMESCSI_ && !(defined(SDST470) || defined(IDST490))
+#if _COMMENT_
+=
+#
+# Support for the SCSI-2 host adapter with 2 disks and 1 1/4" tape
+# on the first SCSI controller, 2 disks and 1 1/4" tape on the second
+# SCSI controller, 2 embedded SCSI disks, and a CD-ROM drive.
+#
+#endif _COMMENT_
+#if _SMALL_
+# comment out the sc0 lines to save memory if you don't have a SCSI-2 board
+#endif
+controller	sc0 at vme24d16 ? csr 0x200000 priority 2 vector scintr 0x40
+tape		st0 at sc0 drive 040 flags 1
+#if _GENSCSI_
+tape		st1 at sc0 drive 050 flags 1
+#endif _GENSCSI_
+_CDCONF_(disk		sr0 at sc0 drive 060 flags 2)
+disk		sd0 at sc0 drive 000 flags 0
+disk		sd1 at sc0 drive 001 flags 0
+#if _GENSCSI_
+disk		sd2 at sc0 drive 010 flags 0
+disk		sd3 at sc0 drive 011 flags 0
+disk		sd4 at sc0 drive 020 flags 0
+disk		sd6 at sc0 drive 030 flags 0
+#endif _GENSCSI_
+#endif _VMESCSI_ && !(defined(SDST470) || defined(IDST490))
+
+#if _CPU3_E_ && !_DL_ && !_DLS_
+#if _COMMENT_
+=
+#
+# Support for the SCSI-E host adapter used with the Sun-3/E.
+#
+#endif _COMMENT_
+controller	se0 at vme24d16 ? csr 0x300000 priority 2 vector se_intr 0x40
+tape		st0 at se0 drive 040 flags 1
+#if _GENDISK_
+tape		st1 at se0 drive 050 flags 1
+#endif _GENDISK_
+_CDCONF_(disk		sr0 at se0 drive 060 flags 2)
+disk		sd0 at se0 drive 000 flags 0
+disk		sd1 at se0 drive 001 flags 0
+#if _GENDISK_
+disk		sd2 at se0 drive 010 flags 0
+disk		sd3 at se0 drive 011 flags 0
+disk		sd4 at se0 drive 020 flags 0
+disk		sd6 at se0 drive 030 flags 0
+#endif _GENDISK_
+#endif _CPU3_E_ && !_DL_ && !_DLS_
+
+#if _VMESCSI_ || _SCSISI_ && !_DL_ && !_DLS_
+#if _COMMENT_
+=
+#
+# Support for the SCSI-3 host adapter and the on-board SCSI controller
+# on several machines (e.g. 3/50).
+#
+#endif _COMMENT_
+#if _VMESCSI_
+#if _SMALL_
+# comment out the si0 lines to save memory if you don't have a SCSI-3 board
+#endif _SMALL_
+controller	si0 at vme24d16 ? csr 0x200000 priority 2 vector siintr 0x40
+#endif _VMESCSI_
+#if _SCSISI_
+controller	si0 at obio ? csr 0x140000 priority 2
+#endif _SCSISI_
+#if _GENSCSI_ || defined(IDST490)
+controller	si1 at vme24d16 ? csr 0x204000 priority 2 vector siintr 0x41
+#endif _GENSCSI_ || defined(IDST490)
+tape		st0 at si0 drive 040 flags 1
+#if _GENSCSI_ || _CPU4_470_
+tape		st1 at si0 drive 050 flags 1
+tape		st2 at si0 drive 030 flags 1
+tape		st3 at si0 drive 020 flags 1
+#endif _GENSCSI_ || _CPU4_470_
+#if _GENSCSI_ || defined(IDST490)
+tape		st4 at si1 drive 040 flags 1
+tape		st5 at si1 drive 050 flags 1
+tape		st6 at si1 drive 030 flags 1
+tape		st7 at si1 drive 020 flags 1
+#endif _GENSCSI_ || defined(IDST490)
+_CDCONF_(disk		sr0 at si0 drive 060 flags 2)
+#if !defined(IDST490)
+disk		sd0 at si0 drive 000 flags 0
+#if !_SMALL_ || defined(GENERIC_SMALL) || defined(SDST470)
+disk		sd1 at si0 drive 001 flags 0
+#endif !_SMALL_ || defined(GENERIC_SMALL) || defined(SDST470)
+#if _GENSCSI_ || defined(GENERIC_SMALL) || defined(SDST470)
+disk		sd2 at si0 drive 010 flags 0
+#endif _GENSCSI_ || defined(GENERIC_SMALL) || defined(SDST470)
+#if _GENSCSI_ || defined(SDST470)
+disk		sd3 at si0 drive 011 flags 0
+disk		sd4 at si0 drive 020 flags 0
+disk		sd6 at si0 drive 030 flags 0
+#endif _GENSCSI_ || defined(SDST470)
+#endif !IDST490
+#endif _VMESCSI_ || _SCSISI_ && !_DL_ && !_DLS_
+
+#if _SCSIESP_ && !_DL_ && !_DLS_
+#if _COMMENT_
+=
+#
+# Support for onboard SCSI-ESP host adapters
+#
+#endif _COMMENT_
+#ifdef sun3x
+controller	sm0 at obio ? csr 0x66000000 priority 2
+#endif
+#ifdef sun4
+controller	sm0 at obio ? csr 0xfa000000 priority 2
+#endif
+tape		st0 at sm0 drive 040 flags 1
+tape		st1 at sm0 drive 050 flags 1
+tape		st2 at sm0 drive 030 flags 1
+tape		st3 at sm0 drive 020 flags 1
+_CDCONF_(disk		sr0 at sm0 drive 060 flags 2)
+/* 4/390 doesn't support sd disks */
+#if !(defined(sun4) && defined(IDST390))
+disk		sd0 at sm0 drive 000 flags 0
+disk		sd1 at sm0 drive 001 flags 0
+disk		sd2 at sm0 drive 010 flags 0
+disk		sd3 at sm0 drive 011 flags 0
+disk		sd4 at sm0 drive 020 flags 0
+disk		sd6 at sm0 drive 030 flags 0
+#endif !(sun4 && IDST390)
+#endif _SCSIESP_ && !_DL_ && !_DLS_
+
+#if _SCSISW_ && !_DL_ && !_DLS_
+#if _COMMENT_
+=
+#
+# Support for the "SCSI weird" host adapter used with the Sun-4/110.
+#
+#endif _COMMENT_
+controller	sw0 at obio 2 csr 0xa000000 priority 2
+tape		st0 at sw0 drive 040 flags 1
+tape		st1 at sw0 drive 050 flags 1
+_CDCONF_(disk		sr0 at sw0 drive 060 flags 2)
+disk		sd0 at sw0 drive 000 flags 0
+disk		sd1 at sw0 drive 001 flags 0
+disk		sd2 at sw0 drive 010 flags 0
+disk		sd3 at sw0 drive 011 flags 0
+disk		sd4 at sw0 drive 020 flags 0
+disk		sd6 at sw0 drive 030 flags 0
+#endif _SCSISW_ && !_DL_ && !_DLS_
+
+
+/*
+ * Serial ports
+ */
+#if _TTYAB_
+#if _COMMENT_
+=
+#
+# Support for the 2 tty lines (ttya, ttyb) on the cpu board.
+# Needed when using a terminal for the console device.
+# Flags=3 says to supply carrier in software for both lines.
+# Change flags by changing /etc/ttytab; see ttysoftcar(8).
+#
+#endif _COMMENT_
+#ifdef sun3
+device		zs0 at obio ? csr 0x20000 flags 3 priority 3
+#endif
+#ifdef sun3x
+device		zs0 at obio ? csr 0x62002000 flags 3 priority 3
+#endif
+#ifdef sun4
+device		zs0 at obio ? csr 0xf1000000 flags 3 priority 3
+#endif
+#endif _TTYAB_
+
+#if _KBDMS_
+#if _COMMENT_
+=
+#
+# Support for the keyboard and mouse interface.  Needed when
+# using a frame buffer as the console device or with SunView.
+# You can remove this line if you don't use the standard Sun
+# Workstation keyboard and mouse, but if you leave it in don't
+# change it.
+#
+#endif _COMMENT_
+#ifdef sun3
+device		zs1 at obio ? csr 0x00000 flags 0x103 priority 3
+#endif
+#ifdef sun3x
+device		zs1 at obio ? csr 0x62000000 flags 0x103 priority 3
+#endif
+#ifdef sun4
+device		zs1 at obio ? csr 0xf0000000 flags 0x103 priority 3
+#endif
+#endif _KBDMS_
+
+#if _TTYCD_
+#if _COMMENT_
+=
+#
+# Support for 2 additional tty lines on board the Sun-4/330.
+#
+#endif _COMMENT_
+device		zs2 at obio 3 csr 0xe0000000 flags 3 priority 3
+#endif _TTYCD_
+
+#if !defined(sun4m)		/* sun4m does not support this device */
+#if _GENDEV_ || (_SUN3_ && _SERVER_)
+#if _COMMENT_
+=
+#
+# Support for 4 ALMs (Systech MTI-800/1600).  Flags set for
+# all lines to be local, i.e., carrier supplied by software
+# rather than by the device.
+# Change flags by changing /etc/ttytab; see ttysoftcar(8).
+#
+#endif _COMMENT_
+device		mti0 at vme16d16 ? csr 0x620 flags 0xffff priority 4
+	vector mtiintr 0x88
+#if _GENDEV_
+device		mti1 at vme16d16 ? csr 0x640 flags 0xffff priority 4
+	vector mtiintr 0x89
+device		mti2 at vme16d16 ? csr 0x660 flags 0xffff priority 4
+	vector mtiintr 0x8a
+device		mti3 at vme16d16 ? csr 0x680 flags 0xffff priority 4
+	vector mtiintr 0x8b
+#endif _GENDEV_
+#endif _GENDEV_ || (_SUN3_ && _SERVER_)
+#endif sun4m
+
+#if _MCP_
+#if _COMMENT_
+=
+#
+#ifdef _MCP8_
+# Support for 8 MCP boards.
+# Note that the first four MCPs use the same vectors as the ALMs and thus
+#else
+# Support for 4 MCP boards.
+# Note that the MCPs use the same vectors as the ALMs and thus
+#endif
+# ALMs cut into the total number of MCPs that can installed.
+# Make sure the maxusers line above is correct for the number of
+# users expected.
+#
+#endif _COMMENT_
+device		mcp0 at vme32d32 ? csr 0x01000000 flags 0x1ffff priority 4
+	vector mcpintr 0x8b
+device		mcp1 at vme32d32 ? csr 0x01010000 flags 0x1ffff priority 4
+	vector mcpintr 0x8a
+device		mcp2 at vme32d32 ? csr 0x01020000 flags 0x1ffff priority 4
+	vector mcpintr 0x89
+device		mcp3 at vme32d32 ? csr 0x01030000 flags 0x1ffff priority 4
+	vector mcpintr 0x88
+#ifdef _MCP8_
+device		mcp4 at vme32d32 ? csr 0x02000000 flags 0x1ffff priority 4
+	vector mcpintr 0xa0
+device		mcp5 at vme32d32 ? csr 0x02010000 flags 0x1ffff priority 4
+	vector mcpintr 0xa1
+device		mcp6 at vme32d32 ? csr 0x02020000 flags 0x1ffff priority 4
+	vector mcpintr 0xa2
+device		mcp7 at vme32d32 ? csr 0x02030000 flags 0x1ffff priority 4
+	vector mcpintr 0xa3
+#endif _MCP8_
+#endif _MCP_
+
+
+/*
+ * Ethernet
+ */
+
+#if _ETHERI_
+#if _COMMENT_
+=
+#
+# Support for the on-board Intel 82586 Ethernet chip on many machines.
+#
+#endif _COMMENT_
+#ifdef sun3
+device		ie0 at obio ? csr 0xc0000 priority 3
+#endif
+#ifdef sun3x
+device		ie0 at obio ? csr 0x65000000 priority 3
+#endif
+#ifdef sun4
+device		ie0 at obio ? csr 0xf6000000 priority 3
+#endif
+#endif _ETHERI_
+
+#if _ETHERL_
+#if _COMMENT_
+#
+# Support for the on-board LANCE Ethernet chip (Am7990) on many machines.
+#
+#endif _COMMENT_
+#ifdef sun3
+device		le0 at obio ? csr 0x120000 priority 3
+#endif
+#ifdef sun3x
+device		le0 at obio ? csr 0x65002000 priority 3
+#endif
+#ifdef sun4
+device		le0 at obio ? csr 0xf9000000 priority 3
+#endif
+#endif _ETHERL_
+
+#if _VMEETHER_
+#if _CPU3_E_
+#if _COMMENT_
+#
+# Support for the Sun-3/E Intel Ethernet board for Sun-3/E cpu systems.
+#
+#endif _COMMENT_
+device		ie0 at vme24d16 8 csr 0x31ff02 priority 3 vector ieintr 0x74
+#endif _CPU3_E_
+
+#if _GENNET_ || _SERVER_ && !defined(IDST390) && !defined(IDST490)
+#if _COMMENT_
+#
+# Support for a second Intel Ethernet interface, using a Multibus
+# Ethernet board with a Multibus-to-VME adapter.
+#
+#endif _COMMENT_
+device		ie1 at vme24d16 ? csr 0xe88000 priority 3 vector ieintr 0x75
+#endif _GENNET_ || _SERVER_
+
+#if _GENNET_
+#if _COMMENT_
+#ifdef sun3
+#
+# Support for additional "Sun-3/E SCSI/Ethernet" boards
+#
+#else
+#
+# Support for "Sun-3/E SCSI/Ethernet" boards
+#
+#endif
+#endif _COMMENT_
+/* note: refer to bug 1026885 for an explanation of this */
+#if _CPU3_E_
+%#device		ie2 at vme24d16 ? csr 0x31ff02 priority 3 vector ieintr 0x76
+%#device		ie3 at vme24d16 ? csr 0x35ff02 priority 3 vector ieintr 0x77
+#else _CPU3_E_
+device		ie2 at vme24d32 ? csr 0x31ff02 priority 3 vector ieintr 0x76
+device		ie3 at vme24d32 ? csr 0x35ff02 priority 3 vector ieintr 0x77
+#endif _CPU3_E_
+#if _CPU4_470_
+device		ie4 at vme24d32 ? csr 0x2dff02 priority 3 vector ieintr 0x7c
+#endif
+#endif _GENNET_
+#endif _VMEETHER_
+
+
+/*
+ * Tape drives
+ */
+
+#if _SUN3_ && (_GENDISK_ || _DISKXY_)
+#if _COMMENT_
+=
+#
+# Support for 2 Ciprico TapeMaster tape controllers with 1 tape drive each.
+#
+#endif _COMMENT_
+controller	tm0 at vme16d16 ? csr 0xa0 priority 3 vector tmintr 0x60
+#if !_MINI_
+controller	tm1 at vme16d16 ? csr 0xa2 priority 3 vector tmintr 0x61
+#endif
+tape		mt0 at tm0 drive 0 flags 1
+#if !_MINI_
+tape		mt1 at tm1 drive 0 flags 1
+#endif
+#endif _SUN3_ && (_GENDISK_ || _DISKXY_)
+
+#if !defined(IDST390) && !defined(IDST490) && !defined(sun4m)		/* sun4m does not support this device */
+#if _GENDISK_ || _SERVER_
+#if _COMMENT_
+=
+#
+# Support for 2 Xylogics 472 tape controllers with 1 tape drive each.
+#
+#endif _COMMENT_
+controller	xtc0 at vme16d16 ? csr 0xee60 priority 3 vector xtintr 0x64
+#if !_MINI_
+controller	xtc1 at vme16d16 ? csr 0xee68 priority 3 vector xtintr 0x65
+#endif
+tape		xt0 at xtc0 drive 0 flags 1
+#if !_MINI_
+tape		xt1 at xtc1 drive 0 flags 1
+#endif
+#endif _GENDISK_ || _SERVER_
+#endif
+/*
+ * Frame buffers and graphics devices
+ */
+
+#if !_MINI_
+
+/*
+ * Sun-3 frame buffers
+ */
+
+#ifdef sun3
+
+#if _COMMENT_
+=
+#
+# Support for color frame buffers on various machine types.
+#
+#endif _COMMENT_
+
+#if _CPU3_110_
+#if _COMMENT_
+=
+# 3/110 on-board 8-bit frame buffer
+#endif _COMMENT_
+device		cgfour0 at obmem 4 csr 0xff000000 priority 4	# 3/110
+#endif _CPU3_110_
+
+#if _CPU3_60_
+#if _COMMENT_
+=
+# 3/60 P4 8-bit color frame buffer
+#endif _COMMENT_
+device		cgfour0 at obmem 7 csr 0xff300000 priority 4	# 3/60
+#endif _CPU3_60_
+
+#if _CPU3_60_
+#if _COMMENT_
+=
+# 3/60 plug-in 8-bit color frame buffer
+#endif _COMMENT_
+device		cgfour0 at obmem 7 csr 0xff400000 priority 4	# 3/60
+#endif _CPU3_60_
+
+#if _CPU3_E_
+#if _COMMENT_
+=
+# 3/E 8-bit color frame buffer
+#endif _COMMENT_
+device		cgfour0 at obmem 8 csr 0xff400000 priority 4	# 3/E
+#endif _CPU3_E_
+
+#if _CPU3_60_
+#if _COMMENT_
+=
+# 3/60 P4 accelerated 8-bit color frame buffer
+#endif _COMMENT_
+_SCOMM_()device		cgsix0 at obmem 7 csr 0xff000000 priority 4	# 3/60
+#endif _CPU3_60_
+
+#if _CPU3_60_ && _GENDEV_
+#if _COMMENT_
+=
+# 3/60 P4 24-bit color frame buffer
+#endif _COMMENT_
+device		cgeight0 at obmem 7 csr 0xff300000 priority 4	# 3/60
+#endif _CPU3_60_ && _GENDEV_
+
+#if _COMMENT_
+=
+#
+# Support for monochrome frame buffers on various machine types.
+#
+#endif _COMMENT_
+#if _CPU3_160_
+device		bwtwo0 at obmem 1 csr 0xff000000 priority 4	# 3/160
+#endif
+#endif sun3
+#endif !_MINI_
+#if _CPU3_50_
+device		bwtwo0 at obmem 2 csr 0x100000 priority 4	# 3/50
+#endif
+#if !_MINI_
+#ifdef sun3
+#if _CPU3_260_
+device		bwtwo0 at obmem 3 csr 0xff000000 priority 4	# 3/260
+#endif
+#if _CPU3_110_
+#if _COMMENT_
+# 3/110 on-board frame buffer overlay plane
+#endif _COMMENT_
+_SCOMM_()device		bwtwo0 at obmem 4 csr 0xff000000		# 3/110
+#endif _CPU3_110_
+#if _CPU3_60_
+device		bwtwo0 at obmem 7 csr 0xff000000 priority 4	# 3/60
+#endif
+#if _CPU3_E_
+device		bwtwo0 at obmem 8 csr 0x1000000			# 3/E
+#endif
+
+#if _CPU3_60_
+#if _COMMENT_
+=
+# 3/60 P4 color frame buffer overlay plane, or P4 monochrome frame buffer
+#endif _COMMENT_
+device		bwtwo1 at obmem 7 csr 0xff300000 priority 4	# 3/60
+#if _COMMENT_
+# 3/60 plug-in color frame buffer overlay plane
+#endif _COMMENT_
+_SCOMM_()device		bwtwo1 at obmem 7 csr 0xff400000		# 3/60
+#endif _CPU3_60_
+
+#if _CPU3_E_
+#if _COMMENT_
+=
+# 3/E plug-in color frame buffer overlay plane
+#endif _COMMENT_
+_SCOMM_()device		bwtwo1 at obmem 8 csr 0xff400000		# 3/E
+#endif _CPU3_E_
+
+#endif sun3
+
+
+/*
+ * Onboard and P4 frame buffers (not Sun-3)
+ */
+
+#ifndef sun3
+
+#if _BUSP4_
+
+#if _COMMENT_
+=
+#
+# Support for color frame buffers on various machine types.
+#
+#endif _COMMENT_
+
+#if _COMMENT_
+=
+# P4 8-bit color frame buffer
+#endif _COMMENT_
+#ifdef sun3x
+device		cgfour0 at obmem ? csr 0x50300000 priority 4
+#endif
+#ifdef sun4
+device		cgfour0 at obio ? csr 0xfb300000 priority 4
+#endif
+
+#if _COMMENT_
+=
+# P4 accelerated 8-bit color frame buffer
+#endif _COMMENT_
+#ifdef sun3x
+device		cgsix0 at obmem ? csr 0x50000000 priority 4
+#endif
+#ifdef sun4
+device		cgsix0 at obio ? csr 0xfb000000 priority 4
+#endif
+
+#if _GENDEV_
+#if _COMMENT_
+=
+# P4 24-bit color frame buffer
+#endif _COMMENT_
+#ifdef sun3x
+device		cgeight0 at obmem ? csr 0x50300000 priority 4
+#endif
+#ifdef sun4
+device		cgeight0 at obio ? csr 0xfb300000 priority 4
+#endif
+#endif _GENDEV_
+
+#endif _BUSP4_
+
+#if defined(sun3x) || _CPU4_260_ || defined(sun4) && _BUSP4_
+#if _COMMENT_
+=
+#
+# Support for monochrome frame buffers.
+#
+#endif _COMMENT_
+#ifdef sun3x
+device		bwtwo0 at obmem ? csr 0x50300000 priority 4
+#endif
+#if _CPU4_260_
+device		bwtwo0 at obio 1 csr 0xfd000000 priority 4	# 4/260
+#endif
+#if defined(sun4) && _BUSP4_
+device		bwtwo0 at obio ? csr 0xfb300000 priority 4
+#endif
+#endif
+
+#endif !sun3
+
+
+/*
+ * VME graphics devices
+ */
+
+#if _VMEVIDEO_
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for the GP/GP+/GP2 graphics processors.
+# Requires cgtwo and/or cgnine.
+#
+#endif _COMMENT_
+device		gpone0 at vme24d16 ? csr 0x210000	# GP or GP+
+device		gpone0 at vme24d32 ? csr 0x240000	# GP2
+#endif _GENDEV_
+
+#if _GENDEV_ || _BUSVME_ && !(defined(sun3) && _ONLY110_)
+#if _COMMENT_
+=
+#
+# Support for the Sun-2 color board, Sun-3 color board, or CG5 8-bit
+# VME frame buffer.
+#
+#endif _COMMENT_
+#ifndef DL75
+_SCOMM_()device		cgtwo0 at vme24d16 ? csr 0x400000 priority 4
+_SCOMM_()	vector cgtwointr 0xa8
+#endif DL75
+#endif _GENDEV_ || _BUSVME_ && !(defined(sun3) && _ONLY110_)
+
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for the CG9 24-bit VME frame buffer.
+#
+#endif _COMMENT_
+device		cgnine0 at vme32d32 ? csr 0x08000000 priority 4
+	vector cgnineintr 0xaa
+#endif _GENDEV_
+
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for the SunVideo board.
+#
+#endif _COMMENT_
+device		tvone0 at vme32d32 ? csr 0xa000000 priority 4
+	vector tvoneintr 0xa9
+#endif _GENDEV_
+
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for the TAAC-1 Application Accelerator.
+#
+#endif _COMMENT_
+#if _CPU4_110_
+device		taac0 at vme32d32 2 csr 0xf8000000		# 4/110
+#endif
+#if !(defined(sun4) && _ONLY110_)
+device		taac0 at vme32d32 ? csr 0x28000000
+#endif
+#endif _GENDEV_
+
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for the VX/MVX Application Accelerator.
+#
+#endif _COMMENT_
+#if _GENALL_
+#if _CPU4_110_
+device          vx0 at vme32d32 2 csr 0xf0000000 priority 4
+		vector vxintr 0xaa cgvxintr 0xab
+#endif
+#if !(defined(sun4) && _ONLY110_)
+device          vx0 at vme32d32 1 csr 0x30000000 priority 4
+		vector vxintr 0xaa cgvxintr 0xab
+device          vx0 at vme32d32 3 csr 0x30000000 priority 4
+		vector vxintr 0xaa cgvxintr 0xab
+device          vx0 at vme32d32 4 csr 0x30000000 priority 4
+		vector vxintr 0xaa cgvxintr 0xab
+#endif
+#endif
+#endif _GENDEV_
+
+#endif _VMEVIDEO_
+#endif !_MINI_
+
+/*
+ * Miscellaneous devices
+ */
+
+#if !defined(sun4m)		/* sun4m does not support this device */
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for 2 Systech VPC-2200 line printer controllers.
+#
+#endif _COMMENT_
+device		vpc0 at vme16d16 ? csr 0x480 priority 2 vector vpcintr 0x80
+device		vpc1 at vme16d16 ? csr 0x500 priority 2 vector vpcintr 0x81
+#endif _GENDEV_
+#endif
+
+#if _GENDEV_
+#if _COMMENT_
+=
+#
+# Support for the hardware Data Ciphering Processor (aka the DES chip).
+# Suggested if you make heavy use of secure RPC or secure NFS.
+#
+#endif _COMMENT_
+#ifdef sun3
+#endif
+#ifdef sun3x
+#endif
+#ifdef sun4
+#endif
+#endif _GENDEV_
+
+#if _GENDEV_ && _SUN3_
+#if _COMMENT_
+=
+#
+# Support for the Floating Point Accelerator.
+#
+#endif _COMMENT_
+device		fpa0 at virtual ? csr 0xe0000000
+#endif _GENDEV_ && _SUN3_
+
+
+/*
+ * Sun-3/80 specific devices
+ */
+
+#if _CPU3_80_
+
+#if !_DL_ && !_DLS_
+#if _COMMENT_
+=
+#
+# Support for the 3/80 onboard floppy disk controller
+#
+#endif _COMMENT_
+controller	fdc0 at obio ? csr 0x6e000000 priority 6 vector fdintr 0x5c
+device		fd0 at fdc0 drive 0 flags 0
+#endif !_DL_ && !_DLS_
+
+#if !_MINI_
+#if _COMMENT_
+=
+#
+# Support for the 3/80 parallel printer port
+#
+#endif _COMMENT_
+device		pp0 at obio ? csr 0x6f000000 priority 1
+#endif !_MINI_
+
+#endif _CPU3_80_
+
+
+#endif _OLDCONFIG_
+
+/*
+ * Sun-4c and Sun-4m devices
+ */
+
+#if defined(sun4c) || defined(sun4m)
+=
+#if _COMMENT_
+#
+# The following section describes which standard device drivers this
+# kernel supports.
+#
+#endif _COMMENT_
+#if defined(sun4m)
+device-driver	obio		# 'driver' for obio interface
+device-driver	iommu		# 'driver' for iommu interface
+#if _CPU4M_690_
+device-driver	vme		# 'driver' for vme interface
+#endif
+#endif sun4m
+device-driver	sbus		# 'driver' for sbus interface
+#if !_MINI_
+device-driver	bwtwo		# monochrome frame buffer
+device-driver	cgthree		# 8-bit color frame buffer
+device-driver	cgsix		# 8-bit accelerated color frame buffer
+device-driver	cgtwelve	# 24-bit accelerated color frame buffer
+device-driver	gt		# double-buffered 24-bit graphics accelerator
+#endif !_MINI_
+device-driver	dma		# 'driver' for dma engine on sbus interface
+#if !_DL_ 
+device-driver	esp		# Emulex SCSI interface
+#if _CPU4M_50_
+device-driver	espdma		# dma esp support
+#endif _CPU4M_50_
+#endif !_DL_ 
+#if !_DL_  && !_DLS_
+#if defined(sun4c) || defined(_CPU4M_50_)
+device-driver	fd		# Floppy disk
+#endif defined(sun4c) || defined(_CPU4M_50_)
+#endif !_DL_ && !_DLS_
+#if _AUDIO_
+device-driver	audioamd	# AMD79C30A sound chip
+#if !defined(sun4c) && !defined(IDST690)
+device-driver   dbri            # DBRI Audio/ISDN BRI
+#endif !defined(sun4c) && !defined(IDST690)
+#endif _AUDIO_
+device-driver	lebuf		# ethernet buffer
+device-driver	le		# LANCE ethernet
+device-driver	zs		# UARTs
+#if _CPU4M_50_
+device-driver	ledma	# dma ethernet support
+device-driver	bpp		# bpp support
+#endif _CPU4M_50_
+#if _CPU4M_690_
+device-driver	pn		# Self-ident. VME/IPI pseudo driver
+device-driver	ipisc		# Self-ident. IPI-3 Slave Cntrl pseudo driver
+device-driver	idpseudo	# IPI Disk pseudo device driver
+#endif _CPU4M_690_
+
+#if !_DL_  
+=
+#if _COMMENT_
+#
+# The following section describes SCSI device unit assignments.
+#
+#endif _COMMENT_
+#endif !_DL_
+#if !_DL_ || _DLS_
+scsibus0 at esp				# declare first scsi bus
+#if !_DISKID_
+disk sd0 at scsibus0 target 3 lun 0	# first hard SCSI disk
+#endif !_DISKID_
+#endif !_DL_ || _DLS_
+#if !_DL_ && !_DLS_
+#if !_DISKID_
+disk sd1 at scsibus0 target 1 lun 0	# second hard SCSI disk
+disk sd2 at scsibus0 target 2 lun 0	# third hard SCSI disk
+disk sd3 at scsibus0 target 0 lun 0	# fourth hard SCSI disk
+#if defined(sun4m)
+disk sd16 at scsibus0 target 5 lun 0	# seventeenth (fifth) hard SCSI disk
+#endif
+#endif !_DISKID_
+tape st0 at scsibus0 target 4 lun 0	# first SCSI tape
+tape st1 at scsibus0 target 5 lun 0	# second SCSI tape
+#if defined(sun4m)
+tape st2 at scsibus0 target 1 lun 0	# third SCSI tape
+tape st3 at scsibus0 target 0 lun 0	# fourth SCSI tape
+#endif
+_CDCONF_(disk sr0 at scsibus0 target 6 lun 0	# CD-ROM device)
+#if defined(sun4m)
+_CDCONF_(disk sr1 at scsibus0 target 5 lun 0	# second CD-ROM device)
+_CDCONF_(disk sr2 at scsibus0 target 1 lun 0	# third CD-ROM device)
+_CDCONF_(disk sr3 at scsibus0 target 0 lun 0	# fourth CD-ROM device)
+#endif
+=
+scsibus1 at esp				# declare second scsi bus
+#if !_DISKID_
+disk sd4 at scsibus1 target 3 lun 0	# fifth hard SCSI disk
+disk sd5 at scsibus1 target 1 lun 0	# sixth hard SCSI disk
+disk sd6 at scsibus1 target 2 lun 0	# seventh hard SCSI disk
+disk sd7 at scsibus1 target 0 lun 0	# eighth hard SCSI disk
+#endif !_DISKID_
+#if defined(sun4c)
+tape st2 at scsibus1 target 4 lun 0	# third SCSI tape
+tape st3 at scsibus1 target 5 lun 0	# fourth SCSI tape
+_CDCONF_(disk sr1 at scsibus1 target 6 lun 0	# 2nd CD-ROM device)
+#endif
+#if defined(sun4m)
+tape st4 at scsibus1 target 4 lun 0	# fifth SCSI tape
+tape st5 at scsibus1 target 5 lun 0	# sixth SCSI tape
+_CDCONF_(disk sr4 at scsibus1 target 6 lun 0	# fifth CD-ROM device)
+#endif
+=
+#if _GENDEV_ || (_MINI_ && defined(sun4m))
+scsibus2 at esp				# declare third scsi bus
+disk sd8 at scsibus2 target 3 lun 0	# ninth hard SCSI disk
+disk sd9 at scsibus2 target 1 lun 0	# tenth hard SCSI disk
+disk sd10 at scsibus2 target 2 lun 0	# eleventh hard SCSI disk
+disk sd11 at scsibus2 target 0 lun 0	# twelfth hard SCSI disk
+=
+scsibus3 at esp				# declare fourth scsi bus
+disk sd12 at scsibus3 target 3 lun 0	# thirteenth hard SCSI disk
+disk sd13 at scsibus3 target 1 lun 0	# fourteenth hard SCSI disk
+disk sd14 at scsibus3 target 2 lun 0	# fifteenth hard SCSI disk
+disk sd15 at scsibus3 target 0 lun 0	# sixteenth hard SCSI disk
+#if defined(sun4m)
+tape st6 at scsibus3 target 4 lun 0	# seventh SCSI tape
+tape st7 at scsibus3 target 5 lun 0	# eighth SCSI tape
+_CDCONF_(disk sr5 at scsibus3 target 6 lun 0	# sixth CD-ROM device)
+#endif
+=
+#if defined(sun4m)
+scsibus4 at esp				# declare fifth scsi bus
+disk sd17 at scsibus4 target 3 lun 0	# eighteenth hard SCSI disk
+disk sd18 at scsibus4 target 1 lun 0	# nineteenth hard SCSI disk
+disk sd19 at scsibus4 target 2 lun 0	# twentieth hard SCSI disk
+disk sd20 at scsibus4 target 0 lun 0	# twenty-first hard SCSI disk
+#endif
+#endif _GENDEV_ || (_MINI_ && defined(sun4m))
+#endif !_DL_ && !_DLS_
+#endif sun4c || sun4m

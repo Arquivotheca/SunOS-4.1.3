@@ -1,0 +1,61 @@
+.\" @(#)win.4s 1.1 92/07/30 SMI;
+.TH WIN 4S "9 October 1987"
+.SH NAME
+win \- Sun window system
+.SH CONFIG
+.nf
+.B "pseudo-device win\fInumber\fP"
+.B "pseudo-device dtop\fInumber\fP"
+.fi
+.SH DESCRIPTION
+.IX  "win device"  ""  "\fLwin\fP \(em Sun window system"  ""  PAGE START
+.LP
+The
+.B win
+pseudo-device accesses the system drivers supporting the Sun window system.
+.IR number ,
+in the device description line above, indicates
+the
+maximum number of windows supported by the system.
+.I number
+is set
+to 128 in the
+.SM GENERIC
+system configuration file used to generate the
+kernel used in Sun systems as they are shipped.
+The
+.I dtop
+pseudo-device line indicates the number of
+separate ``desktops'' (frame buffers) that can be
+actively running the Sun window system at once.
+In the
+.SM GENERIC
+file, this number is set to 4.
+.LP
+Each window in the system is represented by a
+.B /dev/win*
+device.
+The windows are organized as a tree with windows being subwindows of
+their parents, and covering/covered by their siblings.  Each window
+has a position in the tree, a position on a display screen,
+an input queue, and information telling what parts of it are exposed.
+.LP
+The window driver multiplexes keyboard and mouse input among the
+several windows, tracks the mouse with a cursor on the screen,
+provides each window access to information about what parts of it are exposed,
+and notifies the manager process for a window
+when the exposed area of the window changes so that the window may
+repair its display.
+.LP
+Full information on the window system functions is given in the
+.TX SVSPG .
+.IX  "win device"  ""  "\fLwin\fP \(em Sun window system"  ""  PAGE END
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/win[0-9]
+.TP
+.B /dev/win[0-9][0-9]
+.PD
+.SH "SEE ALSO
+.TX SVSPG

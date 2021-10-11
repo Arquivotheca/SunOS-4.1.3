@@ -1,0 +1,106 @@
+.\" @(#)fwtmp.8 1.1 92/07/30 SMI; from S5R2
+.TH FWTMP 8 "17 January 1990"
+.SH NAME
+fwtmp, wtmpfix \- manipulate connect accounting records
+.SH SYNOPSIS
+.B /usr/lib/acct/fwtmp
+[
+.B \-ci
+]
+.LP
+.B /usr/lib/acct/wtmpfix
+[
+.IR filename \|.\|.\|.
+]
+.SH DESCRIPTION
+.IX "fwtmp" "" "\fLfwtmp\fP \(em convert connect accounting records to ASCII" ""
+.IX "wtmpfix" "" "\fLwtmpfix\fP \(em correct connect accounting records date/time stamp" ""
+.SS fwtmp
+.LP
+.B fwtmp
+reads from the standard input and
+writes to the standard output,
+converting binary records of the type found in
+.B wtmp
+to formatted
+.SM ASCII
+records.
+The
+.SM ASCII
+version is useful to enable editing bad records,
+using a text editor,
+or general purpose maintenance of the file.
+.SS wtmpfix
+.LP
+.B wtmpfix
+examines the standard input or named files in
+.B wtmp
+format, corrects the time/date stamps to make the
+entries consistent, and writes to the standard output.
+A
+.RB ` \- '
+can be used in place of
+.I filename
+to indicate the standard input.
+If time/date corrections are not performed,
+.B acctcon1
+fails when it encounters certain date-change records.
+.LP
+Each time the date is set,
+a pair of date change records are written to
+.BR /var/adm/wtmp .
+The first record is the old date denoted
+by the string
+.RB ` | '
+placed in the line field of the 
+.B <utmp.h>
+structure.
+The second record specifies the new date and is
+denoted by the string
+.RB ` { '
+placed in the line field.
+.B wtmpfix
+uses these records to synchronize all time stamps in the file.
+.LP
+In addition to correcting time/date stamps,
+.B wtmpfix
+checks the validity of the name field to ensure that it consists
+solely of alphanumeric characters or
+.SM SPACE
+characters.
+If it encounters a name that is considered invalid,
+it changes the login name to
+.SB INVALID
+and writes a diagnostic message to the standard error.
+In this way,
+.B wtmpfix
+reduces the chance that
+.B acctcon1
+will fail when processing connect accounting records.
+.SH OPTIONS
+.SS fwtmp
+.TP
+.B \-c
+Write output in binary form.
+.TP
+.B \-i
+Input is in
+.SM ASCII
+form.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/wtmp
+.PD
+.SH SEE ALSO
+.BR acctcom (1),
+.BR acct (2V),
+.BR acct (5),
+.BR utmp (5V),
+.BR acct (8),
+.BR acctcms (8),
+.BR acctcon (8),
+.BR acctmerg (8),
+.BR acctprc (8),
+.BR acctsh (8),
+.BR runacct (8)

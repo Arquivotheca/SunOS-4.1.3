@@ -1,0 +1,367 @@
+.\" @(#)add_client.8 1.1 92/07/30 SMI;
+.TH ADD_CLIENT 8 "7 October 1990"
+.SH NAME
+add_client \- create a diskless network bootable NFS client on a server
+.SH SYNOPSIS
+.B /usr/etc/install/add_client 
+.RB [ \-inpv ]
+[
+.B \-a 
+.I kernel-arch
+]
+.if n .ti +5n
+[
+.B \-e 
+.I exec-path
+]
+[
+.B \-f 
+.I share-path
+]
+[
+.B \-h
+.I home-path
+]
+.if n .ti +5n
+.if t .ti +.5i
+[
+.B \-k
+.I kvm-path
+]
+[
+.B \-m
+.I mail-path
+]
+[
+.B \-r 
+.I root-path
+]
+.if n .ti +5n
+[
+.B \-s 
+.I swap-path
+]
+[
+.B \-t
+.I term-type
+]
+.if t .ti +.5i
+[
+.B \-y 
+.I yptype
+]
+.if n .ti +5n
+[
+.B \-z 
+.I swapsize
+]
+.IR client \|.\|.\|.
+.br
+.B /usr/etc/install/add_client 
+.RB \-i \||\| \-p
+.RB [ \-nv ]
+[
+.B \-a 
+.I kernel-arch
+]
+.if n .ti +5n
+[
+.B \-e 
+.I exec-path
+]
+[
+.B \-f 
+.I share-path
+]
+.if t .ti +.5i
+[
+.B \-h
+.I home-path
+]
+.if n .ti +5n
+[
+.B \-k
+.I kvm-path
+]
+[
+.B \-m
+.I mail-path
+]
+[
+.B \-r 
+.I root-path
+]
+.if n .ti +5n
+[
+.B \-s 
+.I swap-path
+]
+.if t .ti +.5i
+[
+.B \-t
+.I term-type
+]
+[
+.B \-y 
+.I yptype
+]
+.if n .ti +5n
+[
+.B \-z 
+.I swapsize
+]
+[
+.IR client \|.\|.\|.
+]
+.SH DESCRIPTION
+.IX "add_client command" "" "\fLadd_client\fP command"
+.LP
+.B add_client
+adds an
+.SM NFS
+client to a server.
+It can only be run by the super-user.
+.LP
+A default standard layout is used to set up the 
+client's environment, but most
+pathnames can be overridden with the appropriate option,
+or menu field change.
+.LP
+Before you can add a client, you must first make sure that the Internet
+and Ethernet addresses for
+.I client
+are listed in the 
+Network Information Service
+(\s-1NIS\s0)
+hosts database (if the server is running the
+.SM NIS
+service),
+or in the server's
+.B /etc/hosts
+and
+.B /etc/ethers
+databases, respectively.
+If
+.B add_client
+cannot find the client entry in the hosts database
+it aborts the operation.
+If there is no client entry in the
+.B /etc/ethers
+database,
+.B add_client 
+issues a warning to update this file while adding the client.
+.LP
+The default root and swap partitions are
+.BI /export/root/ client
+and
+.BI /export/swap/ client\fR,
+respectively.
+.LP
+.B add_client
+updates the
+.B /etc/bootparams
+file on the server but not the bootparams database in the
+.SM NIS
+service
+(if used).
+.LP
+If the server is not running as an
+.SM NIS 
+master,
+.BR add_client
+issues a warning to indicate that
+the database is out of date and the
+.SM NIS
+master should be updated.
+.LP
+.B add_client
+updates the server's
+.B /etc/exports
+file to allow client's root access to each client's root file system.
+It also exports each client's swap file accordingly.
+Note: the system administrator should verify that the
+.B /etc/exports
+file contains correct information, and that file systems
+are exported to the correct users and groups.
+Refer to
+.BR exportfs (8)
+for details on exporting file systems.
+.LP
+If the
+.B \-i
+or 
+.B \-p
+option is not specified,
+at least one
+.I client
+argument must be supplied on the command line.
+.br
+.ne 10
+.SH OPTIONS
+.TP 15
+.B \-i
+Interactive.
+Bring up a full-screen menu interface to
+.BR add_client .
+.TP
+.B \-n
+Print the working parameters and exit without doing anything.
+This is used to verify what parameters 
+.B add_client
+will use before actually doing anything.
+.TP
+.B \-p
+Display a short version of all client information,
+If 
+.IR client s
+are specified on the command line,
+only display information for those clients.
+When combined with the 
+.B \-v
+option, a long version of client information is displayed.
+.TP
+.BI \-v
+Verbose.
+Report information about the client as steps are performed.
+.TP
+.BI \-a " kernel-arch"
+Specify the client kernel architecture (for instance, 
+.BR sun3 ,
+.BR sun4 ,
+.BR sun4c .\|.\|.). 
+.B add_client
+prompts for the kernel architecture when unable to determine
+the correct value.
+.TP
+.BI \-e " exec-path"
+Set the pathname of the directory in which the
+executables for the architecture specified by
+.BR \-a .
+The client mounts
+.BI /export/exec/ arch . rel
+as
+.BR /usr . 
+See
+.SM WARNINGS\s0.
+.TP
+.BI \-f " share-path"
+Set the pathname of the share directory, which is normally a link to
+.BR /usr/share .
+.TP
+.BI \-h " home-path"
+Set the pathname of the directory for the client's home.  
+The default is
+.BI /home/ server-name\fR.
+.TP
+.BI \-k " kvm-path"
+Set the pathname of the directory containing the client's kernel
+executables.
+See
+.SM WARNINGS\s0.
+.TP
+.BI \-m " mail-path"
+Set the pathname of the client's mail directory.  
+The default is
+.BR /var/spool/mail .
+.TP
+.BI \-r " root-path"
+Set the pathname of parent directory for client root directories; 
+.IB root / client
+is the pathname of the client's root directory.
+The default is
+.BI /export/root/ client-name\fR.
+.TP
+.BI \-s " swap-path"
+Set the pathname of parent directory for client swap files;  
+.IB swap / client
+is the pathname of the client's swap file.
+The default is
+.BI /export/swap/ client-name\fR.
+.TP
+.BI \-t " term-type"
+Set the terminal type of the client's console.
+.br
+.ne 5
+.TP
+.BI \-y " yptype"
+Indicate the type of 
+.SM NIS
+server or if client is to be an
+.SM NIS
+client; it can be
+.BR client
+or
+.BR none .
+The
+.BR none
+argument results in the
+.SM NIS
+service being disabled on the client.  The default is
+.BR client .
+.TP
+.BI \-z " swapsize"
+Reserve
+.I swapsize
+bytes for the client's swap file. 
+.BR swapsize
+can be flagged as kilobytes, blocks, or
+megabytes, with the
+.BR k ,
+.BR b ,
+or
+.B m
+suffixes, respectively.
+The default is 16Mb, and bytes are used when no
+units are specified.
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/bootparams
+.TP
+.B /etc/ethers
+.TP
+.B /etc/exports
+.TP
+.B /etc/hosts
+.TP
+.BI /export/exec/proto.root. release
+architecture independent base for the
+client root file system
+.TP
+.BI /tftpboot. client-ipaddr
+link to
+.BI /tftpboot/boot. arch
+.PD
+.SH "SEE ALSO"
+.BR add_services (8),
+.BR bootparamd(8),
+.BR exportfs (8),
+.BR ndbootd (8C),
+.BR rm_client (8),
+.BR suninstall (8)
+.LP
+.TX INSTALL
+.SH DIAGNOSTICS
+.TP
+.B "add_client: must be super-user"
+You must be root to use
+.BR add_client .
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+.SH WARNINGS
+.LP
+The
+.BI \-e " exec-path"
+and
+the
+.BI \-k " kvm-path"
+options should not be used since the correct paths
+are determined when the adding the client's architecture service.
+See
+.BR add_services (8).

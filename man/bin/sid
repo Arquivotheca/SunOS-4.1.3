@@ -1,0 +1,18 @@
+case $1 in 
+-i)	shift ; inter=1
+;;
+esac
+
+for i in $*
+do
+	case $inter in
+	1) echo $i
+	;;
+	esac
+	( if test ! -w $i ; then chmod +w $i ; fi )
+	ed - $i <<'EOT' > /dev/null 2>&1
+/@(#)/s/@(#).*SMI;*/@(#)sid 1.1 92/07/30 SMI;/
+w
+q
+EOT
+done

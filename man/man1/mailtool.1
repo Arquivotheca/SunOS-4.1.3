@@ -1,0 +1,709 @@
+.\" @(#)mailtool.1 1.1 92/07/30 SMI;
+.TH MAILTOOL 1 "2 October 1989"
+.SH NAME
+mailtool \- SunView interface for the mail program
+.SH SYNOPSIS
+.B mailtool
+[
+.B \-Mx
+]
+[
+.B \-Mi
+.I interval
+]
+[
+.I generic-tool-arguments
+]
+.SH AVAILABILITY
+This command is available with the
+.TX SVBG
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX mailtool "" "\fLmailtool\fR \(em SunView mail interface"
+.IX tools mailtool "" "\fLmailtool\fR"
+.LP
+.B mailtool
+is the standard SunView interface to 
+.BR mail (1).
+It provides a window and mouse-based interface for reading, storing,
+composing, and sending mail messages.
+Scrollable windows allow easy access to
+your mailbox and mail folders. 
+Software \*(lqpanel buttons\*(rq make frequently-used commands readily
+available. 
+Less-used commands are accessible from
+menus, and keyboard accelerators are provided
+for the more experienced user.
+.LP
+The full editing capabilities of
+.BR textedit (1)
+and the SunView selection service are available
+for modifying and composing mail.
+In addition, you can customize
+.B mailtool
+by setting various parameters with
+.BR defaultsedit (1).
+.SH OPTIONS
+.TP 15
+.B \-Mx
+Expert mode.
+Do not ask for confirmation after potentially damaging
+.B mail
+commands.
+This has the same effect as setting the
+.B expert
+variable.
+.TP
+.BI \-Mi " interval"
+Check for new mail every
+.I interval
+seconds.
+This has the same effect as specifying a value for the
+.I interval
+variable.
+.TP
+.I generic-tool-arguments
+.B mailtool
+accepts the generic tool arguments described in
+.BR sunview (1).
+.SH USAGE
+Users who are not familiar with the 
+.B mail
+command should read
+.TX GSBG .
+For more information on text editing and the
+selection service, see the 
+.TX SVBG .
+.LP
+.B mailtool
+comes up closed.
+You can open the tool by clicking on the icon with the
+.SM LEFT
+mouse button.
+.B mailtool
+starts reading your system mailbox as it opens.
+Alternatively, the frame menu on the icon contains the 
+.B Open
+pull-right item, which allows you to open
+.B mailtool
+to a selected folder, or open and
+.BR Compose ,
+or just open without performing any other operation.
+.SS Subwindows
+.LP
+.B mailtool
+is composed of six parts. 
+From top to bottom, they are:
+.TP 12
+frame header\ \ \ \ 
+This is the broad stripe at the top of the tool, and it
+displays status information.
+The right side displays information about the
+most-recently executed command.
+The left side displays other information such as the
+name of the current folder.
+When involved in a lengthy operation,
+.B mailtool
+displays a message to that effect on the left side.
+While an operation is pending, the cursor takes on
+the shape of an hourglass; you must wait until it
+finishes.
+.TP
+header-list window
+This read-only text window contains a list of message headers
+from the current folder or mailbox. 
+Initially, it shows the contents of your system mailbox (by default).
+Each header typically contains fields indicating who the message is from,
+its subject, and so forth.
+There is a scrollbar to the left
+that you can use to scroll through the headers.
+.br
+.ne 8
+.TP
+control panel\ \ \ \ 
+This panel contains a collection of
+software buttons corresponding to the most frequently used
+.BR mail (1)
+commands.
+Clicking on one of these buttons starts the indicated
+operation for either the selected or the current message.
+Commands that require the name of a folder, such as
+.BR Save ,
+use the contents of the
+.RB ` File: '
+text item.
+You must enter the name of a file or folder in this space before
+clicking on the button.
+.IP
+In addition to the panel buttons, other commands
+and variations are accessible through menus \*(lqbehind\*(rq
+each panel button. 
+To display a button menu, hold down the
+.SM RIGHT
+mouse button over the panel button.
+See
+.BR "Command Menus" ,
+below, for details.
+.TP
+The message window
+This text window displays the current message
+(marked with
+.RB ` > '
+in the header window). 
+You can edit this message, in which case the result replaces
+the original message in the mailbox or folder.
+.TP
+composition panel
+This panel contains software buttons for
+composing or replying to messages, and is visible
+only when you are composing a message or reply.
+.TP
+composition window
+This text window, in which you compose messages to send, appears in
+conjunction with the composition panel. 
+It is normally displayed only when composing a message or reply. 
+It is initially loaded with mail header lines such as
+.RB ` To: '
+and 
+.RB ` Subject: ',
+and perhaps,
+.RB ` Cc: '. 
+After these labels come various text fields, such as
+.BR "|>recipients<|" .
+You can move from field to field using
+.SM CTRL-TAB\s0.
+This advances to the next text field.
+If you supply input to
+the field, your input replaces its contents. 
+Empty fields are deleted when the message is sent.
+You can continue
+to edit the message as you see fit until you click on
+.BR Deliver ,
+at which point the message is sent as is.
+(You normally cannot retrieve a message once it has been sent).
+.TP
+pop-up composition window
+While composing a message or reply, clicking again on
+.B Compose
+or
+.BR Reply ,
+opens another frame that contains a composition panel and window.
+The only limit on the number of such pop-up composition frames is the
+number of windows that a tool can support.
+These additional frames operate independently.
+.SS "Basic Mailtool Concepts"
+.LP
+.TP 12
+Choosing a message
+To choose a message, place the cursor anywhere
+in its header in the header window and click the
+.SM LEFT
+mouse button. 
+If there is no message chosen, 
+.B mailtool
+applies operations to the current message.
+.TP
+Current message
+The message that is displayed in
+the message window, and flagged with a
+.RB ` > '
+in the header window.
+.TP
+Confirmation\ \ \ \ \ 
+Some operations require confirmation, in which case an alert is
+displayed.
+You can then confirm or cancel the operation.
+.TP
+Folders\ \ \ \ \ \ \ \ \ \ \ \ 
+When mailtool starts up, it normally reads your system mailbox.
+However, you can select another \*(lqfolder\*(rq (file containing mail
+messages) from which to read.
+.TP
+Committing Changes
+Some operations change the state of your system mailbox or the current
+folder.  These changes are not finalized until you commit them.
+For instance, you can \*(lqundelete\*(rq messages that were deleted,
+provided that you have not yet done an operation that commits your
+changes. 
+If the
+.B mailtool
+session is interrupted, pending changes to the mailbox  or
+folder do not take effect.  The
+.B Done
+button commits changes, as does the
+.B Quit
+button, which also exits from
+.BR mailtool .
+To deliberately exit without committing, use the pop-up menu behind the 
+.B Quit
+button.
+.SS "Control Panel"
+.LP
+Except for the 
+.B Next
+and
+.B Undelete
+buttons,
+.B mailtool
+commands operate on the selected message or the current message only.
+You cannot specify a list or range of messages as with
+.BR mail (1).
+The control panel buttons and items are (in alphabetical order):
+.TP 12
+.B Compose
+Open a composition panel and window to compose a message.
+.TP
+.B Delete
+Delete the selected or current message.
+.TP
+.B Done
+Commit changes, close 
+.BR mailtool ,
+and read new mail on next
+.BR Open .
+.TP
+.B File:
+This is a text item in which to enter the name of a folder for the
+.BR Save ,
+.BR Copy ,
+and
+.BR Folder
+commands.
+This name can be a full pathname, a
+pathname relative to the current directory (the directory 
+.B mailtool
+was started from), or a filename prefixed with a
+.RB ` + '
+to refer to a file in the \*(lqfolder\*(rq directory.
+.TP
+.B Folder
+Commit changes and switch to the file or folder specified in the
+.RB ` File: '
+text item.
+.TP
+.B Misc
+Display a pop-up panel to change the current directory of
+.BR mailtool .
+Other miscellaneous operations are available on
+the menu behind this button.
+.TP
+.B New Mail
+If you are examining your system mailbox, retrieve
+new mail
+.I without
+committing changes.
+If your are examining a folder, commit any changes to the folder,
+switch back to system mailbox, and retrieve any new mail
+in the process.
+.TP
+.B Next
+Display the message following the
+.I current
+message in the message window.
+.TP
+.B Print
+Print the corresponding message on a hardcopy printer.
+.TP
+.B Reply
+Open a composition window to reply to the selected or current message.
+.TP
+.B Save
+Save the current or selected message in the folder specified in the
+.RB ` File: '
+text field, and delete it from your system mailbox or current folder.
+.TP
+.B Show
+Display the chosen or current message in the message window.
+.SS "The Composition Panel"
+.LP
+This panel contains four buttons and a cycle-item. 
+The cycle-item
+controls the behavior of the composition window when it becomes
+inactive \(em when the user delivers or cancels a message.
+Items in the cycle are:
+.TP 12
+.B Disappear
+Remove the composition window and panel from display.  This is
+the default.
+.TP
+.B Stay Up
+Clear the window, but leave it displayed.
+.TP
+.B Close
+Close a pop-up composition frame.
+.LP
+The panel buttons are:
+.TP 12
+.B Cancel
+Abort the message being composed.
+.TP
+.B Deliver
+Send the message being composed to the indicated recipients.
+.TP
+.B Include
+Insert the corresponding message into the composition window at
+the caret.  This operation can be performed repeatedly, to
+include various messages.
+.TP
+.B Re-address
+Insert the appropriate
+.RB ` To: ',
+.RB ` Subject: '
+and
+.RB ` Cc: '
+fields at the top
+of the composition window.
+.LP
+.SS "Command Menus"
+.LP
+All panel buttons have menus behind them.  The first item on
+the menu is the default command; choosing this item is the same as
+clicking on the panel button.
+.LP
+Some menu items are pull-right to menus of related commands.
+You can browse the button menus to discover what additional commands are
+available, and what their accelerators are, if any.
+The following commands are particularly useful.
+.br
+.ne 3
+.TP 15
+.B Change Directory
+Display a pop-up panel to change the current directory.
+.TP
+.B Commit Changes
+Commit changes.  This item is behind the
+.B New Mail
+button when viewing a folder.
+.TP
+.B Commit Changes and Quit
+Behind the
+.B Done
+button.
+Commit changes and exit
+.BR mailtool (1).
+This is the same as choosing
+.B Quit
+from the frame menu.
+.br
+.ne 5
+.TP
+.B "Commit Changes and Retrieve New Mail"
+Behind the 
+.B New Mail
+button.
+Commit changes and retrieve new mail, switching to the system mail box
+if in a folder. 
+This is the default when viewing a folder.
+.TP
+.B Copy
+Behind the 
+.B Save
+button.
+Copy the selected message to the file or folder specified in the
+.RB ` File: '
+text item, without deleting it from the mailbox or folder.
+.TP
+.B "Deliver, Leave Window Intact"
+Behind the
+.B Deliver
+button.
+Deliver the message, but do not undisplay, close, or clear the message
+composition window.
+.TP
+.B Include, Indented
+Behind the
+.B Include
+button.
+Include the indicated message, setting it off by indentation
+rather than bracketing it with 
+.RB ` "--- Begin Included Message ---" '
+and
+.RB ` "--- End Included Message ---" '
+lines.
+.TP
+.B Previous
+Behind the
+.B Next
+button.
+Display the previous message in the message window.
+.TP
+.B "Quit without Committing Changes"
+Behind the
+.B Done
+button.
+Exit
+.B mailtool
+.I without
+committing changes.
+.TP
+.B Show Full Header
+Behind the
+.B Show
+button.
+Display the complete message in the message window, including
+header lines that are normally ignored.
+.TP
+.B Source .mailrc
+Behind the
+.B Misc
+button.
+Read in your
+.B \&.mailrc
+file to acquire new variables and settings. 
+Note: this operation does not \*(lqforget\*(rq the
+previous option settings; only changes to
+boolean variables take effect.
+.TP
+.B Undelete
+Behind the
+.B Delete
+button.
+Undelete the most recently deleted message(s) \(em this may be
+used repeatedly.
+It is inactive when there are no deleted messages.
+.LP
+There are two special 
+menus for use with the
+.RB ` File: '
+text item.
+Choosing a name from either of these menus replaces the contents of
+this item. 
+The menu behind the
+.RB ` File: '
+item holds the most recently used folder names of the current
+session.
+It is be initialized by the 
+.B filemenu
+variable.
+The menu behind the 
+.B Folder
+button displays all folders in the \*(lqfolder\*(rq directory, which is
+specified by the 
+.B folder
+variable (described in
+.BR mail (1)).
+Folders can be organized into subdirectories
+within the folder directory. 
+Files in these subdirectories
+appear in a hierarchy of pull-right menus.
+.LP
+To switch to a folder, choose it from one of the file menus, or
+type it in directly, and click on the
+.B Folder
+button.
+To return to your system mailbox, use the
+.B New Mail
+button.
+.SS "Mailtool Variables"
+.LP
+In addition to the variables recognized by
+.BR mail (1),
+.B mailtool
+recognizes those listed below. 
+They can be set by using
+.BR defaultsedit (1),
+or by editing your
+.B \&.mailrc
+file directly.
+Unless otherwise noted, the default for the
+following variables is off.
+.br
+.ne 4
+.TP 15
+.B allowreversescan
+When set, allows you to step through messages in latest-first
+oldest-first order if you choose.
+The next message depends on the order of travel.
+.TP
+.B alwaysusepopup
+Never split the message window to compose or reply; always use pop-up
+composition windows.
+.TP
+.B askbcc
+Prompt for the
+.RB ` "Bcc:" '
+field when composing or replying.
+.TP
+.B autoprint
+Display the next message when the current message
+is deleted or saved.
+.TP
+.B bell
+The number of times to ring the bell when new mail arrives.
+The default is 0.
+.TP
+.B disablefields
+Do not use text fields in the composition window. 
+The default is to use text fields.
+.TP
+.B editmessagewindow
+Request confirmation before the first editing operation to a message in
+the message window (as opposed to composing a reply).
+The default is not to request confirmation of the first edit.
+.TP
+.B expert
+Set expert mode in which no confirmations are requested.
+.TP
+.B filemenu
+A list of files from which to initialize the
+.RB ` File: '
+menu.
+These can be absolute pathnames, pathnames relative to the
+working directory for 
+.BR mailtool 
+(typically your home directory), or filenames prefixed with a 
+.RB ` + ',
+which are taken as relative to the directory specified in the
+.B folder
+variable (see
+.BR mail (1)).
+.TP
+.B filemenusize
+Specifies the maximum size of the 
+.RB ` File: '
+menu.
+The default is 10.
+.TP
+.B flash
+The number of times to flash the window or icon when new mail arrives.
+The default is 0.
+.TP 
+.B headerlines
+The number of lines in header window. 
+The default is 10.
+.TP
+.B interval
+The interval in seconds to check for new mail.
+The default is 300.
+.TP
+.B maillines
+The number of lines in mail message window.
+The default is 30.
+.TP
+.B moveinputfocus
+Move the input focus into the composition window for
+.B Compose
+and
+.BR Reply .
+This only works for click-to-type.
+.TP
+.B pop-uplines
+The number of lines in pop-up message composition window.
+The default is 30.
+.TP
+.B msgpercent
+The percent of the message window to remain visible during
+.B Compose
+or
+.BR Reply .
+The default is 50.
+.TP
+.B printmail
+The command to use to print a message.
+The default is 
+.RB ` "lpr \-p" '.
+.TP
+.B trash
+The name of trash bin, which may be accessed just like any other folder.
+If set, all deleted messages are moved to the trash bin.
+The trash bin is emptied when you commit changes.
+.SS Conditional Settings
+.LP
+You can make your 
+.B \&.mailrc
+set variables conditionally,
+depending on whether it is running in the tty environment or the
+window environment.
+See
+.TX GSBG
+for details.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR mailtool .
+On entry to
+.BR mailtool ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/spool/mail/*
+system mailboxes
+.TP
+.B ~/.mailrc
+startup file for 
+.B mail
+and
+.B mailtool
+.PD
+.br
+.ne 7
+.SH SEE ALSO
+.BR bin-mail (1),
+.BR defaultsedit (1),
+.BR mail (1),
+.BR sunview (1),
+.BR textedit (1)
+.BR aliases (5),
+.BR locale (5),
+.BR newaliases( 8),
+.BR sendmail (8)
+.LP
+.TX GSBG
+.br
+.TX SVBG
+.SH BUGS
+.LP
+If
+.BR mail (1)
+receives an error, then 
+.B mailtool
+may hang, in which case you must kill it.
+.LP
+New mail status is only approximate, therefore the presence of new mail
+is not always accurately reflected in the icon image or tool frame
+header.
+.LP
+Mouse input may be lost while
+.B mailtool
+switches to iconic state.
+.LP
+When notifying you of new mail,
+.B mailtool
+will not flash the window or icon without beeping (ringing the
+audible bell).  Thus, the
+number of flashes is limited by the number of beeps you set.
+.LP
+Unlike
+.BR mail (1),
+.B mailtool
+retains unsaved messages in the system mailbox by default; that
+is, the
+.B hold
+variable is initially set.

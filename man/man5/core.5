@@ -1,0 +1,130 @@
+.\" @(#)core.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH CORE 5  "18 February 1988"
+.SH NAME
+core \- format of memory image file
+.SH SYNOPSIS
+.B #include <sys/core.h>
+.SH DESCRIPTION
+.IX  "core file"  ""  "\fLcore\fP \(em memory image file format"
+.IX  "memory image file format"  ""  "memory image file format \(em \fLcore\fP"
+.IX  "format of memory image file"  ""  "format of memory image file \(em \fLcore\fP"
+.LP
+The operating system writes out a memory image of a
+terminated process when any of various errors occur.  See
+.BR sigvec (2)
+for the list of reasons; the most common are memory violations, illegal
+instructions, bus errors, and user-generated
+quit signals.  The memory image is called
+.B core
+and is written in the process's working
+directory (provided it can be; normal access controls apply).
+Set-user-\s-1ID\s0 and set-group-\s-1ID\s0 programs do not produce core files
+when they terminate as this would cause a security loophole.
+.LP
+The maximum size of a
+.B core
+file is limited by
+.B setrlimit
+(see
+.BR getrlimit (2)).
+Files which would be larger than the limit are not created.
+.LP
+The core file consists of a 
+.B core
+structure, as defined in the
+.B <sys/core.h>
+file, followed by the data pages and then the stack pages of the process image.
+The
+.B core
+structure includes
+the program's header, the size of the text, data, and stack
+segments, the name of the program and the number of the signal
+that terminated the process.  The program's 
+header is described by the 
+.B exec
+structure defined in the
+.B <sys/exec.h>
+file, except on Sun386i systems.
+.LP
+.RS
+.nf
+.ta 1i 1.5i 2.5i
+.ft B
+struct core {
+	int	c_magic;		/* Corefile magic number */
+	int	c_len;			/* Sizeof (struct core) */
+	struct	regs c_regs;		/* General purpose registers */
+	struct 	exec c_aouthdr;		/* A.out header */
+	int	c_signo;		/* Killing signal, if any */
+	int	c_tsize;		/* Text size (bytes) */
+	int	c_dsize;		/* Data size (bytes) */
+	int	c_ssize;		/* Stack size (bytes) */
+	char	c_cmdname[CORE_NAMELEN + 1]; /* Command name */
+	struct	fpu c_fpu;		/* external FPU state */
+	int	c_ucode;		/* Exception no. from u_code */
+};
+.ft R
+.fi
+.DT
+.RE
+.LP
+The members of the structure are:
+.TP 15
+.B c_magic
+The magic number
+.SB CORE_MAGIC ,
+as defined in
+.BR <sys/core.h> .
+.TP
+.B c_len
+The length of the
+.B core
+structure in the core file.  This need not be equal to the current size of a 
+.B core
+structure as defined in
+.BR <sys/core.h> ,
+as the core file may have been produced on a different release of
+the SunOS operating system.
+.TP
+.B c_regs
+The general purpose registers at the time the core file was produced.  This
+structure is machine-dependent.
+.TP
+.B c_aouthdr
+The executable image header of the program.
+.TP
+.B c_signo
+The number of the signal that terminated the process; see
+.BR sigvec (2).
+.TP
+.B c_tsize
+The size of the text segment of the process at the time the core file was
+produced.
+.TP
+.B c_dsize
+The size of the data segment of the process at the time the core file was
+produced.  This gives the amount of data space image in the core file.
+.TP
+.B c_ssize
+The size of the stack segment of the process at the time the core file was
+produced.  This gives the amount of stack space image in the core file.
+.TP
+.B c_cmdname
+The first
+.SB CORE_NAMELEN
+characters of the last component of the path name of the program.
+.br
+.ne 4
+.TP
+.B c_fpu
+The status of the floating point hardware at the time the core file was
+produced.
+.TP
+.B c_ucode
+The signal code of the signal that terminated the process, if any.  See
+.BR sigvec (2).
+.SH "SEE ALSO"
+.BR adb (1),
+.BR dbx (1),
+.BR getrlimit (2),
+.BR sigvec (2)

@@ -1,0 +1,116 @@
+.\" @(#)auto.home.5	1.1 92/07/30 SMI; new from ECD for 4.1
+.TH AUTO.HOME 5 "19 February 1988"
+.SH NAME
+auto.home \- automount map for home directories
+.SH SYNOPSIS
+.B /etc/auto.home
+.SH AVAILABILTITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX  "auto.home" "" "\fLauto.home\fP \(em autmount map for home directories" ""
+.LP
+.B auto.home
+resides in the
+.B /etc
+directory, and contains
+.BR automount (8)
+map entries for user's home directories.
+On Sun386i systems, this file is used to build the 
+.B auto.home
+Network Information Service
+(\s-1NIS\s0)
+map used by
+.B automount
+at system startup and reads the 
+.B auto.master
+.SM NIS
+database, which contains an entry for 
+.B auto.home 
+and 
+.B /home .
+The 
+.B auto.home
+map contains entries for each username in the 
+.SM NIS
+.B passwd
+map, and the
+.IB hostname :/ directory
+to
+.SM NFS
+mount. 
+.LP
+References to
+.BI /home/ username
+are translated by the automount daemon using the 
+.B auto.home 
+map,
+and the directory specified in the map entry is
+.B nfs
+mounted and that directory returned to the user's program.
+.LP
+User accounts created using
+.BR snap (1)
+or
+.BR logintool (8)
+have
+.BR passwd (5)
+entries where the
+initial (home) directory name is, in the form
+.BI /home/ username\fR.
+.BR snap
+and
+.B logintool
+also automatically create the 
+.B auto.home
+entry for a user account.
+The format of the entry is described in 
+.BR automount (8).
+An example entry is:
+.IP
+.ft B
+mtravis		system2:/export/home/users/mtravis
+.ft R
+.LP
+Thus, when the user
+.B mtravis
+logs into a Sun386i systems, the automounter
+automatically mounts his home directory from
+.BR system2 .
+This allows a user to log in to any Sun386i workstation on the network
+and be automatically placed in their home directory.
+.LP
+The convention for the format of home directory names used by
+.BR snap
+and
+.B logintool
+is:
+.IP
+.BI /export/home/ groupname / username
+.LP
+Note: this is a different map and mechanism for home directories than the
+one that the automount daemon provides with the
+.B \-homes
+switch.
+This is because the Sun386i convention for the format of home directory names
+differs and provides directories that can be used as mount points
+on a per user and per group basis.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/auto.home
+.PD
+.SH "SEE ALSO"
+.BR snap (1),
+.BR passwd (5),
+.BR automount (8),
+.BR logintool (8)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

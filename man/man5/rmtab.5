@@ -1,0 +1,50 @@
+.\" %\&Z%%\&M% %\&I% %\&E% SMI; new for pie+
+.TH RMTAB 5 "21 August 1990"
+.SH NAME
+rmtab \- remote mounted file system table
+.SH SYNOPSIS
+.B /etc/rmtab
+.SH DESCRIPTION
+.LP
+.B rmtab
+resides in the
+.B /etc
+directory, and contains a table of
+filesystems that are remotely mounted by
+.SM NFS
+clients.
+This file is maintained by
+.BR rpc.mountd (8),
+the mount daemon.
+The data in this file should only be obtained from 
+.BR rpc.mountd (8)
+using the
+.SB MOUTPROC_DUMP
+remote procedure call.
+.LP
+The file contains a line of information for each remotely mounted
+filesystem.
+There are a number of lines of the form:
+.IP
+.IB hostname : fsname
+.LP
+The mount daemon adds an entry for any client that successfully
+executes a mount request and deletes the appropriate entries for
+an unmount request.
+.LP
+Lines beginning with a
+.RB ` # '
+are commented out.
+These lines are removed from the file by
+.BR rpc.mountd (8)
+when it first starts up.
+Stale entries may accumulate for clients that crash without
+sending an unmount request.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/rmtab
+.PD
+.SH SEE ALSO
+.BR rpc.mountd(8),
+.BR showmount(8)

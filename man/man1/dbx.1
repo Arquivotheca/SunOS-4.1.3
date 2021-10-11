@@ -1,0 +1,1624 @@
+.\" @(#)dbx.1 1.1 92/07/30 SMI; from UCB 4.2 BSD
+.TH DBX 1 "6 December 1989"
+.SH NAME
+dbx \- source-level debugger
+.SH SYNOPSIS
+.B dbx
+.\"[
+.\".B \-b
+.\"]
+.\"[
+.\".B \-d
+.\"]
+.\"[
+.\".B \-D
+.\"]
+.\"[
+.\".B \-e
+.\"]
+[
+.BI \-f " fcount"
+]
+[
+.B \-i
+]
+[
+.BI \-I \|dir
+]
+[
+.B \-k
+]
+[
+.B \-kbd
+]
+.\"[
+.\".B \-l
+.\"]
+.if n .ti +0.5i
+[
+.BI \-P " fd"
+]
+[
+.B \-r
+]
+[
+.BI \-s " startup"
+]
+[
+.BI \-sr " tstartup"
+]
+.ti +.5i
+[
+.I objfile
+[
+.I corefile
+|
+.I process-id
+] ]
+.SH AVAILABILITY
+This command is available with the
+.I Debugging
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  dbx  ""  "\fLdbx\fP \(em source debugger"
+.IX  "debug tools"  "dbx command"  ""  "\fLdbx\fP \(em source debugger"
+.IX  "programming tools" "dbx debugger" "" "\fLdbx\fP \(em source debugger"
+.LP
+.B dbx
+is a utility for source-level debugging and execution of
+programs written in C, or other supported languages such as
+Pascal and
+.SM FORTRAN
+77.
+.B dbx
+accepts the same commands as
+.BR dbxtool (1),
+but uses a standard terminal (tty) interface.
+.LP
+.I objfile
+is an object file, produced by
+.BR cc (1V)
+or another compiler, with the
+.B \-g
+option to include a symbol
+table.  This symbol table contains the names of all the source files
+used to create it, and these files are available for perusal while
+using the debugger.
+.LP
+If no
+.I objfile
+is specified, you can use
+.BR dbx 's
+.B debug
+command to specify the program to debug.
+.LP
+If there is a file named
+.B core
+in the current directory, or a
+.I corefile
+argument is specified, you can use
+.BR dbx
+to examine the state of the program when the core file was produced.
+.LP
+.B dbx
+commands in the file
+.B .\|dbxinit
+are executed immediately before the symbol table is read, if that
+file exists in the current directory, or in the user's home
+directory if
+.B .\|dbxinit
+does not exist in the current directory.
+.SH OPTIONS
+.\".TP
+.\".B \-b
+.\"Trace breakpoints.  Produce debugging output whenever
+.\"the state of a breakpoint changes.
+.\".TP
+.\".B \-d
+.\"Produce debugging information.
+.\".TP
+.\".B \-D
+.\"Allow
+.\".B dbx
+.\"itself to dump core in the event of a serious error.  If used, this
+.\"option must be the very first argument.
+.\".TP
+.\".B \-e
+.\"Trace execution. Produce debugging output whenver the state of
+.\"a breakpoint changes.
+.TP 12
+.BI \-f " fcount"
+Alter the initial estimate of the number functions in the
+program being debugged.  The initial setting is 500.
+.TP
+.B \-i
+Force
+.B dbx
+to act as though the standard input were a terminal
+or terminal emulator.
+.TP
+.BI \-I " dir"
+Add
+.I dir
+to the list of directories in which to search
+for a source file.
+.B dbx
+normally searches the current directory, and the directory where
+.I objfile
+is located.  The directory search path can be reset with the
+.B use
+command.
+.TP
+.B \-k
+Kernel debugging.
+.TP
+.B \-kbd
+Debug a program that sets the keyboard into up-down translation
+mode.  This flag is necessary if a program uses up-down decoding.
+.\".TP
+.\".B \-l
+.\"When the 
+.\".B dbx
+.\"program is compiled with the
+.\".SB LEXDEBUG
+.\"symbol, this option produces debuggin output for each token in the
+.\"command input.
+.TP
+.BI \-P " fd"
+Create a pipeline to a
+.BR dbxtool (1)
+process.
+.I fd
+is the file descriptor through which to pipe output to the
+front-end process.  This option is passed automatically to
+.B dbx
+by
+.BR dbxtool .
+.TP
+.B \-r
+Execute
+.I objfile
+immediately.  Parameters follow the object file name
+(redirection is handled properly).  If the program terminates
+successfully,
+.B dbx
+exits.  Otherwise,
+.B dbx
+reports the reason for termination
+and waits for a response.
+.B dbx
+reads from the terminal
+.RB ( /dev/tty )
+when
+.B \-r
+is specified and standard input is a file or pipe.
+.TP
+.BI \-s " startup"
+Read initialization commands from the file named
+.IR startup .
+.TP
+.BI \-sr " tstartup"
+Read initialization commands from the temporary file named
+.IR startup ,
+and then remove that file.
+.br
+.ne 4
+.SH USAGE
+.LP
+Refer to
+.B dbx
+in the
+.TX DEBUG
+manual.
+.LP
+The most useful basic commands to know about are
+.BR run ,
+to run the program being debugged,
+.BR where ,
+to obtain a stack trace with line numbers,
+.BR print ,
+to display variables, and
+.BR stop ,
+to
+set breakpoints.
+.SS Filenames
+Filenames in
+.B dbx
+may include shell metacharacters.  The shell used
+for pattern matching is determined by the
+.SM SHELL
+environment variable.
+.SS Expressions
+.B dbx expressions
+are combinations of variables, constants,
+procedure calls, and operators.  Variables are either variables in the program
+being debugged or special
+.B dbx
+variables whose names begin with
+.BR $ .
+Hexadecimal constants must be preceded by a
+`0x' and octal constants by a `0'.  Character constants must be enclosed in
+single quotes.  Expressions cannot involve strings, structures, or
+arrays, although elements of structures or arrays may be used.
+.SS Operators
+.TP 24
+.B "+\ \ \ \-\ \ \ *\ \ \ /\ \ \ div\ \ \ %"
+Add, subtract, multiply, divide, integer division, and remainder,
+respectively.
+.IP
+.B dbx
+has two division operators.
+.RB ` / '
+always yields
+a floating-point result and
+.B div
+always yields an integral
+result.
+.TP
+.B  "<\^<\ \ \ >\^>\ \ \  &\ \ \ |\ \ \ ~"
+Left-shift, right-shift, bitwise
+.SM AND\s0,
+bitwise
+.SM OR\s0,
+and bitwise complement.
+.TP
+.B &\ \ \ *
+Address of operator, and contents of operator.
+.br
+.ne 5
+.TP
+.B <\ \ \ >\ \ \ <\^=\ \ \ >\^=\ \ \ =\^=\ \ \ !\^=\ \ \ !
+Less than, greater than, less than or equal to, greater than or equal
+to, equal, not equal, and negation.
+.TP
+.B &\^&\ \ \ |\||
+Logical
+.SM AND,
+and logical
+.SM OR
+.TP
+.BI "sizeof (" cast )
+Size of variable or type and type cast.
+.TP
+.B \s+2.\s0\ \ \ \->
+Field reference, and pointed-to-field reference (however, dot works for
+both in
+.BR dbx ).
+.LP
+Precedence and associativity of operators are the same as for
+.BR C ;
+parentheses can be used for grouping.
+.LP
+If there is no
+.IR corefile ,
+only expressions containing constants
+are available.  Procedure calls require an active child process.
+.SS "Scope Rules"
+.LP
+.B dbx
+uses the current file and function to resolve scope conflicts.
+Their values are updated as files and functions are entered and exited
+during execution.  You can also change them explicitly by using the
+.B file
+and
+.B func
+commands.  When the current function is changed, the current file
+is updated along with it, but not vice versa.
+.SS "Execution and Tracing Commands"
+.TP
+.B \s+2^\s0C
+Interrupt.  Stop the program being debugged and enter
+.BR dbx .
+.HP
+.B run
+.RI [ " args " ]
+.RB [ " < "
+.IR infile " ]"
+.RB [ " >" \||\| " >> "
+.IR outfile " ]"
+.br
+Start executing
+.IR objfile ,
+reading in any new information from it.
+With no
+.IR args ,
+use the argument list from the previous
+.B run
+command.
+.RS
+.RS
+.TP 12
+.I args
+.PD 0
+Pass
+.I args
+as command-line arguments to the program.
+.TP
+.BR < \||\| > \||\| ">>"
+Redirect input or output, or append output to a file.
+.PD
+.RE
+.RE
+.HP
+.B rerun
+.RI [ " args " ]
+.RB [ " < "
+.IR infile " ]"
+.RB [ " >" \||\| " >> "
+.IR outfile " ]"
+.br
+Like the
+.B run
+command, except that when
+.I args
+are omitted, none are passed to the program.
+.HP
+.B cont
+.RB [ " at "
+.IR sourceline " ]"
+.RB [ " sig "
+.IR signal " ]"
+.br
+Continue execution from where it stopped.
+.RS
+.RS
+.TP 12
+.BI at " sourceline"
+.PD 0
+Start from
+.I sourceline
+.TP
+.BI sig " signal"
+Continue as if
+.I signal
+had occurred.
+.I signal
+may be a number or a name as with
+.BR catch .
+.PD
+.RE
+.RE
+.br
+.ne 5
+.HP
+.B trace
+.RB [ " in "
+.IR function " ]"
+.RB [ " if "
+.IR condition " ]"
+.br
+.PD 0
+.HP
+.B trace
+.I sourceline
+.RB [ " if "
+.IR condition " ]"
+.br
+.HP
+.B trace
+.I function
+.RB [ " if "
+.IR condition " ]"
+.br
+.HP
+.B trace
+.I expression
+.BI at " sourceline"
+.RB [ " if "
+.IR condition " ]"
+.br
+.HP
+.B trace
+.I variable
+.RB [ " in
+.IR function " ]"
+.RB [ " if "
+.IR condition " ]"
+.br
+Display tracing information.
+If no argument is specified, each source line is displayed before
+execution.  Tracing is turned off when the function or procedure
+is exited.
+.PD
+.RS
+.RS
+.TP 12
+.BI in " function"
+.PD 0
+Display tracing information only while executing the function or
+procedure
+.IR function .
+.TP
+.BI if " condition"
+Display tracing information only if
+.I condition
+is true.
+.TP
+.I sourceline
+Display the line immediately prior to executing it.
+Source line-numbers from another file are written
+as
+.BI "\fIfilename\fB": n.
+.TP
+.I function
+Display the routine and source line called from,
+parameters passed in, and return value.
+.TP
+.IB expression " at " sourceline
+Display the value of
+.I expression
+whenever
+.I sourceline
+is reached.
+.TP
+.I variable
+Display the name and value whenever
+.I variable
+changes.
+.PD
+.RE
+.RE
+.br
+.ne 10
+.HP
+.B stop
+.BI at " sourceline"
+.RB [ " if "
+.IR condition " ]"
+.br
+.PD 0
+.HP
+.B stop
+.BI in " function"
+.RB [ " if "
+.IR condition " ]"
+.br
+.HP
+.B stop
+.I variable
+.RB [ " if "
+.IR condition " ]"
+.br
+.HP
+.B stop
+.BI if " condition"
+.br
+.PD
+Stop execution when the
+.I sourceline
+is reached,
+.I function
+is called,
+.I variable
+is changed, or
+.I condition
+becomes true.
+.HP
+.B when
+.BI in " function "
+.BI { " command " ;
+.RI [ " command "
+.BR ; " ] .\|.\|. " }
+.br
+.PD 0
+.HP
+.B when
+.BI at " sourceline"
+.BI { " command " ;
+.RI [ " command "
+.BR ; " ] .\|.\|. " }
+.br
+.HP
+.B when
+.I condition
+.BI { " command " ;
+.RI [ " command "
+.BR ; " ] .\|.\|. " }
+.br
+Execute the
+.B dbx
+.IR command (s)
+when
+.I function
+is called,
+.I sourceline
+is reached, or
+.I condition
+is true.
+.PD
+.HP
+.B status
+.RB [ " > "
+.IR filename " ]"
+.br
+Display active
+.BR trace ,
+.B stop
+and
+.B when
+commands, and associated command numbers.
+.TP
+.B delete all
+.PD 0
+.HP
+.BI delete " cmd-no"
+.RB  [ " , "
+.IR  cmd-no " ] .\|.\|.
+.br
+.PD
+Remove all
+\fBtrace\fPs,
+.BR stop s
+and
+\fBwhen\fPs,
+or those corresponding to each
+.B dbx
+.I cmd-no
+(as displayed by
+.BR status ).
+.HP
+.BI clear
+.RI [ " sourceline" ]
+.br
+Clear all breakpoints at the current stopping point, or at
+.IR sourceline .
+.HP
+.B catch
+.RI [ " signal "
+.RB [ " , "
+.IR signal " ] .\|.\|. ]"
+.br
+Display all signals currently being caught, or
+catch
+.I signal
+before it is sent to the program being debugged.
+A signal can be specified either by name (with the
+.SM SIG
+prefix omitted, as with
+.BR kill (1))
+or number.  Initially all signals are caught except
+.SM SIGHUP,
+.SM SIGEMT,
+.SM SIGFPE,
+.SM SIGKILL,
+.SM SIGALRM,
+.SM SIGTSTP,
+.SM SIGCONT,
+.SM SIGCHLD,
+and
+.SM SIGWINCH\s0.
+.HP
+.B ignore
+.RI [ " signal "
+.RB [ " , "
+.IR signal " ]  .\|.\|. ]"
+.br
+Display all signals currently being ignored, or
+stop catching
+.IR signal ,
+which may be specified by name or number as with
+.BR catch .
+.TP
+\fBstep \fR[\fIn\|\fR]
+Execute the next
+.I n
+source lines.
+If omitted,
+.I n
+is taken to be 1.
+Steps into functions.
+.TP
+\fBnext \fR[\fIn\|\fR]
+Execute the next
+.I n
+source lines.
+If omitted,
+.I n
+is taken to be 1.
+.B next
+steps past functions.
+.br
+.ne 10
+.SS "Naming, Printing and Displaying Data"
+.LP
+Variables from another function or procedure  with the same name as
+one in the current block must be qualified as follows:
+.IP
+.RB [ \|\`\c
+.I sourcefile\c
+.BR \` ]\c
+.IB function \`\c
+.I variable
+.LP
+For Pascal variables there may be more than one
+.I function
+or procedure name, each separated by a backquote.
+.HP
+.B print
+.I expression
+.RB [ " , "
+.IR expression " ] .\|.\|."
+.br
+Print the value of each
+.IR expression ,
+which may involve function calls.
+Program execution halts when a breakpoint is reached, and
+.B dbx
+resumes.
+.HP
+.B display
+.RI [ " expression "
+.RB [ " , "
+.IR expression " ] .\|.\|. ]"
+.br
+Print a list of the expressions currently being displayed, or
+display the value of each
+.I expression
+whenever execution stops.
+.HP
+.B undisplay
+.RI [ " expression "
+.RB [ " , "
+.IR expression " ] .\|.\|. ]"
+.br
+Stop displaying the value of each
+.I expression
+whenever execution stops.  If
+.I expression
+is a constant, it refers to a display-number as shown by the
+.B display
+command with no arguments.
+.TP
+.BI whatis " identifier"
+.PD 0
+.TP
+.BI whatis " type"
+.PD
+Print the declaration of the given identifier or type.
+.IR type s
+are useful to print all the members of a structure, union,
+or enumerated type.
+.TP
+.BI which " identifier"
+Print the fully-qualified name of the given identifier.
+.TP
+.BI whereis " identifier"
+Print the fully qualified name of all symbols matching
+.IR identifier .
+.HP
+.BI assign " variable"
+.BI = " expression\fP"
+.br
+.PD 0
+.HP
+.BI set " variable"
+.BI = " expression\fP"
+.br
+.PD
+Assign the value of
+.I expression
+to
+.I variable.
+There is no type conversion for operands of differing type.
+.br
+.ne 6
+.TP
+.BI set81 " fpreg" = "word1 word2 word3"
+Treat the concatenation of
+.I word1 word2 word3
+as a 96-bit,
+.SM IEEE
+floating-point value and assign it to the
+.SM MC68881
+floating-point register
+.IR fpreg .
+(Supported only on Sun-3).
+.TP
+.BI call " function" ( \|parameters )
+Execute the named function.  Arguments are passed according to
+the rules for the source-language of
+.I function.
+.TP
+\fBwhere\fR[\fI n\fR]
+List all, or the top
+.IR n ,
+active functions on the stack.
+.HP
+.B dump
+.RI [ " function " ]
+.br
+Display the names and values of local variables and parameters
+in the current or specified
+.IR function .
+.HP
+.B up
+.RI [ n ]
+.br
+.PD 0
+.HP
+.B down
+.RI [ n ]
+.br
+.PD
+Move up (towards ``main'') or down the call stack, one or
+.I n
+levels.
+.SS "File Access Commands"
+.HP
+.B edit
+.RI [ " filename " | " function " ]
+.br
+Edit the current source file, or the given
+.I filename
+or the file that contains
+.IR function .
+.HP
+.B file
+.RI [ " filename " ]
+.br
+Print the name of the current source file, or
+change the current source file to
+.IR filename .
+.br
+.ne 10
+.HP
+.B func
+.RI [ " function" | " program "
+.RI | " objfile " ]
+.br
+Print the name of the current function, or
+change to the given
+.IR function ,
+.IR program ,
+or
+.IR objfile .
+Also changes the current scope.
+.HP
+.B list
+.RI [ " startline "
+.RB [ " , "
+.IR endline " ] ]"
+.br
+.PD 0
+.HP
+.BI list " function"
+.br
+.PD
+List the next ten lines from current source file, list from
+.I startline
+through
+.IR endline ,
+or
+and list from five lines above, to five lines below
+the first line of
+.IR function .
+.HP
+.B use
+.RI [ " directory-list " ]
+.br
+Print or set the list of directories in which to search for source files.
+.HP
+.B cd
+.RI [ " directory " ]
+.br
+Change the current working directory for
+.B dbx
+to
+.I directory
+(or to the value of the
+.SM HOME
+environment variable).
+.TP
+.B pwd
+Print the current working directory for
+.BR dbx .
+.HP
+\fB/\fIreg-exp\fR[\fB\|/\|\fR]
+.br
+.PD 0
+.HP
+.BI ? reg-exp
+.RB [ \|?\| ]
+.br
+.PD
+Search the current file for the
+regular expression
+.IR reg-exp ,
+from the next (previous) line to the
+end (top).
+The matching line becomes the new current line.
+.SS "Miscellaneous Commands"
+.TP
+.BI sh  " command-line"
+Pass the command line to the shell for execution.  The
+.SM SHELL
+environment variable determines which shell is used.
+.HP
+.B alias
+.I new-command-name character-sequence
+.br
+Respond to
+.I new-command-name
+as though it were
+.I character-sequence.
+Special characters occurring in
+.I character-sequence
+must be enclosed in quotation marks.
+Alias substitution as with the C shell
+.RB ( csh (1))
+also
+occurs.
+.HP
+.B help
+.RI [ " command " ]
+.br
+Display a synopsis of
+.B dbx
+commands, or print a
+short message explaining
+\fIcommand\fP.
+.TP
+.B make
+Invoke
+.BR make (1)
+with the name of the program as its argument.
+Any arguments set using
+.B dbxenv makeargs
+are also passed as arguments.
+.HP
+.BI setenv " name string"
+.br
+Set environment variable
+.I name
+to
+.IR string .
+.HP
+.BI source " filename"
+.br
+Read and execute
+.B dbx
+commands from
+\fIfilename\fP.
+Useful when the
+.I filename
+has been created by redirecting an
+earlier
+.B status
+command.
+.TP
+.B quit
+Exit
+.BR dbx .
+.HP
+.B dbxenv
+.PD 0
+.br
+.HP
+.B dbxenv case \0\0sensitive
+.RB | " insensitive"
+.br
+.HP
+.B dbxenv fpaasm \0\0on
+.RB | " off"
+.br
+.HP
+.B dbxenv fpabase
+.BR \0\0a [ 0 - 7 ]
+.RB | " off"
+.HP
+.B dbxenv makeargs
+.I string
+.br
+.HP
+.BI "dbxenv  stringlen" " num "
+.HP
+.BI "dbxenv  speed" " seconds "
+.br
+.PD
+Display
+.B dbx
+attributes or set the named attribute:
+.RS
+.RS
+.TP 10
+.B case
+.PD 0
+Controls whether upper- and lower-case characters are treated as different
+values.  The default is
+.BR sensitive .
+.TP
+.B fpaasm
+Controls
+.SM FPA
+instruction disassembly.  The default is
+.BR on .
+(Supported only on Sun-3).
+.br
+.ne 5
+.TP
+.B fpabase
+Sets the base register for
+.SM FPA
+instruction disassembly.  The default is
+.BR off .
+(Supported only on Sun-3 systems).
+.TP
+.B makeargs
+Sets arguments to pass to
+.BR make .
+The default is
+.BR "CC=cc \-g" .
+.TP
+.B speed
+Set the interval between execution during tracing.  The default is
+0.5 seconds.
+.TP
+.B stringlen
+Controls the maximum number of characters printed for a ``char *''
+variable in a C program.  The default is 512.
+.PD
+.RE
+.RE
+.br
+.ne 15
+.HP
+.B debug
+[
+.B \-k 
+]
+[
+.I objfile
+[
+.I corefile
+.RI | " pid"
+]
+]
+.br
+With no arguments, print the name of the current program.
+With arguments, stop debugging the current program and begin debugging
+.I objfile
+having either
+.I corefile
+or the current process
+.SM ID
+.IR pid .
+The
+.B \-k
+option indicates kernel debugging.
+.TP
+.B kill
+Stop debugging of the current program, but be ready to debug another.
+.TP
+.B detach
+Detach the current program (process) from
+.BR dbx .
+.B dbx
+will be unable to access or modify its state.
+.TP
+.B modules
+.PD 0
+.HP
+.B modules select
+[
+.BR all \||\|
+.IR objfile \|.\|.\|.
+]
+.br
+.HP
+.B modules append
+.I objfile
+[
+.IR objfile \|.\|.\|.
+]
+.br
+.PD
+The
+.B modules
+command displays or sets the current
+.IR "modules selection list" .
+If the modules selection list is set,
+the debugger reads debugging information only for object files
+in this list.  Debugging information for object
+files not in the modules selection list is ignored.
+.IP
+.B modules
+with no arguments displays the set of object files for which source
+level debugging information is currently available,
+including the path names of any associated source files.
+If the debugger cannot access a source file for which it has
+debugging information, it displays the source file name with a trailing
+.RB ` ? '
+(question mark)
+character.
+Source file path names reflect the current search path as set by the
+.B use
+command or the
+.B \-I
+option.
+.IP
+.B "modules select"
+displays the current modules selection list if no
+.I objfile
+is given.  Otherwise,
+.B "modules select"
+sets the modules selection list to the specified object files.
+To get complete debugging information, the debugger may need to read
+object files not in the modules selection list.
+.RB ` "modules select" '
+displays these \*(lqimplied\*(rq file names with trailing
+.RB ` * '
+(asterisk)
+characters (see
+.SM NOTES\s0).
+.RB ` "modules select all" '
+discards the modules selection list.
+.IP
+.B "modules append"
+appends the specified object files to the modules selection list.
+.IP
+If the modules selection list includes an object file not in the
+executable being debugged, the debugger issues a warning.
+.HP
+.B proc
+[
+.I pid
+]
+.br
+For kernel debugging.  Display which process is mapped into
+the user area, or map
+.I pid
+to the user area.
+.br
+.ne 5
+.SS "Machine-Level Commands"
+.HP
+.B tracei
+.RI [ " address " ]
+.RB [ " if
+.IR condition " ]"
+.br
+.PD 0
+.HP
+.B tracei
+.RI [ " variable " ]
+.RB [ "at
+.IR address " ]"
+.RB [ " if
+.IR condition " ]"
+.br
+.PD
+Trace execution of a specific machine-instruction address.
+.br
+.ne 6
+.HP
+.B stopi
+.RI [ " variable " ]
+.RB [ " if
+.IR condition " ]"
+.br
+.PD 0
+.HP
+.B stopi
+.RB [ "at
+.IR address " ]"
+.RB [ " if
+.IR condition " ]"
+.br
+.PD
+Set a breakpoint at a machine instruction address.
+.br
+.ne 6
+.TP
+.B stepi
+.PD 0
+.TP
+.B nexti
+.PD
+Single step as in
+.B step
+or
+.BR next ,
+but do a single
+machine instruction rather than a source line.
+.br
+.ne 8
+.HP
+.IB address , \|address
+.B /
+.RI [ " mode " ]
+.br
+.PD 0
+.HP
+.I address
+.B /
+.RI [ "count " ]
+.RI [ " mode " ]
+.br
+.PD
+Display the contents of memory starting at the first (or
+current)
+.I address
+up to the second
+.IR address ,
+or
+until
+.I count
+items have been displayed.
+The initial display
+.I mode
+is
+.BR X .
+The following modes are supported:
+.RS
+.RS
+.TP 12
+.B i
+.PD 0
+the machine instruction
+.TP
+.B d
+word in decimal
+.TP
+.B D
+longword in decimal
+.TP
+.B o
+word in octal
+.TP
+.B O
+longword in octal
+.TP
+.B x
+word in hexadecimal
+.TP
+.B X
+longword in hexadecimal
+.TP
+.B b
+byte in octal
+.TP
+.B c
+byte as a character
+.TP
+.B s
+strings as characters terminated by a null
+.TP
+.B f
+single precision real number
+.TP
+.B F
+double-precision real number
+.TP
+.B E
+extended-precision real number
+(not supported on Sun-4)
+.PD
+.RE
+.RE
+.IP
+An
+.I address
+can be specified as an item from the following list, as
+an expression made up of other addresses and the
+operators
+.RB ` + ',
+.RB ` \- ',
+.RB ` * ',
+and indirection (unary
+.RB ` * '),
+or as an arbitrary expression enclosed in parentheses.
+.RS
+.RS
+.TP 12
+.BI & name
+symbolic address
+.PD 0
+.TP
+.I integer
+numeric address
+.PD
+.RE
+.RE
+.HP
+.I address
+.B =
+.RI [ " mode " ]
+.br
+Display the value of the
+.IR address .
+.br
+.ne 10
+.SS "Machine Registers"
+The machine registers for the current machine type are represented as special
+.B dbx
+variables.  They can be used in expressions as any other
+.B dbx
+variable can.  The registers and their variable names are:
+.SS "\fISun-2 and Sun-3 Registers\fP"
+.RS
+.TP 12
+.BR $d [ 0 - 7 ]
+data registers
+.PD 0
+.TP
+.BR $a [ 0 - 7 ]
+address registers
+.TP
+.B $fp
+frame pointer, equivalent to register a6
+.TP
+.B $sp
+stack pointer, equivalent to register a7
+.TP
+.B $pc
+program counter
+.TP
+.B $ps
+program status
+.PD
+.RE
+.SS "\fISun-3-Only Registers\fP"
+.RS
+.TP 12
+.BR $fp [ 0 - 7 ]
+.SM MC68881
+data registers
+.PD 0
+.TP
+.B $fpc
+.SM MC68881
+control register
+.TP
+.B $fps
+.SM MC68881
+status register
+.TP
+.B $fpi
+.SM MC68881
+instruction address register
+.TP
+.B $fpf
+.SM MC68881
+flags register (unused, idle, busy)
+.TP
+.BR $fpa [ 0 - 31 ]
+double-precision interpretation of
+.SM FPA
+registers.
+.TP
+.BR $sfpa [ 0 - 31 ]
+single-precision interpretation of
+.SM FPA
+registers.
+.PD
+.RE
+.SS "\fISun-4 Registers\fP
+.RS
+.TP 12
+.BR $g [ 0 - 7 ]
+global registers
+.PD 0
+.TP
+.BR $o [ 0 - 7 ]
+``out'' registers
+.TP
+.BR $i [ 0 - 7 ]
+``in'' registers
+.TP
+.BR $l [ 0 - 7 ]
+``local'' registers
+.TP
+.B $fp
+frame pointer, equivalent to register i6
+.TP
+.B $sp
+stack pointer, equivalent to register o6
+.TP
+.B $y
+Y register
+.TP
+.B $psr
+processor state register
+.TP
+.B $wim
+window invalid mask register
+.TP
+.B $tbr
+trap base register
+.TP
+.B $pc
+program counter
+.TP
+.B $npc
+next program counter
+.TP
+.BR $f [ 0 - 31 ]
+.SM FPU
+``f'' registers
+.TP
+.B $fsr
+.SM FPU
+status register
+.TP
+.B $fq
+.SM FPU
+queue
+.PD
+.RE
+.SS "\fISun386i Registers\fP"
+.RS
+.TP 12
+.B $ss
+stack segment register
+.PD 0
+.TP
+.B $eflags
+flags
+.TP
+.B $cs
+code segment register
+.TP
+.B $eip
+instruction pointer
+.TP
+.B $eax
+general register
+.TP
+.B $ecx
+general register
+.TP
+.B $edx
+general register
+.TP
+.B $ebx
+general register
+.TP
+.B $esp
+stack pointer
+.TP
+.B $ebp
+frame pointer
+.TP
+.B $esi
+source index register
+.TP
+.B $edi
+destination index register
+.TP
+.B $ds
+data segment register
+.TP
+.B $es
+alternate data segment register
+.TP
+.B $fs
+alternate data segment register
+.TP
+.B $gs
+alternate data segment register
+.PD
+.RE
+.br
+.ne 10
+.LP
+Registers for the 80386 lower halves (16 bits) are:
+.LP
+.RS
+.TP 12
+.B $ax
+general register
+.PD 0
+.TP
+.B $cx
+general register
+.TP
+.B $dx
+general register
+.TP
+.B $bx
+general register
+.TP
+.B $sp
+stack pointer
+.TP
+.B $bp
+frame pointer
+.TP 
+.B $si
+source index register
+.TP
+.B $di
+destination index register
+.TP
+.B $ip
+instruction pointer, lower 16 bits
+.TP
+.B $flags
+flags, lower 16 bits
+.PD
+.RE
+.LP
+The first four Sun386i 16-bit registers can be split into 8-bit
+parts:
+.RS
+.TP 12
+.B $al
+lower (right) half of register
+.B $ax
+.PD 0
+.TP
+.B $ah
+higher (left) half of register
+.B $ax
+.TP
+.B $cl
+lower (right) half of register
+.B $cx
+.TP 
+.B $ch
+higher (left) half of register
+.B $cx
+.TP
+.B $dl
+lower (right) half of register
+.B $dx
+.TP
+.B $dh
+higher (left) half of register
+.B $dx
+.TP
+.B $bl
+lower (right) half of register
+.B $bx
+.TP
+.B $bh
+higher (left) half of register
+.B $bx
+.PD 0
+.RE
+.LP
+Registers for the 80387 are:
+.RS
+.TP 12
+.B $fctrl
+control register
+.PD 0
+.TP
+.B $fstat
+status register
+.TP
+.B $ftag
+tag register
+.TP
+.B $fip
+instruction pointer offset
+.TP
+.B $fcs
+code segment selector
+.TP
+.B $fopoff
+operand pointer offset
+.TP
+.B $fopsel
+operand pointer selector
+.TP
+.B $st0 - $st7
+data registers
+.PD
+.RE
+.SH ENVIRONMENT
+.B dbx
+checks the environment variable
+.SM EDITOR
+for the name of the text editor to use with the
+.B edit
+command.
+.SH FILES
+.PD 0
+.TP 20
+.B core
+default core file
+.TP
+.B .\|dbxinit
+local
+.B dbx
+initialization file
+.TP
+.B ~/.\|dbxinit
+user's
+.B dbx
+initialization file
+.PD
+.SH SEE ALSO
+.BR cc (1V),
+.BR csh (1),
+.BR dbxtool (1),
+.BR kill (1),
+.BR lex (1),
+.BR make (1),
+.BR yacc (1)
+.LP
+.TX DEBUG
+.SH NOTES
+.LP
+Because the 
+.B cc 
+command does not generate or support 8-bit symbol names,
+it is inappropriate to make
+.B dbx
+8-bit clean.
+See
+.BR cc (1V)
+for an explanation about why
+.B cc
+is not 8-bit clean.
+.LP
+To save space, the linker eliminates debugging information redundantly
+defined in multiple include files.  If the linker excluded some
+of the symbols for an object file in the modules selection list, the
+debugger must read debugging information from the object files where
+these symbols were first defined.  If these \*(lqimplied\*(rq
+modules are not in the modules selection list,
+.RB ` "modules select" '
+displays their names with trailing
+.RB ` * '
+(asterisk)
+characters.
+.SH BUGS
+.LP
+.B dbx
+does not correctly handle
+.B C
+variables that are local to compound statements.
+When printing these variables it often gives incorrect results.
+.LP
+.B dbx
+does not handle
+.SM FORTRAN
+entry points well \(em it treats them as if they were independent
+routines.
+.LP
+.B dbx
+does not handle
+.I assigning
+to
+.SM FORTRAN
+complex types correctly (see the
+.BR assign / set
+command).
+.br
+.ne 10
+.LP
+Unlike C,
+.B dbx
+does not recognize
+an array or function name as the address of the array
+or function.
+In
+.BR dbx ,
+an array name signifies the entire array, and a function name
+signifies a call to the function with no arguments.
+To get the address of an array, take the address
+of its first element.  To get the address of a function,
+take the address of its name.
+.LP
+Casts do not work with
+.SM FORTRAN
+77 or Pascal.
+.LP
+Executable code incorporated into a source file using an
+.B #include
+preprocessor directive confuses
+.BR dbx .
+.LP
+.B dbx
+is confused by the output of program generators such as
+.BR yacc (1)
+and
+.BR lex (1).
+.LP
+A step command issued at a procedure call will not work properly
+when debugging information is available for the function being
+called and that function is in a shared library.

@@ -1,0 +1,117 @@
+.\" @(#)touch.1v 1.1 92/07/30 SMI; from 4.2 BSD and S5R2 6.2 9/2/83
+.TH TOUCH 1V "19 September 1989"
+.SH NAME
+touch \- update the access and modification times of a file
+.SH SYNOPSIS
+.B touch
+[
+.B \-c
+] [
+.B \-f
+]
+.IR filename .\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/touch
+[
+.BR \-acm
+] [
+.IR date-time
+]
+.IR filename .\|.\|.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLtouch\fR"
+.IX  "touch command"  ""  "\fLtouch\fP \(em update last modified date of file"
+.IX  "update last modified date of file"  ""  "update last modified date of file \(em \fLtouch\fP"
+.IX  file  "update last modified date of"  ""  "update last modified date of \(em \fLtouch\fP"
+.IX  "programming tools"  touch  ""  "\fLtouch\fP \(em update last modified date of file"
+.B touch
+sets the access and modification times of each
+argument to the current time.
+A file is created if it does not already exist.
+.LP
+.B touch
+is valuable when used in conjunction with
+.BR make (1),
+where, for instance, you might want to force a complete rebuild of a
+program composed of many pieces.  In such a case, you might type:
+.RS
+.IP
+.nf
+.B example% \fBtouch  *.c\fP
+.B example% \fBmake\fP
+.fi
+.RE
+.LP
+.BR make (1)
+would then see that all the
+.B .c
+files were more
+recent than the corresponding
+.B .o
+files, and would start
+the compilation from scratch.
+.SH OPTIONS
+.TP
+.B \-c
+Do not create
+.I filename
+if it does not exist.
+.TP
+.B \-f
+Attempt to force the touch in spite of read and write permissions on
+.IR filename .
+.SH SYSTEM V OPTIONS
+.LP
+Options must be grouped to form the first argument.  The
+.I date-time
+argument takes the form:
+.IP
+.IR mmddhhmm [ yy ]
+.LP
+and updates the modification time to that specified, rather than the
+current time.
+The first
+.I mm
+is the month,
+.B dd
+is the day of the month,
+.I hh
+is the hour, and the second
+.I mm
+is the minute.  If
+.I yy
+is specified, it is the last two digits
+of the year.  If omitted, the current year is assumed.
+.TP
+.B \-a
+Update only the access time.
+.TP
+.B \-c
+Do not create
+.I filename
+if it does not exist.
+.TP
+.B \-m
+Update only the modification time.
+.SH SEE ALSO
+.BR make (1),
+.BR utimes (2)
+.SH BUGS
+It is difficult to touch a file whose name
+consists entirely of digits in
+the System V
+.BR touch ,
+as it will interpret the first such non-flag
+argument as a time.  You must
+ensure that there is a character in the
+name which is not a digit, by
+specifying it as
+.BI .\|/ name
+rather than
+.IR name .

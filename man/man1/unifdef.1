@@ -1,0 +1,133 @@
+.\" @(#)unifdef.1 1.1 92/07/30 SMI; from 4.3 BSD
+.TH UNIFDEF 1 "9 September 1987"
+.SH NAME
+unifdef \- resolve and remove ifdef'ed lines from cpp input
+.SH SYNOPSIS
+.B unifdef
+[
+.B \-c
+.B l
+.B t
+] [
+.BI \-D name
+] [
+.BI \-U name
+] [
+.BI \-iD name
+] [
+.BI \-iU name
+] .\|.\|. [
+.I filename
+]
+.SH DESCRIPTION
+.IX  "unifdef command"  ""  "\fLunifdef\fP \(em eliminate \fL#ifdef\fR's from C input"
+.IX  "eliminate ifdefs from C input"  ""  "eliminate \fL#ifdef\fR's from C input \(em \fLunifdef\fP"
+.IX  "programming tools"  unifdef  ""  "\fLunifdef\fP \(em eliminate \fL#ifdef\fR's from C input"
+.LP
+.B unifdef
+removes
+.BR ifdef ed
+lines from a file while otherwise leaving the file alone.
+It is smart enough to deal with the nested
+.BR ifdef s,
+comments, single and double quotes of
+.B C
+syntax, but it does not do any including or interpretation of macros.
+Neither does it strip out comments,
+though it recognizes and ignores them.
+You specify which symbols you want defined with
+.B \-D
+options, and which you want undefined with
+.BI \-U
+options.  Lines within those
+.BR ifdef s
+will be
+copied to the output, or removed, as appropriate.
+Any
+.BR ifdef ,
+.BR ifndef ,
+.BR else ,
+and
+.B endif
+lines associated with
+.I filename
+will also be removed.
+.LP
+.BR ifdef s
+involving symbols you do not specify are untouched and copied out
+along with their associated
+.BR ifdef ,
+.BR  else ,
+and
+.B endif
+lines.
+.LP
+If an
+.BI ifdef X
+occurs nested inside another
+.BI ifdef X\fR,
+then the inside
+.B ifdef
+is treated as if it were an unrecognized symbol.
+If the same symbol appears in more than one argument, only the first
+occurrence is significant.
+.LP
+.B unifdef
+copies its output to the standard output
+and will take its input from the standard input
+if no
+.I filename
+argument is given.
+.SH OPTIONS
+.TP
+.B \-c
+Complement the normal operation.
+Lines that would have been removed or blanked
+are retained, and vice versa.
+.TP
+.B \-l
+Replace \*(lqlines removed\*(rq lines with blank lines.
+.TP
+.B \-t
+Plain text option.
+.B unifdef
+refrains from attempting to recognize
+comments and single and double quotes.
+.TP
+.BI \-iD name
+Ignore, but print out, lines associated with the defined symbol
+.I filename.
+If you use
+.BR ifdef s
+to delimit non-C
+lines, such as comments or code which is
+under construction, then you must tell
+.B unifdef
+which symbols are used for that purpose so that it won't try to parse
+for quotes and comments within them.
+.TP
+.BI \-iU name
+Ignore, but print out, lines associated with the undefined symbol
+.IR filename .
+.SH "SEE ALSO"
+.BR cpp (1),
+.BR diff (1)
+.SH DIAGNOSTICS
+.TP 10
+.B Premature \s-1EOF\s0
+Inappropriate
+.B else
+or
+.BR endif .
+.LP
+Exit status is 0 if output is exact copy of input,
+1 if not, 2 if trouble.
+.SH BUGS
+.LP
+Does not know how to deal with
+.BR cpp (1)
+constructs such as
+.IP
+.nf
+.B #if	defined(X) || defined(Y)
+.fi

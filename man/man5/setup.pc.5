@@ -1,0 +1,264 @@
+'\" t
+.\" @(#)setup.pc.5 1.1 92/07/30 SMI;
+.TH SETUP.PC 5 "25 September 1989"
+.SH NAME
+setup.pc \- master configuration file for DOS
+.SH SYNOPSIS
+.B ~/pc/setup.pc
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "setup.pc" "" "\fLsetup.pc\fP \(em setup.pc master configuration file for DOS" ""
+.LP
+The
+.B setup.pc
+file in your home 
+.SM PC
+directory,
+.BR ~/pc ,
+is the master configuration file for 
+.SM DOS\s0.
+Changes to the file take effect for all new
+.SM DOS 
+windows you start.
+The definitions made in
+.B setup.pc
+and
+.SB AUTOEXEC.BAT
+serve to define your system to
+.SM DOS\s0. 
+Among other things, the
+.B setup.pc
+file defines:
+.LP
+.RS
+\(bu\0\0The printers or devices to which you assign 
+.SM DOS\s0 printer names (\s-1LPT1\s0, 
+.SM LPT2\s0, 
+.SM LPT3\s0)
+.LP
+\(bu\0\0The devices or boards that are tied to the 
+.SM DOS\s0
+communications devices (\s-1COM1\s0, 
+.SM COM2\s0)
+.LP
+\(bu\0\0The name of a special 
+.SM DOS\s0
+quick-start file that you may have set up
+.LP
+\(bu\0\0The drive C file to be used
+.RE
+.LP
+The format of each line is as follows; separators can be
+.SM TAB
+or
+.SM SPACE
+characters:
+.LP
+.RS 1i
+.I "\s-1DOS\s0 Device		SunOS Device or Command"
+.RE
+.TP
+.I \s-1DOS\s0 Device
+The name of the device as
+.SM DOS
+knows it.
+For example, the device name for the first diskette drive in
+.SM DOS
+is \*(lqA\*(rq.
+.TP
+.I "SunOS Device or Command"
+The name of the device as the SunOS
+system knows it. 
+This can also be a symbolic link to the real device name. 
+For example,
+.B /etc/dos/defaults/diskette_a
+is a symbolic link to
+.BR /dev/rfd0c .
+For emulated
+.SM DOS
+printers (\s-1LPT1\s0, 
+.SM LPT2\s0,
+or 
+.SM LPT3\s0),
+specify a command or command pipeline.
+.SH EXAMPLES
+.LP
+.RS
+.TS
+lfB lfB .
+# \s-1DOS\s0 Device	SunOS Device Path Name
+#
+\s-1A\s0	/etc/dos/defaults/diskette_a
+#\s-1B\s0	/etc/dos/defaults/diskette_b
+\s-1C\s0	~/pc/C:
+\s-1COM1\s0	/etc/dos/defaults/com1
+#\s-1COM2\s0	/etc/dos/defaults/com2
+\s-1LPT1\s0	lpr
+\s-1LPT2\s0	cat >>~/lpt-2
+\s-1LPT3\s0	psfx80 | lpr
+\s-1SAVE\s0	~/pc/.quickpc
+#\s-1CMDTOOL\s0
+#\s-1TEXT\s0
+#\s-1BOARDS\s0
+.TE
+.ps
+.RE
+.TP
+.B #
+Placed at the beginning of a line to indicate a comment.
+.TP
+.B \s-1A, B\s0
+Diskette drivers defined using the standard SunOS names for the
+Sun386i diskette drives.
+Drive
+.B A
+is normally assigned to the built-in
+diskette drive.
+.TP
+.B C
+The emulated C drive.
+It is actually stored as one large system file.
+.br
+.ne 7v
+.TP
+.B \s-1COM1, COM2\s0
+Serial ports.
+The first
+.SM DOS
+serial port (\s-1COM1\s0) is assigned to the Sun386i built-in serial port.
+To use the built-in serial port as
+.SM COM2\s0,
+comment out the
+.SM COM1
+line and uncomment the
+.SM COM2
+line. 
+(\s-1DOS\s0
+Windows directs the output of either
+.SM COM1
+or
+.SM COM2
+to the built-in port, but uses different interrupt levels so that
+.SM COM2
+\*(lqappears\*(rq to
+.SM DOS
+to be a second serial port.) 
+You can also add a real second serial port by
+installing an
+.SM AT
+or
+.SM XT
+card and enabling the SunOS
+.SM ATS
+driver.
+.TP
+.B \s-1LPT1, LPT2, LPT3\s0
+Emulated printers.
+.SM DOS
+printer names can be assigned to SunOS printers, other devices, or files.
+.TP
+.B \s-1SAVE\s0
+The \*(lqquick-start\*(rq file
+.SM DOS
+reads at startup for faster loading. 
+.TP
+.B \s-1CMDTOOL\s0
+Used to list the SunOS commands that must run in a separate Commands window
+when started from
+.SM DOS. 
+The following SunOS commands automatically run in a Commands 
+window when you run them from DOS:
+.RS 1.0i
+.ft B
+.sp .5
+.nf
+mail\ \ \ man\ \ \ more\ \ \ passwd\ \ \ rlogin\ \ \ stty\ \ \ vi
+.fi
+.ft R
+.RE
+.TP
+\&
+If there are other SunOS commands or applications you want to run 
+from
+.SM DOS\s0,
+and these commands require keyboard entry or Commands window display,
+list them here. 
+If you add entries to this line, separate them with a
+.SM SPACE
+character, and be sure to remove the
+.B #
+(comment) symbol to activate the line.
+.TP
+.B \s-1TEXT\s0
+Specifies a list of \*(lqtext-only\*(rq
+.SM DOS
+programs.
+Such programs do not require a
+.SM PC
+window because they do not 
+print at specific screen positions;
+they can print text in a current 
+Commands window if that is where you are working at the time. 
+An example is a C compiler or a linker that runs from the
+.SM DOS
+command line.
+If you place entries on this line, separate them with a
+.SM SPACE
+character, and be sure to remove the
+.B #
+symbol to activate the text-only line.
+.TP
+.B \s-1BOARDS\s0
+A list of boards that
+.SM DOS
+should attempt to activate when opening a
+.SM DOS
+window.
+Each board you list here must have a corresponding entry in the
+.B boards.pc file
+(see
+.BR boards.pc (5)).
+.LP
+You can create task-specific
+.SM DOS
+environments by setting up additional
+.B setup.pc
+files to attach different printers, drive C files, and 
+other real and emulated devices.
+.LP
+If you are installing a board that duplicates a function normally 
+enabled in the
+.B setup.pc
+file, you should disable the corresponding
+.B setup.pc
+line by commenting it out with
+.BR # .
+.SH FILES
+.PD 0
+.TP 25
+.B ~/pc/setup.pc
+Personal
+.B setup.pc
+file, copied to the user's
+.B pc
+directory when
+.SM DOS
+is started for the first time.
+.TP
+.B /etc/dos/defaults/setup.pc
+Master copy of
+.B setup.pc
+for the workstation.
+.PD
+.SH SEE ALSO
+.BR dos (1),
+.BR boards.pc (5)
+.LP
+.IR "Sun386i User's Guide" ,
+.br
+.IR "Sun386i Advanced Skills" ,
+.br
+.I Sun \s-1MS-DOS\s0 Reference Manual

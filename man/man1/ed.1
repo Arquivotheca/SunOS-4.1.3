@@ -1,0 +1,1463 @@
+.\" @(#)ed.1 1.1 92/07/30 SMI; from S5R3
+.TH ED 1 "2 October 1989"
+.SH NAME
+ed, red \- basic line editor
+.SH SYNOPSIS
+.B ed
+[
+.B \-
+]
+[
+.B \-sx
+]
+[
+.BI \-p " string"
+]
+[ 
+.I filename
+]
+.LP
+.B red
+[
+.B \-
+]
+[
+.B \-sx
+]
+[
+.BI \-p " string"
+]
+[ 
+.I filename
+]
+.SH DESCRIPTION
+.IX "ed command"  ""  "\fLed\fP \(em line editor"
+.IX "text editing"  "ed command"  ""  "\fLed\fP \(em line editor"
+.IX "editing text"  "ed command"  ""  "\fLed\fP \(em line editor"
+.LP
+.B ed
+is the most basic line editor of the
+.SM UNIX
+system.  Although superseded by
+.BR ex (1)
+and
+.BR vi (1)
+for most purposes, 
+.B ed
+is still used by various system utilities.
+.LP
+.B ed
+operates on a copy of
+.IR filename ,
+called a buffer, and overwrites a file only when you issue the
+.B w
+(write) command.
+.B ed
+provides line oriented editing commands to display or change lines,
+to insert and delete lines from the buffer, to move or copy lines
+within the buffer, or to substitute character strings within lines.
+.LP
+.B red
+is a restricted version of
+.BR ed .
+It will only allow editing of files in the current directory, and 
+prohibits executing commands using 
+.BI ! command\fR. 
+Attempts to bypass these restrictions result in an error message.
+.SH OPTIONS
+.TP 10
+.PD 0
+.B \-
+.TP
+.B \-s
+.PD
+Suppress printing of character counts (by
+.BR e ,
+.BR r ,
+and
+.B w
+commands), diagnostics (by
+.B e
+and
+.B q
+commands), and the
+.B !
+prompt (after a
+.B !
+command).  Also, suppress printing the
+.B ?
+diagnostic before overwriting unsaved changes in the buffer.
+.TP
+.B \-x
+Edit an encrypted file (see 
+.BR crypt (1)
+for details).
+.TP
+.BI \-p " string"
+Use
+.I string
+as the editing prompt in command mode.
+.SH USAGE
+.SS Command Structure
+.LP
+.B ed
+commands have a simple and regular structure. 
+They consist of an optional
+.IR address ,
+or two optional
+.IR address es
+separated by a comma or semicolon, then a single-character
+.IR command ,
+which may be followed by a
+.I parameter
+for that 
+.IR command :
+.RS
+.HP
+.RI [ address [
+.BI \|,\| address
+.RI ]] \|command
+.RI [ \|parameter\| ]
+.br
+.RE
+.LP
+If only one
+.I address
+is specified, operations are performed on that line.  If two
+.IR address es
+are specified,
+.B ed
+performs the operation on the inclusive range of lines.
+Commands that requires an
+.I address
+use certain addresses by default, typically the address of the current
+line.
+.LP
+For example,
+.B 1,10p
+means \*(lqprint (display) lines 1 through 10\*(rq
+(two addresses),
+.B 5a
+means \*(lqappend text after line 5\*(rq (one address), and
+.B d
+means \*(lqdelete the current line\*(rq (no
+address with the current line used as default).  The meaning of
+.I parameter
+varies for each operation \(em for the move
+.RB ( m )
+and transfer
+.RB ( t)
+operations, for instance, it is the line that the
+addressed lines are to be moved to or transferred after.
+For reading
+.RB ( r )
+and
+writing
+.RB ( w )
+a file,
+.I parameter
+specifies the name of the file that is to be read or written.
+.LP
+.B ed
+is extremely terse in its interaction with the user.
+Its normal response to most problems is simply a question mark
+.RB ( ? ).
+This may happen when
+.B ed
+cannot find a specified line in the buffer,
+or if a search for a regular expression fails in a substitute
+.RB ( s )
+command. The
+.B h
+command prints a somewhat more complete diagnostic for the most
+recent error encountered; the
+.B H
+command requests that the diagnostic be printed for all errors.
+.SS Addresses
+.LP
+Lines can be addressed in several ways:
+.TP
+.I nnn
+By line number.
+Lines in the buffer are numbered relative to
+the start of the buffer.  When displayed, line numbers are not
+physically present with the text of the file or buffer.
+.TP
+.B $
+The last line of the buffer.
+.TP
+.B \&.
+The current line.
+.B ed
+keeps track of the line on which you last performed an operation.
+This line is called the 
+.IR "current line" .
+You can address this line by typing a \*(lqdot\*(rq character.
+.TP
+.BI \(+- n
+By relative line number.
+Address the line number that is
+.I n
+lines higher, or 
+.I n
+lines lower than the current line.
+.TP
+.I \(fmc
+Address the line marked with the mark character
+.IR c ,
+which must be a lower-case letter.  Lines are marked with the
+.B k
+command, described below.
+.TP
+.BI / \s-1RE\s0 /
+An
+.I \s-1RE\s0
+is a Regular Expression, described under
+.B "Regular Expressions"
+below.  When enclosed by slashes, 
+.I \s-1RE\s0
+addresses the first line found by searching for a matching string.
+The search proceeds forward from the line following the 
+current line, and wraps through the beginning of the buffer to
+include all preceding lines, as well as the current line.
+.TP
+.BI ? \s-1RE\s0 ?
+An
+.I \s-1RE\s0
+enclosed in question marks addresses the first line containing 
+a match found by searching backward from the line preceding the current
+line.  The search wraps through the end of the buffer to include
+all lines following the current line (in reverse order), as well as
+the current line.
+.TP
+.IB address \(+- n
+An address followed by a plus sign
+.RB (\^ + \^)
+or a minus sign
+.RB ( \- ),
+followed by a decimal number, specifies 
+that address plus or minus the indicated number of lines.
+(The plus sign may be omitted.)  If the address
+is omitted, the current line is used as the base.  For
+example,
+.RB ` 31\-3 '
+addresses line 28 in the buffer.
+.TP
+.IB address \(+-
+If an address ends with
+.RB ` + '
+or
+.RB ` \- ',
+then 1 is added to or subtracted from the address, respectively.
+As a consequence of this rule and the previous rule, the address
+.RB ` \- '
+refers to the line preceding the current line.
+(To maintain compatibility with earlier versions of
+.BR ed ,
+the character 
+.RB ` \s+2^\s0 '
+is equivalent to
+.RB ` \- '.)
+Trailing
+.RB ` + '
+and
+.RB ` \- '
+characters
+have a cumulative effect, so
+.RB ` \-\|\- '
+refers to the current line, less 2.
+.TP
+.B ,
+By itself, a comma stands for the address pair
+.RB ` 1,\^$ '.
+.TP
+.B ;
+A semicolon by itself stands for the pair
+.RB ` \&.\^,\^$ '.
+.IP
+By default for a given command.  If you do not specify an address for a
+command to operate on, a command that requires an address
+supplies one by default.  This is typically the current line.
+.LP
+A pair of addresses separated by a comma signifies an inclusive
+range of lines, and the current line is not changed unless the command
+changes it.
+When addresses are separated by a semicolon, however,
+the current line is set to the address preceding the semicolon
+before any subsequent addresses are interpreted.  This
+feature can be used to determine the starting line for forward and
+backward searches using
+.RB ` / ',
+and
+.RB ` ? '.
+.LP
+The second address of any two-address sequence
+must correspond to a line that occurs later in the buffer than
+that of the first address.
+.SS Regular Expressions
+.LP
+.B ed
+supports a limited form of regular-expression notation, which
+can be used in a line address to specify lines by content. 
+A regular expression (\s-1RE\s0) specifies a set of character strings to
+match against \(em such as \*(lqany string containing
+digits 5 through 9\*(rq or \*(lqonly lines containing uppercase letters.\*(rq
+A member of this set of strings is said to be
+.I matched
+by the regular expression.  Regular expressions or
+.I patterns
+are used to address lines
+in the buffer (see
+.B Addresses ,
+above), and also for
+selecting strings to be replaced using the
+.B s
+(substitute) command.
+.LP
+Where multiple matches are present in a line, a regular expression
+matches the
+.I longest
+of the
+.I leftmost
+matching strings.
+.LP
+Regular expressions can be built up from the following
+\*(lqsingle-character\*(rq
+.SM RE\s0's:
+.TP
+.I c
+Any ordinary character not listed below.
+An ordinary character matches itself.
+.TP
+.B \e
+Backslash.
+When followed by a special character, the
+.SM RE
+matches the \*(lqquoted\*(rq character.  A backslash followed by one of
+.BR < ,
+.BR > ,
+.BR ( ,
+.BR ) ,
+.BR { ,
+or
+.BR } ,
+represents an 
+.I operator
+in a regular expression, as described below.
+.TP
+.B \&.
+Dot.
+Matches any single character except
+.SM NEWLINE\s0.
+.TP
+.B \s+2^\s0
+As the leftmost character, a caret (or circumflex) constrains the
+.SM RE
+to match the leftmost portion of a line.  A match of this type
+is called an \*(lqanchored match\*(rq because it is \*(lqanchored\*(rq
+to a specific place in the line.  The
+.B \s+2^\s0
+character loses its special meaning if
+it appears in any position other than the start of the
+.SM RE\s0.
+.TP
+.B $
+As the rightmost character, a dollar sign constrains the
+.SM RE
+to match the rightmost portion of a line.
+The
+.B $
+character loses its special meaning if it appears in
+any position other than at the end of the
+.SM RE\s0.
+.TP
+.BI \s+2^\s0 \s-1RE\s0 $
+The construction
+.BI \s+2^\s0 \s-1RE\s0 \|$
+constrains the
+.SM RE
+to match the entire line.
+.TP
+.B \e<
+The sequence
+.B \e<
+in an
+.SM RE
+constrains the one-character
+.SM RE
+immediately following it only to match something at the
+beginning of a \*(lqword\*(rq; that is, either at the beginning of a line,
+or just before a letter, digit, or underline and after a character not
+one of these.
+.TP
+.B \e>
+The sequence
+.B \e>
+in an
+.SM RE
+constrains the one-character
+.SM RE
+immediately following it only to match something at the
+end of a \*(lqword.\*(rq
+.TP
+.BI [ \|c\|.\|.\|.\| ]
+A nonempty string of characters, enclosed in square brackets
+matches any single character in the string.  For example,
+.B [abcxyz]
+matches any single character from the set 
+.RB ` abcxyz '.
+When the first character of the string is a caret 
+.RB ( \s+2^\s0 ),
+then the
+.SM RE
+matches any character
+.I except
+.SM NEWLINE
+and those in the remainder of the string.  For example,
+.RB ` [\s+2^\s045678] '
+matches any character except 
+.RB ` 45678 '.
+A caret in any other position 
+is interpreted as an ordinary character.
+.TP
+.BI [\|] \|c\|.\|.\|.\| ]
+The right square bracket does not
+terminate the enclosed string if it is the first character
+(after an initial 
+.RB ` \s+2^\s0 ',
+if any), in the bracketed string.  In this position it is
+treated as an ordinary character.
+.TP
+.BI [ \|l \- r\| ]
+The minus sign, between two characters, indicates a range of consecutive
+.SM ASCII
+characters to match.  For example, the range
+.RB ` [0\-9] '
+is equivalent to the string
+.RB ` [0123456789] '.
+Such a bracketed string of characters is known as a
+.IR "character class" .
+The
+.RB ` \- '
+is treated as an ordinary character if it occurs first (or first
+after an initial
+.BR \s+2^\s0 )
+or last in the string.  
+.TP
+.I d
+Delimiter character.
+The character used to delimit an
+.SM RE
+within a command is special for that command (for example, see how 
+.B / 
+is used in the
+.B g
+command, below).
+.LP
+The following rules and special characters allow for constructing
+.SM RE\s0's
+from single-character
+.SM RE\s0's:
+.IP
+A concatenation of
+.SM RE\s0's
+matches a concatenation of text strings, each of which
+is a match for a successive
+.SM RE
+in the search pattern.
+.TP 
+.B *
+A single-character
+.SM RE\s0,
+followed by an asterisk
+.RB ( \(** )
+matches
+.I zero
+or more occurrences of the single-character
+.SM RE\s0.
+Such a pattern is called a
+.IR closure .
+For example,
+.B [a\-z][a\-z]*
+matches any string of one or more lower case letters.
+.TP
+.PD 0
+.BR \e{ m \e}
+.TP
+.BR \e{ m ,\e}
+.TP
+.BR \e{ m , n \e}
+.PD
+A one-character
+.SM RE
+followed by
+.BI \^\e{\^ m \^\e}\fR,
+.BI \^\e{\^ m, \^\e}\fR,
+or
+.BI \^\e{\^ m,n \^\e}
+is an
+.SM RE
+that matches a
+.I range
+of occurrences of the one-character
+.SM RE\s0.
+The values of
+.I m
+and
+.I n
+must be nonnegative integers less than 256;
+.BI \^\e{\^ m \^\e}
+matches
+.I exactly
+.I m
+occurrences;
+.BI \^\e{\^ m, \^\e}
+matches
+.I "at least"
+.I m
+occurrences;
+.BI \^\e{\^ m,n \^\e}
+matches
+.I "any number"
+of occurrences
+.I between
+.I m
+and
+.IR n ,
+inclusively.  Whenever a choice exists, the
+.SM RE
+matches as many occurrences as possible.
+.TP
+.BR \e( .\|.\|. \e)
+An
+.SM RE
+enclosed between the character sequences
+.B \e\^(
+and
+.B \e\^)
+matches whatever the unadorned
+.SM RE
+matches, but saves the
+string matched by the enclosed 
+.SM RE
+in a numbered substring register.
+There can be up to nine such substrings in an 
+.SM RE\s0,
+and
+parenthesis operators can be nested.
+.TP
+.BI \e n
+Match the contents of the
+.IR n th
+substring register from the current 
+.SM RE\s0.
+This provides a mechanism for extracting matched substrings.
+For example, the expression
+.B ^\e(..\(**\e)\e1$
+matches a line consisting entirely of two adjacent non-null
+appearances of the same string.
+When nested parenthesized substrings are present,
+.I n
+is determined by counting occurrences of 
+.B \e(
+starting from the left.
+.TP
+.B /\|/
+The null 
+.SM RE
+.RB ( /\|/ )
+is equivalent to the last 
+.SM RE encountered.
+.SS Commands
+.LP
+The commands
+.B a
+for
+.IR append ,
+.B c
+for
+.IR change ,
+and
+.B i
+for
+.IR insert ,
+allow you to add new text to the buffer.  While accepting
+new text, 
+.B ed
+is said to be in
+.IR "input mode" .
+While in input mode,
+.I no
+commands are recognized; all character input is inserted into
+the buffer.
+To exit from input mode, enter a dot
+.RB (\| . \|)
+on a line by itself;
+.B ed
+then reverts to command mode.  Or,
+you can interrupt
+.B ed
+(typically with
+.SM CTRL-C\s0),
+in which case it displays a
+.B ?
+and returns to command mode.
+.LP
+Commands may accept zero, one, or two addresses.
+Commands that accept no addresses regard the presence
+of an address as an error.  Commands that accept one or two addresses
+assume default addresses when too few addresses are given;
+if more addresses are given than such a command requires,
+only the last ones are used.
+.LP
+In the following list of
+.B ed
+commands, the default addresses are shown in parentheses;
+the parenthesized addresses are
+.I not
+part of the command.
+.LP
+It is generally illegal for more than one
+command to appear on a line.  However, any command (except
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w )
+may be followed by
+.BR l ,
+.BR n ,
+or
+.B p
+in which case the current line is either
+listed, numbered or printed, respectively.
+.TP
+.RB \u\s-2( \|.\| )\s0\d\| a
+.PD 0
+.LP
+.I text
+.TP
+.B \&.
+.PD
+Append text.
+Add lines of
+.I text
+into the buffer after the addressed line.  The resulting current line is
+the last line of input, or the addressed line if no text is entered.
+Address
+.B 0
+is legal for this command, in which case the 
+.I text
+is placed at the beginning of the buffer.
+The maximum number of characters per input line (from a
+terminal) is 256, including the final
+.SM NEWLINE\s0.
+.TP
+.PD 0
+.RB \u\s-2( \|.\| )\s0\d\| c
+.TP
+.I text
+.TP
+.B \&.
+.PD
+Change lines.
+Delete the addressed lines, and then accept lines of
+.I text
+to replace them. 
+.B c
+accepts one or two addresses;
+the default is the current line.  The resulting current line is the last
+line of input, or the line preceding the deleted lines if no text is
+entered.
+.TP
+.RB \u\s-2( \|. \|, \|.\| )\s0\d\| d
+Delete the addressed lines from the buffer. 
+.B d
+accepts one or two addresses;
+the default is the current line.  The resulting current line is
+the line following the last one deleted; if the deleted lines were
+at the end of the buffer, the new last line is the resulting current
+line.
+.TP
+.BI e " filename"
+Edit a file.
+Delete the entire contents of the buffer, and then read in the named
+file.  The resulting current line is the last line of the buffer. 
+.B e
+reports the number of characters read into the buffer, and sets
+.I filename
+to be the current file (for use as a
+default filename in subsequent commands).
+If no
+.I filename
+is given, the current filename, if any, is used
+(see the
+.B f
+command, below).  If
+.I filename
+is replaced by a shell 
+.RB ( sh (1))
+command prefaced with a 
+.RB ` ! ',
+the shell command is executed and its output is read into the
+buffer after the current line.
+Such a shell command is
+.I not
+used as the current filename. 
+.B e
+displays a
+.B ?
+if the buffer has not been written out since the last change
+made \(em another
+.B e
+command in response to the
+.B ?
+forces the command to take effect.
+.TP
+.BI E " filename"
+The
+.B E
+command is like
+.BR e ,
+except that the editor does not check for
+changes to the buffer since the last
+.B w
+command was performed.
+.TP
+.BI f " filename"
+Display or set the current filename.
+If
+.I filename
+is given as an argument, the file
+.RB ( f )
+command changes the current filename to
+.IR filename ;
+otherwise, it prints the current filename.
+.HP
+.RB \u\s-2( \|1 \|, \|$\| )\s0\d\|
+.BI g/ \s-1RE\s0 / command-list
+.br
+The global
+.RB ( g )
+command performs
+.I command-list
+on all lines in the range of addresses that match
+.IR \s-1RE\s0 .
+.B ed
+executes
+.I command-list
+for each matching line in succession,
+setting the current line to each in turn.
+.I command-list
+can contain a single command, or it can be continued across
+input lines, with one 
+.B ed
+command per line, by escaping all but the last
+.SM NEWLINE
+with a 
+.B \e
+character.  Operations that place
+.B ed
+into input mode
+.RB ( a ,
+.BR i ,
+and
+.BR c ),
+.I are
+permitted in
+.IR command-list ;
+the final
+.RB ` . '
+terminating text input may be omitted if it is the
+last line of the
+.IR command-list . 
+.BR g ,
+.BR G ,
+.BR v ,
+and
+.B V
+commands, however, are
+.I not
+permitted.  An empty
+.I command-list
+is equivalent to the
+.B p
+command.
+.HP 
+.RB \u\s-2( \|1 \|, \|$\|)\s0\d\|
+.BI G/ \s-1RE\s0 /
+.br
+The interactive
+.B G
+(Global) command, selects all lines that match the given
+.IR \s-1RE\s0 .
+Then, each selected line is made current, and any
+.I one
+command (other than one of the
+.BR a ,
+.BR c ,
+.BR i ,
+.BR g ,
+.BR G ,
+.BR v ,
+and
+.B V
+commands) can be performed upon that line.  A 
+.SM NEWLINE
+acts as a null command; an
+.B &
+reexecutes the most recent command.
+Commands entered during execution of the
+.B G
+command can address and affect lines other than the current line.
+The
+.B G
+command can be terminated by an interrupt (typically 
+.SM CTRL-D\s0).
+.TP
+.B h
+Help. 
+Display a short error message that explains
+the reason for the most recent
+.B ?
+diagnostic.
+.TP
+.B H
+Automatic printing of help diagnostics.
+Toggle between printing the
+.B ?
+diagnostic, or automatically printing diagnostic messages as well.
+.TP
+.PD 0
+.RB \u\s-2( \|.\| )\s0\d\| i
+.TP
+.I text
+.TP
+.B \&.
+Insert Text.
+.PD
+Insert the given 
+.I text
+into the buffer, above the addressed line. 
+.B i
+accepts one
+.IR address ;
+the default is the current line.  The resulting current line is the
+last line of input; if no text is input, it is the line just
+before the addressed line.  This command differs from the
+.I a
+command only in the placement of the input text;
+Address 0 is not allowed for this command.
+The maximum number of characters that may be entered from a
+terminal is 256 per line (including the 
+.SM NEWLINE
+character).
+.TP
+.RB \u\s-2( \|. \|, \|.+1 \|)\s0\d\| j
+Join Lines. 
+Remove the
+.SM NEWLINE
+character from between the two addressed lines.
+The defaults are the current line and the line following.
+If exactly one address is given, this command does nothing.
+The joined line is the resulting current line.
+.TP
+.RB \u\s-2( \|.\| )\s0\d\| k\fIc\fR
+Mark the addressed line with the name
+.IR c ,
+a lower-case letter.
+The address-form,
+.BI \(fm c\fR,
+addresses the line marked by 
+.IR c . 
+.B k
+accepts one
+.IR address ;
+the default is the current line.
+The current line is left unchanged.
+.TP
+.RB \u\s-2( \|. \|, \|.\| )\s0\d\| l
+List nonprinting characters.
+Print the addressed lines in an unambiguous way: a few nonprinting
+characters, such as
+.SM TAB
+and
+.SM BACKSPACE
+are represented by visually mnemonic overstrikes.
+All other nonprinting characters are
+shown in octal, with long lines folded. 
+.B l
+accepts one or two addresses;
+the default is the current line.
+The resulting current line is
+the last line printed.  An
+.B l
+command may be appended to any command other than
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w .
+.HP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\|
+.BI m address
+.br
+Move addressed lines to just after
+.IR address .
+Address 0 is legal, and moves the addressed line(s) to
+the beginning of the file.  An error results if
+.I address
+falls within the range of lines to move. 
+.B m
+accepts two addresses
+to specify a range of lines to move; the default
+is the current line.  The resulting current line is the last of the
+moved lines.
+.TP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\| n
+Number the displayed lines.
+Print the addressed lines, preceding each with its line number and a 
+.SM TAB 
+character. 
+.B n
+accepts one or two addresses;
+the default is the current line.  The resulting current line is
+the last line printed.  The
+.B n
+command can be appended to any command other than
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w .
+.TP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\| p
+Print the addressed lines. 
+.B p
+accepts one or two addresses;
+the default is the current line.  The resulting current line is
+the last line printed.  The
+.B p
+command may be appended to any command other than
+.BR e ,
+.BR f ,
+.BR r ,
+or
+.BR w .
+For example,
+.B dp
+deletes the current line and prints the new 
+current line.
+.TP
+.B P
+Toggle prompting on or off.  When prompting is
+in effect, the editor prompts with a
+.B \(**
+for commands.  A subsequent
+.B P
+command turns prompting off.
+.TP
+.B q
+Quit.
+Exit from
+.BR ed .
+Note, however, that the buffer is
+.I not
+automatically written out; you must write any changes to be saved
+with the
+.B w
+command;
+.B ed
+warns you once if you have not saved your
+changes (unless the
+.RB ` \- '
+option is in effect).  A second
+.B q
+forces
+.B ed
+to exit regardless, destroying the buffer's contents.
+.TP
+.B Q
+Force quit.  This is the same as
+.BR q ,
+but you do not get any
+warning if you have not previously written out the buffer.
+.B ed
+simply exits.
+.HP
+.RB \u\s-2( \|$\| )\s0\d\|
+.BI r " filename"
+.br
+Read in the contents of
+.IR filename ,
+after the addressed line.  If
+.I filename
+is not given, the current filename, if any, is used (see the
+.B e
+and
+.B f
+commands).  The current filename is
+.I not
+altered; if there is no current filename,
+.I filename
+becomes the current filename. 
+.B r
+accepts one
+.IR address ;
+the default is
+.BR $ .
+Address 0 is legal for
+.BR r ,
+in which case the file is read in at the beginning of the buffer.
+If the read is successful, the number of characters read is typed.
+The resulting current line is the last line read in from the file.
+If
+.I filename
+is replaced by a shell 
+.RB ( sh (1))
+command prefaced with a 
+.BR ! ,
+the shell command is executed and its output is read in.
+Such a shell command is
+.I not
+remembered as the current filename.
+.HP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\|
+.BI s/ \s-1RE\s0 / rs /
+.PD 0
+.HP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\|
+.BI s/ \s-1RE\s0 / rs /g
+.HP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\|
+.BI s/ \s-1RE\s0 / rs / n
+.br
+Substitute.
+.PD
+Search each addressed line for the first occurrence of a string matching
+the specified
+.IR \s-1RE\s0 ,
+and replace it with 
+.IR rs ,
+the replacement string.  If
+.B g
+(global suffix) is appended to the command, replace
+.I all
+(non-overlapped) matching strings in each addressed line with the
+replacement string
+.IR rs .
+Note: the
+.B g
+.I suffix
+is distinct from the
+.B g
+.IR command .
+If a number
+.I n
+is appended, replace only the
+.IR n 'th
+occurrence of the matched string on each addressed line. 
+.B s
+accepts one or two addresses;
+the default is the current line.  The resulting current line is the
+last line on which a substitution is made.  An error results if
+.I \s-1RE\s0
+matches no strings in the addressed line or range.
+Any character (other than 
+.SM SPACE
+or 
+.SM NEWLINE
+can be used instead of
+.B /
+to delimit
+.I \s-1RE\s0
+and
+.IR rs .
+As with
+.SM RE\s0's
+in addresses, you can refer to the entire string matched by
+.I \s-1RE\s0
+with an 
+.RB ` & ';
+you can refer to parenthesized substrings within 
+.I \s-1RE\s0
+using
+.BR \e1 \|.\|.\|.\| \e\fIn.
+When
+.B %
+is the only character in
+.IR rs ,
+the
+.I rs
+from in the most recent substitute command is used as the current
+.IR rs .
+The
+.B %
+loses its special meaning when it is
+in a replacement string of more than one
+character, or if it is preceded by a backslash.
+.IP
+A line may be split by substituting a 
+.SM NEWLINE
+character into it.
+The 
+.SM NEWLINE
+in the
+.I replacement
+must be escaped by preceding with an
+.RB ` \e '.
+Such substitutions cannot be done as part of a
+.B g
+or
+.B v
+command list.
+.HP
+.RB \u\s-2( \|. \|, \|. \|)\s0\d\|
+.BI t address
+.br
+Transfer.
+Transpose a copy of the addressed range of lines to
+just after the given
+.IR address .
+.B t
+(transfer) is like
+.B m
+(move), except that it copies of the lines,
+rather than moving them. 
+.B t
+accepts two addresses preceding the operation letter, the current
+address is the default.  The resulting current line is the last
+line copied.  Address 0 is allowed.
+.TP
+.B u
+Undo.
+Reverse the effect of the most recent
+command that modified the buffer.  A second
+.B u
+undoes the undo operation.
+.HP
+.RB \u\s-2( \|1 \|, \|$ \|)\s0\d\|
+.BI v/ \s-1RE\s0 / command-list
+.br
+This command is the same as the global command
+.B g
+except that the
+.I "command-list"
+is executed
+with
+.RB ` . '
+initially set to every line that does
+.I not
+match the
+.SM RE\s0.
+.HP 
+.RB \u\s-2( \|1 \|, \|$ \|)\s0\d\|
+.BI V/ \s-1RE\s0
+.br
+Similar to the
+.B G
+command, except that the lines selected are those that do
+.I not
+match the
+.IR \s-1RE\s0 .
+.HP 
+.RB \u\s-2( \|1 \|, \|$ \|)\s0\d\|
+.BI w " filename"
+.br
+Write the addressed lines to
+.IR filename .
+If the file does not exist,
+.B ed
+creates it.
+The current filename is
+.I not
+altered; if there is no current filename, then
+.I filename
+becomes current.  If no
+.I filename
+is given, the current filename, if any, is used. 
+.B w
+accepts one or two addresses;
+the default is all lines in the file.  The current line is unchanged.
+If the command is successful, the number of characters written is
+displayed.
+If
+.I filename
+is replaced by a shell 
+.RB ( sh (1))
+command prefaced with a 
+.RB ` ! ',
+the shell command is executed with standard input taken from
+the addressed lines.  Such a shell command is
+.I not
+remembered as the current filename.
+.HP
+.RB \u\s-2( \|1 \|, \|$ \|)\s0\d\|
+.BI W " filename"
+.br
+Like
+.BR w ,
+but append the addressed lines onto the named file.
+.TP
+.B x
+Encrypt the file.
+.B ed
+prompts for an encryption key from the standard input.
+Subsequent
+.BR e ,
+.BR r ,
+and
+.B w 
+commands encrypt and decrypt the text with this key (see
+.BR crypt (1)).
+An empty key turns off encryption.  Encryption can also be
+specified on the command line with the
+.B \-x
+option.
+.TP
+.RB \u\s-2( \|$ \|)\s0\d\| =
+Display the line number of the addressed line; the current line
+remains unchanged.
+.TP
+.BI ! shell-command
+Run a shell command.
+.I shell-command
+is a (Bourne shell) command line.
+.B ed
+replaces the unescaped character
+.B %
+with the current filename; if a
+.B !
+appears as the first character of the shell command,
+it is replaced with the text of the previous shell command.
+.RB ( !!
+repeats the last shell command.)
+If any such expansion is performed, the expanded line is echoed.
+The current line is unchanged.
+.TP
+.PD 0
+.I address
+.TP
+.SB NEWLINE
+.PD
+An address, alone on a line, prints the addressed line.  A 
+.SM NEWLINE
+alone is equivalent to
+.RB ` \&.+1p ',
+which is useful for stepping forward through the buffer.
+.LP
+If an interrupt signal (\s-1ASCII\s0
+.SM DEL
+or
+.SM BREAK\s0)
+is sent,
+.B ed
+prints a
+.B ?
+and returns to
+.I its
+command level.
+.SS File Format Specification Support
+.LP
+.B ed
+supports the 
+.BR fspec (5)
+formatting capability for displaying lines.  When the first line of a
+file is a format specification of the form:
+.IP
+.BI <: ts\c
+.RB [ \|,\|\c
+.IR ts ]\|.\|.\|.\|
+.BI s max :>
+.LP
+where
+.I ts
+is the column number of a 
+.SM TAB
+stop and 
+.I max
+is the maximum line length for display purposes, and with the
+terminal in
+.RB ` "stty \-tabs" '
+or
+.RB ` "stty tab3" '
+mode (see
+.BR stty (1V)
+for details), the indicated 
+.SM TAB
+stops are used in displayed lines.
+While inserting text, however, 
+.SM TAB
+stops are set to every eighth
+column.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR ed .
+On entry to
+.BR ed ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.BI /usr/tmp/e #
+temporary;
+.I #
+is the process number
+.TP
+.B ed.hup
+file for saved work if the terminal is hung up
+.PD
+.SH "SEE ALSO"
+.BR crypt (1),
+.BR ex (1),
+.BR grep (1V),
+.BR sed (1V),
+.BR sh (1),
+.BR stty (1V),
+.BR vi(1),
+.BR regexp(3),
+.BR fspec (5),
+.BR locale (5),
+.BR iso_8859_1 (7)
+.LP
+.TX TEXT
+.br
+.ne 5
+.SH LIMITATIONS
+.LP
+The following limitations apply:
+.LP
+.RS
+.nf
+512 characters per line.
+256 characters per global command-list.
+1024 characters per filename.
+The limit on the number of lines depends on the amount of user memory:
+each line takes 1 word.
+.fi
+.RE
+.LP
+When reading a file,
+.B ed
+discards
+.SM ASCII
+.SM NUL
+characters and all characters after the last 
+.SM NEWLINE\s0.
+Files (such as executable images)
+that contain characters not in the
+.SM ASCII
+set (bit 8 on) cannot be edited using
+.BR ed .
+.LP
+If a file is not terminated by a
+.SM NEWLINE
+character,
+.B ed
+adds one and prints a message saying that it has done so.
+.LP
+If the closing delimiter of an
+.SM RE
+or of a
+replacement string (such as
+.BR / )
+would be the last character before a 
+.SM NEWLINE\s0,
+that delimiter can be omitted, in which case the addressed line
+is printed.  The following pairs of commands are equivalent:
+.RS
+.TP 10
+.PD 0
+.B s/s1/s2
+.B s/s1/s2/p
+.TP
+.B g/s1
+.B g/s1/p
+.TP
+.B ?s1
+.B ?s1?
+.PD
+.RE
+.SH DIAGNOSTICS
+.TP
+.B ?
+For command errors.
+.TP
+.BI ? file : error
+For an inaccessible file (use the
+.B h
+(help) and
+.B H
+(Help) commands for detailed explanations).
+.LP
+If changes have been made in the buffer since the last
+.B w
+command,
+.B ed
+issues a warning 
+.B ?
+when a command is given that would destroy the buffers contents.
+A second
+.B e
+or
+.B q
+command at this point will take effect.
+The
+.RB ` \- '
+and
+.B \-s
+command-line options inhibit this feature.
+.SH WARNINGS
+.LP
+A
+.B !
+command cannot be subject to a
+.B g
+or a
+.B v
+command.
+.LP
+The sequence
+.B \en
+in an
+.SM RE
+does not match a 
+.SM NEWLINE
+character.
+.LP
+Files encrypted directly with the
+.BR crypt (1)
+command with the null key cannot be edited.
+.LP
+The encryption facilities of
+.B ed
+are not available on software
+shipped outside the U.S.
+.LP
+If the editor input is coming from a command file, the editor exits at 
+the first failure of a command in that file.

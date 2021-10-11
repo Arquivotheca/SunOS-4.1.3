@@ -1,0 +1,297 @@
+.\" @(#)tcp.4p 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH TCP 4P "24 November 1987"
+.SH NAME
+tcp \- Internet Transmission Control Protocol
+.SH SYNOPSIS
+.nf
+.B #include <sys/socket.h>
+.B #include <netinet/in.h>
+.LP
+.B s = socket(\s-1AF_INET\s0, \s-1SOCK_STREAM\s0, 0);
+.fi
+.SH DESCRIPTION
+.IX  "tcp protocol"  ""  "\fLtcp\fP \(em Internet Transmission Control Protocol"  ""  PAGE START
+.IX  Internet  "Transmission Control Protocol tcp"  ""  "Transmission Control Protocol \(em \fLtcp\fP"  ""  PAGE START
+.LP
+.SM TCP
+is the virtual circuit protocol of the Internet protocol family.
+It provides reliable, flow-controlled, in order,
+two-way transmission of data.
+It is a byte-stream protocol used to
+support the
+.SB SOCK_STREAM
+abstraction.
+.SM TCP
+is layered above the Internet Protocol (\s-1IP\s0),
+the Internet protocol family's
+unreliable internetwork datagram delivery protocol.
+.LP
+.SM TCP
+uses
+.SM IP\s0's
+host-level addressing and
+adds its own per-host collection of \*(lqport addresses\*(rq.
+The endpoints of a
+.SM TCP
+connection are identified by the
+combination of an
+.SM IP
+address and a
+.SM TCP
+port number.
+Although other protocols, such as the User Datagram Protocol (\s-1UDP\s0),
+may use the same host and port address format,
+the port space of these protocols is distinct.
+See
+.BR inet (4F)
+for details on the common aspects of addressing in the Internet
+protocol family.
+.LP
+Sockets utilizing
+.SM TCP
+are either \*(lqactive\*(rq or
+\*(lqpassive\*(rq.
+Active sockets initiate connections to passive sockets.
+Both types of sockets must have their local IP address and
+.SM TCP
+port
+number bound with the
+.BR bind (2)
+system call after the socket is created.
+By default,
+.SM TCP
+sockets are active.
+A passive socket is created by calling the
+.BR listen (2)
+system call after binding the socket with
+.B bind .
+This establishes a queueing parameter for the passive socket.
+After this, connections to the passive socket can be received with the
+.BR accept (2)
+system call.
+Active sockets use the
+.BR connect (2)
+call after binding to initiate connections.
+.LP
+By using the special value
+.BR \s-1INADDR_ANY\s0 ,
+the local
+.SM IP
+address can be left unspecified in the
+.B bind
+call by either active or passive
+.SM TCP
+sockets.
+This feature is usually used if
+the local address is either unknown or irrelevant.
+If left unspecified,
+the local
+.SM IP
+address will be bound at connection
+time to the address of the network interface used to
+service the connection.
+.LP
+Once a connection has been established,
+data can be exchanged using the
+.BR read (2V)
+and
+.BR write (2V)
+system calls.
+.LP
+.SM TCP
+supports one socket option which is set with
+.B setsockopt
+and tested with
+.BR getsockopt (2).
+Under most circumstances,
+.SM TCP
+sends data when it is presented.
+When outstanding data has not yet been acknowledged, it gathers
+small amounts of output to be sent in a single packet once
+an acknowledgement is received.
+For a small number of clients, such as window systems
+that send a stream of mouse events which receive no replies,
+this packetization may cause significant delays.
+Therefore,
+.SM TCP
+provides a boolean option,
+.SM TCP_NODELAY
+(defined in
+.BR <netinet/tcp.h> ),
+to defeat this algorithm.
+The option level for the
+.B setsockopt
+call is the protocol number for
+.SM TCP\s0,
+available from
+.B getprotobyname
+(see
+.BR getprotoent (3N)).
+.LP
+Options at the
+.SM IP
+level may be used with
+.SM TCP\s0;
+see
+.BR ip (4P).
+.LP
+.SM TCP
+provides an urgent data mechanism,
+which may be invoked using the out-of-band provisions of
+.BR send (2).
+The caller may mark one byte as \*(lqurgent\*(rq with the
+.SB MSG_OOB
+flag to
+.BR send (2) .
+This causes an \*(lqurgent pointer\*(rq pointing to this byte to be
+set in the
+.SM TCP
+stream.
+The receiver on the other side of the stream is notified
+of the urgent data by a SIGURG signal.
+The
+.SB SIOCATMARK
+ioctl returns a value indicating whether the stream
+is at the urgent mark.
+Because the system never returns data across the urgent mark
+in a single
+.BR read (2V)
+call,
+it is possible to advance to the urgent data in a simple loop
+which reads data,
+testing the socket with the
+.SB SIOCATMARK
+ioctl,
+until it reaches the mark.
+.LP
+Incoming connection requests that include an
+.SM IP
+source route
+option are noted,
+and the reverse source route is used in responding.
+.br
+.ne 6
+.LP
+.SM TCP
+assumes the datagram service it is layered above is unreliable.
+A checksum over all data helps
+.SM TCP
+implement reliability.
+Using a window-based flow control mechanism that
+makes use of positive acknowledgements, sequence numbers, and
+a retransmission strategy,
+.SM TCP
+can usually recover when datagrams are damaged,
+delayed, duplicated or delivered
+out of order by the underlying communication medium.
+.LP
+If the local
+.SM TCP
+receives no acknowledgements from its peer for
+a period of time,
+as would be the case if the remote machine crashed,
+the connection is closed and an error is returned to the user.
+If the remote machine reboots or otherwise loses state information
+about a
+.SM TCP
+connection,
+the connection is aborted and an error is returned to the user.
+.SH ERRORS
+A socket operation may fail if:
+.TP 20
+.SM EISCONN
+A
+.B connect
+operation was attempted on a socket on which a
+.B connect
+operation had already been performed.
+.TP
+.SM ETIMEDOUT
+A connection was dropped
+due to excessive retransmissions.
+.TP
+.SM ECONNRESET
+The remote peer
+forced the connection to be closed (usually because the remote machine
+has lost state information about the connection due to a crash).
+.TP
+.SM ECONNREFUSED
+The remote
+peer actively refused connection establishment (usually because
+no process is listening to the port).
+.TP
+.SM EADDRINUSE
+A
+.B bind
+operation was attempted on a socket with a network address/port pair that has
+already been bound to another socket.
+.TP
+.SM EADDRNOTAVAIL
+A
+.B bind
+operation was attempted on a socket with a network address
+for which no network interface exists.
+.TP 20
+.SM EACCES
+A
+.B bind
+operation was attempted with a \*(lqreserved\*(rq port number and the effective user
+.SM ID
+of the process was not super-user.
+.TP
+.SM ENOBUFS
+The system ran out of memory for internal data structures.
+.SH SEE ALSO
+.BR accept (2),
+.BR bind (2),
+.BR connect (2),
+.BR getsockopt (2),
+.BR listen (2),
+.BR read (2V),
+.BR send (2),
+.BR write (2V),
+.BR getprotoent (3N),
+.BR inet (4F),
+.BR ip (4P)
+.LP
+Postel, Jon,
+.IR "Transmission Control Protocol - \s-1DARPA\s0 Internet Program Protocol Specification" ,
+.SM RFC
+793,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+September 1981.
+.SH BUGS
+.LP
+.SB SIOCSHIWAT
+and
+.SB SIOCGHIWAT
+ioctl's to set and get the high water mark
+for the socket queue, and so that it can be changed from 2048 bytes
+to be larger or smaller, have been defined (in
+.BR <sys/ioctl.h> )
+but not
+implemented.
+.IX  "ioctls for sockets"  "SIOCSHIWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCSHIWAT\fP \(em set high water mark"
+.IX  "SIOCSHIWAT set high water mark"  ""  "\fLSIOCSHIWAT\fP \(em set high water mark"
+.IX  set "high water mark ioctl \(em \fLSIOCSHIWAT\fP"
+.IX  "TCP ioctls"  "SIOCSHIWAT"  "TCP \fLioctl\fP's"  "\fLSIOCSHIWAT\fP \(em set high water mark"
+.IX  "ioctls for sockets"  "SIOCGHIWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCGHIWAT\fP \(em get high water mark"
+.IX  "SIOCGHIWAT get high water mark"  ""  "\fLSIOCGHIWAT\fP \(em get high water mark"
+.IX  get "high water mark \fLioctl\fP \(em \fLSIOCGHIWAT\fP"
+.IX  "TCP ioctls"  "SIOCGHIWAT"  "TCP \fLioctl\fP's"  "\fLSIOCGHIWAT\fP \(em get high water mark"
+.IX  "ioctls for sockets"  "SIOCSLOWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCSLOWAT\fP \(em set low water mark"
+.IX  "SIOCSLOWAT set low water mark"  ""  "\fLSIOCSLOWAT\fP \(em set low water mark"
+.IX  set "low water mark ioctl \(em \fLSIOCSLOWAT\fP"
+.IX  "TCP ioctls"  "SIOCSLOWAT"  "TCP \fLioctl\fP's"  "\fLSIOCSLOWAT\fP \(em set low water mark"
+.IX  "ioctls for sockets"  "SIOCGLOWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCGLOWAT\fP \(em get low water mark"
+.IX  "SIOCGLOWAT get low water mark"  ""  "\fLSIOCGLOWAT\fP \(em get low water mark"
+.IX  get "low water mark \fLioctl\fP \(em \fLSIOCGLOWAT\fP"
+.IX  "TCP ioctls"  "SIOCGLOWAT"  "TCP \fLioctl\fP's"  "\fLSIOCGLOWAT\fP \(em get low water mark"
+.IX  "tcp protocol"  ""  "\fLtcp\fP \(em Internet Transmission Control Protocol"  ""  PAGE END
+.IX  Internet  "Transmission Control Protocol tcp"  ""  "Transmission Control Protocol \(em \fLtcp\fP"  ""  PAGE END

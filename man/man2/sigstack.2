@@ -1,0 +1,120 @@
+.\" @(#)sigstack.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SIGSTACK 2 "21 January 1990"
+.SH NAME
+sigstack \- set and/or get signal stack context
+.SH SYNOPSIS
+.nf
+.ft B
+#include <signal.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sigstack (ss, oss)
+struct sigstack *ss, *oss;
+.ft R
+.fi
+.IX  sigstack()  ""  "\fLsigstack()\fP \(em signal stack context"
+.IX  signals  sigstack()  ""  "\fLsigstack()\fP \(em signal stack context"
+.IX  get "signal stack context \(em \fLsigstack()\fR"
+.IX  set "signal stack context \(em \fLsigstack()\fR"
+.SH DESCRIPTION
+.LP
+.B sigstack(\|)
+allows users to define an alternate stack, called the ``signal stack'',
+on which signals are to be processed.  When a signal's action indicates
+its handler should execute on the signal stack (specified with a
+.BR sigvec (2)
+call), the system checks to see
+if the process is currently executing on that stack.  If the
+process is not currently executing on the signal stack,
+the system arranges a switch to the signal stack for the
+duration of the signal handler's execution.
+.LP
+A signal stack is specified by a
+.B sigstack(\|)
+structure, which includes the following members:
+.LP
+.RS
+.nf
+.ft B
+.ta 1i 1.7i 2.5i
+char	*ss_sp;			/* signal stack pointer */
+int	ss_onstack;		/* current status */
+.ft R
+.fi
+.DT
+.RE
+.LP
+.B ss_sp
+is the initial value to be assigned to the stack pointer
+when the system switches the process to the signal stack.
+Note that, on machines where the
+stack grows downwards in memory, this is
+.I not
+the address of the beginning of the signal stack area.
+.B ss_onstack
+field is zero or non-zero depending on whether the process is
+currently executing on the signal stack or not.
+.LP
+If
+.I ss
+is not a
+.SM NULL
+pointer,
+.B sigstack(\|)
+sets the signal stack state to the value in the
+.B sigstack(\|)
+structure pointed to by
+.IR ss .
+Note: if
+.B ss_onstack
+is non-zero, the system will think that the process is
+executing on the signal stack.
+If
+.I ss
+is a
+.SM NULL
+pointer, the signal stack state will be unchanged.  If
+.I oss
+is not a
+.SM NULL
+pointer, the current signal stack state is stored in the
+.B sigstack(\|)
+structure pointed to by
+.IR oss .
+.SH RETURN VALUES
+.B sigstack(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.B sigstack(\|)
+will fail and the signal stack context will remain unchanged
+if one of the following occurs.
+.TP 15
+.SM EFAULT
+.I ss
+or
+.I oss
+points to memory that is not a valid part of the process
+address space.
+.SH "SEE ALSO"
+.BR sigvec (2),
+.BR setjmp (3V),
+.BR signal (3V)
+.SH NOTES
+Signal stacks are not ``grown'' automatically, as is
+done for the normal stack.  If the stack overflows
+unpredictable results may occur.

@@ -1,0 +1,240 @@
+#
+#	@(#)Makefile.src 1.1 92/07/30 SMI
+#
+# Makefile for Sun-4c SunOS
+#
+# This makefile is constructed from a machine description:
+#	config machine
+# Most changes should be made in the machine description
+#	/sys/conf/``machineid''
+# after which you should do
+#	 config machineid
+# Generic makefile changes should be made in
+#	/sys/conf/Makefile.src
+# after which config should be rerun for all machines.
+#
+# N.B.: NO DEPENDENCIES ON FOLLOWING FLAGS ARE VISIBLE TO MAKEFILE
+#	IF YOU CHANGE THE DEFINITION OF ANY OF THESE RECOMPILE EVERYTHING
+#
+# -DTRACE	compile in kernel tracing hooks
+# -DQUOTA	compile in file system quotas
+#
+ARCH=	sun4c
+CPP=	/lib/cpp -undef -Dsparc -Dsun
+CC=	cc -sparc
+AS=	as
+LD=	ld
+AWK=	awk
+GREP=	egrep
+DESTDIR=
+SYSDIR=	../..
+CONFDIR=../../conf.common
+MACHINE= ..
+LDIR=	/usr/lib/lint
+LINT1=	${LDIR}/lint1
+LINT2=	${LDIR}/lint2
+LCOPTS=	-C -Dlint ${CPPOPTS}
+LOPTS=	-hbxn
+LTMP=	/usr/tmp/lint.kernel
+LTAIL=	${GREP} -v 'struct/union .* never defined' | \
+	${GREP} -v 'possible pointer alignment problem' ; true
+
+LIBPROMDIR=	$(SYSDIR)/$(ARCH)
+LIBPROM=	$(LIBPROMDIR)/libprom.a
+LINTPROM=	$(LIBPROMDIR)/llib-lprom.ln
+LIBPROMLIST=	$(LIBPROMDIR)/libprom.list
+
+CPPOPTS=${IDENT} -DKERNEL -I. -I${MACHINE} -I${SYSDIR}
+COPTS=	${CPPOPTS}
+CFLAGS=	-O ${COPTS}
+
+%OBJS
+
+%CONFFILES
+
+%CFILES
+
+%SFILES
+
+%LFILES
+
+OBJS += $(LIBPROM)
+LFILES += $(LINTPROM)
+
+%LOAD
+
+install: $(INSTALLFILES)
+	install -d -o bin -m 755 ${DESTDIR}/usr/kvm/stand
+	install -m 0755 $(INSTALLFILES) ${DESTDIR}/usr/kvm/stand
+
+clean:
+	$(RM) eddep $(INSTALLFILES) *.o *.pp *.L *errs makedep* makelinks
+	@set -x; if ls *.s | ${GREP} -v mbglue.s; then \
+	    $(RM) `ls *.s | ${GREP} -v mbglue.s`; fi
+
+lint: Locore.L ${LFILES}
+	@make lint2 LTMP=${LTMP}.$$$$
+
+lint2:
+	@cat Locore.L ${LFILES} > ${LTMP}
+	@echo "Global Cross-checks:"
+	@${LINT2} ${LTMP} ${LOPTS}
+	@rm -f ${LTMP}
+
+${SYSDIR}/sun/symbols.sort: ${SYSDIR}/sun/symbols.raw
+	${GREP} -v '^#' ${SYSDIR}/sun/symbols.raw \
+	    | sed 's/^	//' | sort -u > ${SYSDIR}/sun/symbols.sort
+
+vers.o: ${CONFDIR}/newvers.sh ${CONFDIR}/RELEASE
+	@sh ${CONFDIR}/newvers.sh ${CONFDIR}/RELEASE ${ARCH}
+	@${CC} ${CFLAGS} -c vers.c
+
+# the following is necessary because files depend on #if GENERIC
+autoconf.o stubs.o : Makefile
+
+# the following are necessary because the files depend on the types of
+# sun cpu's included in the system configuration
+machdep.o autoconf.o conf.o : Makefile
+
+# depend on network configuration
+af.o uipc_proto.o : Makefile
+
+# depend on options
+init_sysent.o vfs_conf.o : Makefile
+
+# depend on SystemV IPC options
+init_main.o kern_exit.o kern_fork.o : Makefile
+
+
+depend: makedep
+	echo '/^# DO NOT DELETE THIS LINE/+1,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ex - Makefile < eddep
+	rm eddep makedep makedep1 makedeperrs
+
+makedep: ${CONFFILES} assym.s ${MACHINE}/Locore.c syssrc FRC
+	@cat /dev/null >makedep
+	(for i in ${CFILES} ${SFILES} ${ARCH}/genassym.c ; do \
+		${CPP} -M ${CPPOPTS} ${SYSDIR}/$$i >> makedep; done) \
+		2>makedeperrs
+	sed \
+		-e 's,^.*genassym\.o:,assym.s assym.L:,' \
+		-e 's,^\(.*\)\.o:,\1.o \1.L:,' makedep > makedep1
+	(for i in ${CONFFILES} ; do \
+		${CPP} -M ${CPPOPTS} $$i | sed \
+		-e 's,^\(.*\)\.o:,\1.o \1.L:,' >>makedep1; done) \
+		2>>makedeperrs
+	(for i in ${MACHINE}/Locore.c ; do \
+		${CPP} -M -Dlint ${CPPOPTS} $$i | sed \
+		-e 's,^\(.*\)\.o:,\1.o \1.L:,' >>makedep1; done) \
+		2>>makedeperrs
+	${AWK} ' { if ($$1 != prev) { print rec; rec = $$0; prev = $$1; } \
+		else { if (length(rec $$3) > 78) { print rec; rec = $$0; } \
+		       else rec = rec " " $$3 } } \
+	      END { print rec } ' makedep1 > makedep
+	@cat makedeperrs >&- 1>&2
+	@(if [ -s makedeperrs ]; then false; fi)
+
+FRC:
+
+syssrc:
+	here=`pwd`; cd ${SYSDIR}; make -f $$here/Makefile dosyssrc
+
+## dosyssrc, made from the SYSDIR directory, ensures the latest source
+dosyssrc: ${CFILES} ${SFILES}
+
+links:
+	( cd ${SYSDIR}; ${GREP} '#[ 	]*if' ${CFILES} ) | \
+		sed -f ${CONFDIR}/defines | \
+		sed -e 's/:.*//' -e 's/\.c/.o/' | sort -u > dontlink
+	echo ${CFILES} | tr -s ' ' '\12' | sed 's/\.c/.o/' | \
+	  ${GREP} -v '^swap' | sort -u | comm -23 - dontlink | \
+	  sed 's,.*/\(.*.o\),rm -f \1;ln -s ../GENERIC/\1 \1,' > makelinks
+	echo 'rm -f movc.o;ln -s ../GENERIC/movc.o movc.o' >>makelinks
+	echo 'rm -f ocsum.o;ln -s ../GENERIC/ocsum.o ocsum.o' >>makelinks
+	echo 'rm -f setjmp.o;ln -s ../GENERIC/setjmp.o setjmp.o' >>makelinks
+	sh makelinks && rm -f dontlink
+
+tags: ../tags
+	@(cd ..; echo tags file is in `pwd`)
+
+# 1. Using ctags, build tags file for *.[ch]
+# 2. Grep thru *.s for files containing 'ENTRY(' or 'ENTRY2('
+# 3. Convert *ENTRY(sym) to a tags reference
+# 4. Convert ENTRY2(sym1,sym2) to two tags references
+# 5. Merge with tags file and resort
+../tags: ../tags.list
+	(cd ..; ctags -wt `$(GREP) -v '\.[sS]$$' tags.list`;		\
+	 $(GREP) 'ENTRY2*\(' `$(GREP) '\.[sS]$$' tags.list` | sed	\
+    -e 's|^\(.*\):\(.*ENTRY(\)\(.*\)\().*\)|\3	\1	/^\2\3\4$$/|'	\
+    -e 's|^\(.*\):\(.*ENTRY2(\)\(.*\),\(.*\)\().*\)|\3	\1	/^\2\3,\4\5$$/\
+\4	\1	/^\2\3,\4\5$$/|' >> tags;				\
+	 sort -u -o tags tags )
+
+# 1. Starting at the dependency list in this Makefile,
+# 2. remove the targets, leaving only the source names, one-per-line.
+# 3. Convert ../../ to ../  and  ../machine/ to ../ARCH/
+# 4. Convert ../ARCH/../ to ../  and remove references to Locore.c
+# 5. Convert ./ to ../ARCH/SYSNAME/
+# 6. Convert 'filename' to ../ARCH/SYSNAME/filename
+# 7. Include the names in the LIBPROMLIST file.
+# 8. Sort and uniq the whole shebang.
+# 9. Split into two lists, .h files and everything else
+#10. Combine the two lists again, headers go after everything else.
+SYSNAME=`basename \`pwd\``
+../tags.list: Makefile $(LIBPROMLIST)
+	@rm -f ../tags.list
+	@sed -e '/^[a-zA-Z0-9_]*\.o [a-zA-Z0-9_]*\.L:/,$$!d'		\
+	    -e 's/.*L:.//' Makefile | tr '\040' '\012' | sed		\
+	    -e 's,\.\./\.\./,../,' -e 's,\.\./machine/,../'${ARCH}/,	\
+	    -e 's,\.\./machlwp,../'${ARCH}'/machlwp',			\
+	    -e 's,\.\./'${ARCH}'/\.\./,../,' -e '/Locore/d'		\
+	    -e 's,^\./,../'${ARCH}/${SYSNAME}/,				\
+	    -e 's,^\([a-zA-Z0-9_]\),../'${ARCH}/${SYSNAME}'/\1,' |	\
+	    sort -u -o ../tags.list
+	@cat $(LIBPROMLIST) >> ../tags.list
+	@sort -u -o ../tags.list ../tags.list
+	@grep '\.h$$' ../tags.list > ../tags.headers
+	@grep -v '\.h$$' ../tags.list > ../tags.noheaders
+	@cat ../tags.noheaders ../tags.headers > ../tags.list
+	@rm -f ../tags.noheaders ../tags.headers
+
+locore.o: assym.s
+
+assym.s: ${MACHINE}/genassym.c
+	${CC} -E ${CPPOPTS} ${MACHINE}/genassym.c > ./a.out.c
+	cc ${COPTS} ./a.out.c
+	./a.out >assym.s
+	rm -f ./a.out ./a.out.c
+
+Locore.L:
+	@echo Locore.c:
+	@-(${CPP} ${LCOPTS} ${MACHINE}/Locore.c | \
+	  ${LINT1} ${LOPTS} > Locore.L ) 2>&1 | ${LTAIL}
+
+ioconf.o:
+	${CC} -c ${CFLAGS} ioconf.c
+
+ioconf.L:
+	@echo ioconf.c:
+	@-(${CPP} ${LCOPTS} ioconf.c | \
+	  ${LINT1} ${LOPTS} > ioconf.L ) 2>&1 | ${LTAIL}
+
+param.c: ${CONFDIR}/param.c
+	rm -f param.c
+	cp ${CONFDIR}/param.c .
+
+param.o: param.c Makefile
+	${CC} -c ${CFLAGS} ${PARAM} param.c
+
+param.L:
+	@echo param.c:
+	@-(${CPP} ${LCOPTS} ${PARAM} ${CONFDIR}/param.c | \
+	  ${LINT1} ${LOPTS} > param.L ) 2>&1 | ${LTAIL}
+
+%RULES
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+

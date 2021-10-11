@@ -1,0 +1,26 @@
+#       @(#)_errfix.sun	1.1     7/30/92
+:   rearrange the errlst.s file to put the array part in text space 
+rm -f errstrings errary
+sed '/data2/{
+		g
+		N
+		N
+		w errstrings
+		d
+	    }' > errary <$1
+ed - errary <<'EOF'
+g/\.data/d
+1i
+	.text
+.
+/sys_nerr/-1i
+	.data
+.
+$a
+	.text
+.
+r errstrings
+w
+q
+EOF
+mv errary $1

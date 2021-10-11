@@ -1,0 +1,105 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)leave.1 1.1 92/07/30 SMI; from UCB 6.2 5/7/86
+.TH LEAVE 1 "9 September 1987"
+.SH NAME
+leave \- remind you when you have to leave
+.SH SYNOPSIS
+.B leave
+[\^[
+.B +
+]
+.I hhmm
+]
+.SH DESCRIPTION
+.IX  "leave command"  ""  "\fLleave\fP \(em remind you of leaving time"
+.IX  "reminder services"  "leave command"  ""  "\fLleave\fP \(em remind you of leaving time"
+.IX  "timed event services"  "leave command"  ""  "\fLleave\fP \(em remind you of leaving time"
+.B leave
+sets an alarm to a time you specify and will tell you when the time is up.
+.B leave
+waits until the specified time, then reminds you that you have to leave.
+You are reminded 5 minutes and 1 minute before the actual time,
+and at the time.  After the specified time, it reminds you every minute
+thereafter 10 more times.
+.B leave
+disappears after you log off.
+.LP
+You can specify the time in on of two ways, namely as an absolute time
+of day in the form
+.I hhmm
+where
+\fIhh\fP is a time in hours (on
+a
+12 or 24 hour clock), or you can place a
+.B +
+sign in front of the time, in which case the time is relative to the
+current time, that is, the specified number of hours and minutes from
+now.  All times are converted to a 12 hour clock, and assumed to be in
+the next 12 hours.
+.LP
+If no argument is given,
+.B leave
+prompts with
+.RB ` "When do you have to leave?" '.
+.B leave
+exits if you just type a
+.SM NEWLINE\s0,
+otherwise the reply is assumed to be a time.
+This form is suitable for inclusion in a
+.B .login
+or
+.BR .profile .
+.LP
+.B leave
+ignores interrupts, quits, and terminates.  To get rid of it you should
+either log off or use
+.B kill\ \ \-9
+and its process
+.SM ID\s0.
+.SH EXAMPLES
+.LP
+The first example sets the alarm to an absolute time of day:
+.RS
+.sp .5
+.nf
+.B example% leave 1535
+.B "Alarm set for Wed Mar  7 15:35:07 1984"
+.sp
+.RS
+.I work  work  work  work
+.RE
+.sp
+.B example% Time to leave!
+.RE
+.fi
+.LP
+The second example sets the alarm for 10 minutes in the future:
+.RS
+.sp .5
+.B example% leave +10
+.B Alarm set for Wed Mar  7 15:45:24 1984
+.sp
+.RS
+.I work  work  work  work
+.RE
+.sp
+.B example% Time to leave!
+.sp
+.RS
+.I work  work  work  work
+.RE
+.sp
+.B example% You're going to be late!
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B .login
+.TP
+.B .profile
+.PD
+.SH SEE ALSO
+.BR calendar (1)

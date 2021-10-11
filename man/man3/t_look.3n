@@ -1,0 +1,91 @@
+.\" @(#)t_look.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_LOOK 3N "21 January 1990"
+.SH NAME
+t_look \- look at the current event on a transport endpoint
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.LP
+.nf
+.ft B
+int t_look(fd)
+int fd;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_look()" "" "\fLt_look()\fR \(em look at current event on transport endpoint" ""
+.IX look "at current event on transport endpoint"
+.IX transport "look at current event on endpoint"
+.LP
+.B t_look(\|)
+returns the current event
+on the transport endpoint specified by
+.IR fd .
+This function enables a transport provider to notify a transport user of an
+asynchronous event when the user is issuing functions in synchronous mode.
+Certain events require immediate notification of the user and are indicated
+by a specific error,
+.SM TLOOK\s0,
+on the current or next function to
+be executed.
+.LP
+This function also enables a transport user to 
+.BR poll (2)
+a transport endpoint
+periodically for asynchronous events.
+.SH RETURN VALUES
+.LP
+Upon success,
+.B t_look(\|)
+returns a value that indicates which of the allowable
+events has occurred, or returns zero if no event exists.
+One of the following events is returned:
+.RS
+.TP 19
+.PD 0
+.SB T_LISTEN\s0
+Connection indication received
+.TP
+.SB T_CONNECT\s0
+Connect confirmation received
+.TP
+.SB T_DATA\s0
+Normal data received		
+.TP
+.SB T_EXDATA\s0
+Expedited data received	
+.TP
+.SB T_DISCONNECT\s0
+Disconnect received
+.TP
+.SB T_ERROR\s0
+Fatal error indication	
+.TP
+.SB T_UDERR\s0
+Datagram error indication	
+.TP
+.SB T_ORDREL\s0
+Orderly release indication
+.RE
+.PD
+.LP
+On failure, \-1 is returned and
+.B t_errno
+is set to indicate
+the error.
+.SH ERRORS
+.TP 15
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.LP
+.BR t_open (3N)
+.LP
+.TX NETP

@@ -1,0 +1,241 @@
+.\" @(#)econvert.3 1.1 92/07/30 SMI;
+.TH ECONVERT 3  "5 October 1989"
+.SH NAME
+econvert, fconvert, gconvert, seconvert, sfconvert, sgconvert, ecvt, fcvt, gcvt \- output conversion
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <floatingpoint.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *econvert(value, ndigit, decpt, sign, buf)
+double value;
+int ndigit, *decpt, *sign;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *fconvert(value, ndigit, decpt, sign, buf)
+double value;
+int ndigit, *decpt, *sign;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *gconvert(value, ndigit, trailing, buf)
+double value;
+int ndigit;
+int trailing;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *seconvert(value, ndigit, decpt, sign, buf)
+single *value;
+int ndigit, *decpt, *sign;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *sfconvert(value, ndigit, decpt, sign, buf)
+single *value;
+int ndigit, *decpt, *sign;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *sgconvert(value, ndigit, trailing, buf)
+single *value;
+int ndigit;
+int trailing;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *ecvt(value, ndigit, decpt, sign)
+double value;
+int ndigit, *decpt, *sign;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *fcvt(value, ndigit, decpt, sign)
+double value;
+int ndigit, *decpt, *sign;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *gcvt(value, ndigit, buf)
+double value;
+int ndigit;
+char *buf;
+.ft
+.fi
+.IX  "numbers, convert to strings \(em \fLeconvert()\fR"
+.IX  "strings, convert from numbers \(em \fLeconvert()\fR"
+.SH DESCRIPTION
+.IX  "econvert()"  ""  "\fLeconvert()\fR \(em convert number to ASCII"
+.IX  "convert numbers to strings"  econvert()  ""  \fLeconvert\fR
+.IX  "fconvert()"  ""  "\fLfconvert()\fR \(em convert number to ASCII"
+.IX  "convert numbers to strings"  fconvert()  ""  \fLfconvert\fR
+.IX  "gconvert()"  ""  "\fLgconvert()\fR \(em convert number to ASCII"
+.IX  "convert numbers to strings"  gconvert()  ""  \fLgconvert\fR
+.IX  "seconvert()"  ""  "\fLseconvert()\fR \(em convert number to ASCII"
+.IX  "convert numbers to strings"  seconvert()  ""  \fLseconvert\fR
+.IX  "sfconvert()"  ""  "\fLsfconvert()\fR \(em convert number to ASCII"
+.IX  "convert numbers to strings"  sfconvert()  ""  \fLsfconvert()\fR
+.IX  "sgconvert()"  ""  "\fLsgconvert()\fR \(em convert number to ASCII"
+.IX  "convert numbers to strings"  sgconvert()  ""  \fLsgconvert()\fR
+.LP
+.B econvert(\|)
+converts the
+.I value
+to a
+null-terminated
+string of
+.I ndigit
+.SM ASCII
+digits in
+.I buf
+and returns a pointer to
+.IR buf .
+.I buf
+should contain at least
+.I ndigit+1
+characters.
+The position of the radix character relative to the
+beginning of the string is stored indirectly through
+.IR decpt .
+Thus
+.I buf
+== "314" and
+.I *decpt
+== 1 corresponds to the numerical value 3.14,
+while
+.I buf
+== "314" and
+.I *decpt
+== \-1 corresponds to the numerical value .0314.
+If the sign of the result is negative, the word pointed to by
+.I sign
+is nonzero; otherwise it is zero.  The least significant digit is rounded.
+.LP
+.BR fconvert " works much like " econvert", 
+except that the correct digit
+has been rounded as if for 
+.B sprintf(%w.nf) 
+output with
+.IR n = ndigit
+digits to the right of the radix character.
+.I ndigit
+can be negative to indicate rounding to the left of the radix character.
+The return value is a pointer to
+.IR buf .
+.I buf
+should contain at least
+.I 310+max(0,ndigit)
+characters to accomodate any double-precision
+.IR value .
+.LP
+.B gconvert(\|)
+converts the
+.I value
+to a
+null-terminated
+.SM ASCII
+string in
+.I buf
+and returns a pointer to
+.IR buf .
+It produces
+.I ndigit
+significant digits in fixed-decimal format,
+like 
+.BR sprintf(%w.nf) , 
+if possible, and otherwise in
+floating-decimal format, like 
+.BR sprintf(%w.ne) ;
+in either case
+.I buf
+is ready for printing, with sign and exponent.
+The result corresponds to that obtained by
+.LP
+.RS
+.nf
+.ft B
+(void) sprintf(buf, "%w.ng", value);
+.ft
+.fi
+.RE
+.LP
+If
+.IR trailing "= 0,"
+trailing zeros and a trailing point are suppressed, as in 
+.BR sprintf(%g) .
+If
+.IR trailing "!= 0,"
+trailing zeros and a trailing point are retained, as in 
+.BR sprintf(%#g) .
+.LP
+.BR seconvert ,
+.BR sfconvert ,
+and
+.B sgconvert(\|)
+are single-precision versions of these functions, and are more efficient
+than the corresponding double-precision versions.
+A pointer rather than the value itself is passed to avoid C's usual
+conversion of single-precision arguments to double.
+.LP
+.B ecvt(\|)
+and
+.B fcvt(\|)
+are obsolete versions of
+.B econvert(\|)
+and
+.B fconvert(\|)
+that create a string in a static data area,
+overwritten by each call,
+and return values that point to that static data.
+These functions are therefore not reentrant.
+.LP
+.B gcvt(\|)
+is an obsolete version of
+.B gconvert(\|)
+that always suppresses trailing zeros and point.
+.LP
+.SM IEEE
+Infinities and NaNs are treated similarly by these functions.
+``NaN'' is returned for NaN, and ``Inf'' or ``Infinity''
+for Infinity.  The longer form is produced when
+.I ndigit
+>= 8.
+.LP
+The radix character is determined by the current setting of the program's locale
+(category
+.BR \s-1LC_NUMERIC\s0 ).
+In the 
+\fB"C"\fR
+locale or if the locale is undefined,
+the readix character defaults to a period
+.RB ` \&. '.
+.SH "SEE ALSO"
+.BR printf (3V)

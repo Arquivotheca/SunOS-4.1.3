@@ -1,0 +1,93 @@
+.\" @(#)bk.4 1.1 92/07/30 SMI; from UCB 4.1
+.TH BK 4 "9 October 1987"
+.SH NAME
+bk \- line discipline for machine-machine communication
+.SH SYNOPSIS
+.B pseudo-device bk
+.SH DESCRIPTION
+.IX  "bk device"  ""  "\fLbk\fP \(em machine-machine communication line discipline"  ""  PAGE START
+.IX  "machine-machine communication line discipline"  ""  "machine-machine communication line discipline \(em \fLbk\fP"  ""  PAGE START
+.IX  "line discipline"  ""  "line discipline \(em \fLbk\fP"  ""  PAGE START
+.LP
+This line discipline provides a replacement for the tty driver
+.BR tty (4)
+when high speed output to
+and especially input from another machine is to be transmitted
+over an asynchronous communications line.  The discipline
+was designed for use by a (now obsolete) store-and-forward
+local network running over serial lines.
+It may be suitable for uploading of data from microprocessors into
+the system.  If you are going to send data over asynchronous
+communications lines at high speed into the system, you must
+use this discipline, as the system otherwise may detect high
+input data rates on terminal lines and disable the lines;
+in any case the processing of such data when normal terminal
+mechanisms are involved saturates the system.
+.LP
+The line discipline is enabled by a sequence:
+.IX  "ioctls for terminals"  "TIOCSETD"  "\fLioctl\fP's for terminals"  "\fLTIOCSETD\fP \(em set line discipline"
+.IX  "TIOCSETD set line discipline"  ""  "\fLTIOCSETD\fP \(em set line discipline"
+.IX  set "line discipline ioctl \(em \fLTIOCSETD\fP"
+.IX  "line discipline ioctls"  "TIOCSETD"  "line discipline \fLioctl\fP's" "\fLTIOCSETD\fP \(em set line discipline"
+.IX  "bk ioctls"  "TIOCSETD"  "\fLbk ioctl\fP's" "\fLTIOCSETD\fP \(em set line discipline"
+.LP
+.nf
+.ft B
+	#include <sgtty.h>
+	int ldisc = \s-1NETLDISC\s0, fildes; .\|.\|.
+	ioctl(fildes, \s-1TIOCSETD\s0, &ldisc);
+.fi
+.ft R
+.LP
+A typical application program then reads a sequence of lines from
+the terminal port, checking header and sequencing information on each
+line and acknowledging receipt of each line to the sender, who then
+transmits another line of data.  Typically several hundred bytes of
+data and a smaller amount of control information will be received on
+each handshake.
+.LP
+The old standard teletype discipline can be restored by doing:
+.LP
+.nf
+.ft B
+	ldisc = \s-1OTTYDISC\s0;
+	ioctl(fildes, \s-1TIOCSETD\s0, &ldisc);
+.fi
+.ft R
+.LP
+While in networked mode, normal teletype output functions take place.
+Thus, if an 8 bit output data path is desired, it is necessary
+to prepare the output line by putting it into
+.SM RAW
+mode using
+.BR ioctl (2).
+.IX  "ioctls for terminals"  "TIOCGETD"  "\fLioctl\fP's for terminals"  "\fLTIOCGETD\fP \(em get line discipline"
+.IX  "TIOCGETD get line discipline"  ""  "\fLTIOCGETD\fP \(em get line discipline"
+.IX  get "line discipline \fLioctl\fP \(em \fLTIOCGETD\fP"
+.IX  "line discipline ioctls"  "TIOCGETD"  "line discipline \fLioctl\fP's" "\fLTIOCGETD\fP \(em get line discipline"
+.IX  "bk ioctls"  "TIOCGETD"  "\fLbk ioctl\fP's" "\fLTIOCGETD\fP \(em get line discipline"
+This must be done
+.I before
+changing the discipline with
+.BR \s-1TIOCSETD\s0 ,
+as most
+.BR ioctl (2)
+calls are disabled while in network line-discipline mode.
+.LP
+When in network mode, input processing is very limited to reduce overhead.
+Currently the input path is only 7 bits wide, with newline the only
+character terminating an input record.
+Each input record must be read and acknowledged before the next input
+is read as the system refuses to accept any new data when there
+is a record in the buffer.  The buffer is limited in length, but the
+system guarantees to always be willing to accept input resulting in
+512 data characters and then the terminating newline.
+.LP
+User level programs should provide sequencing and checksums on the
+information to guarantee accurate data transfer.
+.IX  "bk device"  ""  "\fLbk\fP \(em machine-machine communication line discipline"  ""  PAGE END
+.IX  "machine-machine communication line discipline"  ""  "machine-machine communication line discipline \(em \fLbk\fP"  ""  PAGE END
+.IX  "line discipline"  ""  "line discipline \(em \fLbk\fP"  ""  PAGE END
+.SH "SEE ALSO"
+.BR ioctl (2),
+.BR tty (4)

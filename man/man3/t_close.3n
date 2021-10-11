@@ -1,0 +1,71 @@
+.\" @(#)t_close.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_CLOSE 3N "21 January 1990"
+.SH NAME
+t_close \- close a transport endpoint
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_close(fd)
+int fd;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_close()" "" "\fLt_close()\fR \(em close a transport endpoint"
+.IX transport "close transport endpoint"
+.IX close "transport endpoint"
+.LP
+.B t_close(\|)
+informs the transport provider that the user is finished
+with the transport endpoint specified by
+.IR fd ,
+and frees any local library resources associated with the endpoint.
+In addition,
+.B t_close(\|)
+closes the file associated with the transport endpoint.
+.LP
+.B t_close(\|)
+should be called from the
+.SB T_UNBND
+state (see
+.BR t_getstate (3N)).
+However, 
+.B t_close(\|)
+does not check state information,
+so it may be called from any state to close a transport endpoint.
+If this occurs, the local library resources associated with the endpoint
+will be freed automatically.
+In addition,
+.BR close (2V)
+will be issued for that file descriptor; the close will be
+abortive if no other process has that file open, and will break any
+transport connection that may be associated with that endpoint.
+.SH RETURN VALUES
+.LP
+.B t_close(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.SH SEE ALSO
+.BR close (2V),
+.BR t_getstate (3N),
+.BR t_open (3N),
+.BR t_unbind (3N)
+.LP
+.TX NETP

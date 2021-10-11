@@ -1,0 +1,257 @@
+.\" @(#)dump.5 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH DUMP 5 "19 October 1988"
+.SH NAME
+dump, dumpdates \- incremental dump format
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <sys/inode.h>
+.B #include <protocols/dumprestore.h>
+.fi
+.SH DESCRIPTION
+.IX  "dump file"  ""  "\fLdump\fP \(em incremental dump format"
+.IX  "incremental dump format"  ""  "incremental dump format \(em \fLdump\fP"
+.LP
+Tapes used by
+.B dump
+and
+.BR restore (8)
+contain:
+.LP
+.nf
+	a header record
+	two groups of bit map records
+	a group of records describing directories
+	a group of records describing files
+.fi
+.LP
+The format of the header record and of the first
+record of each description as given in the
+include file
+.B <protocols/dumprestore.h>
+is:
+.LP
+.RS
+.nf
+.ft B
+.ta +\w'#define 'u +\w'HIGHDENSITYTREC 'u
+#define \s-1TP_BSIZE\s0	1024
+#define \s-1NTREC\s0	10
+#define \s-1HIGHDENSITYTREC\s0	32
+#define \s-1CARTRIDGETREC\s0	63
+#define \s-1TP_NINDIR\s0	(\s-1TP_BSIZE\s0/2)
+
+#define \s-1TS_TAPE\s0	1
+#define \s-1TS_INODE\s0	2
+#define \s-1TS_BITS\s0	3
+#define \s-1TS_ADDR\s0	4
+#define \s-1TS_END\s0	5
+#define \s-1TS_CLRI\s0	6
+#define \s-1OFS_MAGIC\s0	(int)60011
+#define \s-1NFS_MAGIC\s0	(int)60012
+#define \s-1CHECKSUM\s0	(int)84446
+union u_spcl {
+	char dummy[TP_BSIZE];
+	struct	s_spcl {
+		int		c_type;
+		time_t		c_date;
+		time_t		c_ddate;
+		int		c_volume;
+		daddr_t		c_tapea;
+		ino_t		c_inumber;
+		int		c_magic;
+		int		c_checksum;
+		struct		dinode		c_dinode;
+		int		c_count;
+		char		c_addr[\s-1TP_NINDIR\s0];
+	} s_spcl;
+} u_spcl;
+
+#define spcl u_spcl.s_spcl
+  
+#define	\s-1DUMPOUTFMT\s0	"%-16s %c %s"		/* for printf */
+						/* name, incno, ctime(date) */
+#define	\s-1DUMPINFMT\s0	"%16s %c %[^\en]\en"	/* inverse for scanf */
+.fi
+.ft
+.DT
+.RE
+.TP 15
+.SB TP_BSIZE
+Size of file blocks on the dump tapes.
+Note:
+.SB TP_BSIZE
+must be a multiple of
+.SM
+.BR DEV_BSIZE\s0 .
+.TP
+.SB NTREC
+Default number of
+.SB TP_BSIZE
+byte records in a physical tape block, changeable by the
+.B b
+option to
+.BR dump .
+.TP
+.SB HIGHDENSITYNTREC
+Default number of
+.SB TP_BSIZE
+byte records in a physical tape block on 6250 BPI or higher density tapes.
+.TP
+.SB CARTRIDGETREC
+Default number of
+.SB TP_BSIZE
+records in a physical tape block on cartridge tapes.
+.TP
+.SB TP_NINDIR
+Number of indirect pointers in a
+.SB TS_INODE
+or
+.SB TS_ADDR
+record.  It must be a power of two.
+.LP
+The
+.SB TS_
+entries are used in the
+.B c_type
+field to indicate what sort of header
+this is.
+The types and their meanings are as follows:
+.LP
+.TP 20
+.SB TS_TAPE
+Tape volume label
+.TP
+.SB TS_INODE
+A file or directory follows.
+The
+.B c_dinode
+field is a copy of the disk inode and contains
+bits telling what sort of file this is.
+.TP
+.SB TS_BITS
+A bit map follows.
+This bit map has a one bit
+for each inode that was dumped.
+.TP
+.SB TS_ADDR
+A subrecord of a file description.
+See
+.B c_addr
+below.
+.TP
+.SB TS_END
+End of tape record.
+.TP
+.SB TS_CLRI
+A bit map follows.
+This bit map contains a zero bit for
+all inodes that were empty on the file system when dumped.
+.TP
+.SB NFS_MAGIC
+All header records have this number in
+.BR c_magic .
+.TP
+.SB CHECKSUM
+Header records checksum to this value.
+.LP
+The fields of the header structure are as follows:
+.LP
+.TP 20
+.B c_type
+The type of the header.
+.TP
+.B c_date
+The date the dump was taken.
+.TP
+.B c_ddate
+The date the file system was dumped from.
+.TP
+.B c_volume
+The current volume number of the dump.
+.TP
+.B c_tapea
+The current number of this (1024-byte) record.
+.TP
+.B c_inumber
+The number of the inode being dumped if this
+is of type
+.BR \s-1TS_INODE\s0 .
+.TP
+.B c_magic
+This contains the value
+.SB MAGIC
+above, truncated as needed.
+.TP
+.B c_checksum
+This contains whatever value is needed to
+make the record sum to
+.BR \s-1CHECKSUM\s0 .
+.TP
+.B c_dinode
+This is a copy of the inode as it appears on the
+file system; see
+.BR fs (5).
+.TP
+.B c_count
+The count of characters in
+.BR c_addr .
+.TP
+.B c_addr
+An array of characters describing the blocks of the
+dumped file.
+A character is zero if the block associated with that character was not
+present on the file system, otherwise the character is non-zero.
+If the block was not present on the file system, no block was dumped;
+the block will be restored as a hole in the file.
+If there is not sufficient space in this record to describe
+all of the blocks in a file,
+.SB TS_ADDR
+records will be scattered through the file, each one
+picking up where the last left off.
+.LP
+Each volume except the last ends with a tapemark (read as an end
+of file).
+The last volume ends with a
+.SB TS_END
+record and then the tapemark.
+.LP
+The dump history is kept in the file
+.BR /etc/dumpdates .
+It is an
+.SM ASCII
+file with three fields separated by white space:
+.IP
+The name of the device on which the dumped file system resides.
+.IP
+The level number of the dump tape;
+see
+.BR dump (8).
+.IP
+The date of the incremental dump in the format generated by
+.BR ctime (3V).
+.LP
+.SB DUMPOUTFMT
+is the format to use when using
+.BR printf (3S)
+to write an entry to
+.BR /etc/dumpdates ;
+.SB DUMPINFMT
+is the format to use when using
+.BR scanf (3S)
+to read an entry from
+.BR /etc/dumpdates .
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/dumpdates
+.PD
+.SH "SEE ALSO"
+.BR fs (5),
+.BR types (5),
+.BR dump (8),
+.BR restore (8)

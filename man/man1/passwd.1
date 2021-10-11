@@ -1,0 +1,258 @@
+.\" @(#)passwd.1 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH PASSWD 1 "12 June 1988"
+.SH NAME
+passwd, chfn, chsh \- change local or NIS password information
+.SH SYNOPSIS
+.B passwd
+[
+.B \-l \||\| \-y
+] 
+[
+.B \-afs
+]
+[
+.B \-d
+[
+.I username
+] ]
+[
+.B \-e
+.I username
+]
+.if n .ti +.5n
+[
+.B \-F
+.I filename
+]
+[
+.B \-n
+.I numdays username
+]
+.if t .ti +.5i
+.if n .ti +.5n
+[
+.B \-x
+.I numdays username
+]
+[
+.I username
+]
+.LP
+.B chfn
+[
+.B \-l \||\| \-y
+] 
+[
+.B \-f
+]
+[
+.B \-F
+.I filename
+] [
+.I username
+]
+.LP
+.B chsh
+[
+.B \-l \||\| \-y
+] 
+[
+.B \-s
+]
+[
+.B \-F
+.I filename
+] [
+.I username
+]
+.SH DESCRIPTION
+.IX  "passwd command"  ""  "\fLpasswd\fP \(em change login password"
+.IX  password  "change login"  ""  "change login \(em \fLpasswd\fP"
+.IX  "change" "login password \(em \fLpasswd\fP"
+.IX  login  "change password"  ""  "change password \(em \fLpasswd\fP"
+.IX  "login password"  "change"  ""  "change password \(em \fLpasswd\fP"
+.LP
+.B passwd
+changes (or installs) a password, login shell
+.RB ( \-s
+option), or full name
+.RB ( \-f
+option) associated with the user
+.I username
+(your own by default).
+.B chsh
+is equivalent to
+.B passwd
+with the
+.B \-s
+option, and
+.B chfn
+is equivalent to
+.B passwd
+with the
+.B \-f
+option.
+.LP
+Use
+.RB ` "passwd \-y" '
+or
+.BR yppasswd (1)
+to change your password in the
+Network Information Service
+(\s-1NIS\s0).
+This will not affect your local password,
+or your password on any remote
+machines on which you have accounts.
+.B passwd
+calls
+.B yppasswd
+automatically if you do not have an entry in the local passwd file,
+and the 
+.B \-l
+option is not specified.
+.LP
+When changing a password,
+.B passwd
+prompts for the old password and then for the new one.
+You must supply both, and the new password must be typed twice to
+forestall mistakes.
+.LP
+If password aging is enabled, the first time an ordinary user enters the
+new password
+.B passwd
+checks to see if the old password has \*(lqaged\*(rq sufficiently.
+Password \*(lqaging\*(rq is the amount of time (usually a certain number of days)
+that must elapse between password changes.
+If \*(lqaging\*(rq is insufficient the new password is rejected and
+.B passwd
+terminates.
+.LP
+New passwords should be at least five characters long, if they
+combine upper-case and lower-case letters, or at least six characters
+long if in monocase.  Users that persist in entering shorter passwords
+are compromising their own security. The number of significant
+characters in a password is eight, although longer passwords
+will be accepted.
+.LP
+Only the owner of the name or the super-user may change a password;
+the owner must prove he knows the old password.
+The super-user can change
+any password and is not forced to comply with password aging requirements.
+.LP
+When changing a login shell,
+.B passwd
+displays the current login shell and then prompts
+for the new one.
+The new login shell must be one of the approved shells
+listed in
+.B /etc/shells
+unless you are the super-user.
+If
+.B /etc/shells
+does not exist, the only shells that may be specified are
+.B /bin/sh
+and
+.BR /bin/csh .
+.LP
+The super-user may change anyone's login shell; normal users
+may only change their own login shell.
+.LP
+When changing a full name,
+.B passwd
+displays the current full name, enclosed
+between brackets, and prompts for a
+new full name.  If you type a 
+.SM RETURN\s0,
+the full name is not changed.
+If the full name is to be made blank,
+you must type the word \*(lqnone\*(rq.
+.LP
+The super-user may change anyone's full name; normal
+users may only change their own.
+.SH OPTIONS
+.TP 
+.B \-a
+Display the name and aging information for all users.
+Can only be invoked by the super-user.
+.TP
+.B \-f
+Change the full name.
+.TP
+.B \-l
+Change the local password, login shell, or full name.
+If
+.I username
+exists in the local passwd file, this is the default.
+.TP
+.B \-s
+Change the login shell.
+.TP
+.B \-y
+Change passwd, login shell, or full name in the
+.SM NIS
+database.
+.TP
+.BI "\-d \fR[" username\fR]
+Display the name and aging information for the caller or the user specified
+if the invoker has the right privileges.
+.TP
+.BI \-e " username"
+Expire the password for the user name specified.
+Can only be invoked by the super-user.
+.TP
+.BI \-F " filename"
+Treat
+.I filename
+as the password file.
+.TP
+.BI \-n " numdays username"
+Set the maturity time of the password for username.
+Passwords that have not \*(lqaged\*(rq enough cannot be changed.
+Can only be set by the super-user.
+.TP
+.BI \-x " numdays username"
+Set the expiration time of the password for username.
+Can only be set by the super-user.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+file containing all of this information
+.TP
+.B /etc/shells
+list of approved shells
+.PD
+.SH "SEE ALSO"
+.BR finger (1),
+.BR login (1),
+.BR yppasswd (1),
+.BR crypt (3),
+.BR passwd (5)
+.\".br
+.\"Robert Morris and Ken Thompson,
+.\".I UNIX Password Security
+.SH NOTES
+.LP
+Password algorithms do not work with 8-bit characters.
+This maintains consistency with
+.B login
+file naming
+rules, which do not allow 8-bit characters in
+.B login
+names.
+See
+.BR login (1)
+for explanations about why
+.B login
+is not 8-bit clean.
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

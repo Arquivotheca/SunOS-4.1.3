@@ -1,0 +1,575 @@
+.\" @(#)dump.8 1.1 92/07/30 SMI; from UCB 4.1
+.TH DUMP 8 "7 October 1990"
+.SH NAME
+dump, rdump \- incremental file system dump
+.SH SYNOPSIS
+.B /usr/etc/dump
+[
+.I options
+[
+.I arguments
+] ]
+.I filesystem
+.br
+.B /usr/etc/dump
+[
+.I options
+[
+.I arguments
+] ]
+.I filename
+\&.\|.\|.
+.sp .5
+.B /usr/etc/rdump
+[
+.I options
+[
+.I arguments
+] ]
+.I filesystem
+.br
+.B /usr/etc/rdump
+[
+.I options
+[
+.I arguments
+] ]
+.I filename
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  "dump command"  ""  "\fLdump\fP \(em dump file system"
+.IX  "file system dump"  ""  "file system dump \(em \fLdump\fP"
+.IX  "incremental file system dump"  ""  "incremental file system dump \(em \fLdump\fP"
+.IX  "backup dumps"  ""  "backup dumps \(em \fLdump\fP"
+.LP
+.B dump
+backs up all files in
+.IR filesystem ,
+or files changed after a certain date,
+or a specified set of files and directories,
+to magnetic tape, diskettes, or files.
+.I options
+is a string that specifies
+.B dump
+options, as shown below.
+Any
+.I arguments
+supplied for specific options are given as subsequent words on
+the command line, in the same order as that of the
+.I options
+listed.
+.LP
+If
+.B dump
+is called as
+.B rdump,
+the dump device defaults to
+.BR dumphost:/dev/rmt8\fR .
+.LP
+If no
+.I options
+are given, the default is
+.BR 9u .
+.LP
+.B dump
+is normally used to back up a complete filesystem.  To restrict the dump
+to a specified set of files and directories on one filesystem, list
+their names on the command line.  In this mode the dump level is
+set to
+.B 0
+and the
+.B u
+option is ignored.
+.SH OPTIONS
+.TP
+.B  0\-9
+The \*(lqdump level.\*(rq
+All files in the
+.I filesystem
+that have been modified since the last
+.B dump
+at a lower dump level are copied to the volume.
+For instance, if you did a 
+\*(lqlevel \fB2\fP\*(rq
+dump on Monday, followed by a 
+\*(lqlevel \fB4\fP\*(rq
+dump on Tuesday, a subsequent
+\*(lqlevel \fB3\fP\*(rq
+dump on Wednesday would contain
+all files modified or added
+since the \*(lqlevel \fB2\fP\*(rq
+(Monday) backup.
+A \*(lqlevel \fB0\fP\*(rq
+dump copies the entire filesystem to the dump volume.
+.TP
+.BI a " archive-file"
+Create a dump table-of-contents archive in the specified file,
+.IR archive-file .
+This file can be used by 
+.BR restore (8)
+to determine whether a file is present on a dump tape,
+and if so, on which volume it resides.
+For further information on the use of a dump archive file, see
+.BR restore (8).
+.IX "tape block size \(em 512 bytes"
+.IX "block size for tape \(em 512 bytes"
+.TP
+.BI b " factor"
+Blocking factor.
+Specify the blocking factor for tape writes.
+The default is 20 blocks per write.
+Note: the blocking factor is
+specified in terms of 512 bytes blocks, for compatibility with
+.BR tar (1).
+The default blocking factor for tapes of
+density 6250 \s-1BPI\s0 and greater
+is 64.
+The default blocking factor for cartridge tapes
+.RB ( c
+option specified) is 126.
+The highest blocking
+factor available with most tape drives is 126.
+.TP
+.B c
+Cartridge.
+Use a cartridge instead of the standard half-inch reel.
+This sets the density to 1000 \s-1BPI\s0,
+the blocking factor to 126, and the length to 425 feet.
+This option also sets the \*(lqinter-record gap\*(rq
+to the appropriate length.
+When cartridge tapes are used, and this option is 
+.I not
+specified,
+.B dump
+will slightly miscompute the size of the tape.
+If the
+.BR b ,
+.BR d ,
+.BR s
+or
+.B t
+options are specified with this option,
+their values will override the defaults set by this
+option.
+.TP
+.BI d " bpi"
+Tape density.
+The density of the tape, expressed in
+.SM BPI\s0,
+is taken from
+.I bpi.
+This is used to keep a running tab on
+the amount of tape used per reel.
+Default densities are:
+.RS
+.RS
+.TP 25
+1/2" tape
+.PD 0
+1600 \s-1BPI\s0
+.TP
+1/4" cartridge 
+1000 \s-1BPI\s0
+.TP
+2.3-Gbyte 8mm tape
+54,000 \s-1BPI\s0
+.PD
+.RE
+.RE
+.IP ""
+Unless a higher density is specified explicitly,
+.B dump
+uses its default density \(em even if the tape drive is capable of
+higher-density operation (for instance, 6250 \s-1BPI\s0).
+Note: the density specified should correspond to the density of the
+tape device being used, or
+.B dump
+will not be able to handle end-of-tape properly.
+The 
+.B d
+option is not compatible with the 
+.B D
+option.
+.TP
+.B D
+Diskette. Specify diskette as the dump media.
+.TP
+.BI f " dump-file"
+Dump file.
+Use
+.I dump-file
+as the file to dump to, instead of
+.B /dev/rmt8.
+If
+.I dump-file
+is specified as
+.RB ` \- ',
+dump to the standard output.
+If the file name argument is of the form
+.IR machine:device ,
+dump to a
+remote machine.
+Since
+.B dump
+is normally run by
+.I root,
+the name of the local machine must appear in the
+.B .rhosts
+file of the remote machine.
+If the file name argument is of the form
+.IB user @ machine : device\fR,
+.B dump
+will attempt to execute as the specified user on the remote machine.
+The specified user must have a
+.B .rhosts
+file on the remote machine that allows root from the local machine.
+If
+.B dump
+is called as
+.B rdump,
+the dump device defaults to
+.BR dumphost:/dev/rmt8\fR .
+To direct the output to a desired remote machine,
+set up an alias for
+\fBdumphost\fR in the file
+.BR /etc/hosts .
+.TP
+.B n
+Notify.
+When this option is specified, if
+.B dump
+requires attention, it sends a terminal message
+(similar to
+.BR wall (1))
+to all operators in the \*(lqoperator\*(rq group.
+.TP
+.BI s " size"
+Specify the
+.I size
+of the volume being dumped to. When the specified size is reached,
+.B dump
+waits for you to change the volume.
+.B dump
+interprets the specified size as the length in
+feet for tapes, and cartridges and 
+as the number of 1024 byte blocks for diskettes.
+The following are
+defaults:
+.RS
+.RS
+.TP 25
+1/2" tape
+.PD 0
+2300 feet
+.TP
+60-Mbyte 1/4" cartridge 
+425 feet
+.TP
+150-Mbyte 1/4" cartridge 
+700 feet
+.TP
+2.3-Gbyte 8mm
+6000 feet
+.TP
+diskette
+1422 blocks (Corresponds
+to a 1.44-Mbyte diskette, with one cylinder reserved for bad block information.)
+.PD
+.RE
+.RE
+.TP
+.BI t " tracks"
+Specify the number of tracks for a cartridge tape.
+The 
+.B t
+option is not compatible with the 
+.B D
+option.
+The following are
+defaults:
+.RS
+.RS
+.TP 40
+60-Mbyte 1/4" cartridge (Sun2 only)
+.PD 0
+4 tracks
+.TP
+60-Mbyte 1/4" cartridge (all other platforms)
+9 tracks
+.TP
+150-Mbyte 1/4" cartridge 
+18 tracks
+.PD
+.RE
+.RE
+.TP
+.B u
+Update the dump record.
+Add an entry to the file
+.B /etc/dumpdates,
+for each filesystem successfully dumped that includes the filesystem
+name, date, and dump level.
+This file can be edited by the super-user.
+.TP
+.B v
+After writing each volume of the dump,
+the media is rewound and is verified against the filesystem being dumped.
+If any discrepancies are found,
+dump will respond as if a write error had occurred;
+the operator will be asked to mount new media,
+and dump will attempt to rewrite the volume.
+Note that 
+.I any
+change to the filesystem, even the update of the access time
+on a file will cause the verification to fail.
+Thus, the verify option can only be used on a quiescent filesystem.
+.TP
+.B w
+List the filesystems that need backing up.
+This
+information is gleaned from the files
+.B /etc/dumpdates
+and
+.BR /etc/fstab .
+When the
+.B w
+option is used, all other options
+are ignored.
+After reporting,
+.B dump
+exits immediately.
+.TP
+.B W
+Like
+.BR w ,
+but includes all filesystems that appear in
+.B /etc/dumpdates,
+along with information about their most recent dump dates and levels.
+Filesystems that need backing up are highlighted.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rmt8
+default unit to dump to
+.TP
+.B dumphost:/dev/rmt8
+default remote unit to dump to if called as
+.B rdump
+.TP
+.B /dev/rst*
+Sun386i cartridge tape dump device
+.TP
+.B /dev/rfd0a
+Sun386i 1.44 megabyte 3.5-inch high density diskette drive dump device
+.TP
+.B /dev/rfdl0a
+Sun386i 720 kilobyte 3.5-inch low density diskette drive dump device
+.TP
+.B /dev/rfd0c
+Sun386i 1.44 megabyte 3.5-inch high density diskette drive dump device
+.TP
+.B /dev/rfdl0c
+Sun386i 720 kilobyte 3.5-inch low density diskette drive dump device
+.TP
+.B /etc/dumpdates
+dump date record
+.TP
+.B /etc/fstab
+dump table: file systems and frequency
+.TP
+.B /etc/group
+to find group
+.I operator
+.TP
+.B /etc/hosts
+.PD
+.SH "SEE ALSO"
+.BR bar (1),
+.BR fdformat (1),
+.BR tar (1),
+.BR wall (1),
+.BR dump (5),
+.BR fstab (5),
+.BR restore (8),
+.BR shutdown (8)
+.br
+.ne 8
+.SH DIAGNOSTICS
+While running,
+.B dump
+emits many verbose messages.
+.SS Exit Codes
+.PD 0
+.TP
+.B 0
+Normal exit.
+.TP
+.B 1
+Startup errors encountered.
+.TP
+.B 3
+Abort \- no checkpoint attempted.
+.PD
+.SH BUGS
+.LP
+Fewer than 32 read errors on the file system are ignored.
+.LP
+Each reel requires a new process, so parent processes for
+reels already written just hang around
+until the entire tape is written.
+.LP
+It is recommended that incremental dumps also be performed with
+the system running in single-user mode.
+.LP
+.B dump
+does not support multi-file multi-volume tapes.
+.SH EXAMPLES
+.LP
+Here are some examples of arguments which produce satisfactory
+results on a number of typical tape drives.
+Note that individual options can be in any order;  however, the
+position of each following argument depends on the relative
+position of each option.
+.LP
+.PD 0
+.RS
+.TP 32
+60-MByte cartridge (Sun2 only):
+dump cdst 1000 425 4
+.TP
+60-MByte cartridge:
+dump cdst 1000 425 9
+.TP
+150-MByte cartridge:
+dump cdst 1000 700 18
+.TP
+1/2" tape:
+dump dsb 1600 2300 126
+.TP
+2.3-GByte 8mm tape:
+dump dsb 54000 6000 126
+.RE
+.PD
+.LP
+To make a full dump of a root filesystem on sd3, on a 150-MByte
+cartridge tape st0, use:
+.LP
+.RS
+dump 0cdstfu 1000 700 18 /dev/rst0 /dev/sd3a
+.RE
+.LP
+To make and verify an incremental dump at level 5 of the usr
+partition of sd3, on a 1/2" reel tape st1:
+.LP
+.RS
+dump 5dsbfuv 1600 2300 126 /dev/rst1 /dev/sd3g
+.RE
+.LP
+To make a full backup of the entire disk sd3, on a 2.3-GByte
+8mm tape st2, use:
+.LP
+.RS
+dump 0dsbfu 54000 6000 126 /dev/rst2 /dev/sd3c
+.RE
+.SH NOTES
+.SS Operator Intervention
+.LP
+.B dump
+requires operator intervention on these conditions:
+end of volume, end of dump, volume write error, volume open error or
+disk read error (if there are more than a threshold of 32).
+In addition to alerting all operators implied by the
+.B n
+option,
+.B dump
+interacts with the operator on
+.BR dump 's
+control terminal at times when
+.B dump
+can no longer proceed, or if something is grossly wrong.
+All
+questions
+.B dump
+poses
+.I must
+be answered by typing
+.B yes
+or
+.BR no ,
+as appropriate.
+.LP
+Since backing up a disk can involve a lot of time and effort,
+.B dump
+checkpoints at the start of each volume.
+If writing that volume fails for some reason,
+.B dump
+will, with operator permission, restart itself from the
+checkpoint after a defective volume has been replaced.
+.LP
+.B dump
+reports periodically, and in verbose fashion.
+Each report
+includes estimates of the percentage of the dump completed
+and how long it will take to complete the dump.
+The estimated time is given as
+.IR hours : minutes .
+.SS "Suggested Dump Schedule"
+.LP
+It is vital to perform full, \*(lqlevel \fB0\fP\*(rq,
+dumps at regular intervals.
+When performing a full dump, bring the machine down to
+single-user mode using
+.BR shutdown (8).
+While preparing for a full dump, it is a good idea to clean the
+tape drive and heads.
+.LP
+Incremental dumps allow for convenient backup and recovery on a more
+frequent basis of active files, with a minimum of media and time.
+However there are some tradeoffs.
+First, the interval between backups
+should be kept to a minimum (once a day at least).
+To guard against
+data loss as a result of a media failure (a rare, but possible
+occurrence), it is a good idea to capture active files on (at least)
+two sets of dump volumes.
+Another consideration
+is the desire to keep unnecessary
+duplication of files to a minimum to save both operator time and media
+storage.
+A third consideration is the ease with which a particular
+backed-up version of a file can be located and restored.
+The following four-week schedule offers a reasonable tradeoff between
+these goals.
+.RS
+.nf
+.ta 12n 18n 24n 30n 36n 42n 48n
+.I
+	Sun 	Mon	Tue	Wed	Thu	Fri
+\fIWeek 1:\fB	Full	5	5	5	5	3
+\fIWeek 2:\fB		5	5	5	5	3
+\fIWeek 3:\fB		5	5	5	5	3
+\fIWeek 4:\fB		5	5	5	5	3\fR
+.fi
+.RE
+.DT
+.LP
+Although the Tuesday \(em Friday incrementals contain \*(lqextra
+copies\*(rq
+of files from Monday, this scheme assures that any file
+modified during the week can be recovered from the previous
+day's incremental dump.
+.SS "Process Priority of dump"
+.LP
+.B dump
+uses multiple processes to allow it to
+read from the disk and write to the
+media concurrently.
+Due to the way it
+synchronizes between these processes,
+any attempt to run dump with a
+.B nice
+(process priority) of `\-5' or better will likely make
+.B dump
+run
+.I slower
+instead of faster.

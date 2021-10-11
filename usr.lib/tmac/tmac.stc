@@ -1,0 +1,122 @@
+.\"	@(#)tmac.stc	1.1	92/07/30
+.\"-mstc: ms macro package with table of contents feature.
+.\" New macros are: .sh (numbered section heading), .uh (unnumbered heading),
+.\" and .ap (appendix--lettered main section with numbered subsection)
+.\" NOTE: this package disables "cut marks"
+.so /usr/lib/tmac/tmac.s
+.rm CM
+.de @C
+.nr _S \\n(.s
+.nr _V \\n(.v
+.nr _F \\n(.f
+.nr _I \\n(.i
+.ev \\$1
+.ps \\n(_Su
+.vs \\n(_Vu
+.ft \\n(_F
+'in \\n(_Iu
+.ll \\n($lu
+.lt \\n($lu
+.rr _S
+.rr _V
+.rr _F
+.rr _I
+.ls 1
+'ce 0
+..
+.de xp
+.br
+.@C 2
+.ls 1
+.fi
+.na
+.nh
+.nr $l \\n(.l
+.ll -(\\n(xuu+\w'...'u)
+.di |x
+.%C
+.br
+.di
+.rm %C
+.ll \\n($lu
+.ev
+.nf
+.in 0
+.ta \\n(.lu-\\n(xuuR \\n(.luR
+.|x
+.fi
+.in
+.rm |x
+..
+.rn NH nH
+.de NH
+.tm Warning at line \\n(c. -- use .sh, not .NH, for Table of Contents
+.nH
+..
+.rn SH sH
+.de SH
+.tm Warning at line \\n(c. -- use .uh, not .SH, for Table of Contents
+.sH
+..
+.de $0 \"Make T. of C. entry, called by sh and uh
+.nr tC 1
+.ie \\$3 .nr w \\$3u*\w'00.'u+1n
+.el .nr w 0
+.am %C ..
+.sp \\n(xsu
+.in \\nwu
+.ti 0
+...
+.\" if level 1, be sure not near end of page & Bold font
+.if \\$3<=1 \\{\\
+.am %C ..
+\\\\!.ne 4v
+.sp \\n(PDu
+\fB\c
+...
+\&\\}
+.am %C ..
+\&\\kx\\$2\\h'|\\nxu+\\nwu'\\$1\\fR\ \c
+\\\\a\\\\t\\n%
+...
+..
+.de sh  \"Numbered heading with T. of C. entry -- ms version.
+.nH "\\$1"
+.$0 "\\$2" "\\*(SN" "\\n(NS"
+\\$2
+..
+.de uh  \"Unnumbered heading with T. of C. entry -- ms version.
+.sH
+.$0 "\\$1" "" 0
+\\$1
+..
+.\" Set up end macro to produce table of contents:
+.am EM
+.if !\\n(tC .ex
+\&\c
+'bp 1
+.NP
+.nr $l \\n(.l
+.af PN i
+.if \\n(TV .TX  \"Print out title at top of page, if defined via .TL
+.sp
+.ce 1
+Table of Contents
+.sp 2.2
+.LP
+.xp
+.ex
+..
+.de ap
+.if !\\n(aP \\{\\
+.nr aP 1
+.nr H1 0
+.af H1 A \\}
+.nr H1 +1
+.nr H2 0
+.uh "\\$1"
+..
+.nr aP 0
+.nr tC 0
+.nr xu 0.4i 	\"Width of page number in T. of C. entries
+.nr xs 0.2v 	\"Vertical space before each T. of C. entry

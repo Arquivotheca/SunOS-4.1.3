@@ -1,0 +1,22 @@
+
+# @(#)Makefile.install	1.1 92/07/30 SMI
+
+OBJS=	main.o file_panel.o fileio.o video_cursor.o video_panel.o \
+	video_adjust.o slider.o panel_util.o save_postscript.o \
+	video_setup.o initialize_items.o video_poll.o de_interlace.o \
+	video_cbars.o
+
+LIBDIR=	.
+INCDIR=	.
+SUBDIR=	LASERDISC
+
+CFLAGS= -O -I$(INCDIR) 
+
+all:	video subdirs
+
+
+video:	$(OBJS)
+	cc -L$(LIBDIR) -o $@ $(OBJS) -lvideo -lsuntool -lsunwindow -lpixrect
+
+subdirs:
+	for i in ${SUBDIR}; do (cd $$i; make ${MFLAGS}); done

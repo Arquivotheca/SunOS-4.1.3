@@ -1,0 +1,125 @@
+.\" @(#)savecore.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SAVECORE 8 "1 July 1990"
+.SH NAME
+savecore \- save a core dump of the operating system
+.SH SYNOPSIS
+.B /usr/etc/savecore
+[
+.B \-v
+]
+.I directory
+[
+.I system-name
+]
+.SH DESCRIPTION
+.IX  "savecore command"  ""  "\fLsavecore\fP \(em save OS core dump"
+.LP
+.B savecore
+saves a core dump of the kernel (assuming that one was made) and
+writes a reboot message in the shutdown log.  It is meant to be called
+near the end of the
+.B /etc/rc.local
+file after the system boots.  However, it is not normally run by
+default.  You must edit that file to enable it.
+.LP
+.B savecore
+checks the core dump to be certain it corresponds with the
+version of the operating system currently running.  If it does,
+.B savecore
+saves the core image in the file
+.IB directory /vmcore. n
+and the kernel's namelist in
+.IB directory /vmunix. n\fR.
+The trailing
+.BI . n
+in the pathnames is replaced by a number which grows every time
+.B savecore
+is run in that directory.
+.LP
+Before
+.B savecore
+writes out a core image,
+it reads a number from the file
+.IR directory\fB/minfree .
+This is the minimum number of kilobytes that must remain free
+on the filesystem containing
+.IR directory .
+If there is less free space on the filesystem containing
+.I directory
+than the number of kilobytes specified in
+.BR minfree ,
+the core dump is not saved.
+If the
+.B minfree
+file does not exist,
+.B savecore
+always writes out the core file (assuming that a core dump was taken).
+.LP
+.B savecore
+also logs a reboot message using facility
+.SB LOG_AUTH
+(see
+.BR syslog (3)).
+If the system crashed as a result of a panic,
+.B savecore
+logs the panic string too.
+.LP
+If the core dump was from a system other than
+.BR /vmunix ,
+the name of that system must be supplied as
+.IR system-name .
+.SH OPTIONS
+.TP 15
+.B \-v
+Verbose.
+Enable verbose error messages from
+.BR savecore .
+.SH FILES
+.PD 0
+.TP 20
+.IB directory /vmcore. n
+.TP
+.IB directory /vmunix. n
+.TP
+.IB directory /minfree
+.TP
+.B /vmunix
+the kernel
+.TP
+.B /etc/rc.local
+.PD
+.SH SEE ALSO
+.BR syslog (3),
+.BR panic (8S),
+.BR sa (8)
+.SH BUGS
+.LP
+.B savecore
+can be fooled into thinking a core dump is the wrong size.
+.LP
+You must run
+.B savecore
+very soon after booting \(em before the swap space containing the
+crash dump is overwritten by programs currently running.
+.LP
+Core images produced by 
+\s-1SPARC\s0station1 systems,
+and from machines with discontiguous physical memory,
+are sparse and contain holes.
+For example,
+a core image of an 8 megabyte \s-1SPARC\s0station 1
+might contain 3 to 4 megabytes of useful information,
+and thus only occupy 3 to 4 megabytes of disk space,
+yet contain enough holes to appear to be 36 megabytes in size.
+However, copying the core image will manifest the holes,
+so that this copy will require 36 megabytes of disk space.
+If it is necessary to move a core image, it is strongly
+recommended that the core image be compressed with
+.BR compress (1)
+before the transfer.
+The compressed image may later be uncompressed on a system
+with sufficient disk space.

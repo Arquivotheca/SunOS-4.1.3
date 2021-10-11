@@ -1,0 +1,173 @@
+#! /bin/sh
+#
+#	"%Z%%M% %I% %E% SMI";
+#
+#	test for user = root
+#
+
+#
+# some variables 
+#
+ETC_DIR="/etc"
+HOSTS_FILE="${ETC_DIR}/hosts"
+YP_DIR="/var/yp"
+UNCONFIGURED_FILE="${ETC_DIR}/.UNCONFIGURED"
+
+
+INSTALL_DIR="/etc/install"
+SYS_INFO_FILE="${INSTALL_DIR}/sys_info"
+
+
+TIME_DIR="/usr/lib/zoneinfo"
+LOCAL_TIME_FILE="${TIME_DIR}/localtime"
+DEFAULT_TIME_FILE="${TIME_DIR}/Factory"
+
+
+if [ `whoami` != "root" ]; then
+	echo	You must be root to run $0
+	exit 1
+fi
+
+#
+#	Don't allow diskless clients to run this, 
+#		(systems with remote mounted / partitions) 
+#
+
+rootfs=`mount -p | expand | awk '/ \/ / {print $3}'`
+if [ "$rootfs" = "nfs" ]; then
+        echo    You may not run $0 unless / is locally mounted.
+        exit 1
+fi
+
+#
+#
+echo
+echo	"  WARNING"
+echo
+echo	"This program will unconfigure your system.  It will cause the system"
+echo	"to revert to a \"blank\" system - it will not have a name or know"
+echo	"about other machines or networks."
+echo
+echo	"This program will also halt your system."
+echo
+echo -n	"Do you wish to continue (y/n) ? "
+read answer
+case ${answer} in
+"y"|"yes"|"Y"|"YES")
+	# confirm again
+	clear
+	echo
+	echo
+	echo
+	echo	"            ********** LAST CHANCE **********"
+	echo
+	echo	"You are about to remove the system's name, IP address and"
+	echo	"NIS domainname."
+	echo
+	echo	"The machine will also be halted."
+	echo
+	echo 	"You will have to supply configuration information"
+	echo	"the next time this machine is booted."
+	echo
+	echo -n	"Do you still want to continue (y/n) ? "
+	read answer
+	case ${answer} in
+	"y"|"yes"|"Y"|"YES")
+		# do nothing - just continue
+		;;
+	*)
+		echo $0 stopped at your request
+		exit 0
+		;;
+	esac
+	;;
+*)
+		echo $0 stopped at your request
+		exit 0
+		;;
+
+esac
+
+# no turning back, turn off traps
+trap '' 1 2 15
+
+#
+#	next, restore /etc/hosts to original condition
+# 	but, first, append the current hosts file in /etc/hosts.saved
+#
+echo "#################" >> ${HOSTS_FILE}.saved
+cat ${HOSTS_FILE} >> ${HOSTS_FILE}.saved
+echo "#################" >> ${HOSTS_FILE}.saved 
+echo "#" > ${HOSTS_FILE}
+echo "# Sun Host Database" >> ${HOSTS_FILE}
+echo "#" >> ${HOSTS_FILE}
+echo "# If the NIS is running, this file is only consulted when booting" >> ${HOSTS_FILE}
+echo "#" >> ${HOSTS_FILE}
+echo "127.0.0.1	localhost loghost" >> ${HOSTS_FILE}
+echo "#" >> ${HOSTS_FILE}
+#
+#	fix hostname(s)
+#
+rm -f /etc/hostname.??[0-9]
+
+#
+#	fix domainname
+#
+rm -f /etc/defaultdomain
+
+#
+#	turn NIS off
+#
+if [ -d ${YP_DIR} ]; then
+	rm -rf ${YP_DIR}-
+	mv -f ${YP_DIR} ${YP_DIR}- 2>/dev/null
+fi
+
+#
+#	now restore the local time zone to default 
+#
+rm -f ${LOCAL_TIME_FILE}-
+mv -f ${LOCAL_TIME_FILE} ${LOCAL_TIME_FILE}- 2>/dev/null
+ln ${DEFAULT_TIME_FILE} ${LOCAL_TIME_FILE}
+
+#
+#	Save the old sys_info file - we could just trash it, I guess...
+#
+#	Make a generic sys_info file from the old sys_info file and the
+#	default_sys_info file.
+#
+
+ARCH_STR=`grep '^arch_str=' ${SYS_INFO_FILE}`
+USER=`grep '^user='  ${SYS_INFO_FILE}`
+ROOT=`grep '^root='  ${SYS_INFO_FILE}`
+
+mv -f ${SYS_INFO_FILE} ${SYS_INFO_FILE}- 2>/dev/null
+
+awk '{ 
+  	n = split($0, a, "=");
+
+	if (a[1] == "arch_str")
+      		print  ARCH_STR;
+	else  if (a[1] == "root") 
+      		print ROOT;
+	else  if (a[1] == "user")
+      		print  USER;
+	else
+		print $0;
+}' ARCH_STR=$ARCH_STR USER=$USER ROOT=$ROOT \
+	${INSTALL_DIR}/default_sys_info > ${SYS_INFO_FILE}
+
+
+#
+# set configure up to run as soon as the machine is booted again
+#
+touch ${UNCONFIGURED_FILE}
+
+echo
+echo 	"System unconfiguration complete, halting system.  "
+#
+#
+echo
+/usr/etc/shutdown -h now
+
+exit 0

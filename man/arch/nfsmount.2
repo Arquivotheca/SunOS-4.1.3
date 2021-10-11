@@ -1,0 +1,95 @@
+.\" @(#)nfsmount.2 1.1 92/07/30 SMI;
+.TH NFSMOUNT 2 "19 August 1985"
+.SH NAME
+nfsmount \- mount an NFS file system
+.SH SYNOPSIS
+.nf
+.ft B
+nfsmount(addr, fh, dir, rwflag, hard)
+struct sockaddr_in *addr;
+fhandle_t *fh;
+char *dir;
+int rwflag;
+int hard;
+.fi
+.SH DESCRIPTION
+.IX  nfsmount  ""  \fLnfsmount\fP
+.IX  "system operation support"  nfsmount  ""  \fLnfsmount\fP
+.IX  "network file system"  nfsmount  ""  \fLnfsmount\fP
+Mount an
+.IR NFS (4)
+file system on the directory
+.IR dir .
+.I addr
+is the
+.IR UDP (4)
+address of the server that owns the file system to mount.
+.I fh
+is a file handle, obtained from the server,
+to identify the root directory on the server that is being mounted.
+.LP
+The
+.I rwflag
+argument determines whether
+the file system can be written on; if it is 0 writing
+is allowed, otherwise no writing is done.
+.LP
+The
+.I hard
+argument determines whether the remote file system is mounted hard or soft.
+A soft mount causes an error to be returned when a remote access times out.
+Hard mounts cause the access to retry until the server responds.
+A value of 1 indicates a hard mount.
+.SH "RETURN VALUE
+.I nfsmount
+returns 0 if the action occurred, \-1 if some error occurred.
+.SH ERRORS
+.I nfsmount
+will fail when one of the following occurs:
+.TP 15
+[EPERM]
+The caller is not the super-user or the path name given for
+.I dir
+contains characters with the high bit set.
+.TP 15
+[ENAMETOOLONG]
+The path name for
+.I dir
+is too long.
+.TP 15
+[ELOOP]
+.I Dir
+contains a symbolic link loop.
+.TP 15
+[ETIMEDOUT]
+The server at
+.I addr
+is not accessible.  This can only happen if the
+.I hard
+flag is set.
+.TP 15
+[ENOTDIR]
+A component of the path prefix in
+.I dir
+is not a directory.
+.TP 15
+[EBUSY]
+Another process currently holds a reference to 
+.IR fh .
+.TP 15
+[ENOENT]
+.I Dir
+does not exist.
+.TP 15
+[EACCES]
+Search permission is denied for a component of the path prefix of
+.IR dir .
+.TP 15
+[EFAULT]
+.I Dir
+points outside the process's allocated address space.
+.TP 15
+[EIO]
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+mount(2), unmount(2), mount(8)

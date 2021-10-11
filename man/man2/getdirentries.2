@@ -1,0 +1,153 @@
+.\" @(#)getdirentries.2 1.1 92/07/30 SMI
+.TH GETDIRENTRIES 2 "21 January 1990"
+.SH NAME
+getdirentries \- gets directory entries in a filesystem independent format
+.SH SYNOPSIS
+.nf
+.LP
+.ft B
+int getdirentries(fd, buf, nbytes, basep)
+int fd;
+char *buf;
+int nbytes;
+long *basep;
+.fi
+.SH DESCRIPTION
+.IX  getdirentries()  ""  \fLgetdirentries()\fP
+.IX  "file system"  getdirentries()  ""  \fLgetdirentries()\fP
+.IX  directory  "get entries"
+.LP
+This system call is now obsolete. It is superseded by the
+.BR getdents (2)
+system call, which returns directory entries in a new format specified in
+.BR <sys/dirent.h> .
+The file,
+.BR <sys/dir.h> ,
+has also been modified to use the new directory entry
+format.
+Programs which currently call
+.B getdirentries(\|)
+should be modified to use the new system call and the new include file
+.B dirent.h
+or, preferably, to use the
+.BR directory (3V)
+library routines.  The
+.B getdirentries(\|)
+system call is retained in the current Sun\s-1OS\s0
+release only for purposes of backwards binary compatibility and
+will be removed in a future major release.
+.LP
+.B getdirentries(\|)
+attempts to put directory entries from the directory referenced by
+the file descriptor
+.B fd
+into the buffer pointed to by
+.IR buf ,
+in a filesystem independent format.  Up to
+.I nbytes
+bytes of data will be transferred.
+.I nbytes
+must be greater than or equal to the block size associated with the file, see
+.BR stat (2V).
+Sizes less than this may cause errors on certain filesystems.
+.LP
+The data in the buffer is a series of structures each containing the
+following entries:
+.LP
+.RS
+.ta +\w'unsigned\0short\0'u +\w'd_name[MAXNAMELEN + 1];\0'u
+.ft B
+.nf
+unsigned long	d_fileno;
+unsigned short	d_reclen;
+unsigned short	d_namlen;
+char    	d_name[\s-1MAXNAMELEN\s0 + 1];	/* see below */
+.ft R
+.fi
+.RE
+.LP
+The
+.B d_fileno
+entry is a number which is unique for each distinct file in the filesystem.
+Files that are linked by hard links (see
+.BR link (2V))
+have the same
+.BR d_fileno .
+The
+.B d_reclen
+entry is the length, in bytes, of the directory record.
+The
+.B d_name
+entry contains a null terminated file name.
+The
+.B d_namlen
+entry specifies the length of the file name.
+Thus the actual size of
+.B d_name
+may vary from 2 to
+.BR \s-1MAXNAMELEN\s0 + 1 .
+.LP
+The structures are not necessarily tightly packed.
+The
+.B d_reclen
+entry may be used as an offset from the beginning of a
+.B direct
+structure to the next structure, if any.
+.LP
+Upon return, the actual number of bytes transferred is returned.
+The current position pointer associated with
+.B fd
+is set to point to the next block of entries.
+The pointer is not necessarily incremented by the number of bytes returned by
+.BR getdirentries(\|) .
+If the value returned is zero, the end of the directory has been reached.
+The current position pointer may be set and retrieved by
+.BR lseek (2V).
+.B getdirentries(\|)
+writes the position of the block read into the location pointed to by
+.IR basep .
+It is not safe to set the current position pointer to any value other than
+a value previously returned by
+.BR lseek (2V)
+or a value previously returned in the location pointed to by
+.I basep
+or zero.
+.SH RETURN VALUES
+.LP
+.B getdirentries(\|)
+returns
+the number of bytes actually transferred
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+.I fd
+is not a valid file descriptor open for
+reading.
+.TP
+.SM EFAULT
+Either
+.I buf
+or
+.I basep
+points outside the allocated address space.
+.TP
+.SM EINTR
+A read from a slow device was interrupted before
+any data arrived by the delivery of a signal.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+.BR getdents (2),
+.BR link (2V),
+.BR lseek (2V),
+.BR open (2V),
+.BR stat (2V),
+.BR directory (3V)

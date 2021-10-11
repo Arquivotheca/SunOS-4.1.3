@@ -1,0 +1,130 @@
+.\" @(#)yppush.8 1.1 92/07/30 SMI
+.TH YPPUSH 8 "14 December 1987"
+.SH NAME
+yppush \- force propagation of changed NIS map
+.SH SYNOPSIS
+.B /usr/etc/yp/yppush
+[
+.B \-v
+] [
+.B \-d
+.I domain
+]
+.I mapname
+.SH DESCRIPTION
+.IX yppush "" "\fLyppush\fR \(em force propagation of changed NIS map"
+.LP
+.B yppush
+copies a new version of a 
+Network Information Service
+(\s-1NIS\s0)
+map from the master
+.SM NIS
+server to the slave
+.SM NIS
+servers.
+It is normally run only on the master
+.SM NIS
+server by the
+.B Makefile
+in
+.B /var/yp
+after the master databases are changed.
+It first constructs a list of
+.SM NIS
+server hosts by reading the
+.SM NIS
+map
+.B ypservers
+within the
+.IR domain .
+Keys within the map
+.B ypservers
+are the
+.SM ASCII
+names of the machines on which the
+.SM NIS
+servers run.
+.LP
+A \*(lqtransfer map\*(rq request is sent to the
+.SM NIS
+server at each host,
+along with the information needed by the transfer agent (the program
+which actually moves the map) to call back the
+.B yppush .
+When the attempt has completed (successfully
+or not), and the transfer agent has sent
+.B yppush
+a status message, the results may be printed to stdout.  Messages
+are also printed when a transfer is not possible; for
+instance when the request message is
+undeliverable, or when the timeout period
+on responses has expired.
+.LP
+Refer to
+.BR ypfiles (5)
+and
+.BR ypserv (8)
+for an overview of the 
+.SM NIS
+service.
+.SH OPTIONS
+.TP
+.BI "\-d " domain
+Specify a
+.IR domain .
+.TP
+.B \-v
+Verbose.
+This prints messages when
+each server is called, and for each response.
+If this flag is omitted, only error messages are printed.
+.SH FILES
+.PD 0
+.HP 20
+.BI /var/yp/ domain /ypservers.\c
+.BI { dir , pag }
+.br
+.TP
+.B /var/yp
+.PD
+.SH "SEE ALSO"
+.BR ypfiles (5),
+.BR ypserv (8),
+.BR ypxfr (8)
+.LP
+.SM NIS
+protocol specification
+.SH BUGS
+.LP
+In the current implementation (version 2
+.SM NIS
+protocol), the transfer agent is
+.BR ypxfr (8),
+which is started by the
+.B ypserv
+program.  If
+.B yppush
+detects that it is speaking to a version 1
+.SM NIS
+protocol
+server, it uses the older protocol, sending a version 1
+.SM YPPROC_GET
+request and issues a message to that effect.
+Unfortunately, there is no way of knowing
+if or when the map transfer is performed for version 1 servers.
+.B yppush
+prints a message saying that an \*(lqold-style\*(rq message has been sent.
+The system administrator should later check to see that the
+transfer has actually taken place.
+.SH NOTES
+.LP 
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0).
+The functionality of the two remains the same;
+only the name has changed.  The name Yellow Pages is a registered
+trademark in the United Kingdom of British Telecommunications plc,
+and may not be used without permission.
+

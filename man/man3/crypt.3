@@ -1,0 +1,135 @@
+.\" @(#)crypt.3 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH CRYPT 3 "6 October 1987"
+.SH NAME
+crypt, _crypt, setkey, encrypt \- password and data encryption
+.SH SYNOPSIS
+.nf
+.B char *crypt(key, salt)
+.B char *key, *salt;
+.LP
+.B char *_crypt(key, salt)
+.B char *key, *salt;
+.LP
+.B setkey(key)
+.B char *key;
+.LP
+.B encrypt(block, edflag)
+.B char *block;
+.fi
+.IX  "crypt()"  ""  "\fLcrypt\fP \(em encryption"
+.IX  "encryption"  crypt()  ""  \fLcrypt()\fP
+.IX  "setkey()"  ""  "\fLsetkey()\fP \(em encryption"
+.IX  "encryption"  setkey()  ""  \fLsetkey()\fP
+.IX  "encrypt()"  ""  "\fLencrypt()\fP \(em encryption"
+.IX  "encryption"  encrypt()  ""  \fLencrypt()\fP
+.SH DESCRIPTION
+.LP
+.B crypt(\|)
+is the password encryption routine,
+based on the
+.SM NBS
+Data Encryption Standard,
+with variations intended (among other things) to frustrate use of hardware
+implementations of the
+.SM DES
+for key search.
+.LP
+The first argument to
+.B crypt(\|)
+is normally a user's typed password.
+The second is a 2-character string chosen from the
+set [a-zA-Z0-9./].
+Unless it starts with
+.RB ` ## '
+or
+.RB ` #$ ',
+the
+.I salt
+string is used to perturb the
+.SM DES
+algorithm in one of 4096
+different ways, after which the password
+is used as the key to encrypt repeatedly a constant string.
+The returned value points to the encrypted password,
+in the same alphabet as the salt.
+The first two characters are the salt itself.
+.LP
+If the
+.I salt
+string starts with
+.RB ` ## ',
+.BR pwdauth (3)
+is called.  If
+.I pwdauth
+returns
+.SM TRUE\s0,
+the salt is returned from
+.B crypt.
+Otherwise,
+.SM NULL
+is returned.  If the
+.I salt
+string starts with
+.RB ` #$ ',
+.B grpauth
+(see
+.BR pwdauth (3))
+is called.  If
+.B grpauth
+returns
+.SM TRUE\s0,
+the salt is returned from
+.BR crypt .
+Otherwise,
+.SM NULL
+is returned.  If there is a valid reason not
+to have this authentication happen, calling
+.I _crypt
+avoids authentication.
+.LP
+The
+.I setkey
+and
+.I encrypt
+entries provide (rather primitive) access to the
+.SM DES
+algorithm.  The argument of
+.I setkey
+is a character array of length 64 containing only the characters
+with numerical value 0 and 1.
+If this string is divided into groups of 8,
+the low-order bit in each group is ignored;
+this gives a 56-bit key which is set into the machine.
+This is the key that will be used
+with the above mentioned algorithm to encrypt or decrypt
+the string
+.I block
+with the function
+.IR encrypt .
+.LP
+The argument to the
+.I encrypt
+entry is a character array of length 64
+containing only the characters with
+numerical value 0 and 1.
+The argument array is modified in place
+to a similar array
+representing the bits of the argument after having been
+subjected to the
+.SM DES
+algorithm using the key set by
+.I setkey.
+If
+.I edflag
+is zero, the argument is encrypted;
+if non-zero, it is decrypted.
+.SH "SEE ALSO"
+.BR login (1),
+.BR passwd (1),
+.BR getpass (3V),
+.BR pwdauth (3),
+.BR passwd (5)
+.SH BUGS
+.LP
+The return value points to static data
+whose content is overwritten by each call.

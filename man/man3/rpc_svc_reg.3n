@@ -1,0 +1,269 @@
+.\" @(#)rpc_svc_reg.3n 1.1 92/07/30 SMI;
+.TH RPC_SVC_REG 3N "20 January 1990"
+.SH NAME
+svc_fds, svc_fdset, svc_freeargs, svc_getargs, svc_getcaller, svc_getreq, svc_getreqset, svc_getcaller, svc_run, svc_sendreply \- library routines for RPC servers
+.SH DESCRIPTION
+.IX "rpc routines" "svc_fds()" "" "\fLsvc_fds()\fP \(em server side calls"
+.IX "rpc routines" "svc_fdset()" "" "\fLsvc_fdset()\fP \(em server side calls"
+.IX "rpc routines" "svc_freeargs()" "" "\fLsvc_freeargs()\fP \(em server side calls"
+.IX "rpc routines" "svc_getargs()" "" "\fLsvc_getargs()\fP \(em server side calls"
+.IX "rpc routines" "svc_getcaller()" "" "\fLsvc_getcaller()\fP \(em server side calls"
+.IX "rpc routines" "svc_getreq()" "" "\fLsvc_getreq()\fP \(em server side calls"
+.IX "rpc routines" "svc_getreqset()" "" "\fLsvc_getreqset()\fP \(em server side calls"
+.IX "rpc routines" "svc_getcaller()" "" "\fLsvc_getcaller()\fP \(em server side calls"
+.IX "rpc routines" "svc_run()" "" "\fLsvc_run()\fP \(em server side calls"
+.IX "rpc routines" "svc_sendreply()" "" "\fLsvc_sendreply()\fP \(em server side calls"
+.IX "svc_fds()" "" "\fLsvc_fds()\fP \(em server side calls"
+.IX "svc_fdset()" "" "\fLsvc_fdset()\fP \(em server side calls"
+.IX "svc_freeargs()" "" "\fLsvc_freeargs()\fP \(em server side calls"
+.IX "svc_getargs()" "" "\fLsvc_getargs()\fP \(em server side calls"
+.IX "svc_getcaller()" "" "\fLsvc_getcaller()\fP \(em server side calls"
+.IX "svc_getreq()" "" "\fLsvc_getreq()\fP \(em server side calls"
+.IX "svc_getreqset()" "" "\fLsvc_getreqset()\fP \(em server side calls"
+.IX "svc_getcaller()" "" "\fLsvc_getcaller()\fP \(em server side calls"
+.IX "svc_run()" "" "\fLsvc_run()\fP \(em server side calls"
+.IX "svc_sendreply()" "" "\fLsvc_sendreply()\fP \(em server side calls"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+These routines are associated with the server side of the
+.SM RPC
+mechanism.
+Some of them are called by the server side dispatch function,
+while others
+(such as
+.BR svc_run(\|) )
+are called when the server is initiated.
+.SS Routines
+.LP
+The
+.SB SVCXPRT
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions of the
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+int svc_fds;
+.fi
+.ft R
+.IP
+Similar to
+.BR svc_fdset ,
+but limited to 32 descriptors. This
+interface is obsoleted by
+.BR svc_fdset .
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+fd_set svc_fdset;
+.fi
+.ft R
+.IP
+A global variable reflecting the
+.SM RPC
+server's read file descriptor bit mask; it is suitable as a parameter
+to the
+.B select(\|)
+system call. This is only of interest
+if a service implementor does not call
+.BR svc_run(\|) ,
+but rather does their own asynchronous event processing.
+This variable is read-only (do not pass its address to
+.BR select(\|) !),
+yet it may change after calls to
+.B svc_getreqset(\|)
+or any creation routines.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+bool_t svc_freeargs(xprt, inproc, in)
+\s-1SVCXPRT\s0 *xprt;
+xdrproc_t inproc;
+char *in;
+.fi
+.ft R
+.IP
+Free any data allocated by the
+.SM RPC/XDR
+system when it decoded the arguments to a service procedure
+using
+.BR svc_getargs(\|) .
+This routine returns 
+.SM TRUE
+if the results were successfully
+freed,
+and 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t svc_getargs(xprt, inproc, in)
+\s-1SVCXPRT\s0 *xprt;
+xdrproc_t inproc;
+char *in;
+.fi
+.ft R
+.IP
+Decode the arguments of an
+.SM RPC
+request
+associated with the
+.SM RPC
+service transport handle,
+.IR xprt .
+The parameter
+.I in
+is the address where the arguments will be placed;
+.I inproc
+is the
+.SM XDR
+routine used to decode the arguments.
+This routine returns 
+.SM TRUE
+if decoding succeeds, and 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+struct sockaddr_in * svc_getcaller(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+The approved way of getting the network address of the caller
+of a procedure associated with the
+.SM RPC
+service transport handle,
+.IR xprt .
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+void svc_getreq(rdfds)
+int rdfds;
+.fi
+.ft R
+.IP
+Similar to
+.BR svc_getreqset(\|) ,
+but limited to 32 descriptors. This interface is obsoleted by
+.BR svc_getreqset(\|) .
+.br
+.if t .ne 17
+.LP
+.ft B
+.nf
+.sp .5
+void svc_getreqset(rdfdsp)
+fd_set *rdfdsp;
+.fi
+.ft R
+.IP
+This routine is only of interest if a service implementor
+does not use
+.BR svc_run(\|) ,
+but instead implements custom asynchronous event processing.
+It is called when the
+.B select(\|)
+system call has determined that an
+.SM RPC
+request has arrived on some
+.SM RPC
+.B socket(s) ;
+.I rdfdsp
+is the resultant read file descriptor bit mask.
+The routine returns when all sockets associated with the
+value of
+.I rdfdsp
+have been serviced.
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+void svc_run(\|)
+.fi
+.ft R
+.IP
+Normally, this routine only returns in the case of some errors.
+It waits for
+.SM RPC
+requests to arrive, and calls the appropriate service
+procedure using
+.B svc_getreq(\|)
+when one arrives. This procedure is usually waiting for a
+.B select(\|)
+system call to return.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+bool_t svc_sendreply(xprt, outproc, out)
+\s-1SVCXPRT\s0 *xprt;
+xdrproc_t outproc;
+char *out;
+.fi
+.ft R
+.IP
+Called by an
+.SM RPC
+service's dispatch routine to send the results of a
+remote procedure call.  The parameter
+.I xprt
+is the request's associated transport handle;
+.I outproc
+is the
+.SM XDR
+routine which is used to encode the results; and
+.I out
+is the address of the results.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.SH SEE ALSO
+.BR select (2),
+.BR rpc (3N),
+.BR rpc_svc_calls (3N),
+.BR rpc_svc_create (3N),
+.BR rpc_svc_err (3N)

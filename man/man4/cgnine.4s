@@ -1,0 +1,84 @@
+.\" @(#)cgnine.4s 1.1 92/07/30 SMI; new for 4.1
+.TH CGNINE 4S "21 May 1989"
+.SH NAME
+cgnine \- 24-bit VME color memory frame buffer
+.SH CONFIGURATION
+.ft B
+.nf
+device cgnine0 at vme32d32 ? csr 0x08000000 priority 4 vector cgnineintr 0xaa
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "cgnine device"  ""  "\fLcgnine\fP \(em low-end graphics accelerator with color memory frame buffer"  ""
+.IX  "color graphics interface"  "cgnine"  ""  "\fLcgnine\fP \(em color memory frame buffer"
+.LP  
+.B cgnine
+is a 24-bit double-buffered
+.SM VME\s0-based
+color frame buffer.
+It provides the standard frame buffer interface defined in 
+.BR fbio (4S),
+and and can be paired with the 
+.SB GP2
+graphics accelerator board using 
+.BR gpconfig (8).
+.LP
+.B cgnine
+has two bits of overlay planes, each of which is a 1-bit
+deep frame buffer that overlays the 24-bit plane group.
+When either bit of the two overlay planes is non-zero,
+the pixel shows the color of the overlay plane.
+If both bits are zero,
+the color frame buffer underneath is visible.
+.LP
+The 24-bit frame buffer pixel is organized as one
+longword (32 bits) per pixel. 
+The pixel format is defined in 
+.B <pixrect/pixrect.h>
+as follows:
+.RS
+.nf
+.ft B
+	union fbunit {
+	unsigned int	packed;	/* whole-sale deal */
+	struct {
+		unsigned int	A:8;	/* unused, for now */
+		unsigned int	B:8;	/* blue channel */
+		unsigned int	G:8;	/* green channel */
+		unsigned int	R:8;	/* red channel */
+		}
+			channel;	/* access per channel */
+	};  
+.fi
+.ft R
+.RE
+.LP
+When the board is in double-buffer mode,
+the low 4 bits of each channel are ignored when written to, which
+yields 12-bit double-buffering.
+.LP
+The higher bit of the overlay planes ranges
+from offset 0 to 128K (0x20000) bytes.
+The lower bit ranges from 128K to 256K bytes.
+The 4MB (0x400000) of the 24-bit deep pixels begins at 256K.
+The addresses of the control registers start at
+the next page after the 24-bit deep pixels.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/cgnine0
+device special file
+.TP
+.B /dev/gpone0a
+.B cgnine
+bound with
+.SB GP2
+.TP
+.B /dev/fb
+default frame buffer
+.PD
+.SH "SEE ALSO
+.BR mmap (2),
+.BR fbio (4S),
+.BR gpone (4S)
+.BR gpconfig (8)

@@ -1,0 +1,75 @@
+.\" @(#)strtod.3 1.1 92/07/30 SMI
+.TH STRTOD 3 "5 October 1989"
+.SH NAME
+strtod, atof \- convert string to double-precision number
+.SH SYNOPSIS
+.nf
+.B double strtod(str, ptr)
+.B char \(**str, \(**\(**ptr;
+.LP
+.B double atof(str)
+.B char \(**str;
+.fi
+.SH DESCRIPTION
+.IX  "strtod()"  ""  "\fLstrtod()\fP \(em ASCII string to double"
+.IX  "ASCII string to double \(em \fLstrtod()\fP"
+.IX  "convert strings to numbers"  strtod()  ""  \fLstrtod()\fP
+.IX  "atof()"  ""  "\fLatof()\fP \(em ASCII to float"
+.IX  "ASCII to float \(em \fLatof()\fP"
+.IX  "convert strings to numbers"  atof()  ""  \fLatof()\fP
+.LP
+.B strtod(\|)
+returns as a double-precision floating-point number
+the value represented by the character string pointed to by
+.IR str .
+The string is scanned up to the first unrecognized character, using
+.BR string_to_decimal (3),
+with
+.I fortran_conventions
+set to 0.
+.LP
+If the value of
+.I ptr
+is not (char \(**\(**)\s-1NULL\s+1,
+a pointer to the character terminating the scan is returned in
+the location pointed to by
+.IR ptr .
+If no number can be formed,
+.I \(**ptr
+is set to
+.IR str ,
+and for historical compatibility, 0.0 is returned,
+although a NaN would better match the
+.SM IEEE
+Floating-Point Standard's intent.
+.LP
+The radix
+character is defined by the program's locale
+(category
+.BR \s-1LC_NUMERIC\s0 ).
+In the
+\fB"C"\fR
+locale, or in a locale where the radix character is not defined.
+the radix character defaults to a period 
+.RB ` \&. '.
+.LP
+.B atof(str)
+is equivalent to
+.BR "strtod(str, (char \(**\(**)\s-1NULL\s+1)" .
+Thus, when
+.B atof(str)
+returns 0.0 there is no way to determine whether
+.I str
+contained a valid numerical string representing 0.0 or an invalid numerical string.
+.SH SEE ALSO
+.BR scanf (3V),
+.BR string_to_decimal (3)
+.SH DIAGNOSTICS
+.LP
+Exponent overflow and underflow produce the
+results specified by the
+.SM IEEE
+Standard.  In addition,
+.B errno
+is set to
+.SM ERANGE\s0.

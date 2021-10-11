@@ -1,0 +1,165 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)rmt.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\"
+.TH RMT 8C "26 May 1988"
+.SH NAME
+rmt \- remote magtape protocol module
+.SH SYNOPSIS
+.B /usr/etc/rmt
+.SH DESCRIPTION
+.IX  "rmt command"  ""  "\fLrmt\fP \(em remote magtape protocol server"
+.IX  "remote magtape protocol server"  ""  "remote magtape protocol server \(em \fLrmt\fP"
+.B rmt
+is a program used by the remote dump and restore programs
+in manipulating a magnetic tape drive through an interprocess
+communication connection.
+.B rmt
+is normally started up with an
+.BR rexec (3N)
+or
+.BR rcmd (3N)
+call.
+.LP
+The
+.B rmt
+program accepts requests specific to the manipulation of
+magnetic tapes, performs the commands, then responds with
+a status indication.  All responses are in
+.SM ASCII
+and in one of two forms.
+Successful commands have responses of
+.IP
+.BI A number\en
+.LP
+where
+.I number
+is an
+.SM ASCII
+representation of a decimal number.
+Unsuccessful commands are responded to with
+.IP
+.BI E error-number \en error-message \en
+.LP
+where
+.I error-number
+is one of the possible error
+numbers described in
+.BR intro (2)
+and
+.I error-message
+is the corresponding error string as printed
+from a call to
+.BR perror (3).
+The protocol is comprised of the
+following commands:
+.RS
+.TP 15
+.B S
+Return the status of the open device, as
+obtained with a
+.SB MTIOCGET
+.B ioctl
+call.  If the operation was successful,
+an \*(lqack\*(rq is sent with the size of the
+status buffer, then the status buffer is
+sent (in binary).
+.TP
+.BI C device
+Close the currently open device.  The
+.I device
+specified is ignored.
+.TP
+.BI I operation \en count \en
+Perform a
+.SB MTIOCOP
+.BR ioctl (2)
+command using the specified parameters.
+The parameters are interpreted as the
+.SM ASCII
+representations of the decimal values to place in the
+.I mt_op
+and
+.I mt_count
+fields of the structure used in the
+.B ioctl
+call.  The return value is the
+.I count
+parameter when the operation is successful.
+.TP
+.BI L whence \en offset \en
+Perform an
+.BR lseek (2V)
+operation using the specified parameters.
+The response value is that returned from the
+.B lseek
+call.
+.TP
+.BI O device \en mode \en
+Open the specified
+.I device
+using the indicated
+.IR mode .
+.I device
+is a full pathname and
+.I mode
+is an
+.SM ASCII
+representation of a decimal
+number suitable for passing to
+.BR open (2V).
+If a device had already been opened, it is
+closed before a new open is performed.
+.TP
+.BI R count
+Read
+.I count
+bytes of data from the open device.
+.B rmt
+performs the requested
+.BR read (2V)
+and responds with
+.BI A count-read\en
+if the read was
+successful; otherwise an error in the
+standard format is returned.  If the read
+was successful, the data read is then sent.
+.TP
+.BI W count
+Write data onto the open device.
+.B rmt
+reads
+.I count
+bytes from the connection, aborting if
+a premature
+.SM EOF
+is encountered.  The response value is that returned from the
+.BR write (2V)
+call.
+.RE
+.LP
+Any other command causes
+.B rmt
+to exit.
+.SH DIAGNOSTICS
+All responses are of the form described above.
+.SH "SEE ALSO"
+.BR intro (2),
+.BR ioctl (2),
+.BR lseek (2V),
+.BR open (2V),
+.BR read (2V),
+.BR write (2V),
+.BR perror (3),
+.BR rcmd (3N),
+.BR rexec (3N),
+.BR mtio (4),
+.BR dump (8),
+.BR restore (8)
+.SH BUGS
+.LP
+People tempted to use this for a remote file access protocol
+are discouraged.
+

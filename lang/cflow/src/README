@@ -1,0 +1,46 @@
+#	@(#)README 1.1 92/07/30 SMI; from S5R2 1.2
+The pieces:
+
+	cflow.sh - runcom
+	lpfx - filters, sorts and formats lint1 output into dag input
+	nmf - turns nm output into dag input
+	dag - graph maker
+	flip - reverser
+
+Usage:
+	cflow [-r] [-il] [-ix] [-i_] [-d<num>] file.[ylciso] ...
+
+files suffixed with [ylci] will be yacc'd, lex'd, cpp'd and
+lint'd as necessary.
+.s files are assembled and information extracted from object, as
+in .o files.
+
+Output:
+
+Each line begins with a reference number followed by a suitable
+number of tab characters. Then the symbol name followed by a colon.
+If this is the first time the symbol is encounter the definition
+is printed, otherwise the reference number of the line where the
+definition may be found. If the definition was produced via lint,
+an abstract type (eg, int()) will be printed, followed by the file name
+and line number. Definitions extracted from .s and .o files are simply
+text, data or bss.
+Options:
+	-r	reverse relationship (inverted call graph)
+	-i	include normally "invisible" symbols:
+		x	include extern/static symbols
+		_	include "internal" _ symbols
+	-d<num>	limit call graph to <num> depth
+
+If the nesting becomes deep, -e of pr can be used to change the tab
+settings to something other than every 8 spaces.
+
+Notes on making cflow:
+	The following macros in the Makefile have the following
+	special values:
+
+	LINT - directory containing source for lint,
+	  specifically lerror.h lmanifest and lpass2.h
+	MIP - directory containing source for machine-independent
+	  parts of lint, specifically manifest
+	BIN - directory in which you want cflow installed

@@ -1,0 +1,93 @@
+.\" @(#)bwtwo.4s 1.1 92/07/30 SMI;
+.TH BWTWO 4S "19 March 1991"
+.SH NAME
+bwtwo \- black and white memory frame buffer
+.SH "CONFIG \(em SUN-3, SUN-3x SYSTEMS"
+.ft B
+.nf
+device bwtwo0 at obmem 1 csr 0xff000000 priority 4
+device bwtwo0 at obmem 2 csr 0x100000 priority 4
+device bwtwo0 at obmem 3 csr 0xff000000 priority 4
+device bwtwo0 at obmem 4 csr 0xff000000
+device bwtwo0 at obmem 7 csr 0xff000000 priority 4
+device bwtwo0 at obmem ? csr 0x50300000 priority 4
+.ft R
+.fi
+.LP
+The first synopsis line given above is
+used to generate a kernel for Sun-3/75,
+Sun-3/140 or Sun-3/160 systems; the second, for a
+Sun-3/50 system; the third, for a Sun-3/260
+system; the fourth,
+for a Sun-3/110 system; the fifth, for a Sun-3/60
+system; and the sixth for Sun-3/80 and Sun-3/470 systems.
+.SH "CONFIG \(em SUN-4 SYSTEMS"
+.ft B
+.nf
+device bwtwo0 at obio 1 csr 0xfd000000 priority 4
+device bwtwo0 at obio 2 csr 0xfb300000 priority 4
+device bwtwo0 at obio 3 csr 0xfb300000 priority 4
+device bwtwo0 at obio 4 csr 0xfb300000 priority 4
+.ft R
+.fi
+.LP
+The first synopsis line given above should be used to generate a kernel
+for a Sun-4/260 or Sun-4/280 system; the second, for a Sun-4/110 system;
+the third for a Sun-4/330 system; and the fourth for a Sun-4/460
+system.
+.SH "CONFIG \(em SUN-4c, SUN-4m SYSTEMS"
+.ft B
+.nf
+device-driver bwtwo
+.ft R
+.fi
+.\" Sun386i
+.SH "CONFIG \(em Sun386i SYSTEM"
+.ft B
+.nf
+device bwtwo0 at obmem ? csr 0xA0200000
+.ft R
+.fi
+.LP
+.SH DESCRIPTION
+.IX  "bwtwo device"  ""  "\fLbwtwo\fP \(em black and white frame buffer"  ""  PAGE START
+.IX  "frame buffer"  "bwtwo"  ""  "\fLbwtwo\fP \(em black and white frame buffer"  PAGE START
+.IX  "monochrome frame buffer bwtwo"  ""  "monochrome frame buffer \(em \fLbwtwo\fP"  ""  PAGE START
+.LP
+The
+.B bwtwo
+interface provides access to Sun monochrome memory frame buffers.
+It supports the ioctls described in
+.BR fbio (4S).
+.LP
+If
+.B "flags 0x1"
+is specified, frame buffer write operations
+are buffered through regular high-speed
+.SM RAM\s0.
+This \*(lqcopy memory\*(rq mode of operation speeds frame
+buffer accesses, but consumes an extra 128K bytes
+of memory.  Only Sun-3/75, Sun-3/140, and Sun-3/160
+systems support copy memory; on other systems a
+warning message is printed and the flag is ignored.
+.LP
+Reading or writing to the frame buffer is not
+allowed \(em you must use the
+.BR mmap (2)
+system call to map the board into your address space.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/bwtwo[0-9]
+device files
+.PD
+.SH "SEE ALSO
+.BR mmap (2),
+.BR cgfour (4S),
+.BR fb (4S),
+.BR fbio (4S)
+.SH BUGS
+Use of vertical-retrace interrupts is not supported.
+.IX  "bwtwo device"  ""  "\fLbwtwo\fP \(em black and white frame buffer"  ""  PAGE END
+.IX  "frame buffer"  "bwtwo"  ""  "\fLbwtwo\fP \(em black and white frame buffer"  PAGE END
+.IX  "monochrome frame buffer bwtwo"  ""  "monochrome frame buffer \(em \fLbwtwo\fP"  ""  PAGE END

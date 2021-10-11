@@ -1,0 +1,3206 @@
+'\" t
+.\" @(#)curses.3v 1.1 92/07/30 SMI; from S5R3
+.hw noecho
+.hw standout
+.TH CURSES 3V "21 January 1990"
+.UC 4
+.SH NAME
+curses \- System V terminal screen handling and optimization package
+.SH SYNOPSIS
+.LP
+The
+.B curses
+manual page is organized as follows:
+.LP
+In
+.SM SYNOPSIS
+.RS
+.TP 3
+\(bu
+compiling information
+.TP
+\(bu
+summary of parameters used by
+.B curses
+routines
+.RE
+.LP
+In
+.SM SYSTEM V SYNOPSIS\s0:
+.RS
+.TP 3
+\(bu
+compiling information
+.RE
+.LP
+In
+.SM DESCRIPTION
+and
+.SM SYSTEM V DESCRIPTION\s0:
+.RS
+.TP 3
+\(bu
+An overview of how
+.B curses
+routines should be used
+.RE
+.LP
+In
+.SM ROUTINES\s0,
+descriptions of
+.B curses
+routines are grouped under the appropriate topics:
+.RS
+.TP 3
+\(bu
+Overall Screen Manipulation
+.TP
+\(bu
+Window and Pad Manipulation
+.TP
+\(bu
+Output
+.TP
+\(bu
+Input
+.TP
+\(bu
+Output Options Setting
+.TP
+\(bu
+Input Options Setting
+.TP
+\(bu
+Environment Queries
+.TP
+\(bu
+Low-level Curses Access
+.TP
+\(bu
+Miscellaneous
+.TP
+\(bu
+Use of
+.B curscr
+.RE
+.LP
+In
+.SM SYSTEM V ROUTINES\s0,
+descriptions of
+.B curses
+routines are grouped under the appropriate topics:
+.RS
+.TP 3
+\(bu
+Overall Screen Manipulation
+.TP
+\(bu
+Window and Pad Manipulation
+.TP
+\(bu
+Output
+.TP
+\(bu
+Input
+.TP
+\(bu
+Output Options Setting
+.TP
+\(bu
+Input Options Setting
+.TP
+\(bu
+Environment Queries
+.TP
+\(bu
+Soft Labels
+.TP
+\(bu
+Low-level Curses Access
+.TP
+\(bu
+Terminfo-Level Manipulations
+.TP
+\(bu
+Termcap Emulation
+.TP
+\(bu
+Miscellaneous
+.TP
+\(bu
+Use of
+.B curscr
+.RE
+.LP
+Then come sections on:
+.RS
+.TP 3
+\(bu
+.SM SYSTEM V ATTRIBUTES
+.TP
+\(bu
+.SM SYSTEM V FUNCTION KEYS
+.TP
+\(bu
+.SM LINE GRAPHICS
+.RE
+.br
+.ne 4
+.LP
+.B cc
+[
+.I flags
+]
+.I files
+.B \-lcurses \-ltermcap
+[
+.I libraries
+]
+.TP 25
+.B #include <curses.h>
+(automatically includes
+.B <stdio.h>
+and
+.BR <unctl.h> .)
+.LP
+The parameters in the following list are not global
+variables.  This is a summary of the parameters used by the
+.B curses
+library routines.
+All routines return the
+.B int
+values
+.SM ERR
+or
+.SM OK
+unless otherwise noted.
+Routines that return pointers always return
+.SM NULL
+on error.
+.SM ERR\s0,
+.SM OK\s0 ,
+and
+.SM NULL
+are all defined in
+.BR <curses.h> .)
+Routines that return 
+integers are not listed in the parameter list below.
+.LP
+.nf
+.ft B
+bool bf
+.sp .25
+char \(**\(**area,\(**boolnames[\|], \(**boolcodes[\|], \(**boolfnames[\|], \(**bp
+char \(**cap, \(**capname, codename[2], erasechar, \(**filename, \(**fmt
+char \(**keyname, killchar, \(**label, \(**longname
+char \(**name, \(**numnames[\|], \(**numcodes[\|], \(**numfnames[\|]
+char \(**slk_label, \(**str, \(**strnames[\|], \(**strcodes[\|], \(**strfnames[\|]
+char \(**term, \(**tgetstr, \(**tigetstr, \(**tgoto, \(**tparm, \(**type
+.sp .25
+chtype attrs, ch, horch, vertch
+.sp .25
+\s-1FILE\s0 \(**infd, \(**outfd
+.sp .25
+int begin_x, begin_y, begline, bot, c, col, count
+int dmaxcol, dmaxrow, dmincol, dminrow, \(**errret, fildes
+int (\(**init(\|)), labfmt, labnum, line
+int ms, ncols, new, newcol, newrow, nlines, numlines
+int oldcol, oldrow, overlay
+int p1, p2, p9, pmincol, pminrow, (\(**putc(\|)), row
+int smaxcol, smaxrow, smincol, sminrow, start
+int tenths, top, visibility, x, y
+.sp .25
+\s-1SCREEN\s0 \(**new, \(**newterm, \(**set_term
+.sp .25
+\s-1TERMINAL\s0 \(**cur_term, \(**nterm, \(**oterm
+.sp .25
+va_list varglist
+.sp .25
+\s-1WINDOW\s0 \(**curscr, \(**dstwin, \(**initscr, \(**newpad, \(**newwin, \(**orig
+.sp .25
+\s-1WINDOW\s0 \(**pad, \(**srcwin, \(**stdscr, \(**subpad, \(**subwin, \(**win
+.ft R
+.fi
+.SH SYSTEM V SYNOPSIS
+.LP
+.B /usr/5bin/cc
+[
+.I flag
+\&\|.\|.\|.]
+.I file
+\&\|.\|.\|.
+.B \-lcurses
+[
+.I library
+\&\|.\|.\|.]
+.TP 25
+.B #include <curses.h>
+(automatically includes
+.BR <stdio.h> ,
+.BR <termio.h> ,
+and
+.BR <unctrl.h> ).
+.SH DESCRIPTION
+.IX "curses library" "" "\fLcurses\fP library routines"
+.LP
+These routines give the user a method of updating screens with reasonable
+optimization.  They keep an image of the current screen,
+and the user sets up an image of a new one.  Then the
+.B refresh(\|)
+tells the routines to make the current screen look like the new one.
+In order to initialize the routines, the routine
+.B initscr(\|)
+must be called before any of the other routines that deal with windows and
+screens are used.  The routine
+.B endwin(\|)
+should be called before exiting.
+.SH SYSTEM V DESCRIPTION
+.IX "curses functions, System V"
+.LP
+The
+.B curses
+routines give the user
+a terminal-independent method of updating screens with reasonable
+optimization.
+.LP
+In order to initialize the routines, the routine
+.B initscr(\|)
+or
+.B newterm(\|)
+must be called before any of the other routines that deal with windows and
+screens are used.
+Three exceptions are noted where they apply.
+The routine
+.B endwin(\|)
+must be called before exiting.
+To get character-at-a-time input without echoing, (most interactive, screen
+oriented programs want this) after calling
+.B initscr(\|)
+you should call
+.RB ` "cbreak (\|); noecho (\|);" '
+Most programs would additionally call
+.RB ` "nonl (\|);"
+.BR "intrflush(stdscr, \s-1FALSE\s0); keypad(stdscr, \s-1TRUE\s0);" '.
+.LP
+Before a
+.B curses
+program is run, a terminal's
+.SM TAB
+stops should be set and its initialization
+strings, if defined, must be output.
+This can be done by executing the
+.B tset
+command in your
+.B \&.profile
+or
+.B \&.login
+file.
+For further details, see
+.BR tset (1)
+and the
+.B Tabs and Initialization
+subsection of
+.BR terminfo (5V).
+.LP
+The
+.B curses
+library contains routines that
+manipulate data structures called
+.I windows
+that can be thought of as two-dimensional arrays of characters
+representing all or part of a terminal screen.
+A default window called
+.BR stdscr
+is supplied, which is the size of the terminal screen.
+Others may be created with
+.BR newwin(\|) .
+Windows are referred to by variables declared as
+.BR "\s-1WINDOW\s0 \(**" ;
+the type
+.SB WINDOW
+is defined in
+.RB < curses.h >
+to be a C structure.
+These data structures are manipulated with routines described below, among
+which the most basic are
+.B move(\|)
+and
+.BR addch(\|) .
+More general versions of these routines are included with names
+beginning with
+.BR w ,
+allowing you to specify a window.
+The routines not beginning with
+.B w
+usually affect
+.BR stdscr .
+Then
+.B refresh(\|)
+is called, telling the routines to make the user's terminal screen look like
+.BR stdscr .
+The characters in a window are actually of type
+.BR chtype ,
+so that other information about the character may also be stored with each
+character.
+.LP
+Special windows called
+.I pads
+may also be manipulated.
+These are windows that are not constrained to the size of the screen and
+whose contents need not be displayed completely.
+See the description of
+.B newpad(\|)
+under
+.B Window and Pad Manipulation
+for more information.
+.LP
+In addition to drawing characters on the screen, video attributes may be
+included that cause the characters to show up in modes such as
+underlined or in reverse video on terminals that support such display
+enhancements.
+Line drawing characters may be specified to be output.
+On input,
+.B curses
+is also able to translate arrow and function keys that
+transmit escape sequences into single values.
+The video attributes, line drawing characters, and input values use names,
+defined in
+.RB < curses.h >,
+such as
+.BR \s-1A_REVERSE\s0 ,
+.BR \s-1ACS_HLINE\s0 ,
+and
+.BR \s-1KEY_LEFT\s0 .
+.LP
+.B curses
+also defines the
+.B "\s-1WINDOW\s0 \(**"
+variable,
+.BR curscr ,
+which is used only for certain low-level operations like clearing
+and redrawing a garbaged screen.
+.B curscr
+can be used in only a few routines.
+If the window argument to
+.B clearok(\|)
+is 
+.BR curscr ,
+the next call to
+.B wrefresh(\|)
+with any window will clear and repaint the screen from scratch.
+If the window argument to
+.B wrefresh(\|)
+is
+.BR curscr ,
+the screen in immediately cleared and
+repainted from scratch.
+This is how most programs would implement
+a \*(lqrepaint-screen\*(rq function.
+More information on using
+.B curscr
+is provided where its use is appropriate.
+.LP
+The environment variables
+.SB LINES
+and
+.SB COLUMNS
+may be set to override
+.BR curses 's
+idea of how large a screen is.
+.LP
+If the environment variable
+.SB TERMINFO
+is defined, any program using
+.B curses
+will check for a local terminal definition before
+checking in the standard place.
+For example, if the environment variable
+.SB TERM
+is set to
+.BR sun ,
+then the compiled terminal definition is found in
+.BR /usr/share/lib/terminfo/s/sun .
+The
+.B s
+is copied from the first letter of
+.B sun
+to avoid creation of huge directories.)
+However, if
+.SB TERMINFO
+is set to
+.BR \s-1$HOME\s0/myterms ,
+.B curses
+will first check
+.BR \s-1$HOME\s0/myterms/s/sun ,
+and, if that fails, will then check
+.BR /usr/share/lib/terminfo/s/sun .
+This is useful for developing experimental
+definitions or when write permission on
+.B /usr/share/lib/terminfo
+is not available.
+.LP
+The integer variables
+.SB LINES
+and
+.SB COLS
+are defined in
+.RB < curses.h >,
+and will be filled in by
+.B initscr(\|)
+with the size of the screen.
+For more information, see the subsection
+.BR "Terminfo-Level Manipulations" .
+The constants
+.SB TRUE
+and
+.SB FALSE
+have the values
+.B 1
+and
+.BR 0 ,
+respectively.
+The constants
+.SM ERR
+and
+.SM OK
+are returned by routines to indicate whether the routine successfully
+completed.
+These constants are also defined in
+.BR <curses.h> .
+.SH ROUTINES
+.LP
+Many of the following routines have two or more versions.
+The routines prefixed with
+.B w
+require a
+.I window
+argument.
+The routines prefixed with
+.B p
+require a
+.I pad
+argument.
+Those without a prefix generally use
+.BR stdscr .
+.br
+.ne 5
+.LP
+The routines prefixed with
+.B mv
+require 
+.I y
+and
+.I x
+coordinates to move to before performing the appropriate action.
+The
+.B mv
+routines imply a call to
+.B move(\|)
+before the call to the other routine.
+The window argument is always specified before
+the coordinates. 
+.I y
+always refers to the row
+(of the window), and
+.I x
+always refers to the column.
+The upper left corner is always
+.BR (0,0) ,
+not
+.BR (1,1) .
+The routines prefixed with
+.B mvw
+take both a
+.I window
+argument and
+.I y
+and
+.I x
+coordinates.
+.LP
+In each case,
+.I win
+is the window affected and
+.I pad
+is the pad affected.
+.IB ( win
+and
+.I pad
+are always of type
+.BR "\s-1WINDOW\s+1 \(**" .)
+Option-setting routines require a boolean flag
+.I bf
+with the value
+.SB TRUE
+or
+.BR \s-1FALSE\s0 .
+.RI ( bf
+is always of type
+.BR bool .)
+The types
+.BR \s-1WINDOW\s+1 ,
+.BR bool ,
+and
+.B chtype
+are defined in
+.RB < curses.h >
+(see
+.SB SYNOPSIS
+for a summary of what types all variables are).
+.LP
+All routines return either the integer
+.SM ERR
+or the integer
+.SM OK\s0,
+unless otherwise noted.
+Routines that return pointers always return
+.SM NULL
+on error.
+.SS "Overall Screen Manipulation"
+.LP
+.TP 20
+.B \s-1WINDOW\s0 \(**initscr(\|)
+The first routine called should almost always be
+.BR initscr(\|) .
+The exceptions are
+.BR slk_init(\|) ,
+.BR filter(\|) ,
+and
+.BR ripoffline(\|) .
+This will determine the terminal type and initialize all
+.B curses
+data structures.
+.B initscr(\|)
+also arranges that the first call to
+.B refresh(\|)
+will clear the screen.
+If errors occur,
+.B initscr(\|)
+will write an appropriate error message to
+standard error and exit;
+otherwise, a pointer to
+.B stdscr
+is returned.
+If the program wants an indication of error conditions,
+.B newterm(\|)
+should be used instead of
+.BR initscr(\|) .
+.B initscr(\|)
+should only be called once per application.
+.TP 20
+.B endwin(\|)
+A program should always call
+.B endwin(\|)
+before exiting or escaping from
+.B curses
+mode temporarily, to do a
+shell escape or
+.BR system (3)
+call, for example.
+This routine will restore
+.BR termio (4)
+modes, move the cursor to the lower left
+corner of the screen and reset the terminal into the proper non-visual mode.
+To resume after a temporary escape,
+call
+.B wrefresh(\|)
+or
+.BR doupdate(\|) .
+.SS "Window and Pad Manipulation"
+.LP
+.TP 20
+.B refresh(\|)
+.TP
+.BI "wrefresh (" win )
+These routines
+(or
+.BR prefresh(\|) ,
+.BR pnoutrefresh(\|) ,
+.BR wnoutrefresh(\|) ,
+or
+.BR doupdate(\|) )
+must be called to write output to the terminal,
+as most other routines merely manipulate data structures.
+.B wrefresh(\|)
+copies the named window to the physical terminal screen,
+taking into account what is already there in order
+to minimize the amount of information that's
+sent to the terminal (called optimization).
+.B refresh(\|)
+does the same thing, except it uses
+.B stdscr
+as a default window.
+Unless
+.B leaveok(\|)
+has been enabled, the physical cursor of the terminal is left at the location
+of the window's cursor.
+The number of characters output to the terminal
+is returned.
+.sp .5
+Note:
+.B refresh(\|)
+is a macro.
+.sp .5
+.TP 20
+.BI "\s-1WINDOW\s0 \(**newwin (" "nlines, ncols, begin_y, begin_x" )
+Create and return a pointer to
+a new window with the given number of lines (or rows),
+.IR nlines ,
+and columns,
+.IR ncols .
+The upper left corner of the window is at line
+.IR begin_y ,
+column
+.IR begin_x .
+If either
+.I nlines
+or
+.IR ncols
+is
+.BR 0 ,
+they will be set to the value of
+.BI lines\- begin_y
+and
+.BI cols\- begin_x\fR.
+A new full-screen window is created by calling
+.BR newwin(0,0,0,0) .
+.TP 20
+.BI "mvwin (" "win, y, x" )
+Move the window so that the upper left corner will be at position
+.RI ( y ", " x ).
+If the move would cause the window to be off the screen, it is an error and
+the window is not moved.
+.TP 20
+.BI "\s-1WINDOW\s0 \(**subwin (" "orig, nlines, ncols, begin_y, begin_x" )
+Create and return a pointer to
+a new window with the given number of lines (or rows),
+.IR nlines ,
+and columns,
+.IR ncols .
+The window is at position
+.RI ( " begin_y, begin_x" )
+on the screen.
+This position is relative to the screen, and not to the window
+.IR orig .
+The window is made in the middle of the window
+.IR orig ,
+so that changes made to one window will affect both windows.
+When using this routine, often it will be necessary to call
+.B touchwin(\|)
+or
+.B touchline(\|)
+on
+.I orig
+before calling
+.BR wrefresh .
+.TP 20
+.BI " delwin (" win )
+Delete the named window, freeing up all memory associated with it.
+In the case of overlapping windows, subwindows should be deleted before the
+main window.
+.SS "Output"
+.LP
+These routines are used to \*(lqdraw\*(rq text on windows.
+.sp .5
+.TP 20
+.BI "addch (" ch )
+.TP
+.BI "waddch (" "win, ch" )
+.TP
+.BI "mvaddch (" "y, x, ch" )
+.TP
+.BI "mvwaddch (" "win, y, x, ch" )
+The character
+.IR ch
+is put into the window at the current cursor position of the window and
+the position of the window cursor is advanced.
+Its function is similar to that of
+.B putchar(\|)
+(see
+.BR putc (3s)).
+At the right margin, an automatic newline is performed.
+At the bottom of the scrolling region,
+if
+.B scrollok(\|)
+is enabled, the scrolling region will be scrolled up one line.
+.IP
+If
+.I ch
+is a
+.SM TAB\s0,
+.SM NEWLINE\s0,
+or backspace, the cursor will be moved appropriately
+within the window.
+A
+.SM NEWLINE
+also does a
+.B clrtoeol(\|)
+before moving.
+.SM TAB
+characters are considered to be at every eighth column.
+If
+.I ch
+is another control character, it will be drawn in the
+.SM CTRL-X
+notation.  (Calling
+.B winch(\|)
+after adding a control character will not return the control character, but
+instead will return the representation of the control character.)
+.IP
+Video attributes can be combined with a character by or-ing them
+into the parameter.
+This will result in these attributes also being set.
+The intent here is that text, including attributes, can be
+copied from one place to another using
+.B inch(\|)
+and
+.BR addch(\|) .
+See
+.BR standout(\|) ,
+below.
+.IP
+Note: 
+.IR ch
+is actually of type
+.BR chtype ,
+not a character.
+.IP
+Note: 
+.BR addch(\|) ,
+.BR mvaddch(\|) ,
+and
+.B mvwaddch(\|)
+are macros.
+.IP
+.TP 20
+.BI "addstr (" str )
+.TP
+.BI "waddstr (" "win, str" )
+.TP 20
+.BI "mvwaddstr (" "win, y, x, str" )
+.TP
+.BI "mvaddstr (" "y, x, str" )
+These routines write all the characters of the null-terminated character
+string
+.I str
+on the given window.
+This is equivalent to calling
+.B waddch(\|)
+once for each character in the string.
+.IP
+Note: 
+.BR addstr(\|) ,
+.BR mvaddstr(\|) ,
+and
+.B mvwaddstr(\|)
+are macros.
+.\".LP
+.\".TP 20
+.\".B standend(\|)
+.\".TP
+.\".BI "wstandend (" win )
+.\".TP 20
+.\".B standout(\|)
+.\".TP
+.\".BI "wstandout (" win )
+.\"descriptions to be supplied
+.TP 20
+.BI "box (" "win, vertch, horch" )
+A box is drawn around the edge of the window,
+.IR win .
+.I vertch
+and
+.I horch
+are the characters the box is to be drawn with.
+If
+.I vertch
+and
+.I horch
+are
+.BR 0 ,
+then appropriate default characters,
+.SB ACS_VLINE
+and
+.BR \s-1ACS_HLINE\s0 ,
+will be used.
+.IP
+Note: 
+.I vertch
+and
+.I horch
+are actually of type
+.BR chtype ,
+not characters.
+.LP
+.TP 20
+.B erase(\|)
+.TP
+.BI "werase (" win )
+These routines copy blanks to every position in the window.
+.IP
+Note: 
+.B erase(\|)
+is a macro.
+.br
+.ne 8
+.TP 20
+.B clear(\|)
+.TP
+.BI "wclear (" win )
+These routines are like
+.B erase(\|)
+and
+.BR werase(\|) ,
+but they also call
+.BR clearok(\|) ,
+arranging that the screen will be cleared completely on the next call to
+.B wrefresh(\|)
+for that window, and repainted from scratch.
+.IP
+Note: 
+.B clear(\|)
+is a macro.
+.LP
+.TP 20
+.B clrtobot(\|)
+.TP
+.BI "wclrtobot (" win )
+All lines below the cursor in this window are erased.
+Also, the current line to the right of the cursor, inclusive, is erased.
+.IP
+Note: 
+.B clrtobot(\|)
+is a macro.
+.LP
+.TP 20
+.B clrtoeol(\|)
+.TP
+.BI "wclrtoeol (" win )
+The current line to the right of the cursor, inclusive, is erased.
+.IP
+Note: 
+.B clrtoeol(\|)
+is a macro.
+.LP
+.TP 20
+.B delch(\|)
+.TP
+.BI "wdelch (" win )
+.TP
+.BI "mvdelch (" "y, x" )
+.TP
+.BI "mvwdelch (" "win, y, x" )
+The character under the cursor in the window is deleted.
+All characters to the right on the same line are moved to the left one
+position and the last character on the line is filled with a blank.
+The cursor position does not change (after moving to
+.RI ( "y, x" ),
+if specified).
+This does not imply use of the hardware \*(lqdelete-character\*(rq feature.
+.IP
+Note: 
+.BR delch(\|) ,
+.BR mvdelch(\|) ,
+and
+.B mvwdelch(\|)
+are macros.
+.LP
+.TP 20
+.B deleteln(\|)
+.TP
+.BI "wdeleteln (" win )
+The line under the cursor in the window is deleted.
+All lines below the current line are moved up one line.
+The bottom line of the window is cleared.
+The cursor position does not change.
+This does not imply use of the hardware \*(lqdelete-line\*(rq feature.
+.IP
+Note: 
+.B deleteln(\|)
+is a macro.
+.LP
+.TP 20
+.BI "getyx (" "win, y, x" )
+The cursor position of the window is placed in the two integer variables
+.I y
+and
+.IR x .
+This is implemented as a macro, so no
+.RB ` & '
+is necessary before the variables.
+.LP
+.TP 20
+.BI "insch (" ch )
+.TP
+.BI "winsch (" "win, ch" )
+.TP 20
+.BI "mvwinsch (" "win, y, x, ch" )
+.TP
+.BI "mvinsch (" "y, x, ch" )
+The character
+.I ch
+is inserted before the character under the cursor.
+All characters to the right are moved one
+.SM SPACE
+to the right, possibly losing
+the rightmost character of the line.
+The cursor position does not change (after moving to
+.RI ( "y, x" ),
+if specified).
+This does not imply use of the hardware \*(lqinsert-character\*(rq feature.
+.IP
+Note: 
+.I ch
+is actually of type
+.BR chtype ,
+not a character.
+.IP
+Note: 
+.BR insch(\|) ,
+.BR mvinsch(\|) ,
+and
+.B mvwinsch(\|)
+are macros.
+.LP
+.TP 20
+.B insertln(\|)
+.TP
+.BI "winsertln (" win )
+A blank line is inserted above the current line and the bottom line is lost.
+This does not imply use of the hardware \*(lqinsert-line\*(rq feature.
+.IP
+Note: 
+.B insertln(\|)
+is a macro.
+.LP
+.TP 20
+.BI "move (" "y, x" )
+.TP
+.BI "wmove (" "win, y, x" )
+The cursor associated with the window is moved to
+line (row)
+.IR y ,
+column
+.IR x .
+This does not move the physical cursor of the terminal until
+.B refresh(\|)
+is called.
+The position specified is relative to the upper left corner of the window,
+which is
+.RB ( 0 ", " 0 ).
+.IP
+Note: 
+.B move(\|)
+is a macro.
+.LP
+.TP 20
+.BI "overlay (" "srcwin, dstwin" )
+.TP 20
+.BI "overwrite (" "srcwin, dstwin" )
+These routines overlay
+.I srcwin
+on top of
+.IR dstwin ;
+that is, all text in
+.I srcwin
+is copied into
+.IR dstwin .
+.I scrwin
+and
+.I dstwin
+need not be the same size;
+only text where the two windows overlap is copied.
+The difference is that
+.B overlay(\|)
+is non-destructive (blanks are not copied), while
+.B overwrite(\|)
+is destructive.
+.LP
+.TP 20
+.BI "printw (" "fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+.TP 20
+.BI "wprintw (" "win, fmt \fR[, arg\|.\|.\|.\fR]" )
+.TP 20
+.BI "mvprintw (" "y, x, fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+.TP 20
+.BI "mvwprintw (" "win, y, x, fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+These routines are analogous to
+.BR printf (3V).
+The string that would be output by
+.BR printf (3V)
+is instead output using
+.B waddstr(\|)
+on the given window.
+.TP 20
+.BI "scroll (" win )
+The window is scrolled up one line.
+This involves moving the lines in the window data structure.
+As an optimization, if the window is
+.BR stdscr
+and the scrolling region is the entire window,
+the physical screen will be scrolled at the same time.
+.LP
+.TP 20
+.BI "touchwin (" win )
+.TP
+.BI "touchline (" "win, start, count" )
+Throw away all optimization information about which parts of the window have
+been touched, by pretending that the entire window has been drawn on.
+This is sometimes necessary when using overlapping windows, since a change to
+one window will affect the other window, but the records of which lines have
+been changed in the other window will not reflect the change.
+.B touchline(\|)
+only pretends that
+.I count
+lines have been changed, beginning with line
+.IR start .
+.br
+.ne8
+.SS "Input"
+.LP
+.TP 20
+.B getch(\|)
+.TP
+.BI "wgetch (" win )
+.TP
+.BI "mvgetch (" "y, x" )
+.TP
+.BI "mvwgetch (" "win, y, x" )
+A character is read from the terminal associated with the window.
+In
+.SM NODELAY
+mode, if there is no input waiting, the value
+.SM ERR
+is returned.
+In
+.SM DELAY
+mode,
+the program will hang until the system passes text through to
+the program.
+Depending on the setting of
+.BR cbreak(\|) ,
+this will be after one character (\s-1CBREAK\s0 mode),
+or after the first newline (\s-1NOCBREAK\s0 mode).
+In
+.SM HALF-DELAY
+mode, the program will hang until a character is typed or the
+specified timeout has been reached.
+Unless
+.B noecho(\|)
+has been set,
+the character will also be echoed into the designated window.
+No
+.B refresh(\|)
+will occur between the
+.B move(\|)
+and the
+.B getch(\|)
+done within the routines
+.B mvgetch(\|)
+and
+.BR mvwgetch(\|) .
+.IP
+When using
+.BR getch(\|) ,
+.BR wgetch(\|) ,
+.BR mvgetch(\|) ,
+or
+.BR mvwgetch(\|) ,
+do not set both
+.SM NOCBREAK
+mode
+.RB ( nocbreak (\|))
+and
+.SM ECHO
+mode
+.RB ( echo (\|))
+at the same time.
+Depending on the state of the terminal
+driver when each character is typed,
+the program may produce undesirable results.
+.br
+.ne 13
+.IP
+If
+.BI "keypad (" "win, " \s-1TRUE\s0)
+has been called,
+and a function key is pressed, the token for that function
+key will be returned instead of the raw characters.
+See
+.B keypad(\|)
+under
+.BR "Input Options Setting" .
+Possible function keys are defined in
+.RB < curses.h >
+with integers beginning with
+.BR 0401 ,
+whose names begin with
+.BR \s-1KEY_\s0 .
+If a character is received that could be the beginning of a function key
+(such as escape),
+.B curses
+will set a timer.
+If the remainder of the sequence is not received within the designated time,
+the character will be passed through,
+otherwise the function key value will be returned.
+For this reason, on many terminals, there will be a delay after a
+user presses the escape key before the escape is returned to the program.
+Use by a programmer of the escape key for a single character routine is
+discouraged.
+Also see
+.B notimeout(\|)
+below.
+.IP
+Note: 
+.BR getch(\|) ,
+.BR mvgetch(\|) ,
+and
+.B mvwgetch(\|)
+are macros.
+.LP
+.TP 20
+.BI "getstr (" str )
+.TP
+.BI "wgetstr (" "win, str" )
+.TP 20
+.BI "mvgetstr (" "y, x, str" )
+.TP
+.BI "mvwgetstr (" "win, y, x, str" )
+A series of calls to
+.B getch(\|)
+is made, until a newline, carriage return, or enter key is received.
+The resulting value is placed in the area pointed at by the character pointer
+.IR str .
+The user's erase and kill characters are interpreted.
+As in
+.BR mvgetch(\|) ,
+no
+.B refresh(\|)
+is done between the
+.B move(\|)
+and
+.B getstr(\|)
+within the routines
+.B mvgetstr(\|)
+and
+.BR mvwgetstr(\|) .
+.IP
+Note: 
+.BR getstr(\|) ,
+.BR mvgetstr(\|) ,
+and
+.B mvwgetstr(\|)
+are macros.
+.LP
+.TP 20
+.B inch(\|)
+.TP
+.BI "winch (" win )
+.TP
+.BI "mvinch (" "y, x" )
+.TP
+.BI "mvwinch (" "win, y, x" )
+The character, of type
+.BR chtype ,
+at the current position in the named window is returned.
+If any attributes are set for that position, their values will be OR'ed into
+the value returned.
+The predefined constants
+.SB A_CHARTEXT
+and
+.BR \s-1A_ATTRIBUTES\s0 ,
+defined in
+.RB < curses.h >,
+can be used with the C logical
+.SM AND
+(&) operator to extract the character or
+attributes alone.
+.IP
+Note: 
+.BR inch(\|) ,
+.BR winch(\|) ,
+.BR mvinch(\|) ,
+and
+.B mvwinch(\|)
+are macros.
+.LP
+.TP 20
+.BI "scanw (" fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+.TP 20
+.BI "wscanw (" "win, fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+.TP 20
+.BI "mvscanw (" "y, x, fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+.TP 20
+.BI "mvwscanw (" "win, y, x, fmt \fR[\fP, arg\|.\|.\|.\fR]" )
+These routines correspond to
+.BR scanf (3V) ,
+as do their arguments and return values.
+.B wgetstr(\|)
+is called on the window,
+and the resulting line is used as input for the scan.
+.SS "Output Options Setting"
+.LP
+These routines set options within
+.B curses
+that deal with output.
+All options are initially
+\s-1FALSE\s0,
+unless otherwise stated.
+It is not necessary to turn these options off before calling
+.BR endwin(\|) .
+.TP 20
+.BI "clearok (" "win, bf" )
+If enabled
+.RI ( bf
+is
+.BR \s-1TRUE\s0 ),
+the next call to
+.B wrefresh(\|)
+with this window will clear the screen completely and redraw the entire
+screen from scratch.
+This is useful when the contents of the screen are uncertain,
+or in some cases for a more pleasing visual effect.
+.br
+.ne 10
+.TP 20
+.BI "idlok (" "win, bf" )
+If enabled
+.RI ( bf
+is
+.BR \s-1TRUE\s0 ),
+.B curses
+will consider using the hardware \*(lqinsert/delete-line\*(rq
+feature of terminals so equipped.
+If disabled
+.RI ( bf
+is
+.BR \s-1FALSE\s0 ),
+.B curses
+will very seldom use this feature.
+The \*(lqinsert/delete-character\*(rq feature is always considered.
+This option should be enabled
+only if your application needs \*(lqinsert/delete-line\*(rq, for
+example, for a screen editor.
+It is disabled by default because \*(lqinsert/delete-line\*(rq tends to be visually
+annoying when used in applications where it is not really needed.
+If \*(lqinsert/delete-line\*(rq cannot be used,
+.B curses
+will redraw the changed portions
+of all lines.
+.br
+.ne 5
+.TP 20
+.BI "leaveok (" "win, bf" )
+Normally, the hardware cursor is left at the location of the window cursor
+being refreshed.
+This option allows the cursor to be left
+wherever the update happens to leave
+it.
+It is useful for applications where the cursor is not used, since it reduces
+the need for cursor motions.
+If possible, the cursor is made invisible when this option is enabled.
+.LP
+.TP 20
+.BI "scrollok (" "win, bf" )
+This option controls what happens when the cursor of a window is moved off
+the edge of the window or scrolling region, either from a newline on the
+bottom line, or typing the last character of the last line.
+If disabled
+.RI ( bf
+is
+.BR \s-1FALSE\s0 ),
+the cursor is left on the bottom line
+at the location where the offending
+character was entered.
+If enabled
+.RI ( bf
+is
+.BR \s-1TRUE\s0 ),
+.B wrefresh(\|)
+is called on the window,
+and then the physical terminal and window are scrolled up one line.
+Note: in order to get the physical scrolling effect on the terminal,
+it is also necessary to call
+.BR idlok(\|) .
+.LP
+.TP 20
+.B nl(\|)
+.TP
+.B nonl(\|)
+These routines control whether
+.SM NEWLINE
+is translated into 
+.SM RETURN
+and
+.SM LINEFEED
+on output, and whether
+.SM RETURN
+is translated into
+.SM NEWLINE
+on input.
+Initially, the translations do occur.
+By disabling these translations using
+.BR nonl(\|) ,
+.B curses
+is able to make better use of the
+linefeed capability, resulting in faster cursor motion.
+.SS "Input Options Setting"
+.LP
+These routines set options within
+.B curses
+that deal with input.
+The options involve using
+.BR ioctl (2)
+and therefore interact with
+.B curses
+routines.
+It is not necessary to turn these options off
+before calling
+.BR endwin(\|) .
+.LP
+For more information on these options,
+refer to
+.TX PUL .
+.LP
+.TP 20
+.B cbreak(\|)
+.TP
+.B nocbreak(\|)
+These two routines put the terminal into and out of
+.SM CBREAK
+mode, respectively.
+In
+.SM CBREAK
+mode, characters typed by the user are immediately available to the
+program and erase/kill character processing is not performed.
+When in
+.SM NOCBREAK
+mode, the tty driver will buffer characters typed until a
+.SM NEWLINE
+or
+.SM RETURN
+is typed.
+Interrupt and flow-control characters are unaffected by this mode
+(see
+.BR termio (4)).
+Initially the terminal may or may not be in
+.SM CBREAK
+mode, as it is inherited, therefore, a program should call
+.B cbreak(\|)
+or
+.B nocbreak(\|)
+explicitly.
+Most interactive programs using
+.B curses
+will set
+.SM CBREAK
+mode.
+.IP
+Note: 
+.B cbreak(\|)
+overrides
+.BR raw(\|) .
+See
+.B getch(\|)
+under
+.B Input
+for a discussion of how these routines interact with
+.B echo(\|)
+and
+.BR noecho(\|) .
+.LP
+.TP 20
+.B echo(\|)
+.TP
+.B noecho(\|)
+These routines control whether characters typed by the user are echoed by
+.B getch(\|)
+as they are typed.
+Echoing by the tty driver is always disabled,
+but initially
+.B getch(\|)
+is in
+.SM ECHO
+mode, so characters typed are echoed.
+Authors of most interactive programs prefer to do their own echoing in a
+controlled area of the screen, or not to echo at all, so they disable echoing
+by calling
+.BR noecho(\|) .
+See
+.B getch(\|)
+under
+.B Input
+for a discussion
+of how these routines interact with
+.B cbreak(\|)
+and
+.BR nocbreak(\|) .
+.TP 20
+.B raw(\|)
+.TP
+.B noraw(\|)
+The terminal is placed into or out of
+.SM RAW
+mode.
+.SM RAW
+mode is similar to
+.SM CBREAK
+mode,
+in that characters typed are immediately
+passed through to the user program.
+The differences are that in
+.SM RAW
+mode, the interrupt, quit, suspend, and flow
+control characters are passed through uninterpreted, instead of generating a
+signal.
+.SM RAW
+mode also causes 8-bit input and output.
+The behavior of the
+.SM BREAK
+key depends on other bits in the terminal driver that
+are not set by
+.BR curses .
+.SS "Environment Queries"
+.LP
+.TP 20
+.B baudrate(\|)
+Returns the output speed of the terminal.
+The number returned is
+in bits per second,
+for example, 9600,
+and is an integer.
+.TP 20
+.B char erasechar(\|)
+The user's current erase character is returned.
+.TP 20
+.B char killchar(\|)
+The user's current line-kill character is returned.
+.TP 20
+.B char \(**longname(\|)
+This routine returns a pointer to a static area containing
+a verbose description of the current terminal.
+The maximum length of a verbose description is 128
+characters.
+It is defined only after the call to
+.B initscr(\|)
+or
+.BR newterm(\|) .
+The area is overwritten by each call to
+.B newterm(\|)
+and is not restored by
+.BR set_term(\|) ,
+so the value should be saved between calls to
+.B newterm(\|)
+if
+.B longname(\|)
+is going to be used with multiple terminals.
+.SS "Low-Level curses Access"
+.LP
+The following routines give low-level access to various
+.B curses
+functionality.
+These routines typically would be used inside of library routines.
+.LP
+.TP 20
+.B resetty(\|)
+.TP
+.B savetty(\|)
+These routines save and restore the state of the terminal modes.
+.B savetty(\|)
+saves the current state of the terminal in a buffer and
+.B resetty(\|)
+restores the state to what it was at the last call to
+.BR savetty(\|) .
+.SS "Miscellaneous"
+.LP
+.TP 20
+.BI "unctrl (" c )
+This macro expands to a character string which is a printable
+representation of the character
+.IR c .
+Control characters are displayed in the ^X notation.
+Printing characters are displayed as is.
+.IP
+.B unctrl(\|)
+is a macro, defined in
+.RB < unctrl.h >,
+which is automatically included by
+.RB < curses.h >.
+.TP
+.BI "flusok(" "win,boolf" )
+set flush-on-refresh flag for
+.I win
+.TP
+.BI "getcap(" name )
+get terminal capability
+.I name
+.TP
+.BI "touchoverlap(" "win1,win2" )
+mark overlap of
+.I win1
+on
+.I win2
+as changed
+.\" The above three functions need to be properly classified
+.\" (flusok(), getcap() and touchoverlap())
+.SS "Use of curscr"
+.LP
+The special window
+.B curscr
+can be used in only a few routines.
+If the window argument to
+.B clearok(\|)
+is
+.BR curscr ,
+the next call to
+.B wrefresh(\|)
+with any window will cause the screen to be cleared and repainted from
+scratch.
+If the window argument to
+.B wrefresh(\|)
+is
+.BR curscr ,
+the screen is immediately cleared and repainted from scratch.
+This is how most programs would implement a \*(lqrepaint-screen\*(rq routine.
+The source window argument to
+.BR overlay(\|) ,
+.BR overwrite(\|) ,
+and
+.B copywin
+may be
+.BR curscr ,
+in which case the current contents of the virtual terminal
+screen will be accessed.
+.SS "Obsolete Calls"
+.LP
+Various routines are provided to maintain compatibility in programs written
+for older versions of the curses library.
+These routines are all emulated as indicated below.
+.br
+.ne 7
+.TP 20
+.B crmode(\|)
+Replaced by
+.BR cbreak(\|) .
+.TP 20
+.B gettmode(\|)
+A no-op.
+.TP 20
+.B nocrmode(\|)
+Replaced by
+.BR nocbreak(\|) .
+.br
+.ne 3
+.SH SYSTEM V ROUTINES
+.LP
+The above routines are available as described except for
+.BR flusok(\|) ,
+.B getcap(\|)
+and
+.B touchoverlap(\|)
+which are not available.
+.LP
+In addition, the following routines are available:
+.SS "Overall Screen Manipulation"
+.TP 20
+.B isendwin(\|)
+Returns
+.SB TRUE
+if
+.B endwin(\|)
+has been called without
+any subsequent calls to
+.BR wrefresh(\|) .
+.TP 20
+.BI "\s-1SCREEN\s0 \(**newterm(" "type, outfd, infd)
+A program that outputs to more than one terminal must use
+.B newterm(\|)
+for each terminal instead of
+.BR initscr(\|) .
+A program that wants an indication of error conditions, so that it may
+continue to run in a line-oriented mode if the terminal cannot support a
+screen-oriented program, must also use this routine.
+.B newterm(\|)
+should be called once for each terminal.
+It returns a variable of type
+.B "\s-1SCREEN\s0\(**"
+that should be saved as a reference to that terminal.
+The arguments are the
+.I type
+of the terminal to be used in place of
+the environment variable
+.BR \s-1TERM\s0 ;
+.IR outfd ,
+a
+.BR stdio (3V)
+file pointer for output to the terminal; and
+.IR infd ,
+another file pointer for input from the terminal.
+When it is done running, the program must also call
+.B endwin(\|)
+for each terminal being used.
+If
+.B newterm(\|)
+is called more than once
+for the same terminal, the first terminal referred to
+must be the last one for which
+.B endwin(\|)
+is called.
+.TP 20
+.BI "\s-1SCREEN\s0 \(**set_term (" new )
+This routine is used to switch between different terminals.
+The screen reference
+.I new
+becomes the new current terminal.
+A pointer to the screen of
+the previous terminal is returned by the routine.
+This is the only routine that manipulates
+.SB SCREEN
+pointers; all other routines affect only the current terminal.
+.SS "Window and Pad Manipulation"
+.LP
+.TP 20
+.BI "wnoutrefresh (" win )
+.TP 20
+.B doupdate(\|)
+These two routines allow multiple updates
+to the physical terminal screen with more efficiency than
+.B wrefresh(\|)
+alone.
+How this is accomplished is described in the
+next paragraph.
+.sp .5
+.B curses
+keeps two data structures
+representing the terminal screen: a
+.IR physical
+terminal screen, describing what is actually on the screen, and a
+.IR virtual
+terminal screen, describing what the programmer
+wants
+to have on the screen.
+.B wrefresh(\|)
+works by first calling
+.BR wnoutrefresh(\|) ,
+which copies the named window to the virtual screen, and then by calling
+.BR doupdate(\|) ,
+which compares the virtual screen to the physical screen and does the actual
+update.
+If the programmer wishes to output several windows at once, a series of calls
+to
+.B wrefresh(\|)
+will result in alternating calls to
+.B wnoutrefresh(\|)
+and
+.BR doupdate(\|) ,
+causing several bursts of output to the screen.
+By first calling
+.B wnoutrefresh(\|)
+for each window, it is then possible to call
+.B doupdate(\|)
+once, resulting in only one burst of output, with probably fewer total
+characters transmitted and certainly less processor time used.
+.TP 20
+.BI "\s-1WINDOW\s0 \(**newpad (" "nlines, ncols" )
+Create and return a pointer to a new pad
+data structure with the given number of lines (or rows),
+.IR nlines ,
+and columns,
+.IR ncols .
+A pad is a window that is not restricted by the screen size
+and is not necessarily associated with a particular part of the screen.
+Pads can be used when a large window is needed, and only a part of the window
+will be on the screen at one time.
+Automatic refreshes of pads (for example,
+from scrolling or echoing of input) do not occur.
+It is not legal to call
+.B wrefresh(\|)
+with a pad as an argument; the routines
+.B prefresh(\|)
+or
+.B pnoutrefresh(\|)
+should be called instead.
+Note: these routines require additional parameters to specify the part of
+the pad to be displayed and the location on the screen to be used for display.
+.br
+.ne 7
+.TP 20
+.BI "\s-1WINDOW\s0 \(**subpad (" "orig, nlines, ncols, begin_y, begin_x" )
+Create and return a pointer to
+a subwindow within a pad with the given number of lines (or rows),
+.IR nlines ,
+and columns,
+.IR ncols .
+Unlike
+.BR subwin(\|) ,
+which uses screen coordinates,
+the window is at position
+.RI ( "begin_y, begin_x" )
+on the pad.
+The window is made in the middle of the window
+.IR orig ,
+so that changes made to one window will affect both windows.
+When using this routine, often it will be necessary to call
+.B touchwin(\|)
+or
+.B touchline(\|)
+on
+.I orig
+before calling
+.BR prefresh(\|) .
+.sp .5
+.HP 20
+.B prefresh
+.BI ( pad\fR,
+.IR pminrow ,
+.IR pmincol ,
+.IR sminrow ,
+.IR smincol ,
+.IR smaxrow ,
+.IB smaxcol )
+.br
+.TP 20
+.HP
+.B pnoutrefresh
+.BI ( pad\fR,
+.IR pminrow , 
+.IR pmincol , 
+.IR sminrow , 
+.IR smincol ,
+.IR smaxrow , 
+.IB smaxcol )
+.br
+.TP
+These routines are analogous to
+.B wrefresh(\|)
+and
+.B wnoutrefresh(\|)
+except that pads, instead of windows, are involved.
+The additional parameters are needed to indicate what part of the pad and
+screen are involved.
+.IR pminrow
+and
+.IR pmincol
+specify the upper left corner, in the pad, of the rectangle to be displayed.
+.IR sminrow ,
+.IR smincol ,
+.IR smaxrow ,
+and
+.IR smaxcol
+specify the edges, on the screen, of the rectangle to be displayed in.
+The lower right corner in the pad of the rectangle to be displayed is
+calculated from the screen coordinates, since the rectangles must be the same
+size.
+Both rectangles must be entirely contained within their respective structures.
+Negative values of
+.IR pminrow ,
+.IR pmincol ,
+.IR sminrow ,
+or
+.IR smincol
+are treated as if they were zero.
+.br
+.ne8
+.SS "Output"
+.LP
+These routines are used to \*(lqdraw\*(rq text on windows.
+.sp .5
+.TP 20
+.BI "echochar (" ch )
+.TP
+.BI "wechochar (" "win, ch" )
+.TP
+.BI "pechochar (" "pad, ch" )
+These routines are functionally equivalent to a call to
+.BI "addch (" ch )
+followed by a call to
+.BR refresh(\|) ,
+a call to
+.BI "waddch (" "win, ch" )
+followed by a call to
+.BI "wrefresh (" win ),
+or a call to
+.BI "waddch (" "pad, ch" )
+followed by a call to
+.BI "prefresh (" pad ).
+The knowledge that only a single character is being output is taken into
+consideration and, for non-control characters, a considerable performance
+gain can be seen by using these routines instead of their equivalents.
+In the case of
+.BR pechochar(\|) ,
+the last location of the pad on the screen is reused for the
+arguments to
+.BR prefresh(\|) .
+.IP
+Note: 
+.I ch
+is actually of type
+.BR chtype ,
+not a character.
+.IP
+Note: 
+.B echochar(\|)
+is a macro.
+.br
+.ne 22
+.LP
+.TP 20
+.BI "attroff (" attrs )
+.TP
+.BI "wattroff (" "win, attrs" )
+.TP 20
+.BI "attron (" attrs )
+.TP
+.BI "wattron (" "win, attrs" )
+.TP 20
+.BI "attrset (" attrs )
+.TP
+.BI "wattrset (" "win, attrs" )
+.TP 20
+.B beep(\|)
+.TP
+.B flash(\|)
+These routines are used to signal the terminal user.
+.B beep(\|)
+will sound the audible alarm on the terminal, if possible, and if not, will
+flash the screen (visible bell), if that is possible.
+.B flash(\|)
+will flash the screen, and if that is not possible, will sound the audible
+signal.
+If neither signal is possible, nothing will happen.
+Nearly all terminals have an audible signal (bell or beep) but only some can
+flash the screen.
+.LP
+.TP 20
+.BI "delay_output (" ms )
+Insert a
+.I ms
+millisecond pause in the output.
+It is not recommended that this routine be used extensively,
+because padding characters are used rather than a processor pause.
+.LP
+.TP 20
+.BI "getbegyx (" "win, y, x" )
+.TP
+.BI "getmaxyx (" "win, y, x" )
+Like
+.BR getyx(\|) ,
+these routines store the current beginning coordinates and size of the
+specified window.
+.IP
+Note: 
+.B getbegyx(\|)
+and
+.B getmaxyx(\|)
+are macros.
+.LP
+.HP 20
+.B copywin
+.BI ( srcwin\fR,
+.IR dstwin ,
+.IR sminrow , 
+.IR smincol , 
+.IR dminrow , 
+.IR dmincol , 
+.IR dmaxrow , 
+.IR dmaxcol , 
+.IB overlay )
+.br
+This routine provides a finer grain of control over the
+.B overlay(\|)
+and
+.B overwrite(\|)
+routines.
+Like in the
+.B prefresh(\|)
+routine, a rectangle is specified in the destination window,
+.RI ( dminrow ", " dmincol )
+and
+.RI ( dmaxrow ", " dmaxcol ),
+and the upper-left-corner coordinates of the source window,
+.RI ( sminrow ", " smincol ).
+If the argument
+.I overlay
+is true, then copying is non-destructive, as in
+.BR overlay(\|) .
+.LP
+.TP 20
+.BI "vwprintw (" "win, fmt, varglist" )
+This routine corresponds to
+.BR vprintf (3V).
+It performs a
+.B wprintw(\|)
+using a variable argument list.
+The third argument is a
+.BR va_list ,
+a pointer to a list of arguments, as defined
+in
+.BR <varargs.h> .
+See the 
+.BR vprintf (3V)
+and
+.BR varargs (3)
+manual pages for a detailed description on how to use variable
+argument lists.
+.SS "Input"
+.LP
+.TP 20
+.B flushinp(\|)
+Throws away any typeahead that has been typed by the user and has not yet
+been read by the program.
+.TP 20
+.BI "ungetch (" c )
+Place
+.I c
+back onto the input queue to be returned by the next call to
+.BR wgetch(\|) .
+.LP
+.TP 20
+.BI "vwscanw (" "win, fmt, ap" )
+This routine is similar to 
+.B vwprintw(\|)
+above in that performs a
+.B wscanw(\|)
+using a variable argument list.
+The third argument is a
+.BR va_list ,
+a pointer to a list of arguments, as defined
+in
+.BR <varargs.h> .
+See the 
+.BR vprintf (3V)
+and
+.BR varargs (3)
+manual pages for a detailed description on how to use variable
+argument lists.
+.SS "Output Options Setting"
+.LP
+These routines set options within
+.B curses
+that deal with output.
+All options are initially
+\s-1FALSE\s0,
+unless otherwise stated.
+It is not necessary to turn these options off before calling
+.BR endwin(\|) .
+.TP 20
+.BI "setscrreg (" "top, bot" )
+.TP
+.BI "wsetscrreg (" "win, top, bot" )
+These routines allow the user to set a software scrolling region
+in a window.
+.I top
+and
+.I bot
+are the line numbers of the top and bottom margin of the scrolling region.
+Line 0 is the top line of the window.
+If this option and
+.B scrollok(\|)
+are enabled, an attempt to move off the bottom margin line will cause all
+lines in the scrolling region to scroll up one line.
+Note: this has nothing to do with use of a physical scrolling region
+capability in the terminal, like that in the
+.SM DEC VT\s0100.
+Only the text of the window is scrolled;
+if
+.B idlok(\|)
+is enabled and the terminal has either a scrolling region or
+\*(lqinsert/delete-line\*(rq capability,
+they will probably be used by the output routines.
+.IP
+Note: 
+.B setscrreg(\|)
+and
+.B wsetscrreg(\|)
+are macros.
+.SS "Input Options Setting"
+.LP
+These routines set options within
+.B curses
+that deal with input.
+The options involve using
+.BR ioctl (2)
+and therefore interact with
+.B curses
+routines.
+It is not necessary to turn these options off
+before calling
+.BR endwin(\|) .
+.LP
+For more information on these options,
+refer to
+.TX PUL .
+.LP
+.TP 20
+.BI "halfdelay (" tenths )
+Half-delay mode is similar to
+.SM CBREAK
+mode in that characters typed by the
+user are immediately available to the program.
+However, after blocking for
+.I tenths
+tenths of seconds,
+.SM ERR
+will be returned if nothing has been typed.
+.I tenths
+must be a number between 1 and 255.
+Use
+.B nocbreak(\|)
+to leave half-delay mode.
+.br
+.ne 4
+.TP 20
+.BI "intrflush (" "win, bf" )
+If this option is enabled, when an interrupt key is pressed on the keyboard
+(interrupt, break, quit) all output in the tty driver queue will be flushed,
+giving the effect of faster response to the interrupt, but causing
+.B curses
+to have the wrong idea of what is on the screen.
+Disabling the option prevents the flush.
+The default for the option is inherited from the tty driver settings.
+The window argument is ignored.
+.TP 20
+.BI "keypad (" "win, bf" )
+This option enables the keypad of the user's terminal.
+If enabled, the user can press a function key (such as an arrow key) and
+.B wgetch(\|)
+will return a single value representing the function key,
+as in
+.BR \s-1KEY_LEFT\s0 .
+If disabled,
+.B curses
+will not treat function keys specially and the program
+would have to interpret the escape sequences itself.
+If the keypad in the terminal can be turned on (made to transmit) and off
+(made to work locally), turning on this option will cause the
+terminal keypad to be turned on when
+.B wgetch(\|)
+is called.
+.TP 20
+.BI "meta (" "win, bf" )
+If enabled, characters returned by
+.B wgetch(\|)
+are transmitted with all 8 bits, instead of with the highest bit stripped.
+In order for
+.B meta(\|)
+to work correctly, the
+.B km
+.RB ( has_meta_key )
+capability has to be specified in the terminal's
+.BR terminfo (5V)
+entry.
+.TP 20
+.BI "nodelay (" "win, bf" )
+This option causes
+.B wgetch(\|)
+to be a non-blocking call.
+If no input is ready,
+.B wgetch(\|)
+will return
+.SM ERR\s0.
+If disabled,
+.B wgetch(\|)
+will hang until a key is pressed.
+.TP 20
+.BI "notimeout (" "win, bf" )
+While interpreting an input escape sequence,
+.B wgetch(\|)
+will set a timer while waiting for the next character.
+If
+.BI "notimeout (" "win, " \s-1TRUE\s0)
+is called, then
+.B wgetch(\|)
+will not set a timer.
+The purpose of the timeout is to differentiate between sequences
+received from a function key and those typed by a user.
+.LP
+.TP 20
+.BI "typeahead (" fildes )
+.B curses
+does \*(lqline-breakout optimization\*(rq by looking for
+typeahead periodically while updating the screen.
+If input is found, and it is coming from a tty,
+the current update will be postponed until
+.B refresh(\|)
+or
+.B doupdate(\|)
+is called again.
+This allows faster response to commands typed in advance.
+Normally, the file descriptor for the input
+.SM FILE
+pointer passed to
+.BR newterm(\|) ,
+or
+.B stdin
+in the case that
+.B initscr(\|)
+was used, will be used to do this typeahead checking.
+The
+.B typeahead(\|)
+routine specifies that the file descriptor
+.I fildes
+is to be used to check for typeahead instead.
+If
+.I fildes
+is
+.BR \-1 ,
+then no typeahead checking will be done.
+.IP
+Note:
+.I fildes
+is a file descriptor, not a
+.B <stdio.h>
+.SM FILE
+pointer.
+.br
+.ne 9
+.SS "Environment Queries"
+.LP
+.TP 20
+.B has_ic(\|)
+True if the terminal has insert- and delete-character capabilities.
+.TP 20
+.B has_il(\|)
+True if the terminal has insert- and delete-line capabilities, or can
+simulate them using scrolling regions.
+This might be used to check to see if it would be appropriate to turn on
+physical scrolling using
+.BR scrollok(\|) .
+.SS "Soft Labels"
+.LP
+If desired,
+.B curses
+will manipulate the set of soft function-key labels that exist on many
+terminals.
+For those terminals that do not have soft labels,
+if you want to simulate them,
+.B curses
+will take over the
+bottom line of
+.BR stdscr ,
+reducing the size of
+.B stdscr
+and the variable
+.BR \s-1LINES\s0 .
+.B curses
+standardizes on 8 labels of 8 characters each.
+.TP 20
+.BI "slk_init (" labfmt )
+In order to use soft labels,
+this routine must be called
+before
+.B initscr(\|)
+or
+.B newterm(\|)
+is called.
+If
+.B initscr(\|)
+winds up using a line from
+.B stdscr
+to emulate the soft labels, then
+.I labfmt
+determines how the labels are arranged on the screen.
+Setting
+.I labfmt
+to
+.B 0
+indicates that the labels are to be arranged in a
+3-2-3
+arrangement;
+.B 1
+asks for a 4-4 arrangement.
+.br
+.ne 5
+.TP 20
+.BI "slk_set (" "labnum, label, labfmt" )
+.I labnum
+is the label number, from 1 to 8.
+.I label
+is the string to be put on the label, up to 8 characters in length.
+A
+null string or a
+.SM NULL
+pointer will put up a blank label.
+.I labfmt
+is one of
+.BR 0 ,
+.B 1
+or
+.BR 2 ,
+to indicate whether the label is to be left-justified,
+centered, or right-justified within the label.
+.LP
+.TP 20
+.B slk_refresh(\|)
+.TP 20
+.B slk_noutrefresh(\|)
+These routines correspond to the routines
+.B wrefresh(\|)
+and
+.BR wnoutrefresh(\|) .
+Most applications would use
+.B slk_noutrefresh(\|)
+because a
+.B wrefresh(\|)
+will most likely soon follow.
+.TP 20
+.BI "char \(**slk_label (" labnum )
+The current label for label number
+.IR labnum ,
+with leading and trailing blanks stripped,
+is returned.
+.TP 20
+.B slk_clear(\|)
+The soft labels are cleared from the screen.
+.TP 20
+.B slk_restore(\|)
+The soft labels are restored to the screen after a
+.BR slk_clear(\|) .
+.TP 20
+.B slk_touch(\|)
+All of the soft labels are forced to be output the next time a
+.B slk_noutrefresh(\|)
+is performed.
+.SS "Low-Level curses Access"
+.LP
+The following routines give low-level access to various
+.B curses
+functionality.
+These routines typically would be used inside of library routines.
+.LP
+.TP 20
+.B def_prog_mode(\|)
+.TP
+.B def_shell_mode(\|)
+Save the current terminal modes as the \*(lqprogram\*(rq (in
+.BR curses )
+or \*(lqshell\*(rq (not in
+.BR curses )
+state
+for use by the
+.B reset_prog_mode(\|)
+and
+.B reset_shell_mode(\|)
+routines.
+This is done automatically by
+.BR initscr(\|) .
+.LP
+.TP 20
+.B reset_prog_mode(\|)
+.TP
+.B reset_shell_mode(\|)
+Restore the terminal to \*(lqprogram\*(rq (in
+.BR curses )
+or \*(lqshell\*(rq (out of
+.BR curses )
+state.
+These are done automatically by
+.B endwin(\|)
+and
+.B doupdate(\|)
+after an
+.BR endwin(\|) ,
+so they normally would not be called.
+.br
+.ne 11
+.LP
+.TP 20
+.BI "getsyx (" "y, x" )
+The current coordinates of the virtual screen cursor are returned in
+.I y
+and
+.IR x .
+Like
+.BR getyx(\|) ,
+the variables
+.I y
+and
+.I x
+do not take an 
+.B &
+before them.
+If
+.B leaveok(\|)
+is currently
+.BR \s-1TRUE\s0 ,
+then
+.BR \-1 ", " \-1
+will be returned.
+If lines may have been removed from the top of the screen using
+.B ripoffline(\|)
+and the values are to be used beyond just passing them on to
+.BR setsyx(\|) ,
+the value
+.IB y +stdscr\->_yoffset
+should be used for those other uses.
+.IP
+Note: 
+.B getsyx(\|)
+is a macro.
+.TP 20
+.BI "setsyx (" "y, x" )
+The virtual screen cursor is set to
+.IR y ", " x .
+If
+.I y
+and
+.I x
+are both
+.BR \-1 ,
+then
+.B leaveok(\|)
+will be set.
+The two routines
+.B getsyx(\|)
+and
+.B setsyx(\|)
+are designed to be used by a library routine that manipulates
+.B curses
+windows but does not want to mess up the current position of the program's
+cursor.
+The library routine would call
+.B getsyx(\|)
+at the beginning, do its manipulation of its own windows, do a
+.B wnoutrefresh(\|)
+on its windows, call
+.BR setsyx(\|) ,
+and then call
+.BR doupdate(\|) .
+.TP 20
+.BI "ripoffline (" "line, init" )
+This routine provides access to the same facility that
+.B slk_init(\|)
+uses to reduce the size of the screen.
+.B ripoffline(\|)
+must be called
+before
+.B initscr(\|)
+or
+.B newterm(\|)
+is called.
+If
+.I line
+is positive, a line will be removed from the top of
+.BR stdscr ;
+if negative, a line will be removed from the bottom.
+When this is done inside
+.BR initscr(\|) ,
+the routine
+.I init
+is called with two arguments:
+a window pointer to the 1-line window that has been allocated and
+an integer with the number of columns in the window.
+Inside this initialization routine,
+the integer variables
+.SB LINES
+and
+.SB COLS
+(defined in
+.BR <curses.h> )
+are not guaranteed to be accurate and
+.B wrefresh(\|)
+or
+.B doupdate(\|)
+must not be called.
+It is allowable to call
+.B wnoutrefresh(\|)
+during the initialization routine.
+.IP
+.B ripoffline(\|)
+can be called up to five times before calling
+.B initscr(\|)
+or
+.BR newterm(\|) .
+.TP 20
+.BI "scr_dump (" filename )
+The current contents of the virtual screen are written to the file
+.IR filename .
+.TP 20
+.BI "scr_restore (" filename )
+The virtual screen is set to the contents of
+.IR filename ,
+which must have been written using
+.BR scr_dump(\|) .
+The next call to
+.B doupdate(\|)
+will restore the screen to what it looked like in the dump file.
+.TP 20
+.BI "scr_init (" filename )
+The contents of
+.I filename
+are read in and used to initialize the
+.B curses
+data structures about what the
+terminal currently has on its screen.
+If the data is determined to be valid,
+.B curses
+will base its next update of
+the screen on this information rather than clearing the screen and
+starting from scratch.
+.B scr_init(\|)
+would be used after
+.B initscr(\|)
+or a
+.BR system (3)
+call to share the screen with another process that has done a
+.B scr_dump(\|)
+after its
+.B endwin(\|)
+call.
+The data will be declared invalid if the time-stamp of
+the tty is old or the
+.BR terminfo (5V)
+capability
+.B nrrmc
+is true.
+.TP 20
+.BI "curs_set (" visibility )
+The cursor is set to invisible, normal, or very visible for
+.I visibility
+equal to
+.BR 0 ,
+.B 1
+or
+.BR 2 .
+.TP 20
+.BI "draino (" ms )
+Wait until the output has drained enough that it will only take
+.I ms
+more milliseconds to drain completely.
+.TP 20
+.BI "garbagedlines (" "win, begline, numlines" )
+This routine indicates to
+.B curses
+that a screen line is garbaged and
+should be thrown away before having anything written over the top of it.
+It could be used for programs such as editors that want a command to
+redraw just a single line.
+Such a command could be used in cases where
+there is a noisy communications line
+and redrawing the entire screen would be subject
+to even more communication noise.
+Just redrawing the single line gives some semblance
+of hope that it would show up unblemished.
+The current location of the window is used to determine which lines are to
+be redrawn.
+.TP 20
+.BI "napms (" ms )
+Sleep for
+.I ms
+milliseconds.
+.SS "Terminfo-Level Manipulations"
+.LP
+These low-level routines must be called by
+programs that need to deal directly with the
+.BR terminfo (5V)
+database to handle certain terminal capabilities,
+such as programming function keys.
+For all other functionality,
+.B curses
+routines are more suitable and their use is
+recommended.
+.LP
+Initially,
+.B setupterm(\|)
+should be called.
+Note: 
+.B setupterm(\|)
+is automatically called by
+.B initscr(\|)
+and
+.BR newterm(\|) .
+This will define the set of terminal-dependent
+variables defined in the
+.BR terminfo (5V)
+database.
+The
+.BR terminfo (5V)
+variables
+.IR line s
+and
+.IR column s
+(see
+.BR terminfo (5V))
+are initialized by
+.B setupterm(\|)
+as follows: if the environment variables
+.SB LINES
+and
+.SB COLUMNS
+exist, their values are used.
+If the above environment variables
+do not exist, and the window sizes in rows and columns as returned by the
+.SB TIOCGWINSZ
+.B ioctl
+are non-zero, those sizes are used.
+Otherwise, the values for
+.IR line s
+and
+.IR column s
+specified in the
+.BR terminfo (5V)
+database are used.
+.LP
+The header files
+.RB < curses.h >
+and
+.RB < term.h >
+should be included, in this order, to get the definitions
+for these strings, numbers, and flags.
+Parameterized strings should be passed through
+.B tparm(\|)
+to instantiate them.
+All
+.BR terminfo (5V)
+strings (including the output of
+.BR tparm(\|)
+should be printed with
+.B tputs(\|)
+or
+.BR putp(\|) .
+Before exiting,
+.B reset_shell_mode(\|)
+should be called to restore the tty modes.
+Programs that use cursor addressing should
+output
+.B enter_ca_mode
+upon startup
+and should output
+.B exit_ca_mode
+before exiting (see
+.BR terminfo (5V)).
+Programs desiring shell escapes should call
+.B reset_shell_mode(\|)
+and output
+.B exit_ca_mode
+before the shell is called and should output
+.B enter_ca_mode
+and call
+.B reset_prog_mode(\|)
+after returning from the shell.
+Note: this is different from the
+.B curses
+routines (see
+.BR endwin(\|) ).
+.br
+.ne 18
+.TP 20
+.BI "setupterm (" "term, fildes, errret" )
+Reads in the
+.BR terminfo (5V)
+database, initializing the
+.BR terminfo (5V)
+structures, but does
+not set up the output virtualization structures used by
+.BR curses .
+The terminal type is in the character string
+.IR term ;
+if
+.I term
+is
+.SM NULL\s0,
+the environment variable
+.SB TERM
+will be used.
+All output is to the file descriptor
+.IR fildes .
+If
+.IR errret
+is not
+.SM NULL\s0,
+then
+.B setupterm(\|)
+will return
+.SM OK
+or
+.SB ERR
+and store a status value in the integer pointed to by
+.IR errret .
+A status of
+.B 1
+in
+.IR errret
+is normal,
+.B 0
+means that the terminal could not be found, and
+.B \-1
+means that the
+.BR terminfo (5V)
+database could not be found.
+If
+.IR errret
+is
+.SM NULL\s0,
+.B setupterm(\|)
+will print an error message upon finding an error and exit.
+Thus, the simplest call is
+.RB ` "setupterm ((char \(**)0, 1, (int \(**)0)" ',
+which uses all the defaults.
+.IP
+The
+.BR terminfo (5V)
+boolean, numeric and string variables are
+stored in a structure of type
+.BR \s-1TERMINAL\s0 .
+After
+.B setupterm(\|)
+returns successfully, the variable
+.I cur_term
+(of type
+.BR "\s-1TERMINAL\s0 \(**" )
+is initialized with all of the information that the
+.BR terminfo (5V)
+boolean, numeric and string variables refer to.
+The pointer may be saved before calling
+.B setupterm(\|)
+again.
+Further calls to
+.B setupterm(\|)
+will allocate new space rather than reuse the space pointed to by
+.IR cur_term .
+.TP 20
+.BI "set_curterm (" nterm )
+.I nterm
+is of type
+.BR "\s-1TERMINAL\s0 \(** " .
+.B set_curterm(\|)
+sets the variable
+.I cur_term
+to
+.IR nterm ,
+and makes all of the
+.BR terminfo (5V)
+boolean, numeric and string variables use the values from
+.IR nterm .
+.TP 20
+.BI "del_curterm (" oterm )
+.I oterm
+is of type
+.BR "\s-1TERMINAL\s0 \(**" .
+.B del_curterm(\|)
+frees the space pointed to by
+.I oterm
+and makes it available for further use.
+If
+.I oterm
+is the same as
+.IR cur_term ,
+then references to any of the
+.BR terminfo (5V)
+boolean, numeric and string variables thereafter may refer to invalid memory locations
+until another
+.B setupterm(\|)
+has been called.
+.TP 20
+.BI "restartterm (" "term, fildes, errret" )
+Like
+.B setupterm(\|)
+after a memory restore.
+.TP 20
+.BI "char \(**tparm (" "str, p\d\s-21\s+2\u, p\d\s-22\s+2\u, \|.\|.\|., p\d\s-29\s+2\u")
+Instantiate the string
+.I str
+with parms p\d\s-2i\s+2\u.
+A pointer is returned to the result of
+.I str
+with the parameters applied.
+.TP 20
+.BI "tputs (" "str, count, putc" )
+Apply padding to the string
+.I str
+and output it.
+.I str
+must be a
+.BR terminfo (5V)
+string variable or the return value from
+.BR tparm(\|) ,
+.BR tgetstr(\|) ,
+.B tigetstr(\|)
+or
+.BR tgoto(\|) .
+.IR count
+is the number of lines affected, or
+.B 1
+if not applicable.
+.B putchar(\|)
+is a
+.BR putc (3s)-like
+routine to which the characters are passed, one at a time.
+.TP 20
+.BI "putp (" str )
+A routine that calls
+.B tputs(\|)
+.RI ( str ,
+.BR 1 ,
+.BR putc(3s).
+.TP 20
+.BI "vidputs (" "attrs, putc" )
+Output a string that puts the terminal in the video attribute mode
+.IR attrs ,
+which is any combination of the attributes listed below.
+The characters are passed to the
+.BR putc (3s)-like
+routine
+.BR putc (3s) .
+.TP 20
+.BI "vidattr (" attrs )
+Like
+.BR vidputs(\|) ,
+except that it outputs through
+.BR putc (3s).
+.TP 20
+.BI "tigetflag (" capname )
+The value
+.B \-1
+is returned if
+.I capname
+is not a boolean capability.
+.TP 20
+.BI "tigetnum (" capname )
+The value
+.B \-2
+is returned if
+.I capname
+is not a numeric capability.
+.TP 20
+.BI "tigetstr (" capname )
+The value
+.B "(char \(**) \-1"
+is returned if
+.IR capname
+is not a string capability.
+.LP
+.SS "Termcap Emulation"
+.LP
+These routines are included as a conversion aid for programs that use
+the
+.BR termcap (3X)
+library.
+Their parameters are the same and the routines are emulated using the
+.BR terminfo (5V)
+database.
+.TP 20
+.BI "tgetent (" "bp, name" )
+Look up
+.B termcap
+entry for
+.IR name .
+The emulation ignores the buffer pointer
+.IR bp .
+.TP 20
+.BI "tgetflag (" codename )
+Get the boolean entry for
+.IR codename .
+.TP 20
+.BI "tgetnum (" codes )
+Get numeric entry for
+.IR codename .
+.TP 20
+.BI "char \(**tgetstr (" "codename, area" )
+Return the string entry for
+.IR codename .
+If
+.I area
+is not
+.SM NULL\s0,
+then also store it in the buffer pointed to by
+.IR area
+and advance
+.IR area .
+.B tputs(\|)
+should be used to output the returned string.
+.TP 20
+.BI "char \(**tgoto (" "cap, col, row" )
+Instantiate the parameters into the given capability.
+The output from this routine is to be passed to
+.BR tputs(\|) .
+.TP
+.BI "tputs (" "str, affcnt, putc" )
+See
+.B tputs(\|)
+above, under
+.BR "Terminfo-Level Manipulations" .
+.SS "Miscellaneous"
+.LP
+.TP 20
+.BI "char \(**keyname (" c )
+A character string corresponding to the key
+.I c
+is returned.
+.TP 20
+.B filter(\|)
+This routine is one of the few that is to be called
+before
+.B initscr(\|)
+or
+.B newterm(\|)
+is called.
+It arranges things so that
+.B curses
+thinks that there is a 1-line screen.
+.B curses
+will not use any terminal capabilities that assume that they know what
+line on the screen the cursor is on.
+.SS "Use of curscr"
+.LP
+The special window
+.B curscr
+can be used in only a few routines.
+If the window argument to
+.B clearok(\|)
+is
+.BR curscr ,
+the next call to
+.B wrefresh(\|)
+with any window will cause the screen to be cleared and repainted from
+scratch.
+If the window argument to
+.B wrefresh(\|)
+is
+.BR curscr ,
+the screen is immediately cleared and repainted from scratch.
+This is how most programs would implement a \*(lqrepaint-screen\*(rq routine.
+The source window argument to
+.BR overlay(\|) ,
+.BR overwrite(\|) ,
+and
+.B copywin
+may be
+.BR curscr ,
+in which case the current contents of the virtual terminal
+screen will be accessed.
+.SS "Obsolete Calls"
+.LP
+Various routines are provided to maintain compatibility in programs written
+for older versions of the curses library.
+These routines are all emulated as indicated below.
+.TP 20
+.B crmode(\|)
+Replaced by
+.BR cbreak(\|) .
+.TP 20
+.B fixterm(\|)
+Replaced by
+.BR reset_prog_mode(\|) .
+.TP 20
+.B nocrmode(\|)
+Replaced by
+.BR nocbreak(\|) .
+.TP 20
+.B resetterm(\|)
+Replaced by
+.BR reset_shell_mode(\|) .
+.TP 20
+.B saveterm(\|)
+Replaced by
+.BR def_prog_mode(\|) .
+.TP 20
+.B setterm(\|)
+Replaced by
+.BR setupterm(\|) .
+.SH SYSTEM V ATTRIBUTES
+.LP
+The following video attributes,
+defined in
+.RB < curses.h >,
+can be passed to the routines
+.BR attron(\|) ,
+.BR attroff(\|) ,
+and
+.BR attrset(\|) ,
+or
+.SM OR\s0'ed
+with the characters passed to
+.BR addch(\|) .
+.LP
+.TS
+;
+l l l .
+\s-1A_STANDOUT\s0	Terminal's best highlighting mode
+\s-1A_UNDERLINE\s0	Underlining
+\s-1A_REVERSE\s0	Reverse video
+\s-1A_BLINK\s0	Blinking
+\s-1A_DIM\s0	Half bright
+\s-1A_BOLD\s0	Extra bright or bold
+\s-1A_ALTCHARSET\s0	Alternate character set
+.sp
+\s-1A_CHARTEXT\s0	Bit-mask to extract character (described under \fBwinch\fR)
+\s-1A_ATTRIBUTES\s0	Bit-mask to extract attributes (described under \fBwinch\fR)
+\s-1A_NORMAL\s0	Bit mask to reset all attributes off
+	(for example:  `\fBattrset (\s-1A_NORMAL\s0\fP)'
+.TE
+.\" the following attributes may go away when
+.\" internationalization comes along.
+.ig
+A_INVIS	Blanking (invisible)
+A_PROTECT	Protected
+..
+.br
+.ne 5
+.SH SYSTEM V FUNCTION KEYS
+.LP
+The following function keys,
+defined in
+.RB < curses.h >,
+might be returned by
+.B getch(\|)
+if
+.B keypad(\|)
+has been enabled.
+Note: not all of these may be supported on a particular terminal if the
+terminal does not transmit a unique code when the key is pressed or the
+definition for the key is not present in the
+.BR terminfo (5V)
+database.
+.br
+.ne5
+.sp
+.TS
+center;
+l l l .
+\fIName	Value	Key name\fR
+
+\s-1KEY_BREAK\s0	0401	break key (unreliable)
+\s-1KEY_DOWN\s0	0402	The four arrow keys .\|.\|.
+\s-1KEY_UP\s0	0403
+\s-1KEY_LEFT\s0	0404
+\s-1KEY_RIGHT\s0	0405	.\|.\|.
+\s-1KEY_HOME\s0	0406	Home key (upward+left arrow)
+\s-1KEY_BACKSPACE\s0	0407	backspace (unreliable)
+\s-1KEY_F0\s0	0410	Function keys.  Space for 64 keys is reserved.
+\s-1KEY_F(n)	(KEY_F0+(n))\s0	Formula for f\dn\u.
+\s-1KEY_DL\s0	0510	Delete line
+\s-1KEY_IL\s0	0511	Insert line
+\s-1KEY_DC\s0	0512	Delete character
+\s-1KEY_IC\s0	0513	Insert char or enter insert mode
+\s-1KEY_EIC\s0	0514	Exit insert char mode
+\s-1KEY_CLEAR\s0	0515	Clear screen
+\s-1KEY_EOS\s0	0516	Clear to end of screen
+\s-1KEY_EOL\s0	0517	Clear to end of line
+\s-1KEY_SF\s0	0520	Scroll 1 line forward
+\s-1KEY_SR\s0	0521	Scroll 1 line backwards (reverse)
+\s-1KEY_NPAGE\s0	0522	Next page
+\s-1KEY_PPAGE\s0	0523	Previous page
+\s-1KEY_STAB\s0	0524	Set \s-1TAB\s0
+\s-1KEY_CTAB\s0	0525	Clear \s-1TAB\s0
+\s-1KEY_CATAB\s0	0526	Clear all \s-1TAB\s0 characters
+\s-1KEY_ENTER\s0	0527	Enter or send
+\s-1KEY_SRESET\s0	0530	soft (partial) reset
+\s-1KEY_RESET\s0	0531	reset or hard reset
+\s-1KEY_PRINT\s0	0532	print or copy
+.ne 4
+\s-1KEY_LL\s0	0533	home down or bottom (lower left)
+		keypad is arranged like this:
+		  A1    up     A3
+		  left  B2     right
+		  C1    down   C3
+\s-1KEY_A1\s0	0534	Upper left of keypad
+\s-1KEY_A3\s0	0535	Upper right of keypad
+\s-1KEY_B2\s0	0536	Center of keypad
+\s-1KEY_C1\s0	0537	Lower left of keypad
+\s-1KEY_C3\s0	0540	Lower right of keypad
+\s-1KEY_BTAB\s0	0541	Back \s-1TAB\s0 key
+\s-1KEY_BEG\s0	0542	beg(inning) key
+\s-1KEY_CANCEL\s0	0543	cancel key
+\s-1KEY_CLOSE\s0	0544	close key
+\s-1KEY_COMMAND\s0	0545	cmd (command) key
+\s-1KEY_COPY\s0	0546	copy key
+\s-1KEY_CREATE\s0	0547	create key
+\s-1KEY_END\s0	0550	end key
+\s-1KEY_EXIT\s0	0551	exit key
+\s-1KEY_FIND\s0	0552	find key
+\s-1KEY_HELP\s0	0553	help key
+\s-1KEY_MARK\s0	0554	mark key
+\s-1KEY_MESSAGE\s0	0555	message key
+\s-1KEY_MOVE\s0	0556	move key
+\s-1KEY_NEXT\s0	0557	next object key
+\s-1KEY_OPEN\s0	0560	open key
+\s-1KEY_OPTIONS\s0	0561	options key
+\s-1KEY_PREVIOUS\s0	0562	previous object key
+\s-1KEY_REDO\s0	0563	redo key
+\s-1KEY_REFERENCE\s0	0564	ref(erence) key
+\s-1KEY_REFRESH\s0	0565	refresh key
+\s-1KEY_REPLACE\s0	0566	replace key
+\s-1KEY_RESTART\s0	0567	restart key
+\s-1KEY_RESUME\s0	0570	resume key
+\s-1KEY_SAVE\s0	0571	save key
+\s-1KEY_SBEG\s0	0572	shifted beginning key
+\s-1KEY_SCANCEL\s0	0573	shifted cancel key
+\s-1KEY_SCOMMAND\s0	0574	shifted command key
+\s-1KEY_SCOPY\s0	0575	shifted copy key
+\s-1KEY_SCREATE\s0	0576	shifted create key
+\s-1KEY_SDC\s0	0577	shifted delete char key
+\s-1KEY_SDL\s0	0600	shifted delete line key
+\s-1KEY_SELECT\s0	0601	select key
+\s-1KEY_SEND\s0	0602	shifted end key
+\s-1KEY_SEOL\s0	0603	shifted clear line key
+\s-1KEY_SEXIT\s0	0604	shifted exit key
+\s-1KEY_SFIND\s0	0605	shifted find key
+\s-1KEY_SHELP\s0	0606	shifted help key
+\s-1KEY_SHOME\s0	0607	shifted home key
+\s-1KEY_SIC\s0	0610	shifted input key
+\s-1KEY_SLEFT\s0	0611	shifted left arrow key
+\s-1KEY_SMESSAGE\s0	0612	shifted message key
+\s-1KEY_SMOVE\s0	0613	shifted move key
+\s-1KEY_SNEXT\s0	0614	shifted next key
+\s-1KEY_SOPTIONS\s0	0615	shifted options key
+\s-1KEY_SPREVIOUS\s0	0616	shifted prev key
+\s-1KEY_SPRINT\s0	0617	shifted print key
+\s-1KEY_SREDO\s0	0620	shifted redo key
+\s-1KEY_SREPLACE\s0	0621	shifted replace key
+\s-1KEY_SRIGHT\s0	0622	shifted right arrow
+\s-1KEY_SRSUME\s0	0623	shifted resume key
+\s-1KEY_SSAVE\s0	0624	shifted save key
+\s-1KEY_SSUSPEND\s0	0625	shifted suspend key
+\s-1KEY_SUNDO\s0	0626	shifted undo key
+\s-1KEY_SUSPEND\s0	0627	suspend key
+\s-1KEY_UNDO\s0	0630	undo key
+.TE
+.br
+.ne 5
+.SH LINE GRAPHICS
+.LP
+The following variables may be used to add line-drawing characters to the
+screen with
+.BR waddce .
+When defined for the terminal, the variable will have the
+.SB A_ALTCHARSET
+bit turned on.
+Otherwise, the default character listed below will be stored in the variable.
+The names were chosen to be consistent with the
+.SM DEC VT\s0100
+nomenclature.
+.LP
+.ne 5
+.TS
+l c l .
+\fIName	Default	Glyph Description\fR
+
+\s-1ACS_ULCORNER\s0	+	upper left corner
+\s-1ACS_LLCORNER\s0	+	lower left corner
+\s-1ACS_URCORNER\s0	+	upper right corner
+\s-1ACS_LRCORNER\s0	+	lower right corner
+\s-1ACS_RTEE\s0	+	right tee (\|\-\(br\|)
+\s-1ACS_LTEE\s0	+	left tee (\|\z\(br\-\|)
+\s-1ACS_BTEE\s0	+	bottom tee (\|\o'\(ul\(br'\|)
+\s-1ACS_TTEE\s0	+	top tee (\|\o'\(rn\(br'\|)
+\s-1ACS_HLINE\s0	\-	horizontal line
+\s-1ACS_VLINE\s0	|	vertical line
+\s-1ACS_PLUS\s0	+	plus
+\s-1ACS_S1\s0	\-	scan line 1
+\s-1ACS_S9\s0	\(ul	scan line 9
+\s-1ACS_DIAMOND\s0	+	diamond
+\s-1ACS_CKBOARD\s0	:	checker board (stipple)
+\s-1ACS_DEGREE\s0	'	degree symbol
+\s-1ACS_PLMINUS\s0	#	plus/minus
+\s-1ACS_BULLET\s0	o	bullet
+\s-1ACS_LARROW\s0	<	arrow pointing left
+\s-1ACS_RARROW\s0	>	arrow pointing right
+\s-1ACS_DARROW\s0	v	arrow pointing down
+\s-1ACS_UARROW\s0	\d^\u	arrow pointing up
+.ne 3
+\s-1ACS_BOARD\s0	#	board of squares
+\s-1ACS_LANTERN\s0	#	lantern symbol
+\s-1ACS_BLOCK\s0	#	solid square block
+.TE
+.SH RETURN VALUES
+.LP
+Unless otherwise
+noted in the preceding routine descriptions,
+all routines
+return:
+.TP
+.SM OK
+on success.
+.TP
+.SM ERR
+on failure.
+.\"and set
+.\".B errno
+.\"to indicate the error.
+.SH SYSTEM V RETURN VALUES
+.LP
+All macros return the value of their
+.B w
+version, except
+.BR setscrreg(\|) ,
+.BR wsetscrreg(\|) ,
+.BR getsyx(\|) ,
+.BR getyx(\|) ,
+.BR getbegy(\|) ,
+.BR getmaxyx(\|) ,
+which return no useful value.
+.LP
+Routines that return pointers always return
+.BI ( type
+.B *)
+.SM NULL
+on failure.
+.SH FILES
+.TP 20
+.B \&.login
+.TP
+.B \&.profile
+.SH SYSTEM V FILES
+.PD 0
+.TP 20
+.B /usr/share/lib/terminfo
+.PD
+.SH SEE ALSO
+.BR cc (1V),
+.BR ld (1),
+.BR ioctl (2),
+.BR getenv (3V),
+.BR plot (3X),
+.BR printf (3V),
+.BR putc (3S),
+.BR scanf (3V),
+.BR stdio (3V),
+.BR system (3),
+.BR varargs (3),
+.BR vprintf (3V),
+.BR termio (4),
+.BR tty (4),
+.BR term(5V),
+.BR termcap (5),
+.BR terminfo (5V),
+.BR tic (8V)
+.br
+.ne 4
+.SH SYSTEM V WARNINGS
+.LP
+The plotting library
+.BR plot (3X)
+and the curses library 
+.BR curses (3V)
+both use the names
+.B erase(\|)
+and
+.BR move(\|) .
+The
+.B curses
+versions are macros.
+If you need both libraries, put the 
+.BR plot (3X)
+code in  a different source file than the 
+.BR curses (3V)
+code, and/or
+.RB ` "#undef move" '
+and
+.RB ` "#undef erase" '
+in the
+.BR plot (3X)
+code.
+.LP
+Between the time a call to
+.B initscr(\|)
+and
+.B endwin(\|)
+has been issued, use only the routines in the
+.B curses
+library to generate output.
+Using system calls or the \*(lqstandard I/O package\*(rq
+(see
+.BR stdio (3V))
+for output during that time
+can cause unpredictable results.

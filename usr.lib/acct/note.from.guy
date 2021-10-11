@@ -1,0 +1,333 @@
+
+A note from Guy.
+
+Before I left I'd made a bunch of bug fixes, etc. to the S5 accounting
+stuff; I didn't get to check them in, and I forget whether I mentioned
+them to anybody or not.  You should check them into 4.1.
+
+Basically, they're current on "wizard" in the
+"wizard:/var_wiz/src/usr.lib/acct" directory (or maybe it's
+"/var/src/usr.lib/acct", or something like that.  The fixes to the
+various source files are:
+
+General:
+	Minimize differences between SunOS 4.1 and S5R3.1 source.  That
+	makes it easier to make update it with later S5 releases, for
+	instance.
+
+	Fix up "#ident" lines to reflect AT&T version number.  That
+	makes it easier to figure out the version of the code from AT&T
+	that was used; other Sun source that comes from AT&T or Berkeley
+	generally has stuff like that in comments in the SCCS line.
+
+	Use "/var/acct" instead of "/usr/acct", just for cleanliness,
+	since "/usr/acct" is just a symbolic link to "/var/acct".
+
+Makefile:
+	Cleaned up and simplified.
+
+acct.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+acctcms.c:
+	Get the page size from the OS, rather than compiling it in,
+	so the same binary can work on Sun-4 and Sun-4c, for instance. 
+	(The current Sun-4s and SPARCstations other than the
+	SPARCstation 1 have 8K pages, but the SPARCstation 1 has 4K
+	pages.  It'd be best if the program didn't have to be recompiled
+	to run on the SPARCstation 1.)
+
+acctcom.c:
+	Some bug fix to the argument list processing seemed to be
+	missing; I put it back in.  The code in the version currently in
+	4.1 won't step through the argument list properly; it will
+	always process the same argument.
+
+	Also, get the page size from the OS, rather than compiling it
+	in; see "acctcms.c".
+
+acctcon1.c:
+	Always set "ut_line" to "acctcon1", even in SunOS.
+
+	Use "strncpy" and "strncmp" for safety's sake.
+
+	Something needs to be done about the stuff marked with "#ifdef
+	THINK_MORE" at some point; either it has to be fixed, or it
+	doesn't need fixing and the "#ifdef" should be removed.
+
+acctdef.h:
+	Folded in changes from S5R3 to S5R3.1.
+
+	Get rid of the KCORE macro; make it use "getpagesize" instead -
+	this is part of the changes to get the page size from the OS.
+
+acctdusg.c:
+	Don't read "/etc/passwd"; use "getpwent" instead, so 
+	you can get all the user names through YP.  (On most machines,
+	"/etc/passwd" is very small, and most user names for accounts on
+	that machine come from YP.)
+
+	Don't compute the size in blocks based on the size in bytes;
+	get the size in blocks from the "stat" structure, since the
+	computation is different for the BSD file system (and since you
+	don't count holes that way).
+
+acctmerg.c:
+	Left-justify the user name, and properly cut it off at
+	8 characters (it may not be null-terminated - 8-byte array of up
+	to 8 real characters).
+
+acctprc2.c:
+	Get the page size from the OS.
+
+acctwtmp.c:
+	Use "strncpy" for safety's sake.
+
+chargefee.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+ckpacct.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+diskusg.c:
+	Fix it to support the BSD file system; the code that's there
+	doesn't work.
+
+	Don't read "/etc/passwd"; use "getpwent" instead, so 
+	you can get all the user names through YP.  (On most machines,
+	"/etc/passwd" is very small, and most user names for accounts on
+	that machine come from YP.)
+
+	Dynamically allocate the list of user IDs; AT&T's version will,
+	if it runs out of room for user IDs, print a message telling
+	people to recompile, but since most of them don't have source
+	this isn't very useful.
+
+dodisk.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+	Put back the version of the argument processing code from the
+	S5R3.1 version, since it uses "getopts" rather than "getopt";
+	"getopts is more reliable.
+
+	Don't scan "/etc/checklist" for list of local file systems - SunOS
+	doesn't have "/etc/checklist".  Scan "/etc/fstab" with "sed"
+	instead.
+
+getname.c:
+	Improve the comment that explains what it does.
+
+	Fix it so that it prints the entire password file entry for a
+	user, not just their name.  "chargefee.sh" and "lastlogin.sh"
+	now use "getname"; they used to just scan "/etc/passwd", and
+	they expected to get a full password file entry.
+
+holidays:
+	Updated from S5R3.1 for 1988.
+
+lastlogin.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+monacct.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+nulladm.sh:
+	There is no "adm" account or group in SunOS; use "staff"
+	group and "root" account instead.  Also, don't make it writable
+	by the group, since there are a lot of people in the "staff"
+	group.
+
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+prctmp.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+prcdaily.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+	Put back the version of the argument processing code from the
+	S5R3.1 version, since it uses "getopts" rather than "getopt";
+	"getopts is more reliable.
+
+	Use "hostname" rather than "uname".  "uname", by itself, prints
+	the "system name", which is "SunOS" in SunOS, not the name of the
+	host.
+
+prtacct.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+remove.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+runacct.sh:
+	Put the AT&T copyright notice back, if for no other reason than
+	to keep AT&T's lawyers happy.
+
+	Make the "#! header" be "#! /bin/sh -"; the "-" makes sure that,
+	if for some reason the script is run with a name beginning with
+	"-", it doesn't get confused.
+
+	Remove various stuff left over from debugging.
+
+	Fix one of the error messages; the error condition in question
+	leaves the error log in a different file from the other errors,
+	so the message should give the right log file name.
+
+shutacct.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+startup.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+turnacct.sh:
+	Put in a "#!" header so it works when you run it from any shell,
+	even the C shell.  (Other SunOS shell scripts have it.)
+
+lib/Makefile:
+	Clean it up by getting rid of the "clobber" rule, since it's not
+	used.
+
+lib/devtolin.c:
+	Don't read directory files directly, but use "readdir" instead. 
+	The code to read them directly works on System V file systems,
+	but not on BSD file systems and not over NFS, so it won't work
+	in SunOS.
+
+lib/pnpsplit.c:
+	Move the "holidays" file to "/etc" from "/usr/lib/acct", since
+	it might want to be changed on a per-host basis.  "/etc" is the
+	place where per-host configuration files like that are supposed
+	to go, since it's on the writable root file system; "/usr/lib"
+	is on the "/usr" file system, which may often be read-only.
+
+
+A note from Guy, No.2:
+
+The "crontab" file for "root" in 4.1 needs to be updated to run the S5
+accounting stuff regularly.  It wants to be shipped that way to
+customers, obviously; it should also go in for alpha to make sure the S5
+accounting stuff is thoroughly tested.
+
+The updated entries are in a file "crontabfile" in
+"wizard:/var_wiz/src/usr.lib/acct".  The entries in that file replace
+the entry that reads:
+
+	15 0 * * * /usr/etc/sa -s >/dev/null
+
+The other entries in "root"s "crontab" file should be left as is.  I
+think the source for "root"s "crontab" file is in
+"/usr/src/usr.etc/cron" in a file named "crontab.root" or something like
+that.
+
+Also, if there's an entry in "crontabfile" for "ckpacct", it should
+*not* go in.  The "ckpacct" script runs periodically to see how close to
+being full the file system on which the accounting file resides is, and
+turns off accounting if it gets too close to being full.  4.2BSD/4.3BSD's
+kernel accounting code does that automatically, and SunOS has that code,
+so the checking is done automatically; "ckpacct" doesn't have to do the
+check.
+
+Also, for that reason, the "ckpacct" shell script can be gotten rid of,
+and not installed.
+
+Finally, a general idea you might want to think about.  Currently,
+"runacct" sends bunch of messages to "/dev/console".  You might instead
+want to use the "logger" program to log them; "logger" (see the man page
+LOGGER(1)) sends stuff to the "syslog" daemon.  One thing the "syslog"
+daemon does with most messages is to send them to the console; however,
+it also sends them to "/var/adm/messages", so that they don't get lost
+if the message scrolls off the screen.
+
+Basically, you'd replace lines in "runacct.sh" of the form
+
+	(date; echo stuff) >/dev/console
+
+or just
+
+	echo stuff >/dev/console
+
+with a line of the form
+
+	logger -p daemon.err stuff
+
+"syslog" automatically sticks the date and time on the messages that it
+logs, so you don't have to use the "date" command; messages that include
+the date like the
+
+	***************  SYSTEM ACCOUTING STARTED `date`  *****************
+
+should also be changed to say just
+
+	***************  SYSTEM ACCOUTING STARTED  *****************
+
+since the date will show up from "syslog".  Also, there are a bunch of
+extra "\n"s in some messages in "runacct.sh", which you should also
+strip out, so you'd change "_errormsg" to be
+
+	_errormsg="************ ACCT ERRORS : see  ${_active}${_date}********"
+
+and the code that prints the "2 CRONS OR ACCT PROBLEMS" to be
+
+	if test $? -ne 0; then
+		_lnkerr="*********** 2 CRONS or ACCT PROBLEMS***********"
+		logger -p daemon.err "$_lnkerr"
+		echo "$_lnkerr" | mail root
+		echo "ERROR: locks found, run aborted" >> ${_active}
+		rm -f ${_nite}/lock*
+		exit 1
+	fi
+
+and the "SYSTEM ACCOUNTING STARTED" message to be
+
+   logger -p daemon.err "**********  SYSTEM ACCOUNTING STARTED  **********"
+
+and so on.

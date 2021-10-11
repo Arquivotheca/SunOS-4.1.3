@@ -1,0 +1,208 @@
+.\" @(#)floatingpoint.3 1.1 92/07/30 SMI;
+.TH FLOATINGPOINT 3 "21 October 1987"
+.SH NAME
+floatingpoint \- IEEE floating point definitions
+.SH SYNOPSIS
+.nf
+.B #include <sys/ieeefp.h>
+.B #include <floatingpoint.h>
+.fi
+.SH DESCRIPTION
+.IX "floatingpoint()" "" "\fLfloatingpoint()\fR \(em IEEE floating point definitions"
+.IX "ieeefp.h" "" "\fLieeefp.h\fR \(em IEEE floating point definitions"
+This file defines constants, types, variables,
+and functions used to implement standard floating point
+according to
+.SM ANSI/IEEE
+Std 754-1985.
+The variables and functions are implemented in
+.BR libc.a .
+The included file
+.B <sys/ieeefp.h>
+defines certain types of interest to the kernel.
+.LP
+.SM IEEE
+Rounding Modes:
+.TP 20
+.B fp_direction_type
+The type of the
+.SM IEEE
+rounding direction mode.
+Note: the order of enumeration varies according to hardware.
+.TP
+.B fp_direction
+The
+.SM IEEE
+rounding direction mode currently in force.
+This is a global variable that is intended to reflect the
+hardware state, so it should only be written indirectly
+through a function like
+\fBieee_flags ("set","direction",\|.\|.\|.\|)\fR
+that also sets the hardware state.
+.TP
+.B fp_precision_type
+The type of the
+.SM IEEE
+rounding precision mode, which
+only applies on systems that support extended precision such
+as Sun-3 systems with 68881's.
+.TP
+.B fp_precision
+The
+.SM IEEE
+rounding precision mode currently in force.
+This is a global variable that is intended to reflect the
+hardware state on systems with extended precision,
+so it should only be written indirectly through a function
+like
+\fBieee_flags("set","precision",\|.\|.\|.\|)\fR.
+.LP
+.SB SIGFPE
+handling:
+.TP 20
+.B sigfpe_code_type
+The type of a
+.SB SIGFPE
+code.
+.TP
+.B sigfpe_handler_type
+The type of a user-definable
+.SB SIGFPE
+exception handler called to handle a particular
+.SB SIGFPE
+code.
+.TP
+.SB SIGFPE_DEFAULT
+A macro indicating the default
+.SB SIGFPE
+exception handling, namely
+to perform the exception handling specified by calls to
+.BR ieee_handler(3M) ,
+if any, and otherwise to dump core using
+.BR abort (3).
+.TP
+.SB SIGFPE_IGNORE
+A macro indicating an alternate
+.SB SIGFPE
+exception handling, namely
+to ignore and continue execution.
+.TP
+.SB SIGFPE_ABORT
+A macro indicating an alternate
+.SB SIGFPE
+exception handling, namely
+to abort with a core dump.
+.LP
+.SM IEEE
+Exception Handling:
+.TP 20
+.SB N_IEEE_EXCEPTION
+The number of distinct
+.SM IEEE
+floating-point exceptions.
+.TP
+.B fp_exception_type
+The type of the
+.SB N_IEEE_EXCEPTION
+exceptions.  Each exception is given a bit number.
+.TP
+.B fp_exception_field_type
+The type intended to hold at least
+.SB N_IEEE_EXCEPTION
+bits corresponding to the
+.SM IEEE
+exceptions numbered by
+.BR fp_exception_type .
+Thus
+.BR fp_inexact
+corresponds to the least significant bit and
+.BR fp_invalid
+to the fifth least significant bit.
+Note: some operations may set more than one exception.
+.TP
+.B fp_accrued_exceptions
+The
+.SM IEEE
+exceptions between the time this global variable was last cleared,
+and the last time a function like
+\fBieee_flags("get","exception",\|.\|.\|.\|)\fR
+was called to update
+the variable by obtaining the hardware state.
+.TP
+.B ieee_handlers
+An array of user-specifiable signal handlers for use by the standard
+.SB SIGFPE
+handler for
+.SM IEEE
+arithmetic-related
+.SB SIGFPE
+codes.  Since
+.SM IEEE
+trapping modes correspond to hardware modes, elements of
+this array should only be modified with a function like
+.BR ieee_handler (3M)
+that performs the appropriate hardware mode update.
+If no
+.B sigfpe_handler
+has been declared for a particular
+.SM IEEE\s0-related
+.SB SIGFPE
+code, then the related
+.B ieee_handlers
+will be invoked.
+.LP
+.SM IEEE
+Formats and Classification:
+.TP 20
+.IB single ; extended
+Definitions of
+.SM IEEE
+formats.
+.TP
+.B fp_class_type
+An enumeration of the various classes of
+.SM IEEE
+values and symbols.
+.LP
+.SM IEEE
+Base Conversion:
+.IP
+The functions described under
+.BR floating_to_decimal (3)
+and
+.BR decimal_to_floating (3)
+not only satisfy the
+.SM IEEE
+Standard, but also the stricter requirements
+of correct rounding for all arguments.
+.TP 20
+.SB DECIMAL_STRING_LENGTH
+The length of a
+.BR decimal_string .
+.TP
+.B decimal_string
+The digit buffer in a
+.BR decimal_record .
+.TP
+.B decimal_record
+The canonical form for representing an unpacked decimal floating-point number.
+.TP
+.B decimal_form
+The type used to specify fixed or floating binary to decimal conversion.
+.TP
+.B decimal_mode
+A struct that contains specifications for conversion between binary and decimal.
+.TP
+.B decimal_string_form
+An enumeration of possible valid character strings representing floating-point
+numbers, infinities, or NaNs.
+.SH SEE ALSO
+.BR abort (3),
+.BR decimal_to_floating (3),
+.BR econvert (3),
+.BR floating_to_decimal (3),
+.BR ieee_flags (3M),
+.BR ieee_handler (3M),
+.BR sigfpe (3),
+.BR string_to_decimal (3),
+.BR strtod (3)

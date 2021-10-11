@@ -1,0 +1,49 @@
+#
+# @(#)SAS 1.1 92/07/30 SMI
+#
+# Configuration file for running the Sparc Architecture Simulator.
+#
+# A complete configuration of a SAS kernel requires the creation
+# of a sas_simdef.h file in the directory that the objects are
+# created in. This file contains definitions for the real devices
+# that the simulator will use e.g.:
+#
+#	#define SIMD_RDEV	"/dev/rxy0a"	/* root device */
+#	#define SIMD_RSIZE	32830
+#	#define SIMD_SDEV	"/dev/rxy0b"	/* swap device */
+#	#define SIMD_SSIZE	65660
+#	#define SIMD_UDEV	"/dev/rxy0g"	/* usr device */
+#	#define SIMD_USIZE	65660
+#
+machine		"sun4"
+cpu		"SUN4_260"
+ident		"SAS"
+maxusers	4
+options		SAS
+options		INET
+options		UFS
+
+#
+# a list of helpful options
+#
+#options	TRAPWINDOW
+#options	TRAPDEBUG
+#options	SYSCALLTRACE
+
+config		vmunix		root on sim0 swap on sim0
+
+pseudo-device	pty
+pseudo-device	ether
+pseudo-device	loop
+
+# connections for machine type 1 (SUN4_260)
+controller	obmem 1 at nexus ?
+controller	obio 1 at nexus ?
+controller	vme16d16 1 at nexus ?
+controller	vme24d16 1 at nexus ?
+controller	vme32d16 1 at nexus ?
+controller	vme16d32 1 at nexus ?
+controller	vme24d32 1 at nexus ?
+controller	vme32d32 1 at nexus ?
+
+device		simc0 at obio ? csr 0xf1000000 flags 3 priority 3

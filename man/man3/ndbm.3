@@ -1,0 +1,252 @@
+.\" @(#)ndbm.3 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH NDBM 3 "24 November 1987"
+.SH NAME
+ndbm, dbm_open, dbm_close, dbm_fetch, dbm_store, dbm_delete, dbm_firstkey, dbm_nextkey, dbm_error, dbm_clearerr \- data base subroutines
+.SH SYNOPSIS
+.LP
+.B #include <ndbm.h>
+.LP
+.nf
+.ft B
+typedef struct {
+char *dptr;
+int dsize;
+} datum;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+\s-1DBM\s0 *dbm_open(file, flags, mode)
+char *file;
+int flags, mode;
+.ft R
+.fi
+.LP
+.nf
+.B void dbm_close (db)
+.B \s-1DBM\s0 *db;
+.fi
+.LP
+.nf
+.ft B
+datum dbm_fetch(db, key)
+\s-1DBM\s0 *db;
+datum key;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int dbm_store(db, key, content, flags)
+\s-1DBM\s0 *db;
+datum key, content;
+int flags;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int dbm_delete(db, key)
+\s-1DBM\s0 *db;
+datum key;
+.ft R
+.fi
+.LP
+.nf
+.B datum dbm_firstkey(db)
+.B \s-1DBM\s0 *db;
+.fi
+.LP
+.nf
+.B datum dbm_nextkey(db)
+.B \s-1DBM\s0 *db;
+.fi
+.LP
+.nf
+.B int dbm_error(db)
+.B \s-1DBM\s0 *db;
+.fi
+.LP
+.nf
+.B int dbm_clearerr(db)
+.B \s-1DBM\s0 *db;
+.fi
+.SH DESCRIPTION
+.IX "database library" ndbm() "" "\fLndbm()\fR"
+.IX dbm_err() "" "\fLdbm_err()\fR \(em \fLndbm()\fR database routine"
+.IX dbm_open() "" "\fLdbm_open()\fR \(em open \fLndbm()\fR database"
+.IX dbm_close() "" "\fLdbm_close()\fR \(em close \fLndbm()\fR routine"
+.IX dbm_fetch() "" "\fLdbm_fetch()\fR \(em fetch \fLndbm()\fR database data"
+.IX dbm_store() "" "\fLdbm_store()\fR \(em add data to \fLndbm()\fR database"
+.IX dbm_delete() "" "\fLdbm_delete()\fR \(em remove data from \fLndbm()\fR database"
+.IX dbm_firstkey() "" "\fLdbm_firstkey()\fR \(em access \fLndbm()\fR database"
+.IX dbm_nextkey() "" "\fLdbm_nextkey()\fR \(em access \fLndbm()\fR database"
+.IX dbm_error() "" "\fLdbm_error()\fR \(em return \fLndbm()\fR database error condition"
+.IX dbm_clearerr() "" "\fLdbm_clearerr()\fR \(em clear \fLndbm()\fR database error condition"
+.IX "database functions \(em \fLndbm()\fR"  dbm_err()  ""  \fLdbm_err()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_open()  ""  \fLdbm_open()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_close()  ""  \fLdbm_close()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_fetch()  ""  \fLdbm_fetch()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_store()  ""  \fLdbm_store()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_delete()  ""  \fLdbm_delete()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_firstkey()  ""  \fLdbm_firstkey()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_nextkey()  ""  \fLdbm_nextkey()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_error()  ""  \fLdbm_error()\fP
+.IX "database functions \(em \fLndbm()\fR"  dbm_clearerr()  ""  \fLdbm_clearerr()\fP
+.LP
+These functions maintain key/content pairs
+in a data base.
+The functions will handle very large (a billion blocks)
+databases and will access a keyed item
+in one or two file system accesses.
+This package replaces the earlier
+.BR dbm (3X)
+library, which managed only a single database.
+.LP
+.IR key s
+and
+.IR content s
+are described by the
+.B datum
+typedef.  A
+.B datum
+specifies a string of
+.I dsize
+bytes pointed to by
+.IR dptr .
+Arbitrary binary data, as well as normal
+.SM ASCII
+strings, are allowed.
+The data base is stored in two files.
+One file is a directory containing a bit map and has
+.B \.dir
+as its suffix.  The second file contains
+all data and has
+.B \.pag
+as its suffix.
+.LP
+Before a database can be accessed, it must be opened by
+.BR dbm_open .
+This will open and/or create the files
+.IB file .dir
+and
+.IB file .pag
+depending on the flags parameter (see
+.BR open (2V)).
+.LP
+A database is closed by calling
+.BR dbm_close .
+.LP
+Once open, the data stored under a key is accessed by
+.B dbm_fetch(\|)
+and data is placed under a key by
+.BR dbm_store .
+The
+.I flags
+field can be either
+.SB DBM_INSERT
+or
+.BR \s-1DBM_REPLACE\s0 .
+.SB DBM_INSERT
+will only insert new entries into the
+database and will not
+change an existing entry with the same key.
+.SB DBM_REPLACE
+will replace an existing entry if it has the same key.
+A key (and its associated contents) is deleted by
+.BR dbm_delete .
+A linear pass through all keys in a database may be made,
+in an (apparently) random order, by use of
+.B dbm_firstkey(\|)
+and
+.BR dbm_nextkey .
+.B dbm_firstkey(\|)
+will return the first key in the database.
+.B dbm_nextkey(\|)
+will return the next key in the database.
+This code will traverse the data base:
+.IP
+.B
+for
+.B
+(key = dbm_firstkey(db); key.dptr != \s-1NULL\s0; key = dbm_nextkey(db))
+.LP
+.B dbm_error(\|)
+returns non-zero when an error has occurred
+reading or writing the database.
+.B dbm_clearerr(\|)
+resets the error condition on the named database.
+.SH SEE ALSO
+.BR ar (1V),
+.BR cat (1V),
+.BR cp (1),
+.BR tar (1),
+.BR open (2V),
+.BR dbm (3X)
+.SH DIAGNOSTICS
+All functions that return an
+.B int
+indicate errors with negative values.
+A zero return indicates no error.
+Routines that return a
+.B datum
+indicate errors with a
+.SM NULL
+.BR  (0)
+.IR dptr .
+If
+.BR dbm_store
+called with a
+.I flags
+value of
+.SB DBM_INSERT
+finds an existing entry with the same key
+it returns 1.
+.SH BUGS
+The
+.B \.pag
+file will contain holes so that its apparent
+size is about four times its actual content.  Older
+versions of the 
+.SM UNIX
+operating system may create real file blocks for
+these holes when touched.  These files cannot be copied
+by normal means (\c
+.BR cp (1),
+.BR cat (1V),
+.BR tar (1),
+.BR ar (1V))
+without filling in the holes.
+.LP
+.I dptr
+pointers returned by these subroutines point
+into static storage
+that is changed by subsequent calls.
+.LP
+The sum of the sizes of a key/content pair
+must not exceed
+the internal block size (currently 4096 bytes).
+Moreover all key/content pairs that hash
+together must fit on a single block.
+.B dbm_store(\|)
+will return an error in the event that a
+disk block fills with inseparable data.
+.LP
+.B dbm_delete(\|)
+does not physically reclaim file space,
+although it does make it available for reuse.
+.LP
+The order of keys presented by
+.B dbm_firstkey(\|)
+and
+.B dbm_nextkey(\|)
+depends on a hashing function, not on
+anything interesting.
+.LP
+There are no interlocks and no reliable cache flushing;
+thus concurrent updating and reading is risky.

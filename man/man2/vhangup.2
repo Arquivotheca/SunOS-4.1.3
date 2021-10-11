@@ -1,0 +1,44 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)vhangup.2 1.1 92/07/30 SMI; from UCB 6.2 6/30/85
+.TH VHANGUP 2 "21 January 1990"
+.SH NAME
+vhangup \- virtually ``hangup'' the current control terminal
+.SH SYNOPSIS
+.B vhangup()
+.SH DESCRIPTION
+.IX  vhangup()  ""  \fLvhangup()\fP
+.IX  "processes and protection"  vhangup()  ""  \fLvhangup()\fP
+.IX  "control terminal,  hangup \(em \fLvhangup()\fR"
+.IX  "hangup, control terminal \(em \fLvhangup()\fR"
+.LP
+.B vhangup(\|)
+is used by the initialization process
+.BR init (8)
+(among others) to arrange that users are given
+\*(lqclean\*(rq terminals at login,
+by revoking access of the previous users' processes to the terminal.
+To affect this,
+.B vhangup(\|)
+searches the system tables for references to the control terminal
+of the invoking process, revoking access permissions
+on each instance of the terminal that it finds.
+Further attempts to access the terminal by the affected processes
+will yield I/O errors (\s-1EBADF\s0).
+Finally, a
+.SB SIGHUP
+(hangup signal)
+is sent to the process group of the
+control terminal.
+.SH SEE ALSO
+.BR init (8)
+.SH BUGS
+Access to
+the control terminal using
+.B /dev/tty
+is still possible.
+.LP
+This call should be replaced by an automatic mechanism that
+takes place on process exit.

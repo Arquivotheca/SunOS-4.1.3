@@ -1,0 +1,138 @@
+.\" @(#)getmntent.3 1.1 92/07/30 SMI; from UCB 4.2
+.TH GETMNTENT 3 "26 February 1988"
+.SH NAME
+getmntent, setmntent, addmntent, endmntent, hasmntopt \- get file system descriptor file entry
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+#include <mntent.h>
+.sp.5
+\s-1FILE\s0 *setmntent(filep, type)
+char *filep;
+char *type;
+.sp.5
+struct mntent *getmntent(filep)
+\s-1FILE\s0 *filep;
+.sp.5
+int addmntent(filep, mnt)
+\s-1FILE\s0 *filep;
+struct mntent *mnt;
+.sp.5
+char *hasmntopt(mnt, opt)
+struct mntent *mnt;
+char *opt;
+.sp.5
+int endmntent(filep)
+\s-1FILE\s0 *filep;
+.fi
+.IX  "setmntent()"  ""  "\fLsetmntent()\fP \(em open a file system description file"
+.IX  "getmntent()"  ""  "\fLgetmntent()\fP \(em read a file system description file entry"
+.IX  "addmntent()"  ""  "\fLaddmntent()\fP \(em add a file system description file entry"
+.IX  "endmntent()"  ""  "\fLendmntent()\fP \(em close a file system description file"
+.IX  "hasmntopt()"  ""  "\fLhasmntopt()\fP \(em search a file system description file entry for an option"
+.IX  "file system description file open"  "setmntent()"  ""  "\fLsetmntent()\fP"
+.IX  "file system description file entry read"  "getmntent()"  ""  "\fLgetmntent()\fP"
+.IX  "file system description file entry add"  "addmntent()"  ""  "\fLaddmntent()\fP"
+.IX  "file system description file close"  "endmntent()"  ""  "\fLendmntent()\fP"
+.IX  "file system description file entry option search"  "hasmntopt()"  ""  "\fLhasmntopt()\fP"
+.IX  "file system description file, manipulate"
+.SH DESCRIPTION
+.LP
+These routines replace the
+.B getfsent(\|)
+routines for accessing the file system description file
+.BR /etc/fstab .
+They are also used to access the mounted file system description file
+.BR /etc/mtab .
+.LP
+.B setmntent(\|)
+opens a file system description file and returns
+a file pointer which can then be used with
+.BR getmntent ,
+.BR addmntent ,
+or
+.BR endmntent .
+The
+.I type
+argument is the same as in
+.BR fopen (3V).
+.B getmntent(\|)
+reads the next line from
+.I filep
+and returns a pointer to an object with the following structure
+containing the broken-out fields of a line in the file system description file,
+.BR <mntent.h> .
+On failure,
+.B getmntent(\|)
+returns the
+.SM NULL
+pointer.
+The fields have meanings described in
+.BR fstab (5).
+.RS
+.LP
+.ta \w'#define'u +\w'char\0\0'u +\w'*mnt_fsname;\0\0'u
+.nf
+.ft B
+struct	mntent{
+	char	*mnt_fsname;		/* name of mounted file system */
+	char	*mnt_dir;		/* file system path prefix */
+	char	*mnt_type;		/* \s-1MNTTYPE\s0_* */
+	char	*mnt_opts;		/* \s-1MNTOPT\s0* */
+	int	mnt_freq;		/* dump frequency, in days */
+	int	mnt_passno;		/* pass number on parallel fsck */
+};
+.ft R
+.fi
+.RE
+.LP
+.B addmntent(\|)
+adds the
+.B mntent
+structure
+.I mnt
+to the end of the open file
+.IR filep .
+.B addmntent( )
+returns 0 on success, 1 on failure.
+Note: 
+.I filep
+has to be opened for writing if this is to work.
+.B hasmntopt(\|)
+scans the
+.B mnt_opts
+field of the
+.B mntent
+structure
+.I mnt
+for a substring that matches
+.IR opt .
+It returns the address of the substring if a match is found,
+0 otherwise.
+.B endmntent( )
+closes the file.  It always returns 1, so should be treated as type
+.B void.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/fstab
+.TP
+.B /etc/mtab
+.PD
+.SH "SEE ALSO"
+.BR fopen (3V),
+.BR getfsent (3),
+.BR fstab (5)
+.SH DIAGNOSTICS
+.LP
+.SM NULL
+pointer (0) returned on
+.SM EOF
+or error.
+.SH BUGS
+.LP
+The returned
+.B mntent
+structure points to static information that is overwritten in each call.
+.\" This is meaningless.  What is it supposed to say?

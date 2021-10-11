@@ -1,0 +1,77 @@
+.\" @(#)rotcvph.6 1.1 92/07/30 SMI
+.TH ROTCVPH 6  "22nd February 1983"
+.SH NAME
+rotcvph \- rotate convex polyhedron
+.SH SYNOPSIS
+.B /usr/demo/rotcvph
+file
+.SH DESCRIPTION
+.I Rotcvph
+rotates a convex polyhedron with hidden surfaces removed.
+Using the SunCore Graphics Package, a 3-D projection
+is drawn on the Sun Monochrome Bitmap Display.
+The mandatory file argument contains a polygonal object definition as
+described below.
+.LP
+Initially the program displays a fixed view of the object.  The following
+commands may be typed at any time:
+.IP \fBn\fP
+Display successive views with no waiting.
+.IP \fBw\fP
+Wait for <SPACE> to be typed before displaying each view.
+.IP \fBq\fP
+Exit the program.
+.LP
+The format of the polygonal object definition is illustrated by this example
+of the definition of a pyramid:
+.IP
+	5	5
+.br
+-1.0 1.0 -1.0 1.0 -1.0 1.0
+.br
+ 1.0  1.0 -1.0
+.br
+ 1.0 -1.0 -1.0
+.br
+-1.0 -1.0 -1.0
+.br
+-1.0  1.0 -1.0
+.br
+ 0.0  0.0  1.0
+.br
+4	4 3 2 1
+.br
+3	1 5 4
+.br
+3	2 5 1
+.br
+3	3 5 2
+.br
+3	4 5 3
+.LP
+The first line gives the number of vertices followed by the number of
+polygons.  The second line gives the coordinates of a bounding box for the
+object.  Minimum and maximum coordinate values are given for each of three
+dimensions in the order minx, maxx, miny, maxy, minz, maxz.  Lines 3 through
+v+2 (where v is the number of vertices) give vertex coordinates in the order
+x, y, z.  Lines v+3 through v+p+2 (where p is the number of polygons) give
+polygon descriptions.  The first number is the number of vertices for the
+polygon.  Succeeding numbers on the line are indices into the vertex list.
+Polygons should be planar.  Coordinates are given in floating point format
+and everything else is integer.  Entries on a given line are separated by
+arbitrary whitespace. A maximum of 400 vertices and 400 polygons may be
+defined. The polygon definitions may contain a maximum of 1600 instances of
+the vertices.  /usr/demo/data contains several object definition files,
+including icosa.dat, socbal.dat, and pyramid.dat.
+.LP
+The above format may be used to define non-convex objects.  The program will
+display these objects but hidden surface computations will not be done
+correctly.
+.SH FILES
+/usr/demo/data/*.dat	Sample object definition files
+.SH BUGS
+All floating point transformations are done twice for each view, once to draw
+the object and once to undraw it.
+.br
+Lines which are common to two visible polygons in a view are drawn twice, once
+for each polygon.

@@ -1,0 +1,83 @@
+.\" @(#)kgmon.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH KGMON 8 "9 September 1987"
+.SH NAME
+kgmon \- generate a dump of the operating system's profile buffers
+.SH SYNOPSIS
+.B /usr/etc/kgmon
+[
+.B \-bhpr
+] [
+.I filesystem
+] [
+.I memory
+]
+.SH DESCRIPTION
+.IX  "kgmon command"  ""  "\fLkgmon\fP \(em dump profile buffers"
+.B kgmon
+is a tool used when profiling the operating system.
+When no arguments are supplied,
+.B kgmon
+indicates the state of operating system profiling as running,
+off, or not configured (see
+.BR config (8)).
+If the
+.B \-p
+flag is specified,
+.B kgmon
+extracts profile data from the operating system and produces a
+.B gmon.out
+file suitable for later analysis by
+.BR gprof (1).
+.SH OPTIONS
+.TP
+.B \-b
+Resume the collection of profile data.
+.TP
+.B \-h
+Stop the collection of profile data.
+.TP
+.B \-p
+Dump the contents of the profile buffers into a
+.B gmon.out
+file.
+.TP
+.B \-r
+Reset all the profile buffers.
+If the
+.B \-p
+flag is also specified, the
+.B gmon.out
+file is generated before the buffers are reset.
+.LP
+If neither
+.B \-b
+nor
+.B \-h
+is specified, the state of profiling collection remains unchanged.
+For example, if the
+.B \-p
+flag is specified and profile data is being collected, profiling is
+momentarily suspended, the operating system profile buffers are dumped,
+and profiling is immediately resumed.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+the default system
+.TP
+.B /dev/kmem
+the default memory
+.TP
+.B gmon.out
+.PD
+.SH "SEE ALSO"
+.BR gprof (1),
+.BR config (8)
+.SH DIAGNOSTICS
+Users with only read permission on
+.B /dev/kmem
+cannot change the state
+of profiling collection. They can get a
+.B gmon.out
+file with the warning that the data may be
+inconsistent if profiling is in progress.

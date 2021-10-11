@@ -1,0 +1,182 @@
+.\" @(#)col.1v 1.1 92/07/30 SMI; from UCB 4.3 and S5R6
+.TH COL 1V "2 October 1989"
+.SH NAME
+col \- filter reverse paper motions from nroff output for display on a terminal
+.SH SYNOPSIS
+.B col
+[
+.B \-bfhp
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/col
+[
+.B \-bfpx
+]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLcol\fR"
+.IX  col  ""  "\fLcol\fP \(em filter reverse paper motions"
+.IX  "document production"  "col command"  ""  "\fLcol\fP \(em filter reverse paper motions"
+.IX  "nroff utilities"  "col command"  "\fLnroff\fP utilities"  "\fLcol\fP \(em filter reverse paper motions"
+.IX  "troff utilities"  "col command"  "\fLtroff\fP utilities"  "\fLcol\fP \(em filter reverse paper motions"
+.IX  "filter reverse paper motions \(em \fLcol\fR"
+.LP
+.B col
+copies the standard input to the standard output and performs
+line overlays implied by reverse
+.SM LINEFEED
+characters (\s-1ESC\s0\-7 in 
+.SM ASCII\s0)
+and by forward and reverse half
+.SM LINEFEED
+characters (\s-1ESC\s0\-9 and 
+.SM ESC\s0\-8).  
+.B col
+is particularly
+useful for filtering multicolumn output made with the
+.B \&.rt
+command of
+.BR nroff (1),
+and output resulting from use of the
+.BR tbl (1)
+preprocessor.
+.LP
+The control characters 
+.SM SO 
+(\s-1ASCII
+code 017), and 
+.SM SI 
+(016) 
+are assumed to start and end text in an alternate character set.
+The character set (primary or alternate) associated with each
+printing character read is remembered; on output, 
+.SM SO 
+and 
+.SM SI 
+characters are generated
+where necessary to maintain the correct treatment of each character.
+.LP
+All control characters are removed from the input except
+.SM SPACE\s0,
+.SM BACKSPACE\s0,
+.SM TAB\s0,
+.SM RETURN\s0,
+.SM NEWLINE\s0, 
+.SM ESC 
+(033) followed by one of 7, 8, 9, 
+.SM SI , 
+.SM SO , 
+and 
+.SM VT
+(013).  This last character is an alternate form of
+full reverse
+.SM LINEFEED\s0,
+for compatibility with some other hardware conventions.
+All other non-printing characters are ignored.
+.SH SYSTEM V DESCRIPTION
+.LP
+The System V version of
+.B col
+converts
+.SM SPACE
+to
+.SM TAB
+characters by default.
+.SH OPTIONS
+.TP
+.B \-b
+The output device in use is not capable of
+backspacing.  In this case, if several characters
+are to appear in the
+same place, only the last one read will be taken.
+.TP
+.B \-f
+Fine.  Although
+.B col
+accepts half line motions in its input,
+it normally does not produce them on output.
+Instead, text that would appear
+between lines is moved to the next lower full-line boundary.  The
+.B \-f
+option suppresses this treatment. In this case the output from
+.B col
+may contain forward half
+.SM LINEFEED
+characters (\s-1ESC\s0\-9),
+but will still never contain either kind of reverse line motion.
+.TP
+.B \-h
+Convert strings of blanks to
+.SM TAB
+characters to decrease the printing time.
+.TP
+.B \-p
+Pass escape-sequences that
+.B col
+does not know about to the output,
+rather than stripping them out.
+This option is highly discouraged unless 
+you are fully aware of the position of the escape
+sequences within the text.
+.SH SYSTEM V OPTIONS 
+.TP
+.B \-x
+Suppress converting
+.SM SPACE
+characters to
+.SM TAB
+characters.  
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR col .
+On entry to
+.BR col ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH "SEE ALSO"
+.BR nroff (1),
+.BR tbl (1),
+.BR troff (1),
+.BR locale (5),
+.BR iso_8859_1 (7)
+.SH BUGS
+.LP
+.B col
+cannot back up more than 128 lines.
+.LP
+At most 1600 characters, including
+.SM BACKSPACE
+characters, are allowed on a line.
+.LP
+Local vertical motions that would result in backing up over the first
+line of the document are ignored.
+As a result, the first line must not have any superscripts.

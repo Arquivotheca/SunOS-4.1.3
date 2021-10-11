@@ -1,0 +1,342 @@
+.\" @(#)ip.4p 1.1 92/07/30 SMI; from UCB 4.1
+.TH IP 4P "9 October 1987"
+.SH NAME
+ip \- Internet Protocol
+.SH SYNOPSIS
+.nf
+.B #include <sys/socket.h>
+.B #include <netinet/in.h>
+.LP
+.B s = socket(AF_INET, SOCK_RAW, proto);
+.fi
+.SH DESCRIPTION
+.IX  "ip4p device"  ""  "\fLip\fP \(em Internet Protocol"  ""  PAGE START
+.IX  Internet  "Protocol ip4p"  ""  "Protocol \(em \fLip\fP"  PAGE START
+.LP
+.SM IP
+is the internetwork datagram delivery protocol that is central
+to the Internet protocol family.
+Programs may use
+.SM IP
+through higher-level protocols
+such as the Transmission Control Protocol (\s-1TCP\s0) or the User Datagram
+Protocol (\s-1UDP\s0),
+or may interface directly using a ``raw socket.''
+See
+.BR tcp (4P)
+and
+.BR udp (4P).
+The protocol options defined in the
+.SM IP
+specification may be set
+in outgoing datagrams.
+.LP
+Raw
+.SM IP
+sockets are connectionless and are normally used
+with the
+.B sendto
+and
+.B recvfrom
+calls,
+(see
+.BR send (2)
+and
+.BR recv (2))
+although the
+.BR connect (2)
+call may also be used to fix the destination for future datagrams
+(in which case the
+.BR read (2V)
+or
+.BR recv (2)
+and
+.BR write (2V)
+or
+.BR send (2)
+calls may be used).
+If
+.B proto
+is zero, the default protocol,
+.BR \s-1IPPROTO_RAW\s0 ,
+is used.  If
+.B proto
+is non-zero, that protocol number will be set in outgoing datagrams
+and will be used to filter incoming datagrams.
+An
+.SM IP
+header will be generated and prepended to each outgoing datagram;
+Received datagrams are returned with the
+.SM IP
+header and options intact.
+.LP
+A single socket option,
+.BR \s-1IP_OPTIONS\s0 ,
+is supported at the
+.SM IP
+level.  This socket option may be used to set
+.SM IP
+options to be included in each outgoing datagram.
+.SM IP
+options to be sent are set with
+.B setsockopt
+(see
+.BR getsockopt (2)).
+The
+.BR getsockopt (2)
+call returns the
+.SM IP
+options set in the last
+.B setsockopt
+call.
+.SM IP
+options on received datagrams are visible to user programs only
+using raw
+.SM IP
+sockets.  The format of
+.SM IP
+options given in
+.B setsockopt
+matches those defined in the
+.SM IP
+specification with one exception:
+the list of addresses for the source routing options
+must include the first-hop gateway at the beginning of the
+list of gateways.
+The first-hop gateway address will be extracted from the option
+list and the size adjusted accordingly before use.
+.SM IP
+options may be used with any socket type in the Internet family.
+.LP
+At the socket level, the socket option
+.SB SO_DONTROUTE
+may be applied.
+This option forces datagrams being sent to bypass the routing step
+in output.
+Normally,
+.SM IP
+selects a network interface to send the datagram via,
+and possibly an intermediate gateway,
+based on an entry in the routing table.
+See
+.BR routing (4N).
+When
+.SB SO_DONTROUTE
+is set, the datagram will be sent via the interface
+whose network number or full
+.SM IP
+address matches the destination address.
+If no interface matches, the error
+.SM ENETUNRCH
+will be returned.
+.LP
+Datagrams flow through the
+.SM IP
+layer in two directions:
+from the network
+.B ip
+to user processes and from user
+processes
+.I down
+to the network.
+Using this orientation,
+.SM IP
+is layered
+.I above
+the network interface drivers and
+.I below
+the transport protocols such as
+.SM UDP
+and
+.SM TCP\s0.
+The Internet Control Message Protocol (\s-1ICMP\s0) is logically
+a part of
+.SM IP\s0.
+See
+.BR icmp (4P).
+.LP
+IP provides for a checksum of the header part, but not the data
+part of the datagram.
+The checksum value is computed and set in the process of sending
+datagrams and checked when receiving datagrams.
+.SM IP
+header checksumming may be disabled for debugging purposes
+by patching the kernel variable
+.B ipcksum
+to have the value
+zero.
+.LP
+.SM IP
+options in received datagrams are processed in the
+.SM IP
+layer
+according to the protocol specification.
+Currently recognized
+.SM IP
+options include:
+security,
+loose source and record route (\s-1LSRR\s0),
+strict source and record route (\s-1SSRR\s0),
+record route,
+stream identifier, and
+internet timestamp.
+.LP
+The
+.SM IP
+layer will normally forward received datagrams that are not addressed
+to it.
+Forwarding is under the control of the kernel variable
+.IR ipforwarding :
+if
+.I ipforwarding
+is zero,
+.SM IP
+datagrams will not be forwarded;  if
+.I ipforwarding
+is one,
+.SM IP
+datagrams will be forwarded.
+.I ipforwarding
+is usually set to one only in machines with more than one
+network interface (internetwork routers).
+This kernel variable can be patched to enable or disable forwarding.
+.LP
+The
+.SM IP
+layer will send an
+.SM ICMP
+message back to the source host in many
+cases when it receives a datagram that can not be handled.
+A ``time exceeded''
+.SM ICMP
+message will be sent if the ``time to live''
+field in the
+.SM IP
+header drops to zero in the process of forwarding a datagram.
+A ``destination unreachable'' message will be sent if a datagram can not
+be forwarded because there is no route to the final destination,
+or if it can not be fragmented.
+If the datagram is addressed to the local host
+but is destined for a protocol that is not supported or a port
+that is not in use,
+a destination unreachable message will also be sent.
+The
+.SM IP
+layer may send an
+.SM ICMP
+``source quench'' message if it is
+receiving datagrams too quickly.
+.SM ICMP
+messages are only sent for the first fragment of a fragmented
+datagram and are never returned in response to errors in other
+.SM ICMP
+messages.
+.LP
+The
+.SM IP
+layer supports fragmentation and reassembly.
+Datagrams are fragmented on output if the datagram is larger than the
+maximum transmission unit (\s-1MTU\s0) of the network interface.
+Fragments of received datagrams are dropped from the reassembly queues
+if the complete datagram is not reconstructed within a short time period.
+.LP
+Errors in sending discovered at the network interface driver layer
+are passed by
+.SM IP
+back up to the user process.
+.SH ERRORS
+A socket operation may fail with one of the following errors returned:
+.TP 20
+.SM EACCESS
+when specifying an
+.SM IP
+broadcast destination address
+if the caller is not the super-user;
+.TP
+.SM EISCONN
+when trying to establish a connection on a socket which
+already has one, or when trying to send a datagram with the destination
+address specified and the socket is already connected;
+.TP
+.SM EMSGSIZE
+when sending datagram that is too large for an interface,
+but is not allowed be fragmented (such as broadcasts);
+.TP
+.SM ENETUNREACH
+when trying to establish a connection or send a datagram,
+if there is no matching entry in the routing table,
+or if an
+.SM ICMP
+``destination unreachable'' message is received.
+.TP
+.SM ENOTCONN
+when trying to send a datagram, but
+no destination address is specified, and the socket hasn't been
+connected;
+.TP
+.SM ENOBUFS
+when the system runs out of memory for
+fragmentation buffers or other internal data structure;
+.TP
+.SM EADDRNOTAVAIL
+when an attempt is made to create a
+socket with a local address that matches no network interface,
+or when specifying an
+.SM IP
+broadcast destination address
+and the network interface does not support broadcast;
+.LP
+The following errors
+may occur when setting or getting
+.SM IP
+options:
+.TP 20
+.SM EINVAL
+An unknown socket option name was given.
+.TP
+.SM EINVAL
+The
+.SM IP
+option field was improperly formed;
+an option field was shorter than the minimum value
+or longer than the option buffer provided.
+.SH SEE ALSO
+.BR connect (2),
+.BR getsockopt (2),
+.BR read (2V),
+.BR recv (2),
+.BR send (2),
+.BR write (2V),
+.BR icmp (4P),
+.BR inet (4F)
+.BR routing (4N),
+.BR tcp (4P),
+.BR udp (4P)
+.LP
+Postel, Jon,
+.RI `` "Internet Protocol - \s-1DARPA\s0 Internet Program Protocol Specification" ,''
+.SM RFC
+791, Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+September 1981.
+(Sun 800-1063-01)
+.br
+.ne 8
+.SH BUGS
+.LP
+Raw sockets should receive
+.SM ICMP
+error packets relating to the protocol;
+currently such packets are simply discarded.
+.LP
+Users of higher-level protocols such as
+.SM TCP
+and
+.SM UDP
+should be able to
+see received
+.SM IP
+options.
+.IX  "ip4p device"  ""  "\fLip\fP \(em Internet Protocol"  ""  PAGE END
+.IX  Internet  "Protocol ip4p"  ""  "Protocol \(em \fLip\fP"  PAGE END

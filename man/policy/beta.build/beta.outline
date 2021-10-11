@@ -1,0 +1,471 @@
+OUTLINE FOR PROCDOC
+
+I. Set up .so files for _section_
+  A. Get list of pages as of last release
+
+    1. cd /usr/src/man/man_section_
+    2. sccs prt Makefile (get _version_ for last release)
+    3. sccs get -GMakefile.old -r_version_ Makefile
+    4. make -fMakefile.old show | sort -u > FILES.old
+    5. vi FILES.old and zap extraneous entries
+
+  B. Get current list of pages
+
+    1. ls SCCS/s.* | sed 's/SCCS\/s\.//' | sort -u > FILES.new
+    2. vi FILES.new and zap extraneous entries
+
+  C. Get list of pages deleted and added since last release
+
+    1. comm -23 FILES.old FILES.new > FILES.delete
+    2. comm -13 FILES.old FILES.new > FILES.add
+
+  D. Generate .so files
+
+    1. ../bin/getNAME -s `cat FILES.add` > List.so
+    2. vi List.so to verify
+    3. sccs create `sh List.so`
+
+II. Update List pages for _section_
+
+  A. Delete list page entries for pages deleted since last release
+
+    1. cp FILES.delete FILES.zap
+    2. vi FILES.zap
+    3. :%s/\(.*\)\.[1-8].*/\1/ (remove section suffixes)
+    4. sccs edit List._section_ (check out list page)
+    5. fgrep -f FILES.zap List._section_ > List.zap (get to-be-zappeds)
+    6. vi List.zap to verify
+    7. vi List._section_
+    8. !Gfgrep -v -f FILES.zap %
+    9. verify, and if necessary, merge back any mistakenly zapped lines
+    10. :w
+    11. preserve List.zap!
+
+  B. Add new list page entries for pages added since last release
+
+    1. vi List._section_
+    2. position cursor on first occurrence of .zZ
+    3. :r List.add
+    4. !Gsort
+    5. put .fi back on the last line, where it belongs
+    6. put capitalized entries after corresponding lower-case entries
+    7. in sections 2 and 3, :%s/\\fR/ (\\|)&/, if necessary
+
+III. Update the index - phase one
+
+  A. Get list of pages changed since last release
+
+    1. cd /usr/src/man/man_section_
+    2. ls -lt SCCS/s.* > FILES.index
+    3. vi FILES.index; position cursor on first entry bearing last release date
+    4. dG (zap all entries dated last release or earlier)
+    5. :%s/.*\/s\.// (zap all but the desired filename)
+    6. position cursor on first line of file; !Gsort
+    7. :w (critical step!)
+    8. CTRL-Z (suspend vi)
+    9. sccs get `cat FILES.index` (make sure current versions are extant)
+    10. fg (go back to vi)
+    11. position cursor at first line of file
+    12. !Ggrep -l NAME `cat %` (eliminate .so files from the list)
+    13. :wq
+    14. repeat the above in each section
+    
+  B. Copy sources from release machine
+
+    1. cd /usr/src/man/man_section_
+    2. on your own machine, mkdir index.pages in, say, your home directory
+    3. foreach i (man1 man2 man3 man4 man5 man6 man7 man8)
+	cd $i
+	rcp `cat FILES.index` _your_machine_:_your_homedir_/index.pages
+	cd ..
+	end (copy sources from all sections to index.pages)
+    4. cd _your_homedir_/index.pages
+    5. ls > FILES.index
+    6. vi FILES.index; remove "FILES.index" from the list
+
+  C. Generate trial index
+
+    1. cd _your_homedir_/index.pages
+    2. make -f /usr/src/man/Printfile.master trial.index
+    3. preview trial.index (preview trial index)
+    4. lpr -n trial.index (or print it out)
+
+IV. Review page formatting
+
+  A. (troff -Tlw -msunman `cat FILES.index` ) >& /dev/null & (print 'em out)
+  B. mark 'em up
+  D. vi `cat FILES.index` (fix 'em up)
+  E. filemerge (look 'em over)
+  F. rawhide
+
+V. Update the index - phase two
+ 
+  A. .IX "_1st_index_term_" "_2nd_index_term_" "_format_of_1st_" "_format_of_2nd_"
+    1. _1st_index_term_ is primary index entry
+    2. _2nd_index_term_ is secondary index entry (to be listed under primary)
+    3. _format_of_1st_ is primary including formatting instructions
+    4. _format_of_2nd_ is secondary including formatting instructions
+    5. the last font change in each .IX line should be \fR
+
+  B. Look over printed copy of trial.index._section_ and mark it up.  Look for:
+
+    1. primary entries with only one secondary (check the extant index for them)
+    2. out-of-order entries
+    3. formatting blunders
+    4. misleading or confusing entries
+    5. typos
+
+  C. Fix pages containing bad .IX entries
+
+    1. cd /usr/src/man/man_section_
+    2. vi _page_list_
+    3. whack (use good judgement)
+
+  D. Index pages added since last release
+
+    1. cd /usr/src/man/man_section_
+    2. vi `cat FILES.add`
+    3. whack (use good judgement) Try:
+
+      a. making each name listed in the NAME line a primary entry
+      b. checking frequently with the extant index for precedents
+      c. rotating the NAME line to generate primary entries
+      d. looking at SEE ALSO entries to help identify clumps
+      e. borrowing and modifying secondaries from other pages in a clump
+      f. converting new entries to secondaries when appropriate
+
+  E. Confirm changes and check 'em in
+
+    1. filemerge...
+    2. cd man on release machine
+    3. foreach i (man[1-8])
+	cd $i
+	sccs edit `cat FILES.index`
+	cd ..
+	end (check 'em out)
+    4. cd man on release machine
+    5. foreach i (1 2 3 4 5 6 7 8)
+	cd man$i
+	rcp _your_machine_:_your_homedir_/index.pages/*.$i* .
+	cd ..
+	end (replace old with new)
+    6. foreach i (man[1-8])
+	cd $i
+	sccs delget `cat FILES.index`
+	cd ..
+	end (check 'em in)
+
+VI. Update the Makefiles and Printfiles
+
+  A. make update /usr/src/man on release machine
+
+  B. Edit Makefiles
+
+    1. cd /usr/src/man/man_section_ on release machine
+    2. vi Makefile; review deletion, insertion lists for reasonableness
+    3. delete .eqn files from these lists
+    4. position cursor on first line of FILES list definition.
+    5. separate out old list one per line
+
+      a. in all sections except section 3, !}make show
+      b. in section 3, !}tr ' ' '\012' | sed '/\\/d' for each subsection
+
+    6. zap those that appear in the delete list (by hand)
+    7. note down those deleted, and zap delete list
+    8. position cursor on first line of inserts
+    9. :.,$s/# // (remove comment characters and extra spaces)
+    10. position cursor on first line of inserts
+    11. dG (delete them)
+    12. position cursor on the line "FILES= \" (should be only thing on line)
+    13. p (put them)
+    14. position cursor on first line following "FILES= \"
+    15. !{sort -u | fmt | sed 's/$/ \\/' (sort, pack, and end lines with `\')
+    16. delete the `\' in the last line
+    17. :wq
+    18. repeat for each section
+
+  C. Review Makefiles
+
+    1. make show | more (look over the list; does it look right?)
+    2. repeat for each section
+
+  D. Edit Printfiles (same as Edit Makefiles except as follows)
+
+    3.a. delete .so files from these lists (when in doubt, look 'em up)
+      b. for all .eqn files, delete the corresponding ._section_ files (if any)
+    5.a. in all sections but section 3, !}make showprint
+
+  E. Review Printfiles (same as Review Makefiles except as follows)
+
+    1. make showprint | more (look over the list; does it look right?)
+    2. Note:  List._section_ doesn't appear in the list.  S'OK.
+
+  F. Compare Makefiles and Printfiles
+
+    1. cd /usr/src/man/man_section_
+    2. make showprint > Print.list
+    3. make show | comm -3 Print.list - | more 
+    4. look for .so files in right hand column and .eqn files in left
+    5. investigate any other files that appear in these listings
+    6. repeat this check for all sections
+
+  G. Check in Makefiles and Printfiles
+
+    foreach i (man[1-8])
+	cd $i
+	sccs delget Makefile Printfile
+	cd ..
+	end
+
+VII. Clone the sources
+
+  A. Last minute check-ins
+
+    1. cd /usr/src/man
+    2. ls man?/SCCS/p* (are there any files still checked out?)
+    3. *** so what if there are? (metametaquestion) ***
+
+  B. make clean
+
+    1. cd /usr/src/man
+    2. make clean
+    3. cd man_section_
+    4. ls (anything still lying around?)
+    5. investigate the suspicious!
+    6. pare directory down to SCCS
+    7. lather, rinse, repeat
+
+  C. Get printable sources
+
+    1. cd /usr/src/man
+    2. make -f Printfile all
+
+  D. Make local copy of sources
+
+    1. cd /usr/src/man
+    2. du (display needed space in k-bytes
+    3. df (find partition (directory) with enough room)
+    4. vi Printfile, set CLONEDIR to this directory
+    5. :wq
+    6. make -nf Printfile clone (look it over)
+    7. make -f Printfile clone (if OK)
+    8. make all (get online sources back in order not to be antisocial)
+    9. cd CLONEDIR
+    10. ls man?/Printfile (sanity check:  are they all there?)
+    11. ls (more sanity check)
+
+  E. Make remote copy of sources to doctools host
+
+    1. vi Printfile
+
+      a. set DESTHOST to name of your doctools host
+      b. set DESTDIR to directory on your doctools host
+
+    2. make pinstall (do remote copy from CLONEDIR to DESTDIR)
+    3. du in CLONEDIR; du in DESTDIR; compare usage (sanity check)
+
+VIII. Print manual (finally!)
+
+  A. Preparation
+
+    1. checknr
+    2. cd DESTDIR
+    3. make man (concatenate pages in each section)
+    4. make PS (generate PostScript images)
+
+  B. Check pagination
+
+    1. lpr pag.PS (print pagination sheet)
+    2. review pagination sheet carefully!  Check for:
+
+      a. pages out of order (esp. in sect.3)
+      b. pages missing, pages duplicated
+      c. tweaked page-numbering
+      d. if sect. ends on odd page, there's a blank page following
+
+    3. Note:  there will be extra page icons; Just X them out
+    4. draw a diagonal slash through blank page icons,
+    5. circle page number on icons of pages on which no page number will appear
+    6. if any pagination problems exist, fix them and start over with A.
+
+  C. Print manual sections
+
+    1. print smaller sections first, say 6 and 7
+    2. lpr -s -P_printer_ _section_.PS (print section on _printer_)
+    3. leaf through the printed copy of _section_.PS.  Sticky pages having:
+
+      a. errors which affect pagination:
+
+        i. bad page breaks
+        ii. bad size changes which alter vertical spacing
+        iii. incomplete pages (such as a mail(1) page only two pages long)
+
+      b. other greivous dreck:
+
+        i. technical errors
+        ii. formatting errors
+
+    4. fix errors
+    5. if errors affect pagination, start over with A. (grr...)
+    6. repeat for all sections
+    7. Note:  a pagination botch in one sect will affect all succeeding sects
+        In this case, major reprint is unavoidable
+    8. lpr -s -P_printer_ index.PS (print index)
+    9. check printed copy of index.PS for dreck; fix it (see whack above)
+
+  D. Patch pages sh script (after fixes)
+
+    1. cd DESTDIR
+    2. vi _section_.sh
+    3. use this template to write a script:
+
+      #! /bin/sh
+      t() {
+      tbl $1 | troff -msunman -rC1 -rD1 -rP$2
+      }
+      t _patchpage_ _pagenumber_
+
+    4. Notes:
+
+      a. _patchpage_ is the manpage to be patched
+      b. _pagenumber_ is the number given to the first page of _patchpage_
+      c. add an invocation of t to the script for each patch page
+
+    5. cd man_section_
+    6. sh ../_section_.sh (run the script)
+    7. wait
+    8. cd ..
+    9. repeat for each section
+
+  E. Fold in patch pages
+
+    1. replace stickied pages with their corrected patches; Save stickieds!
+    2. check page numbering!
+    3. watch for errors! (always)
+    4. insert blank sheets when necessary at the ends of sections
+    5. write page numbers in blue pencil on blank pages
+    6. insert colored sheets where tabs will go.
+
+  F. Leaf, leaf, leaf through the whole manual!  Check for
+
+    1. correlation with pagination sheet
+    2. order of pages
+    3. completeness
+    4. general lack of dreck
+
+  G. More patches if necessary
+
+  H. Coversheet
+
+    1. vi cover.mex
+    2. update part no.  Dash level:
+
+      a. alpha - 01
+      b. beta - >1 and <10
+      c. FCS - 10 (nobody knows why...)
+
+    3. update revision level and date
+
+      a. alpha - rev level 1
+      b. beta - rev level 51
+      c. FCS - rev level A (nobody knows why)
+
+    4. print the coversheet
+
+      (troff -Tlw -mex cover.mex) >& /dev/null &
+
+  I. Sending it out the door
+
+    1. last pagination check (beginnings and ends of sections)
+    2. stack manual neatly in order in a box
+    3. review pagination sheet for completeness, order
+    4. number pages of pagination sheet
+    5. paper clip paginations sheet and put it in the box on top of manual
+    6. get rid of the goddamn thing
+
+IX. Final housekeeping
+
+  A. Merging back changed pages
+
+    1. make lists of pages changed since clone
+    2. rcp lists to release machine /tmp
+    3. on doctools host:
+
+      foreach i (1 2 3 4 5 6 7 8)
+        cd man$i
+        sid `cat Mutantclones$i`
+        cd ..
+        end (fix SCCS id lines)
+
+    4. on doctools host:
+
+      foreach i (1 2 3 4 5 6 7 8)
+        cd man$i
+        grep 'SMI' *
+        cd ..
+        end (verify sid)
+
+    5. fix any bad SCCS id lines remaining
+
+    6. on release machine:
+
+      foreach i (1 2 3 4 5 6 7 8)
+        cd man$i
+        sccs edit -s `cat /tmp/Mutantclones$i`
+        cd ..
+        end (check 'em out)
+
+    7. on doctools host:
+
+      foreach i (1 2 3 4 5 6 7 8)
+	cd man$i
+	rcp * _release_machine_:/usr/src/man/man$i
+	cd ..
+	end (rcp the files)
+
+    8. on release machine:
+
+      foreach i ( 1 2 3 4 5 6 7 8 )
+        cd man$i
+        foreach j (`cat /tmp/Mutantclones$i`)
+        echo -n "$j   " >>! /tmp/diffs.list
+        sccs diffs $j | wc -l >>! /tmp/diffs.list
+        end
+        cd ..
+        end (get no. of lines diff; check out if less than 5, more than 100)
+
+    9. fix any dreck discovered above
+
+    10. check 'em in:
+
+      foreach i (1 2 3 4 5 6 7 8)
+        cd man$i
+        sccs delget -s -y"_comment_" *
+        cd ..
+        end
+
+    11. last sanity check:
+
+      a. cd man_section_
+      b. sccs tell (anything left lying around?)
+      c. if wierdness, investigate, fix
+      d. cd ../man_nextsection_
+      e. do it again
+
+  B. catman tests
+
+    1. *** cat? symlinks to temp loc (put cat? in man) ***
+    2. if no Nroff in bin, vi Nroff, insert "head -1 $2", :wq
+    3. mv Nroff nroff (fake out catman)
+    4. catman
+    5. if fail, adjust arg number in 2.
+    6. if catman gives errors, try sccs get on offending files
+    7. *** make fixes ***
+    8. catman -w (fix whatis database)
+    9. *** look at whatis; dreck should appear at the top ***
+    10. fix NAME line dreck
+    11. mv nroff Nroff (unfake)
+    12. rm cat? in man
+    13. *** rm fake cat files ***
+
+*** remember to do bit about checknr and spell ***

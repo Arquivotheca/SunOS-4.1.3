@@ -1,0 +1,347 @@
+.\" @(#)ifconfig.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH IFCONFIG 8C "14 December 1990"
+.SH NAME
+ifconfig \- configure network interface parameters
+.SH SYNOPSIS
+.B /usr/etc/ifconfig
+.I interface
+[
+.I address_family
+]
+.if n .ti +5n
+[
+.I address
+[
+.I dest_address
+] ]
+[
+.B netmask
+.I mask
+]
+.if n .ti +5n
+.if t .ti +0.5i
+[
+.B broadcast
+.I address
+]
+[
+.B up
+]
+[
+.B down
+]
+[
+.B trailers
+]
+.if n .ti +5n
+[
+.B \-trailers
+]
+[
+.B arp
+]
+[
+.B \-arp
+]
+[
+.B private
+]
+.if n .ti +5n
+.if t .ti +0.5i
+[
+.B \-private
+]
+[
+.B metric
+.I n
+]
+[
+.B auto-revarp
+]
+.LP
+.B /usr/etc/ifconfig
+.I interface
+[
+.I protocol_family
+]
+.SH DESCRIPTION
+.IX  "ifconfig command"  ""  "\fLifconfig\fP \(em configure network interface parameters"
+.IX  "configure network interface parameters"  ""  "configure network interface parameters \(em \fLifconfig\fP"
+.IX  "network interface parameters, configure \(em \fLifconfig\fP"
+.LP
+.B ifconfig
+is used to assign an address
+to a network interface and/or to configure
+network interface parameters.
+.B ifconfig
+must be used at boot time to define the network address
+of each interface present on a machine; it may also be used at
+a later time to redefine an interface's address
+or other operating parameters.
+Used without options,
+.B ifconfig
+displays the current configuration for a network interface.
+If a protocol family is specified,
+.B ifconfig
+will report only the details specific to that protocol family.
+Only the super-user may modify the configuration
+of a network interface.
+.LP
+The
+.I interface
+parameter is a string of the form
+.IR "name\^unit" ,
+for example
+.B le0
+or 
+.BR ie1 .
+Three special interface names,
+.BR \-a ,
+.B \-ad
+and
+.BR \-au ,
+are reserved and refer to all or a subset
+of the interfaces in the system.
+If one of these interface names is given, the commands following it are applied
+to all of the interfaces that match:
+.TP 15
+.B \-a
+Apply the commands to all interfaces in the system.
+.TP
+.B \-ad
+Apply the commands to all ``down'' interfaces in the system.
+.TP
+.B \-au
+Apply the commands to all ``up'' interfaces in the system.
+.LP
+Since an interface may receive transmissions in differing protocols,
+each of which may require separate naming schemes, the parameters and
+addresses are interpreted according to
+the rules of some address family,
+specified by the
+.I address_family
+parameter.  The address families currently supported are
+.BR ether " and " inet .
+If no address family is specified,
+.B inet
+is assumed.
+.LP
+For the
+.SM TCP/IP
+family
+.RB ( inet ),
+the address is either a host name present in the host name data
+base (see
+.BR hosts (5))
+or in the 
+Network Information Service
+(\s-1NIS\s0)
+map
+.BR hosts ,
+or a
+.SM TCP/IP
+address expressed in the Internet standard
+\*(lqdot notation\*(rq.
+Typically, an Internet address specified in dot notation
+will consist of your system's network number and the machine's
+unique host number.
+A typical Internet address is
+.BR 192.9.200.44 ,
+where
+.B 192.9.200
+is the network number and
+.B 44
+is the machine's
+host number.
+.LP
+For the
+.B ether
+address family,
+the address is an Ethernet address represented as
+.IR x : x : x :\c
+.IR x : x : x
+where
+.I x
+is a hexadecimal number between 0 and ff.
+Only the super-user may use the
+.B ether
+address family.
+.LP
+If the
+.I dest_address
+parameter is supplied in addition to the
+.I address
+parameter, it specifies the address of
+the correspondent on the other end
+of a point to point link.
+.SH OPTIONS
+.TP 15
+.B up
+Mark an interface \*(lqup\*(rq.
+This happens automatically when setting the
+first address on an interface.
+The
+.B up
+option
+enables an interface after an
+.BR "ifconfig down" ,
+reinitializing the hardware.
+.TP
+.B down
+Mark an interface \*(lqdown\*(rq.  When an interface is
+marked \*(lqdown\*(rq, the system will not attempt to
+transmit messages through that interface.
+If possible, the interface will be reset to disable reception as well.
+This action does not automatically disable routes using the interface.
+.TP
+.B trailers
+This flag used to cause a non-standard encapsulation of inet packets
+on certain link levels.
+Sun drivers no longer use this flag, but it is ignored for compatibility.
+.TP
+.B \-trailers
+Disable the use of a \*(lqtrailer\*(rq link level encapsulation.
+.TP
+.B  arp
+Enable the use of the Address Resolution Protocol in mapping
+between network level addresses and link level addresses (default).
+This is currently implemented for mapping between
+.SM TCP/IP
+addresses and 10Mb/s Ethernet addresses.
+.TP
+.B \-arp
+Disable the use of the Address Resolution Protocol.
+.TP
+.B private
+Tells the
+.B in.routed
+routing daemon
+(see
+.BR routed (8C))
+that the interface should not be advertised.
+.br
+.ne 3
+.TP
+.B \-private
+Specify unadvertised interfaces.
+.TP
+.B auto-revarp
+Use the Reverse Address Resolution Protocol (RARP) to automatically
+acquire an address for this interface.  Available beginning
+with SunOS 4.1.1 Rev B.
+.TP
+.BI  metric " n"
+Set the routing metric of the interface to
+.IR n ,
+default 0.
+The routing metric is used by the routing protocol
+.RB ( routed (8C)).
+Higher metrics have the effect of making a route
+less favorable; metrics are counted as addition hops
+to the destination network or host.
+.TP
+.BI netmask " mask"
+(\fBinet\fR only)
+Specify how much of the address to reserve for subdividing
+networks into sub-networks.
+The mask includes the network part of the local address
+and the subnet part, which is taken from the host field of the address.
+The mask can be specified as a single hexadecimal number
+with a leading 0x, with a dot-notation address,
+or with a pseudo-network name listed in the network table
+.BR networks (5).
+The mask contains 1's for the bit positions in the 32-bit address
+which are to be used for the network and subnet parts,
+and 0's for the host part.
+The mask should contain at least the standard network portion,
+and the subnet field should be contiguous with the network
+portion.
+If a
+.RB ` + '
+(plus sign) is given for the netmask value,
+then the network number is looked up in the
+.SM NIS
+.B netmasks.byaddr
+map
+(or in the
+.BR /etc/netmasks )
+file if not running the 
+.SM NIS
+service.
+.TP
+.BI  broadcast " address"
+.RB ( inet
+only)
+Specify the address to use to represent broadcasts to the
+network.
+The default broadcast address is the
+address with a host part of all 0's.
+A
+.B +
+(plus sign) given for the broadcast value causes the broadcast address to
+be reset to a default appropriate for the (possibly new) address
+and netmask.
+Note that the arguments of
+.B ifconfig
+are interpreted left to right,
+and therefore
+.IP
+.B ifconfig \-a netmask + broadcast +
+.IP
+and
+.IP
+.B ifconfig \-a broadcast + netmask +
+.IP
+may result in different values being assigned for the interfaces'
+broadcast addresses.
+.SH EXAMPLES
+.LP
+If your workstation is not attached to an Ethernet, the
+.B ie0
+interface should be marked \*(lqdown\*(rq as follows:
+.IP
+.B ifconfig ie0 down
+.LP
+To print out the addressing information for each interface, use
+.IP
+.B ifconfig \-a
+.LP
+To reset each interface's broadcast address after the netmasks
+have been correctly set, use
+.IP
+.B ifconfig \-a broadcast +
+.LP
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/nit
+.TP
+.B /etc/netmasks
+.PD
+.SH "SEE ALSO"
+.BR intro (3),
+.BR  ethers (3N),
+.BR  arp (4P),
+.BR  hosts (5),
+.BR  netmasks (5),
+.BR  networks (5)
+.BR  netstat (8C),
+.BR  rc (8),
+.BR  routed (8C)
+.SH DIAGNOSTICS
+.LP
+Messages indicating the specified interface does not exist, the
+requested address is unknown, or the user is not privileged and
+tried to alter an interface's configuration.
+.SH NOTES
+.LP
+The network information service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

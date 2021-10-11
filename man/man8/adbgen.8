@@ -1,0 +1,246 @@
+.\" @(#)adbgen.8 1.1 92/07/30 SMI;
+.TH ADBGEN 8 "4 July 1990"
+.SH NAME
+adbgen \- generate adb script
+.SH SYNOPSIS
+.B /usr/lib/adb/adbgen
+.IB filename .adb
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  "adbgen command"  ""  "\fLadbgen\fP \(em generate adb script"
+.IX  generate "adb script"  ""  "\fLadb\fR script \(em \fLadbgen\fP"
+.IX  "adb scripts"  ""  "\fLadb\fR scripts \(em \fLadbgen\fP"
+.IX  "debug tools"  "adbgen generate adb script"  ""  "\fLadbgen\fP \(em generate \fLadb\fR script"
+.LP
+.B adbgen
+makes it possible to write
+.BR adb (1)
+scripts that do not contain hard-coded
+dependencies on structure member offsets.
+The input to
+.B adbgen
+is a file named
+.IB filename .adb
+which contains
+.B adbgen
+header information, then a null line, then the name of a
+structure, and finally an
+.B adb
+script.
+.B adbgen
+only deals with one structure per file;
+all member names are assumed to be
+in this structure.  The output of
+.B adbgen
+is an
+.B adb
+script in
+.IR  filename .
+.B adbgen
+operates by generating a C program which determines structure member
+offsets and sizes, which in turn generates the
+.B adb
+script.
+.LP
+The header lines, up to the null line, are copied verbatim
+into the generated C program.
+Typically these include C
+.B #include
+statements to include the header files containing the relevant
+structure declarations.
+.LP
+The
+.B adb
+script part may contain any valid
+.B adb
+commands (see
+.BR adb (1)),
+and may also contain
+.B adbgen
+requests, each enclosed in
+.BR {\|} s.
+Request types are:
+.TP 3
+\(bu
+Print a structure member.
+The request form is
+.BI { member , \|format }\fR.
+.I member
+is a member name of the
+.I structure
+given earlier, and
+.I format
+is any valid
+.B adb
+format request.
+For example, to print the
+.B p_pid
+field of the
+.I proc
+structure as a decimal number, you would write
+.BR {p_pid,d} .
+.TP
+\(bu
+Reference a structure member.
+The request form is
+.BI {* member , \|base }\fR.
+.I member
+is the member name whose value is desired, and
+.I base
+is an
+.B adb
+register name which contains the base address of the structure.
+For example, to get the
+.B p_pid
+field of the
+.I proc
+structure, you would get the proc structure address in an
+.B adb
+register, say
+.BR <f ,
+and write
+.BR {*p_pid,<f} .
+.TP
+\(bu
+Tell
+.B adbgen
+that the offset is okay.
+The request form is
+.BR {\s-1OFFSETOK\s0} .
+This is useful after invoking another
+.B adb
+script which moves the
+.BI adb " dot\fR."
+.TP
+\(bu
+Get the size of the
+.IR structure .
+The request form is
+.BR {\s-1SIZEOF\s0} .
+.B adbgen
+replaces this request with the size of the structure.
+This is useful in incrementing a pointer to
+step through an array of structures.
+.TP
+\(bu
+Calculate an arbitrary C expression.
+The request form is
+.BI {\s-1EXPR\s0, expression }\fR.
+.B adbgen
+replaces this request with the value of the expression.
+This is useful when more than one structure
+is involved in the script.
+.TP
+\(bu
+Get the offset to the end of the structure.
+The request form is
+.BR {\s-1END\s0} .
+This is useful at the end of the structure to get
+.B adb
+to align the
+.I dot
+for printing the next structure member.
+.LP
+.B adbgen
+keeps track of the movement of the
+.BI adb " dot"
+and emits
+.B adb
+code to move forward or backward as necessary before printing
+any structure member in a script.
+.BR adbgen 's
+model of the behavior of
+.BR adb 's
+.I dot
+is simple: it is assumed that the first line of the script is of the form
+.IR struct_address / "adb text"
+and that subsequent lines are of the form
+.RI +/ "adb text".
+The
+.BI adb " dot"
+then moves in a sane fashion.
+.B adbgen
+does not check the script to ensure that these limitations are met.
+.B adbgen
+also checks the size of the structure member against the size of the
+.B adb
+format code and warns you if they are not equal.
+.SH EXAMPLES
+.LP
+If there were an include file
+.B x.h
+which contained:
+.RS
+.ft B
+.nf
+struct x {
+.ft R
+.RS
+.ft B
+char	*x_cp;
+char	x_c;
+int	x_i;
+.ft R
+.RE
+.ft B
+};
+.fi
+.ft R
+.RE
+.LP
+Then an
+.B adbgen
+file (call it
+.BR script.adb )
+to print it would be:
+.RS
+.ft B
+.nf
+#include "x.h"
+x
+\&.\|/"x_cp"16t"x_c"8t"x_i"n{x_cp,X}{x_c,C}{x_i,D}
+.ft R
+.fi
+.RE
+.ne 3
+.LP
+After running
+.B adbgen
+the output file
+.B script
+would contain:
+.IP
+.B ./"x_cp"16t"x_c"8t"x_i"n\s-1XC\s0+D
+.LP
+To invoke the script you would type:
+.IP
+.B x$<script
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/adb/*
+.B adb
+scripts for debugging the kernel
+.PD
+.SH SEE ALSO
+.BR adb (1),
+.BR kadb (8S)
+.LP
+.TX DEBUG
+.SH BUGS
+.LP
+.B adb
+syntax is ugly; there should be a higher level interface
+for generating scripts.
+.LP
+Structure members which are bit fields cannot be handled
+because C will not give the address of a bit field.
+The address is needed to determine the offset.
+.SH DIAGNOSTICS
+.LP
+Warnings about structure member sizes not equal to
+.B adb
+format items and complaints about badly formatted requests.
+The C compiler complains if you reference a structure member
+that does not exist.  It also complains about & before array names;
+these complaints may be ignored.

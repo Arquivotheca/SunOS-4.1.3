@@ -1,0 +1,2686 @@
+	.ident	"@(#)locore.s 1.1 92/07/30 SMI"
+
+/*
+ * Copyright (c) 1989 by Sun Microsystems, Inc.
+ */
+
+#include <sys/param.h>
+#include <sys/vmparam.h>
+#include <sys/errno.h>
+#include <netinet/in_systm.h>
+#include <machine/asm_linkage.h>
+#include <machine/buserr.h>
+#include <machine/clock.h>
+#include <machine/cpu.h>
+#include <machine/enable.h>
+#include <machine/intreg.h>
+#include <machine/memerr.h>
+#include <machine/eeprom.h>
+#include <machine/mmu.h>
+#include <machine/pcb.h>
+#include <machine/psl.h>
+#include <machine/pte.h>
+#include <machine/reg.h>
+#include <machine/trap.h>
+#include <machine/scb.h>
+#include <machine/auxio.h>
+
+#include "assym.s"
+
+	.seg	"data"
+
+PROT	= (PG_V | PG_W) >> PG_S_BIT
+VALID	= (PG_V) >> PG_S_BIT
+
+!
+! MINFRAME and the register offsets in struct regs must add up to allow
+! double word loading of struct regs. PCB_WBUF must also be aligned.
+!
+#if (MINFRAME & 7) == 0 || (G2 & 1) == 0 || (O0 & 1) == 0
+ERROR - struct regs not aligned
+#endif
+#if (PCB_WBUF & 7)
+ERROR - pcb_wbuf not aligned
+#endif
+
+/*
+ * Absolute external symbols.
+ * On the sun4c we put the message buffer in the third and fourth pages.
+ * We set things up so that the first 2 pages of KERNELBASE is illegal
+ * to act as a redzone during copyin/copyout type operations. One of
+ * the reasons the message buffer is allocated in low memory to
+ * prevent being overwritten during booting operations (besides
+ * the fact that it is small enough to share pages with others).
+ */
+	.global	_DVMA, _msgbuf
+_DVMA	= DVMABASE			! address of DVMA area
+_msgbuf	= KERNELBASE + (2 * NBPG)	! address of printf message buffer
+
+#if MSGBUFSIZE > (2 * NBPG)
+ERROR - msgbuf too large
+#endif
+
+#if USIZE-KERNSTACK >= 4096
+ERROR - user area too large
+#endif
+
+/*
+ * Define some variables used by post-mortem debuggers
+ * to help them work on kernels with changing structures.
+ */
+	.global UPAGES_DEBUG, KERNELBASE_DEBUG, VADDR_MASK_DEBUG
+	.global PGSHIFT_DEBUG, SLOAD_DEBUG
+
+UPAGES_DEBUG		= UPAGES
+KERNELBASE_DEBUG	= KERNELBASE
+VADDR_MASK_DEBUG	= 0xffffffff
+PGSHIFT_DEBUG		= PGSHIFT
+SLOAD_DEBUG		= SLOAD
+
+/*
+ * Since we don't fix the UADDR anymore, we can recycle that
+ * address and use it's pmeg to map stuff. We choose to use it
+ * to map the onboard devices. In order to hardwire an address
+ * into an instruction, we'll use the same mnemnonic here.
+ */
+#define	OBADDR	(0-(NBPG*UPAGES))
+
+/*
+ * The interrupt stack. This must be the first thing in the data
+ * segment (other than an sccs string) so that we don't stomp
+ * on anything important during interrupt handling. We get a
+ * red zone below this stack for free when the kernel text is
+ * write protected. The interrupt entry code assumes that the
+ * interrupt stack is at a lower address than
+ * both eintstack and the kernel stack in the u area.
+ */
+#define INTSTACKSIZE	0x3000
+
+	.align	8
+	.global intstack, eintstack, intu, eexitstack
+intstack:				! bottom of interrupt stack
+	.skip	INTSTACKSIZE
+eintstack:				! end (top) of interrupt stack
+exitstack:				! bottom of exit stack
+	.skip	INTSTACKSIZE
+eexitstack:				! end (top) of exit stack
+
+	.global	_ubasic			! the primordial uarea
+_ubasic:
+	.skip	KERNSTACK
+_p0uarea:
+	.skip	USIZE
+intu:					! a fake uarea for the kernel
+	.skip	USIZE			! when a process is exiting
+	.global _uunix
+_uunix:
+	.word	_p0uarea
+
+/*
+ * System software page tables
+ */
+
+#define	vaddr_h(x)	((((x)-_Heapptes)/4)*NBPG + HEAPBASE)
+#define	HEAPMAP(mname, vname, npte)	\
+	.global	mname;			\
+mname:	.skip	(4*npte);		\
+	.global	vname;			\
+vname = vaddr_h(mname);
+
+	HEAPMAP(_Heapptes 	,_Heapbase	,HEAPPAGES	)
+	HEAPMAP(_Eheapptes	,_Heaplimit	,0		)
+	HEAPMAP(_Bufptes 	,_Bufbase	,BUFPAGES	)
+	HEAPMAP(_Ebufptes	,_Buflimit	,0		)
+
+#define vaddr(x)	((((x)-_Sysmap)/4)*NBPG + SYSBASE)
+#define SYSMAP(mname, vname, npte)	\
+	.global	mname;			\
+mname:	.skip	(4*npte);		\
+	.global	vname;			\
+vname = vaddr(mname);
+	SYSMAP(_Sysmap	 ,_Sysbase	,SYSPTSIZE	)
+	SYSMAP(_CMAP1	 ,_CADDR1	,1		) ! local tmp
+	SYSMAP(_CMAP2	 ,_CADDR2	,1		) ! local tmp
+	SYSMAP(_mmap	 ,_vmmap	,1		)
+	SYSMAP(_Mbmap	 ,_mbutl	,MBPOOLMMUPAGES	)
+	SYSMAP(_ESysmap	 ,_Syslimit	,0		) ! must be last
+
+	.global	_Syssize
+_Syssize = (_ESysmap-_Heapptes)/4
+
+#ifdef SAS
+	.global _availmem
+_availmem:
+	.word	0
+#endif SAS
+
+/*
+ * Software copy of system enable register
+ * This is always atomically updated
+ */
+	.global	_enablereg
+_enablereg:	.byte	0		! UNIX's system enable register
+
+/*
+ * Opcodes for instructions in PATCH macros
+ */
+#define MOVPSRL0	0xa1480000
+#define MOVL4		0xa8102000
+#define BA		0x10800000
+#define NO_OP		0x01000000
+
+/*
+ * Trap vector macros.
+ *
+ * A single kernel that supports machines with differing
+ * numbers of windows has to write the last byte of every
+ * trap vector with NW-1, the number of windows minus 1.
+ * It does this at boot time after it has read the implementation
+ * type from the psr.
+ *
+ * NOTE: All trap vectors are generated by the following macros.
+ * The macros must maintain that a write to the last byte to every
+ * trap vector with the number of windows minus one is safe.
+ */
+#define TRAP(H) \
+	b (H); mov %psr,%l0; nop; nop;
+
+/* the following trap uses only the trap window, you must be prepared */
+#define WIN_TRAP(H) \
+	mov %psr,%l0; mov %wim,%l3; b (H); mov 7,%l6;
+
+#define SYS_TRAP(T) \
+	mov %psr,%l0; mov (T),%l4; b sys_trap; mov 7,%l6;
+
+#define TRAP_MON(T) \
+	mov %psr,%l0; b trap_mon; mov (T),%l4; nop;
+
+#ifdef SIMUL
+/*
+ * For hardware simulator, want to double trap on any unknown trap
+ * (which is usually a call into SAS)
+*/
+#define BAD_TRAP \
+	mov %psr, %l0; mov %tbr, %l4; t 0; nop;
+#else
+#define BAD_TRAP	SYS_TRAP((. - _scb) >> 4);
+#endif
+
+#define PATCH_ST(T, V) \
+	set	_scb, %g1; \
+	set	MOVPSRL0, %g2; \
+	st	%g2, [%g1 + ((V)*16+0*4)]; \
+	set	sys_trap, %g2; \
+	sub	%g2, %g1, %g2; \
+	sub	%g2, ((V)*16 + 8), %g2; \
+	srl	%g2, 2, %g2; \
+	set	BA, %g3; \
+	or	%g2, %g3, %g2; \
+	st	%g2, [%g1 + ((V)*16+2*4)]; \
+	set	MOVL4 + (T), %g2; \
+	st	%g2, [%g1 + ((V)*16+1*4)];
+
+#define PATCH_T(H, V) \
+	set	_scb, %g1; \
+	set	(H), %g2; \
+	sub	%g2, %g1, %g2; \
+	sub	%g2, (V)*16, %g2; \
+	srl	%g2, 2, %g2; \
+	set	BA, %g3; \
+	or	%g2, %g3, %g2; \
+	st	%g2, [%g1 + ((V)*16+0*4)]; \
+	set	MOVPSRL0, %g2; \
+	st	%g2, [%g1 + ((V)*16+1*4)];
+
+/*
+ * Trap vector table.
+ * This must be the first text in the boot image.
+ *
+ * When a trap is taken, we vector to KERNELBASE+(TT*16) and we have
+ * the following state:
+ *	2) traps are disabled
+ *	3) the previous state of PSR_S is in PSR_PS
+ *	4) the CWP has been incremented into the trap window
+ *	5) the previous pc and npc is in %l1 and %l2 respectively.
+ *
+ * Registers:
+ *	%l0 - %psr immediately after trap
+ *	%l1 - trapped pc
+ *	%l2 - trapped npc
+ *	%l3 - wim (sys_trap only)
+ *	%l4 - system trap number (sys_trap only)
+ *	%l6 - number of windows - 1
+ *	%l7 - stack pointer (interrupts and system calls)
+ *
+ * Note: UNIX receives control at vector 0 (trap)
+ */
+	.seg	"text"
+	.align	4
+
+	.global _start, _scb
+_start:
+_scb:
+	TRAP(entry);				! 00
+	SYS_TRAP(T_FAULT | T_TEXT_FAULT);	! 01
+#ifdef VAC
+	! XXX A bug in the SS2 cache controller will corrupt the first
+	! XXX word of the vector in the cache under certain conditions
+	! XXX (see bug #1050558). The solution is to invalidate the
+	! XXX cache line containing the trap vector, so we never have
+	! XXX a cache-hit.
+	! XXX we handle WIN_TRAPs indirectly, others via sys_trap().
+	WIN_TRAP(_go_multiply_check);		! 02
+#else
+	WIN_TRAP(multiply_check);		! 02
+#endif
+	SYS_TRAP(T_PRIV_INSTR);			! 03
+	SYS_TRAP(T_FP_DISABLED);		! 04
+#ifdef VAC
+	! XXX bug in the SS2 cache controller (see above)
+	WIN_TRAP(_go_window_overflow);		! 05
+	WIN_TRAP(_go_window_underflow);		! 06
+#else
+	WIN_TRAP(window_overflow);		! 05
+	WIN_TRAP(window_underflow);		! 06
+#endif
+	SYS_TRAP(T_ALIGNMENT);			! 07
+	SYS_TRAP(T_FP_EXCEPTION);		! 08
+	SYS_TRAP(T_FAULT | T_DATA_FAULT);	! 09
+	BAD_TRAP;				! 0A tag_overflow
+	BAD_TRAP; BAD_TRAP;			! 0B - 0C
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 0D - 10
+	SYS_TRAP(T_INTERRUPT | 1);		! 11
+	SYS_TRAP(T_INTERRUPT | 2);		! 12
+	SYS_TRAP(T_INTERRUPT | 3);		! 13
+	SYS_TRAP(T_INTERRUPT | 4);		! 14
+	SYS_TRAP(T_INTERRUPT | 5);		! 15
+	SYS_TRAP(T_INTERRUPT | 6);		! 16
+	SYS_TRAP(T_INTERRUPT | 7);		! 17
+	SYS_TRAP(T_INTERRUPT | 8);		! 18
+	SYS_TRAP(T_INTERRUPT | 9);		! 19
+	SYS_TRAP(T_INTERRUPT | 10);		! 1A
+	SYS_TRAP(T_INTERRUPT | 11);		! 1B
+#ifndef XXXXX
+	SYS_TRAP(T_INTERRUPT | 12);		! 1C
+#else XXXXX
+/* Measure how long it takes to process level 12 */
+	TRAP(measure_level_12);
+#endif XXXXX
+	SYS_TRAP(T_INTERRUPT | 13);		! 1D
+#ifdef GPROF
+#ifdef VAC
+	! XXX bug in the SS2 cache controller (see above)
+	TRAP(_go_test_prof);			! 1E
+#else
+	TRAP(test_prof);			! 1E
+#endif
+#else
+	SYS_TRAP(T_INTERRUPT | 14);		! 1E
+#endif GPROF
+	SYS_TRAP(T_INTERRUPT | 15);		! 1F
+
+/*
+ * The rest of the traps in the table up to 0x80 should 'never'
+ * be generated by hardware.
+ */
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 20 - 23
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 24 - 27
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 28 - 2B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 2C - 2F
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 30 - 33
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 34 - 37
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 38 - 33
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 3C - 3F
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 40 - 43
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 44 - 47
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 48 - 4B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 4C - 4F
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 50 - 53
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 54 - 57
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 58 - 5B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 5C - 5F
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 60 - 63
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 64 - 67
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 68 - 6B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 6C - 6F
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 70 - 73
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 74 - 77
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 78 - 7B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 7C - 7F
+
+/*
+ * User generated traps
+ */
+	SYS_TRAP(T_SYSCALL);			! 80 - system call
+	SYS_TRAP(T_BREAKPOINT);			! 81 - user breakpoint
+	SYS_TRAP(T_DIV0);			! 82 - divide by zero
+	SYS_TRAP(T_FLUSH_WINDOWS);		! 83 - flush windows
+	TRAP(clean_windows);			! 84 - clean windows
+	BAD_TRAP;				! 85 - range check
+	TRAP(fix_alignment);			! 86 - do unaligned references
+	SYS_TRAP(T_INT_OVERFLOW);		! 87 - integer overflow
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 88 - 8B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 8C - 8F
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 90 - 93
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 94 - 97
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 98 - 9B
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! 9C - 9F
+	TRAP(getcc);				! A0 - get condition codes
+	TRAP(setcc);				! A1 - set condition codes
+			    BAD_TRAP; BAD_TRAP; ! A0 - A3
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! A4 - A7
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! A8 - AB
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! AC - AF
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! B0 - B3
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! B4 - B7
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! B8 - BB
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! BC - BF
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! C0 - C3
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! C4 - C7
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! C8 - CB
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! CC - CF
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! D0 - D3
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! D4 - D7
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! D8 - DB
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! DC - DF
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! E0 - E3
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! E4 - E7
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! E8 - EB
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! EC - EF
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! F0 - F3
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! F4 - F7
+	BAD_TRAP; BAD_TRAP; BAD_TRAP; BAD_TRAP; ! F8 - FB
+	BAD_TRAP; BAD_TRAP; BAD_TRAP;		! FC - FE
+	TRAP_MON(0xff)				! FF
+
+	!
+	! here we have a cache-aligned string of non_writeable
+	! zeros used mainly by bcopy hardware
+	! and by fpu_probe
+	!
+	.global _zeros
+_zeros:
+	.word 0,0,0,0,0,0,0,0
+
+/*
+ * The number of windows, set once on entry.  Note that it is
+ * in the text segment so that it is write protected in startup().
+ */
+	.global _nwindows
+_nwindows:
+	.word   8
+
+/*
+ * System initialization
+ *
+ * Do a halfhearted job of setting up the mmu so that we can run out
+ * of the high address space. We do this by copying the pmeg numbers
+ * for the physical locations to the correct virtual locations.
+ * NOTE - Assumes that the real and virtual locations have the same
+ * segment offsets from 0 and KERNELBASE!!!
+ *
+ * We make the following assumptions about our environment
+ * as set up by the monitor:
+ *
+ *	- traps are disabled (XXX suppose monitor is stepping us)
+ *	- we are loaded at 0x4000
+ *	- we have enough contiguous memory mapped for
+ *	    the entire kernel + some more
+ *	- all pages are writable
+ *	- the last pmeg [SEGINV] has no valid pme's
+ *	- the next to the last pmeg has no valid pme's
+ *	- when the monitor's romp->v_memorybitmap points to a zero
+ *	    - each low segment i is mapped to use pmeg i
+ *	    - each page map entry i maps physical page i
+ *
+ * Further assumptions which are specific to FORTH proms:
+ *
+ *	- upon entry, the romvec pointer (romp) is the first
+ *	  argument; i.e., %o0.
+ *	- the debug vector (dvec) pointer is the second argument (%o1)
+ *	NOTE: Take care not to mung these values until they can be
+ *	safely stored. Stash them in %g7 and %g6 until relocated
+ *	and bss cleared.
+ *
+ * We will set the protection properly in startup().
+ * Before we set up the new mapping and start running with the correct
+ * addresses, all of the code must be carefully written to be position
+ * independent code, since we are linked for running out of high addresses,
+ * but we get control running in low addresses.
+ */
+entry:
+	! 
+	! save the incoming arguments in locals in case we need
+	! to call the parent's callback routine
+	!
+	mov	%o0, %l0		! save arg (romp) until bss is clear
+	mov	%o1, %l1		! save dvec
+#ifndef SAS
+	ld	[%o0 + OP_ROMVEC_VERSION], %o0	! check romp->op_romvec_version
+	tst	%o0
+	be	dont_kill_parent	! only call back if version > 0
+	nop
+	tst	%o2			! if MUNIX, this is zero
+	be	dont_kill_parent	! only call back if %o2 != 0
+	nop
+	jmpl	%o2, %o7		! pass return addr in %o0 for 
+	add	%o7, 8, %o0		! romp->op_chain() function
+dont_kill_parent:
+#endif !SAS
+	mov	%l0, %g7		! now move the locals to globals
+	mov	%l1, %g6		! so we can reset the psr/wim
+
+	set	PSR_S|PSR_PIL|PSR_ET, %g1	! setup psr, leave traps
+						!  enabled for monitor XXX
+	mov	%g1, %psr
+
+	set	CONTEXT_REG, %g1	! setup kernel context (0)
+	stba	%g0, [%g1]ASI_CTL
+
+	mov	0x02, %wim		! setup wim
+
+	!
+	! Loop through the kernel segment maps starting at zero, copying the
+	! pmeg numbers to the correct virtual addresses, which start at
+	! KERNELBASE.
+	! NOTE: This loop won't work if the kernel size is greater than
+	! KERNELBASE.
+	!
+	clr	%l0			! current virtual address
+	set	KERNELBASE, %l1		! correct virtual address
+	set     (KERNELBASE + MAINMEM_SIZE), %l2 ! ending virtual address
+	set	PMGRPSIZE, %l3
+1:
+	lduba	[%l0]ASI_SM, %g1
+	stba	%g1, [%l1]ASI_SM
+	add	%l1, %l3, %l1
+	cmp	%l1, %l2
+	ble,a	1b
+	add	%l0, %l3, %l0		! delay slot
+
+	!
+	! The correct virtual addresses are now mapped. Do an absolute jump
+	! to set the pc to the correct virtual addresses.
+	!
+	set	1f, %g1
+	jmp	%g1
+	nop
+1:
+	!
+	! Now we are running with correct addresses
+	! and can use non-position independent code.
+	!
+
+	!
+	! Patch vector 0 trap to "zero" in case it happens again.
+	!
+	PATCH_ST(T_ZERO, 0)
+
+	!
+	! Find the the number of implemented register windows.
+	! The last byte of every trap vector must be equal to
+	! the number of windows in the implementation minus one.
+	! The trap vector macros (above) depend on it!
+	!
+	mov	%g0, %wim		! note psr has cwp = 0
+	set	_scb, %g2
+	mov	256, %g3		! number of trap vectors
+	sethi	%hi(_nwindows), %g4	! initialize pointer to _nwindows
+
+	save				! decrement cwp, wraparound to NW-1
+	mov	%psr, %g1
+	and	%g1, PSR_CWP, %g1       ! we now have nwindows-1
+	restore				! get back to orignal window
+	mov	2, %wim			! reset initial wim
+0:
+	stb	%g1, [%g2 + 15]		! write last byte of trap vectors
+	subcc	%g3, 1, %g3		! with nwindows-1
+	bnz	0b
+	add 	%g2, 16, %g2
+
+	inc	%g1			! inialize the nwindows variable
+	st	%g1, [%g4 + %lo(_nwindows)]
+
+	!
+	! The code that flushes windows may have an extra save/restore
+	! as current sparc implementations have 7 and 8 windows.
+	! On those implementations with 7 windows write nops over the
+	! unneeded save/restore.
+	!
+	cmp     %g1, 8
+	be      1f
+	.empty				! hush assembler warnings
+	set     _fixnwindows, %o3
+	set     NO_OP, %o2
+	st      %o2, [%o3]
+	st      %o2, [%o3 + 4]
+1:
+
+#ifdef SAS
+	!
+	! If we are in the simulator we now size memory by counting the
+	! valid segment maps.
+	!
+#ifndef SIMUL
+	clr	%l0
+	set	PMGRPSIZE, %g2
+2:
+	lduba	[%l0]ASI_SM, %g1
+	cmp	%g1, 127		! Campus has 7 bits for PMEG
+	blu,a	2b
+	add	%l0, %g2, %l0
+
+#else SIMUL
+	/* Just assume 1 Meg when running hardware simulator */
+	set	(1024*1024), %l0
+#endif SIMUL
+	sethi	%hi(_availmem), %g1
+	st	%l0, [%g1 + %lo(_availmem)]
+#endif SAS
+	!
+	! Use the pmeg after SYSPTSIZE to map on board devices
+	!
+	set	((SYSPTSIZE*NBPG)+PMGRPSIZE-1)/PMGRPSIZE, %g1
+	sethi	%hi(OBADDR), %l0	! Was UADDR (== _u)
+	stba	%g1, [%l0]ASI_SM	! write segment map
+	!
+	! Clear u area.
+	!
+	set	_ubasic, %l0
+	set	KERNSTACK+USIZE, %g1
+#ifdef SIMUL
+	/* Just clear 80 bytes when running hardware simulator */
+	set	80, %g1
+#endif SIMUL
+1:
+	subcc	%g1, 4, %g1
+	bnz	1b
+	clr	[%l0 + %g1]
+	!
+	! get software copy of enable register
+	!
+	set	ENABLEREG, %g1		! address of real version in hardware
+	lduba	[%g1]ASI_CTL, %g1
+	sethi	%hi(_enablereg), %g2	! software copy of enable register
+	stb	%g1, [%g2 + %lo(_enablereg)] ! update software copy
+	!
+	! Now map in our own copies of the eeprom/clock, memory error
+	! register, counter register and interrupt control register
+	! into the last virtual segment.
+	!
+	set	COUNTER_ADDR, %g1	! map in counters
+	set	COUNTER_PTE, %g2
+	sta	%g2, [%g1]ASI_PM
+
+	set	EEPROM_ADDR, %g1	! map in eeprom/clock/idprom
+	set	EEPROM_PTE, %g2
+	sta	%g2, [%g1]ASI_PM
+
+	set	MEMERR_ADDR, %g1	! map in memory error register
+	set	MEMERR_PTE, %g2
+	sta	%g2, [%g1]ASI_PM
+
+	set	AUXIO_ADDR, %g1		! map in auxiliary i/o register
+	set	AUXIO_PTE, %g2
+	sta	%g2, [%g1]ASI_PM
+
+	set	INTREG_ADDR, %g1	! map in interrupt control reg
+	set	INTREG_PTE, %g2
+	sta	%g2, [%g1]ASI_PM
+	!
+	! Setup trap base and make a kernel stack.
+	!
+	mov	%tbr, %l4		! save monitor's tbr
+	bclr	0xfff, %l4		! remove tt
+	!
+	! Save monitor's level14 clock interrupt vector code.
+	!
+	or	%l4, TT(T_INT_LEVEL_14), %o0
+	set	_mon_clock14_vec, %o1
+	call	_bcopy			! bcopy(mon tbr level 14 vec,
+	mov	16, %o2			!	_mon_clock14_vec, 16)
+	!
+	! Save monitor's breakpoint vector code.
+	!
+	or	%l4, TT(ST_MON_BREAKPOINT+T_SOFTWARE_TRAP), %o0
+	set	mon_breakpoint_vec, %o1
+	call	_bcopy			! bcopy(mon tbr breakpoint vec,
+	mov	16, %o2			!	mon_breakpoint_vec, 16)
+
+	!
+	! Set the initial kernel stack pointer for proc 0.
+	! We are running on the boot prom's stack, with boot prom's trap
+	! table, with traps enabled (see above), so we need to change the
+	! stack pointer atomically
+	!
+	set	_ubasic, %l0
+	set	KERNSTACK - SA(MINFRAME + REGSIZE), %g1
+	add	%l0, %g1, %sp
+	mov	0, %fp
+
+	!
+	! Switch from boot prom's trap table to our own
+	!
+	set	_scb, %g1		! setup trap handler
+	mov	%g1, %tbr
+	!
+	! Dummy up fake user registers on the stack.
+	!
+	set	USRSTACK-WINDOWSIZE, %g1
+	st	%g1, [%sp + MINFRAME + SP*4] ! user stack pointer
+	set	PSL_USER, %l0
+	st	%l0, [%sp + MINFRAME + PSR*4] ! psr
+	set	USRTEXT, %g1
+	st	%g1, [%sp + MINFRAME + PC*4] ! pc
+	add	%g1, 4, %g1
+	st	%g1, [%sp + MINFRAME + nPC*4] ! npc
+
+	mov	%psr, %g1
+	or	%g1, PSR_ET, %g1	! (traps may already be enabled)
+	mov	%g1, %psr		! enable traps
+	!
+	! Zero bss.
+	!
+	set	_edata, %o0
+	set	_end, %o1
+#ifdef SIMUL
+	/* Just clear 20 bytes when running hardware simulator */
+	set	_edata + 20, %o1
+#endif SIMUL
+	call	_bzero
+	sub	%o1, %o0, %o1
+#ifndef SAS
+	!
+	! Now save the romp and dvec we've been holding onto all this time.
+	!
+	sethi	%hi(_romp), %o0
+	st	%g7, [%o0 + %lo(_romp)]
+	sethi	%hi(_dvec), %o0
+	st	%g6, [%o0 + %lo(_dvec)]
+#endif !SAS
+	!
+	! Call main. We will return as process 1 (init).
+	!
+	call	_main
+	add	%sp, MINFRAME, %o0
+	!
+	! Proceed as if this was a normal user trap.
+	!
+	b,a	sys_rtt			! fake return from trap
+
+
+#ifdef VAC
+	! XXX A bug in the SS2 cache controller will corrupt the first
+	! XXX word of the vector in the cache under certain conditions
+	! XXX (see bug #1050558). The solution is to invalidate the
+	! XXX cache line containing the trap vector, so we never have
+	! XXX a cache-hit.
+	!
+	! XXX These 4 traps are seperate entry points.
+	! XXX They are no-oped in machdep.c for machines without the bug.
+	!
+	.global	_go_multiply_check
+_go_multiply_check:
+	sethi	%hi(CACHE_TAGS+0x4020), %l5
+	or	%l5, %lo(CACHE_TAGS+0x4020), %l5
+	sta	%g0, [%l5]ASI_CTL
+	b,a	multiply_check
+
+	.global	_go_window_overflow
+_go_window_overflow:
+	sethi	%hi(CACHE_TAGS+0x4050), %l5
+	or	%l5, %lo(CACHE_TAGS+0x4050), %l5
+	sta	%g0, [%l5]ASI_CTL
+	b,a	window_overflow
+
+	.global	_go_window_underflow
+_go_window_underflow:
+	sethi	%hi(CACHE_TAGS+0x4060), %l5
+	or	%l5, %lo(CACHE_TAGS+0x4060), %l5
+	sta	%g0, [%l5]ASI_CTL
+	b,a	window_underflow
+
+#ifdef GPROF
+	.global	_go_test_prof
+_go_test_prof:
+	sethi	%hi(CACHE_TAGS+0x41E0), %l5
+	or	%l5, %lo(CACHE_TAGS+0x41E0), %l5
+	sta	%g0, [%l5]ASI_CTL
+	b,a	test_prof
+#endif GPROF
+#endif
+
+/*
+ * Generic system trap handler.
+ */
+	.global	_sys_trap
+	.global	sys_trap
+_sys_trap:
+sys_trap:
+	!
+	! Prepare to go to C (batten down the hatches).
+	!
+#ifdef VAC
+	! XXX A bug in the SS2 cache controller will corrupt the first
+	! XXX word of the vector in the cache under certain conditions
+	! XXX (see bug #1050558). The solution is to invalidate the
+	! XXX cache line containing the trap vector, so we never have
+	! XXX a cache-hit.
+	! XXX we handle WIN_TRAPs indirectly, others via sys_trap().
+	!
+	! XXX For machines that don't have this bug, the following
+	! XXX instructions will be no-op'ed in machdep.c during startup().
+	!
+	mov	%tbr, %l5		! get tbr
+	sethi	%hi(_vac_size), %l3	! get size of cache
+	ld	[%l3 + %lo(_vac_size)], %l3
+	sub	%l3, 1, %l3		! turn cache size into bitmask
+	and	%l3, %l5, %l5		! get offset of vector within cache
+					! hardware folks say lsb's don't matter
+	sethi	%hi(CACHE_TAGS), %l3	! cheat, no low bits
+	sta	%g0, [%l3 + %l5]ASI_CTL	! invalidate that cache line!
+#endif VAC
+	mov	0x01, %l5		! CWM = 0x01 << CWP
+	sll	%l5, %l0, %l5
+	mov	%wim, %l3		! get WIM
+	btst	PSR_PS, %l0		! test pS
+	bz	st_user			! branch if user trap
+	btst	%l5, %l3		! delay slot, compare WIM and CWM
+
+	!
+	! Trap from supervisor.
+	! We can be either on the system stack or interrupt stack.
+	!
+	sub	%fp, MINFRAME+REGSIZE, %l7 ! save sys globals on stack
+#define XXXX_Check_Stack_Overflow /* turn off temporarily */
+#ifndef XXXX_Check_Stack_Overflow
+/*
+ * Check for Stack Overflow:
+ * if (%l7 > u ) {
+ *	;
+ * } else if (%l7 > eintstack) {
+ *	switch to intstack
+ *	spl(8);
+ *	panic("kernstack overflow");
+ * } else if (%l7 < intstack + CUSHION) {
+ *	spl(8);
+ *	panic("intstack overflow");
+ * }
+ *
+ * Note that the only free register at this point is %l6!
+ * (Well, we could use %l5 if TRAPWINDOW isn't defined)
+ *
+ * Also, this isn't perfect; we should also do this in window-overflow
+ * handling, and if we panic we can panic again when we flush windows, if
+ * we can't flush them to the stack.
+ */
+#define CUSHION 0x400	/* (allows a few subroutine calls) */
+	set	_oflow_panic_string, %l6
+	ld	[%l6], %l6
+	bnz,a	9f		! don't recurse!
+	clr	%l6
+	set	_u, %l6
+	cmp	%l7, %l6
+	bgu,a	9f		! branch means okay (kernstack)
+	clr	%l6
+	set	eintstack, %l6
+	cmp	%l7, %l6
+	blu,a	5f		! may be on intstack
+	sethi	%hi(intstack+CUSHION), %l6
+	! kernel stack overflow
+	set	0f, %l6
+	.seg	"data"
+0:	.asciz	"kernstack overflow: will panic: Zero\n"
+	.seg	"text"
+	ba	8f
+	sethi	%hi(eintstack), %l7
+
+5:
+	! here means maybe on intstack
+	or	%l6, %lo(intstack+CUSHION), %l6
+	cmp	%l7, %l6
+	bgu,a	9f		! branch means okay (intstack)
+	clr	%l6
+	! interrupt stack overflow
+	sethi	%hi(0f), %l6
+	ba	9f
+	or	%l6, %lo(0f), %l6
+	.seg	"data"
+0:	.asciz	"intstack overflow: will panic: Zero\n"
+	.seg	"text"
+
+8:
+	! must switch to intstack
+	or	%l7, %lo(eintstack), %l7
+	sub	%l7, MINFRAME+REGSIZE, %l7
+9:
+! %l6 is either clear, or contains the address of the panic message
+! %l7 is the new stack fram address
+#endif XXXX_Check_Stack_Overflow
+	SAVE_GLOBALS(%l7 + MINFRAME)
+#ifndef XXXX_Check_Stack_Overflow
+	tst	%l6
+	bz	1f
+	btst	%l5, %l3		! retest
+	set	_oflow_panic_string, %g1
+	st	%l6, [%g1]
+	st	%l6, [%g1 + 4]
+	.seg	"data"
+	.align	4
+	.global	_oflow_panic_string
+_oflow_panic_string:			! two words:
+	.word 0				! if non-zero, don't check
+	.word 0				! if non-zero, panic
+	.seg	"text"
+1:
+#endif XXXX_Check_Stack_Overflow
+#ifdef TRAPWINDOW
+	!
+	! store the window at the time of the trap into a static area.
+	!
+	set	_trap_window, %g1
+	mov	%wim, %g2
+	st	%g2, [%g1+96]
+	mov	%psr, %g2
+	restore
+	st %o0, [%g1]; st %o1, [%g1+4]; st %o2, [%g1+8]; st %o3, [%g1+12]
+	st %o4, [%g1+16]; st %o5, [%g1+20]; st %o6, [%g1+24]; st %o7, [%g1+28]
+	st %l0, [%g1+32]; st %l1, [%g1+36]; st %l2, [%g1+40]; st %l3, [%g1+44]
+	st %l4, [%g1+48]; st %l5, [%g1+52]; st %l6, [%g1+56]; st %l7, [%g1+60]
+	st %i0, [%g1+64]; st %i1, [%g1+68]; st %i2, [%g1+72]; st %i3, [%g1+76]
+	st %i4, [%g1+80]; st %i5, [%g1+84]; st %i6, [%g1+88]; st %i7, [%g1+92]
+	mov	%g2, %psr
+	nop; nop; nop;
+	btst	%l5, %l3		! retest
+#endif TRAPWINDOW
+	st	%fp, [%l7 + MINFRAME + SP*4] ! stack pointer
+	st	%l0, [%l7 + MINFRAME + PSR*4] ! psr
+	st	%l1, [%l7 + MINFRAME + PC*4] ! pc
+	!
+	! If we are in last trap window, all windows are occupied and
+	! we must do window overflow stuff in order to do further calls
+	!
+	bz	st_have_window		! if ((CWM&WIM)==0) no overflow
+	st	%l2, [%l7 + MINFRAME + nPC*4] ! npc
+	b,a	st_sys_ovf
+
+st_user:
+	!
+	! Trap from user. Save user globals and prepare system stack.
+	! Test whether the current window is the last available window
+	! in the register file (CWM == WIM).
+	!
+	set	_masterprocp, %l7
+	ld	[%l7], %l7
+	ld	[%l7 + P_STACK], %l7	! initial kernel sp for this process
+
+	SAVE_GLOBALS(%l7 + MINFRAME)
+	SAVE_OUTS(%l7 + MINFRAME)
+	st	%l0, [%l7 + MINFRAME + PSR*4]	! psr
+	st	%l1, [%l7 + MINFRAME + PC*4]	! pc
+	st	%l2, [%l7 + MINFRAME + nPC*4]	! npc
+	set	_uunix, %g5
+	ld	[%g5], %g5
+	!
+	! If we are in last trap window, all windows are occupied and
+	! we must do window overflow stuff in order to do further calls
+	!
+	bz	1f			! if ((CWM&WIM)==0) no overflow
+	clr	[%g5 + PCB_WBCNT]	! delay slot, save buffer ptr = 0
+
+	not	%l5, %g2		! UWM = ~CWM
+	mov	-2, %g3			! gen window mask from NW-1 in %l6
+	sll	%g3, %l6, %g3
+	andn	%g2, %g3, %g2
+	b	st_user_ovf		! overflow
+	srl	%l3, 1, %g1		! delay slot,WIM = %g1 = ror(WIM, 1, NW)
+
+	!
+	! Compute the user window mask (u.u_pcb.pcb_uwm), which is a mask of
+	! window which contain user data. It is all the windows "between"
+	! CWM and WIM.
+	!
+1:
+	subcc	%l3, %l5, %g1		! if (WIM >= CWM)
+	bneg,a	2f			!    u.u_pcb.pcb_uwm = (WIM-CWM)&~CWM
+	sub	%g1, 1, %g1		! else
+2:					!    u.u_pcb.pcb_uwm = (WIM-CWM-1)&~CWM
+	bclr	%l5, %g1
+	mov	-2, %g3			! gen window mask from NW-1 in %l6
+	sll	%g3, %l6, %g3
+	andn	%g1, %g3, %g1
+	set	_uunix, %g5		! XXX - global u register?
+	ld	[%g5], %g5
+	st	%g1, [%g5 + PCB_UWM]
+
+st_have_window:
+	!
+	! The next window is open.
+	!
+	mov	%l7, %sp		! setup previously computed stack
+	!
+	! Process trap according to type
+	!
+#ifndef XXXX_Check_Stack_Overflow
+	! first check for stack overflow; if so, panic.
+	set	_oflow_panic_string, %g1
+	ld	[%g1 + 4], %o0
+	tst	%o0
+	bz,a	0f
+	mov	%o0, %l6		! save address
+	! mask out interrupts and panic
+	clr	[%g1 + 4]		! only panic once!
+	or	%l0, PSR_PIL, %g1
+	mov	%g1, %psr
+	wr	%g1, PSR_ET, %psr	! enable traps
+	nop
+	call	_printf			! printf(oflow_panic_string[1])
+	nop
+	clr	%o0
+	call	_trap			! trap(0, rp)
+	add	%sp, MINFRAME, %o1
+	! not-reached, but just in case
+	call	_panic
+	mov	%l6, %o0
+0:
+#endif XXXX_Check_Stack_Overflow
+	btst	T_INTERRUPT, %l4	! interrupt
+	bnz	interrupt
+	cmp	%l4, T_SYSCALL		! syscall
+	be	syscall
+	btst	T_FAULT, %l4		! fault
+
+fixfault:
+	bnz,a	fault
+	bclr	T_FAULT, %l4
+	cmp	%l4, T_FP_EXCEPTION	! floating point exception
+	be	_fp_exception
+	cmp	%l4, T_FP_DISABLED	! fpu is disabled
+	be	_fp_disabled
+	cmp	%l4, T_FLUSH_WINDOWS	! flush user windows to stack
+	bne	1f
+	wr	%l0, PSR_ET, %psr	! enable traps
+
+	!
+	! Flush windows trap.
+	!
+	call	_flush_user_windows	! flush user windows
+	nop
+	!
+	! Don't redo trap instruction.
+	!
+	ld	[%sp + MINFRAME + nPC*4], %g1
+	st	%g1, [%sp + MINFRAME + PC*4]  ! pc = npc
+	add	%g1, 4, %g1
+	b	sys_rtt
+	st	%g1, [%sp + MINFRAME + nPC*4] ! npc = npc + 4
+
+1:
+	!
+	! All other traps. Call C trap handler.
+	!
+	mov	%l4, %o0		! trap(t, rp)
+	clr	%o2			!  addr = 0
+	clr	%o3			!  be = 0
+	mov	S_OTHER, %o4		!  rw = S_OTHER
+	call	_trap			! C trap handler
+	add	%sp, MINFRAME, %o1
+	b,a	sys_rtt			! return from trap
+/* end systrap */
+
+/*
+ * Sys_trap overflow handling.
+ * Psuedo subroutine returns to st_have_window.
+ */
+st_sys_ovf:
+	!
+	! Overflow from system.
+	! Determine whether the next window is a user window.
+	! If u.u_pcb.pcb_uwm has any bits set, then it is a user window
+	! which must be saved.
+	!
+#ifdef PERFMETER
+	sethi	%hi(_overflowcnt), %g5
+	ld	[%g5 + %lo(_overflowcnt)], %g2
+	inc	%g2
+	st	%g2, [%g5 + %lo(_overflowcnt)]
+#endif PERFMETER
+	set	_uunix, %g5		! XXX - global u register?
+	ld	[%g5], %g5
+	ld	[%g5 + PCB_UWM], %g2	! if (u.u_pcb.pcb_uwm)
+	tst	%g2			!	user window
+	bnz	st_user_ovf
+	srl	%l3, 1, %g1		! delay slot,WIM = %g1 = ror(WIM, 1, NW)
+	!
+	! Save supervisor window. Compute the new WIM and change current window
+	! to the window to be saved.
+	!
+	sll	%l3, %l6, %l3		! %l6 == NW-1
+	or	%l3, %g1, %g1
+	save				! get into window to be saved
+	mov	%g1, %wim		! install new WIM
+	!
+	! Save window on the stack.
+	!
+st_stack_res:
+	SAVE_WINDOW(%sp)
+	b	st_have_window		! finished overflow processing
+	restore				! delay slot, back to original window
+
+st_user_ovf:
+	!
+	! Overflow. Window to be saved is a user window.
+	! Compute the new WIM and change the current window to the
+	! window to be saved.
+	!
+	sll	%l3, %l6, %l3		! %l6 == NW-1
+	or	%l3, %g1, %g1
+	bclr	%g1, %g2		! turn off uwm bit for window
+	set	_uunix, %g5		! XXX - global u register?
+	ld	[%g5], %g5
+	st	%g2, [%g5 + PCB_UWM]	! we are about to save
+	save				! get into window to be saved
+	mov	%g1, %wim		! install new WIM
+	!
+	! We must check whether the user stack is resident where the window
+	! will be saved, which is pointed to by the window's sp.
+	! We must also check that the sp is aligned to a word boundary.
+	! Normally, we would check the alignment, and then probe the top
+	! and bottom of the save area on the stack. However we optimize
+	! this by checking that both ends of the save area are within a
+	! 4k unit (the biggest mask we can generate in one cycle), and
+	! the alignment in one shot. This allows us to do one probe to
+	! the page map. NOTE: this assumes a page size of at least 4k.
+	!
+	and	%sp, 0xfff, %g1
+#ifdef VA_HOLE
+	! check if the sp points into the hole in the address space
+	sethi	%hi(_hole_shift), %g2	! hole shift address
+	ld	[%g2 + %lo(_hole_shift)], %g3		
+	add	%g1, (14*4), %g1	! interlock, top of save area 
+	sra	%sp, %g3, %g2
+	inc	%g2
+	andncc	%g2, 1, %g2
+	bz	1f
+	andncc	%g1, 0xff8, %g0
+	b,a	st_stack_not_res	! sp points into the hole
+1:
+#else
+	add	%g1, (14*4), %g1
+	andncc	%g1, 0xff8, %g0
+#endif
+	bz,a	st_sp_bot
+	lda	[%sp]ASI_PM, %g1	! check for stack page resident
+	!
+	! Stack is either misaligned or crosses a 4k boundary.
+	!
+	btst	0x7, %sp		! test sp alignment
+	bz	st_sp_top
+	add	%sp, (14*4), %g1	! delay slot, check top of save area
+	b,a	st_stack_not_res	! stack misaligned, catch it later
+
+st_sp_top:
+#ifdef VA_HOLE
+	! check if the sp points into the hole in the address space
+	sra	%g1, %g3, %g2
+	inc	%g2
+	andncc	%g2, 1, %g2
+	bz,a	1f
+	lda	[%g1]ASI_PM, %g1	! get pme for this address
+	b,a	st_stack_not_res	! stack page can never be resident
+1:
+	srl	%g1, PG_S_BIT, %g1	! get vws bits
+	sra	%sp, %g3, %g2
+	inc	%g2
+	andncc	%g2, 1, %g2
+	bz	1f
+	cmp	%g1, PROT		! look for valid, writeable, user
+	b,a	st_stack_not_res	! stack not resident, catch it later
+1:
+#else
+	lda	[%g1]ASI_PM, %g1	! get pme for this address
+	srl	%g1, PG_S_BIT, %g1	! get vws bits
+	cmp	%g1, PROT		! look for valid, writeable, user
+#endif
+
+	be,a	st_sp_bot
+	lda	[%sp]ASI_PM, %g1	! delay slot, check bottom of save area
+	b,a	st_stack_not_res	! stack not resident, catch it later
+
+st_sp_bot:
+	srl	%g1, PG_S_BIT, %g1	! get vws bits
+	cmp	%g1, PROT		! look for valid, writeable, user
+	be	st_stack_res
+	nop				! extra nop in rare case
+
+st_stack_not_res:
+	!
+	! User stack is not resident, save in u area for processing in sys_rtt.
+	!
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	ld	[%g5 + PCB_WBCNT], %g1
+	sll	%g1, 2, %g1		! convert to spbuf offset
+
+	add	%g1, %g5, %g2
+	st	%sp, [%g2 + PCB_SPBUF]	! save sp
+	sll	%g1, 4, %g1		! convert wbcnt to pcb_wbuf offset
+
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	add	%g1, %g5, %g2
+	set	PCB_WBUF, %g4
+	add	%g4, %g2, %g2
+	SAVE_WINDOW(%g2)
+	srl	%g1, 6, %g1		! increment u.u_pcb.pcb_wbcnt
+	add	%g1, 1, %g1
+
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	st	%g1, [%g5 + PCB_WBCNT]
+	b	st_have_window		! finished overflow processing
+	restore				! delay slot, back to original window
+/* end sys_trap overflow */
+
+	.seg	"data"
+	.align	4
+
+	.global _overflowcnt, _underflowcnt
+_overflowcnt:
+	.word	0
+_underflowcnt:
+	.word	0
+
+	.global _qrunflag, _queueflag, _queuerun
+
+#ifndef sun4c	/* sun4c uses GNUFPC which doesn't have this bug */
+	.global	fzero, f0save, fsrsave
+fzero:		.word	0		! used in the fitoX fix below
+f0save:		.word	0
+fsrsave:	.word	0
+#endif sun4c
+
+	.seg	"text"
+	.align	4
+
+/*
+ * Return from sys_trap routine.
+ */
+	.global	sys_rtt
+sys_rtt:
+#ifndef	sun4c
+	! code for fItoX bug removed from sun4c (not needed)
+#endif
+	!
+	! Return from trap.
+	!
+	ld	[%sp + MINFRAME + PSR*4], %l0 ! get saved psr
+	btst	PSR_PS, %l0		! test pS for return to supervisor
+	bnz	sr_sup
+	mov	%psr, %g1
+
+#ifdef LWP
+	.global ___Nrunnable, _lwpschedule
+#endif
+sr_user:
+	!
+	! Return to user. Turn off traps using the current CWP (because
+	! we are returning to user). Test for streams actions.
+	! Test for LWP, AST for resched. or prof, or streams.
+	!
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	and	%g1, PSR_CWP, %g1	! insert current CWP in old psr
+	andn	%l0, PSR_CWP, %l0
+	or	%l0, %g1, %l0
+	mov	%l0, %psr		! install old psr, disable traps
+	nop; nop; 			! psr delay
+#ifdef LWP
+	sethi	%hi(___Nrunnable), %g2
+	ld      [%g2 + %lo(___Nrunnable)], %g2
+	tst     %g2
+	bz      1f
+	nop
+	!
+	! Runnable thread for async I/O
+	!
+	wr	%l0, PSR_ET, %psr	! turn on traps
+	nop				! psr delay
+	call	_flush_user_windows
+	nop
+	call    _lwpschedule
+	nop
+
+	!
+	! Use kernel context (for now) since lwpschedule may
+	! change the context reg. This causes a fault.
+	!
+	set	CONTEXT_REG, %g2
+	b	sys_rtt			! try again
+	stba	%g0, [%g2]ASI_CTL
+1:
+#endif LWP
+	sethi	%hi(_qrunflag), %g1
+	ldub	[%g1 + %lo(_qrunflag)], %g1
+	sethi	%hi(_queueflag), %l5	! interlock slot
+	tst	%g1			! need to run stream queues?
+	bz,a	3f			! no
+	ld	[%g5 + PCB_FLAGS], %g1	! delay slot, test for ast.
+
+	ldub	[%l5 + %lo(_queueflag)], %g1
+	tst	%g1			! already running queues?
+	bnz,a	3f			! yes
+	ld	[%g5 + PCB_FLAGS], %g1	! delay slot, test for ast.
+	!
+	! Run the streams queues.
+	!
+	andn	%l0, PSR_PIL, %g2	! splhi
+	or	%g2, 10 << PSR_PIL_BIT, %g2
+	mov	%g2, %psr		! change priority (IU bug)
+	wr	%g2, PSR_ET, %psr	! turn on traps
+	add	%g1, 1, %g1		! mark that we're running the queues
+	call	_queuerun
+	stb	%g1, [%l5 + %lo(_queueflag)]
+
+	clrb	[%l5 + %lo(_queueflag)] ! done running queues
+	b,a	sys_rtt
+
+3:
+	srl	%g1, AST_SCHED_BIT, %g1
+	btst	1, %g1
+	bz,a	1f
+	ld	[%g5 + PCB_WBCNT], %g3	! delay slot, user regs been saved?
+
+	!
+	! Let trap handle the AST.
+	!
+	wr	%l0, PSR_ET, %psr	! turn on traps
+	mov	T_AST, %o0
+	call	_trap			! trap(T_AST, rp)
+	add	%sp, MINFRAME, %o1
+	b,a	sys_rtt
+
+	!
+	! Return from trap, for yield_child
+	!
+	.global _fork_rtt
+_fork_rtt:
+	sethi	%hi(_masterprocp), %l6
+	ld	[%l6 + %lo(_masterprocp)], %o0
+	ld	[%o0 + P_STACK], %l7
+	mov	%sp, %o2
+	call	_sys_rttchk		! sys_rttchk(procp)
+	mov	%l7, %o1
+
+	ld	[%sp + MINFRAME + PSR*4], %l0 ! get saved psr
+	btst	PSR_PS, %l0		! test pS for return to supervisor
+	bnz	sr_sup
+	mov	%psr, %g1
+
+	sethi	%hi(_uunix), %g5
+	ld	[%g5 + %lo(_uunix)], %g5
+	and	%g1, PSR_CWP, %g1	! insert current CWP in old psr
+	andn	%l0, PSR_CWP, %l0
+	or	%l0, %g1, %l0
+	mov	%l0, %psr		! install old psr, disable traps
+	nop				! psr delay
+	b	3b
+	ld	[%g5 + PCB_FLAGS], %g1	! delay slot, test for ast.
+
+1:
+	!
+	! If user regs have been saved to the window buffer we must clean it.
+	!
+	tst	%g3
+	bz,a	2f
+	ld	[%g5 + PCB_UWM], %l4	! delay slot, user windows in reg file?
+
+	!
+	! User regs have been saved into the u area.
+	! Let trap handle putting them on the stack.
+	!
+	mov	%l0, %psr		! in case of changed priority (IU bug)
+	wr	%l0, PSR_ET, %psr	! turn on traps
+	mov	T_WIN_OVERFLOW, %o0
+	call	_trap			! trap(T_WIN_OVERFLOW, rp)
+	add	%sp, MINFRAME, %o1
+	b,a	sys_rtt
+
+2:
+	!
+	! We must insure that the rett will not take a window underflow trap.
+	!
+	RESTORE_OUTS(%sp + MINFRAME)	! restore user outs
+	tst	%l4
+	bnz	sr_user_regs
+	ld	[%sp + MINFRAME + PC*4], %l1 ! restore user pc
+
+	!
+	! The user has no windows in the register file.
+	! Try to get one from his stack.
+	!
+#ifdef PERFMETER
+	sethi	%hi(_underflowcnt), %l6
+	ld	[%l6 + %lo(_underflowcnt)], %l3
+	inc	%l3
+	st	%l3, [%l6 + %lo(_underflowcnt)]
+#endif PERFMETER
+	set	_scb, %l6		! get NW-1 for rol calculation
+	ldub	[%l6+(5*16)+15], %l6	! last byte of overflow trap vector
+	mov	%wim, %l3		! get wim
+	sll	%l3, 1, %l4		! next WIM = rol(WIM, 1, NW)
+	srl	%l3, %l6, %l5		! %l6 == NW-1
+	or	%l5, %l4, %l5
+	mov	%l5, %wim		! install it
+	!
+	! Normally, we would check the alignment, and then probe the top
+	! and bottom of the save area on the stack. However we optimize
+	! this by checking that both ends of the save area are within a
+	! 4k unit (the biggest mask we can generate in one cycle), and
+	! the alignment in one shot. This allows us to do one probe to
+	! the page map. NOTE: this assumes a page size of at least 4k.
+	!
+	and	%fp, 0xfff, %g1
+#ifdef VA_HOLE
+	! check if the fp points into the hole in the address space
+	sethi	%hi(_hole_shift), %g2	! hole shift address
+	ld	[%g2 + %lo(_hole_shift)], %g3		
+	add	%g1, (14*4), %g1	! interlock, bottom of save area 
+	sra	%fp, %g3, %g2
+	inc	%g2
+	andncc	%g2, 1, %g2
+	bz	1f
+	andncc	%g1, 0xff8, %g0
+	b,a	sr_stack_not_res	! stack page can never be resident
+1:
+#else
+	add	%g1, (14*4), %g1
+	andncc	%g1, 0xff8, %g0
+#endif
+	bz,a	sr_sp_bot
+	lda	[%fp]ASI_PM, %g2	! check for stack page resident
+	!
+	! Stack is either misaligned or crosses a 4k boundary.
+	!
+	btst	0x7, %fp		! test fp alignment
+	bz	sr_sp_top
+	add	%fp, (14*4), %g1	! delay slot, check top of save area
+
+	!
+	! A user underflow with a misaligned sp.
+	! Fake a memory alignment trap.
+	!
+	mov	%l3, %wim		! restore old wim
+sr_align_trap:
+	mov	%l0, %psr		! in case of changed priority (IU bug)
+	wr	%l0, PSR_ET, %psr	! turn on traps
+	mov	T_ALIGNMENT, %o0
+	call	_trap			! trap(T_ALIGNMENT, rp)
+	add	%sp, MINFRAME, %o1
+	b,a	sys_rtt
+
+sr_sp_top:
+#ifdef VA_HOLE
+	sra	%g1, %g3, %g2
+	inc	%g2
+	andncc	%g2, 1, %g2
+	bz,a	1f
+	lda	[%g1]ASI_PM, %g2	! get pme for this address
+	b,a	sr_stack_not_res	! stack page can never be resident
+1:
+	srl	%g2, PG_S_BIT, %g2	! get vws bits
+	sra	%fp, %g3, %g3
+	inc	%g3
+	andncc	%g3, 1, %g3
+	bz	1f
+	andcc	%g2, VALID, %g0		! look for valid bit
+	b	sr_stack_not_res	! stack page can never be resident
+	mov	%fp, %g1
+1:
+#else
+	lda	[%g1]ASI_PM, %g2	! get pme for this address
+	srl	%g2, PG_S_BIT, %g2	! get vws bits
+	andcc	%g2, VALID, %g0		! look for valid bit
+#endif
+
+	bnz,a	sr_sp_bot
+	lda	[%fp]ASI_PM, %g2	! delay slot, check bottom of save area
+	b,a	sr_stack_not_res	! stack page not resident
+
+sr_sp_bot:
+	srl	%g2, PG_S_BIT, %g2	! get vws bits
+	andcc	%g2, VALID, %g0 	! look for valid bit
+	bnz,a	sr_stack_res
+	restore				! get into window to be restored
+
+	mov	%fp, %g1		! save fault address
+sr_stack_not_res:
+	!
+	! Restore area on user stack is not resident.
+	! We punt and fake a page fault so that trap can bring the page in.
+	!
+	mov	%l3, %wim		! restore old wim
+	mov	%l0, %psr		! in case of changed priority (IU bug)
+	wr	%l0, PSR_ET, %psr	! enable traps
+	mov	T_DATA_FAULT, %o0
+	add	%sp, MINFRAME, %o1
+	mov	%g1, %o2
+	mov	SE_INVALID, %o3		! was stack protected or invalid?
+	btst	VALID, %g2
+	bnz,a	1f
+	mov	SE_PROTERR, %o3
+1:
+	call	_trap			! trap(T_DATA_FAULT,
+	mov	S_READ, %o4		!	rp, addr, be, S_READ)
+
+	b,a	sys_rtt
+
+sr_stack_res:
+	!
+	! Resident user window. Restore window from stack
+	!
+	RESTORE_WINDOW(%sp)
+	save				! get back to original window
+
+sr_user_regs:
+	!
+	! User has at least one window in the register file.
+	!
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+  	ld	[%sp + MINFRAME + nPC*4], %l2 ! user npc
+	ld	[%g5 + PCB_FLAGS], %l3
+	!
+	! check user pc alignment.  This can get messed up either using
+	! ptrace, or by using the '-T' flag of ld to place the text
+	! section at a strange location (bug id #1015631)
+	!
+	or	%l1, %l2, %g2
+	btst	0x3, %g2
+	bz,a	1f
+	btst	CLEAN_WINDOWS, %l3
+	b,a	sr_align_trap
+
+1:
+	bz,a	3f
+	mov	%l0, %psr		! install old PSR_CC
+
+	!
+	! Maintain clean windows.
+	!
+	mov	%wim, %g2		! put wim in global
+	mov	0, %wim			! zero wim to allow saving
+	mov	%l0, %g3		! put original psr in global
+	b	2f			! test next window for invalid
+	save
+	!
+	! Loop through windows past the trap window
+	! clearing them until we hit the invlaid window.
+	!
+1:
+	clr	%l1			! clear the window
+	clr	%l2
+	clr	%l3
+	clr	%l4
+	clr	%l5
+	clr	%l6
+	clr	%l7
+	clr	%o0
+	clr	%o1
+	clr	%o2
+	clr	%o3
+	clr	%o4
+	clr	%o5
+	clr	%o6
+	clr	%o7
+	save
+2:
+	mov	%psr, %g1		! get CWP
+	srl	%g2, %g1, %g1		! test WIM bit
+	btst	1, %g1
+	bz,a	1b			! not invalid window yet
+	clr	%l0			! clear the window
+
+	!
+	! Clean up trap window.
+	!
+	mov	%g3, %psr		! back to trap window, restore PSR_CC
+	mov	%g2, %wim		! restore wim
+	nop; nop;			! psr delay
+	RESTORE_GLOBALS(%sp + MINFRAME)	! restore user globals
+	mov	%l1, %o6		! put pc, npc in unobtrusive place
+	mov	%l2, %o7
+	clr	%l0			! clear the rest of the window
+	clr	%l1
+	clr	%l2
+	clr	%l3
+	clr	%l4
+	clr	%l5
+	clr	%l6
+	clr	%l7
+	clr	%o0
+	clr	%o1
+	clr	%o2
+	clr	%o3
+	clr	%o4
+	clr	%o5
+	jmp	%o6			! return
+	rett	%o7
+3:
+	RESTORE_GLOBALS(%sp + MINFRAME)	! restore user globals
+#ifndef XXXXXMeasureInterruptTime
+	jmp	%l1			! return
+	rett	%l2
+#else XXXXXMeasureInterruptTime
+	b,a	end_measure_level_12
+#endif XXXXXMeasureInterruptTime
+	.empty
+
+sr_sup:
+	!
+	! Returning to supervisor.
+	! We will restore the trap psr. This has the effect of disabling
+	! traps and changing the CWP back to the original trap CWP. This
+	! completely restores the PSR so that if we get a trap between a
+	! rdpsr and a wrpsr its OK. We only do this for supervisor return
+	! since users can't manipulate the psr.
+	!
+	sethi	%hi(_nwindows), %g5
+	ld	[%g5 + %lo(_nwindows)], %g5 ! number of windows on this machine
+	ld	[%sp + MINFRAME + SP*4], %fp ! get sys sp
+	xor	%g1, %l0, %g1		! test for CWP change
+	btst	PSR_CWP, %g1
+	bz,a	sr_samecwp
+	mov	%l0, %psr		! install old psr, disable traps
+	!
+	! The CWP will be changed. We must save sp and the ins
+	! and recompute WIM. We know we need to restore the next
+	! window in this case.
+	!
+	mov	%l0, %g3		! save old psr
+	mov	%sp, %g4		! save sp, ins for new window
+	std	%i0, [%sp +(8*4)]	! normal stack save area
+	std	%i2, [%sp +(10*4)]
+	std	%i4, [%sp +(12*4)]
+	std	%i6, [%sp +(14*4)]
+	mov	%g3, %psr		! old psr, disable traps, CWP, PSR_CC
+	mov	0x4, %g1		! psr delay, compute mask for CWP + 2
+	sll	%g1, %g3, %g1		! psr delay, won't work for NW == 32
+	srl	%g1, %g5, %g2		! psr delay
+	or	%g1, %g2, %g1
+	mov	%g1, %wim		! install new wim
+	mov	%g4, %sp		! reestablish sp
+	ldd	[%sp + (8*4)], %i0	! reestablish ins
+	ldd	[%sp + (10*4)], %i2
+	ldd	[%sp + (12*4)], %i4
+	ldd	[%sp + (14*4)], %i6
+	restore				! restore return window
+	RESTORE_WINDOW(%sp)
+	b	sr_out
+	save
+
+sr_samecwp:
+	!
+	! There is no CWP change.
+	! We must make sure that there is a window to return to.
+	!
+	mov	0x2, %g1		! compute mask for CWP + 1
+	sll	%g1, %l0, %g1		! XXX won't work for NW == 32
+	srl	%g1, %g5, %g2		! %g5 == NW, from above
+	or	%g1, %g2, %g1
+	mov	%wim, %g2		! cmp with wim to check for underflow
+	btst	%g1, %g2
+	bz	sr_out
+	mov	%l0, %psr		! install old PSR_CC
+	!
+	! No window to return to. Restore it.
+	!
+	sll	%g2, 1, %g1		! compute new WIM = rol(WIM, 1, NW)
+	dec	%g5			! %g5 == NW-1
+	srl	%g2, %g5, %g2
+	or	%g1, %g2, %g1
+	mov	%g1, %wim		! install it
+	nop; nop; nop;			! wim delay
+	restore				! get into window to be restored
+	RESTORE_WINDOW(%sp)
+	save				! get back to original window
+sr_out:
+	RESTORE_GLOBALS(%sp + MINFRAME)	! restore system globals
+	ld	[%sp + MINFRAME + PC*4], %l1 ! delay slot, restore sys pc
+	ld	[%sp + MINFRAME + nPC*4], %l2 ! sys npc
+#ifndef XXXXXMeasureInterruptTime
+	jmp	%l1			! return to trapped instruction
+	rett	%l2
+#else XXXXXMeasureInterruptTime
+	b,a	end_measure_level_12
+#endif XXXXXMeasureInterruptTime
+	.empty
+/* end sys_rtt*/
+
+/*
+ * System call handler.
+ */
+syscall:
+	wr	%l0, PSR_ET, %psr	! enable traps (no priority change)
+	nop				! psr delay
+	call	_syscall		! syscall(rp)
+	add	%sp, MINFRAME, %o0	! ptr to reg struct
+	b,a	sys_rtt
+/* end syscall */
+
+/*
+ * Fault handler.
+ */
+fault:
+/*
+ * We support both types of machines; must choose proper one by cpu
+ * type (TODO and patch the branch as we do so).
+ */
+	sethi	%hi(_cpu_buserr_type), %g1
+	ld	[%g1 + %lo(_cpu_buserr_type)], %g1
+	! TODO setup patch to fixfault for campus-1
+	tst	%g1
+	bz,a	fault_60
+	nop	! TODO store patch into fixfault
+	! TODO setup patch to fixfault for calvin
+	b	fault_70
+	nop	! TODO store patch into fixfault
+
+/* Campus-1 type support */
+fault_60:
+	set	SYNC_VA_REG, %g1
+	lda	[%g1]ASI_CTL, %o2	! get error address for later use
+	set	SYNC_ERROR_REG, %g1
+	lda	[%g1]ASI_CTL, %o3	! get sync error reg (clears reg)
+	mov	S_EXEC, %o4		! assume execute fault
+	btst	SE_MEMERR, %o3		! test memory error bit
+	bz,a	1f			! branch if not a memory error
+	wr	%l0, PSR_ET, %psr	! enable traps (no priority change)
+
+	!
+	! Synchronous memory error.
+
+	!
+	! XXX we must read the ASER and ASEVAR to unlatch them, XXX
+	! XXX as they are latched whenever SE_MEMERR is on. XXX
+	set	ASYNC_VA_REG, %g1	! XXXX
+	lda	[%g1]ASI_CTL, %g2	! XXXX(in g2 for double store)
+	set	ASYNC_ERROR_REG, %g1	! XXXX
+	lda	[%g1]ASI_CTL, %g3	! XXXX(in g3 for double store)
+	!
+	! XXX If I have two stores, and the first produces an async
+	! XXX error and the second produces a synchronous error, I can
+	! XXX take the synchronous trap first but have the async trap
+	! XXX immediately pending.  I have to handle this carefully.
+	! XXX If this is just synchronous memory error, then the SEVAR
+	! XXX and the ASEVAR will contain the same value.
+	! XXX If this is a "simultaneous" error (back-to-back stores),
+	! XXX then they will have different values and we want to treat
+	! XXX this like a memory_err and ignore the sync error.
+	! XXX There will also be a level 15 interrupt pending, which we
+	! XXX must clear if we haven't already (not a P1.5).
+	! XXX (And even if we have, asyncerr expects interrupts off.)
+	cmp	%o2, %g2		! XXX does SEVAR == ASEVAR?
+	be,a	1f			! XXX yes, a true sync error
+	wr	%l0, PSR_ET, %psr	! enable traps (no priority change)
+	!
+	! XXX We need to process the asynchronous error first.  If we
+	! XXX return, we will eventually re-execute the store that
+	! XXX causes the synchronous error.
+	! XXX First we turn off interrupts.
+	! XXX (this will also clear the pending level 15)
+	set	INTREG_ADDR, %g4	! interrupt register address
+	ldub	[%g4], %g1		! read interrupt register
+	bclr	IR_ENA_INT, %g1		! off
+	stb	%g1, [%g4]		! turn off all interrupts
+	! XXX Now we can enable traps
+	wr	%l0, PSR_ET, %psr	! enable traps (no priority change)
+	! XXX we want o0=ser, o1=sevar, o2=aser, o3=asevar
+	! XXX so we take advantage of the psr delay
+	mov	%o3, %o0		! SER
+	mov	%o2, %o1		! SEVAR
+	mov	%g3, %o2		! ASER
+	call	_asyncerr		! asyncerr(ser, sevar, aser, asevar)
+	mov	%g2, %o3		! ASEVAR
+
+	mov	IR_ENA_INT, %o0		! reenable interrupts
+	call	_set_intreg
+	mov	1, %o1
+	b,a	sys_rtt			! and return from trap
+
+/* memerr() now called by trap for synchronous errors */
+1:
+	cmp	%l4, T_TEXT_FAULT	! text fault?
+	be,a	2f
+	mov	%l1, %o2		! pc is text fault address
+
+	mov	S_READ, %o4		! assume read fault
+	set	SE_RW, %g1		! test r/w bit
+	btst	%g1, %o3
+	bnz,a	2f
+	mov	S_WRITE, %o4		! delay slot, it's a write fault
+2:
+	b	callhatfault
+	cmp	%o3, SE_INVALID
+
+fault_70:
+/* Calvin type support */
+	set	SYNC_VA_REG, %g1
+	lda	[%g1]ASI_CTL, %o2	! get error address for later use
+	set	SYNC_ERROR_REG, %g1
+	lda	[%g1]ASI_CTL, %o3	! get sync error reg (clears reg)
+	wr	%l0, PSR_ET, %psr	! enable traps (no priority change)
+	mov	S_EXEC, %o4		! assume execute fault
+	cmp	%l4, T_TEXT_FAULT	! text fault?
+	be,a	2f
+	mov	%l1, %o2		! pc is text fault address
+
+	mov	S_READ, %o4		! assume read fault
+	set	SE_RW, %g1		! test r/w bit
+	btst	%g1, %o3
+	bnz,a	2f
+	mov	S_WRITE, %o4		! delay slot, it's a write fault
+2:
+	cmp	%o3, SE_INVALID
+callhatfault:
+	bne	3f
+	mov	%l4, %o0
+
+	mov	%o2, %l2		! save %o2 - %o4 in locals
+	mov	%o3, %l3
+	mov	%o4, %l5
+
+	call	_hat_fault		! hat_fault(addr)
+	mov	%o2, %o0
+	tst	%o0			
+	be	sys_rtt			! hat layer resolved the fault
+	
+	!
+	! hat_fault didn't resolve the fault.
+	! Restore saved %o2 - %o4 and call trap.
+	!
+	mov	%l2, %o2		
+	mov	%l3, %o3
+	mov	%l5, %o4
+
+	mov	%l4, %o0
+3:
+	!
+	! Call C trap handler 
+	! 
+	call	_trap			! trap(t, rp, addr, be, rw)
+	add	%sp, MINFRAME, %o1
+	b,a	sys_rtt			! return from trap
+/* end fault */
+
+/*
+ * Interrupt vector table
+ */
+	.seg	"data"
+	.align	4
+	!
+	! all interrupts are vectored via the following table
+	! we can't vector directly from the scb because
+	! we haven't done window setup
+	!
+/* XXX - need support for Sbus devices */
+	.global _int_vector
+_int_vector:
+	.word	_spurious	! level 0, should not happen
+	.word	level1		! level 1, IE register 1 | sbus level 1
+	.word	level2		! level 2, sbus level 2
+	.word	level3		! level 3, sbus level 3
+	.word	level4		! level 4, IE register 2
+	.word	level5		! level 5, sbus level 4
+	.word	level6		! level 6, IE register 3 - zs second level int
+	.word	level7		! level 7, sbus level 5
+	.word	level8		! level 8, sbus level 6
+	.word	level9		! level 9, sbus level 7
+	.word	level10		! level 10, normal clock
+	.word	level11		! level 11, floppy disk
+#ifdef SAS
+	.word	_simcintr	! sas console interrupt
+#else
+#ifdef	XXXX
+	.word	level12		! level 12, scc - serial i/o
+#else
+	.word	_zslevel12	! level 12, scc - serial i/o
+#endif
+#endif SAS
+	.word	level13		! level 13, audio
+	.word	_spurious	! kprof (not done here) / monitor clock
+fixmemory_err:
+	.word	memory_err	! level 15, memory error
+	.seg	"text"
+
+#ifdef XXXXXMeasureInterruptTime
+/* For measuring interrupt process time */
+/*
+ * Note: we are still in the trap window, nothing saved!
+ * the psr has been moved to l0, and the hardware has set l1 and l2
+ */
+	.global measure_level_12
+measure_level_12:
+	sethi	%hi(AUXIO_REG), %l7
+	ldub	[%l7 + %lo(AUXIO_REG)], %l6
+	andn	%l6, AUX_EJECT, %l6		! turn off floppy eject
+	or	%l6, AUX_MBO, %l6		! Must Be Ones
+	stb	%l6, [%l7 + %lo(AUXIO_REG)]
+	b sys_trap; mov (T_INTERRUPT | 12),%l4; nop;
+
+	.global end_measure_level_12
+end_measure_level_12:
+/* For measuring interrupt process time */
+	sethi	%hi(AUXIO_REG), %l3
+	ldub	[%l3 + %lo(AUXIO_REG)], %l4
+	or	%l4, AUX_EJECT|AUX_MBO, %l4	! turn on floppy eject, MBO!
+	stb	%l4, [%l3 + %lo(AUXIO_REG)]
+	jmp	%l1			! return to trapped instruction
+	rett	%l2
+#endif XXXXXMeasureInterruptTime
+
+/*
+ * Generic interrupt handler.
+ */
+	.global	interrupt
+interrupt:
+	set	eintstack, %g1		! on interrupt stack?
+	cmp	%sp, %g1
+	bgu,a	1f
+	sub	%g1, SA(MINFRAME), %sp	! get on it.
+1:
+	andn	%l0, PSR_PIL, %l5	! compute new psr with proper PIL
+	and	%l4, T_INT_LEVEL, %l4
+	sll	%l4, PSR_PIL_BIT, %g1
+	or	%l5, %g1, %l0
+	!
+	! If we just took a memory error we don't want to turn interrupts
+	! on just yet in case there is another memory error waiting in the
+	! wings. So disable interrupts if the PIL is 15.
+	!
+	cmp	%g1, PSR_PIL
+	bne	2f
+	sll	%l4, 2, %l6		! convert level to word offset
+	mov	IR_ENA_INT, %o0
+	call	_set_intreg
+	mov	0, %o1
+2:
+	!
+	! Get handler address for level.
+	!
+	set	_int_vector, %g1
+	ld	[%g1 + %l6], %l3	! grab vector
+	!
+	! On board interrupt.
+	! Due to a bug in the IU, we cannot increase the PIL and
+	! enable traps at the same time. In effect, ET changes
+	! slightly before the new PIL becomes effective.
+	! So we write the psr twice, once to set the PIL and
+	! once to set ET.
+	!
+	mov	%l0, %psr		! set level (IU bug)
+	wr	%l0, PSR_ET, %psr	! enable traps
+	nop
+	call	%l3			! interrupt handler
+	nop
+
+int_rtt:
+	sethi	%hi(_cnt+V_INTR), %g2	! cnt.v_intr++
+	ld	[%g2 + %lo(_cnt+V_INTR)], %g1
+	inc	%g1
+	st	%g1, [%g2 + %lo(_cnt+V_INTR)]
+	b	sys_rtt			! restore previous stack pointer
+	mov	%l7, %sp		! reset stack pointer
+/* end interrupt */
+
+/*
+ * Places (initialized to 0) to count vectored interrupts in.
+ * Used by vmstat.
+ */
+/* XXX - wasted space -- can we remove??? */
+	.seg	"bss"
+	.align 4
+.globl _intrcnt
+.globl _eintrcnt
+_intrcnt:
+	.skip	4 * 192
+_eintrcnt:
+
+	.seg	"text"
+	.align	4
+/*
+ * Spurious trap... 'should not happen'
+ * %l4 - processor interrupt level
+ * %l3 - interrupt handler address
+ */
+	.global	_spurious
+_spurious:
+	set	1f, %o0
+	call	_printf
+	mov	%l4, %o1
+	b,a	int_rtt
+	.seg	"data"
+1:	.asciz	"spurious interrupt at processor level %d\n"
+	.seg	"text"
+
+/*
+ * Macro for autovectored interrupts.
+ */
+#define IOINTR(LEVEL) \
+	set	_level/**/LEVEL, %l5 /* get vector ptr */;\
+1:	ld	[%l5 + AV_VECTOR], %g1 /* get routine address */;\
+	call	%g1		/* go there */;\
+	nop			;\
+	tst	%o0		/* success? */;\
+	bz,a	1b		/* no, try next one */;\
+	add	%l5, AUTOVECSIZE, %l5	/* delay slot, next one to try */;\
+	ld	[%l5 + AV_INTCNT], %g1	/* increment interrupt counter */;\
+	inc	%g1		;\
+	bneg	int_rtt		/* was interrupt spurious? */;\
+	st	%g1, [%l5 + AV_INTCNT];\
+	/* non-spurious interrupt, clear count */;\
+	sethi	%hi(_level/**/LEVEL/**/_spurious), %g1;\
+	b	int_rtt		/* done */;\
+	clr	[%g1 + %lo(_level/**/LEVEL/**/_spurious)]
+
+#ifdef oldlevel1
+/*
+ * Handle software interrupts
+ * Just call C routine softint - executes all accumulated softcalls
+ */
+/* XXX - shared with sbus level 1 -- should we fix it? XXX */
+	.global	level1
+level1:
+	mov	%psr, %g2
+	or	%g2, PSR_PIL, %g1	! spl hi to protect intreg update
+	mov	%g1, %psr
+	nop; nop;			! psr delay
+	set	INTREG_ADDR, %l1	! interrupt register address
+	ldub	[%l1], %g1		! get current setting
+	bclr	IR_SOFT_INT1, %g1	! reset level one int request bit
+	stb	%g1, [%l1]		! turn off the level one interrupt
+	mov	%g2, %psr		! splx
+	nop				! psr delay
+	call	_softint		! go do accumulated softcalls
+	nop
+
+	b,a	int_rtt
+/* end level1 */
+#else oldlevel1
+/*
+ * Level 1 interrupts, from Sbus level 1, or from software interrupt
+ */
+level1:
+	IOINTR(1)
+
+/*
+ * level1 will call _softlevel1 if no SBUS device claims the interrupt.
+ * We need to determine if a software interrupt was requested.
+ * If so, call _softint, and return 1, else return 0.
+ * If we are careful, we won't need to buy a register window.
+ * The IOINTR macro is using %l5 and %l6, so we can't use them.
+ */
+	ENTRY(softlevel1)
+	mov	%psr, %g2
+	or	%g2, PSR_PIL, %g1	! spl hi to protect intreg update
+	mov	%g1, %psr
+	nop; nop;			! psr delay
+	set	INTREG_ADDR, %l1	! interrupt register address
+	ldub	[%l1], %g1		! get current setting
+	btst	IR_SOFT_INT1, %g1	! is level one int request bit on?
+	bnz,a	1f			! yes, branch
+	bclr	IR_SOFT_INT1, %g1	! delay slot: reset int request bit
+
+	mov	%g2, %psr		! no, not us: splx
+	! no psr delay needed: dropping down, and not reading psr
+	retl
+	clr	%o0			! return that we didn't handle it
+1:
+	stb	%g1, [%l1]		! turn off the level one interrupt
+	mov	%g2, %psr		! splx
+	mov	%o7, %l1		! psr delay; save return address
+	call	_softint		! go do accumulated softcalls
+	nop
+
+	jmp	%l1+8			!return success
+	mov	1, %o0
+/* end level1 */
+#endif oldlevel1
+
+/*
+ * Level 2 interrupts, from Sbus level 2.
+ */
+level2:
+	IOINTR(2)
+
+/*
+ * Level 3 interrupts, from Sbus level 3 (SCSI/DMA).
+ */
+level3:
+	IOINTR(3)
+
+/*
+ * Level 4 interrupts, IE register 2 - used by floppy, audio, etc.
+ * for second level interrupts.
+ * This routine is different; it turns off the level4 interrupt, and
+ * then calls every routine on the list.
+ * A null address terminates the list.
+ */
+level4:
+	mov	IR_SOFT_INT4, %o0
+	call	_set_intreg	/* set_intreg(IR_SOFT_INT4, 0); */
+	mov	0, %o1
+	set	_level4, %l5 /* get vector ptr */
+1:	ld	[%l5 + AV_VECTOR], %g1 /* get routine address */
+	tst	%g1		/* is there a routine? */
+	bz	1f		/* no; done */
+	nop
+	call	%g1		/* go there */
+	nop
+	tst	%o0		/* success? */
+	bz,a	1b		/* no, try next one */
+	add	%l5, AUTOVECSIZE, %l5	/* delay slot, next one to try */
+	ld	[%l5 + AV_INTCNT], %g1	/* increment interrupt counter */
+	inc	%g1
+	st	%g1, [%l5 + AV_INTCNT]
+	b	1b		/* and call the next routine */
+	add	%l5, AUTOVECSIZE, %l5	/* delay slot, next one to try */
+1:
+	b,a	int_rtt		/* done */
+
+/*
+ * Level 5 interrupts, from Sbus level 4 (ethernet).
+ */
+level5:
+	IOINTR(5)
+
+/*
+ * Level 6 interrupts, IE register 3 - used by zs second level interrupt
+ */
+level6:
+	IOINTR(6)
+
+/*
+ * Level 7 interrupts, from Sbus level 5 (video).
+ */
+level7:
+	IOINTR(7)
+
+/*
+ * Level 8 interrupts, from Sbus level 6.
+ */
+level8:
+	IOINTR(8)
+
+/*
+ * Level 9 interrupts, from Sbus level 7.
+ */
+level9:
+	IOINTR(9)
+
+/*
+ * Level 11 interrupts, from floppy disk.
+ */
+level11:
+	IOINTR(11)
+
+/*
+ * Level 13 interrupts, from audio chip.
+ */
+level13:
+	IOINTR(13)
+
+#ifdef FANCYLED
+/*
+ * LED data for front-panel light.
+ * NOTE: pattern is sampled at 100hz.
+ *
+ * I know, you can't figure out the LED pattern so you are
+ * looking at the source to find out what it is.
+ * This is cheating.  But if you must cheat, please don't tell your
+ * friends what the pattern is; that spoils the fun.
+ * I'm waiting for the Sun-Spots messages: "Has anyone figured
+ * out the flashing LED on the 4/60?  It looks random to me."
+ * You can say "Well, I looked at the source, and there is a pattern,
+ * but the comments ask us not to tell you what the pattern is because
+ * the developer wants to see if you can figure it out for yourself."
+ * (Besides, divulging the algorithm may be a violation of your source
+ * license agreement!)
+ *
+ * Thanks.
+ * --The nameless developer
+ */
+	.seg	"data"
+led:
+	! LEDDUTY
+	.byte	10, 90
+	.byte	20, 80
+	.byte	30, 70
+	.byte	40, 60
+	.byte	50, 50
+	.byte	60, 40
+	.byte	70, 30
+	.byte	80, 20
+	.byte	90, 10
+	.byte	80, 20
+	.byte	70, 30
+	.byte	60, 40
+	.byte	50, 50
+	.byte	40, 60
+	.byte	30, 70
+	.byte	20, 80
+led_end:
+	! end of LEDDUTY
+	.byte	0		! LEDCNT current count of ticks
+	.byte	0		! LEDPTR offset in pattern
+
+LEDDUTYCNT =	(led_end - led)
+LEDCNT =	LEDDUTYCNT + 1
+LEDPTR =	LEDCNT + 1
+#else FANCYLED
+	.align	4
+	.global _led_on
+_led_on:
+	.long	1
+#endif FANCYLED
+
+	.seg	"text"
+/*
+ * This code assumes that the real time clock interrupts 100 times
+ * per second, for SUN4C we call hardclock at that rate.
+#ifdef FANCYLED
+ * Update the LEDs with new values before calling hardclock so
+ * at least the user can tell that something is still running.
+#else FANCYLED
+ * Since we may have started the monitor's clock at any time,
+ * which may have turned off the led, turn it back on every clock tick
+ * unless led_on is 0 (used to communicate with the future /dev/led)
+#endif FANCYLED
+ */
+	.seg	"bss"
+	.align	4
+.globl	_clk_intr
+_clk_intr:
+	.skip 4
+	.seg "text"
+
+	.global	level10
+level10:
+	mov	%psr, %g3
+	or	%g3, PSR_PIL, %g1	! spl hi to protect intreg update
+	mov	%g1, %psr
+	nop; nop;			! psr delay
+
+	/* Note: SAS now simulates the counter; we take clock ticks! */
+	set	COUNTER_ADDR+CNTR_LIMIT10, %l5 ! read limit10 reg
+	ld	[%l5], %g1		! to clear intr
+#ifdef FANCYLED
+	!
+	! Cycle the LED, whether or not we are doing anything
+	! We need to keep interrupts disabled as we do this
+	!
+#ifndef SAS
+	set	led, %l5		! countdown to next update of LEDs
+	ldub	[%l5 + LEDCNT], %g1
+	subcc	%g1, 1, %g1
+	bge,a	3f			! not zero, just call hardclock
+	stb	%g1, [%l5 + LEDCNT]	! delay, write out new ledcnt
+
+	ldub	[%l5 + LEDPTR], %g1
+	sethi	%hi(AUXIO_REG), %o3
+	ldub	[%o3 + %lo(AUXIO_REG)], %g4
+	ldub	[%l5 + %g1], %g2	! get next LED count
+	subcc	%g1, 1, %g1		! point to next one
+	stb	%g2, [%l5 + LEDCNT]	! store the new count
+	bneg,a	2f
+	mov	LEDDUTYCNT-1, %g1
+2:
+	stb	%g1, [%l5 + LEDPTR]	! update duty count pointer
+	xor	%g4, AUX_LED, %g4	! toggle the LED
+	or	%g4, AUX_MBO, %g4	! Must Be Ones!
+	stb	%g4, [%o3 + %lo(AUXIO_REG)]	! store it back
+3:
+#endif !SAS
+#else FANCYLED
+	sethi	%hi(_led_on), %l5
+	ld	[%lo(_led_on) + %l5], %g1
+	sethi	%hi(AUXIO_REG), %o3
+	tst	%g1
+	bz	1f
+	ldub	[%o3 + %lo(AUXIO_REG)], %g4
+	or	%g4, AUX_LED | AUX_MBO, %g4
+	stb	%g4, [%o3 + %lo(AUXIO_REG)]
+1:
+#endif FANCYLED
+	mov	%g3, %psr		! restore psr
+
+	sethi	%hi(_clk_intr), %g2	! count clock interrupt
+	ld	[%lo(_clk_intr) + %g2], %g3
+	inc	%g3
+	st	%g3, [%lo(_clk_intr) + %g2]
+
+	ld	[%l7 + MINFRAME + PC*4], %o0 ! pc
+#ifdef	MEASURE_KERNELSTACK
+	ld	[%l7 + MINFRAME + SP*4], %o2 ! sp /*XXX-instrument*/
+#endif	MEASURE_KERNELSTACK
+	call	_hardclock
+	ld	[%l7 + MINFRAME + PSR*4], %o1 ! psr
+
+	b,a	int_rtt			! return to restore previous stack
+/* end level10 */
+
+/*
+ * Level 14 interrupts can be caused by the clock when
+ * kernel profiling is enabled. It is handled immediately
+ * in the trap window.
+ */
+#ifdef GPROF
+	.global	test_prof
+test_prof:
+	sethi	%hi(COUNTER_ADDR+CNTR_LIMIT14), %l3 ! read limit14 reg
+	ld	[%l3 + %lo(COUNTER_ADDR+CNTR_LIMIT14)], %l3 ! to clear intr
+	sethi	%hi(_mon_clock_on), %l3	! see if profiling is enabled
+	ldub	[%l3 + %lo(_mon_clock_on)], %l3
+	tst	%l3
+	bz	kprof			! profiling on, do it.
+	nop
+	b	sys_trap		! do normal interrupt processing
+	mov	(T_INTERRUPT | 14), %l4
+#endif GPROF
+
+/*
+ * Level 15 interrupts can only be caused by asynchronous errors.
+ * On a parity machine, these errors are always fatal. However, on an ECC
+ * machine, the error may have been corrected, and memerr may return after
+ * logging the error.
+ * XXX On Async errors, the 4/60 cache chip sometimes doesn't set the
+ * XXX right bits on in the ASER, so give all the registers to
+ * XXX asyncerr() to figure out what to do; it will call memerr().
+ */
+	.global	memory_err
+memory_err:
+/*
+ * We support both types of machines; must choose proper one by cpu
+ * type (TODO and patch the vector as we do so).
+ */
+	sethi	%hi(_cpu_buserr_type), %g1
+	ld	[%g1 + %lo(_cpu_buserr_type)], %g1
+	! TODO setup patch to fixmemory_err for campus-1
+	tst	%g1
+	bz,a	memory_err_60
+	nop	! TODO store patch into fixfault
+	! TODO setup patch to fixfault for calvin
+	b	memory_err_70
+	nop	! TODO store patch into fixfault
+
+/* Campus-1 type support */
+memory_err_60:
+	set	ASYNC_VA_REG, %g1	! get error address for later use
+	lda	[%g1]ASI_CTL, %o3
+	set	ASYNC_ERROR_REG, %g1	! get async error reg (clears reg)
+	lda	[%g1]ASI_CTL, %o2
+
+	! we want o0=ser, o1=sevar, o2=aser, o3=asevar
+	! So far, we have
+	! %o2 = aser
+	! %o3 = asevar
+	set	SYNC_VA_REG, %g1
+	lda	[%g1]ASI_CTL, %o1	! sevar
+	! The sync error register seems to be set on async errors; clear
+	! it.
+	set	SYNC_ERROR_REG, %g1	! XXX get sync error reg (clears reg)
+	call	_asyncerr		! asyncerr(ser, sevar, aser, asevar)
+	lda	[%g1]ASI_CTL, %o0	! XXX
+3:
+	mov	IR_ENA_INT, %o0		! reenable interrupts
+	call	_set_intreg
+	mov	1, %o1
+	b,a	int_rtt
+
+/* Calvin type support */
+memory_err_70:
+	set	ASYNC_VA_REG, %g1	! get error address for later use
+	lda	[%g1]ASI_CTL, %o2
+	set	ASYNC_ERROR_REG, %g1	! get async error reg (clears reg)
+	lda	[%g1]ASI_CTL, %o1
+	set	ASYNC_DATA1_REG, %g1	! get async data1 reg (clears reg)
+	lda	[%g1]ASI_CTL, %o3
+	set	ASYNC_DATA2_REG, %g1	! get async data2 reg (clears reg)
+	lda	[%g1]ASI_CTL, %o4
+	btst	ASE_ERRMASK_70, %o1	! valid memory error?
+
+	bz	1f
+	nop
+	call	_memerr_70		! memerr_70(type, reg, addr, d1, d2)
+					!     sometimes returns
+	mov	MERR_ASYNC, %o0		! delay slot, async flag to memerr
+	b,a	3f
+1:
+/* XXX - this is possible due to hardware bug, should we not print msg?? */
+	sethi	%hi(2f), %o0		! print stray interrupt message
+	call	_printf			! print a message to the console
+	or	%o0, %lo(2f), %o0
+3:
+	mov	IR_ENA_INT, %o0		! reenable interrupts
+	call	_set_intreg
+	mov	1, %o1
+	b,a	int_rtt
+
+	.seg	"data"
+2:	.asciz	"stray level 15 interrupt\n"
+	.seg	"text"
+
+/* end level15 */
+
+/*
+ * Turn on or off bits in the auxiliary i/o register.
+ * We must lock out interrupts, since we don't have an atomic or/and to mem.
+ * set_auxioreg(bit, flag)
+ *	int bit;		bit mask in aux i/o reg
+ *	int flag;		0 = off, otherwise on
+ */
+	ENTRY(set_auxioreg)
+	mov	%psr, %g2
+	or	%g2, PSR_PIL, %g1	! spl hi to protect aux i/o reg update
+	mov	%g1, %psr
+	nop;				! psr delay
+	tst	%o1
+	set	AUXIO_REG, %o2		! aux i/o register address
+	ldub	[%o2], %g1		! read aux i/o register
+	bnz,a	1f
+	bset	%o0, %g1		! on
+	bclr	%o0, %g1		! off
+1:
+	or	%g1, AUX_MBO, %g1	! Must Be Ones
+	stb	%g1, [%o2]		! write aux i/o register
+	mov	%g2, %psr		! splx
+	nop				! psr delay
+	retl
+	nop
+/* end set_auxioreg */
+
+/*
+ * Flush all windows to memory, except for the one we entered in.
+ * We do this by doing NWINDOW-2 saves then the same number of restores.
+ * This leaves the WIM immediately before window entered in.
+ * This is used for context switching.
+ */
+	ENTRY(flush_windows)
+	save	%sp, -WINDOWSIZE, %sp
+	save	%sp, -WINDOWSIZE, %sp
+	save	%sp, -WINDOWSIZE, %sp
+	save	%sp, -WINDOWSIZE, %sp
+	save	%sp, -WINDOWSIZE, %sp
+
+ 
+	.global	_fixnwindows
+_fixnwindows:	
+	save	%sp, -WINDOWSIZE, %sp	! could be no-ops if machine
+	restore				! has only 7 register windows
+
+	restore
+	restore
+	restore
+	restore
+	ret
+	restore
+
+/*
+ * flush user windows to memory.
+ */
+	ENTRY(flush_user_windows)
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	ld	[%g5 + PCB_UWM], %g1	! get user window mask
+	tst	%g1			! do save until mask is zero
+	bz	3f
+	clr	%g2
+1:
+	save	%sp, -WINDOWSIZE, %sp
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	ld	[%g5 + PCB_UWM], %g1	! get user window mask
+	tst	%g1			! do save until mask is zero
+	bnz	1b
+	add	%g2, 1, %g2
+2:
+	subcc	%g2, 1, %g2		! restore back to orig window
+	bnz	2b
+	restore
+3:
+	retl
+	.empty				! next instruction ok in delya slot
+
+/*
+ * Throw out any user windows in the register file.
+ * Used by setregs (exec) to clean out old user.
+ * Used by sigcleanup to remove extraneous windows when returning from a
+ * signal.
+ */
+	ENTRY(trash_user_windows)
+	sethi	%hi(_uunix), %g5		! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	ld	[%g5 + PCB_UWM], %g1	! get user window mask
+	tst	%g1
+	bz	3f			! user windows?
+	nop
+	!
+	! There are old user windows in the register file. We disable traps
+	! and increment the WIM so that we don't overflow on these windows.
+	! Also, this sets up a nice underflow when first returning to the
+	! new user.
+	!
+	mov	%psr, %g4
+	or	%g4, PSR_PIL, %g1	! spl hi to prevent interrupts
+	mov	%g1, %psr
+	nop; nop; nop			! psr delay
+	ld	[%g5 + PCB_UWM], %g1	! get user window mask
+	clr	[%g5 + PCB_UWM]		! throw user windows away
+	set	_scb, %g5
+	b	2f
+	ld	[%g5 + 31], %g5		! %g5 == NW-1
+
+1:
+	srl	%g2, 1, %g3		! next WIM = ror(WIM, 1, NW)
+	sll	%g2, %g5, %g2		! %g5 == NW-1
+	or	%g2, %g3, %g2
+	mov	%g2, %wim		! install wim
+	bclr	%g2, %g1		! clear bit from UWM
+2:
+	tst	%g1			! more user windows?
+	bnz,a	1b
+	mov	%wim, %g2		! get wim
+
+	mov	%g4, %psr		! enable traps
+	nop				! psr delay
+3:
+	sethi	%hi(_uunix), %g5	! XXX - global u register?
+	ld	[%g5 + %lo(_uunix)], %g5
+	retl
+	clr	[%g5 + PCB_WBCNT]		! zero window buffer cnt
+
+/*
+ * Clean out register file.
+ */
+clean_windows:
+	sethi	%hi(_uunix), %l5	! XXX - global u register?
+	ld	[%l5 + %lo(_uunix)], %l5
+	ld	[%l5 + PCB_FLAGS], %l4	! set CLEAN_WINDOWS in pcb_flags
+	mov	%wim, %l3
+	bset	CLEAN_WINDOWS, %l4
+	st	%l4, [%l5 + PCB_FLAGS]
+	srl	%l3, %l0, %l3		! test WIM bit
+	btst	1, %l3
+	bnz,a	cw_out			! invalid window, just return
+	mov	%l0, %psr		! restore PSR_CC
+
+	mov	%g1, %l5		! save some globals
+	mov	%g2, %l6
+	mov	%g3, %l7
+	mov	%wim, %g2		! put wim in global
+	mov	0, %wim			! zero wim to allow saving
+	mov	%l0, %g3		! put original psr in global
+	b	2f			! test next window for invalid
+	save
+	!
+	! Loop through windows past the trap window
+	! clearing them until we hit the invlaid window.
+	!
+1:
+	clr	%l1			! clear the window
+	clr	%l2
+	clr	%l3
+	clr	%l4
+	clr	%l5
+	clr	%l6
+	clr	%l7
+	clr	%o0
+	clr	%o1
+	clr	%o2
+	clr	%o3
+	clr	%o4
+	clr	%o5
+	clr	%o6
+	clr	%o7
+	save
+2:
+	mov	%psr, %g1		! get CWP
+	srl	%g2, %g1, %g1		! test WIM bit
+	btst	1, %g1
+	bz,a	1b			! not invalid window yet
+	clr	%l0			! clear the window
+
+	!
+	! Clean up trap window.
+	!
+	mov	%g3, %psr		! back to trap window, restore PSR_CC
+	mov	%g2, %wim		! restore wim
+	nop; nop;			! psr delay
+	mov	%l5, %g1		! restore globals
+	mov	%l6, %g2
+	mov	%l7, %g3
+	mov	%l2, %o6		! put npc in unobtrusive place
+	clr	%l0			! clear the rest of the window
+	clr	%l1
+	clr	%l2
+	clr	%l3
+	clr	%l4
+	clr	%l5
+	clr	%l6
+	clr	%l7
+	clr	%o0
+	clr	%o1
+	clr	%o2
+	clr	%o3
+	clr	%o4
+	clr	%o5
+	clr	%o7
+	jmp	%o6			! return to npc
+	rett	%o6 + 4
+
+cw_out:
+	nop				! psr delay
+	jmp	%l2			! return to npc
+	rett	%l2 + 4
+
+/*
+ * Enter the monitor -- called from console abort
+ */
+	ENTRY(montrap)
+	save	%sp, -SA(MINFRAME), %sp	! get a new window
+	call	_flush_windows		! flush windows to stack
+	nop
+
+#ifdef SAS
+	ta	255			! trap to siumlator
+	nop
+#else
+	call	%i0			! go to monitor
+	nop
+
+#endif SAS
+	ret
+	restore
+
+/*
+ * return the condition codes in %g1
+ */
+getcc:
+	sll	%l0, 8, %g1		! right justify condition code
+	srl	%g1, 28, %g1
+1:	jmp	%l2			! return, skip trap instruction
+	rett	%l2+4
+
+/*
+ * set the condtion codes from the value in %g1
+ */
+setcc:
+	sll	%g1, 20, %l5		! mov icc bits to their position in psr
+	set	PSR_ICC, %l4		! condition code mask
+	andn	%l0, %l4, %l0		! zero the current bits in the psr
+	or	%l5, %l0, %l0		! or new icc bits
+	mov	%l0, %psr		! write new psr
+	nop				! psr delay
+	b,a	1b
+
+/*
+ * some user has to do unaligned references, yuk!
+ * set a flag in the pcb so that when alignment traps happen
+ * we fix it up instead of killing the user
+ * Note: this routine is using the trap window 
+ */
+fix_alignment:
+	sethi	%hi(_uunix), %l5
+	ld	[%l5 + %lo(_uunix)], %l5
+	ld	[%l5 + PCB_FLAGS], %l4	! get pcb_flags
+	bset	FIX_ALIGNMENT, %l4
+	ba	1b
+	st	%l4, [%l5 + PCB_FLAGS]
+
+/*
+ * icode1
+ * When a process is created by main to do init, it starts here.
+ * We hack the stack to make it look like a system call frame.
+ * Then, icode exec's init.
+ */
+	ENTRY(icode1)
+	call	_icode
+	add	%sp, MINFRAME, %o0	! pointer to struct regs
+	b,a	sys_rtt
+
+/*
+ * Glue code for traps that should take us to the monitor/kadb if they
+ * occur in kernel mode, but that the kernel should handle if they occur
+ * in user mode.
+ */
+	.global _kadb_tcode, _trap_ff_tcode, _trap_fe_tcode
+
+/* tcode to replace trap vectors if kadb steals them away */
+_trap_ff_tcode:
+	mov	%psr, %l0
+	sethi	%hi(trap_kadb), %l4
+	jmp	%l4 + %lo(trap_kadb)
+	mov	0xff, %l4
+_trap_fe_tcode:
+	mov	%psr, %l0
+	sethi	%hi(trap_kadb), %l4
+	jmp	%l4 + %lo(trap_kadb)
+	mov	0xfe, %l4
+/*
+ * This code assumes that:
+ * 1. the monitor uses trap ff to breakpoint us
+ * 2. kadb steals both ff and fe when we call scbsync()
+ * 3. kadb uses the same tcode for both ff and fe.
+ * XXX The monitor shouldn't use the same trap as kadb!
+ */
+trap_mon:
+trap_kadb:
+	btst	PSR_PS, %l0		! test pS
+	bnz,a	1f			! branch if kernel trap
+	mov	%l0, %psr		! delay slot, restore psr
+	b,a	sys_trap		! user-mode, treat as bad trap
+1:
+	nop;nop;nop			! psr delay
+mon_breakpoint_vec:
+_kadb_tcode:
+	SYS_TRAP(0xff)			! gets overlaid.

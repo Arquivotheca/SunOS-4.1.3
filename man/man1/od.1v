@@ -1,0 +1,218 @@
+.\" @(#)od.1v 1.1 92/07/30 SMI; from UCB 4.2 16 Feb 1983
+.TH OD 1V "2 October 1989"
+.SH NAME
+od \- octal, decimal, hexadecimal, and ascii dump
+.SH SYNOPSIS
+.B od
+[
+.BI \- format
+]
+.RI [ " filename " ]
+[
+.RB [ + ]\c
+.IR offset [\c
+.BR . ]\|[ b ]
+.RI [ label ]
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/od 
+.RI [ arguments ]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "od command"  ""  "\fLod\fP \(em dump file"
+.IX  file  dump  file  "dump \(em \fLod\fP"
+.IX  "octal dump file"  ""  "octal dump file \(em \fLod\fP"
+.IX  "decimal dump file"  ""  "decimal dump file \(em \fLod\fP"
+.IX  "hexadecimal dump file"  ""  "hexadecimal dump file \(em \fLod\fP"
+.IX  "ASCII dump file"  ""  "ASCII dump file \(em \fLod\fP"
+.LP
+.B od
+displays
+.IR filename ,
+or its standard input, in one or more dump formats as selected by the
+first argument.  If the first argument is missing,
+.B \-o
+(octal) is the default.
+Dumping continues until an
+.SM EOF\s0.
+.SS Format Arguments
+.LP
+The meanings of the format argument characters are:
+.TP 5
+.B  a
+Interpret bytes as characters and display them with their
+.SM ASCII
+names.  If the
+.B p
+character is given also, bytes with even parity are underlined.  If the
+.B P
+character is given, bytes with odd parity are underlined.
+Otherwise the parity bit is ignored.
+.TP 5
+.B  b
+Interpret bytes as unsigned octal.
+.TP 5
+.B  c
+Interpret bytes as
+.SM ASCII
+characters.  Certain non-graphic characters appear as C escapes:
+.SM NUL\s0=\fB\e0\fP,
+.SM BACKSPACE\s0=\fB\eb\fP,
+.SM FORMFEED\s0=\fB\ef\fP,
+.SM NEWLINE\s0=\fB\en\fP,
+.SM RETURN\s0=\fB\er\fP,
+.SM TAB\s0=\fB\et\fP;
+others appear as 3-digit octal numbers.
+Bytes with the parity bit set are displayed in octal.
+.TP 5
+.B  d
+Interpret (short) words as unsigned decimal.
+.TP 5
+.B  f
+Interpret long words as floating point.
+.TP 5
+.B  h
+Interpret (short) words as unsigned hexadecimal.
+.TP 5
+.B  i
+Interpret (short) words as signed decimal.
+.TP 5
+.B  l
+Interpret long words as signed decimal.
+.TP 5
+.B  o
+Interpret (short) words as unsigned octal.
+.TP 5
+.BI s[ n ]
+Look for strings of
+.SM ASCII
+graphic characters, terminated with a null byte.
+.I n
+specifies the minimum length string to be recognized.
+By default, the minimum length is 3 characters.
+.TP 5
+.B v
+Show all data.
+By default, display lines that are identical to the last
+line shown are not output, but are indicated with an
+.RB ` * '
+in column 1.
+.TP 5
+.BI w[ n ]
+Specifies the number of input bytes to be interpreted and displayed
+on each output line. If
+.B w
+is not specified, 16 bytes are read for each display line.
+If
+.I n
+is not specified, it defaults to 32.
+.TP 5
+.B  x
+Interpret (short) words as hexadecimal.
+.LP
+An upper case format character implies the long or double precision
+form of the object.
+.LP
+The
+.I offset
+argument specifies the byte offset into the
+file where dumping is to commence.
+By default this argument is interpreted in octal.
+A different radix can be
+specified; if
+.RB ` . '
+is appended to the argument, then
+.I offset
+is interpreted in decimal.  If
+.I offset
+begins with
+.B x
+or
+.BR 0x ,
+it is interpreted in hexadecimal.  If
+.B b
+.RB ( B )
+is appended, the offset is interpreted
+as a block count, where a block is 512 (1024) bytes.  If the
+.I filename
+argument is omitted, the
+.I offset
+argument must be preceded by
+.RB ` + '.
+.LP
+The radix of the displayed address will be the same as the radix of the
+.IR offset ,
+if specified; otherwise it will be octal.
+.LP
+.I label
+will be interpreted as a pseudo-address for the first byte displayed.
+It will be shown in
+.B (\|)
+following the file offset.  It is intended to
+be used with core images to indicate the
+real memory address.  The syntax for
+.I label
+is identical to that for
+.IR offset .
+.SH SYSTEM V DESCRIPTION
+.IX "System V commands" "\fLod\fR"
+.LP
+The
+.B s
+format interprets (short) words as
+signed decimal, rather than searching for
+strings; the
+.B S
+format searches for strings.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR od .
+On entry to
+.BR od ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH "SEE ALSO"
+.BR adb (1),
+.BR dbx (1),
+.BR dbxtool (1),
+.BR locale (5),
+.BR iso_8859_1 (7)
+.SH BUGS
+.LP
+A file name argument cannot start with
+.RB ` + '.
+A hexadecimal offset cannot be a block count.
+Only one file name argument can be given.
+.LP
+It is an historical botch to require specification
+of object, radix, and
+sign representation in a single character argument.

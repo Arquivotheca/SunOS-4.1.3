@@ -1,0 +1,740 @@
+|*	@(#)xdp.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Double Precision Instruction
+|*		reg1 <-- reg2 + operand
+|*
+routine xd.add 0100110xxxx1 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+|* By repeating the instruction, I can check the status and hang if error,
+|* and if not, the result will still be there because the instruction is
+|* repeated.
+	;			dadd enrb loaddp halt;		optoti;		;
+	;			dadd;				;		;
+dpaxfin:
+	jtierr hang cstat;	dnop halt;			;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*		Double Precision Instruction
+|*		reg1 <-- reg2 - operand
+|*
+routine xd.sub 0100111xxxx1 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			dsub enrb loaddp halt;		optoti;		;
+	call dpaxfin;		dsub;				;		;
+|*
+|*		Double Precision Instruction
+|*		reg1 <-- operand - reg2
+|*
+routine xd.b.sub 0101010xxxx1 	dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	;				;		;
+	;			drsub enrb loaddp halt;		optoti;		;
+	call dpaxfin;		drsub;				;		;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- reg2 * operand
+|*
+routine xd.mul 0101000xxxx1 	dnop enra loaddp halt;          regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       dmul enrb loaddp halt;          optoti;         ptr1;
+	;			dmul;				regtotmp;	rcslsw ptr1;
+        ;                       dnop halt;			;               ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;        rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Divide Instruction
+|*		reg1 <-- reg2 / operand
+|*
+routine xd.div 0101001xxxx1     dnop enra loaddp halt;          regtoti;       rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;       rcslsw imm2;
+	;			dnop;				;		;
+        ;                       ddiv enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       ddiv enrb loaddp halt;          optoti;         ;
+        ;			dnop;				;		ptr1;
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+        ;                       dmul halt;			;               ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;        rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Reverse Divide Instruction
+|*		reg1 <-- operand / reg2
+|*
+routine xd.b.div 0101011xxxx1 	dnop enra loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       dnop enra loaddp halt;          optoti;         ptr2;
+        ;                       ddiv enrb loaddp halt;          regtoti;       	rcsmsw ptr2;
+        ;                       ddiv enrb loaddp halt;          regtoti;       	rcslsw ptr2;
+	;			dnop;				;		ptr1;
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+        ;                       dmul halt;			;               ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;        rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- reg3 + (reg2 * operand)
+|*
+routine xd.r3Ar2Mop 0110000xxxx1 dnop enra loaddp halt;		regtoti;       	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;		;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       dmul enrb loaddp halt;          optoti;         ptr1;
+	;                       dmul;				regtotmp;	rcslsw ptr1;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	jtierr hang cstat;	dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	;			dnop;				;		ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- reg3 - (reg2 * operand)
+|*
+routine xd.r3Sr2Mop 0110001xxxx1 dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       dmul enrb loaddp halt;          optoti;         ptr1;
+	;                       dmul;				regtotmp;	rcslsw ptr1;
+	;			dnop enrb loaddp halt;	 	regtoti;	rcsmsw ptr3;
+	jtierr hang cstat;	drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	;			dnop;				;		ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- ( - reg3) + (reg2 * operand)
+|*
+routine xd.Nr3Ar2Mop 0110010xxxx1 dnop enra loaddp halt;	regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       dmul enrb loaddp halt;          optoti;         ptr1;
+	;                       dmul;				regtotmp;	rcslsw ptr1;
+	;			dnop enrb loaddp halt;	 	regtoti;	rcsmsw ptr3;
+	jtierr hang cstat;	dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	;			dnop;				;		ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- reg3 * (reg2 + operand)
+|*
+routine xd.r3Mr2Aop 0110011xxxx1 dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;                       dadd enrb loaddp halt;          optoti;         ;
+	;                       dadd;				;		ptr3;
+xdmulfin:
+	jtierr hang cstat;	dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+	;			dmul mulaalu enrb loaddp halt;	regtoti;	rcslsw ptr3;
+	;			dmul;				regtotmp;	rcslsw ptr1;
+        ;			dnop halt;			;        	ptr1; 
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- reg3 * (reg2 - operand)
+|*
+routine xd.r3Mr2Sop 0110100xxxx1 dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;			dsub enrb loaddp halt;          optoti;         ;
+	call xdmulfin;		dsub;				;		;
+|*
+|*              Double Precision Multiply Instruction
+|*		reg1 <-- reg3 * ( - reg2 + operand)
+|*
+routine xd.r3MNr2Aop 0110101xxxx1 dnop enra loaddp halt;	regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+	;			dnop;				;		;
+        ;                       dnop enrb loaddp halt;          adtoti;         ;
+        jclr idle1 idl2;        ;                               ;               ;
+        ;			drsub enrb loaddp halt;		optoti;         ;
+	call xdmulfin;		drsub;				;		;
+|*
+|*              Double Precision Add/Multiply Instruction
+|*		reg1 <-- operand + (reg3 * reg2)
+|*
+routine xd.opAr3Mr2 0110110xxxx1 dnop enra loaddp halt;		regtoti;       	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;       	rcslsw imm2;
+        jclr idle1 idl2;        ;                               ;               ;
+	;			dnop;				;		ptr3;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+        ;                       dmul enrb loaddp halt;          regtoti;	rcslsw ptr3;
+	;			dmul halt;			regtotmp;	rcslsw ptr1;
+	;			dmul halt;			;		;
+	;			dnop enrb loaddp halt; 		adtoti;		;
+	jtierr hang cstat;	dadd aluamul enrb loaddp halt;	optoti;		;
+	;			dnop ;				;		ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Sub/Multiply Instruction
+|*		reg1 <-- operand - (reg3 * reg2)
+|*
+routine xd.opSr3Mr2 0110111xxxx1 dnop enra loaddp halt;		regtoti;       	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;       	rcslsw imm2;
+        jclr idle1 idl2;        ;                               ;               ;
+	;			dnop;				;		ptr3;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+        ;                       dmul enrb loaddp halt;          regtoti;	rcslsw ptr3;
+	;			dmul halt;			regtotmp;	rcslsw ptr1;
+	;                       dmul halt;			;               ;
+	;			dnop enrb loaddp halt; 		adtoti;		;
+	jtierr hang cstat;	drsub aluamul enrb loaddp halt;	optoti;		;
+	;			dnop;				;		ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Sub/Multiply Instruction
+|*		reg1 <-- ( - operand) + (reg3 * reg2)
+|*
+routine xd.NopAr3Mr2 0111000xxxx1 dnop enra loaddp halt;	regtoti;       	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;       	rcslsw imm2;
+        jclr idle1 idl2;        ;                               ;               ;
+	;			dnop;				;		ptr3;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+        ;                       dmul enrb loaddp halt;          regtoti;	rcslsw ptr3;
+	;                       dmul halt;			regtotmp;       rcslsw ptr1; 
+	;			dmul halt;			;		;
+	;			dnop enrb loaddp halt; 		adtoti;		;
+	jtierr hang cstat;	dsub aluamul enrb loaddp halt;	optoti;		;
+	;			dnop;				;		ptr1;
+        jtierr der1 cstat;      dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+        call idle1;             dnop tioe timsw halt;		titoreg;        rcsmsw ptr1;
+|*
+|*              Double Precision Multiply/Add Instruction
+|*		reg1 <-- operand * (reg3 + reg2)
+|*
+routine xd.opMr3Ar2 0111001xxxx1 dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+        jclr idle1 idl2;        ;                               ;               ;
+	;			dnop;				;		ptr3;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+        ;                       dadd enrb loaddp halt;          regtoti;	rcslsw ptr3;
+	;                       dadd halt;			regtotmp;	rcslsw ptr1;
+	;			dadd halt;			;		;
+xdaddfin:
+	jtierr hang cstat;	dnop enrb loaddp halt;		adtoti;		;
+	;			dmul mulaalu enrb loaddp halt;	optoti;		;
+        ;                       dmul;				;		;
+        ;			dnop halt;			;        	ptr1;
+	jtierr hang cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*              Double Precision Multiply/Add Instruction
+|*		reg1 <-- operand * (reg3 - reg2)
+|*
+routine xd.opMr3Sr2 0111010xxxx1 dnop enra loaddp halt;		regtoti;	rcsmsw imm2;
+        ;                       dnop enra loaddp halt;          regtoti;	rcslsw imm2;
+        jclr idle1 idl2;        ;                               ;               ;
+	;			dnop;				;		ptr3;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr3;
+        ;			drsub enrb loaddp halt;		regtoti;	rcslsw ptr3;
+	;			drsub halt;			regtotmp;	rcslsw ptr1;
+	call xdaddfin;		drsub halt;				;		;
+|*
+|*		Extended Instruction
+|*		reg1 <- square root (operand)
+|*		Double Precision
+|*
+routine xd.sqrt  0101100xxxx1 	dnop enra loaddp halt;		adtoti;		;
+	jclr idle1 idl2;	dnop;				;		;
+	;			dsqrt enra loaddp halt;		optoti;		;
+	;			dnop;				;		ptr1;
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		ptr1;
+	jtierr der1 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*		Extended Instruction
+|*		reg1 <- hypot (reg2, operand)
+|*		Double Precision
+|*
+routine xd.hypot 0101101xxxx1	dnop enra enrb loaddp halt;	regtoti;	rcsmsw imm2;
+        ;                       dmul enra enrb loaddp halt;	regtoti;	rcslsw imm2;
+	jclr clp idl2;		dmul;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;	lpreg!0x01
+	jtierr hardway;		dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop enra enrb loaddp halt;	adtoti;		;
+	;			dmul enra enrb loaddp halt;	optoti;		;
+	;			dmul;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	jtierr hardway;		dadd aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr hard2;		dnop enra tioe timsw loaddp halt;;		;
+	;			dsqrt enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr1;
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop;				tmptoreg;	rcslsw ptr5;
+	;			dnop;				;		;	lpreg!0x0
+	;			dmul;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		ptr1;
+	jtierr hardway cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+hard2:
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+hardway:
+|*  compare abs(reg2) to abs(operand)
+	;			dnop;				;		;
+	;			dnop enrb loaddp halt;		adtoti;		;
+	;			dnop enrb loaddp halt;		optoti;		ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dcmpm enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dcmpm;				;		;
+	jtierr cklpreg cstat;	dcmpm halt;			;		;
+	;			dnop halt;			;		;
+	jge hyptyox;		dnop enra loaddp halt;		adtoti;		;
+	;			dnop enra loaddp halt;		optoti;		ptr2;
+	;			ddiv enrb loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			ddiv enrb loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr1;
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop;				tmptoreg;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	;			dnop enra enrb loaddp halt;	tmptoti;	rcsmsw;
+	;			dmul enra enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dabs enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call finhypot;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+hyptyox:
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		;
+	;			ddiv enrb loaddp halt;		adtoti;		;
+	;			ddiv enrb loaddp halt;		optoti;		;
+	;			dnop;				;		ptr1;
+	;			dnop halt;			regtotmp;	rcslsw ptr1;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop;				tmptoreg;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	;			dnop enra enrb loaddp halt;	tmptoti;	rcsmsw;
+	;			dmul enra enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop enra loaddp halt;		adtoti;		;
+	;			dabs enra loaddp halt;		optoti;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call finhypot;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+finhypot:
+	;			dnop;				;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dsqrt enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			ddiv enrb loaddp halt;		tmptoti;	rcsmsw;
+	;			ddiv enrb loaddp halt;		tmptoti;	rcslsw;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	;			dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;	ptr5!0x700+0xD1
+	;			dnop enra loaddp halt;		tmptoti;	rcslsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul;			;		;
+	;			dadd aluamul;			;		ptr1;
+	jtierr ser15 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+cklpreg:	
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	jloop hang;		;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr1;
+	call hang;		;				tmptoreg;	rcslsw ptr1;
+ser15:
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr1;
+	call hang;		;				tmptoreg;	rcslsw ptr1;
+	
+|*
+|*		Extended Instruction
+|*		reg1 <-- - operand
+|*		Complex Instruction:  MSW of operand has real part
+|*				      LSW of operand has imag part
+routine xd.cneg  0101110xxxx1	sneg enra halt;			adtoti;		;
+	;			;				;		;
+	jclr clp idl2;		;				;		ptr1;
+	;			tioe tisp halt;			titoreg;	rcsmsw ptr1;
+	;			sneg enra halt;			optoti;		;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcslsw ptr1;
+|*		Extended Instruction
+|*		reg1 <-- cabs (operand)
+|*		Complex Instruction:  MSW of operand has real part
+|*				      LSW of operand has imag part
+routine xd.cabs  0101111xxxx1	scvtd enra loaddp halt;		adtoti;		;
+	;			scvtd enra loaddp halt;		adtoti;		;
+	;			dnop;				;		;
+	;			dnop enra enrb tioe timsw loaddp halt;;		;
+	;			dmul enra enrb tioe tilsw loaddp halt;;		;
+	;			dmul;				;		;
+	jclr clp idl2;		;				;		;
+	;			dmul;				;		;
+	jtierr bail.out;	dmul tioe timsw halt;		titotmp;	rcsmsw;
+	;			dmul tioe tilsw halt;		titotmp;	rcslsw;
+	;			scvtd enra loaddp halt;		optoti;		;
+	;			scvtd enra loaddp halt;		optoti;		;
+	;			dnop;				;		;
+	;			dnop enra enrb tioe timsw loaddp halt;;		;
+	;			dmul enra enrb tioe tilsw loaddp halt;;		;
+	;			dmul;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	jtierr bail.out;	dadd aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr bail.out;	dnop enra tioe timsw loaddp halt;;		;
+	;			dsqrt enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	;			dmul;				;		;
+	jtierr bail.out;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dcvts enra loaddp halt;		tmptoti;	rcslsw;
+	;			dcvts;				;		;
+	jtierr bail.out;	dnop tioe timsw halt;		;		ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+|*
+|*		Extended Instruction
+|*		reg1 <--  reg2 + operand
+|*		Complex Instruction:  MSW of operand has real part
+|*				      LSW of operand has imag part
+routine xd.cadd  0111100xxxx1	enra halt;			regtoti;	rcsmsw imm2;
+	;			;				;		;
+	;			sadd enrb halt;			adtoti;		;
+	jclr clp idl2;		;				;		;
+	;			sadd;				;		;
+	jtierr hang cstat;	halt;				;		ptr1;
+	;			tioe tisp halt;			titoreg;	rcsmsw ptr1;
+	;			enrb halt;			optoti;		ptr2;
+	;			sadd enra halt;			regtoti;	rcslsw ptr2;
+	;			sadd;				;		;
+	jtierr hang cstat;	halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcslsw ptr1;
+|*
+|*		Extended Instruction
+|*		reg1 <--  reg2 - operand
+|*		Complex Instruction:  MSW of operand has real part
+|*				      LSW of operand has imag part
+routine xd.csub  0111101xxxx1 	enra halt;			regtoti;	rcsmsw imm2;
+	;			;				;		;
+	;			ssub enrb halt;			adtoti;		;
+	jclr clp idl2;		;				;		;
+	;			ssub;				;		;
+	jtierr hang cstat;	halt;				;		ptr1;
+	;			tioe tisp halt;			titoreg;	rcsmsw ptr1;
+	;			enrb halt;			optoti;		ptr2;
+	;			ssub enra halt;			regtoti;	rcslsw ptr2;
+	;			ssub;				;		;
+	jtierr hang cstat;	halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcslsw ptr1;
+|*
+|*		Extended Instruction
+|*		reg1 <--  reg2 * operand
+|*		Complex Instruction:  MSW of operand has real part
+|*				      LSW of operand has imag part
+routine xd.cmul  0111110xxxx1	scvtd enra loaddp halt;		adtoti;		;
+	;			scvtd enra loaddp halt;		adtoti;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	jclr clp idl2;		;				;		;
+	;			scvtd enra loaddp halt;		optoti;		;
+	;			scvtd enra loaddp halt;		optoti;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD3
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dmul enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;	ptr5!0x700+0xD0
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	jtierr hang cstat;	dsub aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			dcvts;				;		;
+	jtierr hang cstat;	dnop halt;			;		ptr1;
+	;			dnop tioe tisp halt;		titoreg;	rcsmsw ptr1;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;	ptr5!0x700+0xD0
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	jtierr hang cstat;	dadd aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			dcvts;				;		;
+	jtierr hang cstat;	dnop halt;			;		ptr1;
+	call idle1;		dnop tioe tisp halt;		titoreg;	rcslsw ptr1;
+|*
+|*		Extended Instruction
+|*		reg1 <--  reg2 / operand
+|*		Complex Instruction:  MSW of operand has real part
+|*				      LSW of operand has imag part
+routine xd.cdiv  0111111xxxx1	scvtd enra loaddp halt;		adtoti;		;
+	;			scvtd enra loaddp halt;		adtoti;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			scvtd enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcsmsw ptr2; 
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			scvtd enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			scvtd enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	jclr clp idl2;		;				;		;
+	;			snop enra halt;			optoti;		ptr5;	ptr5!szero
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		;
+	jeq imzero;		scvtd enra loaddp halt;		optoti;		;
+	;			scvtd enra loaddp halt;		optoti;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD3
+	;			dnop enra enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dmul enra enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD2
+	;			dnop enra enrb loaddp halt;	regtoti;	rcsmsw ptr5;
+	;			dmul enra enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	jtierr hang cstat;	dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	;			dadd aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD4
+	jtierr hang cstat;	dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5; 	ptr5!0x700+0xD3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;	ptr5!0x700+0xD2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	jtierr hang cstat;	dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	;			dadd aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xD4
+	;			ddiv enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			ddiv enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	jtierr hang cstat;	dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dcvts enra loaddp halt;		tmptoti;	rcslsw;
+	;			dcvts;				;		;	ptr5!0x700+0xD2
+	jtierr hang cstat;	dnop halt;			;		ptr1;
+	;			dnop tioe tisp halt;		titoreg;	rcsmsw ptr1;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;	ptr5!0x700+0xD3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop enrb loaddp halt;		tmptoti;	rcsmsw;
+	jtierr hang cstat;	drsub aluamul enrb loaddp halt;	tmptoti;	rcslsw;
+	;			dnop;				;		;
+	jtierr hang cstat;	dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xD4
+	;			ddiv enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			ddiv enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop halt;			;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dnop;				;		;
+	;			dmul;				;		;
+	;			dmul halt;			;		;
+	jtierr hang cstat;	dnop tioe timsw halt;		titotmp;	rcsmsw;
+	;			dnop tioe tilsw halt;		titotmp;	rcslsw;
+	;			dnop halt;			;		;
+	jtierr hang cstat;	dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dcvts enra loaddp halt;		tmptoti;	rcslsw;
+	;			dcvts;				;		;
+	jtierr hang cstat;	dnop halt;			;		ptr1;
+	call idle1;		dnop tioe tisp halt;		titoreg;	rcslsw ptr1;
+imzero:
+|* get here if y.im == 0
+	;			enra halt;			regtoti;	rcsmsw ptr2;
+	;			;				;		;
+	;			sdiv enrb halt;			adtoti;		;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr1;
+	;			tioe tisp halt;			titoreg;	rcsmsw ptr1;
+	;			enra halt;			regtoti;	rcslsw ptr2;
+	;			;				;		;
+	;			sdiv enrb halt;			adtoti;		;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcslsw ptr1;

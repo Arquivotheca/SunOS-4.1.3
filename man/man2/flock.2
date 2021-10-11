@@ -1,0 +1,148 @@
+.\" @(#)flock.2 1.1 92/07/30 SMI; from UCB 4.2
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH FLOCK 2 "21 January 1990"
+.SH NAME
+flock \- apply or remove an advisory lock on an open file
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/file.h>
+.LP
+.ft B
+.DT
+#define	\s-1LOCK_SH\s0	1	/* shared lock */
+#define	\s-1LOCK_EX\s0	2	/* exclusive lock */
+#define	\s-1LOCK_NB\s0	4	/* don't block when locking */
+#define	\s-1LOCK_UN\s0	8	/* unlock */
+.LP
+.ft B
+int flock(fd, operation)
+int fd, operation;
+.fi
+.IX  flock()  ""  \fLflock()\fP
+.IX  descriptors  flock() "" \fLflock()\fP
+.IX  "lock" "file" "lock" "file \(em \fLflock()\fP"
+.SH DESCRIPTION
+.LP
+.B flock(\|)
+applies or removes an
+.I advisory
+lock on the file associated with the file descriptor
+.IR fd .
+A lock is applied by specifying an
+.I operation
+parameter that is the inclusive
+.SM OR
+of
+.SB LOCK_SH
+or
+.SB LOCK_EX
+and, possibly,
+\fB\s-1LOCK_NB\s0\fR.
+To unlock
+an existing lock, the
+.I operation
+should be
+.SB LOCK_UN\s0\fR.
+.LP
+Advisory locks allow cooperating processes to perform
+consistent operations on files, but do not guarantee
+exclusive access (that is, processes may still access files
+without using advisory locks, possibly resulting in
+inconsistencies).
+.LP
+The locking mechanism allows two types of locks:
+.I shared
+locks and
+.I exclusive
+locks.
+More than one process may hold a shared lock for a file at any given time,
+but multiple exclusive, or both shared and exclusive,
+locks may not exist simultaneously on a file.
+.LP
+A shared lock may be
+.I upgraded
+to an exclusive lock, and vice versa, simply by specifying
+the appropriate lock type; the previous
+lock will be released and the new lock applied (possibly
+after other processes have gained and released the lock).
+.LP
+Requesting a lock on an object that is already locked
+normally causes the caller to block until the lock may be
+acquired.  If
+.SB LOCK_NB
+is included in
+.IR operation ,
+then this will not happen; instead the call will fail and
+the error
+.SM EWOULDBLOCK
+will be returned.
+.SH NOTES
+.LP
+Locks are on files, not file descriptors.  That is, file descriptors
+duplicated through
+.BR dup (2V) 
+or
+.BR fork (2V))
+do not result in multiple instances of a lock, but rather multiple
+references to a single lock.  If a process holding a lock on a file
+forks and the child explicitly unlocks the file, the parent will
+lose its lock.
+.LP
+Processes blocked awaiting a lock may be awakened by signals.
+.SH RETURN VALUES
+.LP
+.B flock(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EBADF
+The argument
+.B fd
+is an invalid descriptor.
+.TP
+.SM EOPNOTSUPP
+The argument
+.B fd
+refers to an object other than a file.
+.TP
+.SM EWOULDBLOCK
+The file is locked and the
+.SB LOCK_NB
+option was specified.
+.SH "SEE ALSO"
+.BR close (2V),
+.BR dup (2V),
+.BR execve (2V),
+.BR fcntl (2V),
+.BR fork (2V),
+.BR open (2V),
+.BR lockf (3),
+.BR lockd (8C)
+.SH BUGS
+.LP
+Locks obtained through the
+.B flock(\|)
+mechanism are known only
+within the system on which they were placed.  Thus, multiple clients
+may successfully acquire exclusive locks on the same remote file.
+If this behavior is not explicitly desired, the
+.BR fcntl (2V)
+or
+.BR lockf (3)
+system calls should be used instead; these make use of
+the services of the
+.B network lock manager
+(see
+.BR lockd (8C)).

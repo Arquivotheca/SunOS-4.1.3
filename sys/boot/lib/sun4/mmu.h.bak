@@ -1,0 +1,155 @@
+/*      @(#)mmu.h.bak 1.1 92/07/30 SMI      */
+
+/*
+ * Copyright (c) 1985 by Sun Microsystems, Inc.
+ */
+
+#ifndef _MMU_
+#define _MMU_
+
+/* 
+ * Sunrise memory management unit constants.
+ */
+#define	NCONTEXT	 16	/* Number of contexts */
+#define KCONTEXT	 0	/* Kernel context (no valid user pages) */
+
+#define	NSGCTX	4096		/* # of hardware segments per context */
+#define	NBSG	262144		/* bytes/segment */
+#define	NPGSG	32		/* # of pages per segment */
+#define	NPME	16384		/* number of hardware page map entries */
+#define	NPMEG	(NPME/NPGSG)	/* # of pme groups (segment allocation) */
+#define	SEGINV	(NPMEG-1)	/* invalid pmeg - no access */
+#define UPMEG	8		/* a pmeg past SYSPTSIZE, for the uarea */
+
+#define	SGOFSET	(NBSG-1)	/* byte offset into segment */
+#define	SGSHIFT	18		/* LOG2(NBSG) */
+#define NSGVA	(1<<(32-SGSHIFT)) /* segments per virtual address space */
+
+/*
+ * Masks for relevant bits of virtual address.
+ */
+#define	PAGEADDRBITS	0xFFFFE000	/* page map virtual address mask */
+#define	SEGMENTADDRBITS	0xFFFC0000	/* segment map virtual address mask */
+
+/*
+ * Macro to determine whether an addres is within the range of the MMU.
+ */
+#define good_addr(a) \
+	((unsigned)(a) < (unsigned)(NSGCTX/2 * NBSG) || \
+	 (unsigned)(a) >= (unsigned)((NSGVA - NSGCTX/2) * NBSG))
+
+/*
+ * Address space identifier (formerly function codes) values.
+ */
+#define	ASI_UP	0x8		/* user program */
+#define	ASI_SP	0x9		/* supervisor program */
+#define	ASI_UD	0xA		/* user data */
+#define	ASI_SD	0xB		/* supervisor data */
+#define ASI_FCS	0xC		/* flush cache segment */
+#define ASI_FCP	0xD		/* flush cache page */
+#define ASI_FCC	0xE		/* flush cache context */
+#define ASI_CD	0xF		/* cache data */
+#define	ASI_CTL	0x2		/* control space*/
+#define	ASI_SM	0x3		/* segment map */
+#define	ASI_PM	0x4		/* page map */
+
+/*
+ * ASI_CTL base addresses
+ */
+#define	IDPROMBASE	0x00000000	/* id prom base */
+#define	CONTEXTBASE	0x30000000	/* context reg */
+#define	SYSENBASE	0x40000000	/* system enable reg */
+#define	UDVMAENBASE	0x50000000	/* user dvma enable reg */
+#define	BUSERRBASE	0x60000000	/* bus error reg */
+#define	DIAGBASE	0x70000000	/* diagnostic reg */
+#define	CACHETAGSBASE	0x80000000	/* cache tags base */
+#define	VMEINTVECBASE	0xE0000000	/* VME interrupt vector base */
+#define	ZSBASE		0xF0000000	/* ZS serial port base */
+
+#define IDPROMSIZE	0x20		/* size of id prom in bytes */
+
+/*
+ * Constants for cache operations.
+ */
+#define VAC_SIZE		     0x20000	/* 128K */
+#define VAC_LINESIZE			  16	/* 16 bytes per line */
+#define VAC_LINESHIFT			   4	/* LOG2(VAC_LINESIZE) */
+#define VAC_NLINES     VAC_SIZE/VAC_LINESIZE 	/* # of lines in cache */
+#define VAC_CTXFLUSH_COUNT	  VAC_NLINES	/* context flush count */
+#define VAC_SEGFLUSH_COUNT	  VAC_NLINES	/* segment flush count */
+#define VAC_PAGEFLUSH_COUNT		 512	/* page flush count */
+
+/*
+ * Various I/O space related constants
+ */
+#define	VME16_BASE	0xFFFF0000
+#define	VME16_SIZE	(1<<16)
+#define	VME16_MASK	(VME16_SIZE-1)
+
+#define	VME24_BASE	0xFF000000
+#define	VME24_SIZE	(1<<24)
+#define	VME24_MASK	(VME24_SIZE-1)
+
+/*
+ * The usable DVMA space size.
+ */
+#define	DVMASIZE	((1024*1024)-NBSG)
+#define DVMABASE	(0-(1024*1024))
+
+#ifndef LOCORE
+/*
+ * CSEG is the virtual segment reserved for temporary operations.
+ * We use the segment immediately before the start of debugger area.
+ */
+#include <debug/debug.h>
+#define CSEG	((unsigned)(DEBUGSTART - NBSG) >> SGSHIFT)
+
+/*
+ * MMU segments to/from pages
+ */
+#define	sgtop(s)	((s) << (SGSHIFT-PGSHIFT))
+#define	ptosg(p)	((unsigned)(p) >> (SGSHIFT-PGSHIFT))
+#define	ptonsg(p)	(((unsigned)(p) + (NPGSG-1)) >> (SGSHIFT-PGSHIFT))
+
+/*
+ * The context structure is used to allocate
+ * contexts and maintains the pmeg allocation
+ * information for the context.
+ */
+struct	context {
+	struct	proc *ctx_procp;	/* back pointer to proc structure */
+	int	ctx_time;		/* pseudo-time for ctx lru */
+	u_char	ctx_context;		/* bits to load into context register */
+	short	ctx_tdmax;		/* max text or data seg used */
+	short	ctx_smin;		/* min stack segment used */
+	u_short	ctx_pmeg[NSGCTX];	/* pmegs for this context */
+};
+
+/*
+ * Convert virtual segment number into index into ctx_pmeg.
+ */
+#define stopmx(s)	((s) < NSGCTX/2? (s): (s) - (NSGVA - NSGCTX/2))
+
+/*
+ * The pmeg structure allocates the
+ * hardware page map entry groups.
+ */
+struct	pmeg {
+	struct	pmeg *pm_forw;		/* forward link */
+	struct	pmeg *pm_back;		/* backward link */
+	struct	proc *pm_procp; 	/* back pointer to proc using */
+	struct	pte *pm_pte;		/* pointer to pte's mapping */
+	short	pm_seg;			/* seg within process address space */
+	short	pm_count;		/* number of valid pte's in group */
+	int	pm_time;		/* last "time" pmeg was unloaded */
+};
+
+#ifdef KERNEL
+extern	struct context context[];
+extern	struct pmeg pmeg[];
+extern	struct pmeg pmeghead;
+extern	int kernpmeg;
+#endif KERNEL
+#endif !LOCORE
+
+#endif _MMU_

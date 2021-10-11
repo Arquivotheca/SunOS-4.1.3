@@ -1,0 +1,489 @@
+.\" @(#)sccs-get.1 1.1 92/07/30 SMI;
+.TH SCCS-GET 1 "28 June 1988"
+.SH NAME
+sccs-get, get \- retrieve a version of an SCCS file
+.SH SYNOPSIS
+.B /usr/sccs/get
+[
+.B \-begkmnpst
+] [
+.BR \-l \|[\| p \|]\|] 
+[
+.BI \-a sequence
+]
+.if n .ti +5
+[
+.BI \-c date-time
+]
+[
+.BI \-G g-file
+]
+[
+.BI \-i sid-list
+]
+[
+.BI \-r sid
+]
+.if n .ti +5
+.if t .ti +.5i
+[
+.BI \-x sid-list
+] 
+.I s.filename
+\&.\|.\|.
+.SH DESCRIPTION
+.IX "get command"  ""  "\fLget\fP \(em get SCCS file"
+.IX "SCCS commands"  "get command"  ""  "\fLget\fP \(em get SCCS file"
+.B get
+retrieves a working copy from the 
+.SM SCCS
+history file,
+according to the specified options.
+.LP
+For each
+.I s.filename
+argument,
+.B get
+displays the 
+.SM SCCS
+delta
+.SM ID
+(\s-1SID\s0)
+and number of lines retrieved.
+.LP
+If a directory name is used in place of the
+.I s.filename
+argument, the
+.B get
+command applies to all
+.BR s. files
+in that directory.
+Unreadable
+.BR s. files
+produce an error; processing continues with the next file (if
+any).
+The
+use of
+.RB ` \- '
+as the
+.I s.filename
+argument indicates that the names of files are to be read from the
+standard input, one
+.BR s. file
+per line.
+.LP
+The retrieved file normally has the same filename base as the
+.BR s. file,
+less the prefix, and is  referred to as the
+.BR g- file.
+.LP
+For each file processed,
+.B get
+responds (on the standard output) with the
+.SM SID
+being accessed, and with the number of lines retrieved from the
+.BR s. file.
+.SH OPTIONS
+.TP
+.B \-b
+Create a new branch.  Used with the
+.B \-e
+option to indicate that the new delta should have an
+.SM SID
+in a new branch.  Instead of incrementing the
+level for version to be checked in,
+.B get
+indicates in the
+.BR p. file
+that the delta to be checked in should either initialize a new
+branch and sequence (if there is no existing branch at the
+current level), or increment the branch component of the
+.SM SID\s0.
+If the
+.B b
+flag is not set in the
+.BR s. file,
+this option is ignored.
+.TP
+.B \-e
+Retrieve a version for editing.
+With this option,
+.B get
+places a lock on the
+.BR s. file,
+so that no one else can check in changes to the version 
+you have checked out.
+If the
+.B j
+flag is set in the
+.BR s. file,
+the lock is advisory:
+.BR get
+issues a warning message.
+Concurrent use of
+.RB ` "get  \-e" '
+for different
+.SM SID\s0s
+is allowed, however,
+.BR get
+will not check out a version of the file if a writable version
+is present in the directory.  All
+.SM SCCS
+file protections stored in the
+.BR s. file,
+including the release ceiling, floor, and authorized user list,
+are honored by
+.RB ` "get \-e" '.
+.TP
+.B \-g
+Get the
+.SM SCCS
+version ID, without retrieving the version itself.
+Used to verify the existence of a particular
+.SM SID\s0.
+.TP
+.B \-k
+Suppress expansion of ID keywords.
+.B \-k
+is implied by the
+.BR \-e .
+.TP
+.B \-m
+Precede each retrieved line with the
+.SM SID
+of the delta in which it was added to the file.  The
+.SM SID
+is separated from the line with a
+.SM TAB.
+.TP
+.B \-n
+Precede each line with the
+.B %\&M%
+ID keyword and a
+.SM TAB.
+When both the
+.B \-m
+and
+.B \-n
+options are used, the ID keyword
+precedes the
+.SM SID\s0,
+and the line of text.
+.TP
+.B \-p
+Write the text of the retrieved version to the standard output.
+All messages that normally go to the standard output are written
+to the standard error instead.
+.TP
+.B \-s
+Suppress all output normally written on the standard output.
+However, fatal error messages (which always go to the standard error)
+remain unaffected.
+.br
+.ne 5
+.TP
+.B \-t
+Retrieve the most recently created (top) delta in a given release
+(for example:
+.BR \-r1 ).
+.TP
+.BR \-l \|[\| p \|]
+Retrieve a summary of the delta table (version log) and write it to a
+listing file, with the
+.RB ` l. '
+prefix (called
+.RB ` l. file').
+When
+.B \-lp
+is used, write the summary onto the standard output.
+.TP
+.BI \-a \|sequence
+Retrieve the version corresponding to the indicated delta sequence
+number.  This option is used primarily by the
+.SM SCCS
+.B comb
+command (see
+.BR sccs-comb (1));
+for users,
+.B \-r
+is an easier way to specify a version.
+.B \-a
+supercedes
+.BR \-r
+when both are used.
+.TP
+.BI \-c date-time
+Retrieve the latest version checked in prior to the date and time
+indicated by the
+.I date-time
+argument.
+.I date-time
+takes the form:
+.IR yy [ mm [ dd [\c
+.IR hh [ mm [ ss ]\|]\|]\|]\|].
+Units omitted from the indicated date and time default to their maximum
+possible values; that is
+.B \-c7502
+is equivalent to
+.BR \-c750228235959 .
+Any number of non-numeric characters may separate
+the various 2 digit components.  If white-space characters occur, the
+.I date-time
+specification must be quoted.
+.TP 
+.BI \-G newname
+Use
+.I newname
+as the name of the retrieved version.
+.TP
+.BI \-i sid-list
+Specify a list of deltas to include in the retrieved version.
+The included deltas are noted in the standard output message.
+.I sid-list
+is a comma-separated list of
+.SM SID\s0s.
+To specify a range of deltas, use a 
+.RB ` \- ' 
+separator instead of a comma, between two 
+.SM SID\s0s 
+in the list.
+.TP
+.BI \-r sid
+Retrieve the version corresponding to the indicated
+.SM SID
+(delta).
+.IP
+The
+.SM SID
+for a given delta is a number, in Dewey decimal format, composed
+of two or four fields: the
+.I release
+and
+.IR level
+fields, and for branch deltas, the
+.IR branch
+and
+.IR sequence
+fields.  For instance, if
+.BR 1.2
+is the
+.SM SID\s0,
+.B 1
+is the release,
+and
+.B 2
+is the level number.  If
+.BR 1.2.3.4
+is the
+.SM SID\s0,
+.B 3
+is the branch and
+.B 4
+is the sequence number.
+.IP
+You need not specify the entire
+.SM SID
+to retrieve a version with
+.BR get .
+When you omit
+.B \-r
+altogether, or when you omit both release and level,
+.B get
+normally retrieves the highest release and level.  If the
+.B d
+flag is set to an
+.SM SID
+in the
+.BR s. file
+and you omit the
+.SM SID\s0,
+.B get
+retrieves the default version indicated by that flag.
+.IP
+When you specify a release but omit the level,
+.B get
+retrieves the highest level in that release.  If that release
+does not exist,
+.BR get
+retrieves highest level from the next-highest existing release.
+.IP
+Similarly with branches, if you specify a release, level and
+branch,
+.B get
+retrieves the highest sequence in that branch.
+.TP 
+.BI \-x sid-list
+Exclude the indicated deltas from the retrieved version.
+The excluded deltas are noted in the standard output message.
+.I sid-list
+is a comma-separated list of
+.SM SID\s0s.
+To specify a range of deltas, use a 
+.RB ` - ' 
+separator instead of a comma, between two 
+.SM SID\s0s 
+in the list.
+.SH USAGE
+.SS ID Keywords
+In the absence of
+.B \-e
+or
+.BR \-k ,
+.B get
+expands the following ID keywords by replacing them with the
+indicated values in the text of the retrieved source.
+.PD 0
+.TP 12
+.I Keyword
+.I Value
+.sp .5
+.TP
+.B %\&A%
+Shorthand notation for an
+.SM ID
+line with data for
+.BR what (1):
+.B %\&\s-1Z\s0%%\&\s-1Y\s0%\ %\&\s-1M\s0%\ %\&\s-1I\s0%%\&\s-1Z\s0%
+.TP
+.B %\&B%
+.SM SID
+branch component
+.TP
+.B %\&C%
+Current line number.
+Intended for identifying messages
+output by the program such as
+.RI `` "this shouldn't have happened" ''
+type errors.  It is
+.I not
+intended to be used on every line to provide sequence numbers.
+.TP
+.B %\&D%
+Current date:
+.IB yy / mm / dd
+.TP
+.B %\&E%
+Date newest applied delta was created:
+.IB yy / mm / dd
+.TP
+.B %\&F%
+.SM SCCS
+.BR s. file
+name
+.TP
+.B %\&G%
+Date newest applied delta was created:
+.IB mm / dd / yy
+.TP
+.B %\&H%
+Current date:
+.IB mm / dd / yy
+.TP
+.B %\&I%
+.SM SID
+of the retrieved version:
+.B %\&\s-1R\s0%.%\&\s-1L\s0%.%\&\s-1B\s0%.%\&\s-1S\s0%
+.TP
+.B %\&L%
+.SM SID
+level component
+.TP
+.B %\&M%
+Module name: either the value of the
+.B m
+flag in the
+.BR s. file
+(see
+.BR sccs-admin (1)),
+or the name of the
+.BR s. file
+less the prefix
+.TP
+.B %\&P%
+Fully qualified
+.BR s. file
+name
+.TP
+.B %\&Q%
+Value of the
+.B q
+flag in the
+.BR s. file
+.TP
+.B %\&R%
+.SM SID
+Release component
+.TP
+.B %\&S%
+.SM SID
+Sequence component
+.TP
+.B %\&T%
+Current time:
+.IB hh : mm : ss
+.TP
+.B %\&U%
+Time the newest applied delta was created:
+.IB hh : mm : ss
+.TP
+.B %\&W%
+Shorthand notation for an
+.SM ID
+line with data for
+.BR what :
+.B %\&\s-1Z\s0%%\&\s-1M\s0%\ \ \ \ \ \ \ \ %\&\s-1I\s0%
+.TP
+.B %\&Y%
+Module type: value of the
+.B t
+flag in the
+.BR s. file
+.TP
+.B %\&Z%
+4-character string:
+.RB ` @(#) ',
+recognized by
+.BR what .
+.PD
+.SH FILES
+.PD 0
+.TP 20
+``g-file''
+version retrieved by
+.B get
+.TP
+.BI l. file
+file containing extracted delta table info
+.TP
+.BI p. file
+permissions (lock) file
+.TP
+.BI z. file
+temporary copy of
+.BI s. file
+.PD
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-admin (1),
+.BR sccs-delta (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-prt (1),
+.BR sccs-sact (1),
+.BR sccs-unget (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH DIAGNOSTICS
+Use the
+.SM SCCS
+.B help
+command for explanations
+.RB ( sccs-help (1)).
+.SH BUGS
+If the effective user has write permission (either explicitly or
+implicitly) in the directory containing the
+.SM SCCS
+files, but the real user does not, only one file may be named when using
+.BR \-e .

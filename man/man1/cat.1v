@@ -1,0 +1,201 @@
+.\" @(#)cat.1v 1.1 92/07/30 SMI; from UCB 4.2 BSD and S5r2
+.TH CAT 1V "19 July 1989"
+.SH NAME
+cat \- concatenate and display 
+.SH SYNOPSIS
+.B cat
+[
+.B \-
+] 
+[
+.B \-benstuv
+] 
+[ 
+.IR filename .\|.\|.
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/cat
+[
+.B \-
+] 
+[
+.B \-estuv
+]
+[
+.IR filename .\|.\|.
+]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLcat\fR"
+.IX  cat  ""  "\fLcat\fP \(em concatenate files"
+.IX  "concatenate files \(em \fLcat\fP"
+.IX  "text processing utilities"  "cat command"  ""  "\fLcat\fP \(em concatenate files"
+.IX  files  "cat command"  ""  "\fLcat\fP \(em concatenate"
+.LP
+.B cat
+reads each
+.I filename
+in sequence and displays it on the standard output.  Thus:
+.IP
+.B
+example% cat goodies
+.LP
+displays the contents of
+.B goodies
+on the standard output, and
+.IP
+.B example%  cat  goodies1  goodies2  >  goodies3
+.LP
+concatenates the first two files and places the result on the third.
+.LP
+If no filename argument is given, or if the argument
+.RB ` \- '
+is given,
+.B cat
+reads from the standard input.  If the standard input is
+a terminal, input is terminated by an 
+.SM EOF
+condition.
+.SH OPTIONS
+.TP
+.B \-b
+Number the lines, as
+.BR \-n ,
+but omit the line numbers from blank lines.
+.TP
+.B \-e
+Display non-printing characters, as
+.BR \-v ,
+and in addition display a
+.B $
+character at the end of each line.
+.TP
+.B \-n
+Precede each line output with its line number.
+.TP
+.B \-s
+Substitute a single blank line for multiple adjacent blank lines.
+.TP
+.B \-t
+Display non-printing characters, as
+.BR \-v ,
+and in addition display
+.SM TAB
+characters as 
+.B ^\|I 
+(\s-1CTRL-I\s0).
+.TP
+\-u
+Unbuffered.
+If
+.B \-u
+is not used, output is buffered in blocks, or
+line-buffered if standard output is a terminal.
+.TP
+.B \-v
+Display non-printing characters (with the exception of
+.SM TAB
+and
+.SM NEWLINE
+characters)
+so that they are visible.  Control characters print like 
+.B ^\|X
+for
+.SM CTRL-X\s0;
+the
+.SM DEL
+character (octal 0177) print as
+.RB ` ^\|? '.
+Non-\s-1ASCII\s0 characters (with the high bit set) are displayed as 
+.BI M\- x
+where
+.B M\-
+stands for
+.RB ` meta '
+and
+.I x
+is the character specified by the seven low order bits.
+.SH SYSTEM V OPTIONS
+.TP
+.B \-e
+If the
+.B \-v
+option is specified, display a 
+.B $
+character at the end of each line.
+.TP
+.B \-s
+Suppress messages about files which cannot be opened.
+.TP
+.B \-t
+If the
+.B \-v
+option is specified, display
+.SM TAB
+characters as 
+.B ^\|I
+(\s-1CTRL-I\s0) and
+.SM FORMFEED
+characters as
+.B ^\|L
+(\s-1CTRL-L\s0).
+.TP
+.B \-v
+Display non-printing character (with the exception of
+.SM TAB\s0,
+.SM NEWLINE,
+and
+.SM FORMFEED
+characters) so that they are visible.
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR cat .
+On entry to
+.BR cat ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default .
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.br
+.ne 5
+.SH "SEE ALSO"
+.BR cp (1),
+.BR ex (1),
+.BR more (1),
+.BR pg (1V),
+.BR pr (1V),
+.BR tail (1)
+.SH NOTES
+.LP
+Beware of
+.RB ` "cat a b > a" '
+and
+.RB ` "cat a b > b" ',
+which destroy the input files before reading them.

@@ -1,0 +1,425 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)man.1 1.1 92/07/30 SMI; from UCB 6.2 8/7/85
+.TH MAN 1 "12 January 1988"
+.SH NAME
+man \- display reference manual pages; find reference pages by keyword
+.SH SYNOPSIS
+.B man
+.RB "[\|" \-  "\|]"
+.RB "[\|" \-t "\|]"
+.RB "[\|" \-M
+.IR path "\|]"
+.RB "[\|" \-T
+.IR macro-package "\|]"
+.RI "[\|[\|" section "\|] " title " .\|.\|.\|] .\|.\|."
+.br
+.B man
+.RB "[\|" \-M
+.IR path "\|]"
+.BI \-k " keyword"
+\&.\|.\|.
+.br
+.B man
+.RB "[\|" \-M
+.IR path "\|]"
+.BI \-f " filename"
+\&.\|.\|.
+.SH DESCRIPTION
+.IX man "" "\fLman\fR \(em online display of reference pages"
+.IX "online reference \(em \fLman\fR"
+.LP
+.B man
+displays information from the reference manuals.
+It can display complete manual pages that you select by
+.IR title ,
+or one-line summaries selected either by
+.I keyword
+.RB ( \-k ),
+or by the name of an associated file
+.RB ( \-f ).
+.LP
+A
+.IR section ,
+when given, applies to the
+.I titles
+that follow it on the command line (up to the next
+.IR section ,
+if any).
+.B man
+looks in the indicated section of the manual for those
+.IR title s.
+.I section
+is either a digit (perhaps followed by a single letter indicating
+the type of manual page), or one of the words
+.BR new ,
+.BR local ,
+.BR old ,
+or
+.BR public .
+The
+abbreviations
+.RB n ,
+.BR l ,
+.B o
+and
+.B p
+are also allowed.
+If
+.I section
+is omitted,
+.B man
+searches all reference sections
+(giving preference to commands over functions)
+and prints the first manual page it finds.
+If no manual page is located,
+.B man
+prints an error message.
+.LP
+The reference page sources are typically located in the
+.BR /usr/man/man?
+directories.
+Since these directories are optionally installed,
+they may not reside on your host; you may have to mount 
+.B /usr/man
+from a host on which they do reside.
+If there are preformatted, up-to-date versions in
+corresponding
+.B cat?
+or
+.B fmt?
+directories,
+.B man
+simply displays or prints those versions.
+If the preformatted
+version of interest is out of date or missing,
+.B man
+reformats it prior to display.
+If directories for the
+preformatted versions are not provided, 
+.B man
+reformats a page whenever it is requested; it uses a temporary
+file to store the formatted text during display.
+.LP
+If the standard output is not a terminal, or if the
+.RB ` \- '
+flag is given,
+.B man
+pipes its output through
+.BR cat (1V).
+Otherwise,
+.B man
+pipes its output through
+.BR more (1)
+to handle paging and underlining on the screen.
+.SH OPTIONS
+.TP
+.B \-t
+.B man
+arranges for the specified manual pages to be
+.BR troff ed
+to a suitable raster output device (see
+.BR troff (1)
+or
+.BR vtroff (1)).
+If both the
+.B \-
+and
+.B \-t
+flags are given,
+.B man
+updates the
+.BR troff ed
+versions of each named
+.I title
+(if necessary), but does not display them.
+.TP
+.BI \-M " path"
+Change the search path for manual pages.
+.I path
+is a colon-separated list of directories that contain manual page
+directory subtrees.
+For example,
+.B /usr/man/u_man:/usr/man/a_man
+makes
+.B man
+search in the standard System V locations.
+When used with the
+.B \-k
+or
+.B \-f
+options,
+the
+.B \-M
+option must appear first.
+Each directory in the
+.I path
+is assumed to contain subdirectories of the form
+.BR man[1-8l-p] .
+.TP
+.BI \-T " macro-package"
+.B man
+uses
+.I macro-package
+rather than the standard
+.B \-man
+macros defined in
+.B /usr/lib/tmac/tmac.an
+for formatting manual pages.
+.TP
+.BI \-k " keyword .\|.\|."
+.B man
+prints out one-line summaries from the
+.B whatis
+database (table of contents) that contain any of the given
+.IR keyword s.
+The
+.B whatis
+database is created using the
+.BR catman (8)
+command with the
+.B \-w
+option.
+.TP
+.BI \-f " filename .\|.\|."
+.B man
+attempts to locate manual pages related to any of the given
+.IR filename s.
+It strips the leading pathname components from each
+.IR filename ,
+and then prints one-line summaries containing the resulting
+basename or names.
+This option also uses the
+.B whatis
+database.
+.br
+.ne 7
+.SH "MANUAL PAGES"
+.LP
+Manual pages are
+.BR troff (1)/ nroff (1)
+source files prepared with the
+.B \-man
+macro package.
+Refer to
+.BR man (7),
+or
+.TX DOCS
+for more information.
+.LP
+When formatting a manual page,
+.B man
+examines the first line to determine whether
+it requires special processing.
+.SS "Referring to Other Manual Pages"
+.LP
+If the first line of the manual page is a reference to another
+manual page entry fitting the pattern:
+.sp .5
+.RS
+.BI "\&.so man" "?*/ sourcefile"
+.RE
+.LP
+.B man
+processes the indicated file in place of the current one.
+The reference must be expressed as
+a pathname relative to the root of
+the manual page directory subtree.
+.LP
+When the second or any subsequent line starts with
+.BR \&.so ,
+.B man
+ignores it;
+.BR troff (1)
+or
+.BR nroff (1)
+processes the request in the usual manner.
+.SS "Preprocessing Manual Pages"
+.LP
+If the first line is a string of the form:
+.IP
+\fB\'\|\e"\0 \fIX\fP
+.LP
+where
+.I X
+is separated from the
+`\fB"\fP'
+by a single
+.SM SPACE
+and consists of any combination of characters in the following list,
+.B man
+pipes its input to
+.BR troff (1)
+or
+.BR nroff (1)
+through the corresponding preprocessors.
+.sp .5
+.RS
+.PD 0
+.TP
+.B e
+.BR eqn (1),
+or
+.B neqn
+for
+.B nroff
+.TP
+.B r
+.BR refer (1)
+.TP
+.B t
+.BR tbl (1)
+.TP
+.B v
+.BR vgrind (1)
+.PD
+.RE
+.LP
+If
+.B eqn
+or
+.B neqn
+is invoked,
+it will automatically read the file
+.B /usr/pub/eqnchar
+(see
+.BR eqnchar (7)).
+If
+.BR nroff (1)
+is invoked,
+.BR col (1V)
+is automatically used.
+.SH ENVIRONMENT
+.TP 15
+.SB MANPATH
+If set,
+its value overrides
+.B /usr/man
+as the default search path.
+(The
+.B \-M
+flag, in turn, overrides this value.)
+.TP
+.SB PAGER
+A program to use for interactively delivering
+.BR man 's
+output to the screen.
+If not set,
+.RB ` "more \-s" '
+(see
+.BR more (1))
+is used.
+.TP
+.SB TCAT
+The name of the program to use to display
+.BR troff ed
+manual pages.
+If not set,
+.RB ` "lpr \-t" '
+(see
+.BR lpr (1))
+is used.
+.TP
+.SB TROFF
+The name of the formatter to use when the
+.B \-t
+flag is given.
+If not set,
+.B troff
+is used.
+.SH FILES
+.PD 0
+.TP 30
+.B /usr/[share]/man
+root of the standard manual page directory subtree
+.TP
+.B /usr/[share]/man/man?/*
+unformatted manual entries
+.TP
+.B /usr/[share]/man/cat?/*
+.BR nroff ed
+manual entries
+.TP
+.B /usr/[share]/man/fmt?/*
+.BR troff ed
+manual entries
+.TP
+.B /usr/[share]/man/whatis
+table of contents and keyword database
+.TP
+.B /usr/[share]/lib/tmac/tmac.an
+standard
+.B \-man
+macro package
+.TP
+.B /usr/pub/eqnchar
+.PD
+.SH "SEE ALSO"
+.BR apropos (1),
+.BR cat (1V),
+.BR col (1V),
+.BR eqn (1),
+.BR lpr (1),
+.BR more (1),
+.BR nroff (1),
+.BR refer (1),
+.BR tbl (1),
+.BR troff (1),
+.BR vgrind (1),
+.BR vtroff (1),
+.BR whatis (1),
+.BR eqnchar (7),
+.BR man (7),
+.BR catman (8)
+.br
+.ne 5
+.SH NOTES
+.LP
+Because
+.B troff
+is not 8-bit clean,
+.B man
+has not been made 8-bit clean.
+.LP
+The
+.B \-f
+and 
+.B \-k
+options use the
+.B /usr/man/whatis
+database, which is created by
+.BR catman (8).
+.br
+.ne 4
+.SH BUGS
+.LP
+The manual is supposed to be reproducible
+either on a phototypesetter or on an
+.SM ASCII
+terminal.
+However,
+on a terminal some information
+(indicated by font changes, for instance)
+is necessarily lost.
+.LP
+Some dumb terminals cannot process the vertical motions produced
+by the
+.B e
+.RB ( eqn (1))
+preprocessing flag.
+To prevent garbled output on these terminals,
+when you use
+.B e
+also use
+.BR t ,
+to invoke
+.BR col (1V)
+implicitly.
+This workaround has the disadvantage of eliminating superscripts and
+subscripts \(em even on those terminals that can display them.
+.SM CTRL-Q
+will clear a terminal that gets confused by
+.BR eqn (1)
+output.

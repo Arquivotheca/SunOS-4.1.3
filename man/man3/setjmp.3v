@@ -1,0 +1,251 @@
+.\" @(#)setjmp.3v 1.1 92/07/30 SMI; from UCB 4.2
+.hw sigsetjmp
+.TH SETJMP 3V "5 October 1989"
+.SH NAME
+setjmp, longjmp, sigsetjmp, siglongjmp \- non-local goto
+.SH SYNOPSIS
+.nf
+.ft B
+#include <setjmp.h>
+.sp .5v
+int setjmp(env)
+jmp_buf env;
+.sp .5v
+void longjmp(env, val)
+jmp_buf env;
+int val;
+.sp .5v
+int _setjmp(env)
+jmp_buf env;
+.sp .5v
+void _longjmp(env, val)
+jmp_buf env;
+int val;
+.sp .5v
+int sigsetjmp(env, savemask)
+sigjmp_buf env;
+int savemask;
+.sp .5v
+void siglongjmp(env, val)
+sigjmp_buf env;
+int val;
+.fi
+.ft
+.IX  "setjmpa() function"  ""  "\fLsetjmp()\fP \(em save stack environment"
+.IX  "setjmpb() function"  ""  "\fLsetjmp()\fP \(em non-local goto"
+.IX  "longjmp() function"  ""  "\fLlongjmp()\fP \(em non-local goto"
+.IX  "save stack environment"  ""  "save stack environment \(em \fLsetjmp()\fP"
+.IX  "return to saved environment"  ""  "return to saved environment \(em \fLlongjmp()\fP"
+.IX  "non-local goto"  "setjmp()"  ""  "non-local goto \(em \fLsetjmp()\fP"
+.IX  "non-local goto"  "longjmp()"  ""  "non-local goto \(em \fLlongjmp()\fP"
+.SH DESCRIPTION
+.LP
+.B setjmp(\|)
+and
+.B longjmp(\|)
+are useful for dealing with errors and interrupts
+encountered in a low-level subroutine of a program.
+.LP
+The macro
+.B setjmp(\|)
+saves its stack environment in
+.I env
+for later use by
+.BR longjmp(\|) .
+A normal call to
+.B setjmp(\|)
+returns zero.
+.B setjmp(\|)
+also saves the register environment.  If a
+.B longjmp(\|)
+call will be made, the routine which called
+.B setjmp(\|)
+should not return until after the
+.B longjmp(\|)
+has returned control (see below).
+.LP
+.B longjmp(\|)
+restores the environment saved by the last call of
+.BR setjmp ,
+and then returns in such a way that execution
+continues as if the call of
+.B setjmp(\|)
+had just returned the value
+.I val
+to the function that invoked
+.BR setjmp(\|) ;
+however, if
+.I val
+were zero, execution would continue as if the call of
+.B setjmp(\|)
+had returned one.  This ensures that a ``return'' from
+.B setjmp(\|)
+caused by a call to
+.B longjmp(\|)
+can be distinguished from a regular return from
+.BR setjmp(\|) .
+The calling function must not itself have returned in the interim,
+otherwise
+.B longjmp(\|)
+will be returning control to a possibly non-existent environment.
+All memory-bound data have values as of the time
+.B longjmp(\|)
+was called.  The
+.SM CPU
+and floating-point data registers are restored to the values they had at
+the time that
+.B setjmp(\|)
+was called.  But, because the
+.B register
+storage class is only a hint to the C compiler, variables declared as
+.B register
+variables may not necessarily be assigned to machine registers, so
+their values are unpredictable after a
+.BR longjmp(\|) .
+This is especially a problem for programmers trying to write
+machine-independent C routines.
+.LP
+.B setjmp(\|)
+and
+.B longjmp(\|)
+save and restore the signal mask (see
+.BR sigsetmask (2)),
+while
+.B _setjmp(\|)
+and
+.B _longjmp(\|)
+manipulate only the C stack and registers.
+If the
+.I savemask
+flag to
+.B sigsetjmp(\|)
+is non-zero, the signal mask is saved, and a subsequent
+.B siglongjmp(\|)
+using the same
+.I env
+will restore the signal mask.  If the
+.I savemask
+flag is zero, the signal mask is not saved, and a subsequent
+.B siglongjmp(\|)
+using the same
+.I env
+will not restore the signal mask.
+In all other ways,
+.B _setjmp(\|)
+and
+.B sigsetjmp(\|)
+function in the same way that
+.B setjmp(\|)
+does, and
+.B _longjmp(\|)
+and
+.B siglongjmp(\|)
+function in the same way that
+.B longjmp(\|)
+does.
+.LP
+None of these functions save or restore any floating-point status or control
+registers, in particular the
+.SM MC\s068881
+.BR fpsr ,
+.BR fpcr ,
+or
+.BR fpiar ,
+the Sun-3
+.SM FPA
+.BR fpamode
+or
+.BR fpastatus ,
+and the Sun-4
+.BR %fsr .
+See
+.BR ieee_flags (3M)
+to save and restore floating-point status or control information.
+.SH SYSTEM V DESCRIPTION
+.LP
+.B setjmp(\|)
+and
+.B longjmp(\|)
+manipulate only the C stack and registers; they do not save or
+restore the signal mask.
+.B _setjmp(\|)
+behaves identically to
+.BR setjmp(\|) ,
+and
+.B _longjmp(\|)
+behaves identically to
+.BR longjmp(\|) .
+.SH EXAMPLE
+.LP
+The following code fragment indicates the flow of control of the
+.B setjmp(\|)
+and
+.B longjmp(\|)
+combination:
+.RS
+.LP
+.nf
+.I function declaration
+.ft B
+\&.\|.\|.
+.RS
+.ft B
+jmp_buf	my_environment;
+\&.\|.\|.
+if (\|setjmp\|(\|my_environment\|)\|)  {
+.RS
+.ft B
+/* register variables have unpredictable values */
+.I code after the return from longjmp
+\&.\|.\|.
+.RE
+.ft B
+} else {
+.RS
+.ft B
+/* do not modify register vars in this leg of code */
+.I this is the return from setjmp
+\&.\|.\|.
+.RE
+.ft B
+}
+.RE
+.ft R
+.fi
+.RE
+.SH "SEE ALSO"
+.BR cc (1V),
+.BR sigsetmask (2),
+.BR sigvec (2),
+.BR ieee_flags (3M),
+.BR signal (3V),
+.BR setjmp (3V)
+.SH BUGS
+.LP
+.B setjmp(\|)
+does not save the current notion of whether the process is
+executing on the signal stack.  The result is that a
+.B longjmp(\|)
+to some place on the signal stack leaves the signal stack state incorrect.
+.LP
+On Sun-2 and Sun-3 systems
+.B setjmp(\|)
+also saves the register environment.
+Therefore, all data that are bound to registers
+are restored to the values they had at the time that
+.B setjmp(\|)
+was called.
+All memory-bound data have values as of the time
+.B longjmp(\|)
+was called.  However, because the
+.B register
+storage class is only a hint to the C compiler, variables declared as
+.B register
+variables may not necessarily be assigned to machine registers, so
+their values are unpredictable after a
+.BR longjmp(\|) .
+When using compiler options that specify automatic register allocation (see
+.BR cc (1V)),
+the compiler will not attempt to assign variables to
+registers in routines that call
+.BR setjmp(\|) .

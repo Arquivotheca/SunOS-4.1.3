@@ -1,0 +1,220 @@
+#
+#        @(#)Makefile.master  1.1     92/07/30 SMI
+#
+# Copyright (c) 1987 by Sun Microsystems, Inc
+CPP = /lib/cpp
+CC = /bin/cc
+
+DESTDIR=
+CPUFLAG=
+PRODLIBDIR=${DESTDIR}/usr/lib
+PRODINCLUDEDIR=${DESTDIR}/usr/include/sunwindow
+#
+# 
+HDRSALL= ${HDRSPUBLIC} ${HDRSPRIVATE}
+CFILESALL= ${CFILESLIB}
+OBJFILESALL= ${CFILESLIB:.c=.o} ${SFILESLIB:.s=.o}
+TAGFILESALL= ${CFILESALL:%.c=${FULLPATH}/%.c} ${HDRSALL:%.h=${FULLPATH}/%.h}
+#
+#
+FULLPATH= ${DESTDIR}/usr/src/usr.lib/libsunwindow/${WHOAMI}
+LINTLIBS= ${DESTDIR}/usr/src/usr.lib/libpixrect/llib-lpixrect.ln \
+	  ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow.ln \
+	  ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow-private.ln
+INCLUDE=${DESTDIR}/usr/src/usr.lib/libsunwindow/include \
+	-I${DESTDIR}/usr/src/usr.lib/libsuntool/include \
+	-I${DESTDIR}/usr/ucbinclude -I${DESTDIR}/usr/include
+INSTALL=install -m 444
+LINT=lint
+RANLIB= ranlib
+AR=ar
+AWK=	/bin/awk
+SED= /bin/sed
+SORT= /usr/bin/sort
+CTAGS= /usr/ucb/ctags -w
+TOUCH= touch -c
+LINTFLAGS= huz
+DBX= -O
+
+ASFLAGS-mc68010 += $(TARGET_MACH)
+ASFLAGS-mc68020 += $(TARGET_MACH)
+ASFLAGS-sparc 	+= $(TARGET_MACH) -P -DLOCORE
+ASFLAGS-i386	+= $(TARGET_MACH)
+
+CFLAGS-mc68010 	+= $(TARGET_MACH)
+CFLAGS-mc68020 	+= $(TARGET_MACH)
+CFLAGS-sparc 	+= $(TARGET_MACH)
+CFLAGS-i386	+= $(TARGET_MACH)
+
+CPP_RULE-sparc =
+CPP_RULE-mc68020 = $(CPP) $(CPPFLAGS) $(CPPFLAGS$(TARGET_MACH)) $< > tmp.s
+CPP_RULE-mc68010 = $(CPP_RULE-mc68020)
+CPP_RULE-i386 =
+
+AS_RULE-sparc = $(AS) $(ASFLAGS$(TARGET_MACH)) $(ASFLAGS) -o $@ $<
+AS_RULE-mc68020 = $(AS) $(ASFLAGS$(TARGET_MACH)) $(ASFLAGS) -o $@ tmp.s; rm -f tmp.s
+AS_RULE-mc68010 = $(AS_RULE-mc68020)
+AS_RULE-i386=
+
+LIBS-mc68010 = libsunwindow.a libsunwindow_p.a libsunwindow.so libsunwindow_g.a
+LIBS-mc68020 = $(LIBS-mc68010)
+LIBS-sparc = $(LIBS-mc68010)
+LIBS-i386 = libsunwindow.a libsunwindow_p.a  
+LIBS = $(LIBS$(TARGET_MACH))
+
+LIBS_SA-mc68010 = libsunwindow.sa
+LIBS_SA-mc68020 = $(LIBS_SA-mc68010)
+LIBS_SA-sparc = $(LIBS_SA-mc68010)
+LIBS_SA-i386 =
+LIBS_SA = $(LIBS_SA$(TARGET_MACH))
+
+libsunwindow.a $(CFILESLIB:%.c=obj/%.o)		:=	VARIANT = obj
+libsunwindow_p.a $(CFILESLIB:%.c=obj_p/%.o)	:=	VARIANT = obj_p
+libsunwindow_g.a $(CFILESLIB:%.c=obj_g/%.o)	:=	VARIANT = obj_g
+libsunwindow.so $(CFILESLIB:%.c=shared/%.o)	:=	VARIANT = shared
+
+$(SFILES:m68k/%.s=obj/%.o)		:=	VARIANT = obj
+$(SFILES:sparc/%.s=obj/%.o)		:=	VARIANT = obj
+$(SFILES:m68k/%.s=obj_p/%.o)		:=	VARIANT = obj_p
+$(SFILES:sparc/%.s=obj_p/%.o)		:=	VARIANT = obj_p
+$(SFILES:m68k/%.s=obj_g/%.o)		:=	VARIANT = obj_g
+$(SFILES:sparc/%.s=obj_g/%.o)		:=	VARIANT = obj_g
+$(SFILES:m68k/%.s=shared/%.o)		:=	VARIANT = shared
+$(SFILES:sparc/%.s=shared/%.o)		:=	VARIANT = shared
+
+libsunwindow.a		:=	LIB = libsunwindow.a
+libsunwindow_p.a	:=	LIB = libsunwindow_p.a
+libsunwindow_g.a	:=	LIB = libsunwindow_g.a
+libsunwindow.so		:=	LIB = libsunwindow.so
+clean			:= 	LIB = clean
+clean_obj               :=      LIB = clean_obj
+clean_obj_p             :=      LIB = clean_obj_p
+clean_obj_g             :=      LIB = clean_obj_g
+clean_shared            :=      LIB = clean_shared
+lint			:= 	LIB = lint
+
+libsunwindow.a		:=	LDFLAGS = -r -x
+libsunwindow_p.a	:=	LDFLAGS = -r -X
+libsunwindow_g.a	:=	LDFLAGS =
+libsunwindow.so		:=	LDFLAGS = -r -x
+
+libsunwindow_p.a $(CFILESLIB:%.c=obj_p/%.o)	:=	CPPFLAGS += -DGPROF
+libsunwindow.so $(CFILESLIB:%.c=shared/%.o)	:= 	CPPFLAGS += -DPIC
+
+CFLAGS= $(DBX) -I${INCLUDE}
+CFLAGS_LOCAL=
+NO_XSTR =
+ROI_DATA= -R
+CFLAGS_NOT_ROI_DATA= ${CFLAGS} ${CFLAGS_LOCAL} ${CPUFLAG}
+CFLAGS_NOT_DBX= -I${INCLUDE} ${CFLAGS_LOCAL} ${CPUFLAG}
+
+libsunwindow_p.a $(CFILESLIB:%.c=obj_p/%.o)	:=	CFLAGS += -pg 
+libsunwindow_g.a $(CFILESLIB:%.c=obj_g/%.o)	:=	CFLAGS += -g
+libsunwindow.so $(CFILESLIB:%.c=shared/%.o)	:=	CFLAGS += -pic
+
+libsunwindow.so 	:= 	ASFLAGS = -k
+
+lint			:= 	LINT_FLAGS = "LINTFLAGS=huz"
+
+
+LD_ACTION= -@true
+libsunwindow.a libsunwindow_p.a  := LD_ACTION = ($(LD)  $(LDFLAGS) $@; mv a.out $@ )
+libsunwindow_g.a := LD_ACTION =
+
+$$(VARIANT)/%.o:	$$(ARCH)/%.s
+	$(CPP_RULE$(TARGET_MACH))
+	$(AS_RULE$(TARGET_MACH))
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	$$(ARCH)/%.c
+	$(CC)  $(CFLAGS_NOT_ROI_DATA) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) -o $@ -c $<
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.s
+	$(CPP_RULE$(TARGET_MACH))
+	$(AS_RULE$(TARGET_MACH))
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.c
+	if [ "$(NO_XSTR)" = "ON" ]; then \
+		$(CC) $(CFLAGS_NOT_ROI_DATA) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) -o $@ -c $<; \
+	else \
+		$(CC) -E $(CFLAGS_NOT_DBX) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) $< | xstr -l _libsunwindow_xstr -c -; \
+		$(CC) $(CFLAGS_NOT_ROI_DATA) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) -o $@ -c x.c; \
+		rm -f x.c; \
+	fi
+	$(LD_ACTION)
+
+COMMON_DIRS =	obj obj_p obj_g shared
+COMMON_FILES =  tags
+
+$(COMMON_DIRS):
+	test -d $@ || mkdir $@
+
+.KEEP_STATE:
+
+gprof:
+
+master.clean:
+	rm -fr $(COMMON_DIRS) $(COMMON_FILES)
+
+master.clean_obj master.clean_obj_p master.clean_obj_g master.clean_shared:
+	rm -fr $(LIB)
+
+clean_obj: master.clean_obj
+
+clean_obj_p: master.clean_obj_p
+
+clean_obj_g: master.clean_obj_g
+
+clean_shared: master.clean_shared
+
+lint::	${LINTFILESALL}
+	if [ ! -f llib-lsunwindow ]; then \
+		ln -s ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow .; \
+	fi
+	if [ ! -f llib-lsunwindow-private ]; then \
+		ln -s ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow-private .; \
+	fi
+	if [ ! -f llib-lpixrect ]; then \
+		ln -s ${DESTDIR}/usr/src/usr.lib/libpixrect/llib-lpixrect .; \
+	fi
+	if [ ! -f llib-lc ]; then \
+		ln -s /usr/lib/lint/llib-lc .; \
+	fi
+	@echo
+	@echo 'IF YOU CHANGE THE INTERFACE, PLEASE CHANGE THE LINT LIBRARY TO REFLECT THAT.'
+	@echo
+
+TAGFILE=../tags
+tags::	${CFILESALL} ${HDRSALL}
+	-@if [ "${TAGFILESALL}" != "  " ]; then \
+		rm -f tags; \
+		echo -n "Running ctags ... "; \
+		${CTAGS} -t ${TAGFILESALL}; \
+		echo -n "remove old references to ${WHOAMI} ... "; \
+		${SED} "/\.\.\/${WHOAMI}/D" ${TAGFILE} > ${TAGFILE}- ; \
+		echo -n "recombining ... "; \
+		${SORT} -o ${TAGFILE} ${TAGFILE}- tags; \
+		rm -f tags; \
+		ln -s ${TAGFILE} tags; \
+		echo "done."; \
+	fi;
+
+#install_subdir_h::	${HDRSPUBLIC} FRC
+#	-for i in ${HDRSPUBLIC}; do \
+#		cmp -s $$i ${PRODINCLUDEDIR}/$$i || \
+#		${INSTALL} $$i ${PRODINCLUDEDIR}/$$i; \
+#	done
+#
+usr_latest::
+	-for i in ${HDRSPUBLIC}; do \
+	(	echo "Linking $$i"; \
+		ln -s ../../../usr/src/usr.lib/libsunwindow/${WHOAMI}/$$i ${DESTDIR}/usr_latest/include/sunwindow/$$i \
+	);  done
+
+# extract header, source files
+hdr:: $(HDRSPUBLIC) $(HDRSPRIVATE)
+src:: hdr $(SFILES)
+
+FRC:

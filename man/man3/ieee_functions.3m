@@ -1,0 +1,271 @@
+.\" @(#)ieee_functions.3m 1.1 92/07/30 SMI;
+.TH IEEE_FUNCTIONS 3M "18 August 1988"
+.ds nn \fINaN\fR
+.SH NAME
+ieee_functions, fp_class, finite, ilogb, isinf, isnan, isnormal, issubnormal, iszero, signbit, copysign, fabs, fmod, nextafter, remainder, scalbn \- appendix and related miscellaneous functions for IEEE arithmetic
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.B #include <stdio.h>
+.LP
+.B enum fp_class_type fp_class(x)
+.B double x;
+.LP
+.B int finite(x)
+.B double x;
+.LP
+.B int ilogb(x)
+.B double x;
+.LP
+.B int isinf(x)
+.B double x;
+.LP
+.B int isnan(x)
+.B double x;
+.LP
+.B int isnormal(x)
+.B double x;
+.LP
+.B int issubnormal(x)
+.B double x;
+.LP
+.B int iszero(x)
+.B double x;
+.LP
+.B int signbit(x)
+.B double x;
+.LP
+.B void ieee_retrospective(f)
+.B \s-1FILE\s0 *f;
+.LP
+.B void nonstandard_arithmetic()
+.LP
+.B void standard_arithmetic()
+.LP
+.B double copysign(x,y)
+.B double x, y;
+.LP
+.B double fabs(x)
+.B double x;
+.LP
+.B double fmod(x,y)
+.B double x, y;
+.LP
+.B double nextafter(x,y)
+.B double x, y;
+.LP
+.B double remainder(x,y)
+.B double x, y;
+.LP
+.B double scalbn(x,n)
+.B double x; int n;
+.fi
+.ne 13
+.SH DESCRIPTION
+.IX "ilogb()" "" "\fLilogb()\fP function"
+.IX "finite()" "" "\fLfinite()\fP function"
+.IX "fp_class()" "" "\fLfp_class()\fP function"
+.IX "scalbn()" "" "\fLscalbn()\fP function"
+.IX "remainder()" "" "\fLremainder()\fP function"
+.IX "nextafter()" "" "\fLnextafter()\fP function"
+.IX "fmod()" "" "\fLfmod()\fP function"
+.IX "fabs()" "" "\fLfabs()\fP function"
+.IX "copysign()" "" "\fLcopysign()\fP function"
+.IX "signbit()" "" "\fLsignbit()\fP function"
+.IX "iszero()" "" "\fLiszero()\fP function"
+.IX "issubnormal()" "" "\fLissubnormal()\fP function"
+.IX "isnormal()" "" "\fLisnormal()\fP function"
+.IX "isnan()" "" "\fLisnan()\fP function"
+.IX "isinf()" "" "\fLisinf()\fP function"
+.IX "isinf()" "" "\fLisinf()\fP function"
+.LP
+Most of these functions provide capabilities required by
+.SM ANSI/IEEE
+Std 754-1985 or suggested in its appendix.
+.LP
+.BI fp_class( x )
+corresponds to the
+.SM IEEE\s0's
+.B class(\|) and
+classifies
+.I x
+as zero, subnormal, normal, \(if, or quiet or signaling \*(nn.
+.B <floatingpoint.h>
+defines
+.BR "enum fp_class_type" .
+The following functions return 0 if the indicated condition is not satisfied:
+.LP
+.RS
+.PD 0
+.TP 15
+.BI finite( x )
+returns 1 if x is zero, subnormal or normal
+.TP
+.BI isinf( x )
+returns 1 if
+.I x
+is \(if
+.TP
+.BI isnan( x )
+returns 1 if
+.I x
+is \*(nn
+.TP
+.BI isnormal( x )
+returns 1 if
+.I x
+is normal
+.TP
+.BI issubnormal( x )
+returns 1 if
+.I x
+is subnormal
+.TP
+.BI iszero( x )
+returns 1 if
+.I x
+is zero
+.TP
+.BI signbit( x )
+returns 1 if
+.IR x 's
+sign bit is set
+.PD
+.RE
+.LP
+.BI ilogb( x )
+returns the unbiased exponent of
+.I x
+in integer format.
+.BI ilogb( \(+-\(if ") = +\s-1MAXINT\s0"
+and
+.BR "ilogb(0) = \-\s-1MAXINT\s0" ;
+.B <values.h>
+defines
+.SB MAXINT
+as the largest int.
+.BI ilogb( x )
+never generates an exception.  When
+.I x
+is subnormal,
+.BI ilogb( x )
+returns an exponent computed as if
+.I x
+were first normalized.
+.LP
+.BI ieee_retrospective( f )
+prints a message to the
+.SB FILE
+.I f
+listing all
+.SM IEEE
+accrued exception-occurred bits
+currently on, unless no such bits are on or the only one on is "inexact".
+It's intended to be used at the end of a program to indicate whether some
+.SM IEEE
+floating-point exceptions occurred that might have affected the result.
+.LP
+.B standard_arithmetic() 
+and
+.B nonstandard_arithmetic()
+are meaningful on systems that provide an alternative faster mode of floating-point
+arithmetic that does not conform to the default
+.SM IEEE
+Standard.  
+Nonstandard modes vary among implementations; nonstandard mode may, for instance,
+result in setting subnormal results to zero or in treating subnormal operands as zero,
+or both, or something else.
+.B standard_arithmetic()
+reverts to the default standard mode.
+On systems that provide only one mode, these functions have no effect.
+.LP
+.BI copysign( x , y )
+returns
+.I x
+with
+.IR y 's
+sign bit.
+.LP
+.BI fabs( x )
+returns the absolute value of
+.IR x .
+.LP
+.BI nextafter( x , y )
+returns the next machine representable number from
+.I x
+in the direction
+.IR y .
+.LP
+.BI remainder( x , " y" )
+and
+.BI fmod( x , " y" )
+return a remainder of
+.I x
+with respect to
+.IR y ;
+that is, the result
+.I r
+is one of the numbers that differ from
+.I x
+by an integral multiple of
+.IR y .
+Thus
+.I "(x \- r)/y"
+is an integral value, even though it might exceed
+.SB MAXINT
+if it were explicitly computed as an int.
+Both functions return one of the two such r smallest in magnitude.
+.BI remainder( x , " y" )
+is the operation specified in
+.SM ANSI/IEEE
+Std 754-1985; the result of
+.BI fmod( x , " y" )
+may differ from 
+.BR remainder(\|) 's 
+result by
+.RI \(+- y .
+The magnitude of 
+.BR remainder 's 
+result
+can not exceed half that of
+.IR y ;
+its sign might not agree with either
+.I x
+or
+.IR y .
+The magnitude of
+.BR fmod(\|) 's
+result is less than that of
+.IR y ;
+its sign agrees with that of
+.IR x .
+Neither function can generate an exception as long as both arguments are normal or subnormal.
+.BI remainder( x ", 0)"\c
+\&,
+.BI fmod( x ", 0)"\c
+\&,
+.BI remainder(\(if, " y" )\c
+\&, and
+.BI fmod(\(if, " y" )
+are invalid operations that produce a \*(nn.
+.LP
+.BI scalbn( x , " n" )
+returns
+.IB x "* 2**n"
+computed by exponent manipulation rather than by actually
+performing an exponentiation or a multiplication.  Thus
+.IP
+.BI "1 \(<= scalbn(fabs(" x "),\-ilogb(" x ")) < 2"
+.LP
+for every
+.I x
+except 0,
+.if n \
+infinity,
+.if t \
+\(if,
+and \*(nn.
+.SH SEE ALSO
+.BR floatingpoint (3),
+.BR ieee_flags (3M),
+.BR matherr (3M)

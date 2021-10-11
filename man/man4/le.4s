@@ -1,0 +1,255 @@
+.\" @(#)le.4s 1.1 92/07/30 SMI;
+.TH LE 4S "22 June 1992"
+.SH NAME
+le \- LANCE 10Mb/s Ethernet interface
+.SH "CONFIG \(em SUN-4/3xx, SUN-4/xx SYSTEMS"
+.ft B
+.nf
+device le0 at obio ? csr 0xf9000000 priority 3
+.ft R
+.fi
+.SH "CONFIG \(em Desktop SPARCsystems, SPARCsystem 600MP SERIES"
+.ft B
+.nf
+device-driver le
+device-driver lebuf
+device-driver ledma
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "le device"  ""  "\fLle\fP \(em LANCE 10 Mb/s Ethernet interface"  ""  PAGE START
+.IX  "LANCE 10 Mb/s Ethernet interface"  ""  "LANCE 10 Mb/s Ethernet interface \(em \fLle\fP"  ""  PAGE START
+.IX  "Ethernet controller"  "le"  ""  "\fLle\fP \(em 10 Mb/s LANCE Ethernet interface"  PAGE START
+.LP
+The
+.B le
+interface provides access to a 10 Mb/s Ethernet network through a
+controller using the
+.SM AMD
+.SM LANCE
+(Local Area Network Controller for Ethernet)
+Am7990 chip.
+For a general description of network interfaces see
+.BR if (4N).
+The
+.B lebuf
+and
+.B ledma
+device drivers, when present, support hardware-specific 
+buffering and DMA for each
+.B le
+interface.
+.SH DIAGNOSTICS
+.TP 10
+.B
+le%d: out of mbufs: output packet dropped\ \&
+The driver has run out of memory to use to buffer
+packets on output.
+The packet being transmitted at the time of occurrence is lost.
+This error is usually symptomatic of trouble elsewhere in the kernel.
+.TP
+.B
+le%d: out of tmds - packet dropped\ \&
+The driver has run out of transmit message descriptors
+needed to queue a packet to the
+.SM LANCE
+and discarded the packet.
+This error usually indicates that the upper protocol
+layers are generating packets faster than the
+driver can transmit them on the ethernet
+and is usually self\(hycorrecting.
+.TP
+.B
+le%d: trailer error\ \&
+An incoming packet claimed to have a trailing header but did not.
+.TP
+.B
+le%d: RINT with buffer owned by chip\ \&
+The
+.SM LANCE
+has generated a receive interrupt
+but the driver finds no packets have been received.
+This causes the driver to reinitialize the chip.
+.TP
+.B
+le%d: runt packet\ \&
+An incoming packet's size was below the Ethernet minimum transmission size.
+.TP
+.B
+le%d: Receive: overflow error\ \&
+Indicates that the receiver has lost all or part
+of an incoming packet due to an inability
+to store the packet in a memory buffer
+before the
+.SM LANCE
+internal silo overflowed.
+.TP
+.B
+le%d: Receive: \s-1BUFF\s0 set in rmd\ \&
+This error \*(lqshould never happen,\*(rq
+as it occurs only in conjunction with a
+.SM LANCE
+feature that the driver does not use.
+.TP
+.B
+le%d: Receive: framming error\ \&
+The driver has received a packet
+containing a noninteger multiple of eight bits
+and there was a CRC error.
+.TP
+.B
+le%d: Receive: crc error\ \&
+The driver has received a packet with an incorrect checksum field.
+.TP
+.B
+le%d: Receive: \s-1STP\s0 in rmd cleared\ \&
+The driver has received a packet that straddles multiple receive buffers
+and therefore consumes more than one of the
+.SM LANCE
+chip's receive descriptors.
+Provided that all stations on the Ethernet
+are operating according to the Ethernet specification,
+this error \*(lqshould never happen,\*(rq
+since the driver allocates its receive buffers to be large enough
+to hold packets of the largest permitted size.
+Most likely, some other station
+on the net is transmitting packets whose lengths
+exceed the maximum permitted for Ethernet.
+.br
+.ne 8
+.TP
+.B
+le%d: Receive: \s-1ENP\s0 in rmd cleared\ \&
+The driver has received a packet that straddles multiple receive buffers
+and therefore consumes more than one of the
+.SM LANCE
+chip's receive descriptors.
+Provided that all stations on the Ethernet
+are operating according to the Ethernet specification,
+this error \*(lqshould never happen,\*(rq
+since the driver allocates its receive buffers to be large enough
+to hold packets of the largest permitted size.
+The most likely cause of the message is that some other station
+on the net is transmitting packets whose lengths
+exceed the maximum permitted for Ethernet.
+.br
+.ne 5
+.TP
+.B
+le%d: Transmit: \s-1BUFF\s0 set in tmd\ \&
+Excessive bus contention has prevented the
+.SM LANCE
+chip
+from gathering packet contents quickly enough to sustain
+the packet's transmission over the Ethernet.
+The affected packet is lost.
+.TP
+.B
+le%d: Transmit underflow\ \&
+The transmitter has truncated
+a packet due to data late from memory.
+.TP
+.B
+le%d: Transmit late collision \-  Net problem?
+A packet collision has occurred
+after the channel's slot time has elapsed.
+This error usually indicates faulty hardware elsewhere on the net.
+.TP
+.B
+le%d: No carrier \- transceiver cable problem?
+The
+.SM LANCE
+chip has lost input to its carrier detect pin
+while trying to transmit a packet.
+.TP
+.B
+le%d: No carrier \- twisted pair cable problem or hub link test disabled?
+\s-1SPARC\s0station 10 system only.
+.IP
+The
+.SM LANCE
+chip has lost input to its carrier detect pin
+while trying to transmit a packet.
+.IP
+The
+.SM TPE
+(Twisted-Pair Ethernet)
+in the \s-1SPARC\s0station 10 system has a test feature that verifies
+the Ethernet cable connection between the \s-1SPARC\s0station 10 system
+and the Ethernet hub. In order for this feature to function correctly,
+the Ethernet hub must support the link test feature and it must be
+turned on in the hub.
+If the hub doesn't support the link test or if the link test is
+disabled in the hub, you will see this error message during the
+system boot.
+.IP
+If you receive this message indicating cable problems, first check the
+cable.  If no cable problem can be found then check for a link integrity
+mismatch.  If there is a link integrity mismatch, you may
+enable the link test feature in your Ethernet hub (usually by turning
+a switch on), or you may disable the link test in your \s-1SPARC\s0station
+10 system.
+.IP
+If the link test is enabled in the hub while the link integrity test
+is disabled in the \s-1SPARC\s0station 10 system, the \s-1SPARC\s0station
+10 system will not be able to communicate with other systems properly.
+You may disable the link test feature in your Ethernet hub (usually by
+turning a switch off), or you may enable the link test in your
+\s-1SPARC\s0station 10 system.
+.IP
+To enable/disable the link test in the \s-1SPARC\s0station 10
+system at the system level, see
+.BR eeprom (8S).
+To enable/disable the link test in the \s-1SPARC\s0station 10 system
+at the OBP's ok prompt, enter the OBP command
+.B
+help ethernet
+and press \s-1RETURN\s0 to receive more information.
+.TP
+.B
+le%d: Transmit retried more than 16 times \- net jammed\ \&
+Network activity has become so intense that sixteen successive
+transmission attempts failed, the
+.SM LANCE
+chip gave up on the current packet.
+.TP
+.B
+le%d: missed packet\ \&
+The driver has dropped an incoming packet
+because it had no buffer space for it.
+.TP
+.B
+le%d: Babble error \- sent a packet longer than the maximum length\ \&
+While transmitting a packet, the
+.SM LANCE
+chip has noticed that the packet's length exceeds
+the maximum allowed for Ethernet (1518 bytes).
+This error indicates a kernel bug.
+.TP
+.B
+le%d: Memory Error!\ \&
+The
+.SM LANCE
+chip timed out while trying to acquire the bus
+for a
+.SM DVMA
+transfer.
+.TP
+.B
+le%d: Reception stopped\ \&
+Because of some other error,
+the receive section of the
+.SM LANCE
+chip shut down
+and had to be reinitialized.
+.TP
+.B
+le%d: Transmission stopped\ \&
+Because of some other error,
+the transmit section of the
+.SM LANCE
+chip shut down
+and had to be reinitialized.
+.IX  "le device"  ""  "\fLle\fP \(em LANCE 10 Mb/s Ethernet interface"  ""  PAGE END
+.IX  "LANCE 10 Mb/s Ethernet interface"  ""  "LANCE 10 Mb/s Ethernet interface \(em \fLle\fP"  ""  PAGE END
+.IX  "Ethernet controller"  "le"  ""  "\fLle\fP \(em 10 Mb/s LANCE Ethernet interface"  PAGE END

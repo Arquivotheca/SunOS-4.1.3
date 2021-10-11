@@ -1,0 +1,177 @@
+.\" @(#)trig.3m 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH TRIG 3M  "28 March 1988"
+.SH NAME
+sin, cos, tan, asin, acos, atan, atan2 \- trigonometric functions
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.LP
+.B double sin(x)
+.B double x;
+.LP
+.B double cos(x)
+.B double x;
+.LP
+.B void sincos(x, s, c)
+.B double x, *s, *c;
+.LP
+.B double tan(x)
+.B double x;
+.LP
+.B double asin(x)
+.B double x;
+.LP
+.B double acos(x)
+.B double x;
+.LP
+.B double atan(x)
+.B double x;
+.LP
+.B double atan2(y, x)
+.B double y, x;
+.LP
+.B double sinpi(x)
+.B double x;
+.LP
+.B double cospi(x)
+.B double x;
+.LP
+.B void sincospi(x, s, c)
+.B double x, *s, *c;
+.LP
+.B double tanpi(x)
+.B double x;
+.LP
+.B double asinpi(x)
+.B double x;
+.LP
+.B double acospi(x)
+.B double x;
+.LP
+.B double atanpi(x)
+.B double x;
+.LP
+.B double atan2pi(y, x)
+.B double y, x;
+.fi
+.IX  "trigonometric functions"  ""  ""  ""  PAGE START
+.IX  "sin()"  ""  "\fLsin()\fP \(em trigonometric sine"
+.IX  "mathematical functions"  sin()  ""  \fLsin()\fP
+.IX  "trigonometric functions"  sin()  ""  \fLsin()\fP
+.IX  "cos()"  ""  "\fLcos()\fP \(em trigonometric cosine"
+.IX  "mathematical functions"  cos()  ""  \fLcos()\fP
+.IX  "trigonometric functions"  cos()  ""  \fLcos()\fP
+.IX  "tan()"  ""  "\fLtan()\fP \(em trigonometric tangent"
+.IX  "mathematical functions"  tan()  ""  \fLtan()\fP
+.IX  "trigonometric functions"  tan()  ""  \fLtan()\fP
+.IX  "asin()"  ""  "\fLasin()\fP \(em trigonometric arcsine"
+.IX  "mathematical functions"  asin()  ""  \fLasin()\fP
+.IX  "trigonometric functions"  asin()  ""  \fLasin()\fP
+.IX  "acos()"  ""  "\fLacos()\fP \(em trigonometric arccosine"
+.IX  "mathematical functions"  acos()  ""  \fLacos()\fP
+.IX  "trigonometric functions"  acos()  ""  \fLacos()\fP
+.IX  "atan()"  ""  "\fLatan()\fP \(em trigonometric arctangent"
+.IX  "mathematical functions"  atan()  ""  \fLatan()\fP
+.IX  "trigonometric functions"  atan()  ""  \fLatan()\fP
+.IX  "atan2()"  ""  "\fLatan2()\fP \(em trigonometric arctangent"
+.IX  "mathematical functions"  atan2()  ""  \fLatan2()\fP
+.IX  "trigonometric functions"  atan2()  ""  \fLatan2()\fP
+.SH DESCRIPTION
+.BR sin(\|) ,
+.BR cos(\|) ,
+.BR sincos(\|) ,
+and
+.B tan(\|)
+return trigonometric functions of radian arguments.
+The values of trigonometric functions of
+arguments exceeding \(*p/4 in magnitude are affected
+by the precision of the approximation to \(*p/2 used to
+reduce those arguments to the range \-\(*p/4 to \(*p/4.
+Argument reduction may occur in hardware or
+software; if in software, the variable
+.B fp_pi
+defined in
+.B <math.h>
+allows changing that precision at run time.
+Trigonometric argument reduction is discussed in the
+.TX FPOINT .
+Note:
+.B sincos(x,s,c)
+allows simultaneous computation of
+.B *s = sin(x)
+and
+.B *c = cos(x).
+.LP
+.B asin(\|)
+returns the arc sin in the range \-\(*p/2 to \(*p/2.
+.LP
+.B acos(\|)
+returns the arc cosine in the range 0 to \(*p.
+.LP
+.B atan(\|)
+returns the arc tangent of
+.I x
+in the range \-\(*p/2 to \(*p/2.
+.LP
+.BI atan2( y , x )
+and
+.BI hypot ( x , y )
+(see
+.BR hypot (3M))
+convert rectangular coordinates
+.BI ( x , y )
+to polar
+.BI ( r , \(*h )\fR;
+.B atan2(\|)
+computes
+.IR \(*h ,
+the argument or phase,
+by computing an arc tangent of
+.IR y / x
+in the range \-\(*p to \(*p.
+.BR atan2 (0.0,0.0)
+is \(+-0.0 or \(+-\(*p,
+in conformance with 4.3\s-1BSD\s0, as discussed in the
+.TX FPOINT .
+.PP
+.BR sinpi(\|) ,
+.BR cospi(\|) ,
+and
+.B tanpi(\|)
+avoid range-reduction issues because their definition
+.BI sinpi(x) == sin(\(*p * x)
+permits range reduction that is fast and exact for all 
+.IR x .
+The corresponding inverse functions compute
+.BI asinpi(x) == asin(x)/\(*p\fR.
+Similarly
+.BI atan2pi(y,x) == atan2(y,x)/\(*p\fR.
+.SH DIAGNOSTICS
+.LP
+These functions handle exceptional
+arguments in the spirit of
+.SM ANSI/IEEE
+Std 754-1985.
+.BR "sin(\(+-\(if), cos(\(+-\(if), tan(\(+-\(if)" ,
+or
+.BI asin( x )
+or
+.BI acos( x )
+with
+.RI | x |>1,
+return NaN;
+.BI sinpi( x )
+et. al. are similar.
+In addition,
+.BR asin(\|) ,
+.BR acos(\|) ,
+and
+.B atan2(\|)
+may also set
+.B errno
+and call
+.BR matherr (3M).
+.SH "SEE ALSO"
+.BR hypot (3M),
+.BR matherr (3M)
+.IX  "trigonometric functions"  ""  ""  ""  PAGE END

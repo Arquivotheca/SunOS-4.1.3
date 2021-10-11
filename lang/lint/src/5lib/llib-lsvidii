@@ -1,0 +1,569 @@
+/*LINTLIBRARY*/
+
+/*
+ * Cross lint library for 
+ *	svid issue 2 all three volumes			-DSVID_V3
+ *	svid issue 2 first two volumes
+ *	xopen issue 2 (includes optional functions)	-DSVID_V3 -DXPG2
+ */
+
+/*#include <signal.h>		Can't use this: void/int problems*/
+#define	__signal_h
+#define	__sys_signal_h
+#include <stdio.h>
+#include <sys/param.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <sys/sem.h>
+#include <pwd.h>
+#include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/stropts.h>
+#include <sys/poll.h>
+#include <sys/ptrace.h>
+#include <sys/shm.h>
+#include <sys/times.h>
+#include <sys/utsname.h>
+#include <ustat.h>
+#include <utime.h>
+/*#include <sys/wait.h>		Can't use this: pid_t/int */
+#include <dirent.h>
+#include <fstab.h>
+#include <grp.h>
+#include <mntent.h>
+#include <search.h>
+/*#include <malloc.h>		Can't use this, void/int problems */
+#include <mon.h>
+#include <a.out.h>
+#include <setjmp.h>
+#include <termios.h>
+#include <varargs.h>
+#include <utmp.h>
+#include <tiuser.h>
+
+#undef assert
+#undef _toupper
+#undef _tolower
+#undef toascii
+#undef isalpha
+#undef isupper
+#undef islower
+#undef isdigit
+#undef isxdigit
+#undef isalnum
+#undef isspace
+#undef ispunct
+#undef isprint
+#undef isgraph
+#undef iscntrl
+#undef isascii
+#undef rewinddir
+#undef feof
+#undef ferror
+#undef clearerr
+#undef fileno
+#undef getc
+#undef getchar
+#undef putc
+#undef putchar
+
+long	timezone;
+int	daylight;
+char	*tzname[2];
+int	signgam;
+int	errno;
+char	*sys_errlist[];
+int	sys_nerr;
+FILE	_iob[3];
+
+/*
+ * Need to define mallinfo since we can't include malloc.h
+ * From /usr/5include/malloc.h
+ */
+struct	mallinfo  {
+	int arena;	/* total space in arena */
+	int ordblks;	/* number of ordinary blocks */
+	int smblks;	/* number of small blocks */
+	int hblks;	/* number of holding blocks */
+	int hblkhd;	/* space in holding block headers */
+	int usmblks;	/* space in small blocks in use */
+	int fsmblks;	/* space in free small blocks */
+	int uordblks;	/* space in ordinary blocks in use */
+	int fordblks;	/* space in free ordinary blocks */
+	int keepcost;	/* cost of enabling keep option */
+
+	int mxfast;	/* max size of small blocks */
+	int nlblks;	/* number of small blocks in a holding block */
+	int grain;	/* small block rounding factor */
+	int uordbytes;	/* space (including overhead) allocated in ord. blks */
+	int allocated;	/* number of ordinary blocks allocated */
+	int treeoverhead;	/* bytes used in maintaining the free tree */
+};
+
+#ifndef	XPG2
+long	a64l(s) char *s; { return (0L); }
+#endif
+int	abort() {}
+int	abs(i) { return (i); }
+int	access(f, m) char *f; int m; { return (m); }
+int	acct(f) char *f; { return (0); }
+double	acos(x) double x; { return (x); }
+int	advance(s, e) char *s, *e; { return (0); }
+unsigned	alarm(s) unsigned s; { return (s); }
+char*	asctime(t) struct tm *t; { static char *x; return (x); }
+void	assert(s) {}
+double	asin(x) double x; { return (x); }
+double	atan(x) double x; { return (x); }
+double	atan2(x) double x; { return (x); }
+double	atof(s) char *s; { return (0.0); }
+int	atoi(s) char *s; { return (0); }
+long	atol(s) char *s; { return (0L); }
+#if	defined(XPG2)
+int	brk(p) char *p; { return (0); }	/* use malloc instead */
+#endif
+char*	bsearch(k, b, n, w, c) char *k, *b; unsigned n, w; int (*c)(); { return (k); }
+char*	calloc(n, e) unsigned n, e; { static char *x; return (x); }
+double	ceil(x) double x; { return (x); }
+int	chdir(s) char *s; { return (0); }
+int	chmod(s, m) char *s; { return (0); }
+int	chown(s, o, g) char *s; { return (o); }
+int	chroot(p) char *p; { return (0); }
+void	clearerr(f) FILE *f; {}
+long	clock() { return (0L); }
+int	close(f) { return (0); }
+#if	defined(XPG2) || defined(SVID_V3)
+int	closedir(d) DIR *d; { return(0); }
+#endif
+char*	compile(i, exp, end, eof) char *i, *exp, *end; { return (exp); }
+double	cos(x) double x; { return (x); }
+double	cosh(x) double x; { return (x); }
+int	creat(s, m) char *s; { return (m); }
+char*	crypt(k, s) char *k, *s; { return (k); }
+char*	ctermid(s) char *s; { return (s); }
+#if	defined(SVID_V3) && !defined(XPG2)
+char*	ctime(t) time_t *t; { static char *x; return (x); }
+#else
+char*	ctime(t) long *t; { static char *x; return (x); }
+#endif
+#if	defined(XPG2)
+char	*cuserid(s) char *s; { return(s); }
+#endif
+double	drand48() { return (0.0); }
+int	dup(f) { return (f); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	dup2(f1, f2) { return (f2); }
+#endif
+void	encrypt(b, e) char *b; {}
+void	endgrent() {}
+void	endpwent() {}
+void	endutent() {}
+double	erand48(x) unsigned short x[3]; { return (0.0); }
+double	erf(x) double x; { return (x); }
+double	erfc(x) double x; { return (x); }
+#if	defined(XPG2)
+char	*evct(v, n, d, s) double v; int *d, *s; { return ((char*)0); }
+#endif
+	/*VARARGS2*/
+int	execl(f, a) char *f, *a; { return (0); }
+	/*VARARGS3*/
+int	execle(f, a, e) char *f, *a, *e[]; { return (0); }
+	/*VARARGS2*/
+int	execlp(f, a) char *f, *a; { return (0); }
+int	execv(s, v) char *s, *v[]; { return (0); }
+int	execve(f, a, e) char *f, *a[], *e[]; { return (0); }
+int	execvp(s, v) char *s, *v[]; { return (0); }
+void	_exit(s) {}
+void	exit(s) {}
+double	exp(x) double x; { return (x); }
+double	fabs(x) double x; { return (x); }
+int	fclose(f) FILE *f; { return (0); }
+	/*VARARGS2*/
+int	fcntl(f, c, a) { return (f); }
+#if	defined(XPG2)
+char	*fcvt(v, n, d, s) double v; int *d, *s; { return ((char*)0); }
+#endif
+FILE*	fdopen(f, t) char *t; { return (stdin); }
+int	feof(f) FILE *f; { return (0); }
+int	ferror(f) FILE *f; { return (0); }
+int	fflush(f) FILE *f; { return (0); }
+int	fgetc(f) FILE *f; { return (0); }
+struct group*	fgetgrent(f) FILE *f; { static struct group x; return (&x); }
+struct passwd*	fgetpwent(f) FILE *f; { static struct passwd x; return (&x); }
+char*	fgets(s, n, f) char *s; FILE *f; { return (s); }
+int	fileno(f) FILE *f; { static int fd; return (fd); }
+double	floor(x) double x; { return (x); }
+double	fmod(x, y) double x, y; { return (x); }
+FILE*	fopen(f, t) char *f, *t; { return (stdin); }
+int	fork() { static int x; return (x); }
+	/*VARARGS2 PRINTFLIKE2*/
+int	fprintf(f, s) FILE *f; char *s; { return (0); }
+int	fputc(c, f) FILE *f; { return (c); }
+int	fputs(s, f) char *s; FILE *f; { return (0); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	fread(b, s, n, f) char *b; size_t s, n; FILE *f; { return (n); }
+#endif
+#if	!defined(SVID_V3) && !defined(XPG2)
+int	fread(b, s, n, f) char *b; unsigned s, n; FILE *f; { return (n); }
+#endif
+#if	defined(XPG2)
+int	fread(b, s, n, f) char *b; size_t s; FILE *f; { return (n); }
+#endif
+void	free(s) char *s; {}
+FILE*	freopen(f, t, s) char *f, *t; FILE *s; { return (s); }
+double	frexp(x, e) double x; int *e; { return (x); }
+	/*VARARGS2 SCANFLIKE2*/
+int	fscanf(f, s) FILE *f; char *s; { return (0); }
+int	fseek(f, o, p) FILE *f; long o; { return (0); }
+int	fstat(f, b) struct stat *b; { return (0); }
+long	ftell(f) FILE *f; { static long p; return (p); }
+int	ftw(p, f, d) char *p; int (*f)(); { return (d); }
+#ifdef SVID_V3
+int	fwrite(b, s, n, f) char *b; size_t s, n; FILE *f; { return (n); }
+#else
+int	fwrite(b, s, n, f) char *b; unsigned s, n; FILE *f; { return (n); }
+#endif
+double	gamma(x) double x; { return (x); }
+#if	defined(XPG2)
+char	*gcvt(v, n, b) double v; char *b; { return (b); }
+#endif
+int	getc(f) FILE *f; { return (0); }
+int	getchar() { return (0); }
+char*	getcwd(b, s) char *b; { return (b); }
+unsigned short	getegid() { static unsigned short x; return (x); }
+char*	getenv(n) char *n; { return (n); }
+unsigned short	geteuid() { static unsigned short x; return (x); }
+unsigned short	getgid() { static unsigned short x; return (x); }
+struct group*	getgrent() { static struct group x; return (&x); }
+struct group*	getgrgid(g) gid_t g; { static struct group x; return (&x); }
+struct group*	getgrnam(n) char *n; { static struct group x; return (&x); }
+char*	getlogin() { static char *x; return (x); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	getmsg(fd, c, d, fl) struct strbuf *c, *d; int *fl; { return (0); }
+#endif
+int	getopt(c, v, o) char **v, *o; { return (c); }
+char*	getpass(s) char *s; { return (s); }
+int	getpgrp() { return (0); }
+int	getpid() { return (0); }
+int	getppid() { return (0); }
+#if	defined(XPG2)
+int	getpw(u, b) char *b; { return(0); }
+#endif
+struct passwd*	getpwent() { static struct passwd x; return (&x); }
+struct passwd*	getpwnam(n) char *n; { static struct passwd x; return (&x); }
+struct passwd*	getpwuid(u) unsigned short u; { static struct passwd x; return (&x); }
+char*	gets(s) char *s; { return (s); }
+unsigned short	getuid() { static unsigned short x; return (x); }
+struct utmp*	getutent() { static struct utmp x; return (&x); }
+struct utmp*	getutid(ut) struct utmp *ut; { return (ut); }
+struct utmp*	getutline(ut) struct utmp *ut; { return (ut); }
+int	getw(f) FILE *f; { return (0); }
+#ifdef SVID_V3
+struct tm*	gmtime(c) time_t *c; { static struct tm x; return (&x); }
+#else
+struct tm*	gmtime(c) long *c; { static struct tm x; return (&x); }
+#endif
+int	gsignal(s) { return (s); }
+int	hcreate(n) unsigned n; { return (0); }
+void	hdestroy() {}
+ENTRY*	hsearch(i, a) ENTRY i; ACTION a; { return (&i); }
+double	hypot(x, y) double x, y; { return (x); }
+	/*VARARGS2*/
+int	ioctl(f, r, a) { return (f); }
+int	isalnum(c) { return (c); }
+int	isalpha(c) { return (c); }
+int	isascii(c) { return (c); }
+int	isatty(f) { return (1); }
+int	iscntrl(c) { return (c); }
+int	isdigit(c) { return (c); }
+int	isgraph(c) { return (c); }
+int	islower(c) { return (c); }
+int	isprint(c) { return (c); }
+int	ispunct(c) { return (c); }
+int	isspace(c) { return (c); }
+int	isupper(c) { return (c); }
+int	isxdigit(c) { return (c); }
+double	j0(x) double x; { return (x); }
+double	j1(x) double x; { return (x); }
+double	jn(n, x) double x; { return (x); }
+long	jrand48(x) unsigned short x[3]; { return (0L); }
+int	kill(i, s) int i; { return (s); }
+#if	defined(XPG2)
+void	l3tol(lp, cp, n) long *lp; char *cp; {}
+void	lto3(cp, lp, n) char *cp; long *lp; {}
+#endif
+#if	!defined(XPG2)
+char*	l64a(l) long l; { return (""); }
+#endif
+void	lcong48(p) unsigned short p[7]; {}
+double	ldexp(v, e) double v; { return (v); }
+char*	lfind(k, b, n, w, c) char *k, *b; unsigned *n, w; int (*c)(); { return (k); }
+int	link(a, b) char *a, *b; { return (0); }
+#if	defined(SVID_V3) && !defined(XPG2)
+struct tm*	localtime(c) time_t *c; { static struct tm x; return (&x); }
+#else
+struct tm*	localtime(c) long *c; { static struct tm x; return (&x); }
+#endif
+int	lockf(fd, cmd, size) long size; { return (0); }
+double	log(x) double x; { return (x); }
+double	log10(x) double x; { return (x); }
+#if	defined(XPG2)
+char	*logname() {}
+#endif
+void	longjmp(e, v) jmp_buf e; {}
+long	lrand48() { return (0L); }
+char*	lsearch(k, b, n, w, c) char *k, *b; unsigned *n, w; int (*c)(); { return (k); }
+long	lseek(f, o, w) long o; { return (o); }
+struct	mallinfo mallinfo() { struct mallinfo s; return (s); }
+char*	malloc(s) unsigned s; { static char *x; return (x); }
+int	mallopt (cmd, value) int cmd, value; { return cmd+value; }
+int	matherr(e) struct exception *e; { return (0); }
+#if	!defined(XPG2)
+void	MARK(s) {}
+#endif
+char*	memccpy(a, b, c, n) char *a, *b; { return (a); }
+char*	memchr(s, c, n) char *s; { return (s); }
+int	memcmp(a, b, n) char *a, *b; { return (n); }
+char*	memcpy(a, b, n) char *a, *b; { return (a); }
+char*	memset(s, c, n) char *s; { return (s); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	mkdir(p, m) char *p; mode_t m; { return (0); }
+#endif
+int	mknod(n, m, d) char *n; { return (m); }
+char*	mktemp(t) char *t; { return (t); }
+double	modf(v, i) double v, *i; { return (v); }
+void	monitor(l, h, b, s, n) int (*l)(), (*h)(); WORD *b; {}
+int	mount(s, d, r) char *s, *d; { return (r); }
+long	mrand48() { return (0L); }
+int	msgctl(m, c, b) struct msqid_ds *b; { return (m); }
+int	msgget(k, m) key_t k; { return (m); }
+int	msgrcv(q, p, s, t, f) struct msgbuf *p; long t; { return (q); }
+int	msgsnd(q, p, s, f) struct msgbuf *p; { return (q); }
+int	nice(i) { return (i); }
+#if	!defined(XPG2)
+int	nlist(f, n) char *f; struct nlist *n; { return (0); }
+#endif
+long	nrand48(x) unsigned short x[3]; { return (0L); }
+	/*VARARGS2*/
+int	open(f, o, m) char *f; { return (o); }
+#ifdef	SVID_V3
+DIR*	opendir(f) char *f; { return (DIR *)0; }
+#endif
+int	pause() { return (0); }
+int	pclose(f) FILE *f; { return (0); }
+void	perror(s) char *s; {}
+int	pipe(f) int f[2]; { return (0); }
+int	plock(o) { return (o); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	poll(fds, nfds, t) struct pollfd *fds; unsigned long nfds; { return (0); }
+#endif
+FILE*	popen(c, t) char *c, *t; { return (stdin); }
+double	pow(x, y) double x, y; { return (x); }
+	/*VARARGS1 PRINTFLIKE1*/
+int	printf(s) char *s; { return (0); }
+void	profil(b, s, o, i) char *b; {}
+	/*VARARGS4*/
+int	ptrace(r, p, a1, d, a2) char *a1; { return(0); }
+int	putc(c, f) FILE *f; { return (c); }
+int	putchar(c) { return (c); }
+int	putenv(s) char *s; { return (0); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	putmsg(fd, c, d, fl) struct strbuf *c, *d; { return (0); }
+#endif
+int	putpwent(s, f) struct passwd *s; FILE *f; { return (0); }
+int	puts(s) char *s; { return (0); }
+void	pututline(ut) struct utmp *ut; {}
+int	putw(w, f) FILE *f; { return (w); }
+void	qsort(b, n, w, c) void *b; unsigned n, w; int (*c)(); {}
+int	rand() { return (0); }
+int	read(f, b, n) char *b; unsigned n; { return (f); }
+#ifdef	SVID_V3
+struct dirent*	readdir(d) DIR *d; { return (struct dirent *)0; }
+#endif
+char*	realloc(s, n) char *s; unsigned n; { return (s); }
+void	rewind(f) FILE *f; {}
+#if	defined(XPG2) || defined(SVID_V3)
+void	rewinddir(dirp) DIR *dirp; {}
+#endif
+#if	defined(SVID_V3) && !defined(XPG2)
+int	rmdir(p) char *p; { return (0); }
+#endif
+#if	defined(XPG2)
+char	*sbrk(n) { return((char*)0); }	/* use malloc instead */
+#endif
+	/*VARARGS1 SCANFLIKE1*/
+int	scanf(s) char *s; { return (0); }
+unsigned short*	seed48(s) unsigned short s[3]; { return (s); }
+#if	defined(XPG2)
+void	seekdir(dp, l) DIR *dp; long l; {}	/* use discouraged */
+#endif
+	/*VARARGS4*/
+int	semctl(i, n, c, a) union semun a; { return (i); }
+int	semget(k, n, s) key_t k; { return (n); }
+int	semop(i, o, n) struct sembuf *o; { return (i); }
+void	setbuf(f, b) FILE *f; char *b; {}
+int	setgid(g) int g; { return (0); }
+void	setgrent() {}
+int	setjmp(e) jmp_buf e; { return (0); }
+void	setkey(k) char *k; {}
+int	setpgrp() { return (0); }
+void	setpwent() {}
+int	setuid(u) { return (0); }
+void	setutent() {}
+int	setvbuf(f, b, t, s) FILE *f; char *b; size_t s; { return (t); }
+#if	!defined(XPG2)
+long	sgetl(b) char *b; { return (0L); }
+#endif
+char*	shmat(i, a, f) char *a; { return (a); }
+int	shmctl(s, c, b) struct shmid_ds *b; { return (s); }
+int	shmdt(a) char *a; { return (0); }
+int	shmget(k, s, f) key_t k; { return (s); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	sighold(s) { return (0); }
+int	sigignore(s) { return (0); }
+#endif
+#if	defined(SVID_V3) && !defined(XPG2)
+void	(*signal(s, a))() void (*a)(); { return (a); }
+int	sigrelse(s) { return (0); }
+void	(*sigset(s,f))() void (*f)(); { return (f); }
+#else
+int	(*signal(s, a))() int (*a)(); { return (a); }
+#endif
+double	sin(x) double x; { return (x); }
+double	sinh(x) double x; { return (x); }
+unsigned	sleep(n) unsigned n; { return (0); }
+	/*VARARGS2 PRINTFLIKE2*/
+int	sprintf(p, s) char *p, *s; { return (0); }
+#if	!defined(XPG2)
+void	sputl(v, b) long v; char *b; {}
+#endif
+double	sqrt(x) double x; { return (x); }
+void	srand(s) unsigned s; {}
+void	srand48(s) long s; {}
+	/*VARARGS2 SCANFLIKE2*/
+int	sscanf(p, s) char *p, *s; { return (0); }
+int	(*ssignal(s, a))() int (*a)(); { return (a); }
+int	stat(s, b) char *s; struct stat *b; { return (0); }
+int	step(s, e) char *s, *e; { return (0); }
+int	stime(t) long *t; { return (0); }
+char*	strcat(a, b) char *a, *b; { return (a); }
+char*	strchr(a, b) char *a; { return (a); }
+int	strcmp(a, b) char *a, *b; { return (0); }
+char*	strcpy(a, b) char *a, *b; { return (a); }
+#if	defined(SVID_V3) && !defined(XPG2)
+size_t	strcspn(a, b) char *a, *b; { return (0); }
+#else
+int	strcspn(a, b) char *a, *b; { return (0); }
+#endif
+#if	defined(SVID_V3) && !defined(XPG2)
+char*	strdup(a) char *a; { return (a); }
+#endif
+#if	defined(SVID_V3) && !defined(XPG2)
+size_t	strlen(s) char *s; { return (0); }
+char*	strncat(a, b, n) char *a, *b; size_t n; { return (a); }
+int	strncmp(a, b, n) char *a, *b; size_t n; { return (0); }
+char*	strncpy(a, b, n) char *a, *b; size_t n; { return (a); }
+#else
+int	strlen(s) char *s; { return (0); }
+char*	strncat(a, b, n) char *a, *b; int n; { return (a); }
+int	strncmp(a, b, n) char *a, *b; int n; { return (0); }
+char*	strncpy(a, b, n) char *a, *b; int n; { return (a); }
+#endif
+char*	strpbrk(a, b) char *a, *b; { return (a); }
+char*	strrchr(a, b) char *a; { return (a); }
+#if	defined(SVID_V3) && !defined(XPG2)
+size_t	strspn(a, b) char *a, *b; { return (0); }
+#else
+int	strspn(a, b) char *a, *b; { return (0); }
+#endif
+double	strtod(s, t) char *s, **t; { return (0.0); }
+char*	strtok(a, b) char *a, *b; { return (a); }
+long	strtol(s, t, b) char *s, **t; { return (0L); }
+void	swab(f, t, n) char *f, *t; {}
+void	sync() {}
+int	system(s) char *s; { return (0); }
+double	tan(x) double x; { return (x); }
+double	tanh(x) double x; { return (x); }
+char*	tdelete(k, r, c) char *k, **r; int (*c)(); { return (k); }
+#if	defined(XPG2)
+long	telldir(dp) DIR *dp; { return (0L); }	/* use discouraged */
+#endif
+char*	tempnam(d, s) char *d, *s; { return (d); }
+char*	tfind(k, r, c) char *k, **r; int (*c)(); { return (k); }
+#if	defined(SVID_V3) && !defined(XPG2)
+time_t	time(t) time_t *t; { return (*t);}
+clock_t	times(b) struct tms *b; { static clock_t x; return (x); }
+#else
+long	time(t) long *t; { return (*t);}
+long	times(b) struct tms *b; { static long x; return (x); }
+#endif
+FILE*	tmpfile() { return (stdin); }
+char*	tmpnam(s) char *s; { return (s); }
+int	toascii(i) { return (i); }
+int	_tolower(i) { return (i); }
+int	tolower(i) { return (i); }
+int	_toupper(i) { return (i); }
+int	toupper(i) { return (i); }
+char*	tsearch(k, r, c) char *k, **r; int (*c)(); { return (k); }
+char*	ttyname(f) { return (""); }
+#if	defined(XPG2)
+int	ttyslot() { return (0); }
+#endif
+void	twalk(r, f) char *r; void (*f)(); {}
+void	tzset() {}
+long	ulimit(c, n) long n; { return (n); }
+mode_t	umask(c) mode_t c; { return (c); }
+int	umount(s) char *s; { return (0); }
+int	uname(n) struct utsname *n; { return (0); }
+int	ungetc(c, f) FILE *f; { return (c); }
+int	unlink(s) char *s; { return (0); }
+#if	defined(SVID_V3) && !defined(XPG2)
+int	ustat(d, b) dev_t d; struct ustat *b; { return (0); }
+#else
+int	ustat(d, b) struct ustat *b; { return (d); }
+#endif
+int	utime(f, t) char *f; struct utimbuf *t; { return (0); }
+void	utmpname(f) char *f; {}
+int	vfprintf(f, s, v) FILE *f; char *s; va_list v; { return (0); }
+int	vprintf(s, v) char *s; va_list v; { return (0); }
+int	vsprintf(p, s, v) char *p, *s; va_list v; { return (0); }
+int	wait(s) int *s; { static int p; return (p); }
+int	write(f, b, n) char *b; unsigned n; { return (f); }
+double	y0(x) double x; { return (x); }
+double	y1(x) double x; { return (x); }
+double	yn(n, x) double x; { return (x); }
+
+
+/*
+ * V.3 TLI stuff
+ */
+#if defined(SVID_V3) && !defined(XPG2)
+extern int	t_errno;
+extern char	*t_errlist[];
+extern int	t_nerr;
+
+int	t_accept(fd, resfd, call) struct t_call *call; { return (0); }
+int	t_alloc(fd, st, fld) { return (0); }
+int	t_bind(fd, req, ret) struct t_bind *req, *ret; { return (0); }
+int	t_close(fd) { return (0); }
+int	t_connect(fd, snd, rec) struct t_call *snd, *rec; { return (0); }
+void	t_error(s) char *s; {}
+int	t_free(p, t) char *p; { return (0); }
+int	t_getinfo(fd, info) struct t_info *info; { return (0); }
+int	t_getstate(fd) { return (0); }
+int	t_listen(fd, call) struct t_call *call; { return (0); }
+int	t_look(fd) { return (0); }
+int	t_open(p, of, i) char *p; struct t_info *i; { return (0); }
+int	t_optmgmt(fd, rq, rt) struct t_optmgmt *rq, *rt; { return (0); }
+int	t_rcv(fd, buf, n, fl) char *buf; unsigned n; int *fl; { return (0); }
+int	t_revconnect(fd, call) struct t_call *call; { return (0); }
+int	t_rcvdis(fd, dis) struct t_discon *dis; { return (0); }
+int	t_rcvrel(fd) { return (0); }
+int	t_rcvudata(fd, ud, fl) struct t_unitdata *ud; int *fl; { return (0); }
+int	t_rcvuderr(fd, ud) struct t_uderr *ud; { return (0); }
+int	t_snd(fd, buf, n, fl) char *buf; unsigned n; { return (0); }
+int	t_snddis(fd, call) struct t_call *call; { return (0); }
+int	t_sndrel(fd) { return (0); }
+int	t_sndudata(fd, ud) struct t_unitdata *ud; { return (0); }
+int	t_sync(fd) { return (0); }
+int	t_unbind(fd) { return (0); }
+#endif

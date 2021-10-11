@@ -1,0 +1,211 @@
+.\" @(#)mt.1 1.1 92/07/30 SMI;
+.TH MT 1 "19 December 1989"
+.SH NAME
+mt \- magnetic tape control
+.SH SYNOPSIS
+.B mt
+[
+.B \-f
+.I tapename
+]
+.I command
+[
+.I count
+]
+.SH DESCRIPTION
+.IX  "mt command"  ""  "\fLmt\fP \(em manipulate magnetic tape"
+.IX  "manipulate magnetic tape"  ""  "manipulate magnetic tape \(em \fLmt\fP"
+.IX  "control magnetic tape"  ""  "control magnetic tape \(em \fLmt\fP"
+.IX  "magnetic tape"  manipulate  ""  "manipulate \(em \fLmt\fP"
+.IX  tape  "manipulate magnetic"  ""  "manipulate magnetic \(em \fLmt\fP"
+.IX  "write EOF mark on magnetic tape"  ""  "write EOF mark on magnetic tape \(em \fLmt\fP"
+.IX  "skip forward magnetic tape files"  ""  "skip forward magnetic tape files \(em \fLmt\fP"
+.IX  "skip forward magnetic tape records"  ""  "skip forward magnetic tape records \(em \fLmt\fP"
+.IX  "skip backward magnetic tape files"  ""  "skip backward magnetic tape files \(em \fLmt\fP"
+.IX  "skip backward magnetic tape records"  ""  "skip backward magnetic tape records \(em \fLmt\fP"
+.IX  "backspace magnetic tape files"  ""  "backspace magnetic tape files \(em \fLmt\fP"
+.IX  "backspace magnetic tape records"  ""  "backspace magnetic tape records \(em \fLmt\fP"
+.IX  "rewind magnetic tape"  ""  "rewind magnetic tape \(em \fLmt\fP"
+.IX  "place magnetic tape unit off-line"  ""  "place magnetic tape unit off-line \(em \fLmt\fP"
+.IX  get "magnetic tape unit status \(em \fLmt\fP"
+.IX  "place magnetic tape unit off-line"  ""  "place magnetic tape unit off-line \(em \fLmt\fP"
+.IX  "retension magnetic tape"  ""  "retension magnetic tape \(em \fLmt\fP"
+.IX  "erase magnetic tape"  ""  "erase magnetic tape \(em \fLmt\fP"
+.IX  "magnetic tape"  "write EOF mark on"  ""    "write EOF mark on \(em \fLmt\fP"
+.IX  "magnetic tape"  "skip forward files"  ""    "skip forward files \(em \fLmt\fP"
+.IX  "magnetic tape"  "skip forward records"  ""    "skip forward records \(em \fLmt\fP"
+.IX  "magnetic tape"  "forward space files"  ""    "forward space files \(em \fLmt\fP"
+.IX  "magnetic tape"  "forward space records"  ""    "forward space records \(em \fLmt\fP"
+.IX  "magnetic tape"  "skip backward files"  ""    "skip backward files \(em \fLmt\fP"
+.IX  "magnetic tape"  "skip backward records"  ""    "skip backward records \(em \fLmt\fP"
+.IX  "magnetic tape"  "backspace files"  ""    "backspace files \(em \fLmt\fP"
+.IX  "magnetic tape"  "backspace records"  ""    "backspace records \(em \fLmt\fP"
+.IX  "magnetic tape"  "rewind"  ""    "rewind \(em \fLmt\fP"
+.IX  "magnetic tape"  "place unit off-line"  ""    "place unit off-line \(em \fLmt\fP"
+.IX  "magnetic tape"  "get unit status"  ""    "get unit status \(em \fLmt\fP"
+.IX  "magnetic tape"  "retension"  ""    "retension \(em \fLmt\fP"
+.IX  "magnetic tape"  "erase"  ""    "erase \(em \fLmt\fP"
+.IX  tape  "write EOF mark on"  ""    "write EOF mark on \(em \fLmt\fP"
+.IX  tape  "skip forward files"  ""    "skip forward files \(em \fLmt\fP"
+.IX  tape  "skip forward records"  ""    "skip forward records \(em \fLmt\fP"
+.IX  tape  "forward space files"  ""    "forward space files \(em \fLmt\fP"
+.IX  tape  "forward space records"  ""    "forward space records \(em \fLmt\fP"
+.IX  tape  "skip backward files"  ""    "skip backward files \(em \fLmt\fP"
+.IX  tape  "skip backward records"  ""    "skip backward records \(em \fLmt\fP"
+.IX  tape  "backspace files"  ""    "backspace files \(em \fLmt\fP"
+.IX  tape  "backspace records"  ""    "backspace records \(em \fLmt\fP"
+.IX  tape  "rewind"  ""    "rewind \(em \fLmt\fP"
+.IX  tape  "place unit off-line"  ""    "place unit off-line \(em \fLmt\fP"
+.IX  tape  "get unit status"  ""    "get unit status \(em \fLmt\fP"
+.IX  tape  "retension"  ""    "retension \(em \fLmt\fP"
+.IX  tape  "erase"  ""    "erase \(em \fLmt\fP"
+.LP
+.B mt
+sends commands to a magnetic tape drive.
+If
+.I tapename
+is not specified, the environment variable
+.SB TAPE
+is used.  If
+.SB TAPE
+does not exist,
+.B mt
+uses the device
+.BR /dev/rmt12 .
+.I tapename
+refers to a raw tape device.
+By default,
+.B mt
+performs the requested operation once;  multiple operations
+may be performed by specifying
+.IR count .
+.LP
+The available commands are listed below.  Only as many
+characters as are required to uniquely identify a command
+need be specified.
+.LP
+.B mt
+returns a 0 exit status when the operation(s)
+were successful, 1 if the command was
+unrecognized or if
+.B mt
+was unable to open the specified tape drive,
+and 2 if an operation failed.
+.SH OPTIONS
+.TP 13
+.BR eof , " weof"
+Write
+.I count
+.SM EOF
+marks at the current position on the tape.
+.TP
+.B fsf
+Forward space over
+.I count
+.SM EOF 
+marks. 
+The tape is positioned on the first block of the file.
+.TP
+.B fsr
+Forward space
+.I count
+records.
+.TP
+.B bsf
+Back space over
+.I count
+.SM EOF 
+marks.
+The tape is positioned on the
+beginning-of-tape
+side of the 
+.SM EOF 
+mark.
+.TP
+.B bsr
+Back space
+.I count
+records.
+.TP
+.B nbsf
+Back space
+.I count
+files.  The tape is positioned on the first block of the file.
+This is equivalent to
+.I count+1
+.BR bsf 's 
+followed by one 
+.BR fsf .
+.TP
+.B asf
+Absolute space to 
+.I count
+file number.  This is equivalent to a
+.B rewind
+followed by a
+.B fsf
+.I count.
+.LP
+For the following commands,
+.I count
+is ignored:
+.TP 13
+.B eom
+Space to the end of recorded media on the tape.
+This is useful for appending files onto previously written tapes.
+.TP
+.B rewind
+Rewind the tape.
+.TP
+.BR offline , " rewoffl"
+Rewind the tape and, if appropriate, take the drive unit 
+off-line by unloading the tape.
+.TP
+.B status
+Print status information about the tape unit.
+.TP
+.BR retension
+Rewind the cartridge tape completely, then wind it forward
+to the end of the reel
+and back to beginning-of-tape
+to smooth out
+tape tension.
+.TP
+.BR erase
+Erase the entire tape.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rmt*
+magnetic tape interface
+.TP
+.B /dev/rar*
+Archive cartridge tape interface
+.TP
+.B /dev/rst* 
+.SM SCSI
+tape interface
+.PD
+.SH "SEE ALSO"
+.BR ar (4S), 
+.BR mtio (4), 
+.BR st (4S), 
+.BR tm (4S), 
+.BR xt (4S)
+.BR environ (5V)
+.SH BUGS
+.LP
+Not all devices support all options.
+Some options are hardware-dependent.
+Refer to the corresponding device manual page.
+.br
+.ne 5
+
+.SH WARNINGS
+.LP
+The 
+.B bsf 
+option for 
+.SM SCSI 
+tape in SunOS 4.0.3 is incompatible
+with this release and releases prior to 4.0.3.

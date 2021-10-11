@@ -1,0 +1,594 @@
+#if defined(TAPE)
+#define DEVTYPE tape
+#elif defined(DISKETTE)
+#define DEVTYPE disk
+#elif defined(CDROM)
+#define DEVTYPE disk
+#endif
+*Title=		SunOS VERS
+*Version=	PART
+*Date=		DATE
+*Source=	Sun Release Engineering
+#if defined(TAPE)
+#if defined(sun4c) || defined(sun4m)
+*================
+*Name=  munix
+*Description=   memory unix
+*File-Type=     image
+*File-Kind=     standalone
+*Architectures=  ARCH
+*Size=		disksize PROTO/usr/kvm/stand/munix
+*Command=	dd if=munix.tape.ARCH bs=8k conv=sync
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+#else /* sun4c || sun4m */
+*================
+*Name=	boot
+*Description=	Standalone Boot Program
+*File-Type=	image
+*File-Kind=	standalone
+*Architectures=	 ARCH
+*Size=		disksize PROTO/usr/kvm/stand/tpboot.ARCH
+*Command=	makeboot ARCH PROTO/usr/kvm/stand/tpboot.ARCH
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  munix
+*Description=   memory unix
+*File-Type=     image
+*File-Kind=     standalone
+*Architectures=  ARCH
+*Size=		disksize PROTO/usr/kvm/stand/munix
+*Command=	makemunix PROTO/usr/kvm/stand/munix DEVRNAME
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  munixfs.DEVTYPE
+*Description=   munix file system
+*File-Type=     image
+*File-Kind=     executable
+*Architectures=  ARCH
+*Size=		disksize MUNIXFS
+*Command=       dd if=MUNIXFS bs=MUNIXFSBLOCKING conv=sync
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+#endif /* sun4c || sun4m */
+*================
+*Name=  mini-root
+*Description=   miniroot 
+*File-Type=     image
+*File-Kind=     executable
+*Architectures=  ARCH
+*Size=		disksize MINIROOT
+*Command=       dd if=MINIROOT bs=FSBLOCKING conv=sync
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+#endif /* defined TAPE */
+*================
+*Name=	root
+*Description=	Root File System
+*File-Type=	FILETYPE
+*File-Kind=	installable
+*Architectures=	 ARCH
+*Depends-on=
+*Required= true
+*Desirable= false
+*Common= true
+*Loadpoint= root
+*Moveable= true
+*Size=		DIR=PROTO disksize -e exclude.lists/root.usr
+*Pre-install=
+*Install=
+*Command=	k=`pwd`;k=$k/exclude.lists/root.usr;cd PROTO;tar cfX - $k .
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=	usr
+*Description=	User File System
+*File-Type=	FILETYPE
+*File-Kind=	installable
+*Architectures=	 ARCH
+*Depends-on=
+*Required= true
+*Desirable= false
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=          cd PROTO/usr; newdisksize ${TARFILES}/ARCH/usr 
+*Pre-install=
+*Install=
+*Command=       cat `makexcl mktp_input` exclude.lists/usr.kvm |sort -u >/tmp/exc$$;cd PROTO/usr;tar cfX - /tmp/exc$$ .;rm -f /tmp/exc$$ 
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=	Kvm
+*Description=	Kernel-dependent executables
+*File-Type=	FILETYPE
+*File-Kind=	installable
+*Architectures=	ARCH
+*Depends-on=
+*Required=	true
+*Desirable=	true
+*Common=	true
+*Loadpoint=	impl
+*Moveable=	true
+*Size=		DIR=PROTO/usr/kvm disksize -e exclude.lists/kvm.exclude
+*Pre-install=
+*Install=
+*Command= 	k=`pwd`;cd /proto/usr/kvm;tar cfX - $k/exclude.lists/kvm.exclude .
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Install
+*Description=   Install tools
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= true
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		sed -e 's/etc\/install\///' exclude.lists/install.exclude>/tmp/exc$$;DIR=PROTO/usr/etc/install disksize -e /tmp/exc$$;rm -f /tmp/exc$$
+*Pre-install=
+*Install=
+*Command=       d=`pwd`;k=`cat exclude.lists/usr.install`;cd PROTO/usr;tar cfX - $d/exclude.lists/install.exclude $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Networking
+*Description=   Networking tools and programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on= 
+*Required= false
+*Desirable= true
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.net
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.net`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  System_V
+*Description=  System V programs and libraries 
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= true
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.vsys
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.vsys`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Sys
+*Description=   Sys 
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= true
+*Common= true
+*Loadpoint= impl
+*Moveable= true
+*Size=		DIR=PROTO/usr/kvm disksize -i exclude.lists/kvm.sys
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/kvm.sys`;cd PROTO/usr/kvm;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  SunView_Users
+*Description=   SunView_Users Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.sunview_users
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.sunview_users`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  SunView_Demo
+*Description=   SunView_Demo Program source
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.src
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.src`;cd PROTO/usr;tar cf - $k   
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*================
+*Name=  Text
+*Description=   Text Processing tools
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.text
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.text`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Demo
+*Description=   Demonstration Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.demo
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.demo`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  OpenWindows_Users
+*Description=   OpenWindows_Users Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.ow_usr
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.ow_usr`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*================
+*Name=  OpenWindows_Demo
+*Description=   OpenWindows_Demo Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.ow_demo
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.ow_demo`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*===============
+*Name=  OpenWindows_Fonts
+*Description=   OpenWindows_Fonts Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.ow_font
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.ow_font`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*===============
+*Name=  User_Diag
+*Description=   User Level Diagnostics tools
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.diag.ARCH
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.diag.ARCH`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Manual
+*Description=  Manual Pages 
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= share
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.man
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.man`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  TLI
+*Description=   TLI tools and programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= true
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.tli
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.tli`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*================
+*Name=  RFS
+*Description=   Remote File Sharing
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= true
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.rfs
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.rfs`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*================
+*Name=  Debugging
+*Description=   Debugging tools
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= true
+*Common= true
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.debug
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.debug`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  SunView_Programmers
+*Description=   SunView_Programmers Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.sunview_prog
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.sunview_prog`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*================
+*Name=  Shlib_Custom
+*Description=  Shared Library Customization Support
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.shlib
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.shlib`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Graphics
+*Description=   Graphics Libraries
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.graphics.ARCH
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.graphics.ARCH`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  uucp
+*Description=   uucp programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.uucp
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.uucp`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  Games
+*Description=  Games 
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.games
+*Pre-install= 
+*Install= 
+*Command=       k=`cat exclude.lists/usr.games`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================ 
+*Name=  Versatec 
+*Description=  Versatec 
+*File-Type=     FILETYPE
+*File-Kind=     installable 
+*Architectures=  ARCH 
+*Depends-on= 
+*Required= false 
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true 
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.vtroff
+*Pre-install=  
+*Install= 
+*Command=       k=`cat exclude.lists/usr.vtroff`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================ 
+*Name= Security
+*Description= SunOs Security Features
+*File-Type= FILETYPE
+*File-Kind= installable
+*Architectures= ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= false
+*Size=		DIR=PROTO/usr disksize -i exclude.lists/usr.secure
+*Pre-install=
+*Install=
+*Command= k=`cat exclude.lists/usr.secure`;cd PROTO/usr;tar cf - $k
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME
+*================
+*Name=  OpenWindows_Programmers
+*Description=   OpenWindows_Programmer Programs
+*File-Type=     FILETYPE
+*File-Kind=     installable
+*Architectures=  ARCH
+*Depends-on=
+*Required= false
+*Desirable= false
+*Common= false
+*Loadpoint= appl
+*Moveable= true
+*Size=          DIR=PROTO/usr disksize -i exclude.lists/usr.ow_prog
+*Pre-install=
+*Install=
+*Command=       k=`cat exclude.lists/usr.ow_prog`;cd PROTO/usr;tar cf - $k
+*Device-Type=   DEVTYPE
+*Device-Size=   DEVSIZE
+*Device-Rname=  DEVRNAME
+*================ 
+*Name= Copyright
+*Description= SunOs Copyright
+*File-Type= image
+*File-Kind= amorphous
+*Size= echo 512
+*Command= echo SunOS VERS>/tmp/copy$$;echo ARCH SUNBIN>>/tmp/copy$$;echo MEDIA", $VOLUME of $NVOLS">>/tmp/copy$$;echo Part Number PART>>/tmp/copy$$;cat /tmp/copy$$ Copyright|dd bs=512 conv=sync;rm /tmp/copy$$
+*Device-Type=	DEVTYPE
+*Device-Size=	DEVSIZE
+*Device-Rname=	DEVRNAME

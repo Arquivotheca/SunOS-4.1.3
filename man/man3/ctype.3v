@@ -1,0 +1,239 @@
+.\" @(#)ctype.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH CTYPE 3V "11 January 1990"
+.SH NAME
+ctype, conv, isalpha, isupper, islower, isdigit, isxdigit, isalnum, isspace, ispunct, isprint, iscntrl, isascii, isgraph, toupper, tolower, toascii \- character classification and conversion macros and functions
+.SH SYNOPSIS
+.B #include <ctype.h>
+.LP
+.B isalpha(c)
+.LP
+.B \&.\|.\|.
+.SH DESCRIPTION
+.SS Character Classification Macros
+.LP
+These macros classify
+character-coded integer values according to the rules of the coded character
+set defined by the character type information in the program's locale
+(category
+.BR \s-1LC_CTYPE\s0 ).
+On program startup the 
+.SB LC_CTYPE
+category of locale is equivalent to the
+\fB"C"\fP
+locale.
+.LP
+In the
+\fB"C"\fR
+locale, or in a locale where the character type information is not defined,
+characters are classified according to the rules of the 
+.SM US-ASCII
+7-bit coded character set.
+The control characters are those below 040 (and the single byte 0177)
+(\s-1DEL\s0).
+See
+.BR ascii (7).
+.LP
+In all cases that argument is an
+.BR int ,
+the value of which must be representable as an
+.B unsigned char
+or must equal the value of the macro
+.SM EOF\s0.
+If the argument has any other value, the behavior is undefined.
+.LP
+Each is a predicate returning nonzero for true, zero for false.
+.B isascii(\|)
+is defined on all integer values.
+.IX  "character classification"  isalpha()  ""  \fLisalpha()\fP
+.IX  "isalpha() macro"  ""  "\fLisalpha()\fP \(em is character letter"
+.TP 20
+.BI isalpha( c )
+.I c
+is a letter.
+.IX  "character classification"  isupper()  ""  \fLisupper()\fP
+.IX  "isupper() macro"  ""  "\fLisupper()\fP \(em is character upper-case"
+.TP
+.BI isupper( c )
+.I c
+is an upper case letter.
+.IX  "character classification"  islower()  ""  \fLislower()\fP
+.IX  "islower() macro"  ""  "\fLislower()\fP \(em is character lower-case"
+.TP
+.BI islower( c )
+.I c
+is a lower case letter.
+.IX  "character classification"  isdigit()  ""  \fLisdigit()\fP
+.IX  "isdigit() macro"  ""  "\fLisdigit()\fP \(em is character digit"
+.TP
+.BI isdigit( c )
+.I c
+is a digit [0-9].
+.IX  "character classification"  isxdigit()  ""  \fLisxdigit()\fP
+.IX  "isxdigit() macro"  ""  "\fLisxdigit()\fP \(em is character hex digit"
+.TP
+.BI isxdigit( c )
+.I c
+is a hexadecimal digit [0-9], [A-F], or [a-f].
+.IX  "character classification"  isalnum()  ""  \fLisalnum()\fP
+.IX  "isalnum() macro"  ""  "\fLisalnum()\fP \(em is character alphanumeric"
+.TP
+.BI isalnum( c )
+.I c
+is an alphanumeric character, that is,
+.I c
+is a letter or a digit.
+.IX  "character classification"  isspace()  ""  \fLisspace()\fP
+.IX  "isspace() macro"  ""  "\fLisspace()\fP \(em is character whitespace"
+.TP
+.BI isspace( c )
+.I c
+is a
+.SM SPACE\s0,
+.SM TAB\s0,
+.SM RETURN\s0,
+.SM NEWLINE\s0,
+.SM FORMFEED\s0,
+or
+vertical tab
+character.
+.IX  "character classification"  ispunct()  ""  \fLispunct()\fP
+.IX  "ispunct() macro"  ""  "\fLispunct()\fP \(em is character punctuation"
+.TP
+.BI ispunct( c )
+.I c
+is a punctuation character (neither control nor alphanumeric).
+.IX  "character classification"  isprint()  ""  \fLisprint()\fP
+.IX  "isprint() macro"  ""  "\fLisprint()\fP \(em is character printable"
+.TP
+.BI isprint( c )
+.I c
+is a printing character.
+.IX  "character classification"  iscntrl()  ""  \fLiscntrl()\fP
+.IX  "iscntrl() macro"  ""  "\fLiscntrl()\fP \(em is character control"
+.TP
+.BI iscntrl( c )
+.I c
+is a delete character or ordinary control character.
+.IX  "character classification"  isascii()  ""  \fLisascii()\fP
+.IX  "isascii() macro"  ""  "\fLisascii()\fP \(em is character ASCII"
+.TP
+.BI isascii( c )
+.I c
+is an
+.SM ASCII
+character, code less than 0200.
+.IX  "character classification"  isgraph()  ""  \fLisgraph()\fP
+.IX  "isgraph() macro"  ""  "\fLisgraph()\fP \(em is character graphic"
+.TP
+.BI isgraph( c )
+.I c
+is a visible graphic character.
+.SS Character Conversion Macros
+.IX  "character conversion"  toascii()  ""  \fLtoascii()\fP
+.IX  "toascii() macro"  ""  "\fLtoascii()\fP \(em convert character to ASCII"
+.IX  "convert character" "to ASCII \(em \fLtoascii()\fP"
+.TP
+.BI toascii( c )
+Masks
+.I c
+with the correct value so that
+.I c
+is guaranteed to be an
+.SM ASCII
+character in the range 0 through 0x7f.
+Will not perform mapping from a non-\s-1ASCII\s0 
+coded character set into
+.SM ASCII\s0.
+.SS Character Conversion Functions
+.LP
+These functions perform simple conversions on single characters.
+They replace the previous macro definitions
+which did not extend to support variant settings of the 
+.SB LC_CTYPE
+locale category.
+.IX  "character conversion"  toupper()  ""  \fLtoupper()\fP
+.IX  "toupper() macro"  ""  "\fLtoupper()\fP \(em convert character to upper-case"
+.IX  "convert character" "to upper-case \(em \fLtoupper()\fP"
+.TP 20
+.BI toupper( c )
+Converts
+.I c
+to its upper-case equivalent.  
+This function works correctly for all coded character sets 
+and all characters within such sets selected by a valid setting of 
+the 
+.SB LC_CTYPE
+locale category. 
+.IX  "character conversion"  tolower()  ""  \fLtolower()\fP
+.IX  "tolower() macro"  ""  "\fLtolower()\fP \(em convert character to lower-case"
+.IX  "convert character" "to lower-case \(em \fLtolower()\fP"
+.br
+.ne 5
+.TP
+.BI tolower( c )
+Converts
+.I c
+to its lower-case equivalent.  
+This function works correctly for all coded character sets 
+and all characters within such sets selected by a valid setting of 
+the 
+.SB LC_CTYPE
+locale category. 
+.LP
+If the argument to any of these macros is not in the
+domain of the function, the result is undefined.
+.SH SYSTEM V DESCRIPTION
+.SS Character Conversion Macros 
+.LP
+The macros
+.B _toupper(\|)
+and
+.B _tolower(\|)
+are faster than the equivalent functions
+.RB ( toupper(\|)
+and
+.BR tolower(\|) )
+but only work properly on a restricted range of characters, and will not 
+work on a 
+.SB LC_CTYPE
+category other than the default
+\fB"C"\fP
+(\s-1ASCII\s0).
+.LP
+These macros perform simple conversions on single characters.
+.IX  "character conversion, System V"  _toupper()  ""  \fL_toupper()\fP
+.IX  "_toupper() macro V"  ""  "\fL_toupper()\fP \(em convert character to upper-case, System V"
+.IX  "convert character" "to upper-case, System V \(em \fL_toupper()\fP"
+.TP 20
+.BI _toupper( c )
+converts
+.I c
+to its upper-case equivalent.
+Note: 
+This
+.I only
+works where
+.I c
+is known to be a lower-case character to start with (presumably checked
+using
+.BR islower(\|) ).
+.IX  "character conversion, System V"  _tolower()  ""  \fL_tolower()\fP
+.IX  "tolower() macro V"  ""  "\fL_tolower()\fP \(em convert character to lower-case, System V"
+.IX  "convert character" "to lower-case, System V \(em \fL_tolower()\fP"
+.TP
+.BI _tolower( c )
+converts
+.I c
+to its lower-case equivalent.
+Note: 
+This
+.I only
+works where
+.I c
+is known to be a upper-case character to start with (presumably checked
+using
+.BR isupper(\|) ).
+.SH "SEE ALSO"
+.BR setlocale (3V),
+.BR ascii (7),
+.BR iso_8859_1 (7)

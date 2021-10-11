@@ -1,0 +1,303 @@
+.\" @(#)filemerge.1 1.3 87/09/18 SMI;
+.TH FILEMERGE 1 "9 September 1987"
+.SH NAME
+filemerge \- window-based file comparison and merging program
+.SH SYNOPSIS
+.B filemerge 
+[
+.B \-a
+.I ancestor
+] [
+.B \-b
+] [
+.B \-l
+.I listfile
+] [
+.B \-r
+] [
+.I leftfile
+[
+.I rightfile
+[
+.I outfile
+] 
+]
+]
+.SH DESCRIPTION
+.I Filemerge
+is a window-based version of
+.IR diff (1),
+for comparing and merging text files.  It displays two files
+for side-by-side comparison, each in a read-only text-subwindow.
+Beneath them, an editing subwindow can be used to construct a
+\fImerged\fP
+version\(em\&one which contains selected lines from
+either or both input files, along with any additional edits you may
+make.
+.LP
+.I leftfile
+and
+.I rightfile
+are the files to be compared, and
+.I outfile
+is name of the file containing the merged version.  If
+.I outfile
+is a directory, then the output is placed in the file
+.IR outfile/leftfile .
+If 
+.I outfile
+is omitted, the output file is named
+.B filemerge.\|out
+by default.  If no filename
+arguments are given, you can enter them from within the tool itself.
+.SH OPTIONS
+.TP
+.BI \-a " ancestor"
+Compare both files with respect to
+.IR ancestor .
+A minus-sign indicates lines that have been deleted relative to the
+ancestor.  A plus-sign indicates
+lines added relative to the ancestor.
+.TP
+.B \-b
+Ignore leading blanks in comparisons.
+.TP
+.BI \-l " listfile"
+Process a list of filename pairs.  With this option,
+.I leftfile
+and
+.I rightfile
+are the names of directories, and
+.I listfile
+contains a list of filenames that appear in both.
+.I filemerge
+compares the versions of each file between the two
+directories, and allows you to create a merged version (typically
+in the directory
+.IR outfile ).
+The
+.B
+.SM SHIFT\*S\-Load
+command button, which is selected by holding the 
+.SM SHIFT
+key while clicking on the
+.B Load
+button, reads in the next pair named in the list.
+If
+.I listfile
+is 
+.BR \- ,
+then the list of files is read from the standard input.
+.TP
+.B \-r
+Readonly mode.  Don't display the editing subwindow.
+.SH USAGE
+.LP
+The text in the editing subwindow
+.RI ( outfile )
+is initially the same as that in
+.IR leftfile .
+To construct a merged version, you can directly edit the text of
+.I outfile
+with textedit commands, or you can change
+a selected difference to match
+.I rightfile
+(the one on the right) by clicking the
+\fBRight\fP
+button in the top panel.
+.SS Differences
+At any given time, one of the displayed ``differences'' is
+\fIcurrent\fP.
+The current difference is indicated by emboldening the
+symbol adjacent to each line, and also by the notation
+``\fIi\ \fBof\ \fIn\fR\|'' displayed in the control panel.  Once a
+difference is current, you can use the
+\fBLeft\fP
+and
+\fBRight\fP
+buttons to apply either the left-hand or
+the right-hand version of the text to
+.IR outfile .
+The
+.B Next
+and 
+.B Prev
+buttons select the next or previous difference, respectively.
+.SS Property Sheet
+You can customize
+\fIfilemerge\fP
+using the property sheet to
+set or alter various display and control options.  To bring up
+the property sheet, press the
+.B Props
+function key (typically
+.BR L3 )
+while the mouse is over any part of filemerge.
+.SS "Menus"
+There are pop-up menus associated with several of the control panel
+items, and a menu associated with the editing subwindow.  The former
+provide to select any command function obtained with a modified
+mouse-button (such as 
+.B
+.SM SHIFT\*S\-Next\c
+); the editing subwindow's menu has items that
+control the filename and directory location of the merged output.  To
+bring up a menu, move the mouse-cursor
+to the command button, or to the
+editing subwindow, and hold down the right mouse-button.  Select a
+desired menu item by releasing the
+mouse-button after moving the cursor
+on top of it.
+.SS "Command Buttons"
+.IP \fBNext\fP 12
+Make the next difference current.  The
+subwindow scrolls, if necessary, to display it.
+.IP \fB
+\s-1SHIFT-\fBNext\fP 
+12
+Make the first difference current.  (Also a menu item from the 
+.B Next
+menu.)
+.IP \fBPrev\fP
+Make the previous difference current.
+.IP \fB
+\s-1SHIFT\s0-Prev\fR 
+12
+Make the last difference current.
+(Also a menu item from the 
+.B Prev
+menu.)
+.IP \fBRight\fP
+Apply right-hand version of the current difference to 
+.IR outfile .
+If
+\fBautoadvance\fP
+is in effect, advance to the next difference.
+.IP \fB
+\s-1SHIFT\s0-Right\fP 
+12
+Apply the right-hand version and advance
+to the next difference, unless
+.B autoadvance
+is in effect.
+(Also a menu item from the 
+.B Right
+menu.)
+.IP \fB\s-1CTRL\s0-Right\fP
+Apply the right-hand version for the current difference, and
+for all subsequent differences up to the end of the file.
+.IP \fBLeft\fP
+Apply the left-hand version of the current difference.
+.IP \fBUndo\fP
+Undo the last
+\fBRight\fP
+or
+\fBLeft\fP
+operation.  You can undo
+up to 100 stacked operations.  You can't undo an undo.
+.IP \fB
+\s-1SHIFT\s0-Undo\fP 
+12
+Undo all the operations since the last
+\fBLoad\fP,
+or the last
+100 operations.
+.IP \fBScroll-Lock\fP
+When in effect, the three text-subwindows scroll in unison.
+Otherwise each subwindow scrolls independently.
+.IP "\fIi \fBof \fIn\fR"
+The number of the current difference,
+.IR i ,
+out of
+.IR n
+detected differences.
+Popping up a menu on this item allows you to jump
+to a selected difference.
+.IP \fBLoad\fP 12
+Load the files whose names appear by the prompts
+\fBFile1:\fP
+and
+\fBFile2:\fP.
+.IP \fB
+\s-1SHIFT\s0-Load\fP 
+12
+When the
+.B \-l
+option is used, load the files from the directories shown in
+.B File1
+and 
+.B File2
+corresponding to the next name in the list (taken from the
+.I listfile
+argument).
+.IP \fBDone\fP
+Save
+\fIoutfile\fP
+and close the tool.  The name used to save the
+file appears in the namestripe, in the same fashion as textedit.
+.IP \fB
+\s-1SHIFT\s0-Done\fP 
+12
+Save without closing.  You can also save the merged version using
+the
+\fBSave\fP
+item in the editing subwindow's menu.
+.IP \fBQuit\fP
+Exit the tool.  You must explictly save your merged 
+.I outfile,
+either with the
+\fBDone\fP
+button or the
+\fBSave\fP
+item in the
+editing subwindow's menu.
+.SS Properties
+.LP
+Hitting the
+.B L3
+function key brings up a property sheet that controls several
+\fIfilemerge\fP
+parameters.  The information in the property sheet is
+stored in the file
+.BR ~/.\|filemergerc .
+The property panel items have the following meanings:
+.LP
+.IP \fBApply\fP 12
+Any changes you have made to the property sheet will now take effect.
+.IP \fBReset\fP
+reset the property sheet to the state it had at the time of
+the last
+\fBApply\fP.
+.IP \fBDone\fP
+Close the property sheet.
+.IP \fBautoadvance\fP
+Advance to the next difference
+after each
+\fBLeft\fP
+or
+\fBRight\fP
+operation.
+.IP \fBToplines\fP
+number of lines in the top two subwindows
+.IP \fBBottomlines\fP
+number of lines in the bottom subwindow
+.IP \fBColumns\fP
+number of columns in the left (and also right) subwindow
+.SH FILES
+.PD 0
+.TP 20
+.B ~/.\|filemergerc
+file storing property sheet information
+.PD
+.SH SEE ALSO
+.IR diff (1), 
+.IR sdiff (1),
+.IR textedit (1)
+.SH BUGS
+.LP
+Using the
+\fBFind\fP
+function key causes the subwindows to get
+out of sync for scrolling.  To resync them, turn
+\fBScroll-Lock\fP
+first off, and then on.

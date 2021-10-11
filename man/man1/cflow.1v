@@ -1,0 +1,250 @@
+.\" @(#)cflow.1v 1.1 92/07/30 SMI; from S5R2 5.2 5/18/82
+.TH CFLOW 1V "16 September 1989"
+.SH NAME
+cflow \- generate a flow graph for a C program
+.SH SYNOPSIS
+.B cflow
+.RB [ \-r ]
+.RB [ \-ix ]
+[
+.B \-i_
+]
+[
+.B \-d\fInum
+]
+.IR filename s
+.SH SYSTEM V SYNOPSIS
+.B cflow
+.RB [ \-r ]
+.RB [ \-ix ]
+[
+.B \-i_
+]
+[
+.B \-d\fInum
+]
+.IR filename s
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "cflow command"  ""  "\fLcflow\fP \(em generate C flow graph"
+.IX  "code flow graph"  ""  "code flow graph \(em \fLcflow\fP"
+.IX  "programming tools"  cflow  ""  "\fLcflow\fP \(em code flow graph"
+.IX  "C programming language"  cflow  ""  "\fLcflow\fP \(em code flow graph"
+.IX  languages  cflow  ""  "\fLtcflow\fP \(em code flow graph"
+.B cflow
+analyzes a collection of C, 
+.BR yacc , 
+.BR lex ,
+assembler, and object files
+and attempts to build a graph charting the external references.
+Files suffixed in
+.B .\|y
+and
+.B .\|l
+are run through
+.B yacc
+and
+.BR lex ,
+respectively; the output of
+.B yacc
+and
+.B lex
+for those files, and files suffixed in
+.BR .\|c ,
+are first run through the C preprocessor
+and then run through the first pass of
+.BR lint (1V).
+(The
+.BR \-I \*S,
+.BR \-D \*S,
+and
+.BR \-U
+options of the C preprocessor are also understood.)
+Files suffixed in
+.BR .\|i
+are passed directly to the first pass of
+.BR lint .
+Files suffixed with
+.B .\|s
+are assembled.  Information is extracted from the symbol tables of the
+output of the assembler and from files suffixed with
+.BR .\|o .
+The output of all this non-trivial processing
+is collected and turned into a graph of external references
+which is displayed upon the standard output.
+.LP
+Each line of output begins with a reference
+(that is, line)
+number, followed by a suitable number of tabs
+indicating the level.
+Then the name of the global
+(normally only a function not defined as an external or
+beginning with an underscore; see below for the
+.B \-i
+inclusion option)
+a colon
+and its definition.
+For information extracted from C source,
+the definition consists of an abstract type declaration
+(for example,
+.BR "char \(**" ),
+and, delimited by angle brackets,
+the name of the source file
+and the line number
+where the definition was found.
+Definitions extracted from object files
+indicate the file name and location
+counter under which the symbol appeared
+(for example,
+.IR text ).
+Leading underscores in C-style external names are deleted.
+.LP
+Once a definition of a name has been printed,
+subsequent references to that name contain
+only the reference number of the line
+where the definition may be found.
+For undefined references, only
+.B <\|>
+is printed.
+.LP
+.SH SYSTEM V DESCRIPTION
+The System V version of
+.B cflow
+in
+.B /usr/5bin/cflow
+makes the 
+.B C 
+preprocessor,
+.BR cpp (1)
+search in
+.B /usr/5include
+for include files before it searches in
+.BR /usr/include .
+.SH OPTIONS
+The following options are interpreted by
+.B cflow :
+.TP \w'\fB\-d\fPnum\ \ 'u
+.B \-r
+Reverse the ``caller:callee'' relationship producing an inverted listing
+showing the callers of each function.
+The listing is also sorted in
+lexicographical order by callee.
+.TP
+.B \-ix
+Include external and static data symbols. The default is to include
+only functions in the flowgraph.
+.TP
+.B \-i_
+Include names that begin with an underscore.
+The default is to exclude
+these functions (and data if
+.B \-ix
+is used).
+.TP
+.BI \-d num
+The
+.I num
+decimal integer indicates the depth at which the flowgraph
+is cut off.
+By default this is a very large number.
+Attempts to set
+the cutoff depth to a nonpositive integer will be met with contempt.
+.br
+.ne 15
+.SH EXAMPLES
+.LP
+As an example, given the following in
+.BR file.c :
+.IP
+.ft B
+.nf
+	int  i;
+	main()
+	{
+		f();
+		g();
+		f();
+	}
+.br	
+.ne 6	
+	f()
+	{
+		i = h();
+	}
+.ft R
+.fi
+.LP
+the command:
+.IP
+.ft B
+.nf
+	cflow \-ix file.c
+.ft R
+.fi
+produces the output
+.ft B
+.nf
+	1	main: int(), <file.c 4>
+	2		f: int(), <file.c 11>
+	3			h: <>
+	4			i: int, <file.c 1>
+	5		g: <>
+.ft R
+.fi
+When the nesting level becomes too deep, the
+.BR \-e
+option of
+.BR pr (1V)
+can be used to compress the tab expansion to something
+less than eight spaces.
+.\".SH FILES
+.\".PD 0
+.\".TP 20
+.\".B /usr/5bin/cflow
+.\".TP
+.\".B /usr/include
+.\".PD
+.SH "SEE ALSO"
+.BR as (1),
+.BR cc (1V),
+.BR cpp (1),
+.BR lex (1),
+.BR lint (1V),
+.BR nm (1),
+.BR pr (1V),
+.BR yacc (1)
+.SH DIAGNOSTICS
+Complains about bad options.
+Complains about multiple definitions
+and only believes the first.
+Other messages may come from the various
+programs used, such as the C preprocessor.
+.SH NOTES
+While the compiler allows 8-bit strings and comments,
+8-bits are not allowed anywhere else.
+See
+.BR cc (1V)
+for an explanation about why
+.B cc
+is not 8-bit clean.
+.SH BUGS
+Files produced by
+.B lex
+and
+.B yacc
+cause the reordering of line number declarations which can
+confuse
+.BR cflow .
+To get proper results, feed
+.B cflow
+the
+.B yacc
+or
+.B lex
+input.
+

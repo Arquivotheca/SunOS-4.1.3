@@ -1,0 +1,67 @@
+.\" @(#)ulimit.3c 1.1 92/07/30 SMI; from UCB 4.2
+.TH ULIMIT 3C "21 January 1990"
+.SH NAME
+ulimit \- get and set user limits
+.SH SYNOPSIS
+.ft B
+.nf
+long ulimit(cmd, newlimit)
+int cmd;
+long newlimit;
+.fi
+.ft R
+.IX  get "user limits \(em \fLulimit()\fP"
+.IX  set "user limits \(em \fLulimit()\fP"
+.IX  "user limits"  get  "user limits"  "get \(em \fLulimit()\fP"
+.IX  "user limits"  set  "user limits"  "set \(em \fLulimit()\fP"
+.IX  limits  "get for user"  limits  "get for user \(em \fLulimit()\fP"
+.IX  limits  "set for user"  limits  "set for user \(em \fLulimit()\fP"
+.IX  "ulimi()"  ""  "\fLulimit()\fP \(em get and set user limits"
+.SH DESCRIPTION
+.LP
+This function is included for System V compatibility.
+.LP
+This routine provides for control over process limits.  The
+.I cmd
+values available are:
+.RS
+.TP 5
+.B 1
+Get the process's file size limit.  The limit is in units of 512-byte
+blocks and is inherited by child processes.  Files of any size can be read.
+.TP
+.B 2
+Set the process's file size limit to the value of
+.IR newlimit .
+Any process may decrease this limit, but only a process with an effective user
+.SM ID
+of super-user may increase the limit.
+.B ulimit(\|)
+will fail and the limit will be unchanged if a process with an effective
+user
+.SM ID
+other than the super-user attempts to increase its file size limit.
+.TP
+.B 3
+Get the maximum possible break value.  See
+.BR brk (2).
+.TP
+.B 4
+Get the size of the process' file descriptor table, as returned by
+.BR getdtablesize (2).
+.RE
+.SH "RETURN VALUE"
+.LP
+Upon successful completion, a non-negative value is returned.  Otherwise
+a value of \-1 is returned and
+.B errno
+is set to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EPERM
+A user other than the super-user attempted to increase the file size limit.
+.SH SEE ALSO
+.BR brk (2),
+.BR getdtablesize (2),
+.BR getrlimit (2),
+.BR write (2V)

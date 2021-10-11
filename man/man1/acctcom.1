@@ -1,0 +1,312 @@
+.\" @(#)acctcom.1 1.1 92/07/30 SMI; from SV
+.TH ACCTCOM 1 "12 January 1990"
+.SH NAME
+acctcom \- search and print process accounting files
+.SH SYNOPSIS
+.B acctcom
+[
+.B \-abfhikmqrtv
+]
+[
+.BI \-C " sec"
+]
+[
+.BI \-e " time" 
+]
+[
+.BI \-E " time"
+]
+.if n .ti +5n
+[
+.BI \-g " group"
+]
+[
+.BI \-H " factor"
+]
+[
+.BI \-I " chars" 
+]
+.if t .ti +.5i
+[
+.BI \-l " line"
+]
+.if n .ti +5n
+[
+.BI \-n " pattern"
+]
+[
+.BI \-o " output-file"
+]
+[
+.BI \-O " sec"
+]
+.if n .ti +5n
+[
+.BI \-s " time"
+]
+[
+.BI \-S " time"
+]
+[
+.BI \-u " user"
+]
+.SH DESCRIPTION
+.IX "acctcom" "" "\fLacctcom\fP \(em search and print process acounting files" ""
+.IX "accounting" "acctcom" "" "\fLacctcom\fP \(em search and print process accounting files"
+.LP
+.B acctcom
+reads
+.IR filename ,
+the standard input, or
+.BR /var/adm/pacct ,
+in the form described by
+.BR acct (5)
+and writes selected records to the standard output.
+Each record represents the execution of one process.
+The output shows the
+.BR "\s-1COMMAND NAME\s0" ,
+.BR \s-1USER\s0 ,
+.BR \s-1TTYNAME\s0 ,
+.BR "\s-1START TIME\s0" ,
+.BR "\s-1END TIME\s0" ,
+.B \s-1REAL\s0
+.BR (\s-1SEC\s0) ,
+.B \s-1CPU\s0
+.BR (\s-1SEC\s0) ,
+.BR "\s-1MEAN SIZE(K)\s0" ,
+and optionally,
+.B F
+(the
+.IR fork / exec
+flag:
+.B 1
+for 
+.B fork(\|)
+without 
+.BR exec(\|) ),
+.SB STAT
+(the system exit status),
+.BR "\s-1HOG FACTOR\s0" , 
+.BR "\s-1KCORE MIN\s0" ,
+.BR "\s-1CPU FACTOR\s0" ,
+.BR "\s-1CHARS TRNSFD\s0" ,
+and 
+.SB BLOCKS READ
+(total blocks read and written).
+.LP
+A 
+.RB ` # '
+is prepended to the command name if the command was executed with
+super-user privileges.
+If a process is not associated with a known terminal, a 
+.RB ` ? '
+is printed in the
+.SB TTYNAME
+field.
+.LP
+If no 
+.IR filename s
+are specified, and
+if the standard input is associated with a terminal or
+.B /dev/null
+(as is the case when using
+.RB ` & '
+in the shell),
+.B /var/adm/pacct
+is read; otherwise, the standard input is read.
+.LP
+If any
+.I filename
+arguments are given,
+they are read in their respective order.
+Each file is normally read forward, that is, in chronological order
+by process completion time.
+The file
+.B /var/adm/pacct
+is usually the current file to be examined;
+a busy system may need several such files
+of which all but the current file are found in
+.BR /var/adm/pacct ?.
+.SH OPTIONS
+.TP 12
+.B \-a
+Show some average statistics about the processes selected.
+The statistics will be printed after the output records.
+.TP
+.B \-b
+Read backwards, showing latest commands first.
+This option has no effect when the standard input is read.
+.TP
+.B \-f
+Print the
+.IR fork / exec
+flag and system exit status columns in the output.
+The numeric output for this option will be in octal.
+.TP
+.B \-h
+Instead of mean memory size,
+show the fraction of total available
+.SM CPU
+time consumed by the process
+during its execution.
+This \*(lqhog factor\*(rq is computed as:
+.RS
+.RS
+(total \s-1CPU\s+1\ time)/(elapsed\ time)
+.RE
+.RE
+.TP
+.B \-i
+Print columns containing the I/O counts in the output.
+.TP
+.B \-k
+Instead of memory size, show total kcore-minutes.
+.TP
+.B \-m
+Show mean core size (the default).
+.TP
+.B \-q
+Do not print any output records, just print the average statistics as with
+the
+.B \-a
+option.
+.TP
+.B \-r
+Show
+.SM CPU
+factor (user time/(system-time + user-time).
+.TP
+.B \-t
+Show separate system and user
+.SM CPU
+times.
+.TP
+.B \-v
+Exclude column headings from the output.
+.TP
+.BI \-C " sec"
+Show only processes with total
+.SM CPU
+time, system plus user, exceeding
+.I sec
+seconds.
+.TP
+.BI \-e " time"
+Select processes existing at or before
+.IR time .
+.TP
+.BI \-E " time"
+Select processes ending at or before
+.IR time .
+Using the same
+.I time
+for both
+.B \-S
+and
+.B \-E
+shows the processes that existed at
+.IR time .
+.TP
+.BI \-g " group"
+Show only processes belonging to
+.IR group .
+The 
+.I group
+may be designated by either the group 
+.SM ID
+or group name.
+.TP
+.BI \-H " factor"
+Show only processes that exceed
+.IR factor ,
+where factor is the \*(lqhog factor\*(rq as explained in the
+.B \-h 
+option above.
+.TP
+.BI \-I " chars"
+Show only processes transferring more characters than
+the cutoff number given by
+.IR chars .
+.TP
+.BI \-l " line"
+Show only processes belonging to terminal
+.BR /dev/line .
+.TP
+.BI \-n " pattern"
+Show only commands matching
+.I pattern
+that may be a regular expression as in
+.BR regexp (3).
+.TP
+.BI \-o " ofile"
+Copy selected process records in the input data format to
+.IR ofile ;
+suppress standard output printing.
+.TP
+.BI \-O " sec"
+Show only processes with
+.SM CPU
+system time exceeding
+.I sec
+seconds.
+.TP
+.BI \-s " time"
+Select processes existing at or after
+.IR time ,
+given in the format
+.IR hr \|[\|:\| min \|[\|:\| sec \|]\|]\|.
+.TP
+.BI \-S " time"
+Select processes starting at or after
+.IR time .
+.TP
+.BI \-u " user"
+Show only processes belonging to
+.I user
+that may be specified by: a user 
+.SM ID\s0,
+a login name
+that is then converted to a user 
+.SM ID\s0,
+a 
+.RB ` # ',
+which designates only those processes executed with
+super-user privileges, or 
+.RB ` ? ',
+which designates only those processes associated with unknown user 
+.SM ID\s0s.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.TP
+.B /var/adm/pacct
+.TP
+.B /etc/group
+.PD
+.SH SEE ALSO
+.BR ps (1),
+.BR su (1V)
+.BR acct (2V),
+.BR regexp (3),
+.BR acct (5),
+.BR utmp (5V),
+.BR acct (8),
+.BR acctcms (8),
+.BR acctcon (8),
+.BR acctmerg (8),
+.BR acctprc (8),
+.BR acctsh (8),
+.BR fwtmp (8),
+.BR runacct (8)
+.SH BUGS
+.LP
+.B acctcom
+reports only on processes that have terminated; use
+.BR ps (1)
+for active processes.
+If
+.I time
+exceeds the present time, then
+.I time
+is interpreted as occurring on the previous day.

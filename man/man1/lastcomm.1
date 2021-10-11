@@ -1,0 +1,101 @@
+.\" @(#)lastcomm.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH LASTCOMM 1 "7 September 1989"
+.SH NAME
+lastcomm \- show the last commands executed, in reverse order
+.SH SYNOPSIS
+.B lastcomm
+[
+.I command-name
+] .\|.\|. [
+.I user-name
+] .\|.\|. [
+.I terminal-name
+] .\|.\|.
+.SH DESCRIPTION
+.IX  "lastcomm command"  ""  "\fLlastcomm\fP \(em display last commands"
+.IX  display "last commands \(em \fLlastcomm\fP"
+.LP
+.B lastcomm
+gives information on previously executed commands.
+.B lastcomm
+with no arguments displays information about all the commands recorded
+during the current accounting file's lifetime.
+If called with arguments,
+.B lastcomm
+displays only accounting entries with a matching
+.IR command-name ,
+.IR user-name ,
+or
+.IR terminal-name .
+.SH EXAMPLES
+.LP
+The command
+.IP
+.B example% lastcomm a.out root ttyd0
+.LP
+would produce a listing of all the executions of commands named
+.BR a.out ,
+by user
+.B root
+while using the terminal
+.BR ttyd0 .
+.IP
+.B example% lastcomm root
+.LP
+would produce a listing of all the commands executed by user
+.BR root .
+.LP
+For each process entry,
+.B lastcomm
+displays the following information:
+.RS
+.TP 3
+\(bu
+The command name under which the process was called.
+.TP 3
+\(bu
+One or more flags indicating special information about the process.  The
+flags have the following meanings:
+.RS
+.TP 3
+.B F
+The process performed a
+.B fork
+but not an
+.BR exec .
+.TP 3
+.B S
+The process ran as a set-user-id program.
+.TP 3
+.B D
+The process dumped memory.
+.TP 3
+.B X
+The process was killed by some signal.
+.RE
+.TP 3
+\(bu
+The name of the user who ran the process.
+.TP 3
+\(bu
+The terminal from which the user was logged in at the time (if applicable).
+.TP 3
+\(bu
+The amount of
+.SM CPU
+time used by the process (in seconds).
+.TP 3
+\(bu
+The date and time the process starts.
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/pacct
+accounting file
+.PD
+.SH "SEE ALSO"
+.BR last (1),
+.BR sigvec (2),
+.BR acct (5),
+.BR core (5)

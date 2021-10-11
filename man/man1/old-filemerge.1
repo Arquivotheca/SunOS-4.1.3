@@ -1,0 +1,332 @@
+.\" @(#)old-filemerge.1 1.1 92/07/30 SMI;
+.TH OLD-FILEMERGE 1 "9 September 1987"
+.SH NAME
+old-filemerge \- window-based file comparison and merging program
+.SH SYNOPSIS
+.B /usr/old/filemerge 
+[
+.B \-br
+] [
+.B \-a
+.I ancestor
+] [
+.B \-l
+.I listfile
+] [
+.I leftfile
+[
+.I rightfile
+[
+.I outfile
+] 
+]
+]
+.SH DESCRIPTION
+.IX "filemerge command" "" "\fLfilemerge\fR command"  
+.LP
+Note: This program is considered to be obsolete, and will not be 
+distributed or supported in future Sun releases.
+.LP 
+.B filemerge
+is a window-based version of
+.BR diff (1),
+for comparing and merging text files.  It displays two files
+for side-by-side comparison, each in a read-only text-subwindow.
+Beneath them, an editing subwindow can be used to construct a
+.I merged
+version\(em\&one which contains selected lines from
+either or both input files, along with any additional edits you may
+make.
+.LP
+.I leftfile
+and
+.I rightfile
+are the files to be compared, and
+.I outfile
+is name of the file containing the merged version.  If
+.I outfile
+is a directory, then the output is placed in the file
+.IB outfile / leftfile.
+If 
+.I outfile
+is omitted, the output file is named
+.B filemerge.\|out
+by default.  If no filename
+arguments are given, you can enter them from within the tool itself.
+.SH OPTIONS
+.TP
+.B \-b
+Ignore leading blanks in comparisons.
+.TP
+.B \-r
+Read-only mode.  Do not display the editing subwindow.
+.TP
+.BI \-a " ancestor"
+Compare both files with respect to
+.IR ancestor .
+A minus-sign indicates lines that have been deleted relative to the
+ancestor.  A plus-sign indicates
+lines added relative to the ancestor.
+.TP
+.BI \-l " listfile"
+Process a list of filename pairs.  With this option,
+.I leftfile
+and
+.I rightfile
+are the names of directories, and
+.I listfile
+contains a list of filenames that appear in both.
+.B filemerge
+compares the versions of each file between the two
+directories, and allows you to create a merged version (typically
+in the directory
+.IR outfile ).
+The
+.RB \s-1SHIFT\s0- Load
+command button, which is selected by holding the 
+.SM SHIFT
+key while clicking on the
+.B Load
+button, reads in the next pair named in the list.
+If
+.I listfile
+is 
+.RB ` - ',
+then the list of files is read from the standard input.
+.SH USAGE
+.LP
+The text in the editing subwindow
+.RI ( outfile )
+is initially the same as that in
+.IR leftfile .
+To construct a merged version, you can directly edit the text of
+.I outfile
+with textedit commands, or you can change
+a selected difference to match
+.I rightfile
+(the one on the right) by clicking the
+.B Right
+button in the top panel.
+.SS Differences
+At any given time, one of the displayed ``differences'' is
+.IR current .
+The current difference is indicated by emboldening the
+symbol adjacent to each line, and also by the notation
+.RI `` i 
+.B of
+.IR n\|'' 
+displayed in the control panel.  Once a
+difference is current, you can use the
+.B Left
+and
+.B Right
+buttons to apply either the left-hand or
+the right-hand version of the text to
+.IR outfile .
+The
+.B Next
+and 
+.B Prev
+buttons select the next or previous difference, respectively.
+.SS Property Sheet
+You can customize
+.B filemerge
+using the property sheet to
+set or alter various display and control options.  To bring up
+the property sheet, press the
+.B Props
+function key (typically L3)
+while the mouse is over any part of the 
+.BR filemerge " window."
+.SS "Menus"
+There are pop-up menus associated with several of the control panel
+items, and a menu associated with the editing subwindow.  The former
+provide to select any command function obtained with a modified
+mouse-button (such as 
+.RB \s-1SHIFT\s0- Next
+); the editing subwindow's menu has items that
+control the filename and directory location of the merged output.  To
+bring up a menu, move the mouse-cursor
+to the command button, or to the
+editing subwindow, and hold down the 
+.SM RIGHT 
+mouse-button.  Select a
+desired menu item by releasing the
+mouse-button after moving the cursor
+on top of it.
+.SS "Command Buttons"
+.TP 12
+.B Next
+Make the next difference current.  The
+subwindow scrolls, if necessary, to display it.
+.IP 
+.RB \s-1SHIFT\s0- Next
+12
+Make the first difference current.  (Also a menu item from the 
+.B Next
+menu.)
+.TP 
+.B Prev
+Make the previous difference current.
+.IP 
+.RB \s-1SHIFT\s0- Prev
+12
+Make the last difference current.
+(Also a menu item from the 
+.B Prev
+menu.)
+.TP 
+.B Right
+Apply right-hand version of the current difference to 
+.IR outfile .
+If
+.B autoadvance
+is in effect, advance to the next difference.
+.IP 
+.RB \s-1SHIFT\s0- Right
+12
+Apply the right-hand version and advance
+to the next difference, unless
+.B autoadvance
+is in effect.
+(Also a menu item from the 
+.B Right
+menu.)
+.TP 
+.RB \s-1CTRL\s0- Right
+Apply the right-hand version for the current difference, and
+for all subsequent differences up to the end of the file.
+.TP 
+.B Left
+Apply the left-hand version of the current difference.
+.TP 
+.B Undo
+Undo the last
+.B Right
+or
+.B Left
+operation.  You can 
+.B Undo
+up to 100 stacked operations.  You cannot undo an 
+.BR Undo .
+.IP
+.RB \s-1SHIFT\s0- Undo
+12
+Undo all the operations since the last
+.BR Load ,
+or the last
+100 operations.
+.TP 
+.B Scroll-Lock
+When in effect, the three text-subwindows scroll in unison.
+Otherwise each subwindow scrolls independently.
+.TP 
+.IB i " of " n
+The number of the current difference,
+.IR i ,
+out of
+.I n
+detected differences.
+Popping up a menu on this item allows you to jump
+to a selected difference.
+.TP 
+.B Load
+Load the files whose names appear by the prompts
+.B File1:
+and
+.BR File2: .
+.IP 
+.RB \s-1SHIFT\s0- Load
+12
+When the
+.B \-l
+option is used, load the files from the directories shown in
+.B File1
+and 
+.B File2
+corresponding to the next name in the list (taken from the
+.I listfile
+argument).
+.TP 
+.B Done
+Save
+.I outfile
+and close the tool.  The name used to save the
+file appears in the namestripe, in the same fashion as 
+.BR textedit (1).
+.IP 
+.RB \s-1SHIFT\s0- Done
+12
+Save without closing.  You can also save the merged version using
+the
+.B Save
+item in the editing subwindow's menu.
+.TP 
+.B Quit
+Exit the tool.  You must explicitly save your merged 
+.IR outfile ,
+either with the
+.B Done
+button or the
+.B Save
+item in the
+editing subwindow's menu.
+.SS Properties
+.LP
+Hitting the L3
+function key brings up a property sheet that controls several
+.B filemerge
+parameters.  The information in the property sheet is
+stored in the file
+.BR ~/.\|filemergerc .
+The property panel items have the following meanings:
+.RS
+.TP 12
+.B Apply
+Any changes you have made to the property sheet will now take effect.
+.TP 
+.B Reset
+Reset the property sheet to the state it had at the time of
+the last
+.BR Apply .
+.TP 
+.B Done
+Close the property sheet.
+.TP 
+.B autoadvance
+Advance to the next difference
+after each
+.B Left
+or
+.BR Right operation.
+.TP 
+.B Toplines
+Number of lines in the top two subwindows.
+.TP 
+.B Bottomlines
+Number of lines in the bottom subwindow.
+.TP 
+.B Columns
+Number of columns in the left (and also right) subwindow.
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B ~/.\|filemergerc
+file storing property sheet information
+.TP
+.B filemerge.out
+default output file
+.PD
+.SH SEE ALSO
+.BR diff (1), 
+.BR sdiff (1V),
+.BR textedit (1)
+.SH BUGS
+.LP
+Using the
+.B Find
+function key gets the subwindows 
+out of sync for scrolling.  To resync them, turn
+.B Scroll-Lock
+first off, and then on.

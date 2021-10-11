@@ -1,0 +1,368 @@
+.\" @(#)acctsh.8 1.1 92/07/30 SMI; from S5R2
+.TH ACCTSH 8 "17 January 1990"
+.SH NAME
+chargefee, ckpacct, dodisk, lastlogin, monacct, nulladm, prctmp, prdaily, prtacct, runacct, shutacct, startup, turnacct \- shell procedures for accounting
+.SH SYNOPSIS
+.B /usr/lib/acct/chargefee
+.I login-name
+.I number
+.LP
+.B /usr/lib/acct/ckpacct
+[
+.I blocks
+]
+.LP
+.B /usr/lib/acct/dodisk
+[
+.B \-o
+] [
+.IR filename \|.\|.\|.
+]
+.LP
+.B /usr/lib/acct/lastlogin
+.LP
+.B /usr/lib/acct/monacct
+.I number
+.LP
+.B /usr/lib/acct/nulladm
+.I filename
+.LP
+.B /usr/lib/acct/prctmp
+.I filename
+.LP
+.B /usr/lib/acct/prdaily
+[
+.B \-cl
+] [
+.I mmdd
+]
+.LP
+.B /usr/lib/acct/prtacct
+.I filename
+[
+.I heading
+]
+.LP
+.B /usr/lib/acct/runacct
+[
+.I mmdd
+] [
+.I mmdd state
+]
+.LP
+.B /usr/lib/acct/shutacct
+[
+.I reason
+]
+.LP
+.B /usr/lib/acct/startup
+.LP
+.B /usr/lib/acct/turnacct
+.BR on \||\| off \||\| switch
+.SH DESCRIPTION
+.IX "chargefee" "" "\fLchargefee\fP \(em accounting shell procedure" ""
+.IX "ckpacct" "" "\fLckpacct\fP \(em accounting shell procedure" ""
+.IX "dodisk" "" "\fLdodisk\fP \(em accounting shell procedure" ""
+.IX "lastlogin" "" "\fLlastlogin\fP \(em accounting shell procedure" ""
+.IX "monacct" "" "\fLmonacct\fP \(em accounting shell procedure" ""
+.IX "nulladm" "" "\fLnulladm\fP \(em accounting shell procedure" ""
+.IX "prctmp" "" "\fLprctmp\fP \(em accounting shell procedure" ""
+.IX "prdaily" "" "\fLprdaily\fP \(em accounting shell procedure" ""
+.IX "prtacct" "" "\fLprtacct\fP \(em accounting shell procedure" ""
+.IX "runacct" "" "\fLrunacct\fP \(em accounting shell procedure" ""
+.IX "shutacct" "" "\fLshutacct\fP \(em accounting shell procedure" ""
+.IX "startup" "" "\fLstartup\fP \(em accounting shell procedure" ""
+.IX "turnacct" "" "\fLturnacct\fP \(em accounting shell procedure" ""
+.IX "accounting shell procedures" "chargefee" "" "\fLchargefee\fP"
+.IX "accounting shell procedure" "ckpacct" "" "\fLckpacct\fP"
+.IX "accounting shell procedures" "dodisk" "" "\fLdodisk\fP"
+.IX "accounting shell procedures" "lastlogin" "" "\fLlastlogin\fP"
+.IX "accounting shell procedures" "monacct" "" "\fLmonacct\fP"
+.IX "accounting shell procedures" "nulladm" "" "\fLnulladm\fP"
+.IX "accounting shell procedures" "prctmp" "" "\fLprctmp\fP"
+.IX "accounting shell procedures" "prdaily" "" "\fLprdaily\fP"
+.IX "accounting shell procedures" "prtacct" "" "\fLprtacct\fP"
+.IX "accounting shell procedures" "runacct" "" "\fLrunacct\fP"
+.IX "accounting shell procedures" "shutacct" "" "\fLshutacct\fP"
+.IX "accounting shell procedures" "startup" "" "\fLstartup\fP"
+.IX "accounting shell procedures" "turnacct" "" "\fLturnacct\fP"
+.IX "acctsh" "" "\fLacctsh\fP \(em shell procedures for accounting"
+.SS chargefee
+.LP
+.B chargefee
+can be invoked to charge a
+.I number
+of units to
+.IR login-name .
+A record is written to
+.BR /var/adm/fee ,
+to be merged with other accounting records during the night.
+.SS ckpacct
+.LP
+.B ckpacct
+should be initiated by
+.BR cron (8)
+every hour.
+It periodically checks the size of
+.BR /var/adm/pacct .
+If the size exceeds
+.IR blocks ,
+1000 by default,
+.B turnacct
+is called with the argument
+.BR switch .
+If the number of free disk blocks in the
+.B /usr
+file system
+falls below 500,
+.B ckpacct
+automatically turns off the collection of
+process accounting records using the
+.B off
+argument to
+.BR turnacct .
+When at least this number of blocks is restored, 
+accounting is activated again.
+This feature is sensitive to the frequency at which
+.B ckpacct
+is executed, usually by
+.BR cron .
+.SS dodisk
+.LP
+.B dodisk
+should be executed by
+.B cron
+to perform the disk accounting functions.
+By default, it does disk accounting on the 4.2 file systems in
+.BR /etc/fstab .
+.IR filename s
+specify the one or more filesystem names where disk accounting
+will be done.
+If
+.IR filename s
+are used, disk accounting will be done on these
+filesystems only.
+They should be the special file names of mountable filesystems.
+.SS lastlogin
+.LP
+.B lastlogin
+is invoked by
+.B runacct
+to update
+.BR /var/adm/acct/sum/loginlog ,
+which shows the last date on which each person logged in.
+.B lastlogin
+deletes the entries of users no longer in
+.B /etc/passwd
+and creates new entries.
+.SS monacct
+.LP
+.B monacct
+should be invoked once each month or each accounting
+period.
+.I number
+indicates
+which month or period it is.
+If
+.I number
+is not given, it defaults to the
+current month (01\-12).
+This default is useful if
+.B monacct
+is executed by
+.BR cron (8)
+on the first day of each month.
+.B monacct
+creates summary files in
+.B /var/adm/acct/fiscal
+and restarts summary files in
+.BR /var/adm/acct/sum .
+.SS nulladm
+.LP
+.B nulladm
+creates
+.I filename
+with mode 664 and insures that owner and group are
+.BR adm .
+It is called by
+various accounting shell procedures.
+.SS prctmp
+.LP
+.B prctmp
+can be used to print the session record file with headings 
+(normally
+.B /var/adm/acct/nite/ctmp
+created by
+.B acctcon1
+(see
+.BR acctcon (8)).
+The heading specifies device, user
+.SM ID\s0,
+login name, prime connect time (in seconds), non-prime
+connect time (in seconds), session starting time (numeric)
+and starting date and time.
+.SS prdaily
+.LP
+.B prdaily
+is invoked by
+.B runacct
+to format a report of the previous day's accounting data.
+The report resides in
+.BI /var/adm/acct/sum/rprt mmdd
+where
+.I mmdd
+is the month and day of the report.
+The current daily accounting reports may be printed by typing
+.BR prdaily .
+Previous days' accounting reports can be printed by using the
+.I mmdd
+option and specifying the exact report date desired.
+Previous daily reports are cleaned up
+and therefore inaccessible after each invocation of
+.BR monacct .
+.SS prtacct
+.LP
+.B prtacct
+can be used to format and print any total accounting
+.RB ( tacct )
+file with headings.
+See Chapter 8
+in the
+.TX ADMIN 
+manual,
+for an explanation of this output.
+.SS runacct
+.LP
+.B runacct
+performs the accumulation of connect,
+process,
+fee,
+and disk accounting on a daily basis.
+It also creates summaries of command usage.
+For more information, see
+.BR runacct (8).
+.SS shutacct
+.LP
+.B shutacct
+should be invoked during a system shutdown
+(usually in
+.BR /etc/shutdown )
+to turn process accounting
+off and append a
+\*(lqreason\*(rq record to
+.BR /var/adm/wtmp .
+If
+.I reason
+is not specified,
+.B shutdown
+is provided as a default reason.
+.SS startup
+.LP
+.B startup
+should be called by
+.B /etc/rc
+to turn the accounting on
+whenever the system is brought up.
+.SS turnacct
+.LP
+.B turnacct
+is an interface to
+.B accton
+(see
+.BR acct (8))
+to turn process accounting
+.B on
+or
+.BR off .
+The
+.B switch
+argument
+turns accounting off,
+moves the current
+.B /var/adm/pacct
+to the next free name in
+.BI /var/adm/pacct incr
+(where
+.I incr
+is a number starting with
+.B 1
+and incrementing by one for each
+additional
+.B pacct
+file),
+then turns accounting back on again.
+This procedure is called by
+.B ckpacct
+and thus can be taken care of by
+.B cron
+and used to keep
+.B pacct
+to a reasonable size.
+This command is restricted to the super-user.
+.SH OPTIONS
+.SS dodisk
+.TP
+.B \-o
+Do a slower version of disk accounting
+by login directory.
+.IR filename s
+should be mount points of mounted filesystem.
+.SS prdaily
+.TP
+.B \-c
+Prints a report
+of exceptional resource usage by command.
+This may be used on current day's accounting data only.
+.TP
+.B \-l
+Print a report of exceptional usage by login
+.SM ID
+for the specifed date.
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/fstab
+list of file systems
+.B /var/adm/fee
+accumulator for fees
+.TP
+.B /var/adm/pacct
+current file for per-process accounting
+.TP
+.B /var/adm/pacct\(**
+used if pacct gets large and during execution of daily accounting procedure
+.TP
+.B /var/adm/wtmp
+login/logoff summary
+.TP
+.B /usr/lib/acct/ptelus.awk
+limits for exceptional usage by login id
+.TP
+.B /usr/lib/acct/ptecms.awk
+limits for exceptional usage by command name
+.TP
+.B /var/adm/acct/nite
+working directory
+.TP
+.B /usr/lib/acct
+directory of accounting commands
+.TP
+.B /var/adm/acct/sum
+summary directory, should be saved
+.PD
+.SH SEE ALSO
+.BR acctcom (1),
+.BR acct (2V),
+.BR acct (5),
+.BR utmp (5V),
+.BR acct (8),
+.BR acctcms (8),
+.BR acctcon (8),
+.BR acctmerg (8),
+.BR acctprc (8),
+.BR cron (8),
+.BR diskusg(8),
+.BR fwtmp (8),
+.BR runacct (8)
+.LP
+.TX ADMIN

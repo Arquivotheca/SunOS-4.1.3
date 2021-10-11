@@ -1,0 +1,296 @@
+.\"	@(#)newform.1 1.1 92/07/30 SMI; from S5R2 6.2 83/09/02
+.TH NEWFORM 1 "9 April 1986"
+.SH NAME
+newform \- change the format of a text file
+.SH SYNOPSIS
+.B newform
+[
+.BI  \-s 
+]
+[
+.BI  \-i tabspec
+]
+[
+.BI  \-o tabspec
+]
+[
+.BI  \-b n
+]
+[
+.BI  \-e n
+]
+[
+.BI  \-p n
+]
+[
+.BI  \-a n
+]
+[
+.BI  \-f 
+]
+[
+.BI  \-c char
+]
+[
+.BI  \-l n
+]
+.I filename .\|.\|.
+.SH DESCRIPTION
+.I newform 
+reads lines from the named files (or the standard input if 
+.I filename 
+is omitted) and reproduces in formatted form on the standard output.
+Lines are formatted accroding to the command-line options in effect.
+.LP
+Except for
+.BR \-s ,
+command line options may appear in any order,
+may be repeated, and
+may be intermingled with the optional
+.IR files .
+.SH OPTIONS
+Command line options are processed in the order specified.
+This means that option sequences like
+.RB `` \-e 15
+.BR \-l 60''
+will yield results different from
+.RB `` \-l 60
+.BR \-e 15''.
+Options are applied to all
+.IR filename s
+on the command line.
+.TP 
+.BI \-i tabspec
+Input tab specification.  Expands tabs to spaces, according to
+the tab specifications given.
+.I tabspec
+recognizes all tab specification forms described in under the
+.BI t tabs
+option in
+.IR fspec (5).
+In addition,
+.I tabspec
+may be
+.BR \-\- ,
+in which case
+.I newform
+assumes that the tab specification is to be
+found in the first line read from the standard input (see
+.I fspec (5)
+for details.
+If no
+.I tabspec
+is given,
+.I tabspec
+defaults to
+.BR \-8 .
+A
+.I tabspec
+of
+.B \-0
+expects no tabs; if any are found, they are treated as
+.BR \-1 .
+.TP 
+.BI \-o tabspec
+Output tab specification:
+replaces spaces by tabs, according to the tab specifications given.
+The tab specifications are the same as for
+.BI \-i tabspec\fR.\fP
+If no
+.I tabspec
+is given,
+.I tabspec
+defaults to
+.BR \-8 .
+A
+.I tabspec
+of
+.B \-0
+means that no spaces will be converted to tabs on output.
+.TP 10
+.BI \-l n
+Set the effective line length to
+.I n
+characters.
+If
+.I n
+is not entered,
+.B \-l
+defaults to 72.
+The default line length without the
+.B \-l
+option is 80 characters.
+Note that tabs and backspaces are considered to be one character
+(use
+.B \-i
+to expand tabs to spaces).
+.TP 
+.BI \-b n
+Truncate
+.I n
+characters from the beginning of the line
+when the line length is greater than the effective line length
+(see
+.BI \-l n\fR).\fP
+Default is to truncate
+the number of characters necessary
+to obtain the effective line length.
+The default value is used when
+.B \-b
+with no
+.I n
+is used.
+.\"This option can be used to delete the sequence numbers from a
+.\".SM COBOL
+.\"program as follows:
+.\".br
+.\".RS 20
+.\"newform\ \|\-l1\ \|\-b7\ \|file-name
+.\".RE
+.TP
+.B \-l1
+Set the effective line length shorter than any existing
+line in the file, thus activating the
+.B \-b
+option.
+.TP 
+.BI \-e n
+Same as
+.BI \-b n
+except that characters are truncated
+from the end of the line.
+.TP 
+.BI \-c k
+Change the prefix/append character to
+.IR k .
+Default character for
+.I k
+is a space.
+.TP 
+.BI \-p n
+Prefix
+.I n
+characters (see
+.BI \-c k\fR)\fP
+to the beginning of a
+line when the line length is less than the effective
+line length.
+Default is to prefix the number of characters necessary
+to obtain the effective line length.
+.TP 
+.BI \-a n
+Same as 
+.BI \-p n
+except characters are
+appended to the end of a line.
+.TP 
+.B \-f
+Write the tab specification format
+line on the standard output before
+any other lines are output.
+The tab specification format line which is printed
+will correspond to the format specified
+in the
+.I last
+.B \-o
+option.
+If no
+.B \-o
+option is specified, the line which is printed will
+contain the default specification of
+.BR \-8 .
+.TP 
+.B \-s
+Shears off leading characters on each line up to the first tab and
+places up to 8 of the sheared characters at the end of the line.
+If more than 8 characters (not counting the first tab) are sheared,
+the eighth character is replaced by a
+.B \(**
+and any characters to the right of it are discarded.
+The first tab is always discarded.
+.IP
+An error message and program exit will occur if this option
+is used on a file without a tab on each line.
+The characters sheared off are saved internally until all other
+options specified are applied to that line.
+The characters are then added at the end of the processed line.
+.IP
+For example, to convert a file with leading digits,
+one or more tabs, and text on each line, to a file beginning with the
+text, all tabs after the first expanded to spaces,
+padded with spaces out to column 72 (or truncated to column 72),
+and the leading digits placed starting at column 73, the command would be:
+.br
+.RS 20
+newform\ \|\-s\ \|\-i\ \|\-l\ \|\-a\ \|\-e\ \|file-name
+.RE
+.SH DIAGNOSTICS
+.LP
+usage: \ \|.\|.\|. 
+.IP
+.I newform
+was called with a bad option.
+.LP
+not \-s format
+.IP
+There was no tab on one line.
+.LP
+can't open file
+.IP
+Self-explanatory.
+.LP
+internal line too long
+.IP
+A line exceeds 512 characters
+after being expanded in the internal work buffer.
+.LP
+tabspec in error
+.IP
+A tab specification is incorrectly formatted,
+or specified tab stops are not ascending.
+.LP
+tabspec indirection illegal
+.IP
+A
+.I tabspec
+read from a file (or
+standard input) may not contain a
+.I tabspec
+referencing another 
+file (or standard input).
+.SH "SEE ALSO"
+csplit(1), fspec(5)
+.SH BUGS
+.I newform
+normally only keeps track of physical characters;
+however, for the 
+.B \-i
+and
+.B \-o
+options,
+.I newform
+will keep track of backspaces in order
+to line up tabs in the appropriate logical columns.
+.PP
+.I newform
+will not prompt the user if a
+.I tabspec
+is to be read from the
+standard input (by use of 
+.B \-i\-\-
+or 
+.BR \-o\-\- ).
+.PP
+If the
+.B \-f
+option is used,
+and the last
+.B \-o
+option specified was
+.BR \-o\-\- ,
+and was preceded by either a
+.B \-o\-\-
+or a
+.BR \-i\-\- ,
+the tab specification format line
+will be incorrect.

@@ -1,0 +1,40 @@
+.\" @(#)abort.3 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH ABORT 3 "6 October 1987"
+.SH NAME
+abort \- generate a fault
+.SH SYNOPSIS
+.B abort(\|)
+.IX  "abort()"  ""  "\fLabort()\fP \(em generate fault"
+.IX  generate "fault \(em \fLabort()\fP"
+.IX  "terminate program \(em \fLabort()\fP"
+.SH DESCRIPTION
+.LP
+.B abort(\|)
+first closes all open files if possible, then
+sends an
+.SM IOT
+signal to the process.
+This signal usually results in termination with a core dump,
+which may be used for debugging.
+.LP
+It is possible for
+.B abort(\|)
+to return control if
+.SB SIGIOT
+is caught or ignored,
+in which case the value returned is that of the
+.BR kill (2V)
+system call.
+.SH SEE ALSO
+.BR adb (1),
+.BR exit (2V),
+.BR kill (2V),
+.BR signal (3V)
+.SH DIAGNOSTICS
+.LP
+If
+.SB SIGIOT
+is neither caught nor ignored, and the current directory is writable,
+a core dump is produced and the message
+.RB `  "abort \- core dumped"  '
+is written by the shell.

@@ -1,0 +1,131 @@
+.\" @(#)rootmenu.5 1.1 92/07/30 SMI;
+.TH ROOTMENU 5 "31 January 1990"
+.SH NAME
+rootmenu \- root menu specification for SunView
+.SH SYNOPSIS
+.B ~/.rootmenu
+.br
+.B /usr/lib/.rootmenu
+.SH DESCRIPTION
+.IX "rootmenu root" "" "\fLrootmenu\fP \(em root menu specification for SunView"
+.IX "root" "menu specification for SunView"
+.IX "specification" "root menu, for SunView"
+.IX SunView "root menu specification for"
+.LP
+If a
+.B .rootmenu
+file is present in a user's home directory, it specifies the SunView menu,
+the menu that appears when the user clicks and holds the right
+mouse button in the background of the SunView desktop.  If a
+.B .rootmenu
+file is not present in the user's home directory,
+.B /usr/lib/.rootmenu
+specifies the SunView menu.
+.LP
+Each line of a
+.B .rootmenu
+file
+has the format:
+.LP
+.RS
+.TP 15
+.I "menu item"
+.I command
+.RE
+.LP
+.I menu item
+can be a character string, or an icon file delimited by angle brackets:
+.LP
+.RS
+.BI < icon-filename >
+.RE
+.LP
+If
+.I menu item
+is a character string with embedded spaces, it must be enclosed by
+double quotes
+(`\fB"\fP').
+.LP
+.I command
+can be a command line to be executed when the menu item is selected,
+or one of the following reserved-word commands:
+.LP
+.RS
+.TP 15
+.SB EXIT
+Exit 
+.BR sunview
+(requires confirmation).
+.TP
+.SB REFRESH
+Redraw the entire screen.
+.TP
+.SB MENU
+This menu item is a pull-right item with a submenu.
+If a full pathname follows the
+.SB MENU
+command, the submenu contents are taken from that file.
+Otherwise, all the lines between a
+.SB MENU
+command and a matching
+.SB END
+command are added to the submenu.
+.TP
+.SB END
+Mark the end of a nested submenu.
+The left side of this line should match the left side of a line
+with a
+.SB MENU
+command.
+.RE
+.LP
+If
+.I command
+is not one of the reserved-word commands, it is treated as a command line,
+although no shell interpretation is done.
+.LP
+Lines beginning with a
+.RB ` # '
+character are considered comments and are ignored.
+.LP
+If a user's
+.B .rootmenu
+file is modified, the SunView menu immediately reflects the changes.
+.LP
+See
+.BR sunview (1)
+for more details about
+.BR .rootmenu .
+.SH EXAMPLES
+.LP
+The following is a sample
+.B .rootmenu
+file:
+.LP
+.nf
+.ft B
+#
+#	sample root menu
+#
+"Lock Screen"		lockscreen
+Tools     MENU
+	Perfmeter		perfmeter
+	Calculator		calc
+	Mailtool		mailtool
+Tools     END
+"ShellTool"		shelltool
+"CommandTool"	cmdtool
+"Console"		cmdtool -C
+#"MailTool"		mailtool
+"TextEditor"		textedit
+"DefaultsEditor"	defaultsedit
+#"IconEditor"		iconedit
+#"DbxTool"		dbxtool
+"PerfMeter"		perfmeter
+#"GraphicsTool"	gfxtool
+"Redisplay All"		REFRESH
+"Exit Suntools"		EXIT
+.ft
+.fi
+.SH SEE ALSO
+.BR sunview (1)

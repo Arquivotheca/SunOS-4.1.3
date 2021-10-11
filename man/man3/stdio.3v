@@ -1,0 +1,255 @@
+.\" @(#)stdio.3v 1.1 92/07/30 SMI; from UCB 4.2
+.TH STDIO 3V "21 January 1990"
+.SH NAME
+stdio \- standard buffered input/output package
+.SH SYNOPSIS
+.B #include <stdio.h>
+.LP
+.SM
+.B FILE
+.B *stdin;
+.br
+.SM
+.B FILE
+.B *stdout;
+.br
+.SM
+.B FILE
+.B *stderr;
+.SH DESCRIPTION
+.IX  introduction  "standard I/O library functions"  
+.IX  "standard I/O library functions, introduction to"
+.IX  "buffered I/O library functions, introduction to"
+.IX  "library functions"  "introduction to standard I/O"
+.LP
+The functions described in section 3S constitute a user-level I/O buffering
+scheme.  The in-line macros
+.BR getc (3V)
+and
+.BR putc (3S)
+handle characters quickly.  The macros
+.B getchar(\|)
+(see
+.BR getc (3V))
+and
+.B putchar(\|)
+(see
+.BR putc (3S)),
+and the higher level routines
+.BR fgetc(\|) ,
+.B getw(\|)
+(see
+.BR getc (3V)),
+.BR gets (3S),
+.BR fgets(\|)
+(see
+.BR gets (3S)),
+.BR scanf (3V),
+.B fscanf(\|)
+(see
+.BR scanf (3V)),
+.BR fread (3S),
+.BR fputc(\|) ,
+.B putw(\|)
+(see
+.BR putc (3S)),
+.BR puts (3S),
+.B fputs(\|)
+(see
+.BR puts (3S)),
+.BR printf (3V),
+.B fprintf(\|)
+(see
+.BR printf (3V)),
+.B fwrite(\|)
+(see
+.BR fread (3S))
+all use or act as if they use
+.B getc(\|)
+and
+.BR putc(\|) .
+They can be freely intermixed.
+.LP
+A file with associated buffering is called a
+.IR stream ,
+and is declared to be a pointer to a defined type
+.SM
+.BR FILE \s0.
+.BR fopen (3V)
+creates certain descriptive data for a stream
+and returns a pointer to designate the stream in all further transactions.
+Normally, there are three open streams with constant pointers declared in
+the
+.B <stdio.h>
+include file and associated with the standard open files:
+.TP 10n
+.B stdin
+standard input file
+.br
+.ns
+.TP
+.B stdout
+standard output file
+.br
+.ns
+.TP
+.B stderr
+standard error file
+.LP
+A constant
+.SM
+.B NULL
+(0)
+designates a nonexistent pointer.
+.LP
+An integer constant
+.SM
+.B EOF
+(\-1) is returned upon
+.SM EOF
+or error by most integer functions that
+deal with streams
+(see the individual descriptions for details).
+.LP
+Any module that uses this package
+must include the header file of pertinent macro definitions,
+as follows:
+.PP
+.RS
+.B #include \|<stdio.h>
+.RE
+.LP
+The functions and constants mentioned in sections labeled 3S of this manual
+are declared in that header file and need no further declaration.
+The constants and the following `functions' are
+implemented as macros; redeclaration of these names is perilous:
+.BR getc(\|) ,
+.BR getchar(\|) ,
+.BR putc(\|) ,
+.BR putchar(\|) ,
+.BR feof(\|) ,
+.BR ferror(\|) ,
+.BR fileno(\|) ,
+and
+.BR clearerr(\|) .
+.LP
+Output streams, with the exception of the standard error stream
+.BR stderr ,
+are by default buffered if the output refers to a file
+and line-buffered if the
+output refers to a terminal.
+The standard error output stream
+.B stderr
+is by default unbuffered,
+but use of
+.B fopen(\|)
+will cause it to become buffered or line-buffered.
+When an output stream is unbuffered,
+information is written to the
+destination file or terminal as soon as it is output to the stream;
+when it is buffered,
+many characters are saved up and written as a block.
+When it is line-buffered,
+each line of output is written to the
+destination file or terminal as soon as the line is completed
+(that is, as soon as a
+.SM NEWLINE 
+character is output
+or, if the output stream is
+.B stdout
+or
+.BR stderr ,
+as soon as input is read from
+.BR stdin ).
+.BR setbuf (3V),
+.BR setbuffer(\|) ,
+.BR setlinebuf(\|) ,
+or
+.BR setvbuf(\|)
+(see
+.BR setbuf (3V))
+can be used to change the
+stream's buffering strategy.
+.SH SYSTEM V DESCRIPTION
+.LP
+When an output stream is line-buffered,
+each line of output is written to the
+destination file or terminal as soon as the line is completed
+(that is, as soon as a
+.SM NEWLINE
+character is output
+or as soon as input is read from a line-buffered stream).
+.LP
+Output saved up on
+.I all
+line-buffered streams is written when input is read from
+.I any
+line-buffered stream.  Input read from a stream that is not
+line-buffered does not flush output on line-buffered streams.
+.br
+.ne 5
+.SH RETURN VALUES
+.LP
+The value
+.SM
+.B EOF
+is returned uniformly to indicate that a
+.SM
+.B FILE
+pointer has not been initialized with
+.BR fopen(\|) ,
+input (output) has been attempted on an output (input) stream, or a
+.SM
+.B FILE
+pointer designates corrupt or otherwise unintelligible
+.SM
+.B FILE
+data.
+.SH SEE ALSO
+.BR open (2V),
+.BR close (2V),
+.BR lseek (2V),
+.BR pipe (2V),
+.BR read (2V),
+.BR write (2V),
+.BR ctermid (3V),
+.BR cuserid (3V),
+.BR fclose (3V),
+.BR ferror (3V),
+.BR fopen (3V),
+.BR fread (3S),
+.BR fseek (3S),
+.BR getc (3V),
+.BR gets (3S),
+.BR popen (3S),
+.BR printf (3V),
+.BR putc (3S),
+.BR puts (3S),
+.BR scanf (3V),
+.BR setbuf (3V),
+.BR system (3),
+.BR tmpfile (3S),
+.BR tmpnam (3S),
+.BR ungetc (3S)
+.SH NOTES
+.LP
+The line buffering of output to terminals is almost always transparent,
+but may cause confusion or malfunctioning of programs which use
+standard I/O routines but use
+.BR read (2V)
+to read from the standard input, as calls to
+.B read(\|)
+do not cause output to line-buffered streams to be flushed.
+.LP
+In cases where a large amount of computation is done after printing
+part of a line on an output terminal, it is necessary to call
+.B fflush(\|)
+(see
+.BR fclose (3V))
+on the standard output before performing the computation so that the output
+will appear.
+.SH BUGS
+.LP
+The standard buffered functions do not interact well with certain other
+library and system functions, especially
+.BR vfork (2).

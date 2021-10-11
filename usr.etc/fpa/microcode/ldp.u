@@ -1,0 +1,38 @@
+|*
+|*		Read Register via the Load Pointer
+|*
+routine c.rdregmsw r01110100000 lnop ssub
+	;		;			;		recclk;	rcsmsw ldptr;
+	call idle1 cdata;;			;		;	;
+routine c.rdreglsw r01110100001 lnop ssub
+	;		;			;		recclk;	rcslsw ldptr;
+	call idle1 cdata;;			;		;	;
+|*
+|*		Write Register via the Load Pointer
+|*
+routine c.wrregmsw w01110100000 lnop ssub
+routine c.wrregrecm w01110100010 lnop ssub
+	;		;			;		;	ldptr;
+	;		;			opdmsw dtor;	;	ramwe rcsmsw ldptr;
+	call idle1;	;			dtor;		;	ramwe ldptr;
+routine c.wrreglsw w01110100001 lnop ssub
+routine c.wrregrecl w01110100011 lnop ssub
+	;		;			;		;	ldptr;
+	;		;			opdmsw dtor;	;	ramwe rcslsw ldptr;
+	call idle1;	;			dtor;		;	ramwe ldptr;
+|*
+|*		Read Ram Location Specified by LOAD_PTR using both
+|*		halves of the Recovery Register
+|*
+routine c.rdregrecm r01110100010 lnop ssub
+	;		;			;		recclk;	rcsmsw ldptr;
+	;		;			;		recclk;	;
+	;		;			;		recoe recclk;;
+	;		;			;		recoe;	;
+	call idle1 cdata;;			;		;	;
+routine c.rdregrecl r01110100011 lnop ssub
+	;		;			;		recclk;	rcslsw ldptr;
+	;		;			;		recclk;	;
+	;		;			;		recoe recclk;;
+	;		;			;		recoe;	;
+	call idle1 cdata;;			;		;	;

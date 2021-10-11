@@ -1,0 +1,128 @@
+.\" @(#)getopt.3c 1.1 92/07/30 SMI; from UCB 4.2
+.TH GETOPT 3C "28 February 1985"
+.SH NAME
+getopt, optarg, optind \- get option letter from argv
+.SH SYNOPSIS
+.nf
+.ft B
+int getopt(argc, argv, optstring)
+int args;
+char **argv;
+char *optstring;
+.ft P
+.LP
+.ft B
+extern char *optarg;
+extern int optind;
+.ft R
+.fi
+.IX  "get option letter from argv"  ""  "get option letter from argv \(em \fLgetopt\fP"
+.IX  "option letter"  "get from argv"  ""  "get from argv \(em \fLgetopt\fP"
+.IX  argv  "get option letter"  argv  "get option letter \(em \fLgetopt\fP"
+.IX  "getopt function"  ""  "\fLgetopt\fP \(em get option letter"
+.IX  optarg  ""  "\fLoptarg\fP \(em get option letter"
+.IX  optind  ""  "\fLoptind\fP \(em get option letter"
+.SH DESCRIPTION
+This routine is included for compatibility with UNIX System V.
+.LP
+.I Getopt
+returns the next option letter in
+.I argv
+that matches a letter in
+.I optstring.
+.I Optstring
+is a string of recognized option letters; if a letter is followed
+by a colon, the option is expected to have an argument that may
+or may not be separated from it by white space.
+.I Optarg
+is set to point to the start of the option argument on return
+from
+.I getopt.
+.LP
+.I Getopt
+places in
+.I optind
+the
+.I argv
+index of the next argument to be processed.
+Because
+.I optind
+is external, it is normally initialized to zero automatically before
+the first call to
+.I getopt.
+.LP
+When all options have been processed (i.e., up to the first non-option
+argument),
+.I getopt
+returns
+.B \s-2EOF\s0.
+The special option \-\- may be used to delimit the end
+of the options;
+.B \s-2EOF\s0
+will be returned, and \-\- will be skipped.
+.SH DIAGNOSTICS
+.I Getopt
+prints an error message on
+.I stderr
+and returns a question mark (?)
+when it encounters an option letter not included in
+.I optstring.
+.SH EXAMPLE
+The following code fragment shows how one might process the arguments for a
+command that can take the mutually exclusive options
+.B a
+and
+.B b,
+and the options
+.B f
+and
+.B o,
+both of which require arguments:
+.LP
+.nf
+.DT
+	main(argc, argv)
+	int argc;
+	char **argv;
+	{
+		int c;
+		extern int optind;
+		extern char *optarg;
+		\&\fB.\fP
+		\&\fB.\fP
+		\&\fB.\fP
+		while ((c = getopt(argc, argv, "abf:o:")) != EOF)
+			switch (c) {
+			case 'a':
+				if (bflg)
+					errflg++;
+				else
+					aflg++;
+				break;
+			case 'b':
+				if (aflg)
+					errflg++;
+				else
+					bproc();
+				break;
+			case 'f':
+				infile = optarg;
+				break;
+			case 'o':
+				ofile = optarg;
+				bufsiza = 512;
+				break;
+			case '?':
+				errflg++;
+			}
+		if (errflg) {
+			fprintf(stderr, "usage: . . . ");
+			exit(2);
+		}
+		for (; optind < argc; optind++) {
+			if (access(argv[optind], 4)) {
+		\&\fB.\fP
+		\&\fB.\fP
+		\&\fB.\fP
+	}
+.fi

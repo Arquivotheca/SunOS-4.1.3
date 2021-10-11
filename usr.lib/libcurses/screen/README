@@ -1,0 +1,61 @@
+		Curses/Terminfo distribution
+
+THIS CODE IS PROPRIETARY TO BELL LABS.  DO NOT GIVE IT TO ANYONE ELSE.
+
+You have a distribution of curses and terminfo.  This is the second
+internal distribution of curses.  To find the version, look in
+screen/curses.c for a version number.
+
+To report bugs, if at all possible, demonstrate the bug in the form
+of a "show script", that is, a 2 page (often 48 line) file which
+will cause the show program to mess up.  If a simple modification
+to show will illustrate the bug, this is second choice.  Otherwise,
+please write a small program that illustrates the bug.  Huge programs
+that "don't work" are unlikely to get much sympathy.
+
+To install curses, be guided by the makefiles.  You can use the
+makefile in this directory.  Do a "make all install".  Do not do "make clean"
+until the install completes.  This will not install any manual pages
+or demos - they are up to you to install by hand if you want them.
+
+If you are on a 16 bit machine, it will be necessary
+to add the -i option to ../screen/makefile's compilation of tic.
+(This has already been done for the PDP-11).
+Otherwise, tic will dump core when trying to compile some terminals.
+If you are on a small 11 without separate I/D, you'll have
+to compile only those entries that don't use lots of use= indirection:
+what's happening is that 3 or 4 levels of use= recursion runs out of
+memory on the stack.
+
+Now you can run programs using curses.  A sample program included in
+the screen directory is show.c, say "make show" and it will compile.
+"show" is a paging program - you hit space to go on to the next page.
+You can use show to make sure everything works.  (Be sure you have TERM
+set in your environment.  TERMCAP is no longer necessary.)  A fancier
+demo can be found in the demo directory.
+
+If you add or change terminfo descriptions in the terminfo directory,
+you can run compile on the single source file, instead of on terminfo.src.
+Since the compiler is so slow, it's worthwhile to only run it on
+one source file.
+
+If you add capabilities
+you should edit screen/caps.  Be sure to add the capabilties
+at the END of the section (bools, nums, or strings) as this will
+preserve compatibility with older binaries.  Then run "make term.h",
+"make clean", and recompile the library.
+
+For debugging, the makefile will create several other versions of curses.
+In addition to the .c (source) and .o (object) files, there are .p's
+for profiling, .d's for debugging, and .t's for tracing.  These will
+create dlibcurses.a, plibcurses.a, and tlibcurses.a.  The d version
+defines DEBUG and uses the -g flag for sdb.  DEBUG causes the file "trace"
+to be created in the current directory when you run a program with curses.
+This can be installed as -lcurses if you wish.  The t version defines
+DEBUG for tracing, but doesn't use -g, so it's faster to compile, but
+won't help much if core dumps.
+
+A recent addition is screen/termcap.c (made from screen/termcap.form
+and screen/caps) which emulates the older termcap library.  This is
+intended only as a conversion aid, but it is complete enough to enable
+vi 3.7 (the last termcap version) to run using terminfo.

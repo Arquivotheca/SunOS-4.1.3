@@ -1,0 +1,127 @@
+.\" @(#)trace.1 1.1 92/07/30 SMI;
+.TH TRACE 1 "8 August 1989"
+.SH NAME
+trace \- trace system calls and signals
+.SH SYNOPSIS
+.B trace
+[
+.B \-ct
+] [
+.B \-o
+.I filename
+]
+.I \ command
+.LP
+.B trace
+[
+.B \-ct
+] [
+.B \-o
+.I filename
+]
+.B \-p
+.I pid
+.SH DESCRIPTION
+.IX "trace command" "" "\fLtrace\fR command"  
+.LP
+.B trace
+runs the specified
+.I command
+until it exits.
+It intercepts the system calls and signals of a process.
+The name of the system call, its arguments and result
+are listed on the standard output.
+.LP
+Each line in the trace contains the system call name, followed
+by its arguments in parentheses and its result.
+Error returns (result = \-1) have the error name and error message
+appended.
+Signals are printed as a signal name followed by the signal number.
+Arguments are printed according to their type.
+Structure pointers are always printed as hex addresses.
+Character pointers are dereferenced and printed as a
+quoted string.
+Non-printing characters in strings are represented by escape codes.
+Only the first 32 bytes of strings are printed;
+longer strings have two dots appended following the closing quote.
+.IP
+.B "The quick brown fox jumps over t" \|.\|.
+.LP
+Strings with more than 50% non-printing characters are assumed
+to contain binary data and are represented by a null
+string followed by two dots.
+.IP
+\fB""..\fR
+.SH OPTIONS
+.TP 12
+.B \-c
+Print a quick summary of system call
+and signal counts, instead of printing a full trace.
+.TP
+.B \-t
+Prefix each line of the trace with the time of day.
+.TP
+.BI \-o " filename"
+Write the trace output to the file
+.I filename
+rather than to the standard output.
+.TP
+.BI \-p " pid"
+Attach to the process with the process
+.SM ID
+.I pid
+and begin tracing.
+The trace may be terminated
+at any time by a keyboard interrupt signal (\c
+.SM CTRL\s0-C);
+.B trace
+will respond by detaching itself from the traced process
+leaving it to continue running.
+.SH EXAMPLES
+.nf
+.ft B
+example% trace date
+gettimeofday (0x21474, 0x2147c) = 0
+gettimeofday (0x21474, 0) = 0
+gettimeofday (0xefffc78, 0x214ac) = 0
+ioctl (1, 0x40067408, 0xefffa10) = \-1 \s-1ENOTTY\s0 (Inappropriate ioctl for device)
+fstat (1, 0xefffa30) = 0
+getpagesize () = 8192
+brk (0x27640) = 0
+close (0) = 0
+Thu Dec  4 14:16:36 PST 1986
+write (1, "Thu Dec  4 14:16:36 PST 1986\en", 29) = 29
+close (1) = 0
+close (2) = 0
+exit (0) = ?
+example%
+.ft R
+.fi
+.SH "SEE ALSO"
+.BR ptrace (2)
+.br
+.ne 8
+.SH NOTES
+A process that has a system call trace applied to it with the
+.B \-p
+option
+will receive a
+.BR \s-1SIGSTOP\s0 .
+This signal may interrupt a system call that is not restartable.
+This may have an unpredictable effect on the process
+if the process takes no action to restart the system call.
+.SH BUGS
+.LP
+Programs that use the
+.I setuid
+bit do not have
+effective user
+.SM ID
+privileges while being traced.
+.LP
+Child processes of a traced process are not traced.
+.LP
+A traced process ignores
+.SM SIGSTOP\s0.
+.LP
+A traced process runs slowly.

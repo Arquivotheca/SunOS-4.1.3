@@ -1,0 +1,145 @@
+|*	@(#)sp.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Single Precison Add Instruction
+|*
+routine sp.add 0000111xxxx0 	snop enrb halt;			adtoti;		imm2;
+	;			sadd enra halt;			regtitmp;	rcssp imm2;
+	;			;				;		imm2;
+safin:
+sa1fin:
+	jtierr ser2 cstat;	tioe tisp halt;			titoreg;	rcssp imm2;
+	pipe idl1;		snop halt;			;		imm2;
+|*
+|*		Single Precision NOP Instruction
+|*
+routine sp.nop 0000000xxxx0 	;				;		;
+	;			;				;		ptr5;	ptr5!c_ssin
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;	
+	;			tioe tisp halt;			;		;
+	call idle1;		;				;		;
+|*
+|*		Single Precision Negate Instruction
+|*
+routine sp.neg 0000001xxxx0	;				regtotmp;	rcssp imm2;
+	;			;				;		;
+	;			sneg enra halt;			adtoti;		;
+	call sa1fin;		;				;		imm2;
+|*
+|*		Single Precision Absolute Instruction
+|*
+routine sp.abs 0000010xxxx0	;				regtotmp;	rcssp imm2;
+	;			;				;		;
+	;			sabs enra halt;			adtoti;		;
+	call sa1fin;		tioe tisp;			;		imm2;
+|*
+|*		Single Precision Float Instruction (Integer to SP)
+|*
+routine sp.float 0000011xxxx0 	;				regtotmp;	rcssp imm2;
+	;			;				;		;
+	;			sfloat enra halt;		adtoti;		;
+	call sa1fin;		;				;		imm2;
+|*
+|*		Single Precision Fix Instruction (SP to Integer)
+|*
+routine sp.fix 0000100xxxx0	scvtint enra halt;		adtoti;		;
+	;			halt;				regtotmp;	rcssp ptr2;
+	;			halt;				;		ptr2;
+	jtierr ckres cstat;	snop enra tioe tisp halt;	titoreg;	rcssp ptr2;
+	pipe idl1;		snop halt;			;		imm2;	ptr5!szero
+|*
+|*		Single Precision Convert Instruction (SP to DP)
+|*
+routine sp.conv 0000101xxxx0	;				regtotmp;	rcslsw imm2;
+	;			;				;		;
+	;			scvtd enra loaddp halt;		adtoti;		;
+	;			scvtd enra loaddp halt;		adtoti;		;
+	;			dnop tioe timsw; 		;		imm2;
+	jtierr ser2 cstat;	dnop tioe tilsw halt;		titoreg;	rcslsw imm2;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw imm2;
+|*
+|*		Single Precision Square Instruction
+|*
+routine sp.sqar 0000110xxxx0 	;				regtotmp;	rcssp imm2;	
+	;			;				;		;
+	;			smul enra enrb halt;		adtoti;		;
+	call sa1fin;		;				;		imm2;
+|*
+|*		Single Precision Subtract Instruction
+|*
+routine sp.sub 0001000xxxx0 	snop enrb halt;			adtoti;		imm2;
+	;			ssub enra halt;			regtitmp;	rcssp imm2;
+	call safin;		;				;		imm2;
+|*
+|*		Single Precision Multiply Instruction
+|*
+routine sp.mul 0001001xxxx0 	snop enra halt;			adtoti;		imm2;
+	;			smul enrb halt;			regtitmp;	rcssp imm2;	
+	call safin;		;				;		imm2;
+|*
+|*		Single Precision Divide Instruction
+|*
+routine sp.div 0001010xxxx0 	snop enra halt;			regtitmp;	rcssp imm2;
+	;			snop;				;		;
+	;			sdiv enrb halt;			adtoti;		;	
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		imm2;
+	jtierr ser2 cstat;	snop tioe tisp halt;		titoreg;	rcssp imm2;
+	;			tioe tisp halt;			;		;
+	pipe idl1;		halt;				;		imm2;
+
+|*
+|*		Single Precision Backwards Subtract Instruction
+|*
+routine sp.b.sub 0001011xxxx0 	snop enra halt;			adtoti;		imm2;
+	;			ssub enrb halt;			regtitmp;	rcssp imm2;
+	call safin;		;				;		imm2;
+|*
+|*		Single Precision Backwards Divide Instruction
+|*
+routine sp.b.div 0001100xxxx0 	enra halt;			adtoti;		imm2;
+	;			sdiv enrb halt;			regtitmp;	rcssp imm2;	
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		imm2;
+	jtierr ser2 cstat;	snop tioe tisp halt;		titoreg;	rcssp imm2;
+	;			tioe tisp halt;			;		;
+	pipe idl1;		halt;				;		imm2;
+|*
+|*		Single Precision Compare with Zero Instruction
+|*
+routine sp.eqlzero 0001101xxxx0	enra halt;			adtoti;		;
+	;			;				;		ptr5;	ptr5!0x400+0x0
+|#
+|#	Load A register with single precision zero and execute a compare instruction.
+|#
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		;
+spstat:
+	jtierr hang cstat;	halt;				;		;
+	pipe idl1;		halt;				;		imm2;
+|*
+|*		Single Precision Compare Register 1 with operand
+|*
+routine sp.eqlreg1 0001110xxxx0 snop enrb halt;			adtoti;		imm2;
+|#
+|#	Load RA with register 1 contents and execute a compare instruction. 
+|#
+	;			scmp enra halt;			regtoti;	rcssp imm2;
+	call spstat;		;				;		;
+|*
+|*		Single Precision Magnitude Compare Register 1 with operand
+|*
+routine sp.cmpreg1 0001111xxxx0 snop enrb halt;			adtoti;		imm2;
+|#
+|#	Load A register with register 1 contents and execute a magnitude compare instruction.
+|#
+	;			scmpm enra halt;		regtoti;	rcssp imm2;
+	call spstat;		;				;		;

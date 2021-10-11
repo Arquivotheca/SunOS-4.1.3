@@ -1,0 +1,521 @@
+.\" @(#)colldef.8 1.1 92/07/30 SMI; from POSIX
+.\" how to print -    troff -t -man colldef.8 | lpr -t 
+.ds e' \o"e\(ga"
+.TH COLLDEF 8 "30 May 1991"
+.SH NAME
+colldef \- convert collation sequence source definition
+.SH SYNOPSIS
+.B /usr/etc/colldef
+.I filename
+.SH DESCRIPTION
+.IX "colldef" "" "\fLcolldef\fP \(em convert collation sequence source definition" ""
+.LP
+.B colldef
+converts a collation sequence source definition into a
+format usable by the
+.B strxfrm(\|)
+and
+.BR strcoll (3)
+functions.
+It is used to define the many ways in which strings can be
+ordered and collated.
+.B strxfrm(\|)
+transforms its first
+argument and places the result in its second argument.
+The transformed string is such that it can be correctly ordered
+with other transformed strings by using
+.BR strcmp(\|) ,
+.BR strncmp(\|) ,
+or
+.B memcmp(\|) 
+(see
+.BR string (3)
+and
+.BR memory (3)). 
+.BR strcoll (3)
+transforms its arguments and does a comparison.
+.LP
+.B colldef
+reads the collation sequence source definition from the
+standard input and stores the converted definition in 
+.IR filename .
+The output file produced contains the database with collating sequence
+information in a form usable by system commands and routines.
+.LP
+The collation sequence definition specifies a set of
+collating elements and the rules defining how strings
+containing these should be ordered.
+This is most useful for different language
+definitions.
+.LP
+The 
+.B colldef
+command can support languages whose mapping and collating
+sequences can be described by the following cases:
+.IP \(bu 4
+Ordering of single characters within the codeset.
+For example, in Swedish, 
+.B V
+is sorted after 
+.BR U ,
+before 
+.B X
+and with 
+.B W
+.RB ( V
+and 
+.B W
+are considered identical as far as sorting is concerned).
+.IP \(bu 4
+Equivalence class definition.
+A collection of characters is defined to have the same
+primary sorting value.
+.IP \(bu 4
+Ordering of "double characters" in the collation sequence.
+For example, in Spanish, 
+.B ch
+and 
+.B ll
+are collated after
+.B c
+and 
+.BR l ,
+respectively.
+.IP \(bu 4
+Ordering of a single character as if it consists of two characters.
+For example, in German, the "sharp s",
+.BR \(*b ,
+is sorted as
+.BR ss .
+This is a special instance of the next case below.
+.IP \(bu 4
+Substitution of one character with a character string,
+that is, a one-to-many mapping.
+In the example above, the character
+.B \(*b
+is replaced with 
+.B ss
+during sorting.
+.IP \(bu 4
+Ignoring certain characters in the codeset during collation.
+For example, if
+.RB ` \- '
+is not specified in the specification table,
+then the strings
+.B re\-locate
+and
+.B relocate
+are equal.
+.IP \(bu 4
+Null character mapping.
+A character is mapped to a null collating
+element, and is ignored in sorting sequences.
+.IP \(bu 4
+Secondary ordering between characters.
+In the case where two
+characters are sorted together in the collation sequence, (for example,
+they have the same "primary" ordering),
+there is sometimes a secondary
+ordering that is used if two strings are identical except for
+characters that have the same primary ordering.
+For example, in French, the letters
+.B e
+and
+.B \*(e'
+have the same primary ordering but
+.B e
+comes before
+.B \*(e'
+in the secondary
+ordering.
+Thus the word
+.B lever
+would be ordered before
+\f3l\*(e'ver\fP,
+but
+\f3l\*(e'ver\fP
+would be sorted before
+.BR levitate .
+Note: if
+.B e
+came before
+.B \*(e'
+in the primary ordering,
+then
+.B l\*(e'ver
+would be sorted after
+.BR levitate .
+.SH USAGE
+.LP
+The specification file can consist of three statements:
+.BR charmap ,
+.BR substitute ,
+and
+.BR order .
+Of these, only the
+.B order
+statement is required.
+When 
+.B charmap
+or
+.B substitute
+is supplied, these statements must be ordered as above.
+Any statements after the 
+.B order
+statement are ignored.
+.LP
+Lines in the specification file beginning with a
+.B #
+are treated as comments and are ignored.
+Blank lines are also ignored.
+.br
+.ne 5
+.TP
+.BI charmap " charmapfile"
+.B charmap
+defines where a mapping of the character and
+collating element symbols to the actual character encoding can be
+found.
+The
+.I charmapfile
+filename cannot be a keyword (for example, 
+.BR substitute ,
+.BR order ,
+or
+.BR with )
+or special symbols (for example,
+.BR .\|.\|.\| ,
+.BR ; ,
+.BR < ,
+.BR > ,
+or
+.BR , ).
+.IP
+The format of
+.I charmapfile
+is shown below.
+Symbol names are separated from their values by
+.SM TAB
+or
+.SM SPACE
+characters.
+.I symbol-value
+can be specified in a hexadecimal
+.RB ( \ex\fI??\fP )
+or octal
+.RB ( \e\fI???\fP )
+representation, and can be only one character in length.
+.IP
+.ft I
+.nf
+	symbol-name1	symbol-value1
+	symbol-name2	symbol-value2
+	.\|.\|.
+.fi
+.ft R
+.IP
+The following sample
+.I charmapfile
+maps the symbol names,
+.BR c ,
+.BR h ,
+.BR H ,
+and
+.BR A-grave ,
+to their respective symbol values.
+.IP
+.ft B
+.nf
+	c	\ex63
+	h 	\ex68
+	H	\e110
+	A-grave	\e300
+.fi
+.ft R
+.IP
+The symbol names defined in
+.I charmapfile
+can be used in 
+.B order
+statements by enclosing the symbol name in angle brackets,
+.BI < symbol-name >\fR.
+For example,
+.IP
+.ft B
+.nf
+	order	(a, <A-grave>);b;<c>;\|.\|.\|.\|;<h>;<H>;i;\|.\|.\|.\|;z
+.fi
+.ft R
+.IP
+This statement is equivalent to,
+.IP
+.ft B
+.nf
+.\"	order	(a, \*(A'\|);b;c;\|.\|.\|.\|;h;H;i;\|.\|.\|.\|;z
+	order	(a, \z\s-1A\s0\h'.1'\v'-.15'\(ga\v'.15'\|);b;c;\|.\|.\|.\|;h;H;i;\|.\|.\|.\|;z
+.fi
+.ft R
+.IP
+Symbol names cannot be specified in 
+.B substitute
+fields.
+Symbol names also cannot be combined with any other representation,
+such as,
+.BR <c>h ,
+.BR c<h> ,
+.BR <c>\ex68 ,
+or
+.BR <c><h>.
+Symbol names can be used with primary and secondary ordering as in the
+following example.
+.IP
+.ft B
+.nf
+	order  a;b;c;(<c>,<h>);d;...;z;\e
+		A;\|.\|.\|.\|;G;{H,<H>};I;\|.\|.\|.\|;Z
+.fi
+.ft R
+.IP
+The
+.B charmap
+statement is optional.
+.TP
+.BI "substitute " char " with " repl
+.IP
+The 
+.B substitute
+statement substitutes
+the character
+.I char
+with the string
+.IR repl .
+.IP
+The simple use of the
+.B substitute
+statement mentioned above substituted a single character
+with two characters, as with the substitution of
+.B \(*b
+with
+.B ss
+in German.
+.IP
+.ft B
+	substitute "\(*b" with "ss"
+.ft R
+.IP
+This statement can also be used to specify characters to be ignored
+by mapping them to the null string.
+.IP
+.ft B
+	substitute "m" with ""
+.ft R
+.IP
+This is convenient for simplifying 
+.B order
+statements.
+When used with the statement below, the lower-case
+.B m
+is ignored \(em even though it is implicitly included in the
+.B order
+statement.
+.IP
+.ft B
+.nf
+	order a;\|.\|.\|.;z
+.fi
+.ft R
+.br
+.ne 5
+.IP
+Without the null string mapping statement above, this would be specified as,
+.IP
+.ft B
+.nf
+	order a;\|.\|.\|.\|;l;n;\|.\|.\|.\|;z
+.fi
+.ft R
+.IP
+The
+.B substitute
+statement is optional.
+.br
+.ne 5
+.TP
+.BI "order " order_list
+.IP
+.I order_list
+is a list of symbols, separated by semicolons,
+that defines the collating sequence.
+The special symbol,
+.BR \&.\|.\|. ,
+specifies, in a short-hand form, symbols that are sequential in machine code order.
+The following example specifies the list of lower-case letters.
+.IP
+.ft B
+	order a;b;c;d;...;x;y;z\f1
+.ft R
+.IP
+Of course, this could
+be further compressed to just
+.BR a;\|.\|.\|.\|;z .
+.IP
+A symbol can be up to two characters in length and can be represented
+in any one of the following ways:
+.RS
+.IP \(bu 4
+The symbol itself (for example, 
+.B a
+for the lower-case letter 
+.BR a ).
+.IP \(bu 4
+In octal representation (for example, 
+.B \e141
+for the letter
+.BR a ).
+.IP \(bu 4
+In hexadecimal representation (for example, 
+.B \ex61
+for the letter 
+.BR a ).
+.IP \(bu 4
+The symbol name as defined in the
+.B charmap
+file.
+.RE
+.IP
+Any combination of these may be used as well.
+.IP
+The backslash character, 
+.BR \e ,
+is used for continuation.
+In this case,
+no characters are permitted after the backslash character.
+.IP
+Symbols enclosed in parentheses are assigned the same primary ordering
+but different secondary ordering.
+Symbols enclosed in curly
+brackets are assigned only the same primary ordering.
+For example,
+.IP
+.nf
+.ft B
+	order a;b;c;ch;d;(e,\*(e');f;...;z;\\
+		 {1,2,3,4,5,6,7,8,9};A;...;Z
+.ft R
+.fi
+.IP
+In the above example, 
+.B e
+and 
+.B \*(e'
+are assigned the
+same primary ordering and different secondary ordering, and digits 1
+through 9 are assigned the same primary ordering and
+no secondary ordering.
+Note that the ellipses cannot be specified within curly brackets.
+Only primary ordering is assigned to the remaining symbols.
+Notice how double letters can be specified in the collating
+sequence (letter 
+.B ch
+comes between 
+.B c
+and
+.BR d ).
+.IP
+If a character is not included in the 
+.B order
+statement
+it is excluded from the ordering and will be ignored during sorting.
+.SH EXAMPLES
+.LP
+The following example shows the collation specification
+required to support a hypothetical telephone book sorting
+sequence.
+.PP
+The sorting sequence is defined by the following rules:
+.IP \(bu 4
+Upper and lower case letters must be sorted together, but upper
+case letters have precedence over lower case letters.
+.IP \(bu 4
+All special characters and punctuation should be ignored.
+.IP \(bu 4
+Digits must be sorted as their alphabetic counterparts (for example,
+.B 0
+as
+.BR zero ,
+.B 1
+as
+.BR one ).
+.IP \(bu 4
+The
+.BR CH ,
+.BR Ch ,
+.B ch
+combinations must be collated between
+.B c
+and
+.BR D .
+.IP \(bu 4
+.B V
+and
+.BR W ,
+.B v
+and
+.B w
+must be collated together.
+.PP
+The input specification file for this example
+contains:
+.IP
+.RS 10
+.nf
+.ft B
+.\" ### need charmap statement instead of codeset ###
+.\" codeset   telephone
+substitute "0" with "zero"
+substitute "1" with "one"
+substitute "2" with "two"
+substitute "3" with "three"
+substitute "4" with "four"
+substitute "5" with "five"
+substitute "6" with "six"
+substitute "7" with "seven"
+substitute "8" with "eight"
+substitute "9" with "nine"
+
+order A;a;B;b;C;c;CH;Ch;ch;D;d;E;e;F;f;\\
+      G;g;H;h:I;i;J;j;K;k;L;l;M;m;N;n;O;o;P;p;\\
+      Q;q;R;r;S;s;T;t;U;u;{V,W};{v,w};X;x;Y;y;Z;z
+.fi
+.ft R
+.RE
+.SH EXIT STATUS
+.LP
+.B colldef
+exits with the following values:
+.TP
+0
+No errors were found and the output was successfully created.
+.TP
+>0
+Errors were found.
+.SH FILES
+.PD 0
+.TP 10
+.B /etc/locale/\s-1LC_COLLATE\s0/\fIlocale\fP
+standard private location for collation orders under the 
+.I locale 
+locale
+.TP
+.B /usr/share/lib/locale/\s-1LC_COLLATE\s0/\fIlocale\fP
+standard shared location for collation orders under the 
+.I locale 
+locale
+.SH "SEE ALSO"
+.BR memory (3),
+.BR strcoll (3),
+.BR string (3)
+.LP
+.TX SSO
+
+

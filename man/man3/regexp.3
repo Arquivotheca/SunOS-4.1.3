@@ -1,0 +1,413 @@
+.\" @(#)regexp.3 1.1 92/07/30 SMI; from S5R2
+.TH REGEXP 3 "21 January 1990"
+.SH NAME
+regexp \- regular expression compile and match routines
+.SH SYNOPSIS
+.B #define
+.SB INIT
+.B <declarations>
+.br
+.B #define
+.SB GETC\*S(\|)
+.B <getc code>
+.br
+.B #define
+.SB PEEKC\*S(\|)
+.B <peekc code>
+.br
+.B #define
+.SB UNGETC\*S(c)
+.B <ungetc code>
+.br
+.B #define
+.SB RETURN\*S(pointer)
+.B <return code>
+.br
+.B #define
+.SB ERROR\*S(val)
+.B <error code>
+.LP
+.B "#include <regexp.h>"
+.LP
+.B "char \(**compile(instring, expbuf, endbuf, eof)"
+.br
+.B "char \(**instring, \(**expbuf, \(**endbuf;"
+.br
+.B int eof;
+.LP
+.B "int step(string, expbuf)"
+.br
+.B "char \(**string, \(**expbuf;"
+.LP
+.B "extern char \(**loc1, \(**loc2, \(**locs;"
+.LP
+.B "extern int circf, sed, nbra;"
+.SH DESCRIPTION
+.IX regexp() "" "\fLregexp()\fR \(em regular expression compile and match routines"
+.LP
+This page describes general-purpose
+regular expression matching routines.
+.LP
+The interface to this file is unpleasantly complex.
+Programs that include this file must have
+the following five macros declared before the
+.RB ` "#include <regexp.h>" '
+statement.  These macros are used by the
+.I compile
+routine.
+.TP 20
+.B \s-1GETC\s+1(\|)
+Return the value of the next character
+in the regular expression pattern.
+Successive calls to
+.B \s-1GETC\s+1(\|)
+should return successive characters
+of the regular expression.
+.TP
+.B \s-1PEEKC\s+1(\|)
+Return the next character in the regular
+expression.  Successive calls to
+.B \s-1PEEKC\s+1(\|)
+should return
+the same character, which should also be the
+next character returned by
+.BR \s-1GETC\s+1(\|) .
+.TP
+.B \s-1UNGETC\s+1(\fIc\fB)
+Returns the argument
+.I c
+by the next call to
+.B \s-1GETC\s+1(\|)
+or
+.BR \s-1PEEKC\s+1(\|) .
+No more that one character of pushback
+is ever needed and this character is guaranteed
+to be the last character read by
+.BR \s-1GETC\s+1(\|) .
+The value of the macro
+.B \s-1UNGETC\s+1(\fIc\fB)
+is always ignored.
+.TP
+.B \s-1RETURN\s+1(\fIpointer\fB)
+This macro is used on normal exit of the
+.I compile
+routine.  The value of the argument
+.I pointer
+is a pointer to the character after the last
+character of the compiled regular expression.
+This is useful to programs that have
+memory allocation to manage.
+.SH ERRORS
+.TP 20
+.B \s-1ERROR\s+1(\fIval\fB)
+This is the abnormal return from the
+.B compile(\|)
+routine.  The argument
+.I val
+is an error number
+(see table below for meanings).
+This call should never return.
+.LP
+.RS 20
+.PD 0
+.TP 10
+ERROR
+MEANING
+.TP
+11
+Range endpoint too large.
+.TP
+16
+Bad number.
+.TP
+25
+``\fB\e\fP
+digit'' out of range.
+.TP
+36
+Illegal or missing delimiter.
+.TP
+41
+No remembered search string.
+.TP
+42
+.B \e(\| \e)
+imbalance.
+.TP
+43
+Too many
+.BR \e( .
+.TP
+44
+More than 2 numbers given in
+.BR "\e{\| \e}" .
+.TP
+45
+.B }
+expected after
+.BR \e .
+.TP
+46
+First number exceeds second in
+.BR "\e{\| \e}" .
+.TP
+49
+.B [\|]
+imbalance.
+.TP
+50
+Regular expression too long.
+.RE
+.PD
+.LP
+The syntax of the
+.B compile(\|)
+routine is as follows:
+.RS
+.IP
+.B compile(instring, expbuf, endbuf, eof)
+.RE
+.LP
+The first parameter
+.I instring
+is never used explicitly by the
+.B compile(\|)
+routine but is useful
+for programs that pass down different pointers
+to input characters.
+It is sometimes used in the
+.B \s-1INIT\s+1(\|)
+declaration (see below).
+Programs that call functions to input characters or have
+characters in an external array can pass down a value
+of ((char \(**) 0) for this parameter.
+.LP
+The next parameter
+.I expbuf
+is a character pointer.
+It points to the place where the compiled
+regular expression will be placed.
+.LP
+The parameter
+.I endbuf
+is one more than the highest address where
+the compiled regular expression may be placed.
+If the compiled expression cannot fit in
+.RI ( endbuf \- expbuf )
+bytes, a call to
+.B \s-1ERROR\s+1(50)
+is made.
+.LP
+The parameter
+.I eof
+is the character that marks
+the end of the regular expression.
+For example, in an editor like
+.BR ed (1),
+this character would usually a
+.RB ` / '.
+.LP
+Each program that includes this file must have a
+.B #define
+statement for
+.BR \s-1INIT\s+1(\|) .
+This definition will be placed right after
+the declaration for the function
+.B compile(\|)
+and
+.RB ` { '
+(opening curly brace).
+It is used for dependent declarations
+and initializations.
+Most often it is used to set a register variable to
+point the beginning of the regular expression
+so that this register variable can be used in the
+declarations for
+.BR \s-1GETC\s+1(\|) ,
+.BR \s-1PEEKC\s+1(\|) ,
+and
+.BR \s-1UNGETC\s+1(\|) .
+Otherwise it can be used to declare external variables
+that might be used by
+.BR \s-1GETC\s+1(\|) ,
+.BR \s-1PEEKC\s+1(\|) ,
+and
+.BR \s-1UNGETC\s+1(\|) .
+See the example below of the declarations taken from
+.BR grep (1V).
+.LP
+There are other functions in this file
+that perform actual regular expression matching,
+one of which is the function
+.BR step(\|) .
+The call to
+.B step(\|)
+is as follows:
+.IP
+.B step(string, expbuf)
+.LP
+The first parameter to
+.B step(\|)
+is a pointer to a string
+of characters to be checked for a match.
+This string should be
+null-terminated
+.LP
+The second parameter
+.I expbuf
+is the compiled regular expression
+that was obtained by a call of the function
+.IR compile .
+.LP
+The function
+.B step(\|)
+returns non-zero if the given
+string matches the regular expression, and zero
+if the expressions do not match.
+If there is a match, two external character
+pointers are set as a side effect to the call to
+.BR step(\|) .
+The variable set in
+.B step(\|)
+is
+.IR loc1 .
+This is a pointer to the first character that
+matched the regular expression.  The variable
+.IR loc2 ,
+which is set by the function
+.BR advance(\|) ,
+points to
+the character after the last character that matches
+the regular expression.  Thus if the regular
+expression matches the entire line,
+.B loc1
+will point to the first character of
+.I string
+and
+.B loc2
+will point to the
+null character
+at the end of
+.IR string .
+.LP
+.B step(\|)
+uses the external variable
+.B circf
+which is set by
+.B compile(\|)
+if the regular expression begins with
+.RB ` \s+2^\s0 '.
+If this is set then
+.B step(\|)
+will try to match the regular expression to
+the beginning of the string only.
+If more than one regular expression is to be
+compiled before the first is executed the value of
+.B circf
+should be saved for each compiled expression and
+.B circf
+should be set to that saved value before each call to
+.BR step(\|) .
+.LP
+The function
+.B advance(\|)
+is called from
+.B step(\|)
+with the same arguments as
+.BR step(\|) .
+The purpose of
+.B step(\|)
+is to step through the
+.I string
+argument and call
+.B advance(\|)
+until
+.B advance(\|)
+returns non-zero indicating a match or until the end of
+.I string
+is reached.  If one wants to constrain
+.I string
+to the beginning of the line in all cases,
+.B step(\|)
+need not be called; simply call
+.BR advance(\|) .
+.LP
+When
+.B advance(\|)
+encounters a
+.B \(**
+or
+.B \e{\| \e}
+sequence in the regular expression, it
+will advance its pointer to the string to
+be matched as far as possible and will
+recursively call itself trying to match the
+rest of the string to the rest of the regular expression.
+As long as there is no match,
+.B advance(\|)
+will back up along the
+string until it finds a match or reaches the
+point in the string that initially matched the
+.B \(**
+or
+.BR "\e{\| \e}" .
+It is sometimes desirable to stop this backing up before
+the initial point in the string is reached.
+If the external character pointer
+.B locs
+is equal to the point in the string
+at sometime during the backing up process,
+.B advance(\|)
+will break out of the loop that backs
+up and will return zero.
+This could be used by an editor like
+.BR ed (1)
+or
+.BR sed (1V)
+for substitutions done globally
+(not just the first occurrence, but the whole line)
+so, for example, expressions like
+.B s/y\(**//g
+do not loop forever.
+.LP
+The additional external variables
+.B sed 
+and 
+.B nbra
+are used for special purposes.
+.SH EXAMPLES
+.LP
+The following is an example of how the
+regular expression macros and calls could
+look in a command like
+.BR grep (1V):
+.RS
+.nf
+.ft B
+#define \s-1INIT\s+1	register char \(**sp = instring;
+#define \s-1GETC\s+1(\|)	(\(**sp\++)
+#define \s-1PEEKC\s+1(\|)	(\(**sp)
+#define \s-1UNGETC\s+1(c)	(\-\-sp)
+#define \s-1RETURN\s+1(c)	return;
+#define \s-1ERROR\s+1(c)	regerr(\|)
+.LP
+.ft B
+#include <regexp.h>
+\&.\|.\|.
+.ta 8 16
+ 	 (void) compile(\(**argv, expbuf, &expbuf[\s-1ESIZE\s+1], \(fm\e0\(fm);
+\&.\|.\|.
+	if (step(linebuf, expbuf))
+ 		succeed (\|);
+.ft R
+.fi
+.RE
+.SH SEE ALSO
+.BR ed (1),
+.BR grep (1V),
+.BR sed (1V)
+.SH BUGS
+.LP
+The handling of
+.B circf
+is difficult.

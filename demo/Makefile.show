@@ -1,0 +1,105 @@
+#
+# Makefile for bitmap, color, window, and SunCore Show demos ------
+
+# This is the Makefile used to create the hsow tape ... it is included
+#  for reference oly.
+
+FLOATFLAG= -fsingle
+DESTDIR=
+#
+CORE_DEMOS= chessgame draw mixcolor product shaded showmap stringart suncube
+WINDOW_DEMOS= rotcube
+SHOW_DEMOS= cclear molecule show vectors
+DEMOS= ${CORE_DEMOS} ${WINDOW_DEMOS}
+ALL_DEMOS= ${DEMOS} ${SHOW_DEMOS}
+#
+CORELIBS= -lcore -lm
+WINLIBS=-lsuntool -lsunwindow -lpixrect
+#
+CFLAGS = -O -fsingle
+#
+# create the world target for release tapes
+#
+all:	${ALL_DEMOS}
+
+#
+# individual demo targets
+#
+
+cclear: cclear.o
+	cc cclear.o -o cclear -lpixrect
+
+chessgame: chessgame.o
+	cc chessgame.o -o chessgame ${CORELIBS} ${WINLIBS} 
+
+draw: draw.o
+	cc draw.o -o draw ${CORELIBS} ${WINLIBS} 
+
+mixcolor: mixcolor.o
+	cc mixcolor.o -o mixcolor ${CORELIBS} ${WINLIBS} 
+
+molecule: molecule.o
+	cc -O -o molecule molecule.o fract.o $(WINLIBS) -lm -lc
+
+product: product.o
+	cc product.o -o product ${CORELIBS} ${WINLIBS} 
+
+rotcube: rotcube.o
+	cc rotcube.o -o rotcube ${WINLIBS}
+
+shaded: shaded.o
+	cc shaded.o -o shaded ${CORELIBS} ${WINLIBS}
+
+show: show.o
+	cc show.o -o show  -lpixrect
+
+showmap: showmap.o
+	cc showmap.o -o showmap ${CORELIBS} ${WINLIBS}
+
+stringart: stringart.o
+	cc stringart.o -o stringart ${CORELIBS} ${WINLIBS}
+
+suncube: suncube.o
+	cc suncube.o -o suncube ${CORELIBS} ${WINLIBS} 
+
+vectors: vectors.o
+	cc vectors.o -o vectors ${WINLIBS}
+
+#
+# clean up this directory
+#
+clean:
+	rm -f *.o errs core ${ALL_DEMOS}
+
+#
+# move stuff into place for creation of release tapes
+#
+install: all
+	-for i in '' /src /MAPS /DATA /COLORPIX /VECTORDATA; do \
+		mkdir ${DESTDIR}/usr/demo$$i && \
+		/etc/chown bin ${DESTDIR}/usr/demo$$i && \
+                chmod 755 ${DESTDIR}/usr/demo$$i; done
+	-for i in ${ALL_DEMOS}; do \
+		(install -s $$i ${DESTDIR}/usr/demo) && \
+		(cp $$i.c ${DESTDIR}/usr/demo/src); done
+	-cd DATA; for i in *; do\
+		(cp $$i ${DESTDIR}/usr/demo/DATA); done
+	-cd MAPS; for i in *; do\
+		(cp $$i ${DESTDIR}/usr/demo/MAPS); done
+	-cd COLORPIX; for i in *; do\
+		(cp $$i ${DESTDIR}/usr/demo/COLORPIX); done
+	-cd VECTORDATA; for i in *; do\
+		(cp $$i ${DESTDIR}/usr/demo/VECTORDATA); done
+	-(cp Runcolor ${DESTDIR}/usr/demo)
+	-(chmod +x ${DESTDIR}/usr/demo/Runcolor)
+	-(cp Runbw ${DESTDIR}/usr/demo)
+	-(chmod +x ${DESTDIR}/usr/demo/Runbw)
+	-(cp Runvectors ${DESTDIR}/usr/demo)
+	-(chmod +x ${DESTDIR}/usr/demo/Runvectors)
+	-(cp color ${DESTDIR}/usr/demo)
+	-(cp testmol ${DESTDIR}/usr/demo)
+	-(cp READ_ME_SHOW ${DESTDIR}/usr/demo/READ_ME)
+	-(cp demolib.h ${DESTDIR}/usr/demo/src)
+	-(cp fract.h ${DESTDIR}/usr/demo/src)
+	-(cp fract.o ${DESTDIR}/usr/demo/src)
+	-(cp Makefile.show ${DESTDIR}/usr/demo/src/Makefile)

@@ -1,0 +1,208 @@
+.\" @(#)xdr_create.3n 1.1 92/07/30 SMI;
+.TH XDR_CREATE 3N "20 January 1990"
+.SH NAME
+xdr_destroy, xdrmem_create, xdrrec_create, xdrstdio_create \- library routines for external data representation stream creation
+.SH DESCRIPTION
+.IX "xdr routines" "xdr_destroy()" "" "\fLxdr_destroy()\fP \(em create XDR streams"
+.IX "xdr routines" "xdrmem_create()" "" "\fLxdrmem_create()\fP \(em create XDR streams"
+.IX "xdr routines" "xdrrec_create()" "" "\fLxdrrec_create()\fP \(em create XDR streams"
+.IX "xdr routines" "xdrstdio_create()" "" "\fLxdrstdio_create()\fP \(em create XDR streams"
+.IX "xdr_destroy()" "" "\fLxdr_destroy()\fP \(em create XDR streams"
+.IX "xdrmem_create()" "" "\fLxdrmem_create()\fP \(em create XDR streams"
+.IX "xdrrec_create()" "" "\fLxdrrec_create()\fP \(em create XDR streams"
+.IX "xdrstdio_create()" "" "\fLxdrstdio_create()\fP \(em create XDR streams"
+.LP
+.SM XDR
+library routines allow C programmers to describe
+arbitrary data structures in a machine-independent fashion.
+Protocols such as remote procedure calls (\s-1RPC\s0)
+use these routines to describe the format of the data.
+.LP
+These routines deal with the creation of
+.SM XDR
+streams.
+.SM XDR
+streams have to be created before any data can be translated into
+.SM XDR
+format.
+.SS Routines
+.LP
+The
+.BR \s-1XDR\s0 ,
+.BR \s-1CLIENT\s0 ,
+and
+.SB SVCXPRT
+data structures are defined in the
+.SM RPC/XDR
+Library Definitions of the
+.TX NETP .
+.br
+.LP
+.ft B
+.nf
+#include <rpc/xdr.h>
+.fi
+.ft 1
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void xdr_destroy(xdrs)
+\s-1XDR\s0 *xdrs;
+.fi
+.ft R
+.IP
+Invoke the destroy routine associated with the
+.SM XDR
+stream,
+.IR xdrs .
+Destruction usually involves freeing private data structures
+associated with the stream.
+Using
+.I xdrs
+after invoking
+.B xdr_destroy(\|)
+is undefined.
+.br
+.if t .ne 12
+.LP
+.ft B
+.nf
+.sp .5
+void xdrmem_create(xdrs, addr, size, op)
+\s-1XDR\s0 *xdrs;
+char *addr;
+u_int size;
+enum xdr_op op;
+.fi
+.ft R
+.IP
+This routine initializes the
+.SM XDR
+stream object pointed to by
+.IR xdrs .
+The stream's data is written to, or read from,
+a chunk of memory at location
+.I addr
+whose length is no more than
+.I size
+bytes long.
+.I size
+should be a multiple of 4.
+The
+.I op
+determines the direction of the
+.SM XDR
+stream
+(either
+.BR \s-1XDR_ENCODE\s0 ,
+.BR \s-1XDR_DECODE\s0 ,
+or
+.BR \s-1XDR_FREE\s0 ).
+.br
+.if t .ne 15
+.LP
+.ft B
+.nf
+.sp .5
+void xdrrec_create(xdrs, sendsz, recvsz, handle, readit, writeit)
+\s-1XDR\s0 *xdrs;
+u_int sendsz, recvsz;
+char *handle;
+int (*readit) (\|), (*writeit) (\|);
+.fi
+.ft R
+.IP
+This routine initializes the
+.SM XDR
+stream object pointed to by
+.IR xdrs .
+The stream's data is written to a buffer of size
+.IR sendsz ;
+a value of zero indicates the system should use a suitable
+default. The stream's data is read from a buffer of size
+.IR recvsz ;
+it too can be set to a suitable default by passing a zero
+value.
+When a stream's output buffer is full,
+.I writeit
+is called.
+Similarly, when a stream's input buffer is empty,
+.I readit
+is called.
+The behavior of these two routines is similar to
+.BR read (2V)
+and
+.BR write (2V),
+except that
+.I handle
+is passed to the former routines as the first parameter.
+Note: 
+The
+.SM XDR
+stream's
+.I op
+field must be set by the caller.
+.I sendsz
+and
+.I recvsz
+should be multiples of 4.
+.IP
+Warning: 
+This
+.SM XDR
+stream implements an intermediate record stream.
+Therefore there are additional bytes in the stream
+to provide record boundary information.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+void xdrstdio_create(xdrs, filep, op)
+\s-1XDR\s0 *xdrs;
+\s-1FILE\s0 *filep;
+enum xdr_op op;
+.fi
+.ft R
+.IP
+This routine initializes the
+.SM XDR
+stream object pointed to by
+.IR xdrs .
+The
+.SM XDR
+stream data is written to, or read from, the Standard
+.B I/O
+stream
+.IR filep .
+The parameter
+.I op
+determines the direction of the
+.SM XDR
+stream (either
+.BR \s-1XDR_ENCODE\s0 ,
+.BR \s-1XDR_DECODE\s0 ,
+or
+.BR \s-1XDR_FREE\s0 ).
+.IP
+Warning: 
+The destroy routine associated with such
+.SM XDR
+streams calls
+.B fflush(\|)
+on the
+.I file
+stream, but never
+.BR fclose (3V).
+.SH SEE ALSO
+.BR read (2V),
+.BR write (2V),
+.BR fclose (3V),
+.BR xdr (3N),
+.BR xdr_admin (3N),
+.BR xdr_complex (3N),
+.BR xdr_simple (3N)

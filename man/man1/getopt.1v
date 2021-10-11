@@ -1,0 +1,120 @@
+.\" @(#)getopt.1v 1.1 92/07/30 SMI; from S5R2 6.2
+.TH GETOPT 1V "17 September 1989"
+.SH NAME
+getopt \- parse command options in shell scripts
+.SH SYNOPSIS
+.B set \-\|\- `getopt
+.I opstring
+.B $*`
+.br
+.B set argv = (`getopt
+.I opstring 
+.B $*`)
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX command "process options in scripts \(em \fLgetopt\fR"
+.IX getopt "" "\fLgetopt\fR \(em process options in scripts"
+.B getopt
+breaks up options in command lines for easy parsing by shell
+scripts, and checks for legal options.
+.I optstring
+is a string of option letters to recognize, (see
+.BR getopt (3)).
+If a letter is followed by a colon, the option
+is expected to have an argument \(em
+which may or may not be separated by white space.
+.LP
+(The
+.RB ` \-\|\- '
+following
+.B set
+indicates that the Bourne shell is to pass arguments
+beginning with a dash as parameters to the script.)
+.LP
+If
+.RB ` \- '
+appears on the command line that invokes the script,
+.B getopt
+uses it to delimit the end of options it is
+to parse (see example below).
+If used explicitly,
+.B getopt
+will recognize it; otherwise,
+.B getopt
+will generate it at the first argument it encounters that has no
+.RB ` \- '.
+In either case,
+.B getopt
+places it at the end of the options.  The positional parameters
+.RB ( $1
+.BR $2 .\|.\|.\|)
+of the shell are reset so that each option in
+.I optstring
+is broken out and preceded by a
+.RB ` \- ',
+along with the argument (if any) for each.
+.SH EXAMPLE
+.LP
+The following code fragment shows how one might process the arguments
+for a command that can take the options
+.B a
+or
+.BR b ,
+as well as the option
+.BR o ,
+which requires an argument:
+.sp .5
+.RS
+.nf
+.ft B
+.ta +.5i +1i
+#! /usr/bin/sh
+set \-\|\- \*`getopt abo: $*`
+if [ $? != 0 ]
+then
+	echo $\s-1USAGE\s+1
+	exit 2
+fi
+for i in $*
+do
+	case $i in
+	\-a \(bv \-b) \s-1FLAG\s+1 =$i; shift;;
+	\-o)	\s-1OARG\s+1 =$2; shift 2;;
+	\-\|\-)	shift; break;;
+	esac
+done
+.fi
+.ft R
+.RE
+.LP
+This code will accept any of the following
+command lines as equivalent:
+.RS
+.nf
+.ft B
+cmd \-a \-o arg \0f1 \0f2
+cmd \-aoarg \0f1 \0f2
+cmd \-oarg \-a \0f1 \0f2
+cmd \-a \-oarg \-\|\- \0f1 \0f2
+.ft R
+.fi
+.RE
+.SH SEE ALSO
+.BR csh (1),
+.BR getopts (1),
+.BR sh (1),
+.BR getopt (3)
+.SH DIAGNOSTICS
+.B getopt
+prints an error message on the standard
+error when it encounters an option
+letter not included in
+.IR optstring .
+.SH NOTES
+.BR getopts (1)
+is preferred.

@@ -1,0 +1,96 @@
+.\" @(#)updaters.5 1.1 92/07/30 SMI
+.TH UPDATERS 5 "14 December 1987"
+.SH NAME
+updaters \- configuration file for NIS updating
+.SH SYNOPSIS
+.B /var/yp/updaters
+.SH DESCRIPTION
+.IX "updaters file" "" "\fLupdaters\fP file"
+.LP
+The file
+.B /var/yp/updaters
+is a makefile (see
+.BR make (1))
+which is used for updating the
+Network Information Service
+(\s-1NIS\s0)
+databases.
+Databases can only be updated
+in a secure network, that is, one that has a
+.BR publickey (5)
+database.
+Each entry in the file is
+a make target for a particular
+.SM NIS
+database.
+For example, if there is an
+.SM NIS
+database named
+.B passwd.byname
+that can be updated, there should be a
+.B make
+target named
+.B passwd.byname
+in the
+.B updaters
+file with the command to update the file.
+.LP
+The information necessary to make
+the update is passed to the update
+command through standard input.
+The information passed is described
+below (all items are followed by a
+.SM NEWLINE\s0,
+except for 4 and 6)
+.IP \(bu 3
+Network name of client wishing to
+make the update (a string)
+.IP \(bu
+Kind of update (an integer)
+.IP \(bu
+Number of bytes in key (an integer)
+.IP \(bu
+Actual bytes of key
+.IP \(bu
+Number of bytes in data (an integer)
+.IP \(bu
+Actual bytes of data
+.LP
+After getting this information through
+standard input, the command to update
+the particular database should decide
+whether the user is allowed to make
+the change.
+If not, it should exit with the status
+.BR \s-1YPERR_ACCESS\s0 .
+If the user is allowed to make the change,
+the command should make the change and
+exit with a status of zero.
+If there are
+any errors that may prevent the updater from
+making the change, it should exit with the status
+that matches a valid
+.SM NIS
+error code described in
+.BR <rpcsvc/ypclnt.h> .
+.SH FILES
+.PD 0
+.TP 20
+.B /var/yp/updaters
+.PD
+.SH "SEE ALSO"
+.BR make (1),
+.BR ypupdate (3N),
+.BR publickey (5),
+.BR ypupdated (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

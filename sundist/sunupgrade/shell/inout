@@ -1,0 +1,82 @@
+##################################################
+log_echo(){
+    echo $*
+}
+##################################################
+log_cat(){
+    $CAT $*
+}
+##################################################
+log_more(){
+    if $INTERACTIVE; then
+	$MORE $*
+    else
+	$CAT $*
+    fi
+}
+##################################################
+log_tab(){
+    echo -n "	"
+}
+##################################################
+#og_echo "12345678901234567890123456789012345678901234567890123456789012345678901234567890"
+##################################################
+print_header(){
+log_echo ""
+log_echo "$CMD will perform an upgrade by extracting $TO_RELEASE files from the"
+log_echo "media and overwriting the $FROM_RELEASE files on $TYPE $HOST."
+[ $TYPE = dataless ] && return
+log_echo "$CMD will only upgrade software categories which are currently installed."
+log_echo
+log_echo "No OpenWindows versions later than OpenWindows Version 3 will be overwritten."
+log_echo
+log_echo "The list of installed software categories to upgrade will be generated from the"
+log_echo "following file(s) on your system : "
+log_echo
+log_echo "	/etc/install/media_file.sun4.sun{4, 4c, 4m}.sunos.{4.1.1, 4.1.2}"
+log_echo
+log_echo "Please check that the file shows \"mf_loaded=no\" for software categories you"
+log_echo "do NOT wish to upgrade and \"mf_loaded=yes\" for software categories you wish to"
+log_echo "upgrade. If you have installed a software category \"manually\" -- without using "
+log_echo "SunInstall -- it will not be shown as loaded; change the \"no\" to \"yes\" for"
+log_echo "such software categories, being sure the software category is installed in the"
+log_echo "normal SunInstall location."
+log_echo
+log_echo "Please check the _readme file in /usr/etc/install/tar/sunupgrade for more"
+log_echo "information about the upgrade process."
+}
+##################################################
+stdin_log(){
+# the only place we read from stdin
+    read $1
+}
+##################################################
+get_yesno(){
+# return "yes" or "no" into shell variable named $1.
+#  $2 is the user prompt.
+    yesno=""
+    while [ ! "$yesno" ]
+    do
+        echo -n   $2 "	[yes|no] ? "
+        stdin_log yesno
+        case "$yesno" in
+        [yY]*)  yesno=yes ;;
+        [nN]*)  yesno=no ;;
+        *)      echo 'Please enter "yes" or "no".'
+		yesno="" ;;
+        esac
+    done
+    eval $1="$yesno"
+}
+##################################################
+show_list(){
+log_echo "-------------------------------------------------------------------------------"
+    log_echo "$1 on $HOST :"
+    $NAWK -f formatter $2
+}
+##################################################
+cat_it(){
+    if [ -s $1 ]; then	log_more $1
+    fi
+}
+##################################################

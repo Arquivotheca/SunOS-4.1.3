@@ -1,0 +1,53 @@
+.\" @(#)rstat.3r 1.1 92/07/30 SMI;
+.TH RSTAT 3R "6 October 1987"
+.SH NAME
+rstat \- get performance data from remote kernel
+.SH PROTOCOL
+.B /usr/include/rpcsvc/rstat.x
+.SH DESCRIPTION
+.IX rstat() "" "\fLrstat()\fR \(em performance data from remote kernel"
+.IX havedisk "" "\fLhavedisk()\fR \(em disk inquiry of remote kernel"
+.IX "remote kernel performance"
+.LP
+The
+.B rstat(\|)
+protocol is used to gather statistics from remote kernel.
+Statistics are available on items such as
+paging, swapping and cpu utilization.
+.SH PROGRAMMING
+.nf
+.B #include <rpcsvc/rstat.h>
+.LP
+.B havedisk(host)
+.B char *host;
+.LP
+.B rstat(host, statp)
+.B char *host;
+.B struct statstime *statp;
+.fi
+.LP
+.B havedisk(\|)
+returns 1 if
+.I host
+has a disk, 0 if it does not,
+and \-1 if this cannot be determined.
+.B rstat(\|)
+fills in the
+.B statstime
+structure for
+.IR host ,
+and returns 0 if it was successful.
+.LP
+The following
+.SM XDR
+routines are available in
+.BR  librpcsvc :
+.nf
+.B xdr_statstime
+.B xdr_statsswtch
+.B xdr_stats
+.fi
+.SH SEE ALSO
+.BR perfmeter (1),
+.BR rup (1C),
+.BR rstatd (8C)

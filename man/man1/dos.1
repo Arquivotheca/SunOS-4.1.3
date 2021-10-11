@@ -1,0 +1,540 @@
+.\" @(#)dos.1 1.1 92/07/30 SMI;
+.TH DOS 1 "19 February 1988"
+.SH NAME
+dos \- SunView window for IBM PC/AT applications
+.SH SYNOPSIS
+.B dos
+[
+.B \-b
+] [
+.BI \-p " config"
+] [
+.B \-q
+] [
+.B \-s
+] [
+.BI \-update " time"
+] [
+.B \-w 
+] [
+.BI \-c " command"
+]
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX dos "" "\fLdos\fR \(em window for IBM PC/AT applications"
+.LP
+A window created by
+.B dos
+looks and acts like the screen of an
+.SM IBM PC/AT
+or compatible computer running
+.SM MS-DOS
+3.3, except that it has expanded features. It allows
+sharing of files with the SunOS operating system, copying and pasting data between 
+windows, and piping and redirection.  You may run any reasonable number of 
+.SM DOS
+windows simultaneously.
+.LP
+Shrinking or expanding the 
+window will not change the contents to accommodate the new size.
+.SH USAGE
+.SS Menu
+The menu available in the window by pressing the right mouse button
+allows various controls over the work in the window. 
+.B Edit
+allows you to copy and paste between windows.  The 
+.B Show Screen
+menu item selects the type of screen display\(emeither Hercules, \s-1CGA\s0, 
+or Monochrome.  Use the \s-1DOS MODE\s0 command to set the corresponding
+\s-1DOS\s0 display mode.  See the
+.I Sun386i User's Guide
+or on-line help for more information.  The
+.B Mouse
+menu item allows you to control whether the mouse operates like a Microsoft
+or compatible mouse or in normal SunView fashion (see
+.I Sun386i Advanced Skills
+for instructions on enabling Microsoft mouse driver software).
+The
+.B Send to printer
+menu item allows you to send queued jobs to the print spooler.
+.B Sound
+controls the volume of sounds from the \s-1DOS\s0 window.
+.B Device
+allows you to select which disks and other devices will be used and which 
+are to be considered write only.
+The 
+.B Reboot \s-1DOS\s0 Window
+item is equivalent to restarting the window.
+This can also be accomplished by pressing the
+.SM CONTROL,
+.SM ALT,
+and
+.SM DELETE 
+keys simultaneously.
+.LP
+.SS Printer Assignments
+.SM DOS
+uses three printer designations: 
+.SM
+.BR LPT1 ,
+.SM
+.BR LPT2 ,
+and
+.SM
+.BR LPT3 .
+The default settings are: files sent to
+.SB LPT1
+go to the default system printer. Files sent to
+.SB LPT2
+are appended to the file 
+.B lpt-2 
+in your home directory.
+Epson-compatible print jobs can be sent to
+.SB LPT3
+to yield Epson FX-80 quality output on a Postscript printer.
+.SS Drives
+.LP
+The \s-1DOS\s0 command
+.B FORMAT A: /S
+works only if the current working directory contains \s-1DOS\s0 files.
+This is usually Drive C and sometimes Drive A.
+.TP 18
+Drive A 
+The Sun386i 3.5-inch diskette drive, used for reading
+.SM PC
+format diskettes onto the hard disk and writing data to be stored on floppy.
+Drive A is not accessible across a network.
+.TP
+Drive B
+An optional 5.25-inch diskette drive.  Same restrictions as Drive A.
+.TP
+Drive C 
+A virtual disk stored in the
+.B ~/pc/C:
+file.
+Files written to Drive C cannot be accessed from the SunOS operating
+system.
+Drive C is generally intended
+for storage of applications and copy protected software but not data.
+To \s-1DOS\s0, drive C is a 20-megabyte drive. You can install copy-protected
+software on drive C, but not on other drives.
+.TP
+Drives D through S 
+Equivalents of the SunOS operating system directories.  They can be
+accessed from either the
+.SM DOS
+or SunOS operating systems, and can contain any number of files and
+other directories.  The SunOS directories referenced by
+.SM DOS
+drives other 
+than D, H, and R (described below) are user-defined 
+(using the
+.SB DOS EXTEND
+command).
+.br
+.ne 8
+.RS
+.TP
+Drive D 
+The current SunOS directory when the
+.SM DOS
+window was opened.  May subsequently be changed to any other directory.
+.TP
+Drive H 
+The home directory of the user who opened the window.  May subsequently be changed to any directory in the user's home directory tree.
+.TP
+Drive R 
+Initially equivalent to the root directory of the SunOS operating
+system.
+.RE
+.LP
+.SS File Sharing between SunOS and DOS Systems
+File names under
+.SM DOS
+consist of 8 characters, a period, and a 3 
+character extension.  When a SunOS filename does not comply with 
+these rules, its
+name is modified by placing a tilde (~) in an appropriate location 
+so that the
+file name conforms to
+.SM DOS
+specifications while remaining unique.
+It is recommended that filenames conform to
+.SM DOS
+requirements for files to be used in both the SunOS and
+.SM DOS
+operating systems.
+.LP
+Because the SunOS and
+.SM DOS
+operating systems
+use different conventions for 
+.SM RETURN
+characters, 
+.B dos2unix
+and
+.BR unix2dos 
+are provided to convert text files between the two formats.  
+.SS Command Sharing between SunOS and DOS Systems
+The 
+.B /etc/dos/unix
+directory contains a list of SunOS commands accessible from
+.SM DOS.
+Other SunOS commands not in this list can be executed from
+.SM DOS
+with the command
+.RB ` unix 
+.IR command '.
+SunOS commands always use SunOS filename conventions and
+.SM DOS
+commands always use
+.SM DOS
+filename conventions, regardless of whether either type of command is executed from 
+the SunOS or
+.SM DOS
+operating system.
+Only
+.SM DOS
+commands can use drives A and C.
+.LP
+.SH OPTIONS
+.TP
+.B \-b
+Boots (loads)
+.SM DOS
+and opens a window using the
+.SB AUTOEXEC.BAT
+and
+.SB CONFIG.SYS
+files instead of
+.BR ~/pc/.quickpc .
+A
+.SM DOS
+sign-on message is displayed in the window.
+.TP 
+.B \-s
+Boot
+.SM DOS
+and save a new
+.B .quickpc
+unless
+.BR \s-1C:AUTOEXEC.BAT\s0 ,
+.BR \s-1C:CONFIG.SYS\s0 ,
+or
+.B /etc/dos/defaults/rom 
+has a date newer than the
+.B .quickpc
+file (see the
+.B \-s
+option).
+.TP
+.BI \-p " config"
+Loads an alternate file instead of
+.BR setup.pc .
+.TP
+.BI \-q 
+Forces
+.B dos
+to read settings from the 
+.B .quickpc
+file (as specified in 
+.BR setup.pc )
+even if 
+.BR \s-1C:AUTOEXEC.BAT\s0 ,
+.BR \s-1C:CONFIG.SYS\s0 ,
+or 
+.BR /etc/dos/defaults/rom
+have been updated since you last typed 
+.BR "dos \-s" . 
+.TP 
+.B \-s
+Boot \s-1DOS\s0 and save a new
+.B .quickpc
+file under the name specified on the \s-1SAVE\s0 line in 
+.BR ~/pc/setup.pc .
+Use this option after making changes to drive C's
+.BR \s-1AUTOEXEC.BAT\s0
+or
+.BR \s-1CONFIG.SYS\s0 .
+Exits \s-1DOS\s0 after saving the 
+.B .quickpc
+file.
+.TP
+.BI \-update
+Gives you a new drive C and a new
+.B setup.pc
+using the settings from
+.B /etc/dos/defaults/C:
+and
+.BR /etc/dos/defaults/setup.pc ,
+respectively.
+.TP
+.BI \-w 
+Runs
+.SM DOS
+text-only commands and applications in the current SunView Commands window.
+.TP
+.BI \-c " command"
+Executes the given \s-1DOS\s0 command in the newly created window.
+If you use the 
+.BR \-c 
+option,
+.BR \-c 
+and the command that follows it must be the last items on
+the command line.
+.SH ENVIRONMENT
+.TP 15
+\s-1DOS_LOCKING\s0
+This environment variable determines which locking service
+is used to lock drive C for write access. If it is set to on, \s-1DOS\s0
+uses the locking service on the server where the home directory is located.
+This locks drive C for access from any \s-1DOS\s0 window on the network. If
+it is set to off, \s-1DOS\s0 uses the local system's locking service. This locks
+drive C only for access from \s-1DOS\s0 windows running on the local system.
+The default is on. Some servers
+(for example, some \s-1VAX\s0/Ultrix systems) do not provide an
+\s-1NFS\s0 locking service.
+For home directories stored on these servers, set the variable to 
+off to avoid an error message when a \s-1DOS\s0 window starts up.
+.br
+.ne 5
+.TP
+\s-1DOS_PRINTER\s0
+The value of this environment variable indicates 
+the timeout (in seconds) for printing.
+A value of 20 (the default) indicates that jobs will be sent to the \s-1UNIX\s0
+print spooler after 20 seconds of no printing activity from \s-1DOS\s0
+to that printer.
+A value of 0 indicates that the spooler must be flushed manually from the menu
+in the window.
+.TP
+.SM DOSLOOKUP
+.br
+If on, this environment variable indicates that a command
+should be tried as a
+.SM DOS
+command if not recognized by the SunOS system.
+If
+.SM DOS
+supports the command, a
+.SM DOS
+window is created and the command executed in that window.
+If the command does not exist, the normal SunOS error message results. 
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/dos/unix
+Files in this directory indicate which SunOS commands are accessible from
+.SM DOS\s0.
+.TP
+.B /etc/dos/defaults/.quickpc
+Default
+.B .quickpc
+file copied into a user's home PC directory
+.RB ( ~/pc )
+the first time a \s-1DOS\s0 window is started.  Not used by \s-1DOS\s0
+in this location.
+.TP
+.B /etc/dos/defaults/setup.pc
+Default
+.B setup.pc
+file copied into a user's home \s-1DOS\s0 directory
+.RB ( ~/pc )
+the first time a \s-1DOS\s0 window is started.  Not used by \s-1DOS\s0
+in this location.
+.TP
+.B /etc/dos/defaults/boards.pc
+Stores information about
+.SM IBM
+.SM PC/XT/AT\c
+-compatible boards installed in your system.
+.TP
+.B /etc/dos/defaults/C:
+Default drive C file copied into a user's home PC directory 
+the first time a
+.SM DOS
+window is started.
+.TP
+.B ~/pc/autoexec.bat
+Contains drive assignments, search paths, and other startup commands.
+Searched after
+.SB C:AUTOEXEC.BAT
+and
+.SM
+.BR D:AUTOEXEC.BAT .
+.TP
+.SB C:AUTOEXEC.BAT
+Contains commands to access system printers and special drives.
+You should not need to change the
+.SB AUTOEXEC.BAT
+on drive C.
+Put your changes in the
+.SB AUTOEXEC.BAT
+on drive H (in your home directory).
+.SB C:AUTOEXEC.BAT
+is not accessible from the SunOS system.
+.TP
+.SB D:AUTOEXEC.BAT
+If an
+.SB AUTOEXEC.BAT
+file exists in the current directory,
+.SM DOS
+tries execute faster running
+.SM
+.BR C:AUTOEXEC.BAT .
+.TP
+.SB C:CONFIG.SYS
+Specifies device drivers and other system parameters.
+.BR \s-1C:CONFIG.SYS\s0
+is not accessible from  the SunOS system.
+.TP
+.B ~/pc/setup.pc
+Defines printers, standard PC devices, and drive C.
+One or more of these files may exist, under various names which you assign.
+.TP
+.B ~/pc/.quickpc
+An image of DOS as last saved with
+.B dos 
+.BR -s ,
+including all \s-1DOS\s0 environment variables and drivers that were
+in effect at that time.  \s-1DOS\s0 normally reads this file at startup.
+.TP
+.B ~/pc/C:
+A user's personal copy of drive C.
+.PD
+.SH DIAGNOSTICS
+.TP
+.B "Cannot save \fIfilename\fP quick-start file."
+The 
+.B dos 
+command was unable to save the specified quick-start file.
+Check the \s-1SAVE\s0 setting in your PC setup file
+(normally \fB~/pc/setup.pc\fP).
+Also check file access permissions on the specified quick-start file.
+.TP 10
+.B Cannot load \fIfilename\|\fP quick-start file.
+.B dos 
+was unable to read the specified quick-start file.
+Check the \s-1SAVE\s0 setting in your \fBsetup.pc\fP file.  Also check
+file access permissions on the specified quick-start file.
+.TP
+.B "Possible software incompatibility. Unsupported 286 instruction \fIinstruction\fP at \fIaddress\|\fP."
+.PD 0
+.
+.TP
+.B Possible software incompatibility. Unsupported 386 instruction.
+.PD 0
+.
+.TP
+.B Possible software incompatibility. Segment wrap.
+.PD 0
+.
+.TP
+.B "Possible software incompatibility. Two-byte opcode\|."
+The application you are running was written specifically
+for 80286 or 80386 machines.  Software run from a
+.SM DOS
+window must be compatible with 8086 systems.
+.br
+.ne 4
+.TP
+.B "Copying default configuration files into your home directory\|."
+This is the first time you have run the
+.B dos
+command.  A
+.B ~/pc
+directory is being set up, and 
+.SM DOS\s0-related
+files are being copied into it.
+.LP
+.B "Another \s-1DOS\s0 window already has access to \fIdevice\fP"
+.br
+.B "\s-1IRQ\s0 level \fInumber\fP is still in use by another \s-1DOS\s0 window\|."
+.RS
+Your PC configuration file (normally
+.BR ~/pc/setup.pc )
+is requesting access to a physical device that another
+.SM DOS
+window is using.
+.RE
+.TP
+.B "Port number \fInumber\fP out of range for \fIboard\fP board.
+The port number specified in the
+.B /etc/dos/defaults/boards.pc
+is invalid.
+.TP
+.B "\s-1IRQ\s0 value \fInumber\fP out of range for \fIboard\fP board.
+The interrupt level specified in the
+.B /etc/dos/defaults/boards.pc
+is invalid.
+.TP
+.B "\s-1IRQ\s0 level \fInumber\fP is in use by a Unix driver\|."
+There is a Unix driver servicing the board you are trying to attach
+to \s-1DOS\s0.  You are using the wrong \s-1IRQ\s0 level or you should
+use the driver instead.
+.TP
+.B "Interrupt level \fInumber\fP is used by \s-1DOS\s0 to support \fIdevice\fP"
+The interrupt level specified in the
+.B /etc/dos/defaults/boards.pc
+conflicts with an interrupt value currently being used by either
+a physical or emulated
+.SM DOS
+device.
+.TP
+.B "I/O address range \fIaddress\fP-\fIaddress\fP requested for \fIname\fP board already in use by \fIdevice\fP\|."
+The address range specified in the
+.B /etc/dos/defaults/boards.pc
+conflicts with range currently being used by either a physical or 
+emulated \s-1DOS\s0 device.
+.TP
+.B "Cannot share \fIdevice\fP with a hardware interrupt or \s-1DMA\s0 channel\|."
+A shared device specified in the
+.B /etc/dos/defaults/boards.pc
+was also assigned an interrupt level in this file.  Shared
+devices cannot be assigned interrupt levels.
+.TP
+.B "Couldn't find \fIname\fP board in boards.pc\|."
+A file specified in the PC setup file (normally
+.BR ~/pc/setup.pc )
+is not listed in the
+.B /etc/dos/defaults/boards.pc
+file. Check the
+.B setup.pc
+file, or add an entry for the board in
+.BR boards.pc .
+.TP
+.B "\s-1ROM\s0 is newer than .quickpc. Rebooting \fIprogram_name\fP\|."
+Save a new \fB.quickpc\fP file by issuing the command \fBdos \-s\fP.
+.LP 
+.B Warning: Your personal drive C (\fIpathname\fP)
+.B is not protected against 
+.B simultaneous access by more than
+.B one workstation. Ask your system
+.B administrator to upgrade 
+.B \fIserver\fP to use the lock manager.
+.B Until your home directory 
+.B server is updated with this program,
+.B do not use \fIprogram_name\fP
+.B  when you are logged into more 
+.B than one workstation.
+.sp .5
+.RS
+The system on the network where your drive C is stored has not
+protected the drive against access by \s-1DOS\s0 windows in other
+workstations on the network.  This usually means that the server
+where your home directory is stored does not provide an \s-1NFS\s0 locking
+service.  To avoid this error message, set the environment variable
+\s-1DOS_LOCKING\s0 to off.
+.RE
+.SH "SEE ALSO"
+.BR dos2unix (1),
+.BR unix2dos (1)
+.LP
+.I Sun386i User's Guide
+.br
+.I Sun386i Advanced Skills
+.br
+.I Sun \s-1MS-DOS\s0 Reference Manual

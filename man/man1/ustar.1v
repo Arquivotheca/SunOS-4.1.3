@@ -1,0 +1,225 @@
+.\" @(#)ustar.1v 1.1 92/07/30 SMI; new for 4.1
+.TH USTAR 1V "6 September 1989"
+.SH NAME
+ustar \- process tape archives
+.SH SYNOPSIS
+.B /usr/5bin/ustar
+.B \-c
+[
+.B bfvw
+]
+.I device
+.I block
+.I filename \|.\|.\|.
+.br
+.B /usr/5bin/ustar
+.B \-r
+[
+.B bvw
+]
+.I device
+.I block
+[
+.IR filename \|.\|.\|.
+]
+.br
+.B /usr/5bin/ustar
+.B \-t
+[
+.B fv
+]
+.I device
+.br
+.B /usr/5bin/ustar
+.B \-u
+[
+.B bvw
+]
+.I device
+.I block
+.br
+.B /usr/5bin/ustar
+.B \-x
+[
+.B flmovw
+]
+.I device
+[
+.IR filename \|.\|.\|.
+]
+.SH AVAILABILITY
+.LP
+.B ustar
+is available with the
+.I System V
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "ustar process" "" "\fLustar\fP \(em process tape archives" ""
+.IX tape "process tape archives"
+.IX archive "process tape archives"
+.IX read "archive files" 
+.IX write "archive files" 
+.LP
+.B ustar
+reads and writes archive files which conform to the
+.B "Archive/Interchange File Format"
+specified in
+.IR "IEEE Std. 1003.1-1988" .
+.LP
+If the files exist, their modes are not changed except as described above.
+The owner, group and modification time are restored if possible.
+If no
+.I filename
+argument is given, the entire contents of the archive is extracted.
+Note: if several files with the same name are in the archive,
+the last one will overwrite all earlier ones.
+.SH OPTIONS
+.TP
+.B \-c
+Create a new archive;
+writing begins at the beginning of the archive,
+instead of after the last file.
+.TP
+.B \-r
+Write names files to the end of the archive.
+.TP 
+.B \-t
+List the names of all of the files in the archive.
+.TP 
+.B \-u
+Add named files
+to the archive if they are not already there, or if
+they have been modified since last written into the archive.
+This implies the
+.B \-r
+option.
+.TP 
+.B \-x
+Extracts named files from the archive.
+If a named file matches a directory whose contents had been written onto
+the archive, that directory is recursively extracted.
+If a named file in the archive does not exist on the system, the file is
+create with the same mode as the one in the archive, except that the
+set-user-id and get-group-id modes are not set unless the user has
+appropriate privileges.
+.TP 
+.B \-b
+Use the next argument on the command line as the blocking factor for
+tape records.
+The default is 1; the maximum is 20.
+This option should only be used with raw magnetic tape archives.
+Normally, the block size is determined automatically when reading tapes.
+.TP 
+.B \-f
+Use the next argument on the command line as the name of the archive
+instead of the default, which is usually a tape drive.
+If
+.RB ` \- '
+is specified as a filename
+.B ustar
+writes to the standard output or reads from the standard input, whichever
+is appropriate for the options given.
+Thus,
+.B ustar
+can be used as the head or tail of a pipeline.
+.TP 
+.B \-l
+Report if 
+.B ustar
+cannot resolve all of the links to the files being
+archived.
+If
+.B \-l
+is not specified,
+no error messages are written to the standard output.
+This modifier is only valid with the
+.BR \-c ,
+.B \-r
+and
+.BR \-u
+options.
+.TP 
+.B \-m
+Do not restore the modification times.
+The modification time of the file will be the time of extraction.
+This modifier is invalid with the
+.B \-t
+option.
+.TP 
+.B \-o
+Extracted files take on the user and group identifier of the user
+running the program rather than those on the archive.
+This modifier is only valid with the
+.B \-x
+option.
+.TP 
+.B \-v
+Verbose.
+Print the name of each file it processes,
+preceded by the option letter.
+With the
+.B \-t
+option,
+.B \-v
+gives more information about the archive entries than just the name.
+.TP 
+.B \-w
+Print the action to be taken,
+followed by the name of the file, and then
+wait for the user's confirmation.
+If a word beginning with
+.B y
+is given, the action is performed.
+Any other input implies no
+and the action is not performed.
+This modifier is invalid with the
+.B \-t
+option.
+.SH FILES
+.PD 0
+.TP 20 
+.B /dev/tty
+used to prompt the user for information when the
+.B \-i 
+or
+.B \-y
+options are specified
+.PD
+.SH "SEE ALSO"
+.BR cpio (1),
+.BR dd (1),
+.BR find (1),
+.BR pax (1V),
+.BR paxcpio (1V),
+.BR cpio (5),
+.BR tar (5)
+.\".SH COPYRIGHT
+.\"Copyright (c) 1989 Mark H. Colburn.  
+.\".br
+.\"All rights reserved.
+.\".LP
+.\"Redistribution and use in source and binary forms are permitted
+.\"provided that the above copyright notice is duplicated in all such 
+.\"forms and that any documentation, advertising materials, and other 
+.\"materials related to such distribution and use acknowledge that the 
+.\"software was developed by Mark H. Colburn and sponsored by The 
+.\"USENIX Association. 
+.\".LP
+.\"THE SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+.\"IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+.\"WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+.SH AUTHOR
+.LP
+.nf
+Mark H. Colburn
+NAPS International
+117 Mackubin Street, Suite 1
+St. Paul, MN 55102
+.fi
+.LP
+Sponsored by
+.B "The USENIX Association"
+for public distribution.

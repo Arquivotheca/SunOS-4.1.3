@@ -1,0 +1,240 @@
+.\" @(#)xdr_admin.3n 1.1 92/07/30 SMI;
+.TH XDR_ADMIN 3N "20 January 1990"
+.SH NAME
+xdr_getpos, xdr_inline, xdrrec_endofrecord, xdrrec_eof, xdrrec_readbytes, xdrrec_skiprecord, xdr_setpos \- library routines for management of the XDR stream
+.SH DESCRIPTION
+.IX "xdr routines" "xdr_getpos()" "" "\fLxdr_getpos()\fP \(em XDR stream management"
+.IX "xdr routines" "xdr_inline()" "" "\fLxdr_inline()\fP \(em XDR stream management"
+.IX "xdr routines" "xdrrec_endofrecord()" "" "\fLxdrrec_endofrecord()\fP \(em XDR stream management"
+.IX "xdr routines" "xdrrec_eof()" "" "\fLxdrrec_eof()\fP \(em XDR stream management"
+.IX "xdr routines" "xdrrec_readbytes()" "" "\fLxdrrec_readbytes()\fP \(em XDR stream management"
+.IX "xdr routines" "xdrrec_skiprecord()" "" "\fLxdrrec_skiprecord()\fP \(em XDR stream management"
+.IX "xdr routines" "xdr_setpos()" "" "\fLxdr_setpos()\fP \(em XDR stream management"
+.IX "xdr_getpos()" "" "\fLxdr_getpos()\fP \(em XDR stream management"
+.IX "xdr_inline()" "" "\fLxdr_inline()\fP \(em XDR stream management"
+.IX "xdrrec_endofrecord()" "" "\fLxdrrec_endofrecord()\fP \(em XDR stream management"
+.IX "xdrrec_eof()" "" "\fLxdrrec_eof()\fP \(em XDR stream management"
+.IX "xdrrec_readbytes()" "" "\fLxdrrec_readbytes()\fP \(em XDR stream management"
+.IX "xdrrec_skiprecord()" "" "\fLxdrrec_skiprecord()\fP \(em XDR stream management"
+.IX "xdr_setpos()" "" "\fLxdr_setpos()\fP \(em XDR stream management"
+.LP
+.SM XDR
+library routines allow C programmers to describe
+arbitrary data structures in a machine-independent fashion.
+Protocols such as remote procedure calls (\s-1RPC\s0)
+use these routines to describe the format of the data.
+.LP
+These routines deal specifically with the management of the
+.SM XDR
+stream.
+.SS Routines
+.LP
+The
+.SB XDR
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions
+of the
+.TX NETP .
+.br
+.LP
+.ft B
+.nf
+#include <rpc/xdr.h>
+.fi
+.ft 1
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+u_int xdr_getpos(xdrs)
+\s-1XDR\s0 *xdrs;
+.fi
+.ft R
+.IP
+Invoke the get-position routine
+associated with the
+.SM XDR
+stream,
+.IR xdrs .
+The routine returns an unsigned integer,
+which indicates the position of the
+.SM XDR
+byte stream.
+A desirable feature of
+.SM XDR
+streams is that simple arithmetic works with this number,
+although the
+.SM XDR
+stream instances need not guarantee this.
+.br
+.if t .ne 4
+.LP
+.ft B
+.nf
+.sp .5
+.br
+long * xdr_inline(xdrs, len)
+\s-1XDR\s0 *xdrs;
+int len;
+.fi
+.ft R
+.IP
+Invoke the in-line routine associated with the
+.SM XDR
+stream,
+.IR xdrs .
+The routine returns a pointer
+to a contiguous piece of the stream's buffer;
+.I len
+is the byte length of the desired buffer.
+Note: 
+A pointer is cast to
+.BR "long *" .
+.IP
+Warning:
+.B xdr_inline(\|)
+may return
+.SM NULL
+if it cannot allocate a contiguous piece of a buffer.
+Therefore the behavior may vary among stream instances;
+it exists for the sake of efficiency.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdrrec_endofrecord(xdrs, sendnow)
+\s-1XDR\s0 *xdrs;
+int sendnow;
+.fi
+.ft R
+.IP
+This routine can be invoked only on
+streams created by
+.B xdrrec_create(\|)
+(see
+.BR xdr_create (3N)).
+The data in the output buffer is marked as a completed
+record, and the output buffer is optionally written out if
+.I sendnow
+is non-zero. 
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdrrec_eof(xdrs)
+\s-1XDR\s0 *xdrs;
+int empty;
+.fi
+.ft R
+.IP
+This routine can be invoked only on
+streams created by
+.B xdrrec_create(\|)
+(see
+.BR xdr_create (3N)).
+After consuming the rest of the current record in the stream,
+this routine returns 
+.SM TRUE
+if the stream has no more input,
+.SM FALSE
+otherwise.
+.br
+.if t .ne 5
+.LP
+.ft B
+.nf
+.sp .5
+int xdrrec_readbytes(xdrs, addr, nbytes)
+\s-1XDR\s0 *xdrs;
+caddr_t addr;
+u_int nbytes;
+.fi
+.ft R
+.IP
+This routine can be invoked only on
+streams created by
+.B xdrrec_create(\|)
+(see
+.BR xdr_create (3N)).
+It attempts to read 
+.I nbytes
+bytes from the
+.SM XDR 
+stream into the buffer pointed to by 
+.I addr. 
+On success it returns the number of bytes read.
+Returns \-1 on failure.
+A return value of 0 indicates an end of record.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdrrec_skiprecord(xdrs)
+\s-1XDR\s0 *xdrs;
+.fi
+.ft R
+.IP
+This routine can be invoked only on
+streams created by
+.B xdrrec_create(\|)
+(see
+.BR xdr_create (3N)).
+It tells the
+.SM XDR
+implementation that the rest of the current record
+in the stream's input buffer should be discarded.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_setpos(xdrs, pos)
+\s-1XDR\s0 *xdrs;
+u_int pos;
+.fi
+.ft R
+.IP
+Invoke the set position routine associated with
+the
+.SM XDR
+stream
+.IR xdrs .
+The parameter
+.I pos
+is a position value obtained from
+.BR xdr_getpos(\|) .
+This routine returns 1 if the
+.SM XDR
+stream could be repositioned,
+and 0 otherwise.
+.IP
+Warning: 
+It is difficult to reposition some types of
+.SM XDR
+streams, so this routine may fail with one
+type of stream and succeed with another.
+.SH SEE ALSO
+.BR xdr (3N),
+.BR xdr_complex (3N),
+.BR xdr_create (3N),
+.BR xdr_simple (3N)

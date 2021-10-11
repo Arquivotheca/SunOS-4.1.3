@@ -1,0 +1,107 @@
+.\" @(#)nsquery.8 1.1 92/07/30 SMI; from S5R3
+.TH NSQUERY 8 "June 30 1988"
+.SH NAME
+nsquery \- RFS name server query
+.SH SYNOPSIS
+.B nsquery
+[
+.B \-h
+] [
+.I name
+]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "nsquery RFS" "" "\fLnsquery\fP \(em \s-1RFS\s0 name server query" ""
+.IX RFS "name server query" "\s-1RFS\s0" "name server query"
+.IX query "RFS name server" "query" "\s-1RFS\s+1 name server"
+.LP
+.B nsquery
+provides information about resources available to the host
+from both the local domain and from other domains.
+All resources are reported, regardless of whether the
+host is authorized to access them.
+When used with no options,
+.B nsquery
+identifies all resources in
+the domain that have been advertised as sharable.
+A report on selected resources can be obtained by specifying
+.IR name ,
+where
+.I name
+is one of:
+.RS
+.TP 17
+.I nodename
+The report will include only those resources available from
+.IR nodename .
+.TP
+.I domain.
+The report will include only those resources available from
+.IR domain .
+.TP
+.I domain.nodename
+The report will include only those resources available from
+.IR domain.nodename .
+.RE
+.LP
+When the name does not include the delimiter
+.RB ` . ',
+it will be interpreted as a
+.I nodename
+within the local domain.
+If the name ends with a delimiter
+.RB ` . ',
+it will be interpreted as a domain name.
+.LP
+The information contained in the report on each resource includes
+its advertised name
+.RI ( domain.resource ),
+the read/write permissions, the server
+.RI ( nodename.domain )
+that advertised the resource, and a brief textual description.
+.LP
+A remote domain must be listed in your
+.B rfmaster
+file in order
+to query that domain.
+.LP
+If no entries are found when
+.B nsquery
+is executed, the report header is printed.
+.LP
+If your host cannot contact the domain name server,
+an error message will be sent to standard error.
+.SH OPTIONS
+.TP
+.B \-h
+Do not print header.
+.SH EXAMPLE
+.LP
+The following example displays the resources available
+from the domain
+.BR sunrfs :
+.RS
+.ft B
+.nf
+.ta 10 +9 +9
+example%  nsquery sunrfs.
+\s-1RESOURCE	ACCESS	SERVER	DESCRIPTION\s0
+
+LOCAL_SUN3	read-only	sunrfs.estale	
+LOCAL_SUN4	read-only	sunrfs.estale	
+LOCAL_SHARE	read-only	sunrfs.estale	
+.DT
+.fi
+.ft R
+.RE
+.SH "SEE ALSO"
+.BR rfmaster (5),
+.BR adv (8),
+.BR unadv (8)

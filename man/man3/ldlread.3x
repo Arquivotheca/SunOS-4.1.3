@@ -1,0 +1,110 @@
+.\" @(#)ldlread.3x 1.1 92/07/30 SMI; from SVID
+.TH LDLREAD 3X "19 February 1988"
+.SH NAME
+ldlread, ldlinit, ldlitem \- manipulate line number entries of a COFF file function
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+#include <filehdr.h>
+#include <linenum.h>
+#include <ldfcn.h>
+.PP
+.B int ldlread(ldptr, fcnindx, linenum, linent)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B long fcnindx;
+.B unsigned short linenum;
+.B \s-1LINENO\s+1 \(**linent;
+.PP
+.B int ldlinit(ldptr, fcnindx)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B long fcnindx;
+.PP
+.B int ldlitem(ldptr, linenum, linent)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B unsigned short linenum;
+.B \s-1LINENO\s+1 \(**linent;
+.fi
+.ft R
+.DT
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldlread()" "" "\fLldlread()\fP function"
+.IX "ldlinit()" "" "\fLldlinit()\fP function"
+.IX "ldlitem()" "" "\fLldlitem()\fP function"
+.LP
+.B ldlread(\|)
+searches the line number entries of the
+.SM COFF
+file currently
+associated with 
+.IR ldptr .
+.B ldlread(\|)
+begins its search with the line number entry for the beginning of a function
+and confines its search to the line numbers associated with a single function.
+The function is identified by
+.IR fcnindx ,
+the index of its entry in the object file symbol table.
+.BR ldlread(\|)
+reads the entry with the smallest line number equal to or greater
+than
+.I linenum
+into the memory beginning at
+.IR linent .
+.PP
+.B ldlinit(\|)
+and 
+.B ldlitem(\|)
+together perform exactly the same function as
+.BR ldlread(\|) .
+After an initial call to
+.B ldlread(\|)
+or
+.BR ldlinit(\|),
+.B ldlitem(\|)
+may be used to retrieve a series of line number entries associated with a
+single function.
+.B ldlinit(\|)
+simply locates the line number entries for the function identified by
+.I fcnindx.
+.B ldlitem(\|)
+finds and reads the entry with the smallest line number equal to or greater
+than
+.I linenum
+into the memory beginning at
+.BR linent(\|) .
+.PP
+.BR ldlread(\|) ,
+.BR ldlinit(\|) ,
+and
+.B ldlitem(\|)
+each return either 
+.B \s-1SUCCESS\s+1
+or
+.BR \s-1FAILURE\s+1 .
+.B ldlread(\|)
+will fail if there are no line number entries in the object file,
+if
+.I fcnindx
+does not index a function entry in the symbol table, or if
+it finds no line number equal to or greater than
+.IR linenum .
+.L
+.B ldlinit(\|)
+will fail if there are no line number entries in the object file or if
+.I fcnindx
+does not index a function entry in the symbol table.
+.B ldlitem(\|)
+will fail if it finds no line number equal to or greater than
+.IR linenum .
+.PP
+The programs must be loaded with the object file access routine library
+.BR libld.a .
+.SH SEE ALSO
+.BR ldclose (3X),
+.BR ldfcn (3),
+.BR ldopen (3X),
+.BR ldtbindex (3X)

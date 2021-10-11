@@ -1,0 +1,40 @@
+General:
+--------
+
+	A new library, libpfc.a, has been created for linking programs
+	written in mixed pascal, fortran, and C.  This library contains
+	routines to invoke startup and cleanup for both fortran and
+	pascal runtime facilities.
+
+	The library may be used as an option by either the f77 or pc
+	command.  F77 and pc should optionally include the libraries of
+	the other language when linking a program containing both f77
+	and pascal object files.
+
+	Source changes are done in the f77 and pc library directories,
+	and are bracketed by #ifdef LIBPFC so that the normal pascal
+	and f77 libraries are unaffected.
+
+	libpfc.a itself is built in its own directory, and all sources
+	are accessed by symbolic links.  It is assumed that all of the
+	relevant directories exist at the same level in /usr/src/usr.lib/.
+
+
+Pascal library source changes:
+------------------------------
+
+	(PCSTART.c, PCEXIT.c): The routines PCSTART() and PCEXIT() have
+	been changed to conditionally call their Fortran counterparts
+	(f_init() and f_exit()), and set Fortran's copies of argc and
+	argv (called xargc and xargv, respectively).
+
+F77 library source changes:
+---------------------------
+
+	(main.c): The function main() is modified to conditionally
+	call PCSTART and PCEXIT instead of f_init() and f_exit().
+	Note that this change is only required by fortran main programs,
+	since the pascal compiler generates main() in-line.
+
+	(s_stop.c): s_stop() is modified like main(), to conditionally
+	call PCEXIT() instead of f_exit().

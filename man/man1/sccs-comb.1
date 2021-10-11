@@ -1,0 +1,139 @@
+.\" @(#)sccs-comb.1 1.1 92/07/30 SMI;
+.TH SCCS-COMB 1 "27 June 1988"
+.SH NAME
+sccs-comb, comb \- combine SCCS deltas
+.SH SYNOPSIS
+.B /usr/sccs/comb 
+[
+.B \-os
+] 
+[
+.BI \-c sid-list
+] 
+[
+.BI \-p sid
+] 
+.if n .ti +0.5i
+.I s.filename
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  comb  ""  "\fLcomb\fP \(em combine deltas"
+.IX  "SCCS commands"  "comb command"  ""  "\fLcomb\fP \(em combine deltas"
+.IX  "SCCS delta"  combine
+.IX  delta  combine
+.IX  "combine SCCS deltas"
+.LP
+.B comb
+generates a shell script (see
+.BR sh (1))
+that you can use to reconstruct the indicated
+.BR s. files.
+This script is written to the standard output.
+.LP
+If a directory name is used in place of the
+.I s.filename
+argument, the
+.B comb
+command applies to all
+.BR s. files
+in that directory.
+Unreadable
+.BR s. files
+produce an error; processing continues with the next file (if
+any).
+The use of
+.RB ` \- '
+as the
+.I s.filename
+argument indicates that the names of files are to be read from the
+standard input, one
+.BR s. file 
+per line.
+.LP
+If no options are specified,
+.B comb
+preserves only the most recent (leaf) delta in a branch, and the
+minimal number of ancestors needed to preserve the history.
+.SH OPTIONS
+.TP
+.B \-o
+For each
+.RB ` "get \-e" '
+generated, access the reconstructed file at
+the release of the delta to be created.  Otherwise,
+the reconstructed file is accessed at the most
+recent ancestor.  The use of
+.B \-o
+may decrease the size of the reconstructed
+.BR s.  file.
+It may also alter the shape of the delta tree of the original file.
+.TP
+.B \-s
+Generate scripts to gather statistics, rather than combining deltas.
+When run, the shell scripts report: the file name, size (in blocks)
+after combining, original size (also in blocks), and the percentage
+size change, computed by the formula:
+.RS
+.RS
+100 * ( \fIoriginal\fB \- \fIcombined\fB ) / \fIoriginal\fB
+.RE
+.RE
+.IP
+This option can be used to calculate the space that will be saved,
+before actually doing the combining.
+.TP
+.BI \-c sid-list
+Include the indicated list of deltas.  All other deltas are omitted.
+.I sid-list
+is a comma-separated list of
+.SM SCCS
+delta
+.SM ID\s0s
+(\s-1SID\s0s).
+To specify a range of deltas, use a
+.RB ` \- '
+separator instead of a comma, between two
+.SM SID\s0s
+in the list.
+.TP
+.BI \-p \s-1SID\s0
+The
+.SM SID
+of the oldest delta to be preserved.
+.LP
+.SH FILES
+.PD 0
+.TP 20
+.B s.\|\s-1COMB\s+1
+reconstructed 
+.SM SCCS
+file
+.TP
+.B comb?????
+temporary file
+.PD
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-admin (1),
+.BR sccs-cdc (1),
+.BR sccs-delta (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-prt (1),
+.BR sccs-rmdel (1),
+.BR sccs-sccsdiff (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH DIAGNOSTICS
+Use the
+.SM SCCS
+.BR help
+command for explanations
+.RB ( sccs-help (1)).
+.SH BUGS
+.B comb
+may rearrange the shape of the tree of deltas.
+It may not save any space; in fact, it is possible for the reconstructed file to
+actually be larger than the original.

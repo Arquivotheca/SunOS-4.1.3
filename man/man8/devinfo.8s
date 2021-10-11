@@ -1,0 +1,88 @@
+.\" @(#)devinfo.8s 1.1 92/07/30 SMI; 
+.TH DEVINFO 8S "17 April 1991"
+.SH NAME
+devinfo \- print out system device information
+.SH SYNOPSIS
+.B /usr/etc/devinfo
+[
+.B \-pv
+] [
+.B \-f
+.I promdevice
+]
+.SH AVAILABILITY
+.LP
+This program is available for desktop \s-1SPARC\s0systems and
+for the \s-1SPARC\s0system 600MP series only.
+.SH DESCRIPTION
+.IX  "devinfo" "" "\fLdevinfo\fP \(em print out system device information"
+.LP
+.B devinfo
+displays the devices that the system knows about.
+The output will state the name of the device,
+its unit number, and whether a system device driver has claimed it.
+Since the internal system representation of this information is an 
+.IR n \-ary
+tree, indentation is used to denote a parent-child
+relationship, and devices reported at the same indentation level are
+considered sibling devices.
+.SH OPTIONS
+.TP
+.B \-f
+With the 
+.B \-p
+option, use the argument
+.I promdevice
+as the monitor \s-1PROM\s0 device, instead of the default
+.IR /dev/openprom .
+.TP
+.B \-p
+Report the 
+.I monitor's
+view of the attached devices, instead of the kernel's view.
+.TP
+.B \-v
+Report hardware specifications such as register addresses and interrupt
+priorities for each device.
+.SH EXAMPLE
+.LP
+The following example displays the format of
+.B devinfo
+output:
+.RS
+.ft B
+.nf
+example%  devinfo
+Node 'Sun 4/60', unit #0 (no driver)
+	Node 'options', unit #0 (no driver)
+	Node 'zs', unit #0
+	Node 'zs', unit #1
+	Node 'fd', unit #0
+	Node 'audio', unit #0
+	Node 'sbus', unit #0
+		Node 'dma', unit #0
+		Node 'esp', unit #0
+			Node 'st', unit #1 (no driver)
+			Node 'st', unit #0
+			Node 'sd', unit #3
+			Node 'sd', unit #2
+			Node 'sd', unit #1
+			Node 'sd', unit #0
+		Node 'le', unit #0
+		Node 'bwtwo', unit #0
+	Node 'auxiliary-io', unit #0
+	Node 'interrupt-enable', unit #0
+	Node 'memory-error', unit #0
+	Node 'counter-timer', unit #0
+	Node 'eeprom', unit #0
+.fi
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/kmem
+to get kernel device information
+.TP 20
+.B /dev/openprom
+to get the monitor's device information

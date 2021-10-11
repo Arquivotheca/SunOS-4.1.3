@@ -1,0 +1,259 @@
+.\" @(#)t_bind.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_BIND 3N "21 January 1990"
+.SH NAME
+t_bind \- bind an address to a transport endpoint
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_bind(fd, req, ret)
+int fd;
+struct t_bind *req;
+struct t_bind *ret;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_bind()" "" "\fLt_bind()\fR \(em bind an address to a transport endpoint"
+.IX transport "bind an address to a transport endpoint"
+.IX bind "address to a transport endpoint"
+.LP
+.B t_bind(\|)
+associates a protocol address
+with the transport endpoint specified by
+.I fd
+and activates that transport endpoint.
+In connection mode, the transport provider may begin accepting or requesting
+connections on the transport endpoint.
+In connectionless mode, the transport user may send or receive
+data units through the transport endpoint.
+.LP
+The
+.I req
+and
+.I ret
+arguments point to a
+.B t_bind(\|)
+structure containing the following members:
+.RS
+.ft B
+.nf
+	struct netbuf addr;
+	unsigned qlen;
+.ft R
+.fi
+.RE
+.LP
+The
+.IR maxlen , 
+.IR len , 
+and 
+.I buf
+members of the 
+.I netbuf 
+structure are described in 
+.BR t_accept (3N).
+The
+.I addr
+field of the
+.B t_bind(\|)
+structure specifies a protocol address and the
+.I qlen
+field is used to indicate the maximum number of outstanding
+connect indications.
+.LP
+.I req
+is used to request that an address, represented by the
+.I netbuf
+structure, be bound to the given transport endpoint.
+.I len
+specifies the number of bytes in the address and
+.I buf
+points to the address buffer.
+.I maxlen
+has no meaning for the
+.I req
+argument.
+On return,
+.I ret
+contains the address that
+the transport provider actually bound to the transport endpoint;
+this may be different from the address specified by the user in
+.IR req .
+In
+.IR ret ,
+the user specifies
+.I maxlen
+which is the maximum size of the address buffer and
+.I buf
+which points to the buffer where the address is to be placed.
+On return,
+.I len
+specifies the number of bytes in the bound address
+and
+.I buf
+points to the bound address.
+If
+.I maxlen
+is not large enough to hold the returned address, an error will
+result.
+.LP
+If the requested address is not available,
+or if no address is specified in
+.I req
+(the
+.I len
+field of
+.I addr
+in
+.I req
+is 0)
+the transport provider will assign an appropriate address to be bound,
+and will return that address in the
+.I addr
+field of
+.IR ret .
+The user can compare the addresses in
+.I req
+and
+.I ret
+to determine whether the transport provider bound the transport
+endpoint to a different address than that requested.
+.LP
+.I req
+may be
+.SM NULL\s0
+if the user does not wish to specify an
+address to be bound.
+Here, the value of
+.I qlen
+is assumed to be 0, and the transport provider must assign an
+address to the transport endpoint.
+Similarly,
+.I ret
+may be
+.SM NULL\s0
+if the user does not care what address was
+bound by the transport provider and is not interested in the negotiated
+value of
+.IR qlen .
+It is valid to set
+.I req
+and
+.I ret
+to
+.SM NULL\s0
+for the same call, in which case the transport provider chooses the address
+to bind to the transport endpoint and does not return that
+information to the user.
+.LP
+The
+.I qlen
+field has meaning only when initializing a connection-mode service.
+It specifies the number of outstanding connect indications the transport
+provider should support for the given transport endpoint.
+An outstanding connect indication is one that has been passed to the transport
+user by the transport provider.
+A value of
+.I qlen
+greater than 0
+is only meaningful when issued by a passive transport user that expects
+other users to call it.
+The value of
+.I qlen
+will be negotiated by the transport provider and may be changed
+if the transport provider cannot support the specified number of
+outstanding connect indications.
+On return, the
+.I qlen
+field in
+.I ret
+will contain the negotiated value.
+.LP
+.B t_bind(\|)
+allows
+more than one transport endpoint to be bound to the
+same protocol address (however, the transport provider
+must support this capability also), but binding more than
+one protocol address to the same transport endpoint is not allowed.
+If a user binds more than one transport endpoint to the same protocol
+address, only one endpoint can be used to listen for
+connect indications associated with that protocol address.
+In other words, only one
+.B t_bind(\|)
+for a given protocol address
+may specify a value of
+.I qlen
+greater than 0.
+In this way, the transport provider can identify which transport endpoint
+should be notified of an incoming connect indication.
+If a user attempts to bind a protocol address to a second transport
+endpoint with a value of
+.I qlen
+greater than 0, the transport
+provider will assign another address to be bound to that
+endpoint.
+If a user accepts a connection on the transport endpoint that is being
+used as the listening endpoint, the bound protocol address will be found to
+be busy for the duration of that connection.
+No other transport endpoints may be bound for listening while that initial
+listening endpoint is in the data transfer phase.
+This will prevent more than one transport endpoint bound to the same
+protocol address from accepting connect indications.
+.SH RETURN VALUES
+.LP
+.B t_bind(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TACCES
+The user does not have permission to use the specified address.
+.TP
+.SM TBADADDR
+The specified protocol address was in an incorrect format or
+contained illegal information.
+.TP
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBUFOVFLW
+The number of bytes allowed for an incoming argument is not
+sufficient to store the value of that argument.
+The transport provider's state will change to
+.SB T_IDLE
+and the information to be returned in
+.I ret
+will be discarded.
+.TP
+.SM TNOADDR
+The transport provider could not allocate an address.
+.TP
+.SM TOUTSTATE
+The function was issued in the wrong sequence.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.br
+.ne 5
+.SH SEE ALSO
+.BR intro (3),
+.BR t_open (3N),
+.BR t_optmgmt (3N),
+.BR t_unbind (3N)
+.LP
+.TX NETP

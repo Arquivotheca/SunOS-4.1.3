@@ -1,0 +1,204 @@
+.\" @(#)mkdir.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH MKDIR 2V "21 January 1990"
+.SH NAME
+mkdir \- make a directory file
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int mkdir(path, mode)
+char *path;
+int mode;
+.ft R
+.fi
+.SH SYSTEM V SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/stat.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mkdir(path, mode)
+char *path;
+mode_t mode;
+.ft R
+.fi
+.IX  mkdir()  ""  \fLmkdir()\fP
+.IX  "file system"  mkdir()  ""  \fLmkdir()\fP
+.IX  directory  make
+.IX  "make directory"
+.IX  "create directory"
+.SH DESCRIPTION
+.LP
+.B mkdir(\|)
+creates a new directory file with name
+.IR path .
+The mode mask of the new directory is initialized from
+.IR mode .
+.LP
+The low-order 9 bits of
+.I mode
+(the file access permissions)
+are modified such that all bits set in the process's file mode
+creation mask are cleared (see
+.BR umask (2V)).
+.LP
+The set-\s-1GID\s0 bit of
+.I mode
+is ignored.  The set-\s-1GID\s0 bit of the new file is inherited from that of
+the parent directory.
+.LP
+The directory's owner
+.SM ID
+is set to the process's effective user
+.SM ID\s0.
+.LP
+The directory's group
+.SM ID
+is set to either:
+.RS
+.TP 3
+\(bu
+the effective group
+.SM ID
+of the process, if the filesystem was not
+mounted with the
+.SM BSD
+file-creation semantics flag (see
+.BR mount (2V))
+and the set-\s-1GID\s0 bit of the parent directory is clear, or
+.TP 3
+\(bu
+the group
+.SM ID
+of the directory in which the file is created.
+.RE
+.LP
+Upon successful completion,
+.B mkdir(\|)
+marks for update the
+.BR st_atime ,
+.BR st_ctime ,
+and
+.B st_mtime
+fields of the directory
+(see
+.BR stat (2V)).
+The
+.B st_ctime
+and
+.B st_mtime
+fields of the directory's parent directory
+are also marked for update.
+.SH RETURN VALUES
+.LP
+.B mkdir(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B mkdir(\|)
+will fail and no directory will be created if:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.IP
+Write permission is denied on the parent directory of the directory
+to be created.
+.TP
+.SM EDQUOT
+The directory in which the entry for the new file
+is being placed cannot be extended because the user's
+quota of disk blocks on the file system containing
+the directory has been exhausted.
+.IP
+The new directory cannot be created because the user's
+quota of disk blocks on the file system which will
+contain the directory has been exhausted.
+.IP
+The user's quota of inodes on the file system on
+which the file is being created has been exhausted.
+.TP
+.SM EEXIST
+The file referred to by
+.I path
+exists.
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM EMLINK
+The link count of the parent directory would exceed
+.SM {LINK_MAX}
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+A component of the path prefix of
+.I path
+does not exist.
+.TP
+.SM ENOSPC
+The directory in which the entry for the new file
+is being placed cannot be extended because there
+is no space left on the file system containing the directory.
+.IP
+The new directory cannot be created because there
+is no space left on the file system which will contain the directory.
+.IP
+There are no free inodes on the file system on which the file is being created.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM EROFS
+.I path
+The parent directory of the directory to be created resides on
+a read-only file system.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to a null pathname.
+.SH "SEE ALSO"
+.BR chmod (2V),
+.BR mount (2V),
+.BR rmdir (2V),
+.BR stat (2V),
+.BR umask (2V)

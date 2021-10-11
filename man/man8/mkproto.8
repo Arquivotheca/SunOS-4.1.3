@@ -1,0 +1,130 @@
+.\" @(#)mkproto.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH MKPROTO 8 "9 September 1987"
+.SH NAME
+mkproto \- construct a prototype file system
+.SH SYNOPSIS
+.B /usr/etc/mkproto
+.I special proto
+.SH DESCRIPTION
+.IX  "mkproto command"  ""  "\fLmkproto\fP \(em make prototype file system"
+.IX  "create" "prototype file system \(em \fLmkproto\fP"
+.IX  "file system"  "make prototype"  "file system"  "make prototype\(em \fLmkproto\fP"
+.B mkproto
+is used to bootstrap a new file system.
+First a new file system is created using
+.BR newfs (8).
+.B mkproto
+is then used to copy files from the old file system into the new
+file system according to the directions found in the prototype file
+.BR proto .
+The prototype file
+contains tokens separated by
+.SM SPACE
+or
+.SM NEWLINE
+characters.
+The first tokens comprise the specification
+for the root directory.
+File specifications consist of tokens
+giving the mode,
+the user
+.SM ID\s0,
+the group
+.SM ID\s0,
+and the initial contents of the file.
+The syntax of the contents field
+depends on the mode.
+.LP
+The mode token for a file is a 6 character string.
+The first character
+specifies the type of the file.
+(The characters
+.B \-bcd
+specify regular, block special,
+character special and directory files
+respectively.)
+The second character of the type
+is either
+.B u
+or
+.RB ` \- '
+to specify set-user-id mode or not.
+The third is
+.B g
+or
+.RB ` \- '
+for the set-group-id mode.
+The rest of the mode
+is a three digit octal number giving the
+owner, group, and other read, write, execute
+permissions, see
+.BR chmod (1V).
+.LP
+Two decimal number
+tokens come after the mode; they specify the
+user and group
+.SM ID\s0's
+of the owner of the file.
+.LP
+If the file is a regular file,
+the next token is a pathname
+whence the contents and size are copied.
+.LP
+If the file is a block or character special file,
+two decimal number tokens
+follow which give the major and minor device numbers.
+.LP
+If the file is a directory,
+.B mkproto
+makes the entries
+.RB ` . '
+and
+.RB  ` .\|. '
+and then
+reads a list of names and
+(recursively) file specifications for the entries
+in the directory.
+The scan is terminated with the
+token
+.BR $ .
+.LP
+A sample prototype specification follows:
+.LP
+.RS
+.nf
+.ft B
+d\-\^\-777 3 1
+usr	d\-\^\-777 3 1
+.RS
+.ft B
+sh	\-\^\-\^\-755 3 1 /usr/bin/sh
+ken	d\-\^\-755 6 1
+.RS
+.ft B
+$
+.RE
+.ft B
+b0	b\-\^\-644 3 1 0 0
+c0	c\-\^\-644 3 1 0 0
+$
+.RE
+.ft B
+$
+.ft R
+.fi
+.RE
+.LP
+.SH "SEE ALSO"
+.BR chmod (1V),
+.BR fs (5),
+.BR dir (5),
+.BR fsck (8),
+.BR newfs (8)
+.SH BUGS
+There should be some way to specify links.
+.LP
+There should be some way to specify bad blocks.
+.LP
+.B mkproto
+can only be run on virgin file systems.
+It should be possible to copy files into existent file systems.

@@ -1,0 +1,169 @@
+.\" @(#)getitimer.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETITIMER 2 "21 January 1990"
+.SH NAME
+getitimer, setitimer \- get/set value of interval timer
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+.LP
+.ft B
+int getitimer (which, value)
+int which;
+struct itimerval \(**value;
+.LP
+.ft B
+int setitimer (which, value, ovalue)
+int which;
+struct itimerval \(**value, \(**ovalue;
+.fi
+.IX  getitimer()  ""  "\fLgetitimer()\fP \(em get value of interval timer"
+.IX  "timing and statistics"  getitimer()  ""  \fLgetitimer()\fP
+.IX  setitimer()  ""  "\fLsetitimer()\fP \(em set value of interval timer"
+.IX  "timing and statistics"  setitimer()  ""  \fLsetitimer()\fP
+.IX  "interval timers"  "get value" "" "get value \(em \fLgetitimer()\fP"
+.IX  "interval timers"  "set value" "" "set value \(em \fLsetitimer()\fP"
+.SH DESCRIPTION
+.LP
+The system provides each process with three interval timers, defined in
+.BR <sys/time.h> .
+The
+.B getitimer(\|)
+call stores the current value of the timer specified by
+.B which
+into the structure pointed to by
+.IR value .
+The
+.B setitimer(\|)
+call sets the value of the timer specified by
+.B which
+to the value specified in the structure pointed to by
+.IR value ,
+and if
+.I ovalue
+is not a
+.SM NULL
+pointer, stores the previous value of the timer in the
+structure pointed to by
+.IR ovalue .
+.LP
+A timer value is defined by the
+.B itimerval
+structure, which includes the following members:
+.LP
+.RS
+.ta +\w'struct timeval\0'u +\w'it_interval;\0'u
+.nf
+.ft B
+struct timeval	it_interval;	/\(** timer interval \(**/
+struct timeval	it_value;	/\(** current value \(**/
+.ft R
+.fi
+.RE
+.LP
+If
+.B it_value
+is non-zero, it indicates the time to the next timer expiration.  If
+.B it_interval
+is non-zero, it specifies a value to be used in reloading
+.B it_value
+when the timer expires.  Setting
+.B it_value
+to zero disables a timer; however,
+.B it_value
+and
+.B it_interval
+must still be initialized.  Setting
+.B it_interval
+to zero causes a timer to be disabled after its next expiration (assuming
+.B it_value
+is non-zero).
+.LP
+Time values smaller than the resolution of the
+system clock are rounded up to this resolution.
+.LP
+The three timers are:
+.TP 20
+.SB ITIMER_REAL
+Decrements in real time.  A
+.SB SIGALRM
+signal is delivered when this timer expires.
+.TP
+.SB ITIMER_VIRTUAL
+Decrements in process virtual time.
+It runs only when the process is executing.  A
+.SB SIGVTALRM
+signal is delivered when it expires.
+.TP
+.SB ITIMER_PROF
+Decrements both in process virtual time and
+when the system is running on behalf of the process.  It is designed
+to be used by interpreters in statistically profiling the execution
+of interpreted programs.
+Each time the
+.SB ITIMER_PROF
+timer expires, the
+.SB SIGPROF
+signal is delivered.  Because this signal
+may interrupt in-progress
+system calls, programs using this timer must be prepared to
+restart interrupted system calls.
+.SH RETURN VALUES
+.LP
+.B getitimer(\|)
+and
+.B setitimer(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+The possible errors are:
+.TP 15
+.SM EFAULT
+The
+.I value
+or
+.I ovalue
+parameter specified a bad address.
+.TP
+.SM EINVAL
+The
+.I value
+parameter specified a time that was too large to be handled.
+.SH "SEE ALSO"
+.BR sigvec (2),
+.BR gettimeofday (2)
+.SH NOTES
+.LP
+Three macros for manipulating time values are defined in
+.BR <sys/time.h> .
+.IX  timerclear  ""  "\fLtimerclear()\fP \(em macro"
+.IX  "timing and statistics"  timerclear()  ""  "\fLtimerclear()\fP \(em macro"
+.IX  "interval timers"  timerclear()  ""  "\fLtimerclear()\fP \(em macro"
+.B timerclear
+sets a time value to zero,
+.IX  timerisset()  ""  "\fLtimerisset()\fP \(em macro"
+.IX  "timing and statistics"  timerisset()  ""  "\fLtimerisset()\fP \(em macro"
+.IX  "interval timers"  timerisset()  ""  "\fLtimerisset()\fP \(em macro"
+.B timerisset
+tests if a time value is non-zero, and
+.IX  timercmp()  ""  "\fLtimercmp()\fP \(em macro"
+.IX  "timing and statistics"  timercmp()  ""  "\fLtimercmp()\fP \(em macro"
+.IX  "interval timers"  timercmp()  ""  "\fLtimercmp()\fP \(em macro"
+.B timercmp()
+compares two time values (beware that
+.B >=
+and
+.B <=
+do not work with this macro).

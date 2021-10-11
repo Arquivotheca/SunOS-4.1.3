@@ -1,0 +1,109 @@
+.\" @(#)translate.5 1.1 92/07/30 SMI; 
+.TH TRANSLATE 5 "19 February 1988"
+.SH NAME
+translate \- input and output files for system message translation
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX  "translate"  ""  "\fLtranslate\fP \(em input and output files for system message translation"
+.LP
+These files are used by 
+.BR syslogd (8) 
+to translate systems messages.
+The input file is used to map system messages
+(in
+.BR printf (3V)
+format strings) to numbers.
+This number is then used 
+to locate a new string in the output file.
+.LP
+An initial part of each line in the input file may specify
+that the message should be suppressed.  Recognized suppression
+specifications are:
+.LP
+.nf
+.ft B
+	(\s-1NONE\s0)	Suppress the message always.
+	(n)	Allow only one message every n seconds. ((10) for
+		example).
+	()	Do not suppress the message.  This can be used in a
+		message that begins with a '('.
+.ft R
+.fi
+.LP
+Note that the message suppression specification is optional.
+If not present, the message is not suppressed.
+.LP
+Each line in the output file translates the numbers
+from the input file into the desired error messages, and also 
+specifies the format to be used to 
+output each message.
+The order of parameters passed from the input message can be changed, 
+by replacing
+the
+.B %
+of a format phrase with a
+.BI % num $
+where
+.I num
+is a digit string.  For example, if
+.I num
+is 2, the second parameter on the
+input file line will be used. The value of
+.I num
+can be from 1 to the number of parameters in the input message.
+.LP
+If a string is translated to a number that is not found in the output
+file, the message is suppressed.
+.SH EXAMPLES
+An example input file:
+.IP
+.ft B
+.nf
+$quote "
+1	"(NONE)(1) logopen test code: %s\\n"
+2	"(10)(2) logopen test code: %s\\n"
+3	"()(3) logopen test code: %s\\n"
+4	"()(4) logopen test code: %s\\n"
+5	"(10)(5) logopen testcode: %s * 100\\n"
+6	"(10)(6) logopen testcode: %s * 100\\n"
+7	"(10)(7) logopen testcode: %s * 100\\n"
+8	"(10)%s: %s\\n"
+9	"(10)\\n%s: write failed, file system is full\\n"
+10	"(10)NFS server %s not responding still trying\\n"
+11	"(10)NFS %s failed for server %s: %s\\n"
+12	"(10)NFS server %s ok\\n"
+13	"(NONE)\\n%s: write failed, file system is full\\n"
+14	"(10)NFS server %s not responding still trying\\n"
+15	"(100)NFS %s failed for server %s: %s\\n"
+.fi
+.ft
+.br
+.ne 10
+.LP
+An example output file:
+.IP
+.ft B
+.nf
+$quote "
+1	"\s-1TRANSLATION\s0:(1) logopen test code: %s\\n"
+2	"\s-1TRANSLATION\s0: (2) logopen test code: %s IS REALLY\\n"
+3	"\s-1TRANSLATION\s0: (3) logopen test code: %s\\n"
+4	"\s-1TRANSLATION\s0: (4) logopen test code: %s\\n"
+5	"\s-1TRANSLATION\s0: (5) logopen testcode: %s * 100\\n"
+6	"\s-1TRANSLATION\s0: (6) logopen testcode: %s * 100\\n"
+7	"\s-1TRANSLATION\s0: (7) logopen testcode: %s * 100\\n"
+8	"\s-1TRANSLATION\s0: %s: %s\\n"
+9	"\s-1TRANSLATION\s0: \\n%s: write failed, file system is full\\n"
+10	"\s-1TRANSLATION\s0: NFS server %s not responding still trying\\n"
+11	"\s-1TRANSLATION\s0: NFS %s failed for server %s: %s\\n"
+12	"\s-1TRANSLATION\s0: NFS server %s ok\\n"
+13	"Out of disk on file system %s\\n"
+14	"Network file server %s not ok. Check your cable\\n"
+15	"Network file server %2$s down (%1$s, %3$s)\\n"
+.fi
+.ft
+.SH SEE ALSO
+.BR syslogd (8)

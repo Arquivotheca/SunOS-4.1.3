@@ -1,0 +1,122 @@
+.\" @(#)calendar.1 1.1 92/07/30 SMI; from UCB 6.1 85/04/29
+.TH CALENDAR 1 "18 August 1989"
+.SH NAME
+calendar \- a simple reminder service
+.SH SYNOPSIS
+.B calendar
+[ 
+.B \- 
+]
+.SH DESCRIPTION
+.IX  calendar  ""  "\fLcalendar\fP \(em reminder service"
+.IX  "timed event services"  "calendar command"  ""  "\fLcalendar\fP \(em reminder service"
+.IX  "reminder services"  "calendar command"  ""  "\fLcalendar\fP \(em reminder service"
+.LP
+.B calendar 
+consults the file
+.B calendar
+in the current directory and displays lines
+that contain today's or tomorrow's date anywhere in the line.
+Most reasonable month-day dates \(em such as `Dec. 7,' `december 7,' and
+`12/7' \(em are recognized, but `7 December' or `7/12' are not.
+If you give the month as
+.RB ` * '
+with a date \(em for example,
+.RB `` "*\ \ 1" ''
+\(em that day in any month will do.
+On weekends \*(lqtomorrow\*(rq extends through Monday.
+.LP
+When the optional
+.RB ` \- '
+argument is present,
+.B calendar
+does its job for every user
+who has a file
+.B calendar
+in his login directory
+and sends him any positive results by
+.BR  mail (1).
+Normally this is done daily in the wee hours under control of
+.BR cron (8).
+.LP
+The file
+.B calendar
+is first run through the C preprocessor,
+.BR cpp (1),
+to include any other calendar files
+specified with the usual
+.B #include
+syntax.
+Included calendars are usually shared by all users,
+and maintained by the system administrator.
+.SH FILES
+.PD 0
+.TP 20
+.B ~/calendar
+.TP
+.B /usr/lib/calendar
+to figure out today's and tomorrow's dates
+.TP
+.B /etc/passwd
+.TP
+.B /tmp/cal*
+.TP
+.B /lib/cpp
+.PD
+.SH "SEE ALSO"
+.BR at (1),
+.BR cpp (1),
+.BR grep (1V),
+.BR mail (1),
+.BR aliases (5),
+.BR cron (8)
+.SH NOTES
+.LP
+The 
+.RB ` \- '
+argument works only on calendar files that are local to the machine;
+.B calendar
+is intended not to work on calendar files that are mounted remotely with
+.BR \s-1NFS\s0.
+Thus, 
+.RB ` "calendar \-" '
+should be run only on diskful machines where home
+directories exist;  running it on a diskless client has no effect.  
+.LP
+.B calendar 
+is no longer in the default root crontab.
+Because of the network burden
+.RB ` "calendar \-" '
+can induce, it is inadvisable in an environment running
+.BR ypbind
+(see
+.BR ypserv (8))
+with a large passwd.byname map.  However, if the usefulness of
+.B calendar
+outweighs the network impact, the super-user may run
+.RB ` "crontab \-e" '
+to edit the root crontab.
+Otherwise, individual users may wish to use
+.RB ` "crontab \-e" '
+to edit their own crontabs to have
+.B cron
+invoke
+.B calendar
+without the
+.RB ` \- '
+argument, piping output to mail addressed to themselves.
+.SH BUGS
+.LP
+.BR calendar \|'s
+extended idea of \*(lqtomorrow\*(rq does not account for holidays.
+.\" Sun386i
+.LP
+Problems may occur when there is no
+.B /etc/passwd 
+file on the local host.
+.\" Sun386i
+.LP
+The calendar mail will be sent to the user at the machine on which 
+.RB ` "calendar \-" '
+is run.  If the system administrator wants the mail to be sent to another 
+machine, mail aliases should be set up accordingly.

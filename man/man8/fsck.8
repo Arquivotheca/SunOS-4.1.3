@@ -1,0 +1,430 @@
+.\" @(#)fsck.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH FSCK 8 "18 June 1991"
+.SH NAME
+fsck \- file system consistency check and interactive repair
+.SH SYNOPSIS
+.B /usr/etc/fsck
+.B \-p
+[
+.B \-f
+]
+[
+.B \-w
+]
+[
+.B \-l
+.I number
+]
+[
+.IB filesystem \|.\|.\|.
+]
+.LP
+.B /usr/etc/fsck
+[
+.B \-b
+.I block#
+]
+[
+.B \-w
+]
+[
+.B \-y
+]
+[
+.B \-n
+]
+[
+.B \-c
+]
+[
+.IB filesystem \|.\|.\|.
+]
+.SH DESCRIPTION
+.IX  "fsck command"  ""  "\fLfsck\fP \(em check and repair file system"
+.IX  "check file system"  ""  "check file system \(em \fLfsck\fP"
+.IX  "file system"  "check and repair"  ""  "check and repair \(em \fLfsck\fP"
+.LP
+.B fsck
+is a program that checks and repairs file system consistency. It can
+operate in two modes, \*(lqpreen\*(rq and interactive. 
+\*(lqPreen\*(rq is a non-interactive mode which
+only repairs a subset of file system inconsistencies.
+The interactive mode allows users to audit and repair any inconsistencies.
+.SS "\*(lqPreen\*(rq Mode"
+.LP
+With the 
+.B \-p
+option,
+.B fsck
+audits and automatically repairs (\*(lqpreens\*(rq)
+inconsistencies on a set of file systems.
+If a list of file systems is specified on
+the command line,
+.B fsck
+sequentially checks each one; otherwise,
+.B fsck
+reads the table
+.B /etc/fstab
+to determine the file systems to check.
+It then inspects disks in parallel,
+taking advantage of I/O overlap
+to check the file systems quickly.
+The number of disks checked in parallel can be limited using the
+.B \-l
+option.  This helps systems that do not have sufficient memory to
+run enough \fBfsck\fPs to check all disks in parallel.
+Preen mode is normally used in the
+.B /etc/rc
+script during automatic reboot.  
+.LP
+Each file system's super block
+.B clean flag
+is examined and only 
+those file systems not marked
+.B clean
+or
+.B stable
+are checked.
+A message identifying the name of the device
+and its file system's state is printed if the
+clean flag indicates that checking is not
+necessary.
+If the 
+.B \-f
+(force) option 
+is in effect,
+.B fsck
+checks the file system regardless
+of the state of its clean flag.
+.LP
+Only partitions marked in
+.B /etc/fstab
+with a file system type of \*(lq4.2\*(rq and a non-zero pass number
+are checked.
+If the force option is in effect,
+file systems with pass number 1 (typically 
+.BR / ,
+.BR /usr ,
+and
+.BR /usr/kvm )
+are checked one at a time.
+When pass 1 completes, all remaining file systems are checked,
+running one process per disk drive.
+If the force option is not
+in effect (the default case),
+all file systems with non-zero pass numbers
+are checked in as parallel a manner as possible.
+.LP
+.B fsck
+corrects innocuous inconsistencies such as: unreferenced inodes,
+too-large link
+counts in inodes, missing blocks in the free list, blocks appearing
+in the free list and also in files, or incorrect counts in the super
+block, automatically.
+It displays a message
+for each inconsistency corrected that
+identifies the nature of, and file system on which, the correction
+is to take place. 
+After successfully correcting a file system,
+.B fsck
+sets the file system's super block
+.B clean flag
+to
+.B stable,
+prints the number of files on that file system,
+the number of used and free blocks,
+and the percentage of fragmentation.
+.LP
+If
+.B fsck
+encounters other inconsistencies that it cannot fix
+automatically, it does not change the state of
+the super block
+.B clean flag
+and exits with an abnormal return status (and the reboot
+fails).
+A list of file systems containing
+such uncorrectable inconsistencies is printed
+just before
+.B fsck
+exits.
+.LP
+If sent a
+.SM QUIT
+signal while preening the
+file systems listed in
+.BR /etc/fstab ,
+.B fsck
+finishes the file system checks, then exit with an abnormal
+return status and the automatic reboot fails.
+This is useful when you wish to finish the file system checks,
+but do not want the machine to come up multiuser.
+.SS "Interactive Mode"
+.LP
+Without the
+.B \-p
+option,
+.B fsck
+audits and interactively repairs inconsistent conditions on file systems.
+File systems are checked regardless of the state of their
+.BR "clean flag" .
+In this case,
+.B fsck
+asks for confirmation before attempting
+any corrections.
+Inconsistencies other than those mentioned above
+can often result in some loss of data.
+The amount and severity of data
+lost can be determined from the diagnostic output.
+.LP
+The default action for each correction is to wait for the operator to
+respond either 
+.B yes
+or 
+.BR no .
+If the operator does not have write permission on the file system,
+.B fsck
+defaults to a 
+.B \-n
+(no corrections) action.
+.LP
+If no file systems are given to 
+.B fsck
+then a default list of file systems is read from
+the file
+.BR /etc/fstab .
+.LP
+Inconsistencies checked in order are as follows:
+.RS
+.TP 3n
+\(bu
+Blocks claimed by more than one inode or the free list.
+.PD 0
+.TP
+\(bu
+Blocks claimed by an inode or the free list outside the range of the file system.
+.TP
+\(bu
+Incorrect link counts.
+.TP
+\(bu
+Incorrect directory sizes.
+.TP
+\(bu
+Bad inode format.
+.TP
+\(bu
+Blocks not accounted for anywhere.
+.TP
+\(bu
+Directory checks, file pointing to unallocated inode,
+inode number out of range.
+.TP
+\(bu
+Super Block checks:
+more blocks for inodes than there are in the file system.
+.TP
+\(bu
+Bad free block list format.
+.TP
+\(bu
+Total free block and/or free inode count incorrect.
+.TP
+\(bu
+Clean flag state.
+.PD
+.RE
+.PP
+Orphaned files and directories (allocated but unreferenced) are,
+with the operator's concurrence, reconnected by
+placing them in the 
+.B lost+found
+directory.
+The name assigned is the inode number.  If the
+.B lost+found
+directory does not exist, it is created.
+If there is insufficient space its size is increased.
+.LP
+A file system may be specified by giving the name of the cooked or raw device
+on which it resides, or by giving the name of its mount point.  If the latter
+is given,
+.B fsck
+finds the name of the device on which the file system resides by looking in
+.BR /etc/fstab .
+.SH OPTIONS
+.TP
+.B \-b
+Use the block specified immediately after the flag as
+the super block for the file system.
+Block 32 is always an alternate super block.
+.TP
+.B \-f
+Force checking of file systems regardless of the state
+of their super block
+.B "clean flag" .
+.TP
+.BI \-l " number"
+Limits the \fInumber\fP of \fBfsck\fPs that are run concurrently in
+preen mode.  (See \fB\-p\fP.)
+.TP
+.B \-w
+Check writable file systems only.
+.TP
+.B \-y
+Assume a
+.B yes
+response to all questions asked by 
+.BR fsck ;
+this should be used with extreme caution, as it is a free license
+to continue, even after severe problems are encountered.
+.TP
+.B -n
+Assume a
+.B no
+response to all questions asked by 
+.BR fsck ;
+do not open the file system for writing.
+.TP
+.B \-p
+Audit and automatically repair
+inconsistencies on
+file systems whose state is either
+.B active
+or
+.BR unknown .
+If no other options are specified,
+.B fsck
+inspects file systems listed in
+.B /etc/fstab
+in parallel,
+simultaneously checking
+one file system per disk.
+If file systems are specified on the command line,
+inspection is sequential.
+.TP
+.B \-c
+If the file system is in the old (static table) format,
+convert it to the new (dynamic table) format.
+If the file system is in the new format, convert it to
+the old format provided the old format can support the
+file system configuration.
+In interactive mode,
+.BR fsck
+lists the direction the conversion is to be made
+and asks whether the conversion should be done.
+If a negative answer is given, no further operations are
+done on the filesystem.
+In preen mode, the direction of the conversion is listed
+and done if possible without user interaction.
+Conversion in preen mode is best used when all the file
+systems are being converted at once.
+The format of a file system can be
+determined from the first line of output from
+.BR dumpfs (8)
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/fstab
+default list of file systems to check
+.TP
+.B /etc/mtab
+list of mounted file systems
+.PD
+.SH EXIT STATUS
+.TP 
+.B 0
+Either no errors detected or all errors were corrected.
+.TP 
+.B 2
+A
+.SM QUIT
+signal was caught while preening the
+file systems listed in
+.BR /etc/fstab ;
+abort the reboot procedure.
+.TP
+.B 4
+Errors on the root or a mounted file system were corrected.
+The system must be rebooted.
+.TP
+.B 8
+Some uncorrected errors exist on one or more of the file systems
+checked, there was a syntax error, or some other operational
+error occurred.
+.TP
+.B 12
+An
+.SM INTERRUPT
+signal was caught during processing.
+.SH DIAGNOSTICS
+.LP
+The diagnostics produced by 
+.B fsck
+are fully enumerated and explained in the
+.I "System and Network Administration Manual"
+with the following additions.
+.TP
+1. 
+After checking
+a file system in non-preening mode, the question:
+.sp 0.5
+.nf
+.na
+    CLEAN FLAG IN SUPERBLOCK IS WRONG; FIX?
+.ad
+.fi
+.sp 0.5
+is asked if the file system's clean state is wrong.
+A \*(lqyes\*(rq response instructs
+.B fsck
+to reset this state to
+.B active
+if there
+are inconsistencies, or to 
+.B stable
+if there are no uncorrected inconsistencies.
+A \*(lqno\*(rq response instructs
+.B fsck
+to leave the existing state unchanged.
+.TP
+2. 
+When \fBfsck\fP is run in preen mode, the file systems that need additional
+attention are normally scrolled off the screen.  With the enhanced version of
+\fBfsck\fP these file systems listed as \fBfsck\fP exits.  This provides the
+user with a list of the the file systems that require attention.  An example follows:
+.sp 0.5
+.nf
+.na
+        .
+        .
+        .
+    /dev/rsd6a: UNEXPECTED INCONSISTENCY; RUN fsck MANUALLY.
+
+    THE FOLLOWING FILE SYSTEMS HAD AN UNEXPECTED INCONSISTENCY:
+        /dev/rsd6a (/sd6a), /dev/rsd6b (/sd6b)
+        Reboot failed...help!
+.ad
+.fi
+.sp
+.SH "CAVEAT"
+Because super block consistency checks are not made when
+the -b option is used, it is recommended that -b be augumented
+with the -n option to verify fsck actions.  Once you are satisfied
+that the fsck actions are correct, then remove the -n.
+.SH "SEE ALSO"
+.BR fs (5),
+.BR fstab (5),
+.BR dumpfs (8),
+.BR newfs (8),
+.BR mkfs (8),
+.BR panic (8S),
+.BR reboot (8),
+.BR rexecd (8C),
+.BR ypserv (8)
+.LP
+.br
+.I "System and Network Administration"

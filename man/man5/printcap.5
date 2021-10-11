@@ -1,0 +1,458 @@
+'\" t
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)printcap.5 1.1 92/07/30 SMI; from UCB 4.3
+.TH PRINTCAP 5 "24 February 1988"
+.SH NAME
+printcap \- printer capability data base
+.SH SYNOPSIS
+.B /etc/printcap
+.SH DESCRIPTION
+.IX  "printcap file"  ""  "\fLprintcap\fP \(em printer capability data base"
+.LP
+.B printcap
+is a simplified version of the
+.BR termcap (5)
+data base for describing printers.
+The spooling system accesses the
+.B printcap
+file every time it is used, allowing dynamic
+addition and deletion of printers.
+Each entry in the data base describes one printer.
+This data base may not be substituted for, as is possible for
+.BR termcap ,
+because it may allow accounting to be bypassed.
+.LP
+The default printer is normally
+.BR lp ,
+though the environment variable
+.SM PRINTER
+may be used to override this.
+Each spooling utility supports a
+.BI \-P printer
+option to explicitly name a destination printer.
+.LP
+Refer to
+.TX ADMIN
+for a discussion of how to set up the
+database for a given printer.
+.\" Sun386i
+On Sun386i systems, refer to 
+.BR snap (1)
+for information on setting up printers with the system
+and network administration program. 
+.LP
+Each entry in the
+.B printcap
+file describes a printer, and is a line
+consisting of a number of fields separated by
+.RB ` : '
+characters.
+The first entry for each printer
+gives the names which are known for the
+printer, separated by
+.RB ` | '
+characters.
+The first name is conventionally a number. 
+The second name given is the most common abbreviation
+for the printer, and the last name given should
+be a long name fully identifying the printer.
+The second name should contain no blanks;
+the last name may well contain blanks for readability.
+Entries may continue onto multiple lines by giving a
+.RB ` \e '
+as the last character of a line, and empty fields
+may be included for readability.
+.LP
+Capabilities in
+.B printcap
+are all introduced by two-character codes,
+and are of three types:
+.LP
+.TP 10
+.I Boolean
+Capabilities that indicate that the printer
+has some particular feature.
+Boolean capabilities are simply written between the
+.RB ` : '
+characters, and
+are indicated by the word `bool' in the
+.B type
+column of the capabilities table below.
+.TP
+.I Numeric
+Capabilities that supply information such
+as baud-rates, number of lines per page, and so on.
+Numeric capabilities are indicated by the word
+.B num
+in the
+.B type
+column of the capabilities table below.
+Numeric capabilities are given by the
+two-character capability code followed by the
+.RB ` # '
+character, followed by the numeric value.
+The following example is a numeric
+entry stating that this printer should
+run at 1200 baud:
+.IP
+.B 	\ :br#1200:\ 
+.TP
+.I String
+Capabilities that give a sequence which can
+be used to perform particular
+printer operations such as cursor motion.
+String valued capabilities
+are indicated by the word
+.B str
+in the
+.B type
+column of the capabilities table below.
+String valued capabilities
+are given by the two-character
+capability code followed by an
+.RB ` = '
+sign and then a string ending at the next following
+.RB ` : '.
+For example,
+.IP
+.B 	\ \ :rp=spinwriter:\ 
+.IP
+is a sample entry stating that the remote printer
+is named
+.BR spinwriter .
+.SH Sun386i DESCRIPTION
+.LP
+On Sun386i systems,
+.BR lpr (1)
+and related printing commands use the 
+Network Information Service
+(\s-1NIS\s0)
+to obtain the 
+.B printcap
+entry for a named printer if the entry does not exist in the local
+.B /etc/printcap
+file.
+For example, when a user issues the command:
+.IP
+.B 	\ \ lpr -Pnewprinter foo\ 
+.LP
+.B lpr 
+searches 
+.B /etc/printcap
+on the local system for an entry for
+.BR newprinter .
+If no local entry for 
+.B newprinter
+exists, then 
+.B lpr 
+searches the 
+.SM NIS
+map called
+.BR printcap .
+The search is invisible to the user. 
+.LP
+.B lpr
+creates the spooling directory for the printer automatically if 
+no spooling directory exists.
+.LP
+System administrators can make a printer available to the 
+entire 
+.SM NIS
+domain by placing an entry
+for that printer in the 
+.SM NIS
+.B printcap 
+map, typically using
+.BR snap .
+Otherwise, the system administrator must edit the 
+.B /etc/printcap
+file on the 
+.SM NIS
+master and then rebuild the 
+.SM NIS
+map. 
+.SH CAPABILITIES
+.LP
+.\" === troff version ====
+.if n .ig IG
+.TS
+c c l l
+cfB l l l .
+\fIName	Type	Default	Description\fP
+.sp .5
+af	str	\s-1NULL\s0	name of accounting file
+br	num	none	if lp is a tty, set the baud rate (ioctl call)
+cf	str	\s-1NULL\s0	cifplot data filter
+df	str	\s-1NULL\s0	TeX data filter (\s-1DVI\s0 format)
+du	str	0	User \s-1ID\s0 of user `daemon'.
+fc	num	0	if lp is a tty, clear flag bits
+ff	str	``\ef''	string to send for a form feed
+fo	bool	false	print a form feed when device is opened
+fs	num	0	like `fc' but set bits
+gf	str	\s-1NULL\s0	graph data filter (plot(3X) format)
+hl	bool	false	print the burst header page last
+ic	bool	false	driver supports (non standard) ioctl to indent printout
+if	str	\s-1NULL\s0	name of input/communication filter (created per job)
+lf	str	``/dev/console''	error logging file name
+lo	str	``lock''	name of lock file
+lp	str	``/dev/lp''	device name to open for output
+mc	num	0	maximum number of copies
+ms	str	\s-1NULL\s0	list of terminal modes to set or clear
+mx	num	1000	maximum file size (in \s-1BUFSIZ\s0 blocks), zero = unlimited
+nd	str	\s-1NULL\s0	next directory for list of queues (unimplemented)
+nf	str	\s-1NULL\s0	ditroff data filter (device independent troff)
+of	str	\s-1NULL\s0	name of output/banner filter (created once)
+pc	num	200	price per foot or page in hundredths of cents
+pl	num	66	page length (in lines)
+pw	num	132	page width (in characters)
+px	num	0	page width in pixels (horizontal)
+py	num	0	page length in pixels (vertical)
+rf	str	\s-1NULL\s0	filter for printing \s-1FORTRAN\s0 style text files
+rg	str	\s-1NULL\s0	restricted group. Only members of group allowed access
+rm	str	\s-1NULL\s0	machine name for remote printer
+rp	str	``lp''	remote printer name argument
+rs	bool	false	restrict remote users to those with local accounts
+rw	bool	false	open printer device read/write instead of write-only
+sb	bool	false	short banner (one line only)
+sc	bool	false	suppress multiple copies
+sd	str	``/var/spool/lpd''	spool directory
+sf	bool	false	suppress form feeds
+sh	bool	false	suppress printing of burst page header
+st	str	``status''	status file name
+tc	str	\s-1NULL\s0	name of similar printer; must be last	 
+tf	str	\s-1NULL\s0	troff data filter (C/A/T phototypesetter)
+tr	str	\s-1NULL\s0	trailer string to print when queue empties
+vf	str	\s-1NULL\s0	raster image filter
+xc	num	0	if lp is a tty, clear local mode bits
+xs	num	0	like `xc' but set bits
+.TE
+.IG
+.\" === end troff version ====
+.\" === nroff version ====
+.if t .ig IG
+.ta +5n +5n +19n +25n 
+\fIName	Type	Default	Description\fP
+.sp .5
+af	str	\s-1NULL\s0	name of accounting file
+br	num	none	if lp is a tty, set the baud 
+			rate (ioctl call)
+cf	str	\s-1NULL\s0	cifplot data filter
+df	str	\s-1NULL\s0	TeX data filter (\s-1DVI\s0 format)
+du	str	0	User \s-1ID\s0 of user `daemon'.
+fc	num	0	if lp is a tty, clear 
+			flag bits
+ff	str	``\ef''	string to send for a 
+			form feed
+fo	bool	false	print a form feed when 
+			device is opened
+fs	num	0	like `fc' but set bits
+gf	str	\s-1NULL\s0	graph data filter 
+			(plot(3X) format)
+hl	bool	false	print the burst header 
+			page last
+ic	bool	false	driver supports (non 
+			standard) ioctl to indent 
+			printout
+if	str	\s-1NULL\s0	name of input/
+			communication filter 
+			(created per job)
+lf	str	``/dev/console''	error logging file name
+lo	str	``lock''	name of lock file
+lp	str	``/dev/lp''	device name to open 
+			for output
+mc	num	0	maximum number of copies
+ms	str	\s-1NULL\s0	list of terminal modes to 
+			set or clear
+mx	num	1000	maximum file size (in 
+			\s-1BUFSIZ\s0 blocks), 
+			zero = unlimited
+nd	str	\s-1NULL\s0	next directory for list 
+			of queues (unimplemented)
+nf	str	\s-1NULL\s0	ditroff data filter 
+			(device independent troff)
+of	str	\s-1NULL\s0	name of output/banner 
+			filter (created once)
+pc	num	200	price per foot or page in 
+			hundredths of cents
+pl	num	66	page length (in lines)
+pw	num	132	page width (in characters)
+px	num	0	page width in pixels 
+			(horizontal)
+py	num	0	page length in pixels 
+			(vertical)
+rf	str	\s-1NULL\s0	filter for printing \s-1FORTRAN\s0 
+			style text files
+rg	str	\s-1NULL\s0	restricted group. Only 
+			members of group allowed access
+rm	str	\s-1NULL\s0	machine name for remote 
+			printer
+rp	str	``lp''	remote printer name argument
+rs	bool	false	restrict remote users to 
+			those with local accounts
+rw	bool	false	open printer device read
+			/write instead of write-only
+sb	bool	false	short banner (one line only)
+sc	bool	false	suppress multiple copies
+sd	str	``/var/spool/lpd''	spool directory
+sf	bool	false	suppress form feeds
+sh	bool	false	suppress printing of burst 
+			page header
+st	str	``status''	status file name
+tc	str	\s-1NULL\s0	name of similar printer; 
+			must be last	 
+tf	str	\s-1NULL\s0	troff data filter (C/A/T 
+			phototypesetter)
+tr	str	\s-1NULL\s0	trailer string to print 
+			when queue empties
+vf	str	\s-1NULL\s0	raster image filter
+xc	num	0	if lp is a tty, clear 
+			local mode bits
+xs	num	0	like `xc' but set bits
+.fi
+.DT
+.IG
+.\" === end nroff version ===
+.LP
+If the local line printer driver supports
+indentation, the daemon must understand how to invoke it.
+.LP
+Note: the
+.BR fs ,
+.BR fc ,
+.BR xs ,
+and
+.B xc
+fields are flag
+.I masks
+rather than flag
+.IR values .
+Certain default device flags are set when the device is
+opened by the line printer daemon if the device is connected to a
+terminal port.
+The flags indicated in the
+.B fc
+field are then cleared;
+the flags in the
+.B fs
+field are then set (or vice-versa,
+depending on the order of
+.BI fc #nnnn
+and
+.BI fs #nnnn
+in the
+.B /etc/printcap
+file).  The bits cleared by the
+.B fc
+field and set by the
+.B fs
+field are those in the
+.B sg_flags
+field of the
+.B sgtty
+structure, as set by the
+.SB TIOCSETP
+.B ioctl
+call, and the bits cleared by the
+.B xc
+field and set by the
+.B xs
+field are those in the \*(lqlocal flags\*(rq word, as set by the
+.SB TIOCLSET
+.B ioctl
+call.  See
+.BR ttcompat (4M)
+for a description of these flags.
+For example, to set exactly the flags
+06300 in the
+.B fs
+field, which specifies that the
+.SM
+.BR EVENP \*S,
+.SM
+.BR ODDP \*S,
+and
+.SB XTABS
+modes are to be set, and all other flags are to be cleared, do:
+.RS
+.nf
+.B :fc#0177777:fs#06300:
+.fi
+.RE
+.LP
+The same process applies to the
+.B xc
+and
+.B xs
+fields.  Alternatively, the
+.B ms
+field can be used to specify modes to be set and cleared.
+These modes are specified as
+.BR stty (1V)
+modes; any mode supported by
+.B stty
+may be specified, except for the baud rate which must be specified
+with the
+.B br
+field.  This permits modes not supported by the older
+terminal interface described in
+.BR ttcompat (4M)
+to be set or cleared. 
+Thus, to set the terminal port to which the
+printer is attached to even parity,
+.SM TAB
+expansion, no
+.SM NEWLINE
+to
+.SM RETURN/LINEFEED
+translation, and
+.SM RTS/CTS
+flow control enabled, do:
+.RS
+.nf
+.B :ms=evenp,-tabs,nl,crtscts:
+.fi
+.RE
+.\"Sun386i
+.LP
+On Sun386i systems, the 
+.B tc
+field, as in the
+.BR termcap (5)
+file, must appear last in the list of capabilities.
+It is recommended that
+each type of printer have a general entry describing common capabilities;
+then an individual printer can be defined with 
+its particular capabilities plus a
+.B tc
+field that points to the general entry for that type of printer.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/printcap
+.PD
+.SH "SEE ALSO"
+.BR lpq (1),
+.BR lpr (1),
+.BR lprm (1),
+.BR plot (1G),
+.BR snap (1),
+.BR stty (1V),
+.BR plot (3X),
+.BR ttcompat (4M),
+.BR termcap (5),
+.BR lpc (8),
+.BR lpd (8),
+.BR pac (8)
+.LP
+.TX ADMIN
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

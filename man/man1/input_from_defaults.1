@@ -1,0 +1,100 @@
+.\" @(#)input_from_defaults.1 1.1 92/07/30 SMI;
+.TH INPUT_FROM_DEFAULTS 1 "8 September 1989"
+.SH NAME
+input_from_defaults, defaults_from_input \- update the current state of the mouse and keyboard from the defaults database, and vice versa
+.SH SYNOPSIS
+.IX "defaults, update kernel from \(em \fLinput_from_defaults\fR"
+.IX defaults_from_input "" "\fLdefaults_from_input\fR \(em update defaults from kernel"
+.IX input_from_defaults "" "\fLinput_from_defaults\fR \(em update kernel from defaults database"
+.B input_from_defaults
+.br
+.B defaults_from_input
+.SH AVAILABILITY
+This command is available with the
+.TX SVBG 
+software installation option. 
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.LP
+.B input_from_defaults
+updates various parameters controlling
+mouse- and keyboard-processing on the machine on
+which it is run.
+It should be used on systems which are running
+the SunView window system.
+The parameters control the distribution of
+function keys on the keyboard, the assignment
+of buttons on the mouse, the scaling of mouse-to-cursor
+motion, and the effect of two
+filters on mouse-motion originally provided
+to compensate for defective mice.
+The new values are taken from the
+defaults database, starting with the file
+.B .defaults
+in the user's home
+directory.
+When
+.B Private_only
+is
+.B False
+in the
+.B $\s-1HOME\s0/.defaults
+file,
+the
+.B /usr/lib/defaults/*.d
+file is consulted.
+See
+.BR defaultsedit (1)
+for more information about the
+defaults database.
+.LP
+.B defaults_from_input
+is the inverse operation to
+.BR input_from_defaults .
+It updates the user's private defaults database (used by
+.BR defaultsedit (1) )
+to reflect the current state of
+kernel input parameters listed above.
+.SH FILES
+.PD 0
+.TP 20
+.B $\s-1HOME\s0/.defaults
+.TP
+.B /usr/lib/defaults/*.d
+.TP
+.B $\s-1HOME\s0/.login
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR defaultsedit (1)
+.LP
+.TX SVBG
+.SH NOTES
+The parameter settings set by
+.B input_from_defaults
+are lost when the system goes down.
+To set them automatically on login,
+.BR csh (1)
+users can include the following in their
+.B .login
+files:
+.LP
+.RS
+.nf
+.ft B
+if (`tty`==/dev/console) then
+	echo 'Setting input defaults'
+	input_from_defaults
+endif
+.ft R
+.fi
+.RE
+.SH BUGS
+.LP
+.B input_from_defaults
+should be targetable
+to any user's
+.B .defaults
+file.

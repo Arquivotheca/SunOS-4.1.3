@@ -1,0 +1,222 @@
+.\" @(#)setbuf.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH SETBUF 3V "21 January 1990"
+.SH NAME
+setbuf, setbuffer, setlinebuf, setvbuf \- assign buffering to a stream
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <stdio.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+void setbuf(stream, buf)
+\s-1FILE\s0 *stream;
+char *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void setbuffer(stream, buf, size)
+\s-1FILE\s0 *stream;
+char *buf;
+int size;
+.ft
+.ft
+.LP
+.nf
+.fi
+int setlinebuf(stream)
+\s-1FILE\s0 *stream;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setvbuf(stream, buf, type, size)
+\s-1FILE\s0 *stream;
+char *buf;
+int type, size;
+.ft
+.fi
+.IX  "assign buffering to stream"  setbuf()  ""  "\fLsetbuf()\fP \(em assign buffering"
+.IX  "assign buffering to stream"  setbuffer()  ""  "\fLsetbuffer()\fP \(em assign buffering"
+.IX  "assign buffering to stream"  setlinebuf()  ""  "\fLsetlinebuf()\fP \(em assign buffering"
+.IX  "assign buffering to stream"  setvbuf()  ""  "\fLsetvbuf()\fP \(em assign buffering"
+.IX  stream  "assign buffering setbuf()"  ""  "assign buffering \(em \fLsetbuf()\fP"
+.IX  stream  "assign buffering setbuffer()"  ""  "assign buffering \(em \fLsetbuffer()\fP"
+.IX  stream  "assign buffering setlinebuffer()"  ""  "assign buffering \(em \fLsetlinebuf()\fP"
+.IX  stream  "assign buffering setvbuffer()"  ""  "assign buffering \(em \fLsetvbuf()\fP"
+.IX  buffering  "assign to stream setbuf()" buffering  "assign to stream \(em \fLsetbuf()\fP"
+.IX  buffering  "assign to stream setbuffer()" buffering  "assign to stream \(em \fLsetbuffer()\fP"
+.IX  buffering  "assign to stream setlinebuf()" buffering  "assign to stream \(em \fLsetlinebuf()\fP"
+.IX  buffering  "assign to stream setvbuf()" buffering  "assign to stream \(em \fLsetvbuf()\fP"
+.IX  "setbuf()"  ""  "\fLsetbuf()\fP \(em assign buffering"
+.IX  "setbuffer()"  ""  "\fLsetbuffer()\fP \(em assign buffering"
+.IX  "setlinebuf()"  ""  "\fLsetlinebuf()\fP \(em assign buffering"
+.IX  "setvbuf()"  ""  "\fLsetvbuf()\fP \(em assign buffering"
+.SH DESCRIPTION
+.LP
+The three types of buffering available are unbuffered, block buffered,
+and line buffered.
+When an output stream is unbuffered, information appears on the
+destination file or terminal as soon as written;
+when it is block buffered many characters are saved up and written as a block;
+when it is line buffered characters are saved up until a
+.SM NEWLINE
+is encountered or input is read from
+.BR stdin .
+.B fflush(\|)
+(see
+.BR fclose (3V))
+may be used to force the block out early.
+A buffer is obtained from
+.BR malloc (3V)
+upon the first
+.BR getc (3V)
+or
+.BR putc (3S)
+on the file.
+By default, output to a terminal is line buffered, except for output to the
+standard stream
+.B stderr
+which is unbuffered.
+All other input/output is fully buffered.
+.\" what does "fully buffered" mean?
+.LP
+.B setbuf(\|)
+can be used after a stream has been opened but before it is read or written.
+It causes the array pointed to by
+.I buf
+to be used instead of an automatically allocated buffer.  If
+.I buf
+is the
+.SM NULL
+pointer, input/output will be completely unbuffered.
+A manifest constant
+.BR \s-1BUFSIZ\*S ,
+defined in the
+.B <stdio.h>
+header file,
+tells how big an array is needed:
+.IP
+.B char
+.B buf[\s-1BUFSIZ\s0];
+.LP
+.BR setbuffer(\|) ,
+an alternate form of
+.BR setbuf(\|) ,
+can be used after a stream has been opened but before it is read or written.
+It uses the character array
+.I buf
+whose size is determined by the
+.I size
+argument instead of an automatically allocated buffer.  If
+.I buf
+is the
+.SM NULL
+pointer, input/output will be completely unbuffered.
+.LP
+.B setvbuf(\|)
+can be used after a stream has been opened
+but before it is read or written.
+.I type
+determines how
+stream
+will be buffered.  Legal values for
+.I type
+(defined in
+.BR <stdio.h> )
+are:
+.TP .85i
+.SB     _IOFBF
+fully buffers the input/output.
+.TP
+.SB     _IOLBF
+line buffers the output;
+the buffer will be flushed when a
+.SM NEWLINE
+is written, the buffer is full, or input is requested.
+.TP
+.SB     _IONBF
+completely unbuffers the input/output.
+.LP
+If
+.I buf
+is not the
+.SM NULL
+pointer, the array it points to
+will be used for buffering, instead of an automatically allocated
+buffer.
+.I size
+specifies the size of the buffer to be used.
+.LP
+.B setlinebuf(\|)
+is used to change the buffering on a stream
+from block buffered or unbuffered to line buffered.
+Unlike
+.BR setbuf(\|) ,
+.BR setbuffer(\|) ,
+and
+.BR setvbuf(\|) ,
+it can be used at any time that the file descriptor is active.
+.LP
+A file can be changed from unbuffered or line buffered to block buffered
+by using
+.B freopen(\|)
+(see
+.BR fopen (3V)).
+A file can be changed from block buffered or line buffered to unbuffered
+by using
+.B freopen(\|)
+followed by
+.B setbuf(\|)
+with a buffer argument of
+.SM NULL\s0.
+.SH SYSTEM V DESCRIPTION
+If
+.I buf
+is not
+.SB NULL
+and
+.I stream
+refers to a terminal device,
+.B setbuf(\|)
+sets
+.I stream
+for line buffered input/output.
+.SH RETURN VALUES
+.LP
+.B setlinebuf(\|)
+returns no useful value.
+.LP
+.B setvbuf(\|)
+returns
+0
+on success.
+If an illegal value for
+.I type
+or
+.I size
+is provided,
+.B setvbuf(\|)
+returns
+a non-zero value.
+.B setvbuf(\|)
+.SH SEE ALSO
+.BR fclose (3V),
+.BR fopen (3V),
+.BR fread (3S),
+.BR getc (3V),
+.BR malloc (3V),
+.BR printf (3V),
+.BR putc (3S),
+.BR puts (3S)
+.SH NOTES
+.LP
+A common source of error is allocating buffer space
+as an \*(lqautomatic\*(rq variable in a code block, and then
+failing to close the stream in the same block.

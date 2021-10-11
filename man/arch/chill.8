@@ -1,0 +1,79 @@
+.\" @(#)chill.8 1.1 92/07/30 SMI;
+.TH CHILL 8 "06 April 1988"
+.SH NAME
+chill \- remove useful pages from the virtual memory cache
+.SH SYNOPSIS
+.B chill
+[
+.B \-c
+.I cycles
+]
+[
+.B \-f
+.I factor
+]
+[
+.B \-m
+.I memsize
+]
+.SH DESCRIPTION
+.IX "chill remove" "" "\fLchill\fP \(em remove useful pages from virtual memory cache" ""
+.IX "remove" "useful pages from cache"
+.IX memory "remove useful pages from cache"
+.IX "cool" "cool off system"
+.LP
+.B chill
+is a command designed to cool off the system by removing any
+useful (to a process) pages from the virtual memory cache.
+.B chill
+does this by creating a large pool of private pages,
+and then cycling through the pool, dirtying every page.
+Currently, this forces
+.BR chill 's
+pages to be hot, which forces out all the other (non-locked)
+pages in the system.  Then when
+.B chill
+exits, all its private pages are put on the free list,
+leaving no useful pages in memory.
+.LP
+With no options specified,
+the size of the pool created by
+.B chill
+is twice the amount of pageable memory,
+and it is cycled through just once.
+This seems to give correct results with minimal overhead.
+.LP
+However, the size of the pool may be explicitly specified as
+.IR memsize ,
+or as
+.I factor
+times the amount of pageable memory.
+.I memsize
+overrides the
+.I factor
+specification.
+The cycle count may be specified as
+.IR cycles .
+.SH OPTIONS
+.TP
+.BI "\-c " cycles
+Set the cycle count to
+.IR cycles .
+The default is 1.
+.TP
+.BI "\-f " factor
+Set the expansion factor to
+.IR factor .
+The default is 2.
+.TP
+.BI "\-m " memsize
+Set the memory size to
+.IR memsize .
+The default is unspecified, which means that
+.I factor
+times the amount of pageable memory will be used.
+.SH BUGS
+.LP
+.B chill
+is dependent on implementation details
+which are subject to change.

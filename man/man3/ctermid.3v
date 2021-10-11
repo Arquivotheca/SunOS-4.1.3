@@ -1,0 +1,67 @@
+.\" @(#)ctermid.3v 1.1 92/07/30 SMI; from S5
+.TH CTERMID 3V "5 October 1989"
+.SH NAME
+ctermid \- generate filename for terminal
+.SH SYNOPSIS
+.nf
+.B
+\#include <stdio.h>
+.B char *ctermid (s)
+.B char *s;
+.fi
+.SH DESCRIPTION
+.IX ctermind() "" "\fLctermid()\fR \(em generate filename for terminal"
+.LP
+.B ctermid(\|)
+generates the pathname of the controlling
+terminal for the current process, and stores it in a
+string.
+.LP
+If
+.I s
+is a
+.SM NULL
+pointer, the string is stored in an internal static area,
+the contents of which are overwritten at the next call to
+.BR ctermid(\|) ,
+and the address of which is returned.  Otherwise,
+.I s
+is assumed to point to a character array of at least
+.B L_ctermid
+elements; the path name is placed in this array and the value of
+.I s
+is returned.  The constant
+.B L_ctermid
+is defined in
+.B <stdio.h>
+header file.
+.LP
+.B ctermid(\|)
+returns a pointer to a null string if it fails,
+or if the pathname that would refer to the
+controlling terminal cannot be determined.
+.SH SEE ALSO
+.BR ttyname (3V)
+.SH NOTES
+.LP
+The difference between
+.B ctermid(\|)
+and
+.BR ttyname (3V)
+is that
+.B ttyname(\|)
+must be passed a file descriptor and returns the actual name of
+the terminal associated with that file descriptor, while
+.B ctermid(\|)
+returns a string
+.RB ( /dev/tty )
+that will refer to the
+terminal if used as a file name.  Thus
+.B ttyname(\|)
+is useful only if the process already has at least one file open
+to a terminal.
+.B ctermid(\|)
+is useful largely for making code portable to
+(non-\s-1UNIX\s0) systems where the
+current terminal is referred to by a name other than
+.BR /dev/tty .

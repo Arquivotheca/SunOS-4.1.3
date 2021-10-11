@@ -1,0 +1,124 @@
+.\" @(#)setup_exec.8 1.1 92/07/30 SMI;
+.TH SETUP_EXEC 8 "25 September 1987"
+.SH NAME
+setup_exec \- install architecture-dependent executables on a heterogeneous file server
+.SH SYNOPSIS
+.B /usr/etc/install/setup_exec
+.if n .br
+.I arch
+.I execpath
+.SH DESCRIPTION
+.IX "setup_exec command" "" "\fLsetup_exec\fP command"
+.LP
+.B setup_exec
+installs architecture-dependent executables from
+either from a local tape drive or a remote host.
+It is used to
+convert a standalone system or homogeneous file server to a
+heterogeneous file server.
+.B setup_exec
+is a forms-based utility that can be invoked directly, but it is
+also used by
+.BR suninstall (8).
+It can only be invoked by the super-user.
+.LP
+The
+.I arch
+argument specifies the machine archictecture to install
+(for instance,
+.BR sun4 ,
+.BR sun3 .\|.\|.\|).
+When run with no arguments,
+.B setup_exec
+displays a usage line that includes the proper format of the 
+.I arch
+argument for each supported architecture.
+.I execpath
+is the full pathname of the directory in which to install the
+executables.
+When
+.B setup_exec
+is done, the
+.I execpath
+directory is ready to mount as
+.B /usr
+by the heterogeneous server's
+.SM NFS
+clients of the indicated
+.IR arch .
+.LP
+.B setup_exec
+also updates the
+.B /etc/exports
+file (see
+.BR exportfs (8))
+to export the executable directories it has installed.
+The system administrator should verify this file to make sure
+that the directory has been exported to the correct groups.
+.SH EXAMPLE
+.LP
+This example shows how to install a directory of
+executables for Sun-4 system clients running 4.0.
+.IP
+.B example# setup_exec sun4 /exports/execs/sun4/4.0
+.SH FILES
+.PD 0
+.TP 32
+.B /etc/hosts
+hosts database
+.TP
+.B /etc/ethers
+database of hostnames and Ethernet addresses
+.TP
+.B /etc/exports
+database of exported file systems
+.TP
+.BI /usr/etc/install/files/extractlist. arch
+record of extracted categories for the indicated architecture
+.PD
+.SH "SEE ALSO"
+.BR exportfs (8),
+.BR setup_client (8),
+.BR suninstall (8)
+.LP
+.TX INSTALL
+.SH DIAGNOSTICS
+.TP
+.B "incorrect number of arguments"
+Check the number and the order of arguments.
+.TP
+.B "invalid architecture type \*(lq\fIarch\fP\*(rq."
+You supplied a value for
+.I arch
+that is not supported.
+.TP
+.B "invalid tape drive type \*(lq\fIdrive\fP\*(rq."
+Valid tape drive types are
+.B local
+and
+.BR remote .
+.TP
+.B "invalid tape type \*(lq\fItape\fP\*(rq."
+Valid tape types are
+.BR ar ,
+.BR st ,
+.BR mt ,
+and
+.BR xt .
+.TP
+.B "can't reach tapehost \*(lq\fItapehost\fR\*(rq."
+The IP address of
+.I tapehost
+is not in the hosts database, that is,
+the hosts
+.SM YP
+database if the 
+.SM YP
+name service is running, or the
+.B /etc/hosts
+file otherwise.
+.TP
+.B "Load release tape \fIn\fP"
+Mount the release tape specified on the screen and type
+.SM RETURN
+to continue.

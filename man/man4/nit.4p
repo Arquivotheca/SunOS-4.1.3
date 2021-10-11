@@ -1,0 +1,273 @@
+.\" @(#)nit.4p 1.1 92/07/30 SMI;
+.TH NIT 4P "29 December 1987"
+.SH NAME
+nit \- Network Interface Tap
+.SH CONFIG
+.nf
+.B pseudo-device	clone
+.B pseudo-device	snit
+.B pseudo-device	pf
+.B pseudo-device	nbuf
+.fi
+.SH SYNOPSIS
+.nf
+.B #include <sys/file.h>
+.B #include <sys/ioctl.h>
+.B #include <net/nit_pf.h>
+.B #include <net/nit_buf.h>
+.sp 0.25v
+	\fIfd\fP\fB = open("/dev/nit", \|\fP\fImode\fP\fB);\fP
+	\fBioctl(\fP\fIfd\fP\fB, \|I_PUSH, \|"pf");\fP
+	\fBioctl(\fP\fIfd\fP\fB, \|I_PUSH, \|"nbuf");\fP
+.fi
+.SH DESCRIPTION
+.IX "NIT facility" "" "NIT, Network Interface Tap"
+.IX STREAMS NIT "" "NIT, Network Interface Tap"
+.LP
+.SM NIT
+(the Network Interface Tap)
+is a facility composed of several
+.SM STREAMS
+modules and drivers.
+These components collectively provide facilities
+for constructing applications
+that require link-level network access.
+Examples of such applications include
+.BR rarpd (8C),
+which is a user-level implementation of the Reverse
+.SM ARP
+protocol, and
+.BR etherfind (8C),
+which is a network monitoring and trouble-shooting program.
+.LP
+.SM NIT
+consists of several components that are summarized below.
+See their Reference Manual entries for detailed information
+about their specification and operation.
+.TP 12
+.BR nit_if (4M)
+This component is a
+.SM STREAMS
+device driver that interacts directly with the system's Ethernet drivers.
+After opening an instance of this device it must be bound
+to a specific Ethernet interface before becoming usable.
+Subsequently,
+.B nit_if
+transcribes packets arriving on the interface
+to the read side of its associated stream
+and delivers messages reaching it on the write side of its stream
+to the raw packet output code for transmission over the interface.
+.TP
+.BR nit_pf (4M)
+This module provides packet-filtering services,
+allowing uninteresting incoming packets
+to be discarded with minimal loss of efficiency.
+It passes through unaltered all outgoing messages
+(those on the stream's write side).
+.TP
+.BR nit_buf (4M)
+This module buffers incoming messages into larger aggregates,
+thereby reducing the overhead incurred by repeated
+.BR read (2V)
+system calls.
+.LP
+.SM NIT
+clients mix and match these components,
+based on their particular requirements.
+For example, the reverse
+.SM ARP
+daemon concerns itself only with packets of a specific type
+and deals with low traffic volumes.
+Thus,
+it uses
+.B nit_if
+for access to the network and
+.B nit_pf
+to filter out all incoming packets except reverse
+.SM ARP
+packets, but omits the
+.B nit_buf
+buffering module since traffic is not high enough
+to justify the additional complexity of unpacking buffered packets.
+On the other hand, the
+.BR etherd (8C)
+program, which collects Ethernet statistics for
+.BR traffic (1C)
+to display, must examine every packet on the network.
+Therefore, it omits the
+.B nit_pf
+module, since there is nothing it wishes to screen out,
+and includes the
+.B nit_buf
+module, since most networks have very heavy aggregate packet traffic.
+.SH EXAMPLES
+.LP
+The following code fragments outline how to program
+against parts of the
+.SM NIT
+interface.
+For the sake of brevity, all error-handling code has been elided.
+.LP
+.B initdevice
+comes from
+.B etherfind
+and sets up its input stream configuration.
+.LP
+.nf
+.ft B
+.if t .ps -1
+.if t .vs -1
+initdevice(if_flags, snaplen, chunksize)
+	u_long	if_flags,
+		snaplen,
+		chunksize;
+.br
+.ne 3
+{
+	struct strioctl	si;
+	struct ifreq	ifr;
+	struct timeval	timeout;
+
+	if_fd = open(NIT_DEV, O_RDONLY);
+
+	/* Arrange to get discrete messages from the stream. */
+	ioctl(if_fd, I_SRDOPT, (char *)RMSGD);
+
+	si.ic_timout = INFTIM;
+
+	/* Push and configure the buffering module. */
+	ioctl(if_fd, I_PUSH, "nbuf");
+
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
+	si.ic_cmd = NIOCSTIME;
+	si.ic_len = sizeof timeout;
+	si.ic_dp = (char *)&timeout;
+	ioctl(if_fd, I_STR, (char *)&si);
+
+	si.ic_cmd = NIOCSCHUNK;
+	si.ic_len = sizeof chunksize;
+	si.ic_dp = (char *)&chunksize;
+	ioctl(if_fd, I_STR, (char *)&si);
+
+	/* Configure the nit device, binding it to the proper
+	   underlying interface, setting the snapshot length,
+	   and setting nit_if-level flags. */
+	strncpy(ifr.ifr_name, device, sizeof ifr.ifr_name);
+	ifr.ifr_name[sizeof ifr.ifr_name - 1] = '\e0';
+	si.ic_cmd = NIOCBIND;
+	si.ic_len = sizeof ifr;
+	si.ic_dp = (char *)&ifr;
+	ioctl(if_fd, I_STR, (char *)&si);
+
+	if (snaplen > 0) {
+		si.ic_cmd = NIOCSSNAP;
+		si.ic_len = sizeof snaplen;
+		si.ic_dp = (char *)&snaplen;
+		ioctl(if_fd, I_STR, (char *)&si);
+	}
+
+	if (if_flags != 0) {
+		si.ic_cmd = NIOCSFLAGS;
+		si.ic_len = sizeof if_flags;
+		si.ic_dp = (char *)&if_flags;
+		ioctl(if_fd, I_STR, (char *)&si);
+	}
+
+	/* Flush the read queue, to get rid of anything that accumulated
+	   before the device reached its final configuration. */
+	ioctl(if_fd, I_FLUSH, (char *)FLUSHR);
+}
+.if t .vs
+.if t .ps
+.ft R
+.fi
+.br
+.ne 5
+.LP
+Here is the skeleton of the packet reading loop from
+.BR etherfind .
+It illustrates how to cope with dismantling the headers the various
+.SM NIT
+components glue on.
+.LP
+.nf
+.ft B
+.if t .ps -1
+.if t .vs -1
+	while ((cc = read(if_fd, buf, chunksize)) >= 0) {
+		register u_char	*bp = buf,
+				*bufstop = buf + cc;
+
+		/* Loop through each message in the chunk. */
+		while (bp < bufstop) {
+			register u_char		*cp = bp;
+			struct nit_bufhdr	*hdrp;
+			struct timeval		*tvp = NULL;
+			u_long			drops = 0;
+			u_long			pktlen;
+
+			/* Extract information from the successive objects
+			   embedded in the current message.  Which ones we
+			   have depends on how we set up the stream (and
+			   therefore on what command line flags were set).
+			  
+			   If snaplen is positive then the packet was truncated
+			   before the buffering module saw it, so we must
+			   obtain its length from the nit_if-level nit_iflen
+			   header.  Otherwise the value in *hdrp suffices. */
+			hdrp = (struct nit_bufhdr *)cp;
+			cp += sizeof *hdrp;
+			if (tflag) {
+				struct nit_iftime	*ntp;
+
+				ntp = (struct nit_iftime *)cp;
+				cp += sizeof *ntp;
+
+				tvp = &ntp->nh_timestamp;
+			}
+			if (dflag) {
+				struct nit_ifdrops	*ndp;
+
+				ndp = (struct nit_ifdrops *)cp;
+				cp += sizeof *ndp;
+
+				drops = ndp->nh_drops;
+			}
+			if (snaplen > 0) {
+				struct nit_iflen	*nlp;
+
+				nlp = (struct nit_iflen *)cp;
+				cp += sizeof *nlp;
+
+				pktlen = nlp->nh_pktlen;
+			}
+			else
+				pktlen = hdrp->nhb_msglen;
+
+			sp = (struct sample *)cp;
+			bp += hdrp->nhb_totlen;
+
+			/* Process the packet. */
+		}
+	}
+.if t .vs
+.if t .ps
+.ft R
+.fi
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/nit
+clone device instance referring to
+.B nit_if
+.PD
+.SH "SEE ALSO"
+.BR traffic (1C),
+.BR read (2V),
+.BR nit_if (4M),
+.BR nit_pf (4M),
+.BR nit_buf (4M),
+.BR etherd (8C),
+.BR etherfind (8C),
+.BR rarpd (8C)

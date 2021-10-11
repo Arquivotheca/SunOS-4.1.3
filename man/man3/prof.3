@@ -1,0 +1,86 @@
+.\" @(#)prof.3 1.1 92/07/30 SMI; from  S5
+.TH PROF 3 "6 October 1987"
+.SH NAME
+prof \- profile within a function
+.SH SYNOPSIS
+.LP
+.nf
+.B #define \s-1MARK\s+1
+.B #include <prof.h>
+.LP
+.B void \s-1MARK\s+1 (name)
+.fi
+.SH DESCRIPTION
+.IX "prof()" "" "\fLprof()\fR \(em profile within a function"
+.IX "profiling, within a function" "" "\fLprof()\fR"
+.LP
+.SM MARK
+introduces a mark called
+.I name
+that is treated
+the same as a function entry point.
+Execution of the
+mark adds to a counter for that mark, and
+program-counter time spent is accounted to the
+immediately preceding mark or to the function if
+there are no preceding marks within the active function.
+.LP
+.I name
+may be any combination of up to six letters, numbers or
+underscores.  Each
+.I name
+in a single compilation must be unique, but may be the same as
+any ordinary program symbol.
+.LP
+For marks to be effective, the symbol
+.SM MARK
+must be defined before the header file
+.B <prof.h>
+is included.  This may be defined by a
+preprocessor directive as in the synopsis, or by a command
+line argument, such as:
+.RS
+.LP
+.B cc \-p \-\s-1DMARK\s+1 foo.c
+.RE
+.LP
+If
+.SM MARK
+is not defined, the
+.SM MARK
+.RB ( name )
+statements may be left in the source files
+containing them and will be ignored.
+.SH EXAMPLE
+In this example, marks
+can be used to determine how much time is spent in each loop.
+Unless this example is compiled with
+.SM MARK
+defined on the command line, the
+marks
+are ignored.
+.IP
+.ft B
+.nf
+#include <prof.h>
+func( )
+{
+	int i, j;
+	.
+	.
+	.
+ 	\s-1MARK\s+1 (loop1);
+	for (i = 0; i < 2000; i++) {
+		. . .
+	}
+ 	\s-1MARK\s+1 (loop2);
+	for (j = 0; j < 2000; j++) {
+		. . .
+	}
+}
+.fi
+.ft R
+.SH SEE ALSO
+.BR prof (1),
+.BR profil (2),
+.BR monitor (3)

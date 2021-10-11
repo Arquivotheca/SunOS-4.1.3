@@ -1,0 +1,49 @@
+.\" @(#)usleep.3 1.1 92/07/30 SMI; from UCB 6.3 5/15/86
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH USLEEP 3  "6 October 1987"
+.SH NAME
+usleep \- suspend execution for interval in microseconds
+.SH SYNOPSIS
+.nf
+.B usleep(useconds)
+.B unsigned useconds;
+.fi
+.SH DESCRIPTION
+.IX  "usleep()"  ""  "\fLusleep()\fP \(em suspend execution for interval in microseconds"
+.IX  "suspend execution for interval in microseconds \(em \fLusleep()\fP"
+.IX  execution  "suspend for interval in microseconds"
+.LP
+Suspend the current process for the number
+of microseconds specified by the argument.
+The actual suspension time may be an arbitrary
+amount longer because of other activity in the system,
+or because of the time spent in processing the call.
+.LP
+The routine is implemented by setting an interval timer
+and pausing until it occurs.
+The previous state of this timer is saved and restored.
+If the sleep time exceeds the time to the
+expiration of the previous timer,
+the process sleeps only until the signal
+would have occurred, and the
+signal is sent a short time later.
+.LP
+This routine is implemented using
+.B setitimer(\|)
+(see
+.BR getitimer (2));
+it requires eight system calls each time it is invoked.
+A similar but less compatible function can be obtained with a single
+.BR select (2);
+it would not restart after signals,
+but would not interfere with other uses of
+.BR setitimer .
+.SH "SEE ALSO"
+.BR getitimer (2),
+.BR sigpause (2V),
+.BR alarm (3V),
+.BR sleep (3V),
+.BR ualarm (3)

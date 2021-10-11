@@ -1,0 +1,106 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)getfsent.3 1.1 92/07/30 SMI; from UCB 6.3 5/12/86
+.TH GETFSENT 3  "6 October 1987"
+.SH NAME
+getfsent, getfsspec, getfsfile, getfstype, setfsent, endfsent \- get file system descriptor file entry
+.SH SYNOPSIS
+.nf
+.B #include <fstab.h>
+.LP
+.B struct fstab *getfsent(\|)
+.LP
+.B struct fstab *getfsspec(spec)
+.B char *spec;
+.LP
+.B struct fstab *getfsfile(file)
+.B char *file;
+.LP
+.B struct fstab *getfstype(type)
+.B char *type;
+.LP
+.B int setfsent(\|)
+.LP
+.B int endfsent(\|)
+.fi
+.IX  "getfsent()"  ""  "\fLgetfsent()\fP \(em get file system descriptor file entry"
+.IX  "getfsspec()"  ""  "\fLgetfsspec()\fP \(em get file system descriptor file entry"
+.IX  "getfsfile()"  ""  "\fLgetfsfile()\fP \(em get file system descriptor file entry"
+.IX  "getfstype()"  ""  "\fLgetfstype()\fP \(em get file system descriptor file entry"
+.IX  "setfsent()"  ""  "\fLsetfsent()\fP \(em get file system descriptor file entry"
+.IX  "endfsent()"  ""  "\fLendfsent()\fP \(em get file system descriptor file entry"
+.IX  "file system"  "get file descriptor entry"
+.IX  get "file system descriptor file entry"
+.SH DESCRIPTION
+.LP
+These routines are included for compatibility with 4.2
+.SM BSD\s0;
+they have been superseded by the
+.BR getmntent (3)
+library routines.
+.LP
+.BR getfsent ,
+.IR getfsspec ,
+.IR getfstype ,
+and
+.I getfsfile
+each return a pointer to an object with the following structure
+containing the broken-out fields of a line in the file system description file,
+.RB < fstab.h >.
+.RS
+.sp .5
+.nf
+.ft B
+struct fstab {
+	char	*fs_spec;
+	char	*fs_file;
+	char	*fs_type;
+	int	fs_freq;
+	int	fs_passno;
+};
+.ft R
+.ad
+.fi
+.RE
+.LP
+The fields have meanings described in
+.BR fstab (5).
+.LP
+.B getfsent(\|)
+reads the next line of the file, opening the file if necessary.
+.LP
+.B getfsent(\|)
+opens and rewinds the file.
+.LP
+.I endfsent
+closes the file.
+.LP
+.I getfsspec
+and
+.I getfsfile
+sequentially search from the beginning of the file until a matching
+special file name or file system file name is found,
+or until
+.SM EOF
+is encountered.
+.I getfstype
+does likewise, matching on the file system type field.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/fstab
+.PD
+.SH "SEE ALSO"
+.BR fstab (5)
+.SH DIAGNOSTICS
+.LP
+Null pointer
+(0) returned on
+.SM EOF
+or error.
+.SH BUGS
+.LP
+The return value points to static information which is overwritten
+in each call.

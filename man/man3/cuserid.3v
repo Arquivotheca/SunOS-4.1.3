@@ -1,0 +1,157 @@
+.\" @(#)cuserid.3v 1.1 92/07/30 SMI; from S5
+.TH CUSERID 3V "21 January 1990"
+.SH NAME
+cuserid \- get character login name of the user
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *cuserid(s)
+char *s;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  "cuserid()"  ""  "\fLcuserid()\fP \(em get user name"
+.IX  "get user name"  ""  "get user name \(em \fLcuserid()\fP"
+.IX  "user name, get \(em \fLcuserid()\fP"
+.LP
+.B cuserid(\|)
+returns a pointer to a string representing the login name
+under which
+the owner of the current process is logged in.
+If
+.I s
+is a
+.SM NULL
+pointer, this string is placed in an
+internal static area, the address of which is returned.
+Otherwise,
+.I s
+is assumed to point to an array of at least
+.B L_cuserid
+characters; the representation is left in this array.
+The constant
+.B L_cuserid
+is defined in the
+.B <stdio.h>
+header file.
+.SH SEE ALSO
+.BR cc (1V),
+.BR ld (1),
+.BR getlogin (3V),
+.BR getpwent (3V)
+.SH RETURN VALUES
+.LP
+.B cuserid(\|)
+returns
+a pointer to the login name
+on success.
+On failure,
+.B cuserid(\|)
+returns
+.SM NULL\s0,
+and if
+.I s
+is not
+.SM NULL\s0,
+places a null character
+.RB ( '\e0' )
+at
+.BR s[0] .
+.SH NOTES
+.LP
+The internal static area to which
+.B cuserid(\|)
+writes when
+.I s
+is
+.SM NULL
+will be overwritten by a subsequent call to
+.B getpwnam(\|)
+(see
+.BR getpwent (3V)).
+.\" Larry asks if this is really true.  It's not obvious to me that it is.
+.\" The following note came from dwc.
+.LP
+A compatibility problem has been identified with the
+.B cuserid(\|)
+function.
+The traditional version of this library routine in
+SunOS Release 3.2 and later
+releases and all System V releases calls the
+.B getlogin(\|)
+function, and if it fails uses the
+.B getpwuid(\|)
+function to try to return a name associated with the real user 
+.SM ID
+associated with the calling process.
+.SM POSIX.1
+requires that the
+.B cuserid(\|)
+function try to return a name associated with the effective user 
+.SM ID
+associated with the calling process.
+Although this usually yields the same results,
+use of set-uid programs may yield different results.
+.LP
+A binding interpretation has been issued by
+.SM IEEE
+saying that the
+.SM POSIX.1
+functionality has to be provided for compliance with
+.SM POSIX.1\s0.
+However,
+balloting on the first update to
+.SM POSIX.1\s0,
+P1003.1a,
+has led to the removal of the
+.B cuserid(\|)
+function from the standard.
+(This is the state in the second recirculation ballot of P1003.1a dated
+11 December 1989.)
+The objections leading to this resolution had both users and implementors
+arguing for the historical version and for the version specified by
+.SM POSIX.1\s0.
+The only way to reach consensus appears to be to remove the function
+from the standard.
+.LP
+To further complicate the issue,
+System V Release 4.0 has kept the traditional version of
+.BR cuserid(\|) .
+.SM XPG3
+specifies the
+.SM POSIX.1
+version of
+.BR cuserid(\|) ,
+but the test suite for conformance to
+.SM XPG3
+promises to accept either implementation.
+Both of these are anticipating the final
+approval of P1003.1a as a standard with the
+.B cuserid(\|)
+function removed.
+.P
+Since we also expect the
+.B cuserid(\|)
+function to be dropped from the standard when P1003.1a is approved,
+SunOS Release 4.1 provides the traditional
+.B cuserid(\|)
+function in the C library.
+However,
+for users that need the version specified by
+.SM POSIX.1\s0,
+it is provided in a
+.SM POSIX
+library available in the System V environment.
+This library can be accessed by specifying
+.B \-lposix
+on the
+.BR cc (1V)
+or
+.BR ld (1)
+command line.

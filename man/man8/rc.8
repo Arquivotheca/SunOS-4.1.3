@@ -1,0 +1,198 @@
+.\" @(#)rc.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH RC 8 "14 December 1990"
+.SH NAME
+rc, rc.boot, rc.local \- command scripts for auto-reboot and daemons
+.SH SYNOPSIS
+.B /etc/rc
+.LP
+.B /etc/rc.boot
+.LP
+.B /etc/rc.local
+.SH DESCRIPTION
+.IX  "rc command"  ""  "\fLrc\fP \(em startup commands"
+.B rc
+and
+.B rc.boot
+are command scripts that are invoked by
+.BR init (8)
+to perform file system housekeeping and to start system daemons.
+.B rc.local
+is a script for commands that are pertinent only
+to a specific site or client machine.
+.LP
+.B rc.boot
+sets the machine name and, if on SunOS 4.1.1 Rev B or later, invokes 
+.BR ifconfig ,
+which uses 
+.SB RARP 
+to obtain the machine's 
+.SM IP 
+address from the 
+.SM NIS 
+network.  Then a \*(lqwhoami\*(rq 
+bootparams request is used to retrieve the system's
+hostname, 
+.SM NIS 
+domain name and default router.
+The
+.B ifconfig
+and
+.B hostconfig
+programs set the system's hostname, 
+.SM IP 
+address, 
+.SM NIS 
+domain name,
+and default router in the kernel.
+.LP
+If coming up multi-user, 
+.B rc.boot 
+runs
+.BR fsck (8)
+with the
+.B \-p
+option.  This \*(lqpreens\*(rq the disks of minor inconsistencies resulting
+from the last system shutdown and checks for serious inconsistencies
+caused by hardware or software failure.  If
+.BR fsck (8)
+detects a serious disk problem, it returns an error and
+.BR init (8)
+brings the system up in single-user mode.
+When coming up single-user, when
+.BR init (8)
+is invoked by
+.BR fastboot (8),
+or when it is passed the
+.B \-b
+flag from
+.BR boot (8S),
+functions performed in the
+.B rc.local
+file, including this disk check, are skipped.
+.LP
+Next,
+.B rc
+runs.  If the system came up single-user,
+.B rc
+runs when the single-user shell terminates (see
+.BR init (8)).
+It mounts 4.2 filesystems and spawns a shell for
+.BR /etc/rc.local ,
+which mounts
+.SM NFS
+filesystems, runs
+.B sysIDtool
+(if on SunOS 4.1.1 Rev B or later)
+to set the system's configuration information into local 
+configuration files, and starts local daemons.  After
+.B rc.local
+returns,
+.B rc
+starts standard daemons, preserves editor files, clears
+.BR /tmp ,
+starts system accounting (if applicable), starts the network
+(where applicable), and if enabled, runs
+.BR savecore (8)
+to preserve the core image after a crash.
+.SH Sun386i 
+These files
+operate as described above with the following variations:
+.LP
+.BR fsck (8)
+is invoked with the 
+.B \-y
+option to prevent users being put in single-user mode by happenstance.
+.LP
+.B rc.boot
+invokes 
+.BR netconfig (8C)
+to configure the system for the network before
+booting. 
+.B netconfig 
+is invoked before the
+.B /usr
+filesystem is mounted, because
+.B /usr
+might be mounted from a server.
+.B netconfig
+writes
+.B /etc/net.conf
+unless the
+.B \-n
+option is specified, controlling system booting. 
+.LP
+.B rc.boot
+dynamically loads device drivers.
+.LP
+.B rc
+invokes any programs found in
+.B /var/recover
+to clean up any operations partially completed when the system 
+crashed or was shut down.  
+.LP
+.B rc.local
+starts the automounter.
+.LP
+The file
+.B /etc/net.conf 
+stores these environment variables:
+The
+.SB VERBOSE
+environment variable controls the verbosity of the messages from the
+.B rc
+script; its value is taken from
+\fB\s-1NVRAM\s0\fP. 
+The
+.SB NETWORKED
+environment variable controls whether services useful 
+only on a networked system are started in
+.BR /etc/rc.local . 
+The 
+.SB PNP
+environment variable, set up during initial system installation,
+controls whether local network configuration information is used
+or whether that information comes from the network. 
+(Using automatic system installation causes all systems
+except boot servers to get this information
+from the network, facilitating network reconfiguration.)
+The 
+.SB HOSTNAME
+and 
+.SB DOMAINNAME
+environment variables, used together, help determine if this system is
+a boot server or, with
+.SB PNP
+set to 
+.BR no ,
+control the host name and domain name. 
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/rc
+.TP
+.B /etc/rc.boot
+.TP
+.B /etc/rc.local
+.TP
+.B /etc/net.conf
+.TP
+.B /var/recover/*
+.TP 
+.B /var/yp/*
+.TP
+.B /tmp
+.PD
+.SH SEE ALSO
+.BR automount (8),
+.BR boot (8S),
+.BR fastboot (8),
+.BR hostconfig (8),
+.BR ifconfig (8C),
+.BR init (8),
+.BR reboot (8),
+.BR savecore (8),
+.BR netconfig (8C)
+.SH BUGS
+The system message file
+.B /var/adm/messages
+is no longer created automatically.

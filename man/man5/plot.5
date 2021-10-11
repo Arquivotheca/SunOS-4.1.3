@@ -1,0 +1,121 @@
+.\" @(#)plot.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH PLOT 5 "19 October 1987"
+.SH NAME
+plot \- graphics interface
+.SH DESCRIPTION
+.IX  "plot file"  ""  "\fLplot\fP \(em graphics interface files"
+.IX  "graphics interface files"  ""  "graphics interface files \(em \fLplot\fP"
+.LP
+Files of this format are produced by routines
+described in
+.BR plot (3X),
+and are interpreted for various devices
+by commands described in
+.BR plot (1G).
+A graphics file is a stream of plotting instructions.
+Each instruction consists of an
+.SM ASCII
+letter
+usually followed by bytes of binary information.
+The instructions are executed in order.
+A point is designated by
+four bytes representing the
+.I x
+and
+.I y
+values; each value is a signed integer.
+The last designated point in an
+.IR l ", " m ", " n ,
+or
+.I p
+instruction becomes the ``current point''
+for the next instruction.
+.LP
+Each of the following descriptions begins with the name
+of the corresponding routine in
+.BR plot (3X).
+.TP
+.B  m
+Move: the next four bytes give a new current point.
+.TP 3
+.B  n
+Cont: draw a line from the current point to
+the point given by the next four bytes.
+See
+.BR plot (1G).
+.TP 3
+.B p
+Point: plot the point given by the next four bytes.
+.TP 3
+.B l
+Line: draw a line from the point given by the next
+four bytes to the point given by the
+following four bytes.
+.TP 3
+.B t
+Label: place the following
+.SM ASCII
+string so that its
+first character falls on the current point.
+The string is terminated by a
+.SM NEWLINE\s0.
+.TP 3
+.B a
+Arc: the first four bytes give the center,
+the next four give the starting point,
+and the last four give the end point of a circular arc.
+The least significant coordinate of the end point is
+used only to determine the quadrant.
+The arc is drawn counter-clockwise.
+.TP 3
+.B c
+Circle: the first four bytes give the
+center of the circle, the next two the radius.
+.TP 3
+.B e
+Erase: start another frame of output.
+.TP 3
+.B f
+Linemod: take the following string, up to a
+.SM NEWLINE\s0,
+as the style for drawing further lines.
+The styles are ``dotted,''
+``solid,'' ``longdashed,'' ``shortdashed,'' and ``dotdashed.''
+Effective only in
+.B plot 4014
+and
+.BR "plot ver" .
+.TP 3
+.B s
+Space: the next four bytes give
+the lower left corner of the plotting area;
+the following four give the upper right corner.
+The plot will be magnified or reduced to fit
+the device as closely as possible.
+.IP
+Space settings that exactly fill the plotting area
+with unity scaling appear below for
+devices supported by the filters of
+.BR plot (1G).
+The upper limit is just outside the plotting area.
+In every case the plotting area is taken to be square;
+points outside may be displayable on
+devices whose face is not square.
+.RS
+.TP 10n
+.B 4014
+.B space(0, 0, 3120, 3120);
+.TP
+.B ver
+.B space(0, 0, 2048, 2048);
+.TP
+.BR 300 , " 300s"
+.B space(0, 0, 4096, 4096);
+.TP
+.B 450
+.B space(0, 0, 4096, 4096);
+.RE
+.SH "SEE ALSO"
+.BR graph (1G),
+.BR plot (1G),
+.BR plot (3X)

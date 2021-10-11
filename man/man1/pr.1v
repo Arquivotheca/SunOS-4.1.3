@@ -1,0 +1,458 @@
+.\" @(#)pr.1v 1.1 92/07/30 SMI; from 4.3 BSD and S5
+.TH PR 1V "9 September 1987"
+.SH NAME
+pr \- prepare file(s) for printing, perhaps in multiple columns
+.SH SYNOPSIS
+.B pr
+[
+.BR \-\| | \| +
+.I n
+] [
+.B \-fmt
+] [
+.B \-h
+.I string
+] [
+.BI \-l n
+] [
+.BI \-s c
+] 
+.if n .ti +0.5i
+[
+.BI \-w n
+]
+[
+.I filename
+] .\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/pr
+[
+.BR \-\| | \| +
+.I n
+] [
+.B \-adfmprt
+] [
+.BI \-e ck
+]
+.if n .ti +0.5i
+[
+.B \-h 
+.I string
+]
+[
+.BI \-i ck
+] [
+.BI \-l n
+] [
+.BI \-n ck
+]
+.if n .ti +.5i
+[
+.BI \-o n
+] 
+[
+.BI \-s c
+]
+[
+.BI \-w n
+]
+.if t .ti +0.5i 
+[
+.I filename
+] .\|.\|.
+.if t .ti +0.5i
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLpr\fR"
+.IX  "pr command"  ""  "\fLpr\fP \(em prepare files for printing"
+.IX  "prepare files for printing"  ""  "prepare files for printing \(em \fLpr\fP"
+.IX  files  "prepare for printing"  files  "prepare files for printing \(em \fLpr\fP"
+.IX  "multiple columns, print in \(em \fLpr\fP"
+.IX  columns  "print in multiple"  ""  "print in multiple \(em \fLpr\fP"
+.B pr
+prepares one or more
+.IR filename s
+for printing.  By default, the output is separated
+into pages headed by a date, the name of the file, and the page number.
+.B pr
+prints its standard input if there are no
+.I filename
+arguments.  
+.SM FORMFEED 
+characters in the input files cause page breaks in
+the output, as expected.
+.LP
+By default, columns are of equal width,
+separated by at least one
+.SM SPACE\s0;
+lines that do not fit are truncated.  If the
+.B \-s
+option is used, lines are not truncated
+and columns are separated by the
+separation character.
+.LP
+Inter-terminal messages using
+.BR write (1)
+are forbidden during a
+.BR pr .
+.SH OPTIONS
+.LP
+Options apply to all following
+.IR filename s
+but may be reset between
+.IR filename s:
+.TP
+.BI \-f
+Use 
+.SM FORMFEED
+characters instead of
+.SM NEWLINE
+characters to separate pages.
+A 
+.SM FORMFEED 
+is assumed to use up two blank lines at the top of a page.
+Thus this option does not affect the effective page length.
+.TP
+.B \-m
+Print all
+.IR filename s
+simultaneously, each in one column, for example:
+.RS
+.RS
+.nf
+.ft B
+.ta +.75i; +.75i; +.75i
+Print	Print	The
+the	the	third
+lines	lines	file's
+of 	of	lines
+file	file	go
+one.	two.	here.
+.fi
+.RE
+.RE
+.TP
+.B \-t
+Do not print the 5-line header or the 5-line trailer
+normally supplied for
+each page.  Pages are not separated when this option is
+used, even if the
+.B \-f
+option was used.  The
+.B \-t
+option is intended for applications where
+the results should be directed
+to a file for further processing.
+.TP
+.BI \-h " string"
+Use
+.IR string ,
+instead of the file name, in the page header.
+.TP
+.BI \-l n
+Take the length of the page to be
+.I n
+lines instead of the default 66.
+.TP
+.BI \-s c
+Separate columns by the single character
+.I c
+instead of by the appropriate amount of white space.  A missing
+.I c
+is taken to be a
+.SM TAB\s0.
+.TP
+.BI \-w n
+For multicolumn output, take the width of the page to be
+.I n
+characters instead of the default 72.
+.TP
+.BI \- n
+Produce
+.IR n -column
+output.  For example:
+.RS
+.RS
+.nf
+.ta +.75i; +.75i; +.75;
+.ft B
+Print	of	in	
+the	one	three	
+lines	file	columns.
+.fi
+.in -.5i
+.RE
+.RE
+.IP
+Columns are not balanced; if, for example,
+there are as many lines in the
+file as there are lines on the page, only one column will be printed.
+Even if the
+.B \-t
+option (see below) is specified, blank lines
+will be printed at the end of
+the output to pad it to a full page.
+.TP
+.BI + n
+Begin printing with page
+.IR  n .
+.SH SYSTEM V OPTIONS
+When the
+.BI \- n
+option is specified for multicolumn output,
+columns are balanced. For
+example, if there are as many lines in the
+file as there are lines to be
+printed, and two columns are to be printed,
+each column will contain half
+the lines of the file.  If the
+.B \-t
+option is specified, no blank lines will be
+printed to pad the last page.
+.LP
+The options
+.B \-e
+and
+.B \-i
+are assumed for multicolumn output.  The
+.B \-m
+option overrides the
+.B \-k
+and
+.B \-a
+options.
+.LP
+The
+.B \-f
+option does not assume that 
+.SM FORMFEED
+uses up two blank lines; blank
+lines will be printed after the 
+.SM FORMFEED 
+if necessary.
+If the standard output is a terminal,
+.B \-f
+will cause
+.B pr
+to wait for a
+.SM RETURN
+before printing the first page.
+.RS
+.TP
+.B \-a
+When combined with the
+.BI \- n
+option, print multicolumn output across the page.  For example:
+.RS
+.RS
+.nf
+.ta +.75i; +.75i; +.75;
+.ft B
+Print	the	lines
+of	one	file
+in	three	columns.
+.fi
+.RE
+.RE
+.TP
+.B \-d
+Double-space the output.
+.TP
+.B \-p
+Pause before beginning each page if the
+output is directed to a terminal
+.RB ( pr
+will ring the bell at the terminal and
+wait for a 
+.SM RETURN\s0).
+.TP
+.B \-r
+Do Not print diagnostic reports if a file
+cannot be opened, or if it is empty.
+.TP
+.BI \-e ck
+Expand
+.I input
+.SM TAB
+characters to character positions
+.IR k "+1, 2\(**" k "+1, 3\(**" k +1,
+etc.
+If
+.I k
+is 0 or is omitted, default
+.SM TAB
+settings
+at every eighth position are assumed.
+.SM TAB
+characters in the input are expanded
+into the appropriate number of 
+.SM SPACE
+characters.
+If
+.I c
+(any non-digit character)
+is given, it is treated as the input
+.SM TAB
+character
+(default for
+.I c
+is the
+.SM TAB
+character).
+.TP
+.BI \-i ck
+In
+.IR output ,
+replace white space wherever possible by inserting
+.SM TAB
+characters to character positions
+.IR k "+1, 2\(**" k "+1, 3\(**" k +1,
+etc.
+If
+.I k
+is 0 or is omitted, default
+.SM TAB
+settings at every eighth position are assumed.
+If
+.I c
+(any non-digit character)
+is given, it is treated as the output
+.SM TAB
+(default for
+.I c
+is the
+.SM TAB
+character).
+.TP
+.BI \-n ck
+Provide
+.IR k -digit
+line numbering (default for
+.I k
+is 5).
+The number occupies the first
+.IR k +1
+character positions of each column of normal output
+or each line of
+.B \-m
+output.  If
+.I c
+(any non-digit character) is given,
+it is appended to the line number to separate
+it from whatever follows (default for
+.I c
+is a
+.SM TAB\s0).
+.TP
+.BI \-o k
+Offset each line by
+.I k
+character positions.
+The number of character positions
+per line is the sum of the width and offset.
+.RE
+.SH EXAMPLES
+.LP
+Print a file called
+.B dreadnought
+on the printer \(em this is the simplest use of
+.BR pr :
+.RS
+.sp .5
+.nf
+.B example% pr  dreadnought | lpr
+.B example%
+.fi
+.RE
+.LP
+Produce three laminations of a file called
+.B ridings
+side by side in the output, with no headers or trailers, the results to
+appear in the file called
+.BR Yorkshire :
+.RS
+.sp .5
+.nf
+.B
+example% pr \-m \-t ridings ridings ridings > Yorkshire
+.B example%
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/tty*
+to suspend messages.
+.PD
+.SH SEE ALSO
+.BR cat (1V),
+.BR lpr (1),
+.BR write (1)
+.SH DIAGNOSTICS
+.TP
+.B can't print 0 cols, using 1 instead.
+.B \-0
+was specified as a
+.BI \- n
+option.
+.TP
+.BI "pr: bad key " key
+An illegal option was given.
+.TP
+.B pr: No room for columns.
+The number of columns requested will not fit on the page.
+.TP
+.B pr: Too many args
+More than 10 files were specified with the
+.B \-m
+option.
+.TP
+.IB filename " : " error
+.I filename
+could not be opened.  This diagnostic is not printed if
+.B pr
+is printing on a terminal.
+.SH SYSTEM V DIAGNOSTICS
+.TP
+.B pr: bad option
+An illegal option was given.
+.TP
+.B pr: width too small
+The number of columns requested will not fit on the page.
+.TP
+.B pr: too many files
+More than 10 files were specified with the
+.B \-m
+option.
+.TP
+.B pr: page-buffer overflow
+The formatting required is more complicated than
+.B pr
+can handle.
+.TP
+.B pr: out of space
+.B pr
+could not allocate a buffer it required.
+.TP
+.BI "pr: " filename "-- empty file"
+.I filename
+was empty.  This diagnostic is printed
+after all the files are printed if
+.B pr
+is printing on a terminal.
+.TP
+.BI "pr: can't open " filename
+.I filename
+could not be opened.  This diagnostic
+is printed after all the files are printed if
+.B pr
+is printing on a terminal.
+.SH BUGS
+.LP
+The options described above interact with each
+other in strange and as yet to be defined ways.

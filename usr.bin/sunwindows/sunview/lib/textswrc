@@ -1,0 +1,65 @@
+/* @(#)textswrc 1.1 92/07/30 SMI */
+# insert_brackets inserts the indicated characters around the selected text.
+# If the text is already bracketed with these characters, it removes them.
+# At some point in the future, the remove option will be invoked by holding
+# down [Shift] key while hitting function key. 
+R1      FILTER
+insert_brackets "\\fI" "\\fP"
+
+R2      FILTER
+insert_brackets "\\fB" "\\fP"
+
+R3      FILTER
+insert_brackets "\\fL" "\\fP"
+
+# Capitalize/uncapitalize selected material as follows: If there are no
+# lower case characters, convert everything to lower case.
+#       Example: EDIT TOOL => edit tool. 
+# If there are any lower case letters, convert everything to uppercase.
+#       Example: adjust_pending_delete => ADJUST_PENDING_DELETE 
+#
+# If characters consist of several words separated by whitespace, then for each
+# word, capitalize the first letter it if it isn't, lower case if it is.
+#       Example: now is the time => Now Is The Time, and vice versa. 
+R4      FILTER
+capitalize  
+
+R5      FILTER
+insert_brackets \( \)
+
+R6      FILTER
+insert_brackets \" \"
+
+R7      FILTER
+insert_brackets "\\s-2" "\\s0"
+
+# NOTE: Keys R8, R10, R12 and R14 are the arrow keys.
+#        By default these emit cursor motion escape sequences (used e.g. by vi)
+#        so their key mappings will not have any effect unless you 
+#        set Arrow_Keys in the Input category of defaults to "No"
+#        or run 'setkeys reset'.
+
+# shift_lines shifts selected lines left the indicated number of tab
+# stops, with tab stops computed the following way: if any spaces are
+# seen on the first line, tab stops = 4. Otherwise, look in .indent.pro
+# for corresponding value (you can use indent_defaults to set up your
+# .indent.pro). If no .indent.pro, assume 8. Note this means that the
+# user can specify 8 in his .indent.pro, but still have shift_lines do
+# the right thing for those files that he has explicitly formatted using
+# 4 space indentation, provided that the first line given to shift_lines
+# contains some spaces.
+R10     FILTER
+shift_lines -t -1
+
+# Invoke indent on the selected material, using the options specified in
+# .indent.pro .
+R11     FILTER
+indent -st
+
+# Shifts selected lines right the indicated number of spaces.
+R12     FILTER
+shift_lines -t 1
+
+# Pass the selected material through the simple text formatter fmt.
+R13     FILTER
+fmt

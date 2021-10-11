@@ -1,0 +1,89 @@
+.\" @(#)adjtime.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH ADJTIME 2 "21 January 1990"
+.SH NAME
+adjtime \- correct the time to allow synchronization of the system clock
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+.LP
+.ft B
+int adjtime(delta, olddelta)
+struct timeval \(**delta;
+struct timeval \(**olddelta;
+.fi
+.SH DESCRIPTION
+.IX  adjtime()  ""  "\fLadjtime()\fR \(em adjust time"
+.IX  time  "adjust adjtime()"  ""  "adjust \(em \fLadjtime()\fR"
+.LP
+.B adjtime(\|)
+adjusts the system's notion of the current time,
+as returned by
+.BR gettimeofday (2),
+advancing or retarding it by the amount of time specified in the
+.B struct timeval
+(defined in
+.BR <sys/time.h> )
+pointed to by
+.IR delta .
+.LP
+The adjustment is effected by speeding up (if that amount of time
+is positive) or slowing down (if that amount of time is negative)
+the system's clock by some small percentage, generally a fraction of
+one percent.
+Thus, the time is always
+a monotonically increasing function.
+A time correction from an earlier call to
+.B adjtime(\|)
+may not be finished when
+.B adjtime(\|)
+is called again.  If
+.I olddelta
+is not a
+.SM NULL
+pointer, then the structure it points to will contain, upon return, the
+number of microseconds still to be corrected
+from the earlier call.
+If
+.I olddelta
+is a
+.SM NULL
+pointer, the corresponding information will not be returned.
+.LP
+This call may be used in time servers that synchronize the clocks
+of computers in a local area network.
+Such time servers would slow down the clocks of some machines
+and speed up the clocks of others to bring them to the average network time.
+.LP
+Only the super-user may adjust the time of day.
+.LP
+The adjustment value will be silently rounded to the resolution
+of the system clock.
+.SH RETURN
+A 0 return value indicates that the call succeeded.
+A \-1 return value indicates an error occurred, and in this
+case an error code is stored into the global variable
+.BR errno .
+.SH ERRORS
+.TP 15
+.SM EFAULT
+.I delta
+or
+.I olddelta
+points outside the process's allocated address space.
+.IP
+.I olddelta
+points to a region of the process' allocated address space that is not
+writable.
+.TP
+.SM EPERM
+The process's effective user
+.SM ID
+is not that of the super-user.
+.SH "SEE ALSO"
+.BR date (1V),
+.BR gettimeofday (2)

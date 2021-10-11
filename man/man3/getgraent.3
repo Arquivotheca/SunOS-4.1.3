@@ -1,0 +1,130 @@
+.\" @(#)getgraent.3 1.1 92/07/30 SMI;
+.TH GETGRAENT 3 "7 September 1988"
+.SH NAME
+getgraent, getgranam, setgraent, endgraent, fgetgraent \- get group adjunct file entry
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+#include <grpadj.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group_adjunct *getgraent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group_adjunct *getgranam(name)
+char *name;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct group_adjunct *fgetgraent(f)
+FILE *f;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void setgraent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+void endgraent(\|)
+.ft
+.fi
+.SH DESCRIPTION
+.IX "getgraent()" "" "\fLgetgraent()\fP function"
+.IX "getgranam()" "" "\fLgetgranam()\fP function"
+.IX "setgraent()" "" "\fLsetgraent()\fP function"
+.IX "endgraent()" "" "\fLendgraent()\fP function"
+.IX "fgetgraent()" "" "\fLfgetgraent()\fP function"
+.LP
+.B getgraent(\|)
+and
+.B getgranam(\|)
+each return pointers to an object
+with the following structure containing the broken-out
+fields of a line in the group adjunct file.
+Each line contains a
+.B group_adjunct
+structure, defined in the
+.B <grpadj.h>
+header file.
+.RS
+.LP
+.nf
+.ft B
+struct  group_adjunct {
+.ft
+.RS
+.ft B
+char    *gra_name;	/* the name of the group */
+char    *gra_passwd;	/* the encrypted group password */
+.ft
+.RE
+.ft B
+};
+.ft R
+.fi
+.RE
+.LP
+When first called,
+.B getgraent(\|)
+returns a pointer to a
+.B group_adjunct
+structure corresponding to the first line in the file.
+Thereafter, it returns a pointer to the next
+.B group_adjunct
+structure in the file.
+So successive calls may be used to traverse the entire file.
+.LP
+For locating a particular group,
+.B getgranam(\|)
+searches through the file until it finds group
+.IR filename ,
+then returns a pointer to that structure.
+.LP
+A call to
+.B getgraent(\|)
+rewinds the group adjunct file to allow repeated searches.
+A call to
+.B endgraent(\|)
+closes the group adjunct file when processing is complete.
+.LP
+Because read access is required on
+.B /etc/security/group.adjunct,
+.B getgraent(\|)
+and
+.B getgranam(\|)
+will fail unless the calling process has effective UID of root.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/security/group.adjunct
+.TP
+.BI /var/yp/ domainname /group.adjunct
+.PD
+.SH "SEE ALSO"
+.BR getlogin (3V),
+.BR getgrent(3V),
+.BR getpwaent(3),
+.BR getpwent(3V),
+.BR ypserv(8)
+.SH DIAGNOSTICS
+.LP
+A
+.SM NULL
+pointer is returned on end-of-file or error.
+.SH BUGS
+.LP
+All information is contained in a static area,
+so it must be copied if it is to be saved.

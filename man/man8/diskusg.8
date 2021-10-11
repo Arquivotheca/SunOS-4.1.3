@@ -1,0 +1,115 @@
+.\" @(#)diskusg.8 1.1 92/07/30 SMI; from S5R2
+.TH DISKUSG 8 "13 January 1990"
+.SH NAME
+diskusg \- generate disk accounting data by user
+.SH SYNOPSIS
+.B diskusg
+[
+.B \-sv
+] [
+.BI \-p " filename"
+] [
+.BI \-u " filename"
+] [
+.IR filename \|.\|.\|.
+]
+.SH DESCRIPTION
+.IX "diskusg" "" "\fLdiskusg\fP \(em generate disk accounting data by user" ""
+.LP
+.B diskusg
+generates intermediate disk accounting information
+from data in
+.IR filename ,
+or the standard input if 
+.I filename
+is omitted.
+.B diskusg
+displays one line per user on the standard output
+in the following format:
+.IP
+.I "uid  login  #blocks"
+.LP
+.I uid
+is the numerical user
+.SM ID
+of the user.
+.I login
+is the user's login name.
+.I #blocks
+is the total number of disk blocks
+allocated to the user.
+.LP
+.B diskusg
+normally reads only the i-nodes
+of file systems for disk accounting.
+In this case,
+.IR filename s
+are the special filenames of these devices.
+.LP
+The output of
+.B diskusg
+is normally the input to
+.B acctdisk
+(see
+.BR acct (8))
+which generates total accounting records that can be
+merged with other accounting records.
+.B diskusg
+is normally run in
+.B dodisk
+(see
+.BR acctsh (8)).
+.SH OPTIONS
+.TP 12
+.B \-s
+The input data is already in
+.B diskusg
+output format;
+combine all lines for a single user into a single line.
+.TP 12
+.B \-v
+Print a list to the standard error of all
+files that are not charged to any user.
+.TP 12
+.BI \-p " filename "
+Use
+.I filename
+as the name of the password file to generate
+login names.
+.B /etc/passwd
+is used by default.
+.TP 12
+.BI \-u " filename "
+Write records to
+.I filename
+of files that are not charged to any user.
+Records consist of the special file name,
+the i-node number, and the user
+.SM ID\s0.
+.SH EXAMPLES
+.LP
+The following example generates daily disk accounting information:
+.LP
+.RS
+.nf
+.ft B
+for i in /dev/xy0a /dev/xy0g /dev/xy1g; do
+	diskusg $i > dtmp.`basename $i` &
+done
+wait
+diskusg \-s dtmp.* | sort +0n +1 | acctdisk > disktacct
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+used for user
+.SM ID
+to login name conversions
+.PD
+.SH SEE ALSO
+.BR acct (5),
+.BR acct (8),
+.BR acctsh (8)

@@ -1,0 +1,106 @@
+.\" @(#)ipallocd.8c 1.1 92/07/30 SMI;
+.TH IPALLOCD 8C "4 December 1987"
+.SH NAME
+ipallocd \- Ethernet-to-IP address allocator
+.SH SYNOPSIS 
+.B /usr/etc/rpc.ipallocd
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ipallocd" "" "\fLipallocd\fP \(em Ethernet-to-IP address mapper"
+.LP
+.B ipallocd
+is a daemon that determines or temporarily allocates
+.SM IP
+addresses
+within a network segment.  
+The service is only available on the 
+system which is home to the address authority
+for the network segment, currently the
+Network Information Service
+(\s-1NIS\s0)
+master of the 
+.B hosts.byaddr
+map although the service is not tied to the
+.SM NIS
+service.
+It has complete knowledge of the hosts listed in the 
+.SM NIS
+service,
+and, if the system is running the name server,
+of any hosts listed in internet domain tables 
+automatically accessed on that host through the standard library
+.BR gethostent (3N)
+call.
+.LP
+This protocol uses 
+.SM DES
+authentication (the Sun Secure 
+.SM RPC
+protocol) to restrict access to 
+this function.
+The only clients privileged to allocate addresses are those whose
+net
+.SM ID\s0s
+are in the networks
+group. For machine
+.SM ID\s0s,
+the machine must be an
+.SM NIS
+server.
+.LP
+The daemon uses permanent entries in the
+.B /etc/ethers 
+and
+.B /etc/hosts
+files when they exist and are usable.
+In other cases, such as when a system
+is new to the network,
+.B ipallocd
+enters a temporary mapping in a local cache.
+Entries in the cache are 
+removed when there have been no references to a given entry in the last hour.
+This cache survives system crashes so that
+.SM IP
+addresses remain consistent.
+.LP
+The daemon also provides corresponding
+.SM IP
+address to name mapping.
+.LP
+If the file
+.B /etc/ipalloc.netrange
+exists,
+.B ipallocd
+refuses to allocate addresses on networks not listed in the
+.B netrange
+file, or for which no free address
+is available.
+.SH FILES
+.PD 0
+.TP 20
+.\" .BI /etc/yp/ domainname /hosts.byaddr.{dir,pag}
+.\" .TP
+.B /etc/ipalloc.cache
+temporary cache
+.TP
+.B /etc/ipalloc.netrange
+optional file to allocate network addresses
+.SH SEE ALSO
+.BR ipalloc (3R), 
+.BR pnp (3R),
+.BR ipalloc.netrange (5),
+.BR ipallocd (8C), 
+.BR netconfig (8C),
+.BR pnpboot (8C),
+.BR rarpd (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

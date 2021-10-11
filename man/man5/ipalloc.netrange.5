@@ -1,0 +1,88 @@
+.\" @(#)ipalloc.netrange.5 1.1 92/07/30 SMI; 
+.TH IPALLOC.NETRANGE 5 "19 February 1988"
+.SH NAME
+ipalloc.netrange \- range of addresses to allocate
+.SH SYNOPSIS 
+.B /etc/ipalloc.netrange
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ipalloc.netrange file" "" "\fLipalloc.netrange\fP file"
+.LP
+This file, if it exists on the 
+Network Information Service
+(\s-1NIS\s0)
+master of the
+.B hosts.byaddr
+map, specifies the ranges of 
+.SM IP
+addresses that can be allocated by the
+.BR ipallocd (8C)
+daemon.
+This allows multiple address assignment authorities, probably in
+multiple administrative domains, to coexist
+on the same 
+.SM IP
+network by preallocating ranges of addresses.
+If this file does not exist, the daemon assumes that all
+addresses not listed in the
+.B hosts
+map may be freely allocated.
+.PP
+This file can contain blank lines.
+Comments begin with a
+.RB ` # '
+character and extend to the end of the current line.
+Ranges of free addresses are specified on one line per network
+or subnetwork.
+.PP
+The first token on the line is the 
+.SM IP
+address, in four part \*(lqdot\*(lq notation
+as also used in the
+.B hosts
+file, of the network or subnetwork described.
+It is separated from the second token by white space.
+The second token is a comma-separated list of local host number ranges on that
+network.
+These ranges take two forms:
+a single number specifies just that local host number,
+and two numbers separated by a dash specify all local host
+numbers starting at the first number and ending at the second.
+In the case of a subnet, host numbers not in that subnet are excluded.
+.PP
+For example, the following file would specify that a subset of the
+addresses on the class C network 192.9.200.0 may be allocated, and
+only some of the addresses on two particular
+subnets of the class B network 128.255.0.0 may be allocated.
+In any case, only non-broadcast addresses not listed in the
+.B hosts
+map are subject to allocation:
+.LP
+.RS
+.ft B
+# We have three network cables administered using automatic
+# IP address allocation.
+.sp
+192.9.200.0		50-100,200-254
+128.255.210.0		3,5,7,9,100-110
+128.255.211.0		1-254
+.ft
+.RE
+.SH "SEE ALSO"
+.BR hosts (5),
+.BR netmasks (5),
+.BR ipallocd (8C)
+.SH BUGS
+.LP
+There is a silent limit of twenty ranges per network.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

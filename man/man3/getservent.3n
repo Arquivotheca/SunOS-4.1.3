@@ -1,0 +1,129 @@
+.\" @(#)getservent.3n 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETSERVENT 3N "14 December 1987"
+.SH NAME
+getservent, getservbyport, getservbyname, setservent, endservent \- get service entry
+.SH SYNOPSIS
+.nf
+.ft B
+#include <netdb.h>
+.LP
+.ft B
+struct servent *getservent(\|)
+.LP
+.ft B
+struct servent *getservbyname(name, proto)
+char *name, *proto;
+.LP
+.ft B
+struct servent *getservbyport(port, proto)
+int port; char *proto;
+.LP
+.ft B
+setservent(stayopen)
+int stayopen;
+.LP
+.ft B
+endservent(\|)
+.fi
+.IX  get "network service entry \(em \fLgetservent()\fR"
+.IX  set "network service entry \(em \fLgetservent()\fR"
+.IX  "network service entry, get \(em \fLgetservent()\fR"
+.IX  "service entry, get \(em \fLgetservent()\fR"
+.IX  "getservent()"  ""  "\fLgetservent()\fP \(em get service entry"
+.IX  "getservbyport()"  ""  "\fLgetservbyport()\fP \(em get service entry"
+.IX  "getservbyname()"  ""  "\fLgetservbyname()\fP \(em get service entry"
+.IX  "setservent()"  ""  "\fLsetservent()\fP \(em get service entry"
+.IX  "endservent()"  ""  "\fLendservent()\fP \(em get service entry"
+.SH DESCRIPTION
+.LP
+.BR getservent ,
+.IR getservbyname ,
+and
+.I getservbyport
+each return a pointer to an object with the
+following structure
+containing the broken-out
+fields of a line in the network services data base,
+.BR /etc/services .
+.RS
+.LP
+.ft B
+.nf
+struct	servent {
+	char	*s_name;	/* official name of service */
+	char	**s_aliases;	/* alias list */
+	int	s_port;		/* port service resides at */
+	char	*s_proto;	/* protocol to use */
+};
+.ft R
+.fi
+.RE
+.LP
+The members of this structure are:
+.RS
+.PD 0
+.TP 20
+.B s_name
+The official name of the service.
+.TP
+.B s_aliases
+A zero terminated list of alternate names for the service.
+.TP
+.B s_port
+The port number at which the service resides.
+Port numbers are returned in network short byte order.
+.TP
+.B s_proto
+The name of the protocol to use when contacting the
+service.
+.PD
+.RE
+.LP
+.B getservent(\|)
+reads the next line of the file, opening the file if necessary.
+.LP
+.B getservent(\|)
+opens and rewinds the file.  If the
+.I stayopen
+flag is non-zero,
+the net data base will not be closed after each call to
+.B getservent(\|)
+(either directly, or indirectly through one of
+the other \*(lqgetserv\*(rq calls).
+.LP
+.B endservent(\|)
+closes the file.
+.LP
+.B getservbyname(\|)
+and
+.B getservbyport(\|)
+sequentially search from the beginning
+of the file until a matching
+protocol name or port number is found, or until end-of-file is encountered.
+If a protocol name is also supplied (non-\s-1NULL\s0),
+searches must also match the protocol.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/services
+.\" .TP
+.\" .BI /var/yp/ domainname /services.byname
+.PD
+.SH "SEE ALSO"
+.BR getprotoent (3N),
+.BR services (5),
+.BR ypserv (8)
+.SH DIAGNOSTICS
+A
+.SM NULL
+pointer is returned on end-of-file or error.
+.SH BUGS
+All information is contained in a static area
+so it must be copied if it is
+to be saved.  Expecting port
+numbers to fit in a 32 bit
+quantity is probably naive.

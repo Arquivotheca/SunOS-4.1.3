@@ -1,0 +1,245 @@
+.\" @(#)lwp_yield.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH LWP_YIELD 3L "21 January 1990"
+.SH NAME
+lwp_yield, lwp_suspend, lwp_resume, lwp_join, lwp_setpri, lwp_resched, lwp_sleep \- control LWP scheduling
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <lwp/lwp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_yield(tid)
+thread_t tid;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_sleep(timeout)
+struct timeval *timeout;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_resched(prio)
+int prio;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_setpri(tid, prio)
+thread_t tid;
+int prio;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_suspend(tid)
+thread_t tid;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_resume(tid)
+thread_t tid;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int lwp_join(tid)
+thread_t tid;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "lwp_yield()" "" "\fLlwp_yield()\fP function"
+.IX "lwp_suspend()" "" "\fLlwp_suspend()\fP function"
+.IX "lwp_resume()" "" "\fLlwp_resume()\fP function"
+.IX "lwp_join()" "" "\fLlwp_join()\fP function"
+.IX "lwp_setpri()" "" "\fLlwp_setpri()\fP function"
+.IX "lwp_resched()" "" "\fLlwp_resched()\fP function"
+.IX "lwp_sleep()" "" "\fLlwp_sleep()\fP function"
+.LP
+.B lwp_yield(\|)
+allows the currently running thread to voluntarily
+relinquish control to another thread
+.I with the same scheduling priority.
+If
+.I tid
+is
+.BR \s-1SELF\s0 ,
+the next thread in the same priority queue
+of the yielding thread will run and the current thread will
+go the end of the scheduling queue.
+Otherwise, it
+is the
+.SM ID
+of the thread to run next, and the current thread will
+take second place in the scheduling queue.
+.LP
+.B lwp_sleep(\|)
+blocks the thread executing this primitive
+for at least the time specified by
+.IR timeout .
+.LP
+Scheduling of threads is, by default, preemptive
+(higher priorities preempt lower ones) across
+priorities and non-preemptive within a priority.
+.B lwp_resched(\|)
+moves the front thread for a given priority
+to the end of the scheduling queue.
+Thus, to achieve a preemptive round\-robin
+scheduling discipline, a high priority thread
+can periodically wake up and shuffle
+the queue of threads at a lower priority.
+.B lwp_resched(\|)
+does not affect threads which are blocked.
+If the priority of the rescheduled thread is the
+same as that of the caller, the effect is the same as
+.BR lwp_yield(\|) .
+.LP
+.B lwp_setpri(\|)
+is used to alter (raise or lower) the
+scheduling priority of the specified thread.
+If
+.I tid
+is
+.BR \s-1SELF\s0 ,
+the priority of the invoking thread is set.
+Note: if the priority of the affected thread
+becomes greater than that of the caller and the affected
+thread is not blocked, the caller will not run next.
+.B lwp_setpri(\|)
+can be used on either blocked or unblocked threads.
+.LP
+.B lwp_join(\|)
+blocks the thread issuing the join
+until the thread
+.I tid
+terminates.  More than one thread may join
+.IR tid .
+.LP
+.B lwp_suspend(\|)
+makes the specified thread ineligible to run.
+If
+.I tid
+is
+.BR \s-1SELF\s0 ,
+the caller is itself suspended.
+.B lwp_resume(\|)
+undoes the effect of
+.BR lwp_suspend(\|) .
+If a blocked thread is suspended, it will
+not run until it has been unblocked as well as
+explicitly made eligible to run using
+.BR lwp_resume(\|) .
+By suspending a thread, one can safely
+examine it without worrying
+that its execution\-time state will change.
+.SH NOTES
+When scheduling preemptively, be sure to
+use monitors to protect shared data structures
+such as those used by the standard I/O library.
+.SH RETURN VALUES
+.LP
+.BR lwp_yield(\|) ,
+.BR lwp_sleep(\|) ,
+.BR lwp_resched(\|) ,
+.BR lwp_join(\|) ,
+.B lwp_suspend(\|)
+and
+.BR lwp_resume(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+.B lwp_setpri(\|)
+returns
+the previous priority
+on success.
+On failure,
+it returns
+\-1.
+.SH ERRORS
+.LP
+.B lwp_yield(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_ILLPRIO
+Attempt to yield to thread with different priority.
+.TP
+.SM LE_INVALIDARG
+Attempt to yield to a blocked thread.
+.TP
+.SM LE_NONEXIST
+Attempt to yield to a non-existent thread.
+.LP
+.B lwp_sleep(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INVALIDARG
+Illegal timeout specified.
+.LP
+.B lwp_resched(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_ILLPRIO
+The priority queue specified contains no threads to reschedule.
+.TP
+.SM LE_INVALIDARG
+Attempt to reschedule thread at priority greater than that of the caller.
+.LP
+.B lwp_setpri(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INVALIDARG
+The priority specified is beyond the maximum available to the pod.
+.TP
+.SM LE_NONEXIST
+Attempt to set priority of a non-existent thread.
+.LP
+.B lwp_join(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to join a thread that does not exist.
+.LP
+.B lwp_suspend(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to suspend a non-existent thread.
+.LP
+.B lwp_resume(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to resume a non-existent thread.
+.\" .SH BUGS
+.\" More general scheduling manipulation should be made available.
+.\" That is, to put a thread at a certain position in a given priority
+.\" for instance, position 3 or after thread t. As we get more experience,
+.\" we will know better what to provide. Maybe something like:
+.\" lwp_lock(\|); manipulate pod; lwp_unlock where lwp_lock prevents access
+.\" to the pod. Cannot protect runq with monitors since you need to access
+.\" the runq to block on a monitor.

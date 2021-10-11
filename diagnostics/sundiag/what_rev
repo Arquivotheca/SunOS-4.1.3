@@ -1,0 +1,292 @@
+#!/bin/sh
+#########################################################################
+#									#
+#       %Z%%M% %I% %E% SMI; 						#
+#									#
+# File Name: what_rev.sh 						#
+#									#
+# This script will compare the Users SunDiag directory with a 		#
+# reference file that contains the official SunDiag release levels. 	#
+# This script translates the SunDiag reference file into a temporary	#
+# directory structure in /tmp.  The user's SunDiag directory is 	#
+# referenced and a similar temporary directory is also created.  The	#
+# two directories are then compared and then a detailed report is 	#
+# produced that will inform the user of missing files, extra files,	#
+# different SCCS revision levels, incorrect binaries, bad checksums.	#
+# The user will also have an option to save the report to a file.	#
+#									#
+# 	History								#
+# 	Created d.yee 	89/12/01					#
+#									#
+#########################################################################
+#
+# define environment variables
+WHAT=/usr/ucb/what
+FILE=/bin/file
+CURRENT_DIR=`pwd`
+SYNTAX="$SCRIPTNAME -v [SunDiag version ] -h [help]"
+
+VER_FILE=.version
+REF_FILE=revision_ref_file
+DEFAULT_DIR=/usr/diag/sundiag
+TMP_REF_DIR=/tmp/tmp_ref_dir
+TMP_UREF_DIR=/tmp/tmp_uref_dir 
+TMP_DIFF=/tmp/dirdiff9 
+TMP_DIFF1=/tmp/dirdiff8 
+TMP_DIFF2=/tmp/dirdiff7 
+
+##############################
+# Read from the command line #
+##############################
+if [ "$#" -gt 0 ]
+	then  for ARG in $@
+	do
+		case "$ARG" in
+		-v ) 
+			# print version of SunDiag Release 
+			if  test -r $REF_FILE 
+			then 
+				VERSION=`grep "=+=" $REF_FILE | head -1 | awk -F, '{ print $2 }' `
+			else
+				VERSION=`grep "=+=" $DEFAULT_DIR/$REF_FILE | head -1 | awk -F, '{ print $2 }' `
+			fi
+			if  test -r $VER_FILE 
+			then 
+				VER=`head -1 $VER_FILE`
+				echo " Running SunDiag Version - $VER (Based on SunDiag Release Version - $VERSION)"
+			else
+				echo " SunDiag Release Version: $VERSION"
+			fi
+			exit
+			;;
+		-h ) 
+			# print usage text
+			echo $SYNTAX 
+			exit 1
+			;;
+		esac
+	done
+fi
+
+############################
+# Get inputs from the user #
+############################
+echo " 	+-------------------------------+"
+echo " 	| SunDiag Revision Level Report |"
+echo " 	+-------------------------------+"
+echo "	 Enter the Full SunDiag Directory Pathway " 
+echo -n '	           (default is /usr/diag/sundiag): '
+read DIRPATH
+if [ "$DIRPATH" = "" ]
+then
+	echo "	 SunDiag Pathway Assumed to be:  /usr/diag/sundiag"
+	DIRPATH=$DEFAULT_DIR
+fi
+if [ "$DIRPATH" = "." ]
+then
+	DIRPATH=`pwd`
+fi
+echo "-------------------------------------------------------------------------- "
+echo " "
+
+echo "Attention: This report may take several minutes to generate."
+echo " "
+
+if  test ! -r $DIRPATH
+then 
+    echo "SunDiag directory: $DIRPATH  Not Found"
+    exit 2
+fi
+############################
+# CleanUP temp directories #
+############################
+if  test -r $TMP_REF_DIR 
+then 
+	rm -r $TMP_REF_DIR 
+fi
+
+if  test -r $TMP_UREF_DIR 
+then 
+	rm -r $TMP_UREF_DIR
+fi
+if  test -r $TMP_DIFF
+then 
+	rm -f $TMP_DIFF
+fi
+
+#################################################
+# Convert SunDiag Release Revision Control File	#
+#################################################
+cd /tmp 
+if test ! -f $DIRPATH/$REF_FILE
+then
+ 	echo "No SunDiag reference file Found in:  $DIRPATH"
+ 	exit
+fi
+if test -r $TMP_REF_DIR
+then
+ 	rm -r $TMP_REF_DIR
+fi
+mkdir $TMP_REF_DIR
+cd $TMP_REF_DIR
+
+#-----------------------------------#
+# Get SunDiag release version level #
+#-----------------------------------#
+VERSION=`grep "=+=" $DIRPATH/$REF_FILE | head -1 | awk -F, '{ print $2 }' `
+
+#-------------------------------------------------------#
+# Create SunDiag tmp reference directory structure	#
+#-------------------------------------------------------#
+cat $DIRPATH/$REF_FILE | while LINE=`line`
+do
+  	FIELD1=`echo $LINE | awk -F, '{ print $1 }' `
+
+ 	if [ "$FIELD1" = "=+=" ]
+ 	then
+		FILE_NAME=""
+	else 
+  		if [ "$FILE_NAME" = "" ]
+ 		then
+   			FILE_NAME=$FIELD1
+  			echo $LINE >> $FILE_NAME
+		else
+  			echo $LINE >> $FILE_NAME
+		fi
+	fi
+done
+ 
+############################################
+# Create the Users tmp reference directory #
+############################################
+mkdir $TMP_UREF_DIR
+
+#--------------------------------------------------------#
+# Loop in directory and get information on all the files #
+#--------------------------------------------------------#
+cd $DIRPATH
+for file_name in *
+do
+	#---------------------------#
+	# Get file's checksum value #
+	#---------------------------#
+	if [ "$file_name" = "revision_ref_file" ]
+	then
+		CHECKSUM=`echo "0 0"`
+	else
+		CHECKSUM=`sum $file_name| awk '{print $1 " " $2}'`
+	fi
+
+	#-----------------#
+	# Get file's type #
+	#-----------------#
+ 	TYPE=`$FILE $file_name | awk '{print $2}'`
+
+	#--------------------------------#
+	# Get file's sccs revision level #
+	#--------------------------------#
+  	$WHAT $file_name >/tmp/xyz
+  	REV=`sed -e "/^$file_name/d" /tmp/xyz | awk '{print $1 " " $2}'`
+
+	#----------------------------------#
+	# Create the Users reference file  #
+	#----------------------------------#
+	if [ "$file_name" != "revision_ref_file" ]
+	then
+		echo "$file_name, checksum= $CHECKSUM, binary type= $TYPE," >> $TMP_UREF_DIR/$file_name 
+		echo "$REV" >> $TMP_UREF_DIR/$file_name
+	fi
+done
+
+rm /tmp/xyz
+
+#########################################################
+# Now compare the directories and create a report  	#
+#########################################################
+trap "rm -f /usr/tmp/dc$$*;exit" 1 2 3 15
+D0=`pwd`
+D1=$TMP_REF_DIR
+D2=$TMP_UREF_DIR
+cd $D1
+find . -print | sort > /usr/tmp/dc$$a
+cd $D0
+cd $D2
+find . -print | sort > /usr/tmp/dc$$b
+comm /usr/tmp/dc$$a /usr/tmp/dc$$b | sed -n \
+	-e "/^		/w /usr/tmp/dc$$c" \
+	-e "/^	[^	]/w /usr/tmp/dc$$d" \
+	-e "/^[^	]/w /usr/tmp/dc$$e"
+rm -f /usr/tmp/dc$$a /usr/tmp/dc$$b
+echo " SunDiag $VERSION - Revision Test Report	dated: `date`" >> $TMP_DIFF
+echo " ========================================================================">> $TMP_DIFF
+echo " " >> $TMP_DIFF
+MISSING=`cat /usr/tmp/dc$$e | wc -l`
+if [ "$MISSING" -ne "0" ]
+then
+	echo " " >>$TMP_DIFF
+	echo "Files Missing in the User's Directory" >>$TMP_DIFF
+	echo  "`cat /usr/tmp/dc$$e` " >>$TMP_DIFF
+	echo " " >>$TMP_DIFF
+fi
+EXTRA=`cat /usr/tmp/dc$$d | wc -l`
+if [ "$EXTRA" -ne "0" ]
+then
+	echo " " >>$TMP_DIFF
+	echo "Extra Files in User's Directory" >>$TMP_DIFF
+	echo  "`cat /usr/tmp/dc$$d` " >>$TMP_DIFF
+	echo " " >>$TMP_DIFF
+fi
+rm -f /usr/tmp/dc$$e /usr/tmp/dc$$d
+sed -e s/..// < /usr/tmp/dc$$c > /usr/tmp/dc$$f
+rm -f /usr/tmp/dc$$c
+cd $D0
+> /usr/tmp/dc$$g
+while read a
+do
+	if [ -f $D1/"$a" ]
+	then cmp -s $D1/"$a" $D2/"$a"
+	     if [ $? != 0 ]
+	     then 
+	     	  echo "======>Differences found in file	$a" >>$TMP_DIFF
+		  echo " " >> /usr/tmp/dc$$g
+		  echo "######>Diff of SunDiag file $a	<######" >> /usr/tmp/dc$$g
+		  diff $D1/"$a" $D2/"$a" >> /usr/tmp/dc$$g
+	     fi
+	fi
+done < /usr/tmp/dc$$f 
+cat /usr/tmp/dc$$g >> $TMP_DIFF
+rm -f /usr/tmp/dc$$*
+rm -r $D1 $D2
+
+
+#-----------------------#
+# Now create the report #
+#-----------------------#
+sed -e "/^</s//SunDiag Release Level:	/g" $TMP_DIFF > $TMP_DIFF1
+sed -e "/^>/s//User Files REV Level:	/g" $TMP_DIFF1 > $TMP_DIFF2
+sed -e "/^[0-9]/d" $TMP_DIFF2 > $TMP_DIFF
+rm $TMP_DIFF1 $TMP_DIFF2
+
+#-----------------------#
+# Print the report      #
+#-----------------------#
+cat $TMP_DIFF
+REPORT_SIZE=`cat $TMP_DIFF | wc -l`
+if [ "$REPORT_SIZE" -eq 3 ]
+then
+	echo " No Different Revisions found in User's SunDiag Directory "
+	rm $TMP_DIFF
+else
+	cd $CURRENT_DIR
+	echo " "
+	echo -n "	>Do you want to save this report [y or n] ? "
+ 	read ANS
+ 	if [ "$ANS" = "y" -o "$ANS" = "Y" ]
+ 	then
+ 		echo -n "	 			>>>>Enter Filename: "
+ 		read SAVEFILE
+ 		mv $TMP_DIFF $SAVEFILE 
+ 	else
+ 		rm $TMP_DIFF
+ 	fi
+fi

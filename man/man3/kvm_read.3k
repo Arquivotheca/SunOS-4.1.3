@@ -1,0 +1,76 @@
+.\" @(#)kvm_read.3k 1.1 92/07/30 SMI;
+.TH KVM_READ 3K "24 January 1990"
+.SH NAME
+kvm_read, kvm_write \- copy data to or from a kernel image or running system
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <kvm.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kvm_read(kd, addr, buf, nbytes)
+kvm_t *kd;
+unsigned long addr;
+char *buf;
+unsigned nbytes;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kvm_write(kd, addr, buf, nbytes)
+kvm_t *kd;
+unsigned long addr;
+char *buf;
+unsigned nbytes;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "kvm_read()" "" "\fLkvm_read()\fP function"
+.IX "kvm_write()" "" "\fLkvm_write()\fP function"
+.LP
+.B kvm_read(\|)
+transfers data from the kernel image specified by
+.I kd
+(see
+.BR kvm_open (3K))
+to the address space of the process.
+.I nbytes
+bytes of data are copied from the kernel virtual address given by
+.I addr
+to the buffer pointed to by
+.IR buf .
+.LP
+.B kvm_write(\|)
+is like
+.BR kvm_read(\|) ,
+except that the direction of data transfer is reversed.
+In order to use this function, the
+.BR kvm_open (3K)
+call that returned
+.I kd
+must have specified write access.
+If a user virtual address is given,
+it is resolved in the address space of the process
+specified in the most recent
+.BR kvm_getu (3K)
+call.
+.SH RETURN VALUES
+.LP
+On success,
+.B kvm_read(\|)
+and
+.B kvm_write(\|)
+return
+the number of bytes actually transferred.
+On failure,
+they return
+\-1.
+.SH "SEE ALSO"
+.BR kvm_getu (3K),
+.BR kvm_nlist (3K),
+.BR kvm_open (3K)

@@ -1,0 +1,82 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)resolv.conf.5 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\"
+.TH RESOLV.CONF 5 "30 June 1989"
+.SH NAME
+resolv.conf \- configuration file for domain name system resolver
+.SH DESCRIPTION
+.IX "resolv.conf file" "" "\fLresolv.conf\fR file \(em domain name resolver initialization info"
+.LP
+The resolver configuration file contains
+information that is read
+by the domain name system resolver library the first time
+it is invoked in a process.
+It is only necessary to create this file to specify
+an explicit default domain name other than the default one derived
+from the 
+.BR domainname (1)
+command, or to specify name servers to use on other machines.
+The file is designed to be human readable
+and contains a list of
+keyword-value pairs that provide various types
+of resolver information.
+.IP
+.I keyword	value
+.LP
+The different configuration options are:
+.TP 20
+.BI nameserver " address"
+The Internet address (in dot
+notation) of a name server
+that the resolver should query.  
+Up to
+.SM MAXNS
+(currently 3) name servers may be listed. In that
+case the resolver library queries tries them
+in the order listed.  The policy used is to
+try a name server, and if the query times out,
+try the next, until out of name servers, then
+repeat trying all the name servers
+until a maximum number of retries are made.
+If there are no
+.B nameserver
+lines in this file, then the loopback address is used, so there
+must be a name server running on the same machine.
+.TP
+.BI domain " name"
+The default domain to append to names that do
+not have a dot in them, and used in searches.  If there is no 
+.B domain
+line in this file, then it is derived from the domain set by the
+.BR domainname (1)
+command, usually by removing the first component.
+For example, if the 
+.BR domainname (1)
+is set to ``foo.podunk.edu'' then the default
+domain used by the resolver will be ``podunk.edu''.
+The is the same policy used by 
+.BR sendmail (8).
+.LP
+The keyword-value pair must appear on a single line,
+and the keyword (for instance,
+.BR nameserver )
+must start the line.  The value follows
+the keyword, separated by white space.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/resolv.conf
+.PD
+.SH SEE ALSO
+.BR domainname (1),
+.BR gethostent (3N),
+.BR resolver (3),
+.BR named (8C),
+.BR nslookup (8C),
+.SM RFC\s0 1034,
+.SM RFC\s0 1035
+.LP
+.TX ADMIN

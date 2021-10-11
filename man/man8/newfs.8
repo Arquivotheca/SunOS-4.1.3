@@ -1,0 +1,230 @@
+.\" @(#)newfs.8 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH NEWFS 8 "5 July 1990"
+.SH NAME
+newfs \- create a new file system
+.SH SYNOPSIS
+.B /usr/etc/newfs
+[
+.B \-Nv
+] [
+.I mkfs-options
+]
+.I raw-special-device
+.SH DESCRIPTION
+.IX  "newfs command"  ""  "\fLnewfs\fP \(em make new file system"
+.IX  make "new file system \(em \fLnewfs\fP"
+.IX  "create" "new file system \(em \fLnewfs\fP"
+.IX  "file system"  "create new"  ""  "create new \(em \fLnewfs\fP"
+.LP
+.B newfs
+is a \*(lqfriendly\*(rq front-end to the
+.BR mkfs (8)
+program.
+On Sun systems, the disk type is
+determined by reading the disk label for the specified
+.IR raw-special-device .
+.LP
+.I raw-special-device
+is the name of a raw special device residing in
+.BR /dev ,
+including the disk partition,
+where you want the new file system to be created.
+If you want to make a file system on
+.BR sd0[a-h] ,
+specify
+.BR sd0[a-h] ,
+.B rsd0[a-h]
+or
+.BR /dev/rsd0[a-h] ;
+if you only specify
+.BR sd0[a-h] ,
+.B newfs
+will find the proper device.
+.LP
+.B newfs
+then calculates the appropriate parameters to use in calling
+.BR mkfs ,
+and builds the file system by forking
+.BR mkfs .
+.LP
+You must be super-user to use this command.
+.SH OPTIONS
+.LP
+.TP
+.B \-N
+Print out the file system parameters
+without actually creating the file system.
+.TP
+.B \-v
+Verbose.
+.B newfs
+prints out its actions,
+including the parameters passed to
+.BR mkfs .
+.TP
+.I mkfs-options
+Options that override the default parameters passed to
+.BR mkfs (8)
+are:
+.RS
+.TP
+.BI \-a " apc"
+Number of alternates per cylinder 
+(\s-1SCSI\s0 devices only).
+.TP
+.BI \-b " block-size"
+The block size of the file system in bytes.
+The default is 
+.BR 8192 .
+.TP
+.BI \-C " maxcontig
+The maximum number of blocks, belonging to one file, that will be
+allocated contiguously before inserting a rotational delay.
+The default varies from drive to drive.  Drives without internal buffers
+(or drives/controllers that don't advertise the existence of an internal buffer)
+default to
+.BR 1 .
+Drives with buffers default to
+.BR 7 .
+.br
+.ne 5
+.sp
+This parameter is limited in the following way:
+.sp
+.ti +4
+\fIblocksize\fR * \fImaxcontig\fR must be <= \fImaxphys\fR
+.sp
+.I maxphys
+is a read-only
+kernel variable that specifies the maximum block transfer size (in bytes) that 
+the I/O subsystem is capable of satisfying.  (This limit is enforced by 
+.BR mount (2),
+not by 
+.B newfs
+or 
+.BR mkfs .)
+.sp
+.BR Note :
+This parameter also controls
+clustering.  Regardless of  the  value of
+.IR rotdelay ,
+clustering is enabled only when
+.I maxcontig
+is greater than 1.
+Clustering allows higher I/O rates for sequential
+I/O and is described in
+.BR tunefs (8).
+.TP
+.BI \-c " #cylinders/group"
+The number of cylinders per cylinder group in a file system.
+The default is
+.BR 16 .
+.TP
+.BI \-d " rotdelay"
+This specifies the expected time (in milliseconds)
+to service a transfer completion
+interrupt and initiate a new transfer on the same disk.
+It is used to decide how much rotational spacing to place between
+successive clusters/blocks in a file.
+.br
+.ne 5
+.TP
+.BI \-f " frag-size"
+The fragment size of the file system in bytes.
+The default is
+.BR 1024 .
+.TP
+.BI \-i " bytes/inode"
+This specifies the density of inodes in the file system.
+The default is to create an inode for each 2048 bytes of data space.
+If fewer inodes are desired, a larger number should be used;
+to create more inodes a smaller number should be given.
+.TP
+.BI \-m " free-space%"
+The percentage of space reserved from normal users; the minimum
+free space threshold.
+The default is
+.BR 10% .
+.TP
+.BI \-o " optimization"
+.RB ( space
+or
+.BR time ).
+The file system can either be instructed to try to minimize the time spent
+allocating blocks, or to try to minimize the space fragmentation on the disk.
+If the minimum free space threshold (as specified by the
+.B \-m
+option) is less than 10%,
+the default is to optimize for
+.BR space ;
+if the minimum free space threshold is greater than or equal to 10%,
+the default is to optimize for
+.BR time .
+.TP
+.BI \-r " revolutions/minute"
+The speed of the disk in revolutions per minute (frequently 3600).
+.TP
+.BI \-s " size"
+The size of the file system in sectors.
+.br
+.ne 8
+.TP
+.BI \-t " #tracks/cylinder"
+The number of tracks per cylinders on the disk.
+The default is
+.BR 16 .
+.TP
+.BI \-n " #rotational-positions"
+The number of distinguished rotational positions.
+The default is
+.BR 8 . 
+.RE
+.br
+.ne 12
+.SH EXAMPLES
+.LP
+The following example verbosely displays the parameters
+for the raw special device,
+.BR sd0a ,
+but does not actually create a new file system:
+.LP
+.RS
+.ft B
+.nf
+example% \ /usr/etc/newfs \-vN sd0a
+mkfs \-N /dev/rsd0a 16048 34 8 8192 1024 16 10 60 2048 t 0 -1 8 -1
+/dev/rsd0a:	16048 sectors in 59 cylinders of 8 tracks, 34 sectors
+	8.2Mb in 4 cyl groups (16 c/g, 2.23Mb/g, 896 i/g)
+super-block backups (for fsck \-b#) at:
+\ 32, 4432, 8832, 13232,
+example%
+.fi
+.ft R
+.RE
+.SH "SEE ALSO"
+.BR fs (5),
+.BR fsck (8),
+.BR installboot (8S),
+.BR mkfs (8),
+.BR tunefs (8)
+.LP
+.TX ADMIN
+.SH DIAGNOSTICS
+.TP
+.BI "newfs: " special " No such file or directory"
+The device specified does not exist, or a disk partition was not
+specified.
+.TP
+.IB special ": cannot open"
+You must be super-user to use this command.
+.SH NOTES
+.LP
+To install the bootstrap programs for a root partition,
+run
+.BR installboot (8S)
+after
+.BR newfs .

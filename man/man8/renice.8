@@ -1,0 +1,90 @@
+.\" @(#)renice.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH RENICE 8 "9 September 1987"
+.SH NAME
+renice \- alter nice value of running processes
+.SH SYNOPSIS
+.B /usr/etc/renice
+.I priority
+.IR pid .\|.\|.
+.LP
+.B /usr/etc/renice
+.I priority
+[
+.B \-p
+.IR pid .\|.\|.
+] [
+.B \-g
+.IR pgrp .\|.\|.
+] [
+.B \-u
+.IR username .\|.\|.
+]
+.SH DESCRIPTION
+.IX  "renice command"  ""  "\fLrenice\fP \(em change process nice value"
+.IX  "change" "process nice value \(em \fLrenice\fP"
+.IX  "alter process nice value"  ""  "alter process nice value \(em \fLrenice\fP"
+.IX  process  "change priority"  ""  "change priority \(em \fLrenice\fP"
+.B renice
+alters the scheduling nice value, and hence the priority, of one or more
+running processes.  See
+.BR nice (1)
+for a discussion of nice value and process scheduling priority.
+.SH OPTIONS
+By default, the processes to be affected are specified by
+their process
+.SM ID\s0s.
+.I priority
+is the new priority value.
+.TP 15
+.BI \-p " pid .\|.\|."
+Specify a list of process
+.SM ID\s0s.
+.TP
+.BI \-g " pgrp .\|.\|."
+Specify a list of process group
+.SM ID\s0s.
+The processes in the specified process groups have their
+scheduling priority altered.
+.TP
+.BI \-u " user .\|.\|."
+Specify a list of user
+.SM ID\s0s
+or usernames.
+All processes owned by each
+.I user
+have their scheduling altered.
+.LP
+Users other than the super-user may only alter the priority of
+processes they own,
+and can only monotonically increase their \*(lqnice value\*(rq
+within the range 0 to 20.
+(This prevents overriding administrative fiats.)
+The super-user may alter the priority of any process
+and set the priority to any value in the range  \-20 to 19.
+Useful nice values are
+19 (the affected processes will run only when nothing else
+in the system wants to),
+0 (the default nice value) and
+any negative value (to make things go faster).
+.LP
+If only the priority is specified,
+the current process (alternatively,
+process group or user) is used.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+to map user names to user
+.SM ID\s0's
+.PD
+.SH SEE ALSO
+.BR pstat (8)
+.SH BUGS
+If you make the nice value very negative,
+then the process cannot be interrupted.
+.LP
+To regain control you must make the priority greater than zero.
+.LP
+Users other than the super-user cannot increase scheduling priorities
+of their own processes, even if they were the ones that decreased the
+priorities in the first place.

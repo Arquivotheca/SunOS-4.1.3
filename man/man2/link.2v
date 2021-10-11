@@ -1,0 +1,174 @@
+.\" @(#)link.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH LINK 2V "21 January 1990"
+.SH NAME
+link \- make a hard link to a file
+.SH SYNOPSIS
+.nf
+.ft B
+int link(path1, path2)
+char *path1, *path2;
+.ft R
+.fi
+.IX  link()  ""  \fLlink()\fP
+.IX  "file system"  link()  ""  \fLlink()\fP
+.IX  "make hard link to file"
+.IX  file  "make hard link to"
+.IX  "hard link to file \(em \fLlink()\fR"
+.SH DESCRIPTION
+.LP
+.I path1
+points to a pathname naming an existing file.
+.I path2
+points to a pathname
+naming a new directory entry to be created.
+.B link(\|)
+atomically creates a new link for the existing file and
+increments the link count of the file by one.
+.SM {LINK_MAX}
+(see
+.BR pathconf (2V))
+specifies the maximum allowed number of links to the file.
+.LP
+With hard links, both files
+must be on the same file system.
+Both the old and the new link
+share equal access and rights to the underlying object.
+The super-user may make multiple links to a directory.
+Unless the caller is the super-user,
+the file named by
+.I path1
+must not be a directory.
+.LP
+Upon successful completion,
+.B link(\|)
+marks for update the 
+.B st_ctime
+field of the file.  Also, the
+.B st_ctime
+and
+.B st_mtime
+fields of the directory that contains the new entry are marked for
+update.
+.SH RETURN VALUES
+.LP
+.B link(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B link(\|)
+will fail and no link will be created if one or more of the following
+are true:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix pointed to by
+.I path1
+or
+.IR path2 .
+.IP
+The requested link requires writing in a directory for which
+write permission is denied.
+.TP
+.SM EDQUOT
+The directory in which the entry for the new link
+is being placed cannot be extended because the user's
+quota of disk blocks on the file system containing
+the directory has been exhausted.
+.TP
+.SM EEXIST
+The link referred to by
+.I path2
+exists.
+.TP
+.SM EFAULT
+One of the path names specified is outside the process's allocated address space.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system
+to make the directory entry.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating the pathname pointed
+to by
+.I path1
+or
+.IR path2 .
+.TP
+.SM EMLINK
+The number of links to the file named by
+.I path1
+would exceed
+.SM {LINK_MAX}
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+A component of the path prefix pointed to by
+.I path1
+or
+.I path2
+does not exist.
+.IP
+The file referred to by
+.I path1
+does not exist.
+.TP
+.SM ENOSPC
+The directory in which the entry for the new link
+is being placed cannot be extended because there
+is no space left on the file system containing the directory.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path1
+or
+.I path2
+is not a directory.
+.TP
+.SM EPERM
+The file named by
+.I path1
+is a directory and the effective user
+.SM ID
+is not super-user.
+.TP
+.SM EROFS
+The requested link requires writing in a directory on a read-only file system.
+.TP
+.SM EXDEV
+The link named by
+.I path2
+and the file named by
+.I path1
+are on different file systems.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path1
+or
+.I path2
+points to an empty string.
+.SH "SEE ALSO"
+.BR symlink (2),
+.BR unlink (2V)

@@ -1,0 +1,210 @@
+.\" @(#)fpa.4s 1.1 92/07/30 SMI;
+.TH FPA 4S "31 January 1990"
+.SH NAME
+fpa \- Sun-3/Sun-3x floating-point accelerator
+.SH "CONFIG \(em SUN-3/SUN-3X SYSTEMS"
+.ft B
+device fpa0 at virtual ? csr 0xe0000000
+.ft R
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sundev/fpareg.h>
+open("/dev/fpa", flags);
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "fpa device" "" "\fLfpa\fP, floating-point accelerator"
+.IX "floating-point accelerator, \fLfpa\fP"
+.LP
+.SM FPA
+and
+.SM FPA+
+are compatible floating point accelerators available
+on certain Sun-3 and Sun-3x systems.
+They provide hardware contexts for
+simultaneous use by up to 32 processes.
+The same
+.B fpa
+device driver manages either
+.SM FPA
+or
+.SM FPA\s0+
+hardware.
+.LP
+Processes access the device using
+.BR open (2V)
+and
+.BR close (2V)
+system calls, and the
+.SM FPA
+is automatically mapped into the process' address
+space by SunOS.
+This is normally provided transparently at compile time
+by a compiler option, such as the
+.B \-ffpa
+option to
+.BR cc (1V).
+.LP
+The valid
+.BR ioctl (2)
+system calls are used only by diagnostics and by system administration
+programs, such as
+.BR fpa_download (8).
+.SH IOCTLS
+.TP 25
+.SB FPA_ACCESS_OFF
+Clear
+.SB FPA_ACCESS_BIT
+in
+.SM FPA
+state register to disable access to constants
+.SM RAM
+using
+.SM FPA
+load pointer.
+.TP
+.SB FPA_ACCESS_ON
+Set
+.SB FPA_ACCESS_BIT
+in
+.SM FPA
+state register to enable access to constants
+.SM RAM
+using
+.SM FPA
+load pointer.
+.TP
+.SB FPA_FAIL
+Disable the
+.SM FPA\s+1.
+.TP
+.SB FPA_GET_DATAREGS
+Return the contents of 8
+.SM FPA 
+registers.
+.TP
+.SB FPA_INIT_DONE
+Called when downloading is complete.
+Allows multiple users to access the
+.SM FPA\s+1.
+.TP
+.SB FPA_LOAD_OFF
+Set
+.SB FPA_LOAD_BIT
+in
+.SM FPA
+state register to disable
+access to microstore or map
+.SM RAM
+via
+.SM FPA
+load pointer.
+.TP
+.SB FPA_LOAD_ON
+Set
+.SB FPA_LOAD_BIT
+in
+.SM FPA
+state register to enable
+access to microstore or map
+.SM RAM
+using
+.SM FPA
+load pointer.
+.LP
+The following two
+.B ioctl()
+requests are for diagnostic use only.
+.B fpa
+must be compiled with
+.SB FPA_DIAGNOSTICS_ONLY
+defined to enable these two calls.
+.TP 25
+.SB FPA_WRITE_STATE
+Overwrite the
+.SM FPA
+state register.
+.TP
+.SB FPA_WRITE_HCP
+Write to the hard clear pipe register.
+.SH ERRORS
+.LP
+The following error messages are returned by
+.B open
+system calls only.
+.TP 15
+.SM EBUSY
+All 32
+.SM FPA
+contexts are being used.
+.TP
+.SM EEXIST
+The current process has already opened
+.BR /dev/fpa .
+.TP
+.SM EIO
+Downloading has not completed,
+so only 1 root process can have the
+.SM FPA
+open at a time.
+.TP
+.SM ENETDOWN
+.SM FPA
+is disabled.
+.TP
+.SM ENOENT
+68881 chip does not exist.
+.TP
+.SM ENXIO
+.SM FPA
+board does not exist.
+.LP
+The following error messages are returned
+by
+.B ioctl
+system calls only.
+.TP 15
+.SM EINVAL
+Invalid ioctl.  This may occur if diagnostic only
+ioctls,
+.SB FPA_WRITE_STATE
+or
+.BR \s-1FPA_WRITE_HCP\s+1 ,
+are used with a driver which didn't compile
+in those calls.
+.TP
+.SM EPERM
+All ioctl calls except for
+.SB FPA_GET_DATAREGS
+require root execution level.
+.TP
+.SM EPIPE
+The
+.SM FPA
+pipe is not clear.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/fpa
+device file for both
+.SM FPA
+and
+.SM FPA\s+1+.
+.PD
+.SH SEE ALSO
+.BR cc (1V),
+.BR close (2V),
+.BR ioctl (2),
+.BR open (2V)
+.BR fpa_download (8),
+.BR fparel (8),
+.BR fpaversion (8)
+.SH DIAGNOSTICS
+.LP
+If hardware problems are detected
+then all processes with
+.B /dev/fpa
+open are killed, and future opens of
+.B /dev/fpa
+are disabled.

@@ -1,0 +1,566 @@
+.\" @(#)ypclnt.3n 1.1 92/07/30 SMI
+.TH YPCLNT 3N "22 January 1988"
+.SH NAME
+ypclnt, yp_get_default_domain, yp_bind, yp_unbind, yp_match, yp_first, yp_next, yp_all, yp_order, yp_master, yperr_string, ypprot_err \- NIS client interface
+.SH SYNOPSIS AND DESCRIPTION
+.IX  "yp_bind()"  ""  "\fLyp_bind\fP \(em NIS client interface"
+.IX  "yp_get_default_domain()"  ""  "\fLyp_get_default_domain\fP \(em NIS client interface"
+.IX  "yp_unbind()"  ""  "\fLyp_unbind()\fP \(em NIS client interface"
+.IX  "yp_match()"  ""  "\fLyp_match()\fP \(em NIS client interface"
+.IX  "yp_first()"  ""  "\fLyp_first()\fP \(em NIS client interface"
+.IX  "yp_all()"  ""  "\fLyp_all()\fP \(em NIS client interface"
+.IX  "yp_next()"  ""  "\fLyp_next()\fP \(em NIS client interface"
+.IX  "yp_order()"  ""  "\fLyp_order()\fP \(em NIS client interface"
+.IX  "yp_master()"  ""  "\fLyp_master()\fP \(em NIS client interface"
+.IX  "yp_next()"  ""  "\fLyp_next()\fP \(em NIS client interface"
+.IX  "yperr_string()"  ""  "\fLyperr_string()\fP \(em NIS client interface"
+.IX  "ypprot_err()"  ""  "\fLypprot_err()\fP \(em NIS client interface"
+.IX  "YP client interface"
+.IX  "NIS client interface"
+.IX rpc "" "RPC routines"
+.IX "remote procedure calls"
+.LP
+This package of functions provides an interface to the
+Network Information Service
+(\s-1NIS\s0).
+The package can be loaded
+from the standard library,
+.BR /usr/lib/libc.a .
+Refer to
+.BR ypfiles (5)
+and
+.BR ypserv (8)
+for an overview of the 
+.SM NIS
+name service, including
+the definitions of
+.I map
+and
+.IR domain ,
+and a description of the various servers, databases,
+and commands that comprise the
+.SM NIS
+services.
+.LP
+All input parameters names begin with
+.IR in .
+Output parameters begin with
+.IR out .
+Output parameters of type
+.B "char **"
+should be addresses of uninitialized character pointers.
+Memory is allocated by the
+.SM NIS
+client package using
+.BR malloc (3V),
+and may be freed if the user code has no continuing need for it.
+For each
+.I outkey
+and
+.IR outval ,
+two extra bytes of memory are allocated at the end that contain
+.SM NEWLINE
+and
+the null character,
+respectively, but these two bytes are not reflected in
+.I outkeylen
+or
+.IR outvallen .
+.I indomain
+and
+.I inmap
+strings must not be empty and must be
+null-terminated.
+String parameters which are accompanied by a count parameter may
+not be
+.SM NULL\s0,
+but may point to
+null
+strings, with the count parameter indicating this.
+Counted strings need not be
+null-terminated.
+.LP
+All functions in this package of type
+.I int
+return 0 if they succeed, and a failure code (\c
+.BI \s-1YPERR\s0_ xxxx\fR)
+otherwise.
+Failure codes are described under
+.SM DIAGNOSTICS
+below.
+.LP
+.ft B
+.nf
+.sp .5
+yp_bind (indomain);
+char *indomain;
+.fi
+.ft R
+.IP
+To use the
+.SM NIS
+services, the client process must be \*(lqbound\*(rq to a
+.SM NIS
+server that serves the appropriate domain using
+.BR yp_bind(\|) .
+Binding need not be done explicitly by user code; this
+is done automatically whenever a
+.SM NIS
+lookup function is called.
+.B yp_bind(\|)
+can be called directly for processes
+that make use of a backup strategy (for example,
+a local file) in cases when
+.SM NIS
+services are not available.
+.LP
+.ft B
+.nf
+.sp .5
+void
+yp_unbind (indomain)
+char *indomain;
+.fi
+.ft R
+.IP
+Each binding allocates (uses up) one client process
+socket descriptor;
+each bound domain costs one socket descriptor.  However,
+multiple requests to the same domain use that same descriptor.
+.B yp_unbind(\|)
+is available at the client interface for processes that
+explicitly manage their socket descriptors while accessing
+multiple domains.
+The call to
+.B yp_unbind(\|)
+make the domain
+.IR unbound ,
+and free all per-process and per-node resources used to bind
+it.
+.IP
+If an
+.SM RPC
+failure results upon use of a binding, that domain will be
+unbound automatically.
+At that point, the ypclnt
+layer will retry
+forever or until the operation succeeds, provided that
+.B ypbind
+is running, and either
+.RS
+.TP
+a)
+the client process cannot bind a server for the proper domain,
+or
+.TP
+b)
+.SM RPC
+requests to the server fail.
+.RE
+.IP
+If an error is not
+.SM RPC\s0-related,
+or if
+.B ypbind
+is not running, or if a bound
+.B ypserv
+process returns any answer (success or failure),
+the ypclnt layer will
+return control to the user code, either with an error code,
+or a success code and any results.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+yp_get_default_domain (outdomain);
+char **outdomain;
+.fi
+.ft R
+.IP
+The
+.SM NIS
+lookup calls require a map name and a domain name, at minimum.
+It is assumed that the client process knows the name of the map of
+interest.  Client processes
+should fetch the node's default domain by calling
+.BR yp_get_default_domain(\|) ,
+and use the returned
+.I outdomain
+as the
+.I indomain
+parameter to successive
+.SM NIS
+calls.
+.LP
+.ft B
+.nf
+.sp .5
+yp_match(indomain, inmap, inkey, inkeylen, outval, outvallen)
+char *indomain;
+char *inmap;
+char *inkey;
+int inkeylen;
+char **outval;
+int *outvallen;
+.fi
+.ft R
+.IP
+.B yp_match(\|)
+returns the value associated with a passed key.  This key
+must be exact; no pattern matching is available.
+.LP
+.ft B
+.nf
+.sp .5
+yp_first(indomain, inmap, outkey, outkeylen, outval, outvallen)
+char *indomain;
+char *inmap;
+char **outkey;
+int *outkeylen;
+char **outval;
+int *outvallen;
+.fi
+.ft R
+.IP
+.B yp_first(\|)
+returns the first key-value pair from the named map
+in the named domain.
+.LP
+.ft B
+.nf
+.sp .5
+yp_next(indomain, inmap, inkey, inkeylen, outkey, outkeylen, outval, outvallen);
+char *indomain;
+char *inmap;
+char *inkey;
+int inkeylen;
+char **outkey;
+int *outkeylen;
+char **outval;
+int *outvallen;
+.fi
+.ft R
+.IP
+.B yp_next(\|)
+returns the next key-value pair in a named map.  The
+.I inkey
+parameter should be the
+.I outkey
+returned from an initial call to
+.B yp_first(\|)
+(to get the second key-value pair) or the one returned from the nth call to
+.B yp_next(\|)
+(to get the nth + second key-value pair).
+.IP
+The concept of first (and, for that matter, of next) is particular
+to the structure of the
+.SM NIS
+map being processing; there is no relation in
+retrieval order to either the lexical order within
+any original (non-\s-1NIS\s0)
+data base, or to any obvious numerical sorting order on the keys,
+values, or key-value pairs.
+The only ordering guarantee made is
+that if the
+.B yp_first(\|)
+function is called on a particular map, and then the
+.B yp_next(\|)
+function is repeatedly called on the same map at the same server
+until the call fails with a reason of
+.BR \s-1YPERR_NOMORE\s0 ,
+every entry in the data base will be seen exactly once.
+Further, if the same sequence of operations is performed on the same
+map at the same server, the entries will be seen in the same order.
+.br
+.if t .ne 7
+.IP
+Under conditions of heavy server load or server failure, it
+is possible for the domain to become unbound, then bound
+once again (perhaps to a different server)
+while a client is running.
+This can cause a break in one of the enumeration rules;
+specific entries may be seen twice by the client, or not at all.
+This approach protects the client from error messages that would
+otherwise be returned in the midst of the enumeration.
+The next paragraph describes a better solution to enumerating all
+entries in a map.
+.LP
+.ft B
+.nf
+.sp .5
+yp_all(indomain, inmap, incallback);
+char *indomain;
+char *inmap;
+struct ypall_callback *incallback;
+.fi
+.ft R
+.IP
+.B yp_all(\|)
+provides a way to transfer an entire map
+from server to client in a single request using
+.SM TCP
+(rather than
+.SM UDP
+as with other functions in this package).
+The entire transaction take place as a single
+.SM RPC
+request and response.
+You can use
+.B yp_all(\|)
+just like any other
+.SM NIS
+procedure,
+identify the map in the normal manner, and supply the name of a
+function which will be called to process each key-value pair
+within the map.
+You return from the call to
+.B yp_all(\|)
+only when the transaction is completed
+(successfully or unsuccessfully), or your
+.RB foreach
+function decides that it does not want to see
+any more key-value pairs.
+.IP
+The third parameter to
+.B yp_all(\|)
+is
+.RS 1i
+.ft B
+.nf
+struct ypall_callback *incallback {
+int (*foreach)(\|);
+char *data;
+};
+.fi
+.ft R
+.RE
+.IP
+The function
+.B foreach
+is called
+.RS 1i
+.ft B
+.nf
+foreach(instatus, inkey, inkeylen, inval, invallen, indata);
+int instatus;
+char *inkey;
+int inkeylen;
+char *inval;
+int invallen;
+char *indata;
+.fi
+.ft R
+.RE
+.IP
+The
+.I instatus
+parameter will hold one of the return status values defined in
+.B <rpcsvc/yp_prot.h>
+\(em either
+.SB YP_TRUE
+or an error code. 
+See
+.BR ypprot_err(\|) ,
+below, for a function which converts a
+.SM NIS
+protocol error code to a ypclnt layer error code.
+.IP
+The key and value parameters are somewhat different
+than defined in the
+synopsis section above.
+First, the memory pointed to by the
+.I inkey
+and
+.I inval
+parameters is private to the
+.B yp_all(\|)
+function, and is overwritten with the arrival
+of each new key-value pair.
+It is the responsibility of the
+.B foreach
+function to do something useful with the contents
+of that memory, but it
+does not own the memory itself.
+Key and value objects
+presented to the
+.B foreach
+function look exactly as they do in the server's map \(em if they
+were not
+.SM NEWLINE\s0-terminated
+or
+null-terminated
+in the map, they will not be here either.
+.IP
+The
+.I indata
+parameter is the contents of the
+.B incallback->data
+element passed to
+.BR yp_all(\|) .
+The
+.B data
+element of the callback structure may be used to share
+state information between the
+.B foreach
+function and the mainline code.
+Its use is optional,
+and no part of the
+.SM NIS
+client package inspects its contents \(em
+cast it to something useful, or ignore it as you see fit.
+.IP
+The
+.B foreach
+function is a Boolean.
+It should return zero to
+indicate that it wants to be called again for
+further received key-value pairs, or non-zero to stop
+the flow of key-value pairs.  If
+.B foreach
+returns a non-zero value, it is not called again; the functional
+value of
+.B yp_all(\|)
+is then 0.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+yp_order(indomain, inmap, outorder);
+char *indomain;
+char *inmap;
+int *outorder;
+.fi
+.ft R
+.IP
+.B yp_order(\|)
+returns the order number for a map.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+yp_master(indomain, inmap, outname);
+char *indomain;
+char *inmap;
+char **outname;
+.fi
+.ft R
+.IP
+.B yp_master(\|)
+returns the machine name of the master
+.SM NIS
+server for a map.
+.LP
+.ft B
+.nf
+.sp .5
+char *yperr_string(incode)
+int incode;
+.fi
+.ft R
+.IP
+.B yperr_string(\|)
+returns a pointer to an error message string that is
+null-terminated
+but contains no period or
+.SM NEWLINE\s0.
+.LP
+.ft B
+.nf
+.sp .5
+ypprot_err (incode)
+unsigned int incode;
+.fi
+.ft R
+.IP
+.B ypprot_err(\|)
+takes a
+.SM NIS
+protocol error code as input, and returns a ypclnt layer error
+code, which may be used in turn as an input to
+.BR yperr_string(\|) .
+.SH FILES
+.PD 0
+.TP 20
+.B <rpcsvc/ypclnt.h>
+.TP
+.B <rpcsvc/yp_prot.h>
+.TP
+.B /usr/lib/libc.a
+.PD
+.SH "SEE ALSO"
+.BR malloc (3V),
+.BR ypupdate (3N),
+.BR ypfiles (5),
+.BR ypserv (8)
+.SH DIAGNOSTICS
+.LP
+All integer functions return 0 if the
+requested operation is successful,
+or one of the following errors if the operation fails.
+.RS
+.TP 8
+.B #define \s-1YPERR_BADARGS\s0
+.B "1	/* args to function are bad */"
+.TP
+.B #define \s-1YPERR_RPC\s0
+.B "2	/* RPC failure - domain has been unbound */"
+.TP
+.B #define \s-1YPERR_DOMAIN\s0
+.B "3	/* can't bind to server on this domain */"
+.TP
+.B #define \s-1YPERR_MAP\s0
+.B "4	/* no such map in server's domain */"
+.TP
+.B #define \s-1YPERR_KEY\s0
+.B "5	/* no such key in map */"
+.TP
+.B #define \s-1YPERR_YPERR\s0
+.B "6	/* internal yp server or client error */"
+.TP
+.B #define \s-1YPERR_RESRC\s0
+.B "7	/* resource allocation failure */"
+.TP
+.B #define \s-1YPERR_NOMORE\s0
+.B "8	/* no more records in map database */"
+.TP
+.B #define \s-1YPERR_PMAP\s0
+.B "9	/* can't communicate with portmapper */"
+.TP
+.B #define \s-1YPERR_YPBIND\s0
+.B "10	/* can't communicate with ypbind */"
+.TP
+.B #define \s-1YPERR_YPSERV\s0
+.B "11	/* can't communicate with ypserv */"
+.TP
+.B #define \s-1YPERR_NODOM\s0
+.B "12	/* local domain name not set */"
+.TP
+.B #define	\s-1YPERR_BADDB\s0fR
+.B "13	/* yp database is bad */"
+.TP
+.B #define	\s-1YPERR_VERS\s0fR
+.B "14	/* yp version mismatch */"
+.TP
+.B #define	\s-1YPERR_ACCESS\s0
+.B "15	/* access violation */"
+.TP
+.B #define	\s-1YPERR_BUSY\s0
+.B "16	/* database busy */"
+.RE
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

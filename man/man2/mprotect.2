@@ -1,0 +1,81 @@
+.\" @(#)mprotect.2 1.1 92/07/30 SMI;
+.TH MPROTECT 2 "21 January 1990"
+.SH NAME
+mprotect \- set protection of memory mapping
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/mman.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+mprotect(addr, len, prot)
+caddr_t addr;
+int len, prot;
+.ft
+.fi
+.IX  mprotect()  ""  \fLmprotect()\fP
+.IX  "memory management"  mprotect()  ""  \fLmprotect()\fP
+.IX  "change mapping protections \(em \fLmprotect()\fP"
+.SH DESCRIPTION
+.LP
+.B mprotect(\|)
+changes the access protections on the mappings specified
+by
+the range
+[\fIaddr, addr + len\fP\^)
+to be that specified by
+.IR prot .
+Legitimate values for
+.I prot
+are the same as those permitted for
+.BR mmap (2).
+.SH RETURN VALUES
+.LP
+.B mprotect(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+.I prot
+specifies a protection which violates the access permission
+the process has to the underlying memory object.
+.TP
+.SM EINVAL
+.I addr
+is not a multiple of the page size as returned
+by
+.BR getpagesize (2).
+.TP
+.SM ENOMEM
+Addresses in the range
+[\fIaddr, addr + len\fP)
+are invalid for the address space of a process,
+or specify one or more pages which are not mapped.
+.LP
+When
+.B mprotect(\|)
+fails for reasons other than
+.SM EINVAL\s0\fR,
+the protections on some of the pages in the range
+[\fIaddr, addr + len\fP)
+will have been changed.  If the error occurs
+on some page at address
+.IR addr2 ,
+then the protections of
+all whole pages in the range
+[\fIaddr, addr2\fP\^)
+have been modified.
+.SH SEE ALSO
+.BR getpagesize (2),
+.BR mmap (2)

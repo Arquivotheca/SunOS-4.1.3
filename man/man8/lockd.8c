@@ -1,0 +1,77 @@
+.\" @(#)lockd.8c 1.1 92/07/30 SMI;
+.TH LOCKD 8C "9 September 1987"
+.SH NAME
+lockd, rpc.lockd \- network lock daemon
+.SH SYNOPSIS
+.B /usr/etc/rpc.lockd
+[
+.B \-g
+.I graceperiod
+] [
+.B \-t
+.I timeout
+]
+.SH DESCRIPTION
+.IX  "lockd command"  ""  "\fLlockd\fP \(em network lock daemon"
+.IX  servers lockd  ""  "\fLlockd\fP \(em network lock daemon"
+.LP
+.B lockd
+processes lock requests that are either
+sent locally by the kernel or remotely by another lock daemon.
+.B lockd
+forwards lock requests for remote data to the server site's
+lock daemon through the
+.BR rpc (3N)
+.BR xdr (3N)
+in 
+.BR lockd (8C)
+package.
+.B lockd
+then requests the status monitor daemon,
+.BR statd (8C),
+for monitor service.  The reply to the lock request will not be sent
+to the kernel until
+the status daemon and the server site's
+lock daemon have replied.
+.LP
+If either the
+status monitor or server site's lock daemon
+is unavailable, the reply to a lock request for remote data
+is delayed until all daemons become available.
+.LP
+When a server recovers,
+it waits for a grace period for all client site
+lock daemons to submit reclaim requests.
+Client site
+lock daemons,
+on the other hand,
+are notified by the status daemon
+of the server recovery and promptly resubmit previously
+granted lock requests.
+If
+.B lockd
+fails to secure a previously granted lock at the server site,
+it sends
+.SM SIGLOST
+to a process.
+.SH OPTIONS
+.TP 20
+.BI \-t " timeout"
+Use
+.I timeout
+(seconds)
+as the interval instead of the default value
+(15 seconds)
+to retransmit lock request to the remote server.
+.TP
+.BI \-g " graceperiod"
+Use
+.I graceperiod
+.RB ( seconds )
+as the grace period
+duration instead of the default value (45 seconds).
+.SH "SEE ALSO"
+.BR fcntl (2V),
+.BR lockf (3),
+.BR signal (3V),
+.BR statd (8C)

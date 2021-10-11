@@ -1,0 +1,88 @@
+.\" @(#)hostrfs.8 1.1 92/07/30 SMI;
+.TH HOSTRFS 8 "19 September 1988"
+.SH NAME
+hostrfs \- convert IP addresses to RFS format
+.SH SYNOPSIS
+.B hostrfs
+.I hostname
+[
+.I portnum
+]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "hostrfs command"  ""  "\fLhostrfs\fP \(em IP to RFS address conversion"
+.LP
+.B hostrfs
+converts
+.SM IP
+addresses to a format suitable for use by Remote File Sharing
+(\s-1RFS\s0).
+It takes a hostname and an optional portnumber and produces an
+address in the following format:
+.IP
+.ft B
+\ex\<\s-1AF-INET\s0><\fIportnum\fP><\fI\s-1IP\s0-address\fP>0000000000000000
+.ft R
+.LP
+Each field given above is a hex
+.SM ASCII
+representation.
+The 
+.SB AF_INET 
+field is the address family which always has the value
+.BR 0002 .
+.I portnum
+is the two-byte
+.SM TCP
+port number; if not specified on the command line
+it defaults to
+.BR 1450 .
+.I \s-1IP\s0-address 
+is the
+.SM IP
+address of the 
+.I hostname
+given on the command line followed by 16 trailing zeroes.
+.PP
+The output of this command may be directly used as the
+network address field for the address of an
+.SM RFS
+name server in the
+.BR rfmaster (5)
+file.
+It may also be used as input to the 
+.B nlsadmin (8)
+command to initialize the addresses on which the 
+.B listener 
+program listens for service requests.
+.SH EXAMPLES
+.LP
+The output of
+.IP
+.B example%  hostrfs wopr  
+.LP
+is
+.IP
+.BR \e00021450819035090000000000000000
+.LP
+The output of the command can be used to initialize the network address 
+on which the
+.SM RFS
+.B listener
+program listens for remote service requests, for example:
+.IP
+.ft B
+example# nlsadmin \-l `hostrfs wopr` tcp
+.ft R
+.SH SEE ALSO
+.BR rfmaster (5),
+.BR nlsadmin (8)
+.LP
+.TX ADMIN

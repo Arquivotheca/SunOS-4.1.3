@@ -1,0 +1,143 @@
+.\" @(#)truncate.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH TRUNCATE 2 "21 January 1990"
+.SH NAME
+truncate, ftruncate \- set a file to a specified length
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int truncate(path, length)
+char *path;
+off_t length;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int ftruncate(fd, length)
+int fd;
+off_t length;
+.ft
+.fi
+.SH DESCRIPTION
+.LP
+.IX  truncate()  ""  "\fLtruncate()\fP \(em set file to specified length"
+.IX  "file system"  truncate()  ""  \fLtruncate()\fP
+.IX  ftruncate()  ""  \fLftruncate()\fP
+.IX  "file system"  ftruncate()  ""  \fLftruncate()\fP
+.B truncate(\|)
+causes the file referred to by
+.I path
+(or for
+.B ftruncate(\|)
+the object referred to by
+.IR fd )
+to have a size equal to
+.I length
+bytes.  If the file was previously longer than
+.IR length ,
+the extra
+bytes are removed from the file.  If it was shorter, bytes between the old
+and new lengths are read as zeroes.
+With
+.BR ftruncate(\|) ,
+the file must be open for writing.
+.SH RETURN VALUES
+.LP
+.B truncate(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B truncate(\|)
+may set
+.B errno
+to:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.IP
+Write permission is denied for the file referred to by
+.IR path .
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM EISDIR
+The file referred to by
+.I path
+is a directory.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM EROFS
+The file referred to by
+.I path
+resides on a read-only file system.
+.LP
+.B ftruncate(\|)
+may set
+.B errno
+to:
+.TP 20
+.SM EINVAL
+.I fd
+is not a valid descriptor of a file open for writing.
+.IP
+.I fd
+refers to a socket, not to a file.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH "SEE ALSO"
+.BR open (2V)
+.SH BUGS
+.LP
+These calls should be generalized to allow ranges of bytes in a file to be discarded.

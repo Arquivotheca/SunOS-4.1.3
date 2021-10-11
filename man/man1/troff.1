@@ -1,0 +1,258 @@
+.\" @(#)troff.1 1.1 92/07/30 SMI;
+.TH TROFF 1 "21 December 1987"
+.SH NAME
+troff \- typeset or format documents
+.SH SYNOPSIS
+.B troff
+[
+.B \-abfiqtwz
+] [
+.BI \-m package
+] [
+.BI \-n N
+] [
+.BI \-o pagelist
+]
+.if n .ti +0.5i
+[
+.BI \-p N
+] [
+.BI \-r aN
+]
+.if t .ti +0.5i 
+[
+.BI \-s N
+] [
+.I filenames
+] .\|.\|.
+.IX  "troff command"  ""  "\fLtroff\fP \(em typeset documents"
+.IX  "typeset documents"  ""  "typeset documents \(em \fLtroff\fP"
+.IX  "document production"  troff  ""  "\fLtroff\fP \(em typeset documents"
+.SH AVAILABILITY
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.LP
+.B troff
+formats text in the 
+.IR filename s.
+For historical reasons, output goes to a CAT/4 phototypesetter attached to
+.BR /dev/cat ,
+but nobody uses a CAT/4 anymore.
+Ordinarily, postprocessing software converts output to a form
+that can be printed on newer typesetters or laser printers.
+Default font width tables correspond to Times Roman on PostScript\(tm printers.
+See also the
+.BR nroff (1)
+manual page, which describes a formatter for typewriter-like devices.
+.LP
+Input to 
+.B troff
+is expected to consist of text interspersed with formatting
+requests and macros.  If no
+.I filename
+argument is present,
+.B troff
+reads standard input.  A
+.RB ` \- '
+as a
+.IR filename
+argument indicates that standard input is to be read at that point in
+the list of input files;
+.B troff
+reads the files named ahead of the
+.RB ` \- '
+in the arguments list, then text from the standard input, and then text
+from the files named after the
+.RB ` \- '.
+.LP
+If the file
+.B /etc/adm/tracct
+is writable,
+.B troff
+keeps printer accounting records there.
+The integrity of that file may be secured by making
+.B troff
+a \*(lqset-user-ID\*(rq program (see 
+.BR chmod (1V)
+for details on the
+.B setuid
+permission bit.)
+.SH OPTIONS
+.LP
+Options may appear in any order, but they all must appear before the
+first
+.IR filename .
+.RS
+.TP
+.B \-a
+Send a printable
+.SM ASCII
+approximation of the results to the standard output.
+.TP
+.B \-i
+Read the standard input after the input files are exhausted.
+.TP
+.B \-q
+Disable echoing during a
+.B .rd
+request.
+.TP
+.B \-t
+Direct output to the standard output instead of the printer.
+Since this output is non-\c
+.SM ASCII
+it is generally redirected to
+.BR "lpr \-t" .
+.TP
+.BI \-m package
+Prepend the macro file
+.BI /usr/lib/tmac/tmac. package
+to the input
+.IR filename s.
+(Note that most references to macro packages include 
+the leading \*(lq\fBm\fP\*(rq as part of the name; the
+.BR man (7)
+macro package resides in
+.BR /usr/lib/tmac/tmac.an ).
+.TP
+.BI \-n N
+Number first generated page
+.IR N .
+.TP
+.BI \-o list
+Print only pages whose page numbers appear in the comma-separated
+.I list
+of numbers and ranges.  A range
+.IB N \- M
+means pages
+.I N
+through
+.IR M ;
+an initial
+.BI \- N
+means from the beginning to page
+.IR N ;
+and a final
+.IB N \-
+means from
+.I N
+to the end.
+.TP
+.BI \-r aN
+Set register
+.I a
+(one-character) to
+.IR N .
+.RE
+.LP
+Some options of
+.B troff
+only apply if you have a CAT/4 typesetter attached to your system.
+These options remain present for backward compatibility.
+However, this version of
+.B troff
+does not support this typesetter by default.
+.RS
+.TP
+.B \-b
+Report whether the typesetter is busy or available.
+No text processing is done.
+.TP
+.B \-f
+Refrain from feeding paper out and stopping
+at the end of the print job on the typesetter.
+.TP
+.B \-w
+Wait until typesetter is available, if currently busy.
+.TP
+.B \-z
+Suppress all formatted output.  Display only terminal messages
+produced by
+.B .tm
+requests and diagnostics.
+.br
+.ne 7
+.TP
+.BR \-p N
+Print all characters in point size
+.I  N
+while retaining all prescribed spacings and motions,
+to reduce elapsed time on the typesetter.
+.TP
+.BI \-s N
+Stop the phototypesetter every
+.I N
+pages.
+.B troff
+produces a trailer so you can change cassettes; resume by
+pressing the typesetter's start button.
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp/ta*
+temporary file
+.TP
+.B /usr/lib/tmac/tmac.*
+standard macro files
+.TP
+.B /usr/lib/term/*
+terminal driving tables for
+.B nroff
+.TP
+.B /usr/lib/font/*
+font width tables for alternate mounted
+.B troff
+fonts
+.TP
+.B /dev/cat
+phototypesetter
+.TP
+.B /etc/adm/tracct
+accounting statistics for
+.B /dev/cat
+.PD
+.SH "SEE ALSO"
+.LP
+.BR checknr (1), 
+.BR chmod (1V),
+.BR col (1V),
+.BR eqn (1),
+.BR lpr (1),
+.BR nroff (1),
+.BR tbl (1),
+.BR printcap (5),
+.BR man (7),
+.BR me (7),
+.BR ms (7),
+.BR lpd (8)
+.LP
+.TX DOCS
+.br
+.TX TROFF
+.SH DIAGNOSTICS
+.TP
+.B "No /dev/cat: try \-t or \-a"
+The CAT/4 typesetter is not accessible from your machine.
+Combine the
+.B \-t
+option of
+.B troff
+with the
+.B \-t
+option of
+.BR lpr (1)
+to get output on a laser printer or typesetter.
+For information on how to inform
+.BR lpd (8)
+of a PostScript printer attached to a remote host, see
+.BR printcap (5).
+.SH NOTES
+.B troff
+is not 8-bit clean because
+it is by design based on 7-bit
+.SM ASCII.

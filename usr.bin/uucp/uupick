@@ -1,0 +1,171 @@
+#!/bin/sh
+#
+#ident  "%Z%%M% %I% %E%"	/* from SVR3.2 uucp:uupick 2.6 */
+#
+# sys: system; user: login name;  cdir: current directory;
+# tdir: temporary directory; pu: PUBDIR/receive/user;
+cdir=`pwd`
+dir=""
+abs=""
+sys=""
+var=""
+varto=""
+varfrom=""
+trap "exit 1" 1 2 13 15
+# get options
+if test $# -gt 2
+then echo "Usage: $0 [-s sysname]"; exit 1
+fi
+while test $# -ge 1
+do
+	case $1 in
+	 -s*) 	if [ $# -eq 1 ]
+		then
+			sys=`expr $1 : '-s\(.*\)'`
+		else
+			sys=$2
+			shift
+		fi
+		if [ -z "$sys" ]
+		then
+	 		echo "Usage: $0 [-s sysname]"; exit 1
+		fi
+		;;
+	 *)    echo "Usage: $0 [-s sysname]"; exit 1
+	esac
+	shift
+done
+user=`id | sed -n "/^uid=[0-9]*(\([^)]*\)).*/s//\1/p"`
+
+if test -z "$user"
+then echo "User id required!"; exit 1
+fi
+
+pu=/usr/spool/uucppublic/receive/$user
+if test -d $pu -a -s $pu
+then
+for i in `ls $pu`
+do
+	if test $sys
+	then	if test $sys != $i;  then continue;  fi
+	fi
+	if test -d $pu/$i -a -s $pu/$i
+	then
+		cd $pu/$i
+		for j in `ls -a`
+		do
+			if test $j = "." -o $j = ".."; then continue; fi
+			if test -d $j
+			then echo "from system $i: directory $j \c"
+			else echo "from system $i: file $j \c"
+			fi
+			while true
+			do
+			  echo '? \c'
+			  if read cmd dir
+			  then
+				trap ": ;;" 1
+				case $cmd in
+				 d)	rm -fr $j ; break ;;
+				 "")	break ;;
+#options m, a: if dir path
+#begins with a slash, use full
+#path for destination;otherwise,
+#use path relative to current dir;
+#default destination is current dir
+			         m)	eval dir="$dir"
+					if test $dir
+				 	then abs=`expr "$dir" : '/.*'`
+						if test $abs != 0
+						then tdir=$dir
+ 						else tdir=$cdir/$dir
+						fi
+					else
+						tdir=$cdir
+					fi
+					if [ ! -d $tdir -o ! -w $tdir ]; then
+					    echo "directory '$tdir' doesn't exist or isn't writable"
+					    continue
+					fi
+					find $j -depth -print >/tmp/$$uupick
+					cpio -pdmu $tdir </tmp/$$uupick 
+					for k in `cat /tmp/$$uupick`
+					do
+					    varto="$tdir/$k"
+					    varfrom="$pu/$i/$k"
+					    if test -f $varfrom; then
+						if cmp $varfrom $varto ; then
+					    	    rm -f $varfrom
+						else
+						    echo "file '$varfrom' not removed"
+						fi
+					    else
+						rmdir $varfrom 2>/dev/null
+					    fi
+					done
+					rm -f /tmp/$$uupick
+					break;; 
+#As files are transferred,
+#put their names in /tmp/$$uupick.
+#Only remove those named files
+#from...receive/..dir if cmp
+#verifies transfer took place.
+#then find & remove directories
+#(separate find is necessary because
+#cpio -v doesn't print dir names)
+				 a)	eval dir="$dir"
+					if test $dir
+					then abs=`expr "$dir" : '/.*'`
+						if test $abs != 0
+						then tdir=$dir
+						else tdir=$cdir/$dir
+						fi
+					else
+						tdir=$cdir
+					fi
+					if [ ! -d $tdir -o ! -w $tdir ]; then
+					    echo "directory '$tdir' doesn't exist or isn't writable"
+					    continue
+					fi
+					find . -depth -print | \
+					grep -v '^\.$' >/tmp/$$uupick
+					cpio -pdmu $tdir </tmp/$$uupick
+					for k in `cat /tmp/$$uupick`
+					do
+					    varto="$tdir/$k"
+					    varfrom="$pu/$i/$k"
+					    if test -f $varfrom; then
+						if cmp $varfrom $varto ; then
+						    rm -f $varfrom
+						else
+						    echo "file '$varfrom' not removed"
+						fi
+					    else
+						rmdir $varfrom 2>/dev/null
+					    fi
+					done
+					rm -f /tmp/$$uupick
+					break 2 ;;
+				 p)	if test -d $j
+					then find $j -print
+					elif test -s $j 
+				        then cat $j
+					fi ;;
+				 q)	break 3 ;;
+				 !*)	ex=`expr "$cmd $dir" : '!\(.*\)'`
+					tdir=`pwd`
+					cd $cdir
+					sh -c "$ex"
+					cd $tdir
+					echo '!' ;;
+				 *)	echo "usage: [d][m dir][a dir][p][q]\c"
+					echo "[cntl-d][!cmd][*][new-line]" ;;
+				esac
+				trap "exit 1" 1
+			  else	break 3
+			  fi
+			done
+		done
+	fi
+done
+fi

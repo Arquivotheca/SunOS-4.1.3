@@ -1,0 +1,177 @@
+.\" @(#)setuid.3v 1.1 92/07/30 SMI; from UCB 4.2
+.\" TODO
+.\" Does this really need to be a 3v page?  The only s5 difference seems to
+.\" be the checking of the saved user (group) ID, and since _POSIX_SAVED_IDS
+.\" is always true...
+.TH SETUID 3V "21 January 1990"
+.SH NAME
+setuid, seteuid, setruid, setgid, setegid, setrgid \- set user and group ID
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setuid(uid)
+uid_t uid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int seteuid(euid)
+uid_t euid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setruid(ruid)
+uid_t ruid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setgid(gid)
+gid_t gid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setegid(egid)
+gid_t egid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setrgid(rgid)
+gid_t rgid;
+.ft
+.fi
+.IX  "setuid()"  ""  "\fLsetuid()\fP \(em set user ID"
+.IX  "seteuid()"  ""  "\fLseteuid()\fP \(em set effective user ID"
+.IX  "setruid()"  ""  "\fLsetruid()\fP \(em set real user ID"
+.IX  "setgid()"  ""  "\fLsetgid()\fP \(em set group ID"
+.IX  "setegid()"  ""  "\fLsetegid()\fP \(em set effective group ID"
+.IX  "setrgid()"  ""  "\fLsetrgid()\fP \(em set real group ID"
+.IX  "real user ID, set \(em \fLsetruid()\fR"
+.IX  "effective user ID, set \(em \fLseteuid()\fR"
+.IX  "both real and effective user ID, set \(em \fLsetuid()\fR"
+.IX  "real group ID, set \(em \fLsetrgid()\fR"
+.IX  "effective group ID, set \(em \fLsetegid()\fR"
+.IX  "both real and effective group ID, set \(em \fLsetgid()\fR"
+.SH DESCRIPTION
+.LP
+.B setuid(\|)
+.RB ( setgid(\|) )
+sets both the real and effective user
+.SM ID
+(group
+.SM ID\s0)
+of the current process as specified by
+.I uid
+(\fIgid\fP)
+(see
+.SM NOTES\s0).
+.LP
+.B seteuid(\|)
+.RB ( setegid(\|) )
+sets the effective user
+.SM ID
+(group
+.SM ID\s0)
+of the current process.
+.LP
+.B setruid(\|)
+.RB ( setrgid(\|) )
+sets the real user
+.SM ID
+(group
+.SM ID\s0)
+of the current process.
+.LP
+These calls are only permitted to the super-user
+or if the argument is the real or effective user (group)
+.SM ID
+of the calling process.
+.SH SYSTEM V DESCRIPTION
+.LP
+If the effective user
+.SM ID
+of the calling process is not super-user,
+but if its real user (group)
+.SM ID
+is equal to
+.I uid
+.RI ( gid ),
+or if the saved set-user (group)
+.SM ID
+from
+.BR execve (2V)
+is equal to
+.I uid
+.RI ( gid ),
+then the effective user (group)
+.SM ID
+is set to
+.I uid
+.RI ( gid ).
+.SH RETURN VALUES
+.LP
+These functions
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error
+as for
+.BR setreuid (2)
+(\fBsetregid\fR(2)).
+.SH ERRORS
+.TP 15
+.SM EINVAL
+The value of
+.IR uid " (" gid )
+is invalid
+(less than 0 or greater than 65535).
+.TP
+.SM EPERM
+The process does not have super-user privileges and
+.IR uid " (" gid )
+does not matches neither the real user (group)
+.SM ID
+of the process nor the saved
+set-user-\s-1ID\s0
+(set-group-\s-1ID\s0)
+of the process.
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR getgid (2V),
+.BR getuid (2V),
+.BR setregid (2),
+.BR setreuid (2)
+.SH NOTES
+.LP
+For
+.B setuid(\|)
+to behave as described above,
+.SM {_POSIX_SAVED_IDS}
+must be in effect (see
+.BR sysconf (2V)).
+.SM {_POSIX_SAVED_IDS}
+is always in effect
+on SunOS systems, but for portability, applications should call
+.B sysconf(\|)
+to determine whether
+.SM {_POSIX_SAVED_IDS}
+is in effect for the current system.

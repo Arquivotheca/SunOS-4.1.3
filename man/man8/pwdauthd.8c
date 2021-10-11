@@ -1,0 +1,125 @@
+.\" @(#)pwdauthd.8c 1.1 92/07/30 SMI
+.TH PWDAUTHD 8C "21 December 1987"
+.SH NAME
+pwdauthd \- server for authenticating passwords
+.SH SYNOPSIS
+.B /usr/etc/rpc.pwdauthd
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Security
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "pwdauthd daemon" "" "\fLpwdauthd\fP daemon"
+.LP
+.B pwdauthd
+is a server that determines authentication for users and groups.
+It handles authentication requests from
+.BR pwdauth (3)
+and
+.BR grpauth(\|) .
+Communication to and from
+.B pwdauthd
+is by means of
+.SM RPC
+calls.  The server is passed a
+.I filename
+and a
+.IR password .
+It returns an integer value that specifies whether the
+.I password
+is valid.  The possible return values are
+.SB PWA_VALID
+if the name is valid,
+.SB PWA_INVALID
+if the name is invalid, and
+.SB PWA_UNKNOWN
+if validity cannot be determined
+because no adjunct files are present.
+.LP
+If
+.B pwdauthd
+is serving
+.IR pwdauth ,
+it determines whether the
+.B passwd.adjunct
+file exists.  If not, it returns
+\fB\s-1PWA_UNKNOWN\s0\fR.
+In this case,
+.I pwdauth
+knows to check the
+.B /etc/passwd
+file.  Otherwise, the server calls
+.B getpwanam(\|)
+(see
+.BR getpwaent (3))
+to get the entry for
+.I filename
+in either the local or the 
+Network Information Service
+(\s-1NIS\s0)
+file for
+.BR passwd.adjunct .
+If the encrypted password guess matches
+the encrypted password from the file,
+.B pwdauthd
+returns
+.BR \s-1PWA_VALID\s0 .
+If the passwords do not match, it returns
+.BR \s-1PWA_INVALID\s0 .
+.LP
+If
+.B pwdauthd
+is serving
+.BR grpauth(\|) ,
+it determines whether the
+.B group.adjunct
+file exists.  If not, it returns
+.BR \s-1PWA_UNKNOWN\s0 .
+In this case,
+.B grpauth(\|)
+knows to check the
+.B /etc/group
+file.
+Otherwise, the server calls
+.B getgranam(\|)
+(see
+.BR getgraent (3))
+to get the entry for
+.I filename
+in either the local or the 
+.SM NIS
+file for
+.BR group.adjunct .
+If the encrypted password guess matches
+the encrypted password from the file,
+.B pwdauthd
+returns
+.BR \s-1PWA_VALID\s0 .
+If the passwords do not match, it returns
+.BR \s-1PWA_INVALID\s0 .
+.\" .SH FILES
+.\" .PD 0
+.\" .TP 20
+.\" .B /etc/security/passwd.adjunct
+.\" .TP
+.\" .BI /var/yp/ domainname /passwd.adjunct.byname
+.\" .TP
+.\" .B /etc/security/group.adjunct
+.\" .TP
+.\" .BI /var/yp/ domainname /group.adjunct.byname
+.\" .PD
+.SH "SEE ALSO"
+.BR getgraent (3),
+.BR getpwaent (3),
+.BR pwdauth (3)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

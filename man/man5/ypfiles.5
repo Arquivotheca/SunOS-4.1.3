@@ -1,0 +1,189 @@
+.\" @(#)ypfiles.5 1.1 92/07/30 SMI
+.TH YPFILES 5 "14 December 1987"
+.SH NAME
+ypfiles \- NIS database and directory structure
+.SH DESCRIPTION
+.IX  "ypfiles file"  ""  "\fLypfiles\fP \(em NIS database and directory"
+.LP
+The 
+Network Information Service
+(\s-1NIS\s0)
+uses a distributed,
+replicated database of
+.B dbm
+files contained in the
+.B /var/yp
+directory hierarchy on each
+.SM NIS
+server.  A
+.B dbm
+database consists of two files, created by calls to the
+.BR ndbm (3)
+library package.  One has the filename extension
+.B .pag
+and the other has the filename extension
+.BR .dir .
+For instance, the database named
+.BR hosts.byname ,
+is implemented by the pair of files
+.B hosts.byname.pag
+and
+.BR hosts.byname.dir .
+.LP
+A
+.B dbm
+database served by the
+.SM NIS
+service is called an
+.SM NIS
+.IR map .
+An
+.SM NIS
+.I domain
+is a subdirectory of
+.B /var/yp
+containing a set of
+.SM NIS
+maps.  Any number of
+.SM NIS
+domains can exist.  Each may contain any number of
+maps.
+.LP
+No maps are required by the
+.SM NIS
+lookup service itself, although they may
+be required for the normal operation of
+other parts of the system.  There is
+no list of maps which the
+.SM NIS
+service serves \(em if the map exists in a given domain, and a
+client asks about it, the
+.SM NIS
+service will serve it.
+For a map to be
+accessible consistently, it must exist on all
+.SM NIS
+servers that serve the domain.  To provide data
+consistency between the replicated maps,
+an  entry to run
+.B ypxfr
+periodically should be made in the super-user's
+.B crontab
+file on each server.  More information on this topic is in
+.BR ypxfr (8).
+.LP
+The
+.SM NIS
+maps should contain two distinguished
+key-value pairs.  The first is the key
+.BR \s-1YP_LAST_MODIFIED\s0 ,
+having as a value a ten-character
+.SM ASCII
+order number.  The order number should be the
+system time in seconds when the map was built.
+The second key is
+.BR \s-1YP_MASTER_NAME\s0 ,
+with the name of the
+.SM NIS
+master server as a value.
+.BR makedbm (8)
+generates both key-value pairs automatically.
+A map that does not contain both
+key-value pairs can be served by the
+.SM NIS
+service,
+but the
+.B ypserv
+process will not be able to return values for
+\*(lqGet order number\*(rq or \*(lqGet master name\*(rq requests.
+See
+.BR ypserv (8).
+In addition, values of these two keys are used by
+.B ypxfr
+when it transfers a map from a master
+.SM NIS
+server to a slave.  If
+.B ypxfr
+cannot figure out where to get the map,
+or if it is unable to
+determine whether the local copy is more
+recent than the copy at the master,
+you must set extra command line
+switches when you run it.
+.LP
+The
+.SM NIS
+maps must be generated and modified
+only at the master server.  They
+are copied to the slaves using
+.BR ypxfr (8)
+to avoid potential byte-ordering problems among the
+.SM NIS
+servers running on machines with different
+architectures, and to minimize the amount of disk
+space required for the dbm files.  The
+.SM NIS
+database can be initially
+set up for both masters and slaves by using
+.BR ypinit (8).
+.LP
+After the server databases are set up, it
+is probable that the contents of
+some maps will change.  In general, some
+.SM ASCII
+source version of the
+database exists on the master, and it
+is changed with a standard text
+editor.  The update is incorporated into the
+.SM NIS
+map and is propagated from
+the master to the slaves by running
+.BR /var/yp/Makefile .
+All Sun-supplied maps have entries in
+.BR /var/yp/Makefile ;
+if you add an
+.SM NIS
+map, edit this file to support the new map.
+The makefile uses
+.BR makedbm (8)
+to generate the
+.SM NIS
+map on the master, and
+.BR yppush (8)
+to propagate the changed map to the slaves.
+.B yppush
+is a client of the map
+.BR ypservers ,
+which lists all the
+.SM NIS
+servers.
+For more information on this topic, see
+.BR yppush (8).
+.SH FILES
+.PD 0
+.TP 20
+.B /var/yp
+.TP
+.B /var/yp/Makefile
+.PD
+.SH "SEE ALSO"
+.BR dbm (3X),
+.BR makedbm (8),
+.BR rpcinfo (8C),
+.BR ypinit (8),
+.BR ypmake (8),
+.BR yppoll (8),
+.BR yppush (8),
+.BR ypserv (8),
+.BR ypxfr (8)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

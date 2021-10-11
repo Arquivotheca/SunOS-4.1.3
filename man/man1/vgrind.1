@@ -1,0 +1,341 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)vgrind.1 1.1 92/07/30 SMI; from UCB 6.2 5/5/86
+.\"
+.TH VGRIND 1 "8 June 1988"
+.SH NAME
+vgrind \- grind nice program listings
+.SH SYNOPSIS
+.B vgrind
+[
+.B \-fntwWx 
+]
+[
+.BI \-d "\ defs-file"
+]
+[
+.BI \-h "\ header"
+]
+[
+.BI \-l language
+]
+[
+.BI \-s n
+]
+[
+.BI \-o pagelist
+]
+[
+.BI \-P printer
+]
+.br
+.if t .ti +.5i
+[
+.BI \-T output-device
+]
+.IR filename .\|.\|.
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "code formatter" "\fLvgrind\fR \(em \fLtroff\fR preprocessor for listings"
+.IX  "vgrind command"  ""  "\fLvgrind\fP \(em make formatted listings"
+.IX  "programming languages"  vgrind  ""  "\fLvgrind\fP \(em make formatted listings"
+.IX  "C programming language"  vgrind  ""  "\fLvgrind\fP \(em make formatted listings"
+.IX  "pretty printer"  vgrind  ""  "\fLvgrind\fP \(em make formatted listings"
+.LP
+.B vgrind
+formats the program sources named by the
+.I filename
+arguments in a nice style using
+.BR troff (1).
+Comments are placed in italics, keywords in bold face,
+and as each function is encountered
+its name is listed on the page margin.
+.LP
+.B vgrind
+runs in two basic modes, filter mode or regular mode.  In filter mode
+.B vgrind
+acts as a filter in a manner similar to
+.BR tbl (1).
+The standard input is passed directly to the standard output except for
+lines bracketed by the
+.BR troff -like
+macros:
+.RS
+.TP
+.B \&.vS
+starts processing
+.TP
+.B \&.vE
+ends processing
+.RE
+.LP
+These lines are formatted as described above.
+The output from this filter can be passed to
+.B troff
+for output. 
+There need be no particular ordering with
+.BR eqn (1)
+or
+.BR tbl .
+.LP
+In regular mode
+.B vgrind
+accepts input
+.IR filename s,
+processes them, and passes them to
+.B troff
+for output.
+If no
+.I filename
+is given, or if the
+.RB ` \- '
+argument is given,
+.B vgrind
+reads from the standard input (default if
+.B \-f
+is specified).
+.LP
+In both modes
+.B vgrind
+passes any lines beginning with a decimal point without conversion.
+.SH OPTIONS
+.LP
+Note: the syntax of options with arguments is important. 
+Some require a
+.SM SPACE
+between the option name and the argument,
+while those that do not have a
+.SM SPACE
+below will not tolerate one.
+.TP
+.B \-f
+Force filter mode.
+.TP
+.B \-n
+Do not make keywords boldface.
+.TP
+.B \-x
+Output the index file in a \*(lqpretty\*(rq format.  The index file itself
+is produced whenever
+.B vgrind
+is run with a file called
+.B index
+present in the current directory.
+The index of function definitions can then be run off by giving
+.B vgrind
+the
+.B \-x
+option and the file
+.B index
+as argument.
+.TP
+.B \-w
+Consider
+.SM TAB
+characters
+to be spaced four columns apart instead of the usual eight.
+.TP
+.BI \-d "\ defs-file"
+Specify an alternate language definitions file (default is
+.BR /usr/lib/vgrindefs ).
+.TP
+.BI \-h "\ header"
+Specify a header to appear in the center of every output page.
+.TP
+.BI \-l language
+Specify the language to use.
+Among the languages currently known are:
+Bourne shell
+.RB ( \-lsh ),
+C
+.RB ( \-lc ,
+the default), C shell
+.RB ( \-lcsh ),
+emacs
+.SM ML\s0isp,
+.RB ( \-lml ),
+.SM FORTRAN
+.RB ( \-lf),
+Icon
+.RB ( \-lI ),
+.SM ISP
+.RB ( \-i ),
+.SM LDL
+.RB ( \-l\s-1LDL\s0 ),
+Model
+.RB ( \-lm ),
+Pascal
+.RB ( \-lp ),
+and
+.SM RATFOR
+.RB ( \-lr ).
+.TP
+.BI \-s n
+Specify a point size to use on output (exactly
+the same as the argument of a
+.B troff
+.B .ps
+point size request).
+.LP
+.B vgrind
+passes the following options to the formatter specified by the
+.SB TROFF
+environment variable, see
+.SM ENVIRONMENT
+below.
+.TP
+.B \-t
+Similar to the same option in
+.BR troff ;
+that is, formatted text goes to the standard output.
+.TP
+.BI \-o pagelist
+Print only those pages whose page numbers appear in the comma-separated
+.I pagelist
+of numbers and ranges. 
+A range
+.I N\-M
+means pages
+.I N
+through
+.IR M ;
+an initial
+.I \-N
+means from the beginning to page
+.IR N ;
+and a final
+.I N\-
+means from
+.I N
+to the end.
+.TP
+.BI \-P printer
+Send output to the named
+.IR printer .
+.TP
+.BI \-T output-device
+Format output for the specified
+.IR output-device .
+.TP
+.B \-W
+Force output to the (wide) Versatec printer
+rather than the (narrow) Varian.
+.BR vtroff (1)
+only.
+.br
+.ne 5
+.SH ENVIRONMENT
+.LP
+In regular mode
+.B vgrind
+feeds its intermediate output to the text formatter
+given by the value of the
+.SB TROFF
+environment variable, or to
+.B troff
+if this variable is not defined in the environment.
+This mechanism allows for local variations in
+.BR troff 's
+name.
+.SH FILES
+.PD 0
+.TP 30
+.B index
+file where source for index is created
+.TP
+.B /usr/lib/vgrindefs
+language descriptions
+.TP
+.B /usr/lib/vfontedpr
+preprocessor
+.ne 2
+.TP
+.B /usr/share/lib/tmac/tmac.vgrind
+macro package
+.PD
+.SH "SEE ALSO"
+.\".BR ctags (1),
+.\".BR eqn (1),
+.\".BR tbl (1),
+.BR troff (1),
+.BR vtroff (1),
+.BR vgrindefs (5)
+.SH BUGS
+.LP
+.B vgrind
+assumes that a certain programming style is followed:
+.TP 10
+C
+Function names can be preceded on a line only by
+.SM SPACE\s0,
+.SM TAB\s0,
+or an asterisk.
+The parenthesized arguments must also be on the same line.
+.TP
+.SM FORTRAN
+Function names need to appear on the same line as the keywords
+.I function
+or
+.IR subroutine .
+.TP
+.SM ML\s0isp
+Function names should not appear on the same line
+as the preceding
+.IR defun .
+.TP
+Model
+Function names need to appear on the same line as the keywords
+.IR "is beginproc" .
+.TP
+Pascal
+Function names need to appear on the same line as the keywords
+.I function
+or
+.IR procedure .
+.LP
+If these conventions are not followed,
+the indexing and marginal function
+name comment mechanisms will fail.
+.LP
+More generally, arbitrary formatting styles
+for programs mostly look bad.
+The use of
+.SM SPACE
+characters to align source code
+fails miserably; if you plan to
+.B vgrind
+your program you should use
+.SM TAB
+characters.
+This is somewhat inevitable since the fonts
+.B vgrind
+uses are variable width.
+.LP
+The mechanism of
+.BR ctags (1)
+in recognizing functions should be used here.
+.LP
+The
+.B \-w
+option is a crock,
+but there is no other way to achieve the desired effect.
+.br
+.ne 5
+.LP
+The macros defined in
+.B tmac.vgrind
+do not coexist gracefully with those of other macro packages,
+making filter mode difficult to use effectively.
+.LP
+.B vgrind
+does not process certain special characters in
+.BR csh (1)
+scripts correctly.

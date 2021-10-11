@@ -1,0 +1,288 @@
+.\" @(#)soundtool.6 1.1 92/07/30 SMI;
+.TH SOUNDTOOL 6 "10 January 1990"
+.SH NAME
+soundtool \- audio play/record tool
+.SH SYNOPSIS
+.B soundtool
+.SH AVAILABILITY
+.LP
+This command is only available with the
+.I Demos
+installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "soundtool" "" "\fLsoundtool\fP \(em audio play/record tool" ""
+.LP
+.B soundtool
+is a SunView demonstration program that allows recording, playing, and
+simple editing of audio data.
+The display consists of six regions:
+a play/record control panel,
+a function control panel,
+an oscilloscope,
+a display control panel,
+a waveform display panel,
+and a pop-up audio status panel.
+.SS Play/Record Control Panel
+.TP
+.B Play/Stop
+Clicking this button plays the currently selected region of data.
+While data is playing this button becomes a
+.B Stop
+button.
+If audio output is busy when
+.B Play
+is started, this button displays
+.BR Waiting .
+When the device is available, the button switches to
+.B Stop
+and audio output begins.
+Clicking on the
+.B Waiting
+button resets the tool to the idle state.
+.TP
+.B Record/Stop
+Clicking this button starts the recording of data
+from the audio input port that is wired to the 8-pin mini-\s-1DIN\s0
+connector on the back of 
+.SM SPARC\s0station 1 systems.
+While recording is in progress, this button becomes a
+.B Stop
+button.
+If audio input is busy when
+.B Record
+is selected, an alert pops up and the tool resets to the idle state.
+A maximum of 5 minutes may be recorded at a time.
+.TP
+.B Pause
+Clicking this button while playing or recording suspends the current operation.
+The button becomes a
+.B Resume
+button that may be selected to continue the suspended operation.
+.TP
+.B Describe
+Clicking this button brings up the \*(lqAudio Status Panel\*(rq.
+If the panel was already visible, clicking this button removes it.
+.TP
+.B Quit
+Clicking this button exits
+.BR soundtool .
+.TP
+.B "Play Volume"
+This slider adjusts the playback volume.
+Volume levels between 0 and 100 may be selected, where 0 represents
+infinite attenuation and 100 is maximum gain.
+.TP
+.B "Record Volume"
+This slider adjusts the recording level in the range 0 to 100.
+.TP
+.B "Output To"
+This selector switches the audio output port between
+the built-in speaker and the external headphone jack.
+.TP
+.B Looping
+When
+.B Looping
+is disabled, the current data region (that is, the data between
+the two markers in the waveform display) is played once.
+If
+.B Looping
+is enabled, the selected data plays endlessly until the
+.B Stop
+button is pressed.
+.SS Function Control Panel
+.TP
+.B Load
+Clicking
+.B Load
+reads in the audio file specified by the
+.B Directory
+and
+.B File
+fields.
+If the named file does not contain a valid audio header, the raw
+data is copied into the buffer and an alert is displayed.
+Clicking the
+.B Store
+button at that point rewrites the file with the proper audio file header.
+.IP
+Arbitrarily large audio files may be loaded.
+However, system swap space
+resources may be depleted (one minute of 
+.SM SPARC\s0station 1
+audio data consumes roughly .5 Mbyte of swap space).
+.br
+.ne 3
+.TP
+.B Store
+Clicking
+.B Store
+writes the selected data region into the file specified by the
+.B Directory
+and
+.B File
+fields.
+If the named file exists, an alert will request confirmation of the operation.
+.TP
+.B Append
+Clicking
+.B Append
+appends the selected data region to the file specified by the
+.B Directory
+and
+.B File
+fields.
+The named file must contain a valid audio file header.
+.TP
+.B Directory
+The
+.B Directory
+field specifies a directory path in which to look for audio files.
+.TP
+.B File
+The
+.B File
+field designates the file to be loaded from, stored to, or appended to.
+Holding down the right mouse button on this field presents a menu of
+audio files in the currently designated directory.
+All files that contain a valid audio file header, or whose
+names have the suffix 
+.B \&.au
+or 
+.BR \&.snd ,
+are listed.
+.SS Oscilloscope
+.LP
+When the program is in the idle state and the cursor is in the
+waveform display panel, the oscilloscope acts as
+a magnifying glass, displaying the region of the audio waveform that
+is currently under the cursor.
+When the program is playing or recording, 
+the oscilloscope displays the data that is currently being transferred.
+Note: there is a small time lag in the display of recorded data,
+due to the fact that the audio device driver buffers input data and
+delivers it to the application in discrete segments.
+.SS Display Control Panel
+.TP
+.B Zoom
+The
+.B Zoom
+slider adjusts the compression factor used in the display of the waveform.
+The upper compression limit is chosen so that the entire waveform fits
+in the waveform display panel.
+The lower limit is restricted by the ability
+to manipulate large scrolling regions in SunView.
+Adjustment of the
+.B Zoom
+slider ordinarily results in data compression or expansion around the
+center of the currently displayed waveform.
+If the waveform display
+contains one or both data selection markers, an attempt is made to
+keep at least a portion of the selected data region in the window.
+.IP
+The magnified waveform
+presented in the oscilloscope display is unaffected by the
+.B Zoom
+value.
+However, cursor movement over the waveform reflects the current
+compression;  that is, lower
+.B Zoom
+values result in finer granularity of mouse movement.
+.SS Waveform Display Panel
+.IP
+The waveform display shows all or part of the current waveform,
+depending on the current
+.B Zoom
+value.
+Scrolling of the waveform may be achieved either by using the scrollbar
+or by dragging the waveform to the right or left while holding
+the middle mouse button down.
+Note: scrolling is disabled when the entire waveform is being displayed
+(that is, when the
+.B Zoom
+value is at its maximum).
+.IP
+In some cases, it is desirable to identify a subset of the waveform.
+For instance, the
+.BR Play ,
+.BR Store ,
+and
+.B Append
+functions operate on a selected region, rather than the entire waveform.
+The currently selected region of interest is delimited by dashed vertical lines.
+A new region may be selected by clicking the left or right mouse button
+and dragging it across the desired region of interest.
+Alternatively, a single click on the left or right mouse buttons
+adjusts the start or end points.
+.SS Audio Status Panel
+.IP
+This panel is displayed (or removed) when the
+.B Describe
+button is pressed.
+It contains fields that describe the data in the buffer.
+.TP
+.B "Sample Rate"
+This field displays the sampling frequency, in samples per second.
+.TP
+.B Channels
+This field denotes the number of interleaved channels of audio data.
+.TP
+.B Precision
+This field identifies the encoding precision, in bits per sample.
+.br
+.ne 5
+.TP
+.B Encoding
+This field displays the encoding format.
+.TP
+.B "Total Length"
+This field shows the length of the entire data buffer, in the form
+\fIhh\fP:\fImm\fP:\fIss\fP.\fIdd\fP.
+.TP
+.B Selection
+This field identifies the start and end times of the currently selected
+region of interest.
+.TP
+.B "Info String"
+When an audio file is loaded, the first 80 characters of the information field
+of the audio header are displayed in this field.
+This string may be edited,
+though the new information is only written out when the
+.B Store
+operation is performed.
+.SH BUGS
+.LP
+Currently,
+.B soundtool
+is capable of displaying only 8-bit \(*m-law
+encoded data.  This restriction should be removed.
+.LP
+Audio files should be mapped in order to reduce the swap space requirements.
+The limit on recording length should also be removed.
+.LP
+SunView scrollbars operate on canvases whose virtual
+size is given by a short integer (that is, 16 bits).
+This ridiculous constraint is the reason for the lower limit on zooming.
+Because of this, the accuracy of start and end point selection is
+reduced when the data buffer is large.
+.LP
+Region selections made over the waveform display panel work best when
+the click and drag paradigm is used.
+Adjusting the start or end points
+by a single click is susceptible to error; 
+that is, if the mouse moves slightly
+between the button down and up events, the result is a very small
+selection.
+.SH SEE ALSO
+.BR gaintool (6),
+.BR play (6),
+.BR raw2audio (6),
+.BR record (6)
+.SH WARNINGS
+.LP
+This program is furnished on an
+.I as is
+basis as a demonstration
+of audio applications programming.

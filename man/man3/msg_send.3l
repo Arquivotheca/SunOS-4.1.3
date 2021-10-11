@@ -1,0 +1,299 @@
+.\" @(#)msg_send.3l 1.1 92/07/30 SMI;
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH MSG_SEND 3L "21 January 1990"
+.SH NAME
+msg_send, msg_recv, msg_reply, MSG_RECVALL, msg_enumsend, msg_enumrecv \- LWP send and receive messages
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <lwp/lwp.h>
+.LP
+.ft B
+int msg_send(dest, arg, argsize, res, ressize)
+thread_t dest;	/* destination thread */
+caddr_t arg;	/* argument buffer */
+int argsize;	/* size of argument buffer */
+caddr_t res;	/* result buffer */
+int ressize;	/* size of result buffer */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msg_recv(sender, arg, argsize, res, ressize, timeout)
+thread_t *sender;	/* value-result: sending thread or agent */
+caddr_t *arg;		/* argument buffer */
+int *argsize;		/* argument size */
+caddr_t *res;		/* result buffer */
+int *ressize;		/* result size */
+struct timeval *timeout;	/* \s-1POLL\s0, \s-1INFINITY\s0, else timeout */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msg_reply(sender)
+thread_t sender;	/* agent id or thread id */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msg_enumsend(vec, maxsize)
+thread_t vec[\|];	/* list of blocked senders */
+int maxsize;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msg_enumrecv(vec, maxsize)
+thread_t vec[\|];	/* list of blocked receivers */
+int maxsize;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int \s-1MSG_RECVALL\s0(sender, arg, argsize, res, ressize, timeout)
+thread_t *sender;
+caddr_t *arg;
+int *argsize;
+caddr_t *res;
+int *ressize;
+struct timeval *timeout;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "msg_send()" "" "\fLmsg_send()\fP function"
+.IX "msg_recv()" "" "\fLmsg_recv()\fP function"
+.IX "msg_reply()" "" "\fLmsg_reply()\fP function"
+.IX "MSG_RECVALL()" "" "\fLMSG_RECVALL()\fP macro"
+.IX "msg_enumsend()" "" "\fLmsg_enumsend()\fP function"
+.IX "msg_enumrecv()" "" "\fLmsg_enumrecv()\fP function"
+.LP
+Each thread queues messages addressed to
+it as they arrive.
+Threads may either specify
+that a particular sender's message is
+to be received next, or that
+.I any
+sender's message may be received next.
+.LP
+.B msg_send(\|)
+specifies a message buffer and a reply buffer,
+and initiates one half of a rendezvous with the receiver.
+The sender will block until the receiver replies using
+.BR msg_reply(\|) .
+.B msg_recv(\|)
+initiates the other half of a rendezvous and
+blocks the invoking thread until a corresponding
+.B msg_send(\|)
+is received.  When unblocked by
+.BR msg_send(\|) ,
+the receiver may read the message and
+generate a reply by filling in the reply
+buffer and issuing
+.BR msg_reply(\|) .
+.B msg_reply(\|)
+unblocks the sender.  Once a reply is sent,
+the receiver should no longer access either
+the message or reply buffer.
+.LP
+In
+.BR msg_send(\|) ,
+.I argsize
+specifies the size in bytes of the argument buffer
+.IR argbuf ,
+which is intended to be a read-only (to the
+receiver) buffer.
+.I ressize
+specifies the size in bytes of the result buffer
+.IR resbuf ,
+which is intended to be a write-only
+(to the receiver) buffer.
+.I dest
+is the thread that is the target of the send.
+.LP
+.br
+.ne 9
+.B msg_recv(\|)
+blocks the receiver until:
+.TP 3
+\(bu
+A message from the agent or thread bound to
+.I sender
+has been sent to the receiver or,
+.TP
+\(bu
+.I sender
+points to a
+.SM THREADNULL\s0-valued
+variable and
+.I any
+message has been sent to
+the receiver from a thread or agent, or,
+.TP
+\(bu
+After the time specified by
+.I timeout
+elapses and no message is received.
+.LP
+If
+.I timeout
+is
+.BR \s-1POLL\s0 ,
+.B msg_recv(\|)
+returns immediately, returning success if
+the message expected has arrived; otherwise
+an error is returned.  If
+.I timeout
+is
+.BR \s-1INFINITY\s0 ,
+.B msg_recv(\|)
+blocks forever or until the expected
+message arrives.  If
+.I timeout
+is any other value
+.B msg_recv(\|)
+blocks for the time specified by
+.I timeout
+or until the expected message arrives,
+whichever comes first.  When
+.B msg_recv(\|)
+returns,
+.I sender
+is filled in with the identity
+of the sending thread or agent, and the
+buffer addresses and sizes specified
+by the matching send are stored in
+.IR arg ,
+.IR argsize ,
+.IR res ,
+and
+.IR ressize .
+.LP
+.B msg_enumsend(\|)
+and
+.B msg_enumrecv(\|)
+are used to list all of the threads blocked
+on sends (awaiting
+a reply) and receives (awaiting a send), respectively.
+The value returned is the number of such blocked threads.
+The vector supplied by the client is filled
+in (subject to the
+.I maxsize
+limitation) with the
+.SM ID\s0's
+of the blocked threads.
+.I maxsize
+is used to avoid exceeding the capacity of the list.
+If the number of threads blocked on sends or receives is greater than
+.IR maxsize ,
+only
+.I maxsize
+thread
+.SM ID\s0's
+are filled in
+.IR vec .
+If
+.I maxsize
+is 0, just the total number of blocked threads
+is returned.
+.LP
+.I sender
+in
+.B msg_recv(\|)
+is a reference parameter.
+If you wish to receive from \fIany\fP sender,
+be sure to reinitialize the thread
+.I sender
+points to as
+.SM THREADNULL
+before each use (do not use the address of
+.SM THREADNULL
+for the sender).
+Alternatively, use the
+.SM 
+.B MSG_RECVALL(\|)
+macro.
+This macro has the same parameters as
+.BR msg_recv(\|) ,
+but ensures that the sender
+is properly initialized to
+allow receipt from any sender.
+.SM 
+.B MSG_RECVALL(\|)
+returns the result from
+.BR msg_recv .
+.SH RETURN VALUES
+.LP
+.BR msg_send(\|) ,
+.BR msg_recv(\|) ,
+.B MSG_RECVALL(\|)
+and
+.B msg_reply(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.LP
+.B msg_enumsend(\|)
+returns the number of threads
+blocked on
+.BR msg_send(\|) .
+.LP
+.B msg_enumrecv(\|)
+returns the number of threads
+blocked on
+.BR msg_recv(\|) .
+.SH ERRORS
+.LP
+.B msg_recv(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INVALIDARG
+An illegal timeout was specified.
+.IP
+The sender address is that of
+.SM THREADNULL.
+.TP
+.SM LE_NONEXIST
+The specified thread or agent does not exist.
+.TP
+.SM LE_TIMEOUT
+Timed out before message arrived.
+.LP
+.B msg_reply(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_NONEXIST
+Attempt to reply to a sender that does not
+exist or has terminated.
+.TP
+.SM LE_NOWAIT
+Attempt to reply to a sender that is not
+expecting a reply.
+.LP
+.B msg_send(\|)
+will fail if one or more of the following is
+true:
+.TP 20
+.SM LE_INVALIDARG
+Attempt to send a message to yourself.
+.TP
+.SM LE_NONEXIST
+The specified destination thread does not exist or has terminated.
+.\".LP
+.\" send has no timeout cause receiver could have message but then
+.\" attempt to modify buffers that are not valid.
+.\" Also, receiver then has input data that may not be relevant.
+.\" Only good semantics are to ensure that send is completely cancelled
+.\" and that is not possible. Receive can safely timeout since nothing
+.\" has happened if it does.

@@ -1,0 +1,218 @@
+.\"@(#)gettext.3 1.1 92/07/30 SMI;
+.TH GETTEXT 3 "22 January 1990"
+.SH NAME
+gettext, textdomain \- retrieve a message string, get and set text domain
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+char *gettext(msgtag)
+char *msgtag;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *textdomain(domainname)
+char *domainname;
+.ft
+.fi
+.SH DESCRIPTION
+.LP
+.IX "gettext" "" "\fLgettext\fR \(em  retrieve a message string" ""
+.IX "textdomain" "" "\fLtextdomain\fR \(em get or set the current text domain" ""
+.B gettext(\|)
+returns a pointer to a null-terminated string (target string). 
+.I msgtag
+is a string 
+used at run-time to select the target string from the current domain of the
+active pool of messages.
+The length and contents of strings returned by
+.B gettext(\|)
+are undetermined until called at run-time.
+The string returned by 
+.B gettext(\|)
+cannot be modified by the caller, but may be overwritten by a subsequent
+call to 
+.BR gettext(\|) .
+The
+.SB LC_MESSAGES
+locale category setting determines the
+locale of strings that 
+.B gettext(\|)
+returns.
+.LP
+The calling process can dynamically change the choice of
+locale for strings returned by
+.B gettext(\|)
+by invoking the
+.BR setlocale (3V)
+function with the correct category and the required 
+locale.
+If 
+.B setlocale(\|)
+is not called or is called with an invalid value,
+.B gettext(\|)
+defaults to the
+\fB"C"\fR
+locale. 
+The default name for the current domain is the 
+empty string.
+.LP
+.B gettext(\|)
+first attempts to resolve the target string from the active domain and
+locale of the message pool.
+The current locale and domain are determined by the
+combination of both the 
+.SB LC_MESSAGES
+category of locale and the current domain setting.
+.LP
+If the target string cannot be found by using the current locale and domain 
+then
+.I msgtag
+and current domain are applied to the 
+implementation-defined default locale
+(this default locale could contain any language).
+If the default locale does not also contain the target string then the 
+.I msgtag
+and current domain will be applied to the
+\fB"C"\fR 
+locale of the message pool.
+If the target string still cannot be found then 
+.B gettext(\|)
+will return
+.IR msgtag .
+.LP
+Any of the following conditions will result in a message not being 
+found in the string archive:
+.RS
+.TP 3
+\(bu
+Non-existent archive selected after
+.B setlocale(\|)
+or
+.B textdomain(\|)
+was called.
+.TP
+\(bu
+Non-existent archive in the
+\fB"C"\fR
+environment if
+.B setlocale(\|)
+was not called.
+.TP
+\(bu
+Non-existent or deleted entry in the archive.
+.RE
+.LP
+.B textdomain(\|)
+sets the current domain to
+.IR domainname .
+Subsequent calls to
+.B gettext(\|)
+refer to this domain.
+If
+.I domainname
+is
+.SM NULL\s0,
+.B textdomain(\|)
+returns the name of the current domain without
+changing it.
+.LP
+The setting of domain made by the last successful
+.B textdomain(\|)
+call remains valid across any number of subsequent calls to
+.BR setlocale(\|) .
+.SH RETURN VALUES
+.LP
+.B gettext(\|)
+returns a pointer to the null-terminated target string on success.
+On failure,
+.B gettext(\|)
+returns
+.IR msgtag .
+.LP
+.B textdomain(\|)
+returns a pointer to the name of the current domain.
+If the domain has not been set
+prior to this call, 
+.B textdomain(\|)
+returns a pointer to an
+empty string.
+.B textdomain(\|)
+returns
+.SM NULL
+if:
+.RS
+.TP 3
+\(bu
+.I domainname
+contains an invalid character.
+.TP
+\(bu
+.I domainname 
+is longer than
+.SB LINE_MAX
+bytes in length.
+.TP
+\(bu
+If, at the time of the call to 
+.BR textdomain(\|) ,
+the combination of current locale and 
+.I domainname
+creates a domain that
+does not exist at run-time. 
+Note: in this case
+.B textdomain(\|) 
+may have been called prior to a successful 
+.BR setlocale (3V)
+call, but 
+.B textdomain(\|)
+will always check against current locale setting.
+.RE
+.ne 10
+.SH EXAMPLES
+.LP
+The following produces
+`Hit Return\en'
+in a locale that is invalid or is valid and contains the same target string 
+as the key:
+.LP
+.RS
+.nf
+.ft B
+printf( gettext( "Hit Return\en" );
+.ft
+.fi
+.RE
+.LP
+On a system whose default language is French, and whose process has the
+.SB LC_MESSAGES
+category validly set,
+the following might print:
+`Bonjour':
+.LP
+.RS
+.nf
+.ft B
+setlocale( \s-1LC_MESSAGES\s+1, "" );
+textdomain( "Morning" );
+printf( gettext( "Welcome" );
+.ft
+.fi
+.RE
+.LP
+If the
+.SB LC_MESSAGES
+category was invalidly set and the default
+.RB ( \s-1LC_DEFAULT\s0 )
+is set to English,
+the last example above might print
+`Good morning'.
+If the default is not set or is also invalid,
+the example would print
+`Welcome'.
+.SH "SEE ALSO"
+.BR setlocale (3V),
+.BR installtxt (8)
+

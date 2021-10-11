@@ -1,0 +1,303 @@
+.\" @(#)getsockopt.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETSOCKOPT 2 "21 January 1990"
+.SH NAME
+getsockopt, setsockopt \- get and set options on sockets
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int *optlen;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setsockopt(s, level, optname, optval, optlen)
+int s, level, optname;
+char *optval;
+int optlen;
+.ft
+.fi
+.IX  getsockopt()  ""  "\fLgetsockopt()\fR \(em get socket options"
+.IX  "socket operations"  getsockopt()  ""  \fLgetsockopt()\fR
+.IX  "interprocess communication"  getsockopt()  ""  \fLgetsockopt()\fR
+.IX  setsockopt()  ""  "\fLsetsockopt()\fR \(em set socket options"
+.IX  "socket operations"  setsockopt()  ""  \fLsetsockopt()\fR
+.IX  "interprocess communication"  setsockopt()  ""  \fLsetsockopt()\fR
+.IX  "socket options"  get "" "get \(em getsockopt()\fP"
+.IX  "socket options"  set "" "set \(em setsockopt()\fP"
+.IX  "options on sockets"  get "" "get \(em getsockopt()\fP"
+.IX  "options on sockets"  set "" "set \(em setsockopt()\fP"
+.IX  get "options on sockets" "" "options on sockets \(em \fLgetsockopt()\fR"
+.IX  "set options sockets"
+.SH DESCRIPTION
+.LP
+.B getsockopt(\|)
+and
+.B setsockopt(\|)
+manipulate
+.I options
+associated with a socket.  Options may exist at multiple
+protocol levels; they are always present at the uppermost ``socket'' level.
+.LP
+When manipulating socket options the level at which the
+option resides and the name of the option must be specified.
+To manipulate options at the ``socket'' level,
+.I level
+is specified as
+.SM
+.BR SOL_SOCKET \s0.
+To manipulate options at any
+other level the protocol number of the appropriate protocol
+controlling the option is supplied.  For example,
+to indicate that an option is to be interpreted by the
+.SM TCP
+protocol,
+.I level
+should be set to the protocol number of
+.SM TCP\s0;
+see
+.BR getprotoent (3N).
+.LP
+The parameters
+.I optval
+and
+.I optlen
+are used to access option values for
+.BR setsockopt(\|) .
+For
+.B getsockopt(\|)
+they identify a buffer in which the value for the
+requested option(s) are to be returned.  For
+.BR getsockopt(\|) ,
+.I optlen
+is a value-result parameter, initially containing the
+size of the buffer pointed to by
+.IR optval ,
+and modified on return to indicate the actual size of
+the value returned.  If no option value is to be supplied or returned,
+.I optval
+may be supplied as 0.
+.LP
+.I optname
+and any specified options are passed uninterpreted to the appropriate
+protocol module for interpretation.
+The include file
+.B <sys/socket.h>
+contains definitions for ``socket'' level options, described below.
+Options at other protocol levels vary in format and
+name; consult the appropriate entries in section (4P).
+.LP
+Most socket-level options take an
+.I int
+parameter for
+.IR optval .
+For
+.BR setsockopt(\|) ,
+the parameter should be non-zero to enable a boolean option,
+or zero if the option is to be disabled.
+.SB SO_LINGER
+uses a
+.B struct linger
+parameter, defined in
+.BR <sys/socket.h> ,
+which specifies the desired state of the option and the
+linger interval (see below).
+.LP
+The following options are recognized at the socket level.
+Except as noted, each may be examined with
+.B getsockopt(\|)
+and set with
+.BR setsockopt(\|) .
+.LP
+.RS
+.PD 0
+.TP 20
+.SB SO_DEBUG 	
+toggle recording of debugging information
+.TP
+.SB SO_REUSEADDR
+toggle local address reuse
+.TP
+.SB SO_KEEPALIVE
+toggle keep connections alive
+.TP
+.SB SO_DONTROUTE
+toggle routing bypass for outgoing messages
+.TP
+.SB SO_LINGER
+linger on close if data present
+.TP
+.SB SO_BROADCAST
+toggle permission to transmit broadcast messages
+.TP
+.SB SO_OOBINLINE
+toggle reception of out-of-band data in band
+.TP
+.SB SO_SNDBUF
+set buffer size for output
+.TP
+.SB SO_RCVBUF
+set buffer size for input
+.TP
+.SB SO_TYPE
+get the type of the socket (get only)
+.TP
+.SB SO_ERROR
+get and clear error on the socket (get only)
+.PD
+.RE
+.LP
+.SB SO_DEBUG
+enables debugging in the underlying protocol modules.
+.SB SO_REUSEADDR
+indicates that the rules used in validating addresses supplied
+in a
+.BR bind (2)
+call should allow reuse of local addresses.
+.SB SO_KEEPALIVE
+enables the
+periodic transmission of messages on a connected socket.  Should the
+connected party fail to respond to these messages, the connection is
+considered broken.  A process attempting to write to the socket
+receives a
+.SB SIGPIPE
+signal and the write operation returns an error.
+By default, a process exits when it receives
+.SM
+.BR SIGPIPE \s0.
+A read operation on the socket returns an error but does not generate
+.SM
+.BR SIGPIPE \s0.
+If the process is waiting in
+.BR select (2)
+when the connection is broken,
+.B select(\|)
+returns true for any read or write events selected for the socket.
+.SB SO_DONTROUTE
+indicates that outgoing messages should
+bypass the standard routing facilities.  Instead, messages are directed
+to the appropriate network interface according to the network portion
+of the destination address.
+.LP
+.SB SO_LINGER
+controls the action taken when unsent messags are queued on socket and a
+.BR close (2V)
+is performed.
+If the socket promises reliable delivery of data and
+.SB SO_LINGER
+is set, the system will block the process on the
+.B close(\|)
+attempt until it is able to transmit the data or until it decides it
+is unable to deliver the information (a timeout period, termed the
+linger interval, is specified in the
+.B setsockopt(\|)
+call when
+.SB SO_LINGER
+is requested).  If
+.SB SO_LINGER
+is disabled and a
+.B close(\|)
+is issued, the system will process the close in a manner that allows
+the process to continue as quickly as possible.
+.LP
+The option
+.SB SO_BROADCAST
+requests permission to send broadcast datagrams on the socket.
+Broadcast was a privileged operation in earlier versions of the system.
+With protocols that support out-of-band data, the
+.SB SO_OOBINLINE
+option requests that out-of-band data be placed in the normal data input queue
+as received; it will then be accessible with
+.B recv(\|)
+or
+.B read(\|)
+calls without the
+.SB MSG_OOB
+flag.
+.SB SO_SNDBUF
+and
+.SB SO_RCVBUF
+are options to adjust the normal
+buffer sizes allocated for output and input buffers, respectively.
+The buffer size may be increased for high-volume connections,
+or may be decreased to limit the possible backlog of incoming data.
+The system places an absolute limit on these values.
+Finally,
+.SB SO_TYPE
+and
+.SB SO_ERROR
+are options used only with
+.BR getsockopt(\|) .
+.SB SO_TYPE
+returns the type of the socket, such as
+.SM
+.BR SOCK_STREAM \s0;
+it is useful for servers that inherit sockets on startup.
+.SB SO_ERROR
+returns any pending error on the socket and clears
+the error status.
+It may be used to check for asynchronous errors on connected
+datagram sockets or for other asynchronous errors.
+.SH RETURN VALUES
+.LP
+.B getsockopt(\|)
+and
+.B setsockopt(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EBADF
+.I s
+is not a valid descriptor.
+.TP
+.SM EFAULT
+The address pointed to by
+.I optval
+is not in a valid part of the process address space.
+.TP
+.SM ENOPROTOOPT
+The option is unknown at the level indicated.
+.TP
+.SM ENOTSOCK
+.I s
+is a file, not a socket.
+.LP
+In addition to the above,
+.B getsockopt(\|)
+may set
+.B errno
+to:
+.TP 20
+.SM EFAULT
+.I optlen
+is not in a valid part of the process address space.
+.SH "SEE ALSO"
+.BR ioctl (2),
+.BR socket (2),
+.BR getprotoent (3N)
+.SH BUGS
+.LP
+Several of the socket options should be handled at lower levels of the system.

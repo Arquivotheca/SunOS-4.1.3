@@ -1,0 +1,509 @@
+|*
+|*		Single Precision Add Instruction
+|*		Single Precision Subtract Instruction
+|*
+routine xs.add w100110xxxx0 lbs sadd
+routine xs.sub w100111xxxx0 lbs ssub
+	;		lasf fmap csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	jclr clp idl2;	csuxa usp;		;		recclk;	rcssp imm2;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Double Precision Add Instruction
+|*		Double Precision Subtract Instruction
+|*
+routine xd.add w100110xxxx1 lbm dadd
+routine xd.sub w100111xxxx1 lbm dsub
+	;		lam csla;		reg;		;	rcslsw ptr2;
+	;		lal csla;		reg;		;	;
+	jclr clp1 idl2;	lblf fmap csla;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+xdfin.alu:
+	;		;			;		;	;
+xdfin.alu2:
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Single Precision Multiply Instruction
+|*
+routine xs.mul w101000xxxx0 las smul
+	call wait3;	lbsf fmap cslm;		reg;		;	;
+	jclr clp idl2;	csuxm usp;		;		recclk;	rcssp imm2;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Double Precision Multiply Instruction
+|*
+routine xd.mul w101000xxxx1 lbm dmul
+	;		lam cslm;		reg;		;	rcslsw ptr2;
+	;		lal cslm;		reg;		;	;
+	jclr clp3 idl2;	lblf fmap cslm;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+xdfin.mul:
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	jwerr der1 cstat;woem;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Single Precision Divide Instruction
+|*
+routine xs.div w101001xxxx0 lbs sdiv
+	;		lasf fmap csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	lpreg!11
+	jclr clp24 idl2;;			;		;	;
+|#				(Note: 11 will cause a delay of 24)
+	call wait;	;			;		recclk;	rcssp ptr1;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Double Precision Divide Instruction
+|*
+routine xd.div w101001xxxx1 lbm ddiv
+	;		lam csla;		reg;		;	rcslsw ptr2;
+	;		lal csla;		reg;		;	;
+	jclr clp56 idl2;lblf fmap csla;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+|#				(Note: 25 will cause a delay of 52)
+	;		;			;		;	;	lpreg!25
+	call wait;	;			;		;	;
+	call xdfin.alu2;;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Single Precision Backwards Subtract Instruction
+|*
+routine xs.b.sub w101010xxxx0 las ssub
+	call wait3;	lbsf fmap csla;		reg;		;	;
+	jclr clp idl2;	csuxa usp;		;		recclk;	rcssp imm2;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Double Precision Backwards Subtract Instruction
+|*
+routine xd.b.sub w101010xxxx1 lam dsub
+	;		lbm csla;		reg;		;	rcslsw ptr2;
+	;		lbl csla;		reg;		;	;
+	jclr clp1 idl2;	lalf fmap csla;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	call xdfin.alu;	;			;		recclk;	rcslsw ptr1;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Single Precision Backwards Divide Instruction
+|*
+routine xs.b.div w101011xxxx0 las sdiv
+	;		lbsf fmap csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	lpreg!11
+	jclr clp24 idl2;;			;		recclk;	rcssp imm2;
+|#				(Note: 11 will cause a delay of 24)
+	call wait;	;			;		recclk;	rcssp ptr1;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Double Precision Backwards Divide Instruction
+|*
+routine xd.b.div w101011xxxx1 lam ddiv
+	;		lbm csla;		reg;		;	rcslsw ptr2;
+	;		lbl csla;		reg;		;	;
+	jclr clp56 idl2;lalf fmap csla;		opdlsw;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+|#				(Note: 25 will cause a delay of 52)
+	;		;			;		;	;	lpreg!25
+	call wait;	;			;		;	;
+	call xdfin.alu2;;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Reg 3 +/- (Reg 2 * Operand)
+|*		Single Precision Instruction
+|*
+routine xs.r3Ar2Mop w110000xxxx0 las sadd
+routine xs.r3Sr2Mop w110001xxxx0 las ssub
+	call wait3;	lbsf smul cslm;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;lbs csla woem;		;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	call wait3;	lasf fmap csla;		reg;		recclk;	rcssp ptr1;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Reg 3 +/- (Reg 2 * Operand)
+|*		Double Precision Instruction
+|*
+routine xd.r3Ar2Mop w110000xxxx1 lbm dadd
+routine xd.r3Sr2Mop w110001xxxx1 lbm dsub
+	;		lam cslm;		reg;		;	rcslsw ptr2;
+	;		lal cslm;		reg;		;	;
+	jclr clp3 idl2;	lblf dmul cslm;		opdlsw;		;	rcsmsw imm3;
+	;		lam csla;		reg;		;	rcslsw ptr3;
+	;		lal csla;		reg;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	jwerr werr cstat;lbm csla woem;		;		;	;
+	;		lblf fmap csla woem;	;		;	;
+	;		;			;		;	;
+	call xdfin.alu;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- - Reg 3 + (Reg 2 * Operand)
+|*		Single Precision Instruction
+|*
+routine xs.Nr3Ar2Mop w110010xxxx0 las ssub
+	call wait3;	lbsf smul cslm;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;las csla woem;		;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	call wait3;	lbsf fmap csla;		reg;		recclk;	rcssp ptr1;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- - Reg 3 + (Reg 2 * Operand)
+|*		Double Precision Instruction
+|*
+routine xd.Nr3Ar2Mop w110010xxxx1 lbm dsub
+	;		lam cslm;		reg;		;	rcslsw ptr2;
+	;		lal cslm;		reg;		;	;
+	jclr clp3 idl2;	lblf dmul cslm;		opdlsw;		;	rcsmsw imm3;
+	;		lbm csla;		reg;		;	rcslsw ptr3;
+	;		lbl csla;		reg;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	jwerr werr cstat;lam csla woem;		;		;	;
+	;		lalf fmap csla woem;	;		;	;
+	;		;			;		;	;
+	call xdfin.alu;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Reg 3 * (Reg 2 +/- Operand)
+|*		Single Precision Instruction
+|*
+routine xs.r3Mr2Aop w110011xxxx0 lbs sadd
+routine xs.r3Mr2Sop w110100xxxx0 lbs ssub
+	call wait3;	lasf fmap csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;las cslm woea;		;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	call wait3;	lbsf smul cslm;		reg;		recclk;	rcssp ptr1;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Reg 3 * (Reg 2 +/- Operand)
+|*		Double Precision Instruction
+|*
+routine xd.r3Mr2Aop w110011xxxx1 lbm dadd
+routine xd.r3Mr2Sop w110100xxxx1 lbm dsub
+	;		lam csla;		reg;		;	rcslsw ptr2;
+	;		lal csla;		reg;		;	;
+	jclr clp3 idl2;	lblf fmap csla;		opdlsw;		;	rcsmsw imm3;
+	;		lam cslm;		reg;		;	rcslsw ptr3;
+	;		lal cslm;		reg;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+	;		csuxa ulsw;		;		;	;
+	;		csuxa umsw;		;		;	;
+	jwerr werr cstat;lblf dmul cslm woea;	;		;	;
+	;		lbm cslm woea;		;		;	;
+	call xdfin.mul;	;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxm umsw;		;		;	;
+|	;		csuxm ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woem;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Reg 3 * (- Reg 2 + Operand)
+|*		Single Precision Instruction
+|*
+routine xs.r3MNr2Aop w110101xxxx0 las ssub
+	call wait3;	lbsf fmap csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;las cslm woea;		;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	call wait3;	lbsf smul cslm;		reg;		recclk;	rcssp ptr1;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Reg 3 * (- Reg 2 + Operand)
+|*		Double Precision Instruction
+|*
+routine xd.r3MNr2Aop w110101xxxx1 lam dsub
+	;		lbm csla;		reg;		;	rcslsw ptr2;
+	;		lbl csla;		reg;		;	;
+	jclr clp3 idl2;	lalf fmap csla;		opdlsw;		;	rcsmsw imm3;
+	;		lam cslm;		reg;		;	rcslsw ptr3;
+	;		lal cslm;		reg;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;
+	;		csuxa ulsw;		;		;	;
+	;		csuxa umsw;		;		;	;
+	jwerr werr cstat;lblf dmul cslm woea;	;		;	;
+	;		lbm cslm woea;		;		;	;
+	call xdfin.mul;	;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxm umsw;		;		;	;
+|	;		csuxm ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woem;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand * (Reg 3 +/- Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.opMr3Ar2 w111001xxxx0 lnop sadd
+routine xs.opMr3Sr2 w111010xxxx0 lnop ssub
+	;		lbs csla;		reg;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	;		lasf fmap csla;		reg;		recclk;	rcssp ptr1;
+	;		;			;		;	;
+	;		las cslm;		opdsp;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;lbsf smul cslm woea;	;		;	rcssp ptr1;
+	call wait2;	;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand * (Reg 3 +/- Reg 2)
+|*		Double Precision Instruction
+|*
+routine xd.opMr3Ar2 w111001xxxx1 lnop dadd
+routine xd.opMr3Sr2 w111010xxxx1 lnop dsub
+	;		lbm csla;		reg;		;	rcslsw ptr2;
+	;		lbl csla;		reg;		;	;
+	jclr clp3 idl2;	;			;		;	rcsmsw imm3;
+	;		lam csla;		reg;		;	rcslsw ptr3;
+	;		lalf fmap csla;		reg;		;	;
+	;		lam cslm;		opdmsw;		;	;
+	;		lal cslm;		opdlsw;		;	;
+	;		;			;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		csuxa umsw;		;		;	;
+	jwerr werr cstat;lblf dmul cslm woea;	;		;	;
+	;		lbm cslm woea;		;		recclk;	rcsmsw ptr1;
+	call xdfin.mul;	;			;		recclk;	rcslsw ptr1;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxm umsw;		;		;	;
+|	;		csuxm ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woem;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand +/- (Reg 3 * Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.opAr3Mr2 w110110xxxx0 lnop sadd
+routine xs.opSr3Mr2 w110111xxxx0 lnop ssub
+	;		las cslm;		reg;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	;		lbsf smul cslm;		reg;		recclk;	rcssp ptr1;
+	;		;			;		;	;
+	;		las csla;		opdsp;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;lbsf fmap csla woem;	;		;	rcssp ptr1;
+	call wait2;	;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand +/- (Reg 3 * Reg 2)
+|*		Double Precision Instruction
+|*
+routine xd.opAr3Mr2 w110110xxxx1 lnop dadd
+routine xd.opSr3Mr2 w110111xxxx1 lnop dsub
+	;		lam cslm;		reg;		;	rcslsw ptr2;
+	;		lal cslm;		reg;		;	;
+	jclr clp4 idl2;	;			;		;	rcslsw imm3;
+	;		lblf dmul cslm;		reg;		;	rcsmsw ptr3;
+	;		lbm cslm;		reg;		;	;
+	;		lam csla;		opdmsw;		;	;
+	;		lal csla;		opdlsw;		;	;
+	;		;			;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		csuxm umsw;		;		recclk;	rcslsw ptr1;
+	;		csuxm ulsw;		;		;	;
+	jwerr werr cstat;lbm csla woem;		;		;	;
+	;		lblf fmap csla woem;	;		;	;
+	;		;			;		;	;
+	call xdfin.alu;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- -Operand + (Reg 3 * Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.NopAr3Mr2 w111000xxxx0 lnop ssub
+	;		las cslm;		reg;		;	;
+	jclr clp2 idl2;	;			;		;	rcssp imm3;
+	;		lbsf smul cslm;		reg;		recclk;	rcssp ptr1;
+	;		;			;		;	;
+	;		lbs csla;		opdsp;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	jwerr werr cstat;lasf fmap csla woem;	;		;	rcssp ptr1;
+	call wait2;	;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- -Operand + (Reg 3 * Reg 2)
+|*		Double Precision Instruction
+|*
+routine xd.NopAr3Mr2 w111000xxxx1 lnop dsub
+	;		lam cslm;		reg;		;	rcslsw ptr2;
+	;		lal cslm;		reg;		;	;
+	jclr clp4 idl2;	;			;		;	rcslsw imm3;
+	;		lblf dmul cslm;		reg;		;	rcsmsw ptr3;
+	;		lbm cslm;		reg;		;	;
+	;		lbm csla;		opdmsw;		;	;
+	;		lbl csla;		opdlsw;		;	;
+	;		;			;		;	;
+	;		;			;		recclk;	rcsmsw ptr1;
+	;		csuxm umsw;		;		recclk;	rcslsw ptr1;
+	;		csuxm ulsw;		;		;	;
+	jwerr werr cstat;lam csla woem;		;		;	;
+	;		lalf fmap csla woem;	;		;	;
+	;		;			;		;	;
+	call xdfin.alu;	;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa umsw;		;		;	;
+|	;		csuxa ulsw;		;		;	ptr1;
+|	jwerr der1 cstat;woea;			dtor;		;	ramwe rcsmsw ptr1;
+|	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+|	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand2 + (Operand1 * Reg 2)
+|*		Reg 1 <-- Operand2 - (Operand1 * Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.linpack1 w100000xxxx0 las sadd
+routine xs.linpack2 w100001xxxx0 las ssub
+	call wait3;	lbsf smul cslm;		reg;		;	;
+	jclr clp2 idl2;	las csla csuxm usp;	opdlsw;		;	;
+	;		;			;		recclk;	rcssp ptr1;
+	jwerr werr cstat;lbsf fmap csla woem;	;		;	;
+	call wait2;	;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- -Operand2 + (Operand1 * Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.linpack3 w100010xxxx0 las ssub
+	call wait3;	lbsf smul cslm;		reg;		;	;
+	jclr clp2 idl2;	lbs csla csuxm usp;	opdlsw;		;	;
+	;		;			;		recclk;	rcssp ptr1;
+	jwerr werr cstat;lasf fmap csla woem;	;		;	;
+	call wait2;	;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand2 * (Operand1 + Reg 2)
+|*		Reg 1 <-- Operand2 * (Operand1 - Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.linpack4 w100011xxxx0 las sadd
+routine xs.linpack6 w100101xxxx0 las ssub
+	call wait3;	lbsf fmap csla;		reg;		;	;
+	jclr clp2 idl2;	las cslm csuxa usp;	opdlsw;		;	;
+	;		;			;		recclk;	rcssp ptr1;
+	jwerr werr cstat;lbsf smul cslm woea;	;		;	;
+	call wait2;	;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+|*
+|*		Reg 1 <-- Operand2 * (-Operand1 + Reg 2)
+|*		Single Precision Instruction
+|*
+routine xs.linpack5 w100100xxxx0 lbs ssub
+	call wait3;	lasf fmap csla;		reg;		;	;
+	jclr clp2 idl2;	las cslm csuxa usp;	opdlsw;		;	;
+	;		;			;		recclk;	rcssp ptr1;
+	jwerr werr cstat;lbsf smul cslm woea;	;		;	;
+	call wait2;	;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	jwerr ser1 cstat;woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;

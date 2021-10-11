@@ -1,0 +1,206 @@
+.\" @(#)rpc_svc_calls.3n 1.1 92/07/30 SMI;
+.TH RPC_SVC_CALLS 3N "20 January 1990"
+.SH NAME
+registerrpc, svc_register, svc_unregister, xprt_register, xprt_unregister \- library routines for registerring servers
+.SH DESCRIPTION
+.IX "rpc routines" "registerrpc()" "" "\fLregisterrpc()\fP \(em register servers"
+.IX "rpc routines" "svc_register()" "" "\fLsvc_register()\fP \(em register servers"
+.IX "rpc routines" "svc_unregister()" "" "\fLsvc_unregister()\fP \(em register servers"
+.IX "rpc routines" "xprt_register()" "" "\fLxprt_register()\fP \(em register servers"
+.IX "rpc routines" "xprt_unregister()" "" "\fLxprt_unregister()\fP \(em register servers"
+.IX "registerrpc()" "" "\fLregisterrpc()\fP \(em register servers"
+.IX "svc_reg()" "" "\fLsvc_reg()\fP \(em register servers"
+.IX "svc_unreg()" "" "\fLsvc_unreg()\fP \(em register servers"
+.IX "xprt_register()" "" "\fLxprt_register()\fP \(em register servers"
+.IX "xprt_unregister()" "" "\fLxprt_unregister()\fP \(em register servers"
+.LP
+These routines are a part of the 
+.SM RPC
+library which allows the
+.SM RPC
+servers to register themselves with
+.BR portmap (8C),
+and it associates the given program and version
+number with the dispatch function.
+.SS Routines
+.LP
+The
+.SB SVCXPRT
+data structure is defined in the
+.SM RPC/XDR
+Library Definition
+of the
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft 1
+.br
+.if t .ne 15
+.LP
+.ft B
+.nf
+.sp .5
+int registerrpc(prognum, versnum, procnum, procname, inproc, outproc)
+u_long prognum, versnum, procnum;
+char *(*procname) (\|) ;
+xdrproc_t inproc, outproc;
+.fi
+.ft R
+.IP
+Register procedure
+.I procname
+with the
+.SM RPC
+service package.  If a request arrives for program
+.IR prognum ,
+version
+.IR versnum ,
+and procedure
+.IR procnum ,
+.I procname
+is called with a pointer to its parameter;
+.I progname
+must be a procedure that returns a pointer to its static result;
+.I inproc
+is used to decode the parameters while
+.I outproc
+is used to encode the results.
+This routine returns 0 if the registration succeeded, \-1
+otherwise.
+.IP
+Warning: 
+Remote procedures registered in this form
+are accessed using the
+.SM UDP/IP
+transport; see
+.B svcudp_create(\|)
+on
+.BR rpc_svc_create (3N)
+for restrictions.
+This routine should not be used more than once
+for the same program and version number.
+.if t .ne 6
+.br
+.LP
+.ft B
+.nf
+.sp .5
+bool_t svc_register(xprt, prognum, versnum, dispatch, protocol)
+\s-1SVCXPRT\s0 *xprt;
+u_long prognum, versnum;
+void (*dispatch) (\|);
+u_long protocol;
+.fi
+.ft R
+.IP
+Associates
+.I prognum
+and
+.I versnum
+with the service dispatch procedure,
+.IR dispatch .
+If
+.I protocol
+is zero, the service is not registered with the
+.B portmap
+service.  If
+.I protocol
+is non-zero, a mapping of the triple
+.RI [ "prognum, versnum, protocol"\fR]
+to
+\fB\%xprt\->xp_port\fR
+is established with the local
+.B portmap
+service (generally
+.I protocol
+is zero,
+.SB IPPROTO_UDP
+or
+.BR \s-1IPPROTO_TCP\s0 ).
+The procedure
+.I dispatch
+has the following form:
+.RS 1i
+.ft B
+.nf
+dispatch(request, xprt)
+struct svc_req *request;
+\s-1SVCXPRT\s0 *xprt;
+.ft R
+.fi
+.RE
+.IP
+The
+.B svc_register(\|)
+routine returns 
+.SM TRUE
+if it succeeds, and 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+void svc_unregister(prognum, versnum)
+u_long prognum, versnum;
+.fi
+.ft R
+.IP
+Remove all mapping of the pair
+.RI [ prognum , versnum ]
+to dispatch routines, and of the triple
+.RI [ prognum , versnum , *\fR]
+to port number.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void xprt_register(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+After
+.SM RPC
+service transport handles are created,
+they should register themselves with the
+.SM RPC
+service package.
+This routine modifies the global variable
+.BR svc_fds .
+Service implementors usually do not need this routine.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void xprt_unregister(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Before an
+.SM RPC
+service transport handle is destroyed,
+it should unregister itself with the
+.SM RPC
+service package.
+This routine modifies the global variable
+.BR svc_fds .
+Service implementors usually do not need this routine directly.
+.SH SEE ALSO
+.BR portmap (3N),
+.BR rpc (3N),
+.BR rpc_svc_err (3N),
+.BR rpc_svc_create (3N),
+.BR rpc_svc_reg (3N),
+.BR portmap (8C)

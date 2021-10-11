@@ -1,0 +1,54 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)getdtablesize.2 1.1 92/07/30 SMI; from UCB 6.2 6/28/85
+.TH GETDTABLESIZE 2 "21 January 1990"
+.SH NAME
+getdtablesize \- get descriptor table size
+.SH SYNOPSIS
+.nf
+.ft B
+getdtablesize(\|)
+.fi
+.ft R
+.IX  getdtablesize()  ""  \fLgetdtablesize()\fP
+.IX  descriptors  getdtablesize()  ""  \fLgetdtablesize()\fP
+.SH DESCRIPTION
+.LP
+.\"Each process has a fixed size descriptor table,
+.\"which is guaranteed to have at least 20 slots.  The entries in
+.\"the descriptor table are numbered with small integers starting at 0.
+.\"The call
+.\".B getdtablesize(\|)
+.\"returns the size of this table.
+The call
+.B getdtablesize(\|)
+returns the current value of the soft limit component of the
+.B
+.SM RLIMIT_NOFILE
+resource limit.
+This resource limit governs the maximum value allowable
+as the index of a newly created descriptor.
+.SH WARNINGS
+.B getdtablesize
+is implemented as a system call only for binary compatibility
+with previous releases.
+.LP
+Because of possible intervening
+.BR getrlimit (2)
+calls affecting
+.B
+.SM RLIMIT_NOFILE\c
+,
+repeated calls to
+.B getdtablesize(\|)
+may return different values.
+Thus it is unwise to cache the return value
+in an effort to avoid system call overhead,
+unless it is known that such intervening calls do not occur.
+.SH "SEE ALSO"
+.BR close (2V),
+.BR dup (2V),
+.BR getrlimit (2),
+.BR open (2V)

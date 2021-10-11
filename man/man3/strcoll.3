@@ -1,0 +1,104 @@
+.\" @(#)strcoll.3 1.1 92/07/30 SMI; new for 4.1 internationalization from xpg2
+.TH STRCOLL 3 "21 January 1990"
+.SH NAME
+strcoll, strxfrm \- compare or transform strings using collating information
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <string.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int strcoll(s1, s2)
+char *s1;
+char *s2;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+size_t strxfrm(s1, s2, n)
+char *s1;
+char *s2;
+size_t n;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "strcoll()" "" "\fLstrcoll()\fR \(em compare strings using collating information" ""
+.IX "strxfrm()" "" "\fLstrxfrm()\fR \(em transform strings using collating information" ""
+.LP
+.B strcoll(\|)
+compares the string pointed to by
+.I s1
+to the string pointed to by
+.IR s2 .
+These strings are interpreted as appropriate to the
+.SB LC_COLLATE
+category of the current locale.
+.LP
+.B strxfrm(\|)
+transforms the string pointed to by
+.I s2
+and places the resulting string into the array pointed to by
+.IR s1 .
+The transformation is such that if
+.B string(\|)
+is applied to two transformed strings,
+it returns a value greater than, equal to, or less than zero,
+corresponding to the result of the
+.B strcoll(\|)
+function applied to the same two original strings.
+No more than
+.I n
+characters are placed into the resulting array pointed to by
+.IR s1 ,
+including the terminating null character.
+If
+.I n
+is zero,
+.I s1
+is permitted to be a null pointer.
+If copying takes place between objects that overlap, the behavior is undefined.
+.SH RETURN VALUES
+.LP
+On success,
+.B strcoll(\|)
+returns an integer greater than, equal to or less than zero, 
+respectively, if the string pointed to by
+.I s1
+is greater than, equal to or less than the string pointed to by
+.I s2
+when both are interpreted as appropriate to the current locale.
+On failure,
+.B strcoll(\|)
+sets
+.B errno
+to indicate the error, but returns no special value.
+.LP
+.B strxfrm(\|)
+returns the length of the transformed string,
+not including the terminating null character.
+If the value returned is 
+.I n
+or more, the contents of the array pointed to by
+.I s1
+are indeterminate.
+On failure,
+.B strxfrm(\|)
+returns
+.BR (size_t) \-1,
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+.I s1
+or
+.I s2
+contain characters outside the domain of the collating sequence.
+.SH "SEE ALSO"
+.BR string (3)

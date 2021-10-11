@@ -1,0 +1,175 @@
+.\" @(#)tr.1v 1.1 92/07/30 SMI; from 4.3 BSD and S5R2 6.2 9/2/83
+.TH TR 1V "9 September 1987"
+.SH NAME
+tr \- translate characters
+.SH SYNOPSIS
+.B tr
+.RB [ " \-cds " ]
+[
+.I string1
+[
+.I string2
+] ]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/tr
+.RB [ " \-cds " ]
+[
+.I string1
+[
+.I string2
+] ]
+.IX  "tr command"  ""  "\fLtr\fP \(em translate characters"
+.IX  "translate characters"  ""  "translate characters \(em \fLtr\fP"
+.IX  "character translation"  ""  "character translation \(em \fLtr\fP"
+.IX  "text processing utilities"  tr  ""  "\fLtr\fP \(em translate characters"
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLtr\fR"
+.B tr
+copies the standard input to the standard output with substitution or
+deletion of selected characters.  The arguments
+.I string1
+and
+.I string2
+are considered sets of
+characters.
+Any input character found in
+.I string1
+is mapped into the character in the corresponding position within
+.IR string2 .
+When
+.I string2
+is short, it is padded to the length of
+.I string1
+by duplicating its last character.
+.LP
+In either string the notation:
+.RS
+.IB a \- b
+.RE
+.LP
+denotes a range of characters from
+.I a
+to
+.I b
+in increasing
+.SM ASCII
+order.
+The character
+.BR \e\| ,
+followed by 1, 2 or 3 octal digits stands for the character whose
+.SM ASCII
+code is given by those digits.
+As with the shell, the escape character
+.BR \e\| ,
+followed by any other character, escapes any special meaning for that
+character.
+.SH SYSTEM V DESCRIPTION
+When
+.I string2
+is short, characters in
+.I string1
+with no corresponding character in
+.I string2
+are not translated.
+.LP
+In either string the following abbreviation conventions
+introduce ranges of characters or repeated characters into
+the strings.  Note: in the System V version, square brackets are
+required to specify a range.
+.TP 8
+.BI [ a \- z ]
+Stands for the string of characters whose
+.SM ASCII
+codes run
+from character
+.I a
+to character
+.IR z ,
+inclusive.
+.TP
+.BI [ a \(** n ]
+Stands for
+.I n
+repetitions of
+.IR a .
+If the first digit of
+.I n
+is
+.BR 0 ,
+.I n
+is considered octal; otherwise,
+.I n
+is taken to be decimal.
+A zero or missing
+.I n
+is taken to be huge;
+this facility is useful for padding
+.IR string2 .
+.SH OPTIONS
+Any combination of the options
+.BR \-c ,
+.BR \-d ,
+or
+.B \-s
+may be used:
+.TP
+.B \-c
+Complement the set of characters
+in
+.I string1
+with respect to the universe of characters whose
+.SM ASCII
+codes are 01
+through 0377 octal;
+.TP
+.B \-d
+Delete all input characters
+in
+.IR string1 .
+.TP
+.B \-s
+Squeeze all strings of repeated output characters that are in
+.I string2
+to single characters.
+.SH EXAMPLE
+.LP
+The following example creates a list of all the words in
+.I filename1
+one per line in
+.IR filename2 ,
+where a word is taken to be a maximal string of alphabetics.
+The second string is quoted to protect
+.RB ` \|\e\| '
+from the shell.
+012 is the
+.SM ASCII
+code for
+.SM NEWLINE\s0.
+.IP
+.BI "tr \-cs A\-Za\-z \'\e012\' <\|" filename1 >\| filename2
+.LP
+In the System V version, this would be specified as:
+.IP
+.BI "tr \-cs \'[A\-Z][a\-z]\' \'[\e012\(**]\' <\|" filename1 >\| filename2
+.SH "SEE ALSO"
+.BR ed (1),
+.BR expand (1),
+.BR ascii (7)
+.SH BUGS
+.LP
+Will not handle
+.SM ASCII NUL
+in
+.I string1
+or
+.I string2.
+.B tr
+always deletes
+.SM NUL
+from input.

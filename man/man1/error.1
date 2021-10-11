@@ -1,0 +1,304 @@
+.\" @(#)error.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH ERROR 1 "9 September 1987"
+.SH NAME
+error \- categorize compiler error messages, insert at responsible source file lines
+.SH SYNOPSIS
+.B error
+[
+.B \-n
+] 
+[
+.B \-s
+] 
+[
+.B \-q
+] 
+[
+.B \-v
+] 
+[
+.B \-t
+.I suffixlist
+] 
+.if n .ti 0.5i
+[
+.B \-I
+.I ignorefile
+] 
+[
+.I filename
+]
+.SH DESCRIPTION
+.IX "error command"  ""  " \fLerror\fP \(em analyze error messages"
+.IX "programming languages"  "analyze and disperse compiler error messages"
+.B error
+analyzes error messages produced
+by a number of compilers and language
+processors.  It replaces the painful,
+traditional methods of scribbling
+abbreviations of errors on paper,
+and permits error messages and source
+code to be viewed simultaneously.
+.LP
+.B error
+looks at error messages, either from the specified file 
+.I filename
+or from the standard input, and:
+.IP \(bu 2
+Determines which language processor produced each error message.
+.IP \(bu 2
+Determines the file name and line number of the erroneous line.
+.IP \(bu 2
+Inserts the error message into the
+source file immediately preceding the
+erroneous line.
+.LP
+Error messages that can't be
+categorized by language processor or content
+are not inserted into any file,
+but are sent to the standard output.
+.B error
+touches source files only after all input has been read.
+.LP
+.B error
+is intended to be run with its standard
+input connected with a pipe to the
+error message source.  Some language
+processors put error messages on their
+standard error file; others put their
+messages on the standard output.
+Hence, both error sources should be piped together into
+.B error.
+For example, when using the 
+.B csh
+syntax,
+.IP
+.B tutorial% make \-s lint |\|& error \-q \-v
+.LP
+will analyze all the error messages produced by whatever programs
+.BR make (1)
+runs when making lint.
+.LP
+.B error
+knows about the error messages produced by:
+.BR make (1),
+.BR cc (1V),
+.BR cpp (1),
+.BR as (1),
+.BR ld (1),
+.BR lint (1V),
+and other compilers.
+For all languages except Pascal,
+error messages are restricted to one
+line.  Some error messages refer to
+more than one line in more than one file, in which case
+.B error
+duplicates the error message and inserts
+it in all the appropriate places.
+.SH OPTIONS
+.TP 5
+.B \-n
+Do
+.I not
+touch any files; all error messages are sent to the standard
+output.
+.TP 5
+.B \-q
+.B error
+asks whether the file should be touched.  A
+.RB ` y '
+or
+.RB ` n '
+to the question
+is necessary to continue.  Absence of the
+.B \-q
+option implies that all referenced files
+(except those referring to discarded
+error messages) are to be touched.
+.TP 5
+.B \-v
+After all files have been touched, overlay the visual editor
+.B vi
+with it set up to edit all files touched,
+and positioned in the first touched file at the first error.
+If
+.BR vi (1)
+can't be found, try
+.BR ex (1)
+or
+.BR ed (1)
+from standard places.
+.TP 5
+.BI \-t " suffixlist"
+Take the following argument as a suffix list.
+Files whose suffices do not
+appear in the suffix list are not touched.
+The suffix list is dot separated,
+and
+.RB ` * '
+wildcards work.  Thus the suffix list:
+.RS
+.IP 
+.B .c.y.f*.h
+.RE
+.IP
+allows
+.B error
+to touch files ending with
+.RB ` .c ',
+.RB ` .y' ,
+.RB ` .f* '
+and
+.RB ` .h '.
+.TP 5
+.B \-s
+Print out statistics
+regarding the error categorization.
+.LP
+.B error
+catches interrupt and terminate signals, and
+terminates in an orderly fashion.
+.SH USAGE
+.SS Action Statements
+.LP
+.B error
+does one of six things with error messages.
+.TP 1i
+.B synchronize
+Some language processors produce short errors describing
+which file they are processing.
+.B Error 
+uses these to determine the file name for languages that
+don't include the file name in each error message.
+These synchronization messages are consumed entirely by
+.B error.
+.TP
+.B discard
+Error messages from
+.B lint
+that refer to one of the two
+.B lint
+libraries,
+.B /usr/lib/lint/llib-lc
+and
+.B /usr/lib/lint/llib-port
+are discarded, to prevent accidentaly touching these libraries.
+Again, these error messages are consumed entirely by
+.B error.
+.TP
+.B nullify
+Error messages from
+.B lint
+can be nullified if they refer to a
+specific function, which is known to
+generate diagnostics which are not interesting.
+Nullified error messages
+are not inserted into the source file,
+but are written to the standard output.
+The names of functions to ignore are
+taken from either the file named
+.B .errorrc
+in the user's home directory, or from the file named by the
+.B \-I
+option.  If the file does not exist, no error messages are nullified.
+If the file does exist, there must be one function name per line.
+.TP
+.B not file specific
+Error messages that can't be intuited are grouped together,
+and written to the standard output before any files are touched.
+They are not inserted into any source file.
+.TP
+.B file specific
+Error messages that refer to a specific file but to no specific line
+are written to the standard output when that file is touched.
+.TP
+.B true errors
+Error messages that can be intuited are candidates for
+insertion into the file to which they refer.
+.LP
+Only true error messages are inserted into source files.
+Other error messages are consumed entirely by
+.B error
+or are written to the standard output.
+.B error
+inserts the error messages into
+the source file on the line preceding the
+line number in the error message.
+Each error message is turned into a one
+line comment for the language, and is
+internally flagged with the string
+.B ###
+at the beginning of the error, and
+.B %%%
+at the end of the error.
+This makes pattern searching for errors
+easier with an editor, and allows
+the messages to be easily removed. 
+In addition, each error message contains
+the source line number for the line
+the message refers to.  A reasonably
+formatted source program can be recompiled
+with the error messages still in it,
+without having the error messages themselves
+cause future errors.  For poorly
+formatted source programs in free
+format languages, such as C or Pascal, it
+is possible to insert a comment into
+another comment, which can wreak havoc
+with a future compilation.  To avoid
+this, format the source program so there
+are no language statements on the
+same line as the end of a comment.
+.SH FILES
+.PD 0
+.TP 20
+.B ~/.errorrc
+function names to ignore for 
+.B lint
+error messages
+.TP
+.B /dev/tty
+user's teletype
+.PD
+.SH SEE ALSO
+.BR as (1),
+.BR cc (1V),
+.BR cpp (1),
+.BR csh (1),
+.BR ed (1),
+.BR ex (1),
+.BR ld (1),
+.BR lint (1V),
+.BR make (1),
+.BR vi (1)
+.SH BUGS
+.LP
+Opens the tty-device directly for user input.
+.LP
+Source files with links make a new copy of the file with
+only one link to it.
+.LP
+Changing a language processor's error message format
+may cause 
+.B error
+to not understand the error message.
+.LP
+.B error,
+since it is purely mechanical,
+will not filter out subsequent errors caused by ``floodgating''
+initiated by one syntactically trivial error.
+Humans are still much better at discarding these related errors.
+.LP
+Pascal error messages belong after the lines affected,
+error puts them before.  The alignment of the
+.B \||\|
+marking
+the point of error is also disturbed by
+.B error.
+.LP
+.B error
+was designed for work on
+.SM CRT 's
+at reasonably high speed.
+It is less pleasant on slow speed terminals, and has never been
+used on hardcopy terminals.

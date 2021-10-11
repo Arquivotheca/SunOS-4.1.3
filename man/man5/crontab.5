@@ -1,0 +1,143 @@
+.\" @(#)crontab.5 1.1 92/07/30 SMI; from S5R3
+.TH CRONTAB 5 "6 October 1988"
+.SH NAME
+crontab \- table of times to run periodic jobs
+.SH SYNOPSIS
+.B /var/spool/cron/crontabs/*
+.SH DESCRIPTION
+.IX  "crontab file"  ""  "\fLcrontab\fP \(em periodic jobs table"
+.IX  "periodic jobs table"  ""  "periodic jobs table \(em \fLcrontab\fP"
+.IX  "timed event jobs table"  ""  "timed event jobs table \(em \fLcrontab\fP"
+.LP
+The
+.B cron
+utility is a permanent process, started by
+.BR /etc/rc.local .
+.B cron
+consults the files in the directory
+.B /var/spool/cron/crontabs
+to find out what tasks are to be done, and at what time.
+.LP
+Each line in a
+.B crontab
+file consists of six fields, separated by spaces or tabs, as follows:
+.IP
+.I minutes	hours	day-of-month	month	day-of-week	command
+.LP
+.TP 15
+.I minutes
+Minutes field, which can have values in the range 0 through 59.
+.TP
+.I hours
+Hours field, which can have values in the range 0 through 23.
+.TP
+.I day-of-month
+Day of the month, in the range 1 through 31.
+.TP
+.I month
+Month of the year, in the range 1 through 12.
+.TP
+.I day-of-week
+Day of the week, in the range 0 through 6.
+Sunday is day 0 in this scheme of things.  For backward compatibility
+with older systems, Sunday may also be specified as day 7.
+.TP
+.I command
+Command to be run.
+A percent character in this field (unless escaped by
+.BR \e )
+is translated to a
+.SM NEWLINE
+character.
+Only the first line (up to a % or end of line)
+of the command field is executed by the Shell.
+The other lines are made available to the command as standard input.
+.LP
+Any of fields 1 through 5 can be a list of values separated by commas.
+A value can either be a number, or a pair of numbers separated by a hyphen,
+indicating that the job is to be done for all the times in the
+specified range.  If a field is an asterisk character
+.RB ( \(** )
+it means that the job is done for all possible values of the field.
+.LP
+Note: the specification of days
+may be made by two fields
+(day of the month and day of the week).
+If both are specified as a list of elements,
+both are adhered to.
+For example,
+.IP
+.B 0 0 1,15 \(** 1
+.LP
+would run a command on the
+first and fifteenth of each month, as well as on every Monday.
+To specify days by only one field,
+the other field should be set to
+.BR \(** .
+For example,
+.IP
+.B 0 0 \(** \(** 1
+.LP
+would run a command only on Mondays.
+.LP
+The command is run from your home directory with an
+.BR arg0 
+of
+.BR sh .
+Users who desire to have their
+.B \&.profile
+executed must explicitly do so in the command.
+.B cron
+supplies a default environment for every shell, defining
+.BR \s-1HOME\s+1 ", " \s-1LOGNAME\s+1 ", " \s-1USER\s+1 ,
+.BR \s-1SHELL\s+1(=/bin/sh) ,
+and
+.BR \s-1PATH\s0(=:/usr/ucb:/bin:/usr/bin) .
+.LP
+NOTE:
+Users should remember to redirect the standard output
+and standard error of their commands!
+If this is not done, any generated output or errors
+will be mailed to the user.
+.LP
+Lines that start with
+.B #
+are treated as comments.
+.SH EXAMPLES
+.IP
+.nf
+.ft B
+0 0 * * * calendar \-
+15 0 * * * /usr/etc/sa \-s >/dev/null
+15 4 * * * find /var/preserve \-mtime +7 \-a \-exec rm \-f {\|} \;
+40 4 * * * find / \-name '#*' \-atime +3 \-exec rm \-f {\|} \;
+0 0 * * 1-5 /usr/local/weekdays
+0 0 * * 0,6 /usr/local/weekends
+.ft R
+.fi
+.LP
+The
+.B calendar
+command runs at minute 0 of hour 0 (midnight) of every day.  The
+.B /usr/etc/sa
+command runs at 15 minutes after midnight every day.  The two
+.B find
+commands run at 15 minutes past four and at 40 minutes past four,
+respectively, every day of the year.  The
+.B /usr/local/weekdays
+command is run at midnight on weekdays.  Finally, the
+.B /usr/local/weekends
+command is run at midnight on weekends.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/spool/cron/crontabs/*
+tables of times to run periodic jobs
+.TP
+.B /etc/rc.local
+.TP
+.B \&.profile
+.PD
+.SH SEE ALSO
+.BR cron (8),
+.BR rc (8)

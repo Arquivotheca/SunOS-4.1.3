@@ -1,0 +1,660 @@
+.\" @(#)grep.1v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH GREP 1V "30 November 1988"
+.SH NAME
+grep, egrep, fgrep \- search a file for a string or regular expression
+.SH SYNOPSIS
+.B grep
+[
+.B \-bchilnsvw
+] [
+.BI \-e " expression"
+] [
+.IR filename ".\|.\|. ]" 
+.LP
+.B egrep
+[
+.B \-bchilnsv
+] [
+.BI \-e " expression"
+] [
+.BI \-f " filename"
+] 
+.if n .ti +0.5i
+[
+.I expression
+] [
+.IR filename ".\|.\|. ]" 
+.LP
+.B fgrep
+[
+.B \-bchilnsvx
+] [
+.BI \-e " string"
+] [
+.BI \-f " filename"
+] 
+.if n .ti +0.5i
+[
+.I string
+] [
+.IR filename ".\|.\|. ]"
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/grep
+[
+.B \-bchilnsvw
+] [
+.BI \-e " expression"
+] 
+.if n .ti +0.5i
+[
+.IR filename ".\|.\|. ]" 
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLgrep\fR"
+.IX "grep command"  ""  "\fLgrep\fP \(em pattern scanner"
+.IX "egrep command"  ""  "\fLegrep\fP \(em pattern scanner"
+.IX "fgrep command"  ""  "\fLfgrep\fP \(em pattern scanner"
+.IX "text processing utilities"  "search for patterns \(em \fLgrep\fR"
+.IX files  "search for patterns in \(em \fLgrep\fR"
+.IX "patterns, search in file for \(em \fLgrep\fR"
+.IX  "search for pattern in file \(em \fLgrep\fR"
+.IX  "look for pattern in file \(em \fLgrep\fR"
+.IX  find "patterns in file \(em \fLgrep\fR"
+Commands of the
+.B grep
+family search the input
+.IR filename s
+(the standard input default) for lines matching a pattern.
+Normally, each line found is copied to the standard output.
+.B grep
+patterns are limited regular expressions in the style of
+.BR ed (1).
+.B egrep
+patterns are full regular expressions including alternation.
+.B fgrep
+patterns are fixed strings \(em no regular expression metacharacters are supported.
+.LP
+In general,
+.B egrep
+is the fastest of these programs.
+.LP
+Take care when using the characters
+.RB ` $ ',
+.RB ` \(** ',
+.RB [ ,
+.RB ` \s+2^\s0 ',
+.RB ` | ',
+.RB ` ( ',
+.RB ` ) ',
+and
+.RB ` \e '
+in the
+.IR expression ,
+as these characters are also meaningful
+to the shell.  It is safest to enclose
+the entire
+.I expression
+argument in single quotes
+.BR \&\|\' \|.\|.\|.\| \' .
+.LP
+When any of the
+.B grep
+utilities is applied to more than one input
+file, the name of the file is displayed
+preceding each line which matches
+the pattern.  The filename is not displayed
+when processing a single
+file, so if you actually want the filename
+to appear, use
+.B /dev/null
+as a second file in the list.
+.SH OPTIONS
+.TP
+.B \-b
+Precede each line by the block number on which it was found.
+This is sometimes useful in locating disk block numbers by context.
+.TP
+.B \-c
+Display a count of matching lines rather
+than displaying the lines which
+match.
+.TP
+.B \-h
+Do not display filenames.
+.TP
+.B \-i
+Ignore the case of letters in making
+comparisons \(em that is, upper and
+lower case are considered identical.
+.TP
+.B \-l
+List only the names of files with matching
+lines (once) separated by
+.SM NEWLINE
+characters.
+.TP
+.B \-n
+Precede each line by its relative line number in the file.
+.TP
+.B \-s
+Work silently, that is, display nothing except error messages.
+This is useful for checking the error status.
+.TP
+.B \-v
+Invert the search to only display lines that
+.I do not
+match.
+.TP
+.B \-w
+Search for the expression as a word as if surrounded by
+.B \e<
+and
+.BR \e> .
+This applies to
+.B grep
+only.
+.TP
+.B \-x
+Display only those lines which match exactly \(em
+that is, only lines
+which match in their entirety.
+This applies to
+.B fgrep
+only.
+.TP
+.BI \-e " expression"
+Same as a simple
+.I expression
+argument, but useful when the
+.I expression
+begins with a
+.RB ` \- '.
+.TP
+.BI \-e " string"
+For 
+.B fgrep
+the argument is a literal character
+.IR string .
+.TP
+.BI \-f " filename"
+Take the regular expression
+.RB ( egrep )
+or a list of strings separated by
+.SM NEWLINE\s0
+.RB ( fgrep )
+from
+.IR filename .
+.br
+.ne 4
+.SH SYSTEM V OPTIONS
+The
+.B \-s
+option to
+.B grep
+indicates that error messages for nonexistent or unreadable files
+should be suppressed, not that all messages
+.I except
+for error messages should be suppressed.
+.ne 4
+.SH "REGULAR EXPRESSIONS"
+.LP
+The following
+.I one-character
+regular expressions match a
+.I single
+character:
+.TP
+.I c
+An ordinary character
+.RI ( not
+one of the special characters discussed below)
+is a one-character regular expression that matches that character.
+.TP
+.BI \e c
+A backslash 
+.RB ( \e )
+followed by any special character is a
+one-character regular expression that matches the special character itself.
+The special characters are:
+.RS
+.RS
+.TP 
+\(bu
+.RB ` . ',
+.RB ` * ',
+.RB ` [ ',
+and
+.RB ` \e '
+(period, asterisk, left square bracket,
+and backslash, respectively), which are always special,
+.I except
+when they appear within square brackets
+.RB ( [\|] ).
+.TP
+\(bu
+.RB ` \s+2^\s0 '
+(caret or circumflex), which is special at the
+.I beginning
+of an
+.I entire
+regular expression,
+or when it immediately follows the left of a 
+pair of square brackets (\fB[\|]\fP).
+.TP
+\(bu
+.B $
+(currency symbol), which is special at the
+.I end
+of an
+entire regular expression.
+.RE
+.RE
+.LP
+A backslash followed by one of
+.RB ` < ',
+.RB ` > ',
+.RB ` ( ',
+.RB ` ) ',
+.RB ` { ',
+or
+.RB ` } ',
+represents a special operator in the regular expression; see below.
+.TP
+.B \s+4.\s0
+A 
+.RB ` . '
+(period) is a one-character regular expression
+that matches any character except
+.SM NEWLINE\s0.
+.TP
+.BI [\| string\| ]
+A non-empty string of characters enclosed in square brackets is a
+one-character regular expression that matches
+.I "any one"
+character in that string.
+If, however, the first character of the
+string is a 
+.RB  ` \s+2^\s0 '
+(a circumflex or caret),
+the one-character regular expression matches any character
+.I except
+.SM NEWLINE\s0
+and the remaining characters in the string.
+The
+.RB ` \s+2^\s0 '
+has this special meaning
+.I only
+if it
+occurs first in the string.
+The 
+.RB ` \- '
+(minus)
+may be used to indicate a range of consecutive
+.SM ASCII
+characters;
+for example,
+.B [0\-9]
+is equivalent to
+.BR [0123456789] .
+The
+.RB ` \- '
+loses this special meaning if it occurs first (after
+an initial
+.RB ` \s+2^\s0 ',
+if any)
+or last in the string.
+The 
+.RB ` ] ' 
+(right square bracket) does not terminate such a string when it
+is the first character within it (after an initial
+.RB ` \s+2^\s0\| ',
+if any);
+that is,
+.B [\|]a\-f]
+matches either 
+.RB ` ] '
+(a right square bracket )
+or one of the letters
+.B a
+through
+.B f
+inclusive.
+The four characters
+.RB ` . ',
+.RB ` * ',
+.RB ` [\| ',
+and
+.RB ` \e '
+stand for themselves
+within such a string of characters.
+.LP
+The following rules may be used to construct regular expressions:
+.TP
+.B *
+A one-character regular expression followed by 
+.RB ` * '
+(an asterisk) is a
+regular expression that matches
+.I zero
+or more occurrences of the
+one-character regular expression.
+If there is any choice,
+the longest leftmost string that permits a match is chosen.
+.TP
+.BR \e( and \e)
+A regular expression enclosed between the character sequences
+.B \e(
+and
+.B \e)
+matches whatever the unadorned
+regular expression matches.
+This applies only to
+.BR grep .
+.TP
+.BI \e n
+The expression
+.BI \e n
+matches the same string of characters
+as was
+matched by an expression enclosed between
+.B \e(
+and
+.B \e)
+.I earlier
+in the same regular expression.
+Here
+.I n
+is a digit;
+the sub-expression specified is that beginning with the
+.IR n th
+occurrence of
+.B \e(
+counting from the left.
+For example, the expression
+.B ^\e(.*\e)\e1$
+matches a line
+consisting of two repeated appearances of the same string.
+.SS Concatenation
+The concatenation of regular expressions is a regular expression
+that matches the concatenation of the
+strings matched by each component of the
+regular expression.
+.TP
+.B \e<
+The sequence
+.B \e<
+in a regular expression constrains the one-character
+regular expression immediately following
+it only to match something at the
+beginning of a \*(lqword\*(rq; that is, either
+at the beginning of a line, or just
+before a letter, digit, or underline and
+after a character not one of these.
+.TP
+.B \e>
+The sequence
+.B \e>
+in a regular expression constrains the one-character
+regular expression immediately following
+it only to match something at the
+end of a \*(lqword\*(rq; that is, either at the end of a line, or just
+before a character which is neither a letter, digit, nor underline.
+.ne 8
+.TP
+.PD 0
+.BI \e{ m \e}
+.TP
+.BI \e{ m, \e}
+.TP
+.BI \e{ m,n \e}
+A regular expression followed by
+.BI \e{ m \e},
+.BI \e{ m,\e},
+or
+.BI \e{ m,n \e}
+matches a
+.B range
+of occurrences of the
+regular expression.
+The values of
+.I m
+and
+.I n
+must be non-negative integers less than 256;
+.BI \e{\fP m\fP\fB\e}
+matches
+.I exactly
+.I m
+occurrences;
+.BI \e{\fP m,\fP\fB\e}
+matches
+.I "at least"
+.I m
+occurrences;
+.BI \e{\fP m,n\fP\fB\e}
+matches
+.I "any number"
+of occurrences
+.I between
+.I m
+and
+.I n
+inclusive.
+Whenever a choice exists,
+the regular expression matches as many occurrences as possible.
+.PD
+.TP
+.B \s+2^\s0
+A circumflex or caret
+.RB (\| \s+2^\s0  \|)
+at the beginning of an entire regular expression
+constrains that regular expression to match an
+.I initial
+segment of a line.
+.TP
+.B $
+A currency symbol 
+.RB ( $ )
+at the end of an entire regular expression
+constrains that regular expression to match a
+.I final
+segment of a line.
+.LP
+The construction
+.IP
+.B example%
+\fB\s+2^\s0\fIentire
+regular expression
+.B $
+.LP
+constrains the entire regular expression to match the entire line.
+.LP
+.B egrep
+accepts regular expressions of the same sort
+.B grep
+does, except for
+.BR \e( ,
+.BR \e) ,
+.BI \e n,
+.BR \e< ,
+.BR \e> ,
+.BR \e{ ,
+and
+.BR \e} ,
+with the addition of:
+.RS
+.RS
+.TP
+.B *
+A regular expression (not just a one-character
+regular expression) followed by
+.RB ` * '
+(an asterisk) 
+is a regular expression that matches
+.I zero
+or more occurrences of the
+one-character regular expression.
+If there is any choice,
+the longest leftmost string that permits a match is chosen.
+.TP
+.B +
+A regular expression followed by 
+.RB ` + '
+(a plus sign) 
+is a
+regular expression that matches
+.I one
+or more occurrences of the
+one-character regular expression.
+If there is any choice,
+the longest leftmost string that permits a match is chosen.
+.TP
+.B ?
+A regular expression followed by 
+.RB ` ? ' 
+(a question mark) 
+is a
+regular expression that matches
+.I zero
+or
+.I one
+occurrences of the one-character regular expression.
+If there is any choice,
+the longest leftmost string that permits a match is chosen.
+.TP
+.B |
+Alternation: two regular expressions separated by 
+.RB ` | '
+or
+.SM NEWLINE\s0
+match either a match for the first or a match for the second.
+.TP
+.B (\|)
+A regular expression enclosed in parentheses
+matches a match for the regular expression.
+.RE
+.RE
+.LP
+The order of precedence of operators at the same parenthesis level
+is
+.RB ` [\ ] '
+(character classes), then
+.RB ` * '
+.RB ` + '
+.RB ` ? '
+.BR  (closures), then
+concatenation, then
+.RB ` | '
+.BR  (alternation) and
+.SM NEWLINE\s0.
+.SH EXAMPLES
+.LP
+Search a file for a fixed string using
+.BR fgrep :
+.LP
+.RS
+.nf
+.ft B
+example% fgrep intro /usr/share/man/man3/*.3*
+.ft P
+.fi
+.RE
+.LP
+Look for character classes using
+.BR grep :
+.LP
+.RS
+.nf
+.ft B
+example% grep '[1-8]([\s-1CJMSNX\s0])' /usr/share/man/man1/*.1
+.ft P
+.fi
+.RE
+.LP
+Look for alternative patterns using
+.BR egrep :
+.LP
+.RS
+.nf
+.ft B
+example% egrep '(Sally|Fred) (Smith|Jones|Parker)' telephone.list
+.ft P
+.fi
+.RE
+.br
+.ne 4
+.LP
+To get the filename displayed when only processing a single file, use
+.B /dev/null
+as the second file in the list:
+.LP
+.RS
+.nf
+.ft B
+example% grep 'Sally Parker' telephone.list /dev/null
+.ft P
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/null
+.PD
+.SH "SEE ALSO"
+.BR awk (1),
+.BR ed (1),
+.BR ex (1),
+.BR sh (1),
+.BR vi (1),
+.BR sed (1V)
+.SH BUGS
+.LP
+Lines are limited to 1024 characters by
+.BR grep ;
+longer lines are truncated.
+.LP
+The combination of
+.B \-l
+and
+.B \-v
+options does
+.I not
+produce a list of files in which a regular expression is not found.
+To get such a list, use the Bourne shell construct:
+.LP
+.nf
+.ft B
+.\" Unfortunately, this is what you have to do to set tabs every 8 spaces
+.ta +8u*\w'\0'u +8u*\w'\0'u +8u*\w'\0'u +8u*\w'\0'u
+	for \fIfilename\fP in *
+	do
+		if [ `grep "\fIre\fP" $\fIfilename\fP | wc -l` -eq 0 ]
+		then
+			echo $\fIfilename\fP
+		fi
+	done
+.ft R
+.fi
+.LP
+or the C shell construct:
+.LP
+.nf
+.ft B
+	foreach \fIfilename\fP (*)
+		if (`grep "\fIre\fP" $\fIfilename\fP | wc -l` == 0) echo $\fIfilename\fP
+	end
+.ft R
+.fi
+.LP
+Ideally there should be only one
+.BR grep .
+.SH DIAGNOSTICS
+Exit status is 0 if any matches are found,
+1 if none, 2 for syntax errors or inaccessible files.
+
+

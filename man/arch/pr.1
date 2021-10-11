@@ -1,0 +1,172 @@
+.TH PR 1  "23 September 1985"
+.\" @(#)pr.1 1.1 92/07/30 SMI;
+.SH NAME
+pr \- prepare file(s) for printing, possibly in multiple columns
+.SH SYNOPSIS
+.B pr
+[
+.BI \- n
+] [
+.BI \+ n
+] [
+.B \-h
+.I string
+] [
+.BI \-w n
+] [
+.B \-f
+] [
+.BI \-l n
+] [
+.B \-t
+]
+.if n .ti +0.5i
+[
+.BI \-s n
+] [
+.B \-m
+] [ \fIfilename\fR ] .\|.\|.
+.SH DESCRIPTION
+.IX  "pr command"  ""  "\fLpr\fP \(em prepare files for printing"
+.IX  "prepare files for printing"  ""  "prepare files for printing \(em \fLpr\fP"
+.IX  files  "prepare for printing"  files  "prepare files for printing \(em \fLpr\fP"
+.IX  "multiple columns"  "print in"  ""  "print in \(em \fLpr\fP"
+.IX  columns  "print in multiple"  ""  "print in multiple \(em \fLpr\fP"
+.I pr
+prepares one or more
+.IR files 's
+for printing.  The output is separated
+into pages headed by a date, the name of the file or a specified header,
+and the page number.
+.I pr
+prints its standard input if there are no
+.I file
+arguments.  Formfeed characters in the input files cause page breaks in
+the output, as expected.
+.LP
+Inter-terminal messages via
+.IR write
+are forbidden during a
+.IR pr .
+.SH OPTIONS
+.LP
+Options apply to all following
+.IR file 's
+but may be reset between
+.IR file 's:
+.TP
+.BI \- n
+Produce
+.IR n -column
+output.  For example:
+.RS
+.nf
+.in +.5i
+.ta +.75i; +.75i; +.75;
+.ft I
+Print	of	in	
+the	one	three	
+lines	file	columns.
+.fi
+.in -.5i
+.RE
+This option overrides the
+.B \-t
+option (see below).
+.TP
+.BI + n
+Begin printing with page
+.IR  n .
+.TP
+\fB\-h\fP \fIstring\fP
+Use
+.I string
+as a header for the page instead of the default header.
+.TP
+.BI \-w n
+For purposes of multi-column output, take the width of the page to be
+.I n
+characters instead of the default 72.
+.TP
+.BI \-f
+Use formfeeds instead of newlines to separate pages.
+A formfeed is assumed to use up two blank lines at the top of a page.
+Thus this option does not affect the effective page length.
+.TP
+.BI \-l n
+Take the length of the page to be
+.I n
+lines instead of the default 66.
+.TP
+.B  \-t
+Do not print the 5-line header or the 5-line trailer normally supplied for
+each page.  Formfeed characters are not generated when this option is
+used, even if the 
+.B \-f
+option was used.  The
+.B \-t
+option is intended for applications where the results should be directed
+to a file for further processing.
+.TP
+.BI \-s c
+Separate columns by the single character
+.I c
+instead of by the appropriate amount of white space.  A missing
+.I c
+is taken to be a tab.
+.TP
+.B  \-m
+Print all
+.IR file 's
+simultaneously, each in one column, for example:
+.RS
+.nf
+.in +.5i
+.ft I
+.ta +.75i; +.75i; +.75i
+Print	Print	Print
+the	the	third
+lines	lines	file's
+of 	of	lines
+file	file	go
+one.	two.	here.
+.in -.5i
+.fi
+.RE
+.SH EXAMPLES
+.LP
+Print a file called 
+.I dreadnaught
+on the printer \(em this is the simplest use of
+.IR pr :
+.RS
+.nf
+tutorial% \fBpr  dreadnought | lpr\fP
+tutorial%
+.fi
+.RE
+.LP
+Produce three laminations of a file called 
+.I ridings 
+side by side in the output, with no headers or trailers, the results to
+appear in the file called 
+.IR Yorkshire :
+.RS
+.nf
+tutorial% \fBpr  \-m \-t ridings ridings ridings > Yorkshire\fP
+tutorial% 
+.fi
+.RE
+.SH FILES
+/dev/tty?
+to suspend messages.
+.SH "SEE ALSO"
+cat(1), lpr(1)
+.SH DIAGNOSTICS
+There are no diagnostics when
+.I pr
+is printing on a terminal.
+.SH BUGS
+.LP
+The options described above interact with each other in strange and as
+yet to be defined ways.

@@ -1,0 +1,111 @@
+.\" @(#)tput.1v 1.1 92/07/30 SMI; from S5
+.TH TPUT 1V "9 September 1987"
+.SH NAME
+tput \- query terminfo database
+.SH "SYNOPSIS"
+.B /usr/5bin/tput
+[
+.BI -T type
+]
+.I capname
+.SH "DESCRIPTION"
+.IX "System V commands" "\fLtput\fR"
+.IX tput "" "\fLtput\fR \(em System V terminal info database query"
+.LP
+Note:
+Optional Software (System V Option).
+Refer to
+.I Installing \s-1UNIX\s0 on the Sun Workstation
+for information on how to install this command.
+.LP
+.B tput
+uses the
+.BR terminfo (5)
+database to make terminal-dependent
+capabilities and information available to
+the shell.
+.B tput
+outputs a string if the attribute
+.IB ( cap ability " name" )
+is of type string, or an integer if the attribute is of type integer.
+If the attribute is of type boolean, tput simply sets the exit code
+(0 for
+.SM TRUE\s0,
+1 for
+.SM FALSE\s0),
+and does no output.
+.SH OPTIONS
+.TP
+.BI -T type
+Indicate the type of terminal.
+Normally this flag is unnecessary, as the default is taken from the
+environment variable
+.B
+.SM $TERM\s0\fP.
+.LP
+.TP
+.I capname
+Indicate the attribute from the
+.B terminfo
+database.
+See
+.BR terminfo (5).
+.LP
+.SH EXAMPLES
+.TP 10
+.B "tput clear"
+Echo clear-screen sequence for the current terminal.
+.TP
+.B "tput cols"
+Print the number of columns for the current terminal.
+.TP
+.B "tput -T450 cols"
+Print the number of columns for the 450 terminal.
+.TP
+.B "bold=`tput smso`"
+Set shell variable ``bold'' to stand-out mode
+sequence for current terminal.
+This might be followed by a prompt:
+.RS
+.IP
+.B echo "${bold}Please type in your name: \\c"
+.RE
+.TP
+.B "tput hc"
+Set exit code to indicate if current terminal is a hardcopy terminal.
+.LP
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/5lib/terminfo/?/*
+terminal descriptor files
+.TP
+.B /usr/5include/term.h
+definition files
+.TP
+.B /usr/5include/curses.h
+.PD
+.SH "SEE ALSO"
+.BR stty (1),
+.BR terminfo (5)
+.SH DIAGNOSTICS
+.B tput
+prints error messages and returns the following error codes on error:
+.in +6
+.PD 0
+.TP
+.B \-1
+Usage error.
+.TP
+.B \-2
+Bad terminal type.
+.TP
+.B \-3
+Bad capname.
+.LP
+In addition, if a capname is requested
+for a terminal that has no value for
+that capname (for instance,
+.RB ` "tput -T450 lines" '),
+.B \-1
+is printed.

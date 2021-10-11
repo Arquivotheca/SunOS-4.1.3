@@ -1,0 +1,116 @@
+.\" @(#)ip.4s 1.1 92/07/30 SMI;
+.TH IP 4S "18 September 1985"
+.SH NAME
+ip \- Disk driver for Interphase 2180 SMD Disk Controller
+.SH "SYNOPSIS \(em SUN-2"
+.ft B
+.nf
+controller ipc0 at mbio ? csr 0x040 priority 2
+controller ipc1 at mbio ? csr 0x044 priority 2
+disk ip0 at ipc0 drive0
+disk ip1 at ipc0 drive1
+disk ip2 at ipc1 drive0
+disk ip3 at ipc1 drive1
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "ip4s device"  ""  "\fLip\fP \(em Interphase SMD Disk driver"  ""  PAGE START
+.IX  "Interphase SMD Disk driver"  ""  "Interphase SMD Disk driver \(em \fLip\fP"  ""  PAGE START
+.IX  "2180 SMD Disk driver"  ""  "2180 SMD Disk driver \(em \fLip\fP"  ""  PAGE START
+.IX  "SMD disk controller"  "Interphase 2180"  ""  "\fLip\fP \(em Interphase 2180"  PAGE START
+.IX  "disk driver"  "Interphase"  ""  "\fLip\fP \(em Interphase"  PAGE START
+Special files \fIip*\fP refer to disk devices controlled by an
+Interphase SMD 2180 disk controller. 
+.LP 
+The standard \fIip\fP device names begin with the letters ``ip'',
+followed by the drive unit number, followed by a letter from the series
+a \- h to name one of the eight partitions on the drive. 
+For example, \fI/dev/ip1c\fP refers to partition c on the second drive
+controlled by the Interphase controller. 
+.LP 
+The device names provide the binding into the minor device numbers for
+the driver software.  Files with minor device
+numbers 0 through 7 refer to the eight partitions (a \- h) of unit 0;
+files with device numbers 8 through 15 refer to the eight partitions of
+drive 1, and so on.
+.LP
+The block files access the disk via the system's normal
+buffering mechanism, and may be read and written without regard to
+physical disk records.  There is also a `raw' interface
+which provides for direct transmission between the disk
+and the user's read or write buffer.
+A single read or write call results in exactly one I/O operation
+and therefore raw I/O is considerably more effficient when
+many words are transmitted.  Raw files conventionally have a leading
+``r'' \(em \fI/dev/rip0c\fP, for instance.
+.LP
+In raw I/O, counts should be a multiple of 512 bytes (a disk sector).
+Likewise
+.I seek
+calls should specify a multiple of 512 bytes.
+.SH "DISK SUPPORT"
+.LP
+This driver handles all SMD drives by reading a label from sector
+0 of the drive which describes the disk geometry and partitioning.
+.LP
+The ip?a partition is normally used for the root file system
+on a disk, the ip?b partition as a paging area,
+and the ip?c partition for pack-pack copying (it normally maps
+the entire disk).  The rest of the disk is normally the ip?g
+partition.
+.SH FILES
+/dev/ip[0-7][a-h]	block files
+.br
+/dev/rip[0-7][a-h]	raw files
+.SH SEE ALSO
+dkio(4S), xy(4S)
+.\".LP
+.\"``Interphase SMD2180 Storage Module Controller/Formatter \- User's Guide'' (Sun 800-0274)
+.SH DIAGNOSTICS
+.TP
+ip\fIn\fR: SMD-2180
+When booting tells the controller type.
+.TP
+ip\fIn\fR\|: initialization failed
+Because the controller didn't
+respond; perhaps another device is at the address the system
+expected an Interphase controller at.
+.TP
+ip\fIn\fR\|: error \fIn\fR reading label on head \fIn\fR
+Error reading drive geometry/partition table information.
+.TP
+ip\fIn\fR\|: Corrupt label on head \fIn\fR\|
+The geometry/partition label checksum was incorrect.
+.TP
+ip\fIn\fR\|: Misplaced label on head \fIn\fR\|
+A disk label was copied to the wrong head on the disk; shoudn't happen.
+.TP
+ip\fIn\fR\|: Unsupported phys partition # \fIn\fR\|
+This indicates a bad label.
+.TP
+\fBip\fIn\fR\|: unit not online
+.TP
+ip\fIn\|c\fR\|: \fIcmd\fP \fIhow\fP \fI(msg)\fP blk \fIn\fR
+A command such as read, write, or format encountered a error condition 
+(how): either it \fIfailed\fP, the unit was \fIrestored\fP, or an 
+operation was \fIretry\fP'ed.  The \fImsg\fP is derived from the error 
+number given by the controller, indicating a condition such as 
+"drive not ready", "sector not found" or "disk write protected".
+.SH BUGS
+In raw I/O
+.I read
+and
+.IR write (2V)
+truncate file offsets to 512-byte block boundaries, and
+.I write
+scribbles on the tail of incomplete blocks.
+Thus, in programs that are likely to access raw devices,
+.I read, write
+and
+.IR lseek (2)
+should always deal in 512-byte multiples.
+.IX  "ip4s device"  ""  "\fLip\fP \(em Interphase SMD Disk driver"  ""  PAGE END
+.IX  "Interphase SMD Disk driver"  ""  "Interphase SMD Disk driver \(em \fLip\fP"  ""  PAGE END
+.IX  "2180 SMD Disk driver"  ""  "2180 SMD Disk driver \(em \fLip\fP"  ""  PAGE END
+.IX  "SMD disk controller"  "Interphase 2180"  ""  "\fLip\fP \(em Interphase 2180"  PAGE END
+.IX  "disk driver"  "Interphase"  ""  "\fLip\fP \(em Interphase"  PAGE END

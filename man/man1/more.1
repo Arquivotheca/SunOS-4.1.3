@@ -1,0 +1,393 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)more.1 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\"
+.TH MORE 1 "9 September 1987"
+.SH NAME
+more, page \- browse or page through a text file
+.SH SYNOPSIS
+.B more
+[
+.B \-cdflsu
+] [
+.BI \- lines
+] [
+.B +\fIlinenumber\fP
+] [
+.B +/\fIpattern\fP
+]
+.if n .ti +0.5i
+[
+.I filename
+\&.\|.\|. ]
+.LP
+.B page
+[
+.B \-cdflsu
+] [
+.BI \- lines
+] [
+.B +\fIlinenumber\fP
+] [
+.B +/\fIpattern\fP
+] [
+.I filename
+\&.\|.\|. ]
+.if n .ti +05i
+.SH DESCRIPTION
+.IX  "more command"  ""  "\fLmore\fP \(em browse text file"
+.IX  "page command"  ""  "\fLpage\fP \(em browse text file"
+.IX  "text file, browse through" \fLmore\fP
+.IX  "text file, browse through" \fLpage\fP
+.IX  file  "browse more"  ""  "browse through text\(em \fLmore\fP"
+.IX  file  "browse page"  ""  "browse through text\(em \fLpage\fP"
+.IX  display "file by screenfuls \(em \fLmore\fP"
+.LP
+.B more
+is a filter that displays the contents of a text
+file
+on the terminal, one screenful at a time.  It normally pauses after
+each screenful, and prints
+.B --More--
+at the bottom of the screen.
+.B more
+provides a two-line overlap between screens for continuity.
+If
+.B more
+is reading from a file rather than a pipe, the percentage of
+characters displayed so far is also shown.
+.LP
+.B more
+scrolls up to display one more line in response to a
+.SM RETURN
+character; it displays another screenful in response to a
+.SM SPACE
+character.  Other commands are listed below.
+.LP
+.B page
+clears the screen before displaying the next screenful of text;
+it only provides a one-line overlap between screens.
+.LP
+.B more
+sets the terminal
+to
+.I noecho
+mode, so that the output can be continuous.
+Commands that you type do not normally show up on your terminal,
+except for the
+.B /
+and
+.B !
+commands.
+.LP
+If the standard output is not a terminal,
+.B more
+acts just like
+.BR cat (1V),
+except that a header is printed before each file in a series.
+.SH OPTIONS
+.TP
+.B \-c
+Clear before displaying.  Redrawing the screen instead of scrolling
+for faster displays.  This option is ignored if
+the terminal does not have the ability to clear to the end of a line.
+.TP
+.B \-d
+Display error messages rather than ringing the terminal bell if
+an unrecognized command is used.
+This is helpful for inexperienced users.
+.TP
+.B \-f
+Do not fold long lines.  This is useful when lines contain
+nonprinting characters or escape sequences, such as those generated
+when
+.BR nroff (1)
+output is piped through
+.BR ul (1).
+.TP
+.B \-l
+Do not treat
+.SM FORMFEED
+characters (\s-1CTRL-D\s0) as \*(lqpage breaks.\*(rq If
+.B \-l
+is not used,
+.B more
+pauses to accept commands after any line containing a
+.BR ^L
+character (\s-1CTRL-D\s0).  Also, if a file begins with a
+.SM FORMFEED\s0,
+the screen is cleared before the file is printed.
+.TP
+.B \-s
+Squeeze.  Replace multiple blank lines with a single
+blank line.  This is helpful when viewing
+.BR nroff (1)
+output, on the screen.
+.TP
+.B \-u
+Suppress generation of underlining escape sequences.
+Normally,
+.B more
+handles underlining, such as that produced
+by
+.BR nroff (1),
+in a manner appropriate to the terminal.  If the terminal can
+perform underlining or has a stand-out mode,
+.B more
+supplies appropriate escape sequences as called for in the
+text file.
+.TP
+.BI \- lines
+Display the indicated number of
+.I lines
+in each screenful, rather than the default (the number of lines
+in the terminal screen less two).
+.TP
+.BI + linenumber\fP
+Start up at
+.IR linenumber .
+.TP
+.BI +/ pattern\fP
+Start up two lines above the line containing the
+regular expression
+.IR pattern .
+Note: unlike
+editors, this construct should
+.I not
+end with a
+.RB ` / '.
+If it does, then the trailing slash is taken as a character in the
+search pattern.
+.br
+.ne 8
+.SH USAGE
+.SS Environment
+.LP
+.B more
+uses the terminal's
+.BR termcap (5)
+entry to determine its display characteristics, and
+looks in the environment variable
+.SB MORE
+for any preset options.  For instance, to page through files using
+the
+.B \-c
+mode by default, set the value of this variable to
+.BR \-c .
+(Normally, the command sequence to set up this
+environment variable is placed in the
+.B .login
+or
+.B .profile
+file).
+.SS Commands
+.LP
+The commands take effect immediately;  it is not necessary to
+type a carriage return.
+Up to the time when the command character itself is given,
+the user may type the line kill character to cancel the numerical
+argument being formed.
+In addition, the user may type the erase character to redisplay the
+.RB ` "--More--(\fIxx\fP%)" '
+message.
+.LP
+In the following commands,
+.I i
+is a numerical argument
+.RB ( 1
+by default).
+.TP 10
+.IR i \s-1SPACE\s0
+Display another screenful, or
+.I i
+more lines if
+.I i
+is specified.
+.TP
+.IR i \s-1RETURN\s0
+Display another line, or
+.I i
+more lines, if specified.
+.TP
+.IB i ^D
+(\s-1CTRL\s0\-D)
+Display (scroll down) 11 more lines.
+.I i
+is given, the scroll size is set to
+.IR i\| .
+.TP
+.IR i d
+Same as
+.BR ^D .
+.TP
+.IB i z
+Same as
+.SM SPACE,
+except that
+.IR i\| ,
+if present, becomes the new default number
+of lines per screenful.
+.TP
+.IB i s
+Skip
+.I i\|
+lines and then print a screenful.
+.TP
+.IB i f
+Skip
+.I i
+screenfuls and then print a screenful.
+.TP
+.IB i ^B
+(\s-1CTRL-B\s0)
+Skip back
+.I i
+screenfuls and then print a screenful.
+.TP
+.I b
+Same as
+.B ^B
+(\s-1CTRL-D\s0).
+.TP
+.B q
+.PD 0
+.TP
+.B Q
+.PD
+Exit from
+.BR more .
+.TP
+.B =
+Display the current line number.
+.TP
+.B v
+Drop into the
+.BR vi (1)
+editor at the current line of the current
+file.
+.TP
+.B h
+Help.  Give a description of all the
+.B more
+commands.
+.TP
+.IB i / pattern
+Search for the
+.IR i\| th
+occurrence of the regular expression
+.IR pattern .
+Display the screenful starting two lines prior to the line
+that contains the
+.IR i\| th
+match for the regular expression
+.IR pattern ,
+or the end of a pipe, whichever comes first.  If
+.B more
+is displaying a file and there is no such match, its position
+in the file remains unchanged.  Regular expressions can be
+edited using erase and kill characters.
+Erasing back past the first column cancels the search command.
+.TP
+.IB i n
+Search for the
+.IR i\| th
+occurrence of the last
+.I pattern
+entered.
+.TP
+.B \'
+Single quote.  Go to the point from which the last search started.
+If no search has been performed in the current file,
+go to the beginning of the file.
+.TP
+.BI ! command
+Invoke a shell to execute
+.IR command\| .
+The characters
+.B %
+and
+.BR ! ,
+when used within
+.I command
+are replaced with the current filename
+and the previous shell command,
+respectively.
+If there is no current filename,
+.B %
+is not expanded. Prepend a backslash to these characters to
+escape expansion.
+.TP
+.IB i :n
+Skip to the
+.IR i\| th
+next filename given in the command line,
+or to the last filename in the list if
+.I i
+is out of range.
+.TP
+.IB i :p
+Skip to the
+.IR i\| th
+previous filename given in the command line,
+or to the first filename if
+.I i
+is out of range.
+If given while
+.B more
+is positioned within a file, go to the
+beginning of the file.
+If
+.B more
+is reading from a pipe,
+.B more
+simply rings the terminal bell.
+.br
+.ne 2
+.TP
+.B :f
+Display the current filename and line number.
+.br
+.ne 5
+.TP
+.B :q
+.PD 0
+.TP
+.B :Q
+.PD
+Exit from
+.B more
+(same as
+.B q
+or
+.B Q ).
+.TP
+.B \&.
+Dot.  Repeat the previous command.
+.TP
+.B \s+3^\s0\|\e
+Halt a partial display of text.
+.B more
+stops sending output, and displays the usual
+.B --More--
+prompt.  Unfortunately, some output is lost as a result.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/termcap
+terminal data base
+.TP
+.B /usr/lib/more.help
+help file
+.PD
+.SH "SEE ALSO"
+.BR cat (1V),
+.BR csh (1),
+.BR man (1),
+.BR script (1),
+.BR sh (1),
+.BR environ (5V),
+.BR termcap (5)
+.SH BUGS
+Skipping backwards is too slow on large files.

@@ -1,0 +1,140 @@
+.\" @(#)lseek.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH LSEEK 2V "21 January 1990"
+.SH NAME
+lseek, tell \- move read/write pointer
+.SH SYNOPSIS
+.nf
+.ft B
+.ta 1.25i 1.6i
+#include <sys/types.h>
+#include <unistd.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+off_t lseek(fd, offset, whence)
+int fd;
+off_t offset;
+int whence;
+.fi
+.ft R
+.LP
+.nf
+.ft B
+long tell(fd)
+int fd;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  lseek()  ""  "\fLlseek()\fP \(em move file position"
+.IX  "file system"  lseek()  ""  \fLlseek()\fP
+.IX  "file position, move \(em \fLlseek()\fR"
+.IX  "move file position \(em \fLlseek()\fR"
+.IX  "read/write pointer, move \(em \fLlseek()\fR"
+.IX  tell()  ""  \fLtell()\fP
+.IX  "file system"  tell()  ""  \fLtell()\fP
+.LP
+.B lseek(\|)
+sets the seek pointer associated with the open file or device referred
+to by the descriptor
+.I fd
+according to the value supplied for
+.IR whence .
+.I whence
+must be one of the following constants defined in
+.BR <unistd.h> :
+.LP
+.RS
+.RS
+.nf
+.SB SEEK_SET
+.SB SEEK_CUR
+.SB SEEK_END
+.fi
+.RE
+.RE
+.LP
+If
+.I whence
+is
+\fB\s-1SEEK_SET\s0\fP,
+the seek pointer is set to
+.I offset
+bytes.
+If
+.I whence
+is
+\fB\s-1SEEK_CUR\s0\fP,
+the seek pointer is set to its current location plus
+.IR offset .
+If
+.I whence
+is
+\fB\s-1SEEK_END\s0\fP,
+the seek pointer is set to the size of the
+file plus
+.IR offset .
+.LP
+Some devices are incapable of seeking.  The value of the seek pointer
+associated with such a device is undefined.
+.LP
+The obsolete function
+.B "tell(fd)"
+is equivalent to
+.BR "lseek(fd, 0L, SEEK_CUR)" .
+.SH RETURN VALUES
+.LP
+On success,
+.B lseek(\|)
+returns
+the seek pointer location as measured in bytes from the beginning 
+of the file.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B lseek(\|)
+will fail and the seek pointer will remain unchanged if:
+.TP 15
+.SM EBADF
+.I fd
+is not an open file descriptor.
+.TP
+.SM EINVAL
+.I whence
+is not a proper value.
+.IP
+The seek operation would result in an 
+illegal file offset value for the file (for example, a negative file 
+offset for a file other than a character special file).
+.TP
+.SM ESPIPE
+.I fd
+is associated with a pipe or a socket.
+.SH SEE ALSO
+.BR dup (2V),
+.BR open (2V)
+.SH NOTES
+.LP
+Seeking far beyond the end of a file, then writing,
+may create a gap or \*(lqhole\*(rq, which occupies no
+physical space and reads as zeros.
+.LP
+The constants
+\fB\s-1L_SET\s0\fP,
+\fB\s-1L_INCR\s0\fP,
+and
+\fB\s-1L_XTND\s0\fP
+are provided as synonyms for
+\fB\s-1SEEK_SET\s0\fP,
+\fB\s-1SEEK_CUR\s0\fP,
+and
+\fB\s-1SEEK_END\s0\fP,
+respectively for backward compatibility but they will disappear in a
+future release.  It is unlikely that the underlying constants
+0, 1 and 2 will ever change.

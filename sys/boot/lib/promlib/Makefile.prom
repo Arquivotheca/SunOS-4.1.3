@@ -1,0 +1,120 @@
+#	@(#)Makefile.prom 1.1 92/07/30 SMI
+#
+#  Copyright (c) 1990, 1991 Sun Microsystems, Inc.
+#
+# Standalone Library promlib makefile
+#
+# This file is included by ../$(ARCH)/Makefile and the target libraries
+# are built in ../$(ARCH)
+# 
+# Certain symbols must be defined before this Makefile may be included:
+#
+#	ARCH		The target architecture (eg, "sun4")
+#	ARCHOBJ		Architecture-specific objects in ../$(ARCH)
+#	ARCHOPTS	Architecture-specific compile options.
+#	ARCHINS		Architecture-specific install targets.
+#	ARCHCLEAN	Architecture-specific clean targets.
+#	CONFOBJ		Common devices as listed in ../$(ARCH)/conf.c
+
+#
+# Make libprom.a in place in sys/$(ARCH)
+# Install libprom.a in $(SYSINSDIR)/$(ARCH)
+#
+
+LIBPROMDIR=	../../../$(ARCH)
+LIBPROM=	$(LIBPROMDIR)/libprom.a
+
+SYSINSDIR=	$(DESTDIR)/usr/kvm/sys
+LIBPROMINSDIR=	$(SYSINSDIR)/$(ARCH)
+
+LIBPROMCPPOPTS=	-Dprintf=prom_printf -Dputchar=prom_putchar
+
+LIBPROMINSTALL=	install_libprom
+LIBPROMCLEAN=	clean_libprom
+
+#
+# A hack for the list generated for tags and cscope.
+# (See LIBPROMLIST rule, below.)
+#
+
+LIBPROMRELDIR=	../boot/lib/promlib
+
+PROMFILES = prom_alloc.c prom_bootargs.c prom_bootparm.c	\
+	prom_bootpath.c prom_devtype.c prom_nodeid.c		\
+	prom_getprop.c prom_nextprop.c prom_setprop.c		\
+	prom_enter.c prom_exit.c prom_fb.c prom_free.c		\
+	prom_getchar.c prom_gettime.c prom_handler.c		\
+	prom_idlecpu.c prom_init.c prom_inpath.c		\
+	prom_idprom.c						\
+	prom_kbd.c prom_map.c prom_mayget.c prom_mayput.c	\
+	prom_outpath.c prom_phandle.c prom_printf.c		\
+	prom_putchar.c prom_reboot.c prom_resume.c		\
+	prom_segmap.c prom_startcpu.c prom_stopcpu.c		\
+	prom_support.c prom_version.c prom_writestr.c		\
+	prom_interp.c prom_open.c prom_close.c prom_seek.c	\
+	prom_trap.c prom_string.c prom_panic.c
+
+PROMHEADERS = promcommon.h
+
+#
+# Pointers to source, .o's, etc.
+#
+
+PROMDIR=	../promlib
+PROMSRC= 	$(PROMFILES:%.c=$(PROMDIR)/%.c)
+PROMHDRS= 	$(PROMHEADERS:%.h=$(PROMDIR)/%.h)
+PROMOBJ= 	$(PROMFILES:%.c=%.o)
+PROMLINTSRC=	$(PROMDIR)/llib-lprom.c
+PROMLINT=	$(LIBPROMDIR)/llib-lprom.ln
+PROMLIST=	$(LIBPROMDIR)/libprom.list
+
+#
+# A make of $(LIBPROM) should also generate the file list and lint library...
+#
+
+$(LIBPROM): $(PROMHDRS) $(PROMLINT) $(PROMLIST) $$@($(PROMOBJ))
+	ranlib $@
+
+
+# Rules for common .c files
+# Rules for promlib .c files
+
+$(LIBPROM)	:= 	LINTSRC = $(PROMSRC)
+$(LIBPROM)	:=	CFLAGS += -I$(PROMDIR)
+$(PROMLINT)	:=	LCOPTS += -I$(PROMDIR)
+
+$(LIBPROM)(%.o): $(PROMDIR)/%.c
+	$(CC) $(CFLAGS) -c $<
+	@$(AR) $(ARFLAGS) $(LIB) $%; $(RM) $%
+
+$(PROMLINT):	$(PROMLINTSRC) $(PROMHDRS)
+	@-$(RM) $@
+	@-$(RM) /usr/lib/lint/llib-lprom.ln
+	@-(for i in $(PROMLINTSRC) ; do \
+		$(CC) -E $(LCOPTS) $$i | \
+		$(LINT1) $(LOPTS) >> $(PROMLINT); done ) 2>&1 | $(LTAIL)
+
+$(PROMLIST):	$(PROMDIR)/Makefile.prom
+	@-$(RM) $@
+	@-(cd $(PROMDIR);					\
+	   for i in $(PROMFILES) *.h ; do			\
+		echo $(LIBPROMRELDIR)/$$i ;			\
+	   done) > $(PROMLIST)
+
+#
+# Add $(LIBPROMINSTALL) to ARCHINS to install libprom.a related targets.
+#
+
+$(LIBPROMINSTALL): $(LIBPROM) $(PROMLINT)
+	install -d -o bin $(LIBPROMINSDIR)
+	install -c $(LIBPROM) $(LIBPROMINSDIR)
+	ranlib $(LIBPROMINSDIR)/libprom.a
+	install -c $(PROMLINT) $(LIBPROMINSDIR) 
+
+#
+# Add $(LIBPROMCLEAN) to ARCHCLEAN to include libprom.a clean targets.
+#
+
+$(LIBPROMCLEAN):
+	-$(RM) $(LIBPROM) $(PROMLINT) $(PROMLIST)
+

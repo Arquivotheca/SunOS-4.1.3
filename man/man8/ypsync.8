@@ -1,0 +1,118 @@
+.\" @(#)ypsync.8 1.1 92/07/30 SMI;
+.\" SDR 4279
+.TH YPSYNC 8 "10 March 1989"
+.SH NAME
+ypsync \- collect most up-to-date NIS maps
+.SH SYNOPSIS
+.B /usr/etc/yp/ypsync
+[
+.B \-r
+] [
+.B \-u
+]
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ypsync command" "" "\fLypsync\fR command"  
+.LP
+.B ypsync
+gathers current 
+Network Information Service
+(\s-1NIS\s0)
+maps to the local 
+.SM NIS
+server.
+When invoked with no arguments,
+it polls all the 
+.SM NIS
+servers listed in the
+.B /etc/ypservers
+.SM NIS
+map for the maps they serve,
+and the order of those maps.
+If there are any new maps that the local server does not have,
+or if there are maps that are more current than the local server's
+copy, it excutes
+.BR ypxfr (8)
+to transfer those maps to the local server.
+.LP
+.B ypsync
+eliminates the need for
+.BR cron (8)
+jobs to ensure that 
+.SM NIS
+map updates are eventually transmitted to all
+.SM NIS
+servers, and supports different 
+.SM NIS
+maps having different masters.
+It is invoked periodically by
+.BR ypserv (8).
+.SH OPTIONS
+.TP
+.B \-r
+When invoked with the
+.B \-r
+flag,
+.B ypsync
+re-creates the local
+.B /var/yp
+directory and databases if needed.
+This facility is
+used when upgrading servers,
+since they can automatically retrieve
+.SM NIS
+maps without needing manual intervention.  The 
+.SM NIS
+master of the
+.B ypservers
+map can also designate new servers, which would
+automatically pick up their new maps on reboot.
+.TP
+.B \-u
+When invoked with the
+.B \-u
+flag,
+.B ypsync
+updates the list of 
+.SM NIS
+servers on the master of the
+.B ypservers
+.SM NIS
+map to include the local system if it 
+does not already, and then get copies of all the 
+.SM NIS
+databases.
+A user invoking
+.B ypsync \-u
+may not be root, and must have the
+.I networks privilege in the 
+.SM NIS
+.B group
+map.
+.SH FILES
+.PD 0
+.TP 20
+.BI /var/yp/YP .domainname
+.PD
+.SH SEE ALSO
+.BR ypupdate (3),
+.BR ypserv (8),
+.BR ypxfr (8)
+.LP
+.I Sun386i Advanced Administration
+.LP
+.I System and Network Administration
+.SH NOTES
+.LP 
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0).
+The functionality of the two remains the same;
+only the name has changed.  The name Yellow Pages is a registered
+trademark in the United Kingdom of British Telecommunications plc,
+and may not be used without permission.
+

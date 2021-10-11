@@ -1,0 +1,125 @@
+.\" @(#)fuser.8 1.1 92/07/30 SMI; from S5R3
+.TH FUSER 8 "30 June 1988"
+.SH NAME
+fuser \- identify processes using a file or file structure
+.SH SYNOPSIS
+.B /usr/etc/fuser
+[
+.B \-ku
+]
+.IR filename \||\| resource
+[
+.B \-
+]
+[\|[
+.B \-ku
+]
+.IR filename \||\| resource 
+]
+.SH DESCRIPTION
+.IX "fuser identify" "" "\fLfuser\fP \(em identify processes using file structure"
+.IX identify "processes using file structure"
+.IX report "processes using file structure"
+.IX file "report processes using file"
+.LP
+.B fuser
+outputs the process
+.SM ID\s0s
+of the processes that are using the
+.IR filename s
+or remote
+.I resources
+specified as arguments.
+Each process
+.SM ID
+is followed by a letter code.
+Possible code letters and an explanation of how
+the process is using the file are given below:
+.RS
+.TP
+.B c
+its current directory
+.TP
+.B p
+the parent of its current directory
+(only when the file is being used by the system)
+.TP
+.B r
+its root directory
+.TP
+.B v
+process has 
+.BR exec 'ed
+or
+.BR mmap 'ed
+file
+.RE
+.LP
+For block special devices with mounted file systems, all processes using
+any file on that device are listed.
+For remote resource names, all
+processes using any file associated with that remote resource
+are reported.
+.B fuser
+cannot use the mount point of
+the remote resource to report all processes using any file associated
+with that remote resource; it must use the resource name.
+For all other types of files (text files, executables, directories,
+devices, etc.) only the processes using that file are reported.
+.LP
+The process
+.SM ID\s0s
+are printed as a single line on the standard output,
+separated by
+.SM SPACE
+characters and terminated with a single
+.SM NEWLINE\s0.
+All other output is written on standard error.
+.LP
+Any user with permission to read
+.B /dev/kmem
+and
+.B /dev/mem
+can use
+.BR fuser .
+.LP
+Only the super-user can terminate another user's process
+.SH OPTIONS
+.LP
+If more than one group of files are specified, the
+options may be respecified for each additional group of files.
+.TP
+.B \-
+Cancel the options currently in force.
+The new set of options applies to the next group
+of files.
+.TP
+.B \-k
+Send
+.SM SIGKILL
+signal to each process.
+Since this option spawns kills for each process,
+the kill messages may not show up immediately
+(see
+.BR kill (2V)).
+.TP
+.B \-u
+User login name, in parentheses, also follows the process
+.SM ID\s0.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+system namelist
+.TP
+.B /dev/kmem
+system image
+.TP
+.B /dev/mem
+system image
+.PD
+.SH SEE ALSO
+.BR ps (1),
+.BR kill (2V),
+.BR signal (3V),
+.BR mount (8)

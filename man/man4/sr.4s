@@ -1,0 +1,135 @@
+.\" @(#)sr.4s 1.1 92/07/30 SMI; by Edward Un 
+.TH SR 4S "19 March 1991"
+.SH NAME
+sr \- driver for CDROM SCSI controller
+.SH CONFIG \(em Desktop SPARCsystems
+.LP
+.nf
+.ft B
+disk      sr0 at scsibus0 target 6 lun 0
+.ft R
+.fi
+.SH CONFIG \(em SPARCsystem 600MP SERIES
+.LP
+.nf
+.ft B
+disk      sr0 at scsibus0 target 6 lun 0
+disk      sr1 at scsibus0 target 5 lun 0
+disk      sr2 at scsibus0 target 1 lun 0
+disk      sr3 at scsibus0 target 0 lun 0
+disk      sr4 at scsibus1 target 6 lun 0
+disk      sr5 at scsibus3 target 6 lun 0
+.ft R
+.fi
+.SH CONFIG \(em SUN-4/330 SYSTEMS
+.LP
+.nf
+.ft B
+disk      sr0 at sm0 drive 060 flags 2
+.ft R
+.fi
+.SH CONFIG \(em SUN-4 SYSTEMS
+.LP
+.nf
+.ft B
+.\" SCSI-2 host w/ 2 disks and 1 1/4" tape on each disk
+disk      sr0 at sc0 drive 060 flags 2
+.\" SCSI-3 host adapter
+disk      sr0 at si0 drive 060 flags 2
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "sr" "" "\fLsr\fP \(em driver for CDROM SCSI controller" ""
+.LP
+.SB CDROM 
+is a removable read-only direct-access device connected to the
+system's
+.SM SCSI
+bus. 
+.SB CDROM
+drives are designed to work with any disc that meets the Sony-Philips
+\*(lqred-book\*(rq or \*(lqyellow-book\*(rq documents.
+They can read 
+.SB CDROM 
+data
+discs, digital audio discs (Audio
+.SM CD\s0's)
+or combined-mode discs (that is,
+some tracks are audio, some tracks are data).
+A 
+.SB CDROM 
+disc is single-sided containing approximately
+540 megabytes of data or 74 minutes of audio.
+.LP
+The first
+.SB CDROM 
+drive controller in a system is set up as 
+.SM SCSI
+target 6, with logical unit number 0.
+Addressing for additional controllers, when supported, is given above.
+For the first
+.SB CDROM 
+drive in a system, device names are
+.B /dev/sr0
+for block device and
+.B /dev/rsr0
+for character device.  Additional drives, when supported,
+are designated
+.B /dev/sr1
+for block device and
+.B /dev/rsr1
+for character device, and so forth. 
+.LP
+The device driver supports 
+.BR open (2V),
+.BR read (2V),
+.BR close (2V)
+function calls through its block device and character device interface.
+In addition,
+it supports ioctl function calls through the character device interface.
+When the device is first opened, the 
+.SB CDROM
+drive's eject button will be disabled (which prevents the manual removal
+of the disc) until the last
+.BR close (2V)
+is called.
+.SS "CDROM Drive Support"
+This driver supports the 
+.SM SONY CDU\s0-8012
+.SB CDROM 
+drive controller and other
+.SB CDROM 
+drives which have the same 
+.SM SCSI
+command set as the 
+.SM SONY CDU\s0-8012.
+The type of 
+.SB CDROM 
+drive is determined using the 
+.SM SCSI
+inquiry command.
+.LP
+There is no volume label stored on the 
+.BR \s-1CDROM\s0 .
+The disc geometry and paritioning information is always the same.
+The minor device number is always 0. 
+If the 
+.SB CDROM
+is in 
+.SM ISO
+9660 or
+.B High Sierra Disk
+format, it can be mounted as a file system.
+.SH FILES
+.PD 0 
+.TP 20
+.B /dev/sr[0-5]
+block files
+.TP
+.B /dev/rsr[0-5]
+raw files
+.PD
+.SH SEE ALSO
+.BR cdromio (4S),
+.BR fstab (5),
+.BR mount (8)

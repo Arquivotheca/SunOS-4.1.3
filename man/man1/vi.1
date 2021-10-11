@@ -1,0 +1,276 @@
+.\" @(#)vi.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH VI 1 "2 October 1989"
+.SH NAME
+vi, view, vedit \- visual display editor based on ex(1)
+.SH SYNOPSIS
+.B vi
+[
+.B \-ClLRVx
+]
+[
+.BI \-c " command"
+]
+[
+.BI \-r " filename"
+]
+[
+.BI \-t " tag"
+]
+[
+.BI \-w nnn
+]
+[
+.BI + command
+]
+.IR filename .\|.\|.
+.LP
+.BR view .\|.\|.
+.LP
+.BR vedit .\|.\|.
+.IX  "vi command"  ""  "\fLvi\fP \(em visual editor"
+.IX  "screen-oriented editor"  ""  "screen-oriented editor \(em \fLvi\fP"
+.IX  "display editor"  ""  "display editor \(em \fLvi\fP"
+.IX  "visual editor"  ""  "visual editor \(em \fLvi\fP"
+.IX  "text editing"  vi  ""  "\fLvi\fP \(em visual editor"
+.SH DESCRIPTION
+.LP
+.B vi
+(visual) is a display oriented text editor based on
+.BR ex (1).
+.B ex
+and
+.B vi
+are, in fact, the same text editor; it is
+possible to get to the command mode of
+.B ex
+from within
+.B vi
+and vice-versa.
+.LP
+.B view
+runs
+.B vi
+with the
+.B readonly
+flag set.
+With
+.BR view ,
+you can browse through files interactively without making any changes.
+.LP
+.B vedit
+runs
+.B vi 
+with the
+.B report
+flag set to 1,
+the
+.B showmode
+and
+.B novice
+flags set,
+and the
+.B magic
+flag turned off.
+These default settings are intended to make
+easier for beginners to learn
+.BR vi .
+.SH OPTIONS
+.TP 12
+.B \-C
+Encryption option; the same as the 
+.B \-x
+option, except that all input text is assumed to have already been 
+encrypted.
+This guarantees decryption in the cases where the 
+.B \-x
+option incorrectly determines that the input file is not already encrypted
+(this is extremely rare, and will only occur in conjunction with the use
+of files containing non-ASCII text).
+.TP
+.B \-l
+Set up for editing
+.SM LISP
+programs.
+.TP
+.B \-L
+List the names of all files saved as the result of an editor or system crash.
+.TP
+.B \-R
+Edit files in read only state.  This has the same effect as the
+.B view
+command.
+.TP 
+.B \-V
+Verbose. Any non-tty input will be echoed on standard error.
+.TP
+.B \-x
+Prompt for a key to be used in encrypting the file being edited. 
+When used in conjunction with a pre-existing file,
+.I ex
+will make an educated guess to determine whether or not the input text file is already encrypted.
+.TP
+.BI \-c " command"
+Start the editing session by executing the editor command
+.IR command .
+If 
+.I command
+contains spaces, it must be surrounded by double quotess, see
+.SM EXAMPLES
+below.
+.TP
+.BI \-r " filename"
+Recover the named files after a crash.
+.TP
+.BI \-t " tag"
+Edit the file containing
+.IR tag .
+There must be a tags database in the directory, built by
+.BR ctags (1),
+that contains a reference to
+.IR tag .
+.TP
+.BI + command
+Start the editing session by executing
+.IR command .
+This is identical to the
+.B \-c
+option.
+.SH ENVIRONMENT
+.LP
+The editor recognizes the environment variable
+.SB EXINIT
+as a command (or list of commands separated by
+.B |
+characters) to run when it starts up.  If this variable is
+undefined, the editor checks for startup commands in the file
+.B ~/.exrc
+file, which you must own.  However, if there is a
+.B \&.exrc
+owned by you in the current directory, the editor takes its
+startup commands from this file \(em overriding both the
+file in your home directory and the environment variable.
+.br
+.ne 8
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR vi .
+On entry to
+.BR vi ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+In the \*(lqC\*(rq locale, all 8-bit
+characters are escaped into an octal representation.
+.SH EXAMPLES
+.LP
+The following command:
+.LP
+.RS
+.ft B
+example%  vi \-c\ ":r test" tested
+.ft R
+.RE
+.LP
+will read in the file
+.B test 
+at the end of the 
+.B tested
+file.
+.SH SEE ALSO
+.BR ctags (1),
+.BR ex (1)
+.LP
+.TX TEXT
+.br
+.TX GSBG
+.SH BUGS
+.LP
+Software
+.SM TAB
+characters using
+.SM CTRL-T
+work only immediately after the
+.BR autoindent .
+.LP
+.SM SHIFT\s0-left
+and
+.SM SHIFT\s0-right
+on intelligent terminals do not make use of
+insert and delete character operations in the terminal.
+.LP
+The
+.B wrapmargin
+option can be fooled since it looks at output columns when blanks are
+typed.  When insert mode pushes an existing word through the margin and onto 
+the next line without a break, the line will not be broken.
+.LP
+Insert/delete within a line can be slow if
+.SM TAB
+characters are present on intelligent
+terminals, since the terminals need help in doing this correctly.
+.LP
+Saving text on deletes in the named buffers is somewhat inefficient.
+.LP
+The
+.I source
+command does not work when executed as
+.RB ` :source ';
+there is no way to use the
+.RB ` :append ',
+.RB ` :change ',
+and
+.RB ` :insert '
+commands, since it is not possible to give
+more than one line of input to a
+.RB ` : '
+escape.  To use these on a
+.RB ` :global '
+you must
+.B Q
+to
+.I ex
+command mode,
+execute them, and then reenter the screen editor with
+.B vi
+or
+.BR open .
+.LP
+When using the
+.B \-r
+option to recover a file, you must write the recovered
+text before quitting or you will lose it.
+.B vi
+does not prevent you
+from exiting without writing unless you make changes.
+.LP
+.B vi
+does not adjust when the SunView window in which it runs is
+resized.
+.SH RESTRICTIONS
+.LP
+The encryption facilities of
+.B vi
+are not available on software
+shipped outside the U.S.

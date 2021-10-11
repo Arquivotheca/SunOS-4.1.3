@@ -1,0 +1,180 @@
+.\" @(#)rm_services.8 1.1 92/07/30 SMI;
+.TH RM_SERVICES 8 "19 October 1988"
+.SH NAME
+rm_services \- remove server capability for specified architecture
+.SH SYNOPSIS
+.B rm_services
+.RB [ " \-Sy " ]
+[
+.BI \-a " arch"
+]
+[
+.BI \-e " exec-path"
+]
+[
+.BI \-h " home-path"
+]
+[
+.BI \-k " kvm"
+]
+[
+.BI \-m " mail"
+]
+[
+.BI \-p " proto"
+]
+.if t .ti +.5i
+[
+.BI \-q " share-path"
+]
+[
+.BI \-s " swap-path"
+]
+[
+.BI \-x " export"
+]
+.SH DESCRIPTION
+.IX "rm_services command" "" "\fLrm_services\fP command"
+.LP
+.B rm_services
+deletes directories and changes files appropriate to removing
+server capabilities for the specified architecture.
+.B rm_services 
+deletes
+.BI exec/ arch
+and
+.BI kvm/ arch
+directories and unexports the
+them.  It also removes the architecture-specific files in
+.BR /tftpboot .
+If the server will no longer serving any architecture,
+it removes the proto root and
+.B /tftpboot
+directories.  If they are empty,
+.B rm_services
+also removes the
+.BR root ,
+.BR swap ,
+.BR exec ,
+.BR kvm ,
+.BR share ,
+.BR export ,
+.BI home/ server,
+and 
+.BR home
+directories, and then unexports the
+.BR home ,
+.BR mail ,
+and
+.BR share
+directories.
+.LP
+.B rm_services
+is used by
+.BR suninstall (8),
+and can only be invoked by the super-user.
+.SH OPTIONS
+.TP 15
+.B \-S
+Silent.
+.TP
+.B \-y
+Supply ``yes'' answers to all confirmation questions.
+.TP
+.BI \-a " arch" 
+Specify the architecture to be removed (for instance, 
+.BR sun4 ,
+.BR sun3 .\|.\|.). 
+The default is the architecture of the server.
+.TP
+.BI \-e " exec-path" 
+Use
+.I exec-path
+as the parent pathname of the directory in which the
+executables (for the architecture specified by
+.BR \-a )
+reside. 
+The default is
+.BR /export/exec .
+.TP
+.BI \-h " home-path" 
+Use
+.I home-path
+as the parent pathname for home directories.  The default is
+.BR /home .
+.TP
+.BI \-k " kvm" 
+Use
+.I kvm
+as the parent pathname of the directory in which the
+.B kvm
+executables reside, for the architecture specified by
+.B \-a .
+The default is
+.BR /export/exec/kvm .
+.TP
+.BI \-m " mail" 
+Use
+.I mail
+as the mail directory.
+The default is
+.BR /var/spool/mail .
+.TP
+.BI \-p " proto" 
+Use
+.I proto
+as the directory for the proto root file system.
+The default is
+.BR /export/root/proto .
+.TP
+.BI \-q " share-path" 
+Use
+.I share-path
+as the pathname for the
+.B share
+directory.
+The default is
+.BR /export/share .
+.TP
+.BI \-s " swap-path" 
+Use
+.I swap-path
+as the parent pathname of the directory in which the
+swap files reside. 
+The default is
+.BR /export/swap .
+.TP
+.BI \-x " export" 
+.BI x
+Use
+.I export
+as the starting path for the
+.BR exec ,
+.BR root ,
+.BR kvm ,
+.BR swap ,
+and
+.BR share
+directories.  The default is
+.BR /export .
+.SH EXAMPLE
+This example shows how to delete server capability
+for Sun-4 system clients:
+.IP
+.B example# rm_services sun4 
+.LP
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/exports
+database of exported file systems
+.TP
+.B /tftpboot
+.PD
+.SH "SEE ALSO"
+.BR add_client (8),
+.BR add_services (8),
+.BR exportfs (8),
+.BR rm_client (8)
+.LP
+.TX INSTALL

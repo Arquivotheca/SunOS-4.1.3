@@ -1,0 +1,196 @@
+.\" @(#)sccs-cdc.1 1.1 92/07/30 SMI;
+.TH SCCS-CDC 1 "27 June 1988"
+.SH NAME
+sccs-cdc, cdc \- change the delta commentary of an SCCS delta
+.SH SYNOPSIS
+.B /usr/sccs/cdc
+.BI \-r sid
+[
+.BI \-m mr-list
+]
+[
+.B \-y
+[
+.I comment
+] ]
+.I s.filename
+\&\.\|.\|.
+.SH DESCRIPTION
+.IX  cdc  ""  "\fLcdc\fP \(em change delta commentary"
+.IX  "SCCS commands"  "cdc command"  ""  "\fLcdc\fP \(em change delta commentary"
+.IX  "SCCS delta"  "change commentary"
+.IX  "delta"  "change commentary"
+.IX  "change"  "delta commentary"
+.LP
+.B cdc
+annotates the delta commentary for the
+.SM SCCS
+delta ID
+(\s-1SID\s0)
+specified by the
+.B \-r
+option in each named
+.BR s. file.
+.LP
+If the
+.B v
+flag is set in the
+.BR s. file,
+you can also use
+.B cdc
+to update the Modification Request
+(\s-1MR\s0)
+list.
+.LP
+If you checked in the delta,
+or, if you own the file and directory and have write permission,
+you can use
+.B cdc
+to annotate the commentary.
+.LP
+Rather than replacing the existing commentary,
+.B cdc
+inserts the new comment you supply, followed by a line of the form:
+.IP
+.B "*** \s-1CHANGED\s0 ***
+.IB yy / mm / dd
+.IB hh / mm / ss
+.I username
+.LP
+above the existing commentary.
+.LP
+If a directory is named as the
+.I s.filename
+argument, the
+.B cdc
+command applies to all
+.BR s. files
+in that directory.
+Unreadable
+.BR s. files
+produce an error; processing continues with the next file (if any).
+If
+.RB ` \- '
+is given as the
+.I s.filename
+argument, each line of the standard input is taken as the name of an
+.SM SCCS
+history file to be processed, and the
+.B \-m
+and
+.B \-y
+options must be used.
+.SH OPTIONS
+.TP
+.BI \-r sid
+Specify the
+.SM SID
+of the delta to change.
+.TP 
+.BI \-m mr-list
+Specify one or more MR numbers to add or delete.
+When specifying more than one MR on the command line,
+.I mr-list
+takes the form of a quoted, space-separated list.
+To delete an MR number, precede it with a
+.B !
+character (an empty
+.SM MR
+list has no effect).
+A list of deleted
+.SM MR\s0s
+is placed in the comment section of the delta commentary.
+If
+.B \-m
+is not used and the standard input is a terminal,
+.B cdc
+prompts with
+.B \s-1MR\s0s?
+for the list (before issuing the
+.B comments?
+prompt).
+.B \-m
+is only useful when the
+.B v
+flag is set in the
+.BR s. file.
+If that flag has a value, it is
+taken to be the name of a program to validate the MR numbers.  If
+that validation program returns a non-zero exit status,
+.B cdc
+terminates and the delta commentary remains unchanged.
+.HP
+.B \-y\c
+.RI [ comment ]
+Use
+.I comment
+as the annotation in the delta commentary.
+The previous comments are retained; the
+.I comment
+is added along with a notation that the commentary was changed.
+A 
+null
+.I comment
+leaves the commentary unaffected.
+If
+.B \-y
+is not specified and the standard input is a terminal,
+.B cdc
+prompts with
+.BR  comments?
+for the text of the notation to be added.  An unescaped
+.SM NEWLINE
+character terminates the annotation text.
+.SH EXAMPLES
+.LP
+The following command:
+.RS
+.ft B
+.nf
+example% cdc \-r1.6 \-y"corrected commentary" s.program.c
+.fi
+.ft R
+.RE
+.LP
+produces the following annotated commentary for delta 1.6 in
+.BR s.program.c :
+.IP
+.ft B
+.nf
+D 1.6 88/07/05 23:21:07 username 9 0 00001/00000/00000
+MRs:
+\s-1COMMENTS\s0:
+corrected commentary
+*** \s-1CHANGED\s0 *** 88/07/07 14:09:41 username
+performance enhancements in main()
+.fi
+.ft
+.br
+.ne 5
+.SH FILES
+.PD 0
+.TP
+.BI z. file
+temporary lock file
+.PD
+.br
+.ne 5
+.SH SEE ALSO
+.BR sccs (1),
+.BR sccs-admin (1),
+.BR sccs-comb (1),
+.BR sccs-delta (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-prt (1),
+.BR sccs-rmdel (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL .
+.SH DIAGNOSTICS
+Use the
+.SM SCCS
+.B help
+command for explanations
+.RB ( sccs-help (1)).

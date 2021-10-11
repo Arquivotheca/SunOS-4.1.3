@@ -1,0 +1,94 @@
+.\" @(#)ldclose.3x 1.1 92/07/30 SMI; from SVID
+.TH LDCLOSE 3X "19 February 1988"
+.SH NAME
+ldclose, ldaclose \- close a COFF file 
+.SH SYNOPSIS
+.ft B
+.nf
+.ta \w'\s-1LDFILE\s+1\ \ \ 'u
+.B #include <stdio.h>
+.B #include <filehdr.h>
+.B #include <ldfcn.h>
+.LP
+.B int ldclose (ldptr)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.LP
+.B int ldaclose (ldptr)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.fi
+.ft R
+.DT
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldclose()" "" "\fLldclose()\fP function"
+.IX "ldaclose()" "" "\fLldaclose()\fP function"
+.LP
+.BR ldopen (3X)
+and
+.B ldclose(\|)
+are designed to provide uniform access to both simple
+.SM COFF
+object files and
+.SM COFF
+object files that are members of archive files.
+Thus an archive
+of
+.SM COFF
+files can be processed as if it were a series of
+simple
+.SM COFF
+files.
+.LP
+If
+.BI \s-1TYPE\s+1( ldptr )
+does not represent an archive file,
+.B ldclose(\|)
+will close the file and free the memory allocated to the
+.BR \s-1LDFILE\s+1 " structure"
+associated with
+.IR ldptr .
+If
+.BI \s-1TYPE\s+1( ldptr )
+is the magic number of an archive file,
+and if there are any more files in the archive,
+.B ldclose(\|)
+will reinitialize
+.BI \s-1OFFSET\s+1( ldptr )
+to the file address of the next archive member
+and return
+.BR \s-1FAILURE\s+1 .
+The
+.SB LDFILE
+structure is prepared for a subsequent
+.BR ldopen (3X).
+In all other cases,
+.B ldclose(\|)
+returns
+.BR \s-1SUCCESS\s+1 .
+.LP
+.B ldaclose(\|)
+closes the file and frees the memory allocated to the
+.BR \s-1LDFILE\s+1 " structure"
+associated with 
+.I ldptr
+regardless of the value of 
+.BI \s-1TYPE\s+1 (ldptr).
+.B ldaclose(\|)
+.RB "always returns " \s-1SUCCESS\s+1 .
+The function is often used in conjunction with 
+.IR ldaopen .
+.LP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.LP
+.BR intro (5)
+describes
+.IR \s-1INCDIR\s0 " and " \s-1LIBDIR\s0 .
+.SH SEE ALSO
+.BR fclose (3V),
+.BR ldfcn (3),
+.BR ldopen (3X),
+.BR intro (5)

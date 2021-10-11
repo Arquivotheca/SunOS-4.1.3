@@ -1,0 +1,81 @@
+.\" @(#)cgtwelve.4s 1.1 92/07/30 SMI;
+.TH CGTWELVE 4S "3 July 1990"
+.SH NAME
+cgtwelve \- 24-bit SBus color memory frame buffer and graphics accelerator
+.SH CONFIGURATION
+.ft B
+.nf
+device-driver cgtwelve
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "cgtwelve device"  ""  "\fLcgtwelve\fP \(em Sun-4c mid-range graphics accelerator with color memory frame buffer"  ""  PAGE START
+.IX  "color graphics interface"  "cgtwelve"  ""  "\fLcgtwelve\fP \(em Sun-4c color memory frame buffer"
+.LP  
+.B cgtwelve
+is a 24-bit SBus-based color frame buffer and graphics accelerator,
+with 12-bit double buffering, 8-bit colormap, and overlay/enable planes.
+It provides the standard frame buffer interface defined in 
+.BR fbio (4S),
+paired with microcode which can be downloaded using
+.BR gpconfig (8).
+Application acceleration is achieved using the Pixwin and SunPHIGS
+Application Programmer Interfaces (\s-1API\s0s).
+.\" ***  need to modify the below text before Beta to include ovlay and WIDs.
+.\" .LP
+.\" .B cgtwelve
+.\" has two bits of overlay planes, each of which is a 1-bit
+.\" deep frame buffer that overlays the 24-bit plane group.
+.\" When either bit of the two overlay planes is non-zero,
+.\" the pixel shows the color of the overlay plane.
+.\" If both bits are zero,
+.\" the color frame buffer underneath is visible.
+.LP
+The cgtwelve has registers and memory that may be mapped with
+.BR mmap (2), 
+using the offsets defined in
+.BR <sbusdev/cg12reg.h> .
+.\" .LP
+.\" The 24-bit frame buffer pixel is organized as one
+.\" longword (32 bits) per pixel. 
+.\" The pixel format is defined in 
+.\" .B /usr/include/pixrect/pixrect.h
+.\" as follows:
+.\" .RS
+.\" .nf
+.\" .ft B
+.\"	union fbunit {
+.\"	unsigned int	packed;	/* whole-sale deal */
+.\"	struct {
+.\"		unsigned int	A:8;	/* unused, for now */
+.\"		unsigned int	B:8;	/* blue channel */
+.\"		unsigned int	G:8;	/* green channel */
+.\"		unsigned int	R:8;	/* red channel */
+.\"		}
+.\"			channel;	/* access per channel */
+.\"	};  
+.\" .fi
+.\" .ft R
+.\" .RE
+.LP
+When in double-buffer mode,
+each channel is dithered to 4 bits,
+yielding 12-bit double-buffering.
+.SH FILES
+.PD 0
+.TP 30
+.B /dev/cgtwelve0
+device special file
+.TP
+.B /dev/fb
+default frame buffer
+.TP
+.B /usr/include/sbusdev/cg12reg.h
+device-specific definitions
+.PD
+.SH "SEE ALSO
+.BR mmap (2),
+.BR fbio (4S),
+.BR gpconfig (8)
+.IX "cgtwelve device"  ""  "\fLcgtwelve\fP \(em Sun-4c color memory frame buffer"  ""  PAGE END
+.IX "color graphics interface"  "cgtwelve"  ""  "\fLcgtwelve\fP \(em Sun-4c mid-range graphics accelerator with color memory frame buffer"  PAGE END

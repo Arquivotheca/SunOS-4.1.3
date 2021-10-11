@@ -1,0 +1,54 @@
+#
+# @(#)MakeCommon 1.1 92/07/30 SMI
+#
+.KEEP_STATE:
+
+arch-sun3 = SUN3
+arch-sun2 = SUN2
+arch-sun4 = SUN4
+arch-sun3x = SUN3
+arch-sun4c = SUN4
+TARGET=$(arch$(TARGET_ARCH))
+
+cpu-sun2 = m68k
+cpu-sun3 = m68k
+cpu-sun3x = m68k
+cpu-sun4 = sparc
+cpu-sun4c = sparc
+CPU=$(cpu$(TARGET_ARCH))
+
+#
+# Code browser changes:
+#
+# Comment out the next line to disable code browser.
+BROWSER = -DBROWSER
+CB_DIR = ../../browser/cblib
+CB_LIB = $(CB_DIR)/$(CPU)/libcb.a
+CB_LIBRARY-DBROWSER = $(CB_LIB)
+CB_DIRECTORY-DBROWSER = $(CB_DIR)/src
+CFLAGS += $(DBX) -DSUNPRO -I../../vroot -I$(CB_DIRECTORY$(BROWSER)) $(BROWSER)
+
+VROOT_DIR = ../../vroot
+VROOT_LIB = $(VROOT_DIR)/vroot.a
+$(CB_LIB) $(VROOT_LIB): FRC
+	(cd $(@D); $(MAKE) $(@F))
+
+FRC:
+
+HDRS = ../dynamic.h
+MID_SRCS =	../ld.c ../rtsetup.c ../incl.c ../libfind.c ../verscmp.c \
+		../vroot.c ../extra.c
+MID_OBJS = $(MID_SRCS:../%.c=%.o)
+OBJS = ${MID_OBJS}
+LIBS = $(CB_LIBRARY$(BROWSER)) $(VROOT_LIB)
+
+${MID_OBJS}: ../$$(@:.o=.c)
+	$(CC) $(CFLAGS) -c ../$(@:.o=.c)
+
+masterclean:
+	rm -f ${PROGRAM} ${OBJS}
+
+masterlint : 
+	lint $(LINTFLAGS) -I.. $(MID_SRCS)
+
+

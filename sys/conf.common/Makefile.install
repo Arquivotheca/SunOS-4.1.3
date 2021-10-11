@@ -1,0 +1,108 @@
+#
+# @(#)Makefile.install 1.1 92/07/30 SMI
+#
+# This makefile is included by ../sys/sun*/conf/Makefile
+#
+# ARCH, MACH, CONFDIR, & MACHINES are assumed to be defined by
+# the Makefile that includes this one
+#
+
+MASTER=GENERIC
+MINIROOT=GENERIC
+SYSDIR=/usr/kvm/sys
+USRSYSDIR=kvm/sys
+DESTDIR=
+CHOWN=/etc/chown
+
+MKCONFIG = $(CONFDIR)/mkconfig
+MASTERCONFIG = $(CONFDIR)/master
+
+KERNELS= $(MASTER) LINT MINIROOT MUNIX
+ALLCONF= $(KERNELS) $(MACHINES)
+
+# command for generating config files
+GET.MACHINES = $(RM) $@; $(MKCONFIG) $(MASTERCONFIG) $@ -$(ARCH)
+
+HDIRS +=	krpc lofs net netinet nfs rpc specfs sun sundev \
+		sunif sys ufs vm sunwindowdev sunwindow
+FILES += \
+	sun/conf.c sun/stubs.c sun/swapgeneric.c sun/symbols.sort \
+	sun/symbols.raw sun/README \
+	mon/openprom.h mon/obpdefs.h mon/sunromvec.h \
+	netinet/in_proto.c netinet/tcp_debug.c \
+	os/init_sysent.c os/tty_ptyconf.c os/uipc_proto.c os/vfs_conf.c \
+	sun/str_conf.c \
+	sundev/is_conf.c \
+	sundev/mcp_conf.c sundev/mcp_proto.c sundev/mti_conf.c \
+	sundev/sc_conf.c sundev/xy_conf.c sundev/xd_conf.c sundev/zs_proto.c\
+	sundev/gp_conf.c sundev/zs_conf.c sundev/bw2_conf.c \
+	sbusdev/dbri_conf.c sbusdev/gt_printbuf.c \
+	debug/debug.h \
+	nfs/dbx_nfs.c ufs/dbx_ufs.c \
+	os/dbx_sys.c os/init_dbx.c \
+	rpc/dbx_rpc.c vm/dbx_vm.c \
+	sundev/dbx_sundev.c sunif/dbx_sunif.c sunif/ie_conf.c sunif/le_conf.c \
+	conf.common/RELEASE conf.common/newvers.sh \
+	conf.common/files.cmn conf.common/param.c \
+	sunwindowdev/windevconf.c \
+	${ARCH}/conf/${MASTER} \
+	${ARCH}/conf/${MINIROOT} \
+	${ARCH}/dbx_machdep.c
+
+DEBUGHFILES =   ../debug/allregs.h ../debug/asm_linkage.h ../debug/reg.h
+
+all:	$(ALLCONF)
+$(ALLCONF): $(CONFDIR)/master
+	
+install: ${MACHINES}
+	cd ../.. && $(MAKE) $(MFLAGS) $(FILES)
+	cd ../${MINIROOT} && $(MAKE) $(MFLAGS) -r install DESTDIR=${DESTDIR}
+	install -d -o bin ${DESTDIR}${SYSDIR}/${ARCH}
+	install -d -o bin ${DESTDIR}${SYSDIR}/${ARCH}/OBJ
+	install -d -o bin ${DESTDIR}${SYSDIR}/${ARCH}/conf
+	$(RM) ${DESTDIR}$(SYSDIR)/${ARCH}/machine
+	ln -s . ${DESTDIR}$(SYSDIR)/${ARCH}/machine
+	$(RM) -r ${DESTDIR}/sys
+	ln -s .$(SYSDIR) ${DESTDIR}/sys
+	$(RM) -r $(DESTDIR)/usr/sys
+	ln -s $(USRSYSDIR) $(DESTDIR)/usr/sys
+	$(RM) -r ${DESTDIR}/usr/share/sys
+	ln -s ../$(USRSYSDIR) ${DESTDIR}/usr/share/sys
+	(cd ../${MASTER};tar cf - *.[hoa]) | \
+		(cd ${DESTDIR}$(SYSDIR)/${ARCH}/OBJ;tar xpf -)
+	(cd ${DESTDIR}$(SYSDIR)/${ARCH}/OBJ; chmod 444 *.[hoa])
+	cat ../conf/files > \
+		${DESTDIR}$(SYSDIR)/${ARCH}/conf/files
+	echo "sun/stubs.c	standard" >> \
+		${DESTDIR}$(SYSDIR)/${ARCH}/conf/files
+	chmod 444 ${DESTDIR}/$(SYSDIR)/${ARCH}/conf/files
+	cp ../conf/devices \
+		${DESTDIR}$(SYSDIR)/${ARCH}/conf/devices
+	cp ../conf/Makefile.obj \
+		${DESTDIR}$(SYSDIR)/${ARCH}/conf/Makefile.src
+	cp ../../conf.common/README \
+		${DESTDIR}$(SYSDIR)/${ARCH}/conf/README
+	-case ${MACH} in \
+		    sparc) machine=sparc;; \
+		    mc68010|mc68020) machine=m68k;; \
+		    esac; \
+		for i in ${HDIRS} ${ARCH} $$machine; do \
+			install -d -m 775 ${DESTDIR}$(SYSDIR)/$$i; \
+			install -m 444 ../../$$i/*.h ${DESTDIR}$(SYSDIR)/$$i; \
+		done
+# XXX 1037147 - don't ship cg6 internal headers!
+	$(RM) ${DESTDIR}$(SYSDIR)/sundev/cg6*
+	install -d -m 775 ${DESTDIR}$(SYSDIR)/os
+	(cd ../..; tar cf - ${FILES}) | (cd ${DESTDIR}$(SYSDIR); tar xpf -)
+	(tar chf - ${MACHINES}) | \
+		(cd ${DESTDIR}$(SYSDIR)/${ARCH}/conf; tar xpf -)
+	for i in `cat ${CONFDIR}/EXCEPTIONS`; \
+		do $(RM) -r ${DESTDIR}$(SYSDIR)/$$i; done
+	-(cd ${DESTDIR}$(SYSDIR); ${CHOWN} root * */* */*/* 2>/dev/null)
+
+$(ALLCONF): $(MKCONFIG) $(MASTERCONFIG)
+	$(GET.MACHINES)
+
+clean:
+	@echo make all or install only!
+

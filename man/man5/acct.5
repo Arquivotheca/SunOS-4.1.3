@@ -1,0 +1,59 @@
+.\" @(#)acct.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH ACCT 5 "19 October 1987"
+.SH NAME
+acct \- execution accounting file
+.SH SYNOPSIS
+.B #include <sys/acct.h>
+.SH DESCRIPTION
+.IX  "acct"  "\fLacct\fP \(em execution accounting file" "\fLacct\fR"
+.IX  "execution accounting file"  ""  "execution accounting file \(em \fLacct\fP"
+.IX  "accounting file"  ""  "accounting file \(em \fLacct\fP"
+The
+.BR acct (2V)
+system call makes entries in an accounting file
+for each process that terminates.
+The accounting file is a sequence of entries whose layout,
+as defined by the include file is:
+.LP
+.RS
+.nf
+.ft B
+typedef	u_short comp_t;
+
+struct  acct
+{
+	char	ac_flag;		/* Accounting flag */
+	char	ac_stat;		/* Exit status */
+	uid_t	ac_uid;			/* Accounting user ID */
+	gid_t	ac_gid;			/* Accounting group ID */
+	dev_t	ac_tty;			/* control typewriter */
+	time_t	ac_btime;		/* Beginning time */
+	comp_t	ac_utime;		/* Accounting user time */
+	comp_t	ac_stime;		/* Accounting system time */
+	comp_t	ac_etime;		/* Accounting elapsed time */
+	comp_t	ac_mem;			/* average memory usage */
+	comp_t	ac_io;			/* chars transferred */
+	comp_t	ac_rw;			/* blocks read or written */
+	char	ac_comm[8];		/* Accounting command name */
+};
+.ft
+.fi
+.RE
+.LP
+.LP
+The type
+.B comp_t
+is a 3 bits base 8
+exponent, 13 bit fraction ``floating point'' number.
+If the process does an
+.BR execve (2V),
+the first 8 characters of the filename appear in
+.BR ac_comm .
+.B ac_flag
+contains bits indicating whether
+.BR execve (2V)
+was ever accomplished, and whether the process ever had super-user privileges.
+.SH SEE ALSO
+.BR acct (2V),
+.BR execve (2V),
+.BR sa (8)

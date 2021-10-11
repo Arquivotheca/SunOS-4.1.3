@@ -1,0 +1,294 @@
+'\" t
+.\" @(#)sccsfile.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH SCCSFILE 5 "30 June 1988"
+.SH NAME
+sccsfile \- format of an SCCS history file
+.SH DESCRIPTION
+.IX  "sccsfile file"  ""  "\fLsccsfile\fP \(em SCCS file format"
+An
+.SM SCCS
+file is an
+.SM ASCII
+file
+consisting of six logical parts:
+.TP 10
+checksum
+character count used for error detection
+.TP
+delta table
+log containing version info and statistics about each delta
+.TP
+usernames
+login names and/or group
+.SM ID\s0s
+of users who may add deltas
+.TP
+flags
+definitions of internal keywords
+.TP
+comments
+arbitrary descriptive information about the file
+.TP
+body
+the actual text lines intermixed with control lines
+.LP
+Each section is described in detail below.
+.SS Conventions
+Throughout an SCCS file there are lines which begin with the
+.SM ASCII SOH
+(start of heading) character (octal 001).
+This character is hereafter referred to as the
+.IR "control character" ,
+and will be represented as `^A'.
+If a line described below is not depicted as beginning with
+the control character, it cannot do so and still be within
+.SM SCCS
+file format.
+.LP
+Entries of the form
+.I ddddd
+represent a five digit string (a number between 00000 and 99999).
+.SS Checksum
+The checksum is the first line of an
+.SM SCCS
+file.  The form of the line is:
+.IP
+^A \fBh\fIddddd\fR
+.LP
+The value of the checksum is the sum of all characters, except
+those contained in the first line.  The
+.RB ^A h
+provides a
+.I "magic number"
+of (octal) 064001.
+.SS "Delta Table"
+The delta table consists of a variable number of entries of the form:
+.RS
+.nf
+^A\fBs \fIinserted\|\fB/\fIdeleted\|\fB/\fIunchanged\fR
+.if t ^A\fBd \fItype  sid  yr\|\fB/\fImo\|\fB/\fIda hr\|\fB:\fImi\|\fB:\fIse  username  serial-number  predecessor-sn
+^A\fBi \fIinclude-list\fR
+^A\fBx \fIexclude-list\fR
+^A\fBg \fIignored-list\fR
+^A\fBm \fImr-number\fR
+\&.\|.\|.
+^A\fBc \fIcomments\fR .\|.\|.
+\&.\|.\|.
+.RB ^A e
+.fi
+.RE
+The first line
+.RB (^A s )
+contains the number of lines
+inserted/deleted/unchanged respectively.
+The second line
+.RB (^A d )
+contains the type of the delta
+(normal:
+.BR D ,
+and removed:
+.BR R ),
+the SCCS
+.SM ID
+of the delta, the date and time of creation of the delta,
+the user-name corresponding to the real user
+.SM ID
+at the time the delta was created,
+and the serial numbers of the delta and its predecessor, respectively.
+.sp
+The
+.RB ^A i ,
+.RB ^A x ,
+and
+.RB ^A g
+lines contain the serial numbers of deltas
+included, excluded, and ignored, respectively. 
+These lines do not always appear.
+.LP
+The
+.RB ^A m
+lines (optional) each contain one MR number associated with the delta;
+the
+.RB ^A c
+lines contain comments associated with the delta.
+.LP
+The
+.RB ^A e
+line ends the delta table entry.
+.br
+.ne 6
+.SS "User Names"
+.LP
+The list of user-names and/or numerical group
+.SM ID\s0s
+of users who may add deltas to the file, separated by
+.SM NEWLINE
+characters.
+The lines containing these login names and/or numerical group
+.SM ID\s0s
+are surrounded by the bracketing lines
+.RB ^A u
+and
+.RB ^A U .
+An empty list allows anyone to make a delta.
+.SS Flags
+Flags are keywords that are used internally (see
+.BR sccs-admin (1)
+for more information on their use).  Each flag line takes the form:
+.RS
+.TP
+.RB ^A f " \fIflag\fP"
+.I "optional text"
+.RE
+.LP
+The following flags are defined in order of appearance:
+.HP
+.RB ^A f " t"
+.I "type-of-program"
+.br
+Defines the replacement for the
+.BR %\&T%
+ID keyword.
+.HP
+.RB ^A f " v"
+.RI "program-name"
+.br
+Controls prompting for MR numbers in addition to comments;
+if the optional text is present it defines an MR number validity
+checking program.
+.TP
+.RB ^A f " i"
+Indicates that the
+.RB ` "No id keywords" '
+message is to generate an error that terminates the
+.SM SCCS
+command.  Otherwise, the message is treated as a warning only.
+.TP
+.RB ^A f " b"
+Indicates that the
+.B \-b
+option may be used with the
+.SM SCCS
+.B get
+command to create a branch in the delta tree.
+.HP
+.RB ^A f " m"
+.RI "module name"
+.br
+Defines the first choice for the replacement text of the
+.B %\&M%
+ID keyword.
+.HP
+.RB ^A f " f"
+.I "floor"
+.br
+Defines the \*(lqfloor\*(rq release;
+the release below which no deltas may be added.
+.HP
+.RB ^A f " c"
+.I "ceiling"
+.br
+Defines the \*(lqceiling\*(rq release;
+the release above which no deltas may be added.
+.HP
+.RB ^A f " d"
+.I default-sid
+.br
+The
+.B d
+flag defines the default SID to be used when none is specified on an
+.SM SCCS
+.B get
+command.
+.TP
+.RB ^A f " n"
+The
+.B n
+flag enables the
+.SM SCCS
+.B delta
+command to insert a \*(lqnull\*(rq delta (a delta that applies
+.I no
+changes) in those releases that are skipped when a delta is made in a
+.I new
+release (for example, when delta 5.1 is made after delta 2.7, releases 3 and
+4 are skipped).
+.TP
+.RB ^A f " j"
+Enables the
+.SM SCCS
+.B get
+command to allow concurrent edits of the same base
+.SM SID.
+.HP
+.RB ^A f " l"
+.I "lock-releases"
+.br
+Defines a
+.I list
+of releases that are locked against editing.
+.HP
+.RB ^A f " q"
+.RI "user defined"
+.br
+Defines the replacement for the
+.B %\&Q%
+ID keyword.
+.HP
+.RB ^A f " e"
+.BR 0 | 1
+.br
+The 
+.B e
+flag indicates whether a source file is encoded or not.  A
+.B 1
+indicates that the file is encoded.  Source files need to be encoded
+when they contain control characters, or when they do not end with a 
+.SM NEWLINE\s0.
+The
+.B e
+flag allows files that contain binary data to be checked in.
+.SS Comments
+Arbitrary text surrounded by the bracketing lines
+.RB ^A t
+and
+.RB ^A T .
+The comments section typically will contain a description of the file's purpose.
+.SS Body
+The body consists of text lines and control lines.
+Text lines do not begin with the control character, control lines do.
+There are three kinds of control lines:
+.IR insert , \ delete ,
+and
+.IR end ,
+represented by:
+.br
+.ne 6
+.LP
+.RS
+.nf
+.RB ^A I " \fIddddd\fP"
+.RB ^A D " \fIddddd\fP"
+.RB ^A E " \fIddddd\fP"
+.fi
+.RE
+.LP
+respectively.
+The digit string is the serial number corresponding to the delta for the
+control line.
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-admin (1),
+.BR sccs-cdc (1),
+.BR sccs-comb (1),
+.BR sccs-delta (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-prt (1),
+.BR sccs-rmdel (1),
+.BR sccs-sact (1),
+.BR sccs-sccsdiff (1),
+.BR sccs-unget (1),
+.BR sccs-val (1),
+.BR what (1)

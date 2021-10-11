@@ -1,0 +1,129 @@
+.\" @(#)dir.5 1.1 92/07/30 SMI; from UCB 4.2 BSD
+.TH DIR 5 "19 October 1987"
+.SH NAME
+dir \- format of directories
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <sys/dir.h>
+.fi
+.SH DESCRIPTION
+.IX  "dir file"  ""  "\fLdir\fP \(em directory format"
+.LP
+A directory behaves exactly like an ordinary file, save that no
+user may write into a directory and directories must be read using the
+.BR getdirentries (2)
+system call or the
+.BR directory (3V)
+library routines.
+The fact that a file is a directory is indicated by
+a bit in the flag word of its inode entry; see
+.BR fs (5).
+.LP
+A directory consists of some number of blocks of
+.SM DIRBLKSIZ
+bytes, where
+.SM DIRBLKSIZ
+is chosen such that it can be transferred
+to disk in a single atomic operation (512 bytes on most machines):
+.IP
+.ft B
+.nf
+#ifdef \s-1KERNEL\s0
+#define \s-1DIRBLKSIZ DEV_BSIZE\s0
+#else
+#define \s-1DIRBLKSIZ\s0 512
+#endif
+.sp
+#define \s-1MAXNAMLEN\s0 255
+.fi
+.ft R
+.LP
+Each
+.SM DIRBLKSIZ
+byte block contains some number of directory entry
+structures, which are of variable length.  Each directory entry has a
+.B struct direct
+at the front of it, containing its inode number,
+the length of the entry, and the length of the name contained in
+the entry.  These are followed by the name padded to a 4-byte boundary
+with
+null
+bytes.  All names are guaranteed
+null-terminated.
+The maximum length of a name in a directory is
+.BR \s-1MAXNAMLEN\s0 .
+.LP
+The macro
+.B \s-1DIRSIZ\s0(dp)
+gives the amount of space required to represent
+a directory entry.  Free space in a directory is represented by
+entries that have:
+.IP
+.B dp->d_reclen >
+.SB DIRSIZ\s0(dp)
+.LP
+All
+.SM DIRBLKSIZ
+bytes in a directory block are claimed by the directory entries.  This
+usually results in the last entry in a directory having a large
+.BR dp->d_reclen .
+When entries are deleted from a directory, the
+space is returned to the previous entry in the same directory
+block by increasing its
+.BR dp->d_reclen .
+If the first entry of a directory block is free, then its
+.B dp->d_ino
+is set to 0.
+Entries other than the first in a directory do not normally have
+.B dp->d_ino
+set to 0.
+.LP
+The
+.SB DIRSIZ
+macro gives the minimum record length which will hold
+the directory entry.  This requires the amount of space in struct direct
+without the
+.B d_name
+field, plus enough space for the name with a terminating
+null
+byte
+.BR (dp->d_namlen+1) ,
+rounded up to a 4-byte boundary.
+.IP
+.ft B
+.nf
+#undef \s-1DIRSIZ\s0
+#define \s-1DIRSIZ\s0(dp)      ((sizeof (struct direct) - (\s-1MAXNAMLEN\s0+1)) + (((dp)->d_namlen+1 + 3) &~ 3))
+struct	direct {
+	u_long	d_ino;
+	short	d_reclen;
+	short	d_namlen;
+	char	d_name[\s-1MAXNAMLEN\s0 + 1];
+	/* typically shorter */
+};
+.fi
+.ft R
+.LP
+By convention, the first two entries in each directory
+are for
+.RB ` . '
+and
+.RB ` .\|. '.
+The first is an entry for the
+directory itself.  The second is for the parent directory.
+The meaning of
+.RB ` .\|. '
+is modified for the root directory
+of the master file system
+.\" The following in-line font change is necessary to get the double
+.\" quotes to print corectly in nroff. -jah
+(\*(lq \fB/\fR \*(rq),
+for which
+.RB ` .\|. '
+has the same meaning as
+.RB ` . '.
+.SH "SEE ALSO"
+.BR getdirentries (2),
+.BR directory (3V),
+.BR fs (5)

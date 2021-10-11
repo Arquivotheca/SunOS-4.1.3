@@ -1,0 +1,111 @@
+.\" @(#)msync.3 1.1 92/07/30 SMI;
+.TH MSYNC 3 "21 January 1990"
+.SH NAME
+msync \- synchronize memory with physical storage
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mman.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int msync(addr, len, flags)
+caddr_t addr; size_t len; int flags;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "msync()" "" "\fLmsync()\fR \(em synchronize memory with physical storage" ""
+.IX "synchronize" "memory with physical storage"
+.IX "memory" "synchronize with physical storage"
+.IX "storage" "synchronize with memory"
+.LP
+.B msync(\|)
+writes all modified copies of pages over the range
+[\fIaddr, addr + len\fP\^)
+to their permanent storage locations.
+.B msync(\|)
+optionally invalidates any copies so that further references to the pages
+will be obtained by the system from their permanent
+storage locations.
+.LP
+Values for
+.I flags
+are defined in
+.B <sys/mman.h>
+as:
+.LP
+.nf
+.ta 25n 35n
+.ft B
+#define \s-1MS_ASYNC\s0	0x1	/* Return immediately */
+#define \s-1MS_INVALIDATE\s0	0x2	/* Invalidate mappings */
+.ft R
+.fi
+.LP
+and are used to control the behavior of
+.BR msync(\|) .
+One or more flags may
+be specified in a single call.
+.LP
+.SB MS_ASYNC
+returns
+immediately once all I/O operations are
+scheduled; normally,
+.B msync(\|)
+will not return until all I/O operations are complete.
+.SB MS_INVALIDATE
+invalidates all cached copies of data
+from memory objects,
+requiring them to be re-obtained from the object's permanent
+storage location upon the next reference.
+.LP
+.B msync(\|)
+should be used by programs that require a memory object to
+be
+in a known state, for example in building transaction facilities.
+.SH RETURN VALUES
+.LP
+.B msync(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+.I addr
+is not a multiple of the  page size as returned by
+.BR getpagesize (2).
+.IP
+.I flags
+is not some combination of
+.SB MS_ASYNC
+or
+.SB MS_INVALIDATE.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ENOMEM
+Addresses in the range
+[\fIaddr, addr + len\fP\^)
+are outside the valid range for
+the address space of a process, or specify one or more pages that are not
+mapped.
+.TP
+.SM EPERM
+.SB MS_INVALIDATE
+was specified and one or more of the pages is locked in memory.
+.SH SEE ALSO
+.BR mctl (2),
+.BR mmap (2)
+

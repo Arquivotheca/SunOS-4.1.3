@@ -1,0 +1,67 @@
+.\" @(#)dcheck.8 1.1 92/07/30 SMI; from UCB 4.1
+.TH DCHECK 8 "9 September 1987"
+.SH NAME
+dcheck \- file system directory consistency check
+.SH SYNOPSIS
+.B /usr/etc/dcheck
+[
+.B \-i
+.I numbers
+] [
+.I filesystem
+]
+.SH DESCRIPTION
+.IX  "dcheck command"  ""  "\fLdcheck\fP \(em directory consistency check"
+.IX  "check directory"  ""  "check directory \(em \fLdcheck\fP"
+.IX  directory  "check consistency"  ""  "check consistency \(em \fLdcheck\fP"
+.IX  "file system"  "check directory"  ""  "check directory \(em \fLdcheck\fP"
+.LP
+Note:
+.B dcheck
+has been superseded for normal consistency checking by
+.BR fsck (8).
+.LP
+.B dcheck
+reads the directories in a file system and compares
+the link-count in each inode with the number of directory
+entries by which it is referenced.
+If the file system is not specified,
+.B dcheck
+checks a set of default file systems.
+.LP
+.B dcheck
+is fastest if the raw version of the special file is
+used, since the i-list is read in large chunks.
+.SH OPTIONS
+.TP
+.BI \-i\fP  " numbers"
+.I numbers
+is a list of i-numbers; when one of those i-numbers turns
+up in a directory, the number, the i-number of the directory,
+and the name of the entry are reported.
+.SH FILES
+Default file systems vary with installation.
+.SH "SEE ALSO"
+.BR fs (5),
+.BR fsck (8),
+.BR clri (8),
+.BR icheck (8),
+.BR ncheck (8)
+.SH DIAGNOSTICS
+When a file turns up for which the link-count and the number
+of directory entries disagree, the relevant facts are reported.
+Allocated files which have 0 link-count and no entries are also listed.
+The only dangerous situation occurs
+when there are more entries than links;
+if entries are removed, so the link-count drops to 0,
+the remaining entries point to thin air.  They should be removed.
+When there are more links than entries, or there is
+an allocated file with neither links nor entries,
+some disk space may be lost but the situation will not degenerate.
+.SH BUGS
+Since
+.B dcheck
+is inherently two-pass in nature, extraneous diagnostics
+may be produced if applied to active file systems.
+.LP
+Inode numbers less than 2 are invalid.

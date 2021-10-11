@@ -1,0 +1,82 @@
+'\" t
+.\" @(#)rusage.8 1.1 92/07/30 SMI;
+.TH RUSAGE 8  "02 April 1988"
+.SH NAME
+rusage \- print resource usage for a command
+.SH SYNOPSIS
+.B rusage
+.I command
+.IX  "rusage command"  ""  "\fLrusage\fP \(em resource usage for a command"
+.IX  "performance monitoring"  rusage  ""  "\fLrusage\fP \(em resource usage for a command"
+.IX  "programming tools"  rusage  ""  "\fLrusage\fP \(em resource usage for a command"
+.SH DESCRIPTION
+.LP
+The
+.B rusage
+command is similar to
+.BR time (1V).
+It runs the given
+.IR command ,
+which must be specified; that is,
+.I command
+is not optional as it is in the C shell's timing facility.
+When the command is complete,
+.B rusage
+displays the real (wall clock), the system
+.SM CPU\s0,
+and the user
+.SM CPU
+times which elapsed during execution of the command,
+plus other fields in the
+.B rusage
+structure, all on one long line.
+Times are reported in seconds and hundredths of a second.
+.SH EXAMPLE
+.LP
+The example below shows the format of
+.B rusage
+output.
+.LP
+.nf
+.ft B
+example% rusage wc /usr/man/man1/csh (1)
+3045   13423   78071 /usr/man/man1/csh (1)
+2.26 real 0.80 user 0.36 sys 11 pf 38 pr 0 sw 11 rb 0 wb 16 vcx 37 icx 24 mx 0 ix 1230 id 9 is
+example%
+.ft R
+.fi
+.LP
+Each of the fields identified corresponds to an element of the
+.B rusage
+structure, as described in
+.BR getrusage (2),
+as follows:
+.LP
+.RS .5i
+.TS
+;
+lfB lfB lfB .
+real		elapsed real time
+user	ru_utime	user time used
+sys	ru_stime	system time used
+pf	ru_majflt	page faults requiring physical I/O
+pr	ru_minflt	page faults not requiring physical I/O
+sw	ru_nswap	swaps
+rb	ru_inblock	block input operations
+wb	ru_oublock	block output operations
+vcx	ru_nvcsw	voluntary context switches
+icx	ru_nivcsw	involuntary context switches
+mx	ru_maxrss	maximum resident set size
+ix	ru_ixrss	currently 0
+id	ru_idrss	integral resident set size
+is	ru_isrss	currently 0
+.TE
+.RE
+.SH "SEE ALSO"
+.BR csh (1),
+.BR time (1V),
+.BR getrusage (2)
+.SH BUGS
+.LP
+When the command being timed is interrupted, the timing
+values displayed may be inaccurate.

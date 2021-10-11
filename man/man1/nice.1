@@ -1,0 +1,154 @@
+.\" @(#)nice.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH NICE 1 "9 September 1987"
+.SH NAME
+nice \- run a command at low priority
+.SH SYNOPSIS
+.B nice
+[
+.BI \- number
+]
+.I command
+.RI [ " arguments " ]
+.SH DESCRIPTION
+.IX  "nice command"  ""  "\fLnice\fP \(em change priority of command"
+.IX  "change" "priority of command \(em \fLnice\fP"
+.IX  command  "change priority of"  ""  "change priority of \(em \fLnice\fP"
+There are two distinct versions of
+.BR nice :
+it is built in to the C shell, and is an executable program
+available in
+.BR /usr/bin/nice
+for use with the Bourne shell.
+.LP
+.B nice
+executes
+.I command
+with the \(lqnice\(rq value
+.IR number .
+The nice value is one of the factors used by the kernel to
+determine a process's scheduling priority.  Scheduling priorities range from
+0 to 127.  The higher the value, the lower the
+command's scheduling priority, and the lower the value, the higher
+the command's scheduling priority.  In addition to the nice value, the
+kernel also recent CPU usage by the process,
+the time the process has been waiting to run, and other factors to arrive at
+scheduling priority.
+.LP
+If the
+.I number
+argument is present,
+the nice value is incremented or decremented
+by that amount, between the limits \-20 and 19.  If there is no
+.I number
+argument, the default nice value
+is 10 for the Bourne shell, and 4 for the C-shell.
+.LP
+The super-user may run commands with
+priority higher than normal
+by using negative nice values, such as
+.BR \-10 .
+.SH EXAMPLES
+.LP
+The following examples illustrate the use of nice values for users
+(not the super-user) using
+.BR /usr/bin/nice .
+The examples use the
+.B \-l
+option to
+.BR ps (1)
+because it shows both the nice value and the kernel scheduling priority.
+Notice the 
+.SB NI
+and 
+.SB PRI
+columns.  In the first
+example, the user doesn't use
+.BR nice ,
+so the niceness is zero,
+the default value, which is reflected by 0 in the
+.SB NI
+column.  The corresponding process scheduling priority is shown in
+the
+.SB PRI
+column as 28 (this may vary because of the other factors the
+kernel's scheduler uses).
+.LP
+In the second example, the user uses a nice value of 10, and the corresponding
+priority is 53, a higher numerical value but a lower priority.  Notice that
+this is the same as:
+.RS
+.nf
+.sp .5
+example%  \fBnice ps \-l\fR
+.sp .5
+.fi
+.RE
+because the default nice value is 10.
+.LP
+In the third example, the user asks that the nice value be incremented by 20,
+but it's shown as 19 under 
+.BR \s-1NI\s0 ,
+because that's the upper limit of niceness.
+.LP
+A fourth example shows the error message when an ordinary user tries to
+decrement the nice value.
+.nf
+.sp .5
+.ft B
+example%  ps \-l
+      \s-1F UID   PID  PPID CP PRI NI  SZ  RSS WCHAN    STAT TT  TIME COMMAND\s0
+      .\|.\|.
+      19442 16623  9725 12  28  0 120  336          R    p2  0:00 ps \-l
+      .\|.\|.
+example%  nice \-10 ps \-l
+      \s-1F UID   PID  PPID CP PRI NI  SZ  RSS WCHAN    STAT TT  TIME COMMAND\s0
+      .\|.\|.
+      19442 16608 16606 32  53 10 120  328          R N  p2  0:00 ps \-l
+      .\|.\|.
+example%  nice \-20 ps \-l
+      \s-1F UID   PID  PPID CP PRI NI  SZ  RSS WCHAN    STAT TT  TIME COMMAND\s0
+      .\|.\|.
+      19442 16609 16606 37  72 19 120  328          R N  p2  0:00 ps \-l
+      .\|.\|.
+.br
+.ne 5  
+example%  nice \-\-20 ps \-l
+nice: setpriority: Permission denied
+example%
+.ft R
+.sp .5
+.fi
+.\".SH FILES
+.\".PD 0
+.\".TP 20
+.\".B /usr/bin/nice
+.\".PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR getpriority (2),
+.BR nice (3V),
+.BR pstat (8),
+.BR renice (8)
+.SH DIAGNOSTICS
+.B nice
+returns the exit status of the subject command.
+.SH BUGS
+The
+.B nice
+command has a different syntax than the
+.B /usr/bin/nice
+command described here.  It uses the plus sign,
+.BR + ,
+to increment nice values, for example:
+.LP
+.RS
+.ft B
+example%  nice +\fInumber\fP
+.ft
+.RE
+.LP
+increments the nice value by
+.IR number .
+It uses a single a minus sign,
+.BR \- ,
+to decrement nice values for super-user.

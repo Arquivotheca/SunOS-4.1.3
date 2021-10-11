@@ -1,0 +1,1392 @@
+.\" @(#)monitor.8s 1.1 92/07/30 SMI; 
+.TH MONITOR 8S "23 April 1991"
+.SH NAME
+monitor \- system ROM monitor
+.SH SYNOPSIS
+.SB L1\-A
+.sp .5v
+.SB BREAK
+.SH DESCRIPTION
+.IX  "monitor program" ""  "monitor program \(em \fLmonitor\fR"
+.IX  "bootstrap PROM monitor program"  ""  "bootstrap PROM monitor program \(em \fLmonitor\fR"
+.IX  "PROM monitor program"  ""  "PROM monitor program \(em \fLmonitor\fR"
+.IX  "CPU PROM monitor" "program" "" "program \(em \fLmonitor\fR"
+.IX  "system PROM monitor program" ""  "system PROM monitor program \(em \fLmonitor\fR"
+.LP
+The
+.SM CPU
+board of the Sun workstation contains an 
+.SM EPROM
+(or set of 
+.SM EPROM\*Ss),
+called the
+.IR monitor , 
+that controls the system during startup.
+The monitor tests 
+the system before attempting to boot 
+the operating system.
+If you interrupt the boot procedure by holding down
+.SB L1
+while typing
+.B a
+or
+.B A
+on the workstation keyboard (or
+.SB BREAK
+if the console is a dumb terminal), the monitor issues the prompt:
+.IP
+.B >
+.LP
+and accepts commands interactively.
+.LP
+On a 
+Desktop \s-1SPARC\s0system or a \s-1SPARC\s0system 600\s-1MP\s0,
+the message
+.IP
+.B Type\ b\ (boot),\ c\ (continue),\ or\ n\ (new\ command\ mode)
+.LP
+will be displayed prior to the monitor prompt
+.RB  ` > '.
+.SH USAGE
+.SS Modes
+.LP
+The monitor supports three security modes (non-secure, command secure, and
+fully secure) and an authentication password.
+Access to monitor commands is controlled by these security modes.
+In
+.B non-secure
+mode all monitor commands are allowed.
+In
+.B "command secure"
+mode, only the
+.BR b (boot)
+command with no arguments and the
+.BR c (continue)
+command with no arguments may be entered without supplying the authentication
+password.
+In
+.B "fully secure"
+mode, only the
+.BR c (continue)
+command with no arguments may be entered without supplying the authentication
+password.
+Note:
+The system will not auto-reboot in fully secure mode.
+The authentication password must be entered before booting will take place.
+.SS Commands
+.LP
+Note: the following commands are available on all Sun systems
+.I except
+Desktop \s-1SPARC\s0systems and \s-1SPARC\s0system 600\s-1MP\s0 series;
+only the
+.BR b ,
+.BR c ,
+and
+.B n
+commands listed below are available on those systems.
+.TP 12
+.BR + | \-
+Increment or decrement the current address and display the
+contents of the new location.
+.\"
+.TP
+.BI ^C " source destination n"
+(caret-C)
+Copy, byte-by-byte, a block of length 
+.I n
+from the
+.I source
+address to the
+.I destination
+address.
+.\"
+.TP
+.BI ^I " program
+(caret-I)
+Display the compilation date and location of 
+.IR program .
+.TP
+.BI ^T " virtual_address
+(caret-T)
+Display the physical address to which
+.I virtual_address
+is mapped.
+.\"
+.HP
+.B a
+.RI [ n "] [" action "].\|.\|.	(Sun-3 systems only)"
+.br
+Open 
+.BR A \-register
+(cpu address register)
+.IR n ,
+and perform indicated actions.  The number
+.I n
+can be any value from
+.B 0
+to
+.BR 7 ,
+inclusive.  The default value
+is
+.BR 0 .
+A hexadecimal
+.I action
+argument assigns the value you supply to the register
+.IR n .
+A non-hex
+.I action
+terminates command input.
+.\"
+.HP
+.B b
+[
+.I device
+[
+.BI ( c , u , p\|\fB)
+] ] [
+.I pathname
+] [
+.I arguments_list
+]   (\s-1SPARC\s0station 1 systems only)
+.br
+.PD 0
+See
+.BR openboot (8S)
+for details.
+.\"
+.br
+.HP
+.B b
+[
+.I device-specifier
+] [
+.I pathname
+] [
+.I arguments-list
+]    (\s-1SPARC\s0station 2 systems, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.br
+.PD
+See
+.BR openboot (8s)
+for details.
+.HP
+.B b
+[
+.B !
+] [
+.I device
+[
+.BI ( c , u , p\|\fB)
+] ] [
+.I pathname
+] [
+.I arguments_list
+]
+.br
+.TP
+.BR b [ ? ]
+.PD
+Reset appropriate parts of the system and bootstrap
+a program.
+Note:
+the
+.RB ` b! '
+and
+.RB ` b? '
+commands are not available on
+Desktop \s-1SPARC\s0systems and \s-1SPARC\s0system 600\s-1MP\s0 series,
+see
+.BR openboot (8S).
+A
+.RB  ` ! '
+(preceding the
+.I device
+argument) prevents the system reset from occurring.
+Programs can be loaded from various devices
+(such as a disk, tape, or Ethernet).
+.RB ` b '
+with no arguments will cause a default boot, either from a
+disk, or from an Ethernet controller.
+.RB ` b? '
+displays all boot devices and their
+.I device
+arguments, where
+.I device
+is one of:
+.RS
+.RS
+.TP 4
+.B le
+.PD 0
+Lance Ethernet
+.TP
+.B ie
+Intel Ethernet (Sun-3, Sun-4 systems only)
+.TP
+.B sd
+.SM SCSI
+disk, \s-1CDROM\s0
+.TP
+.B st
+.SM SCSI
+1/4" or 1/2" tape
+.TP
+.B fd
+Diskette (Sun386i, Sun-3/80 systems, Desktop \s-1SPARC\s0systems only)
+.TP
+.B id
+\s-1IPI\s0 disk (Sun-4 systems, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B mt
+Tape Master 9-track 1/2" tape (Sun-3, Sun-4 systems only)
+.TP
+.B xd
+Xylogics 7053 disk (Sun-3, Sun-4 systems only)
+.TP
+.B xt
+Xylogics 1/2" tape (Sun-3, Sun-4 systems only)
+.TP
+.B xy
+Xylogics 440/450 disk (Sun-3, Sun-4 systems only)
+.PD
+.RE
+.RE
+.RS
+.TP
+.I c
+A controller number
+.RB ( 0
+if only one controller),
+.TP
+.I u
+A unit number
+.RB ( 0
+if only one driver), and
+.TP
+.I p
+A partition.
+.TP
+.I pathname
+A pathname for a program such as 
+.BR /stand/diag . 
+.B /vmunix
+is the default.
+.TP
+.I arguments_list
+A list of up to seven arguments to pass to the program being booted.
+.\"
+.RE
+.TP
+.PD 0
+.BR c "                       (Desktop \s-1SPARC\s0systems, \s-1SPARC\s0system 600\s-1MP\s0 series only);"
+.HP
+.PD
+.B c
+.RI [ virtual_address ]
+(Sun-3, Sun-4 and Sun386i systems only)
+.br
+Resume execution of a program.
+Desktop \s-1SPARC\s0systems and \s-1SPARC\s0system 600\s-1MP\s0 series
+do not accept a virtual address;
+the current
+.SM PC 
+is assumed.
+See the
+.I "Open \s-1PROM\s0 Toolkit User's Guide"
+or
+.I "Open \s-1PROM\s0 2.0 Toolkit User's Guide"
+for details on changing this value.
+When given,
+.I virtual_address
+is the address at which execution will resume.
+The default is the current
+.SM PC\s0
+(\s-1EIP\s0 on Sun386i systems).
+Registers are restored to the values shown by the
+.BR a , 
+.BR d , 
+and 
+.B r 
+commands (for Sun-3 systems), or by the 
+.B d
+and
+.B r
+commands (for Sun-4 systems), or by the
+.B d
+command (for Sun386i systems).
+.\"
+.HP
+.B d
+.RI [ window_number "]	(Sun-4 systems only)"
+.br
+Display (dump) the state of the processor.
+The processor state is observable only after:
+.RS
+.RS
+.TP 3
+\(bu
+An unexpected trap was encountered.
+.PD 0
+.TP
+\(bu
+A user program dropped into the monitor (by calling
+.IR abortent ).
+.TP
+\(bu
+The user manually entered the monitor by typing
+.SB L1\-A
+or
+.BR \s-1BREAK\s0 .
+.PD
+.RE
+.RE
+.ne 6
+.IP
+The display consists of the following:
+.RS
+.RS
+.TP 4
+\(bu
+The special registers:
+.SM PSR\s0,
+.SM PC\s0,
+n\s-1PC\s0,
+.SM TBR\s0,
+.SM WIM\s0,
+and Y
+.PD 0
+.TP
+\(bu
+Eight global registers, and
+.TP
+\(bu
+24 window registers (8
+.IR in ,
+8
+.IR local ,
+and 8
+.IR out ),
+corresponding to one of the 7 available windows.  If a
+Floating-Point Unit is on board, its status register along with
+its 32 floating-point registers are also shown.
+.PD
+.RE
+.TP
+.I window_number
+Display the indicated
+.IR window_number ,
+which can be any value between 0 and 6, inclusive.  If no window
+is specified and the
+.SM PSR\s0's
+current window pointer contains a
+valid window number, registers from the window that was active just
+prior to entry into the monitor are displayed.  Otherwise,
+registers from window 0 are displayed.
+.RE
+.\"
+.TP
+\fBd\fR	(Sun386i systems only)
+Display (dump) the state of the processor.
+This display consists of the registers, listed below: 
+.RS
+.RS
+.TP 28
+Processor Registers:
+.SM "EAX, ECX, EDX, ESI, EDI, ESP, EBP, EFLAGS, EIP"
+.PD 0
+.TP
+Segment Registers:
+.SM "ES, CS, SS, DS, FS, GS"
+.TP
+Memory Management Registers:
+.SM "GDTR, LDTR, IDTR, TR"
+.TP
+Control Registers:
+.SM CR0, CR2, CR3
+.TP
+Debug Registers:
+.SM "DR0, DR1 , DR2 , DR3, DR6, DR7"
+.TP
+Test Registers:
+.SM TR6, TR7
+.PD
+.RE
+.RE
+.IP
+The processor's state is observable only after an 
+unexpected trap, a user program has 
+\*(lqdropped\*(rq into the monitor (by calling monitor function 
+.IR abortent )
+or the user has manually \*(lqbroken \*(rq
+into the monitor (by typing
+.SB L1\-A
+on the Workstation console, or
+.SB BREAK
+on the dumb terminal's keyboard.
+.\"
+.HP 
+.B d
+.RI [ n ]\|[ action "]\|.\|.\|.	(Sun-3 systems only)"
+.br
+Open 
+.BR D \-register 
+(cpu data register)
+.IR n , 
+and perform indicated actions.
+The number
+.I n 
+can be any value from
+.B 0
+to
+.BR 7 ,
+inclusive.
+The default is
+.BR 0 .
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.HP
+.B e
+.RI [ virtual_address ]\|[ action "] .\|.\|."
+.br
+Open the 16-bit word at 
+.I virtual_address
+.\" Sun386i
+(default zero).  On Sun-3, and Sun-4 systems, the address is 
+interpreted in the address space defined by the 
+.B s
+command.
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.br
+.ne 11
+.HP 
+.BI f " virtual_address1 virtual_address2 pattern "
+.RI [ size\| "]	(Sun-3 and Sun-4 systems only)"
+.br
+Fill the bytes, words, or long words from 
+.I virtual_address1 
+(lower) to
+.I virtual_address2
+(higher) with the constant, 
+.IR pattern .
+The
+.I size
+argument can take one of the following values
+.RS
+.RS
+.TP 4
+.B b
+byte format (the default)
+.PD 0
+.TP
+.B w
+word format
+.TP
+.B l
+long word format
+.PD
+.RE
+.RE
+.IP
+For example, the following command fills the address block from 0x1000 
+to 0x2000 with the word pattern, 0x\s-1ABCD\s0:
+.RS
+.IP
+.B "f 1000 2000 \s-1ABCD\s0 W"
+.RE
+.\"
+.HP
+.B g
+.RI [ vector\| "] [" argument\| ]
+.br
+.PD 0
+.HP
+.B g
+.RI [ virtual_address\| "] [" argument \|]
+.br
+.PD
+Goto (jump to) a predetermined or default routine (first form),
+or to a user-specified routine (second form).  The value of
+.I argument
+is passed to the routine.  If the
+.I vector
+or
+.I virtual_address
+argument is omitted, the value in the
+.SM PC
+is used as the address to jump to.
+.IP
+To set up a predetermined routine to jump to, a user program must,
+prior to executing the monitor's
+.B g
+command, set the variable 
+.B *romp->v_vector_cmd
+to be equal to the virtual address of the desired routine.
+Predetermined routines need not necessarily return control
+to the monitor.
+.IP
+The default routine, defined by the monitor, prints the user-supplied
+.I vector
+according to the format supplied in 
+.IR argument .
+This format can be one of:
+.RS
+.RS
+.TP 4
+.PD 0
+.B %x
+hexadecimal
+.TP
+.B %d
+decimal
+.PD
+.RE
+.RE
+.\"
+.TP
+\fBg0\fR	(Sun-3, and Sun-4 only)
+When the monitor is running as a result of 
+the system being interrupted, force a panic and produce a crash dump.
+.IP \fBg4\fR (Sun-3, and Sun-4 only)
+When the monitor is running as a result of 
+the system
+being interrupted, force a kernel stack trace.
+.\"
+.TP 
+\fBh\fR	(Sun-3 and Sun-4 and Sun386i systems)
+Display the help menu for monitor commands and their descriptions.
+To return to the monitor's basic command level, press
+.SM ESCAPE
+or
+.B q
+before pressing
+.SM RETURN.
+.\"
+.br
+.ne 6
+.TP
+\fBi \fR[\fIcache_data_offset\fR\|] [\fIaction\fR\|]\|.\|.\|.		(Sun-3/200 series and Sun-4 systems only)
+.br
+Modify cache data
+.SM RAM
+command.  Display and/or modify one or more of the
+cache data addresses.  See the
+.B a
+command for a description of
+.IR action .
+.\"
+.HP
+.B j
+.RI [ cache_tag_offset "\|] [" action\| "]\|.\|.\|.	(Sun-3/200 series and Sun-4 systems only)"
+.br
+Modify cache tag
+.SM RAM
+command.  Display and/or modify the contents of
+one or more of the cache tag addresses.  See the
+.B a
+command for a description of
+.IR action .
+.\"
+.HP
+.B k\|
+.RI [ reset_level \|]
+.br
+Reset the system.  If 
+.I reset_level
+is:
+.RS
+.RS
+.TP 4
+.B 0
+.SM CPU
+reset only (Sun-3 systems).  Reset
+.SM VME\s0bus,
+interrupt registers, video monitor (Sun-4 systems).
+This is the default.  Reset video (Sun386i systems).
+.PD 0
+.TP
+.B 1
+Software reset.
+.br
+.ne 4
+.TP
+.B 2
+Power-on reset.
+Resets and clears the memory. 
+Runs the
+.SM EPROM\s0-based
+diagnostic self test, which can take several
+minutes, depending upon how much memory is being tested.
+.PD
+.RE
+.RE
+.\"
+.TP
+.B kb
+Display the system banner.
+.\"
+.HP
+.B l\|
+.RI [ virtual_address \|]\|[ action ]\|.\|.\|.
+.br
+Open the long word (32 bit) at memory address 
+.I virtual_address
+.\" Sun386i
+(default zero).  On Sun-3 and Sun-4 systems, the address is 
+interpreted in the address space defined by the 
+.B s
+command (below).  See the
+.B a
+command for a description of
+.IR action .
+.\"
+.HP
+.B m\|
+.RI [ virtual_address \|]\|[ action \|]\|.\|.\|.
+.br
+Open the segment map entry that maps
+.I virtual_address
+.\" Sun386i
+(default zero).  On Sun-3 and Sun-4 systems, the address is 
+interpreted in the address space defined by the 
+.B s
+command.  Not supported on Sun386i.
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.TP
+.BR n "	(Desktop \s-1SPARC\s0systems, \s-1SPARC\s0system 600\s-1MP\s0 series only)"
+Enter the new command mode. Type
+.RB ` old-mode '
+to return to the old command mode.
+See the
+.I "Open \s-1PROM\s0 Toolkit User's Guide"
+for a complete list of commands available on a
+\s-1SPARC\s0station 1 systems; See the
+.I "Open Boot \s-1PROM\s0 2.0 Toolkit User's Guide"
+for a complete list of commands available on
+\s-1SPARC\s0station 2 and \s-1SPARC\s0system 600MP series.
+.TP
+\fBnd\fR	(Sun386i systems only)
+.PD 0
+.TP
+.BR ne
+.TP
+.BR ni
+.PD
+Disable, enable, or invalidate the cache, respectively.
+.\"
+.HP
+.B o\|
+.RI [ virtual_address \|]\|[action ]\|.\|.\|.
+.br
+Open the byte location specified  by 
+.IR virtual_address
+.\" Sun386i
+(default zero).  On Sun-3 and Sun-4 systems, the address is 
+interpreted in the address space defined by the 
+.B s
+command.
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.HP
+.B p\|
+.RI [ virtual_address \|]\|[ action ].\|.\|.
+.br
+Open the page map entry that maps
+.I virtual_address 
+(default zero) in the address space defined by the
+.B s
+command.  
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.TP
+\fBp\fP [\fIport_address\fP] [[\fInonhex_char\fP [\fIhex_value\fP] | \fIhex_value\fP] ...]	(Sun386i systems only)
+Display or modify the contents of one or more port I/O addresses in
+byte mode.  Each port address is treated as an 8-bit unit.  The optional
+.I port_address
+argument, which is a 16-bit quantity, specifies the initial port I/O address.
+See the
+.B e
+command for argument descriptions.
+.\"
+.HP 
+.B q\|
+.RI [ eeprom_offset \|]\|[ action "\|].\|.\|.	(Sun-3 and Sun-4 systems only)"
+.br
+Open the
+.SM EEPROM
+.I eeprom_offset
+(default zero) in the
+.SM EEPROM
+address space.  
+All addresses are referenced from the beginning or base of the 
+.SM EEPROM
+in physical address space, and a limit check is performed to 
+insure that no address beyond the
+.SM EEPROM
+physical space is accessed.  
+On Sun386i systems, open the
+.SM NVRAM
+.I nvram_offset
+(default zero).
+This command is used to display or modify configuration parameters,
+such as: the amount of memory to test during self test,
+whether to display a standard or custom banner, 
+if a serial port (A or B) is to be the system console, etc.   
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.\"
+.TP
+\fBr\fP [\fIreg_name\fP] [[\fInonhex_char\fP [\fIhex_value\fP] | \fIhex_value\fP] ...]  (Sun386i systems only)
+Display or modify one or more of the processor registers.
+If
+.I "reg_name"
+is specified (2 or 3 characters from the above list), that
+register is displayed first.  The default is
+.SM
+.BR EAX . 
+See note on register availability under the command
+.BR d 
+(for Sun386i systems).
+See the 
+.B e
+command for argument descriptions.
+.\"
+.TP
+\fBs\fP [\fIstep_count\fP]  	(Sun386i systems only)
+Single step the execution of the interrupted program.  The
+.I step_count
+argument specifies the number of single steps to execute 
+before displaying the monitor prompt.  The default is 1. 
+.br
+.ne 5
+.HP
+.B r\|
+.RI [ register_number ]\|[ action "\|]\|.\|.\|.	(Sun-3 systems only)"
+.br
+Display and/or modify the register indicated.
+.I register_number
+can be one of:
+.RS
+.RS
+.TP 4
+.SB CA
+68020 Cache Address Register
+.PD 0
+.TP
+.SB CC
+68020 Cache Control Register
+.TP
+.SB CX
+68020 System and User Context
+.TP
+.SB DF
+Destination Function code
+.TP
+.SB IS
+68020 Interrupt Stack Pointer
+.TP
+.SB MS
+68020 Master Stack Pointer
+.TP
+.SB PC
+Program Counter
+.TP
+.SB SC
+68010 System Context
+.TP
+.SB SF
+Source Function code
+.TP
+.SB SR
+Status Register
+.TP
+.SB SS
+68010 Supervisor Stack Pointer
+.TP
+.SB UC
+68010 User Context
+.TP
+.SB US
+User Stack Pointer
+.TP
+.SB VB
+Vector Base
+.PD
+.RE
+.RE
+.IP
+Alterations to these registers (except
+.SB SC
+and
+.BR \s-1UC\s0 )
+do not take effect until the next 
+.B c 
+command is executed.
+See the
+.B a
+command for a description of
+.IR action .
+.\"
+.br
+.ne 15
+.HP
+.PD 0
+.B r\|
+.RI [ register_number\| "]	(Sun-4 systems only)"
+.br
+.HP
+.B r\|
+.RI [ register_type\| ]
+.br
+.HP
+.B r\|
+.RI [ "w window_number\|" ]
+.br
+.PD
+Display and/or modify one or more of the
+.SM IU
+or
+.SM FPU
+registers.
+.IP
+A hexadecimal
+.I register_number
+can be one of:
+.RS
+.RS
+.TP 12
+.BR 0x00 \(em\& 0x0f
+.PD 0
+window(0,i0)\(em\&window(0,i7), window(0,i0)\(em\&window(0,i7)
+.TP
+.BR 0x16 \(em\& 0x1f
+window(1,i0)\(em\&window(1,i7), window(1,i0)\(em\&window(1,i7)
+.TP
+.BR 0x20 \(em\& 0x2f
+window(2,i0)\(em\&window(2,i7), window(2,i0)\(em\&window(2,i7)
+.TP
+.BR 0x30 \(em\& 0x3f
+window(3,i0)\(em\&window(3,i7), window(3,i0)\(em\&window(3,i7)
+.TP
+.BR 0x40 \(em\& 0x4f
+window(4,i0)\(em\&window(4,i7), window(4,i0)\(em\&window(4,i7)
+.TP
+.BR 0x50 \(em\& 0x5f
+window(5,i0)\(em\&window(5,i7), window(5,i0)\(em\&window(5,i7)
+.TP
+.BR 0x60 \(em\& 0x6f
+window(6,i0)\(em\&window(6,i7), window(6,i0)\(em\&window(6,i7)
+.TP
+.BR 0x70 \(em\& 0x77
+g0, g1, g2, g3, g4, g5, g6, g7
+.TP
+.BR 0x78 \(em\& 0x7d
+.SM PSR\s0,
+.SM PC\s0,
+.SM nPC\s0,
+.SM WIM\s0,
+.SM TBR\s0,
+Y
+.TP
+.BR 0x7e \(em\& 0x9e
+.SM FSR\s0,
+f0\(em\&f31
+.PD
+.RE
+.IP
+Register numbers can only be displayed after an unexpected trap,
+a user program has entered the monitor using the
+.I abortent
+function, or the user has entered the monitor by manually typing
+.SB L1\-A
+or
+.BR \s-1BREAK\s0 .
+.RE
+.IP
+If a 
+.I register_type
+is given, the first register of the indicated type is displayed.
+.I register_type
+can be one of:
+.RS
+.RS
+.TP 4
+.PD 0
+.B f
+floating-point
+.TP
+.B g
+global
+.TP
+.B s
+special
+.PD
+.RE
+.RE
+.IP
+If 
+.B w
+and a
+.I window_number
+.RB ( 0 \(em 6 )
+are given, the first
+.IR in -register
+within the indicated window is displayed.  If 
+.I window_number
+is omitted, the window that was active just prior to entering
+the monitor is used.  If the
+.SM PSR\s0's
+current window pointer is invalid, window 0 is used.
+.\"
+.br
+.ne 11
+.HP
+.B s\|
+.RI [ code "]	(Sun-3 systems only)"
+.br
+Set or query the address space to be used by subsequent 
+memory access commands.
+.I code
+is one of:
+.RS
+.RS
+.TP 4
+.PD 0
+.B 0
+undefined
+.TP
+.B 1
+user data space
+.TP
+.B 2
+user program space
+.TP
+.B 3
+user control space
+.TP
+.B 4
+undefined
+.TP
+.B 5
+supervisor data space
+.TP
+.B 6
+supervisor program space
+.TP
+.B 7
+supervisor control space
+.PD
+.RE
+.RE
+.IP
+If
+.I code
+is omitted,
+.B s
+displays the current address space.
+.br
+.ne 15
+.HP
+.B s\|
+.RI [ asi "\|]	(Sun-4 systems only)"
+.br
+Set or display the Address Space Identifier.  With no argument,
+.B s
+displays the current Address Space Identifier.  The
+.I asi
+value can be one of:
+.RS
+.RS
+.TP 12
+.B 0x2
+.PD 0
+control space
+.TP
+.B 0x3
+segment table
+.TP
+.B 0x4
+Page table
+.TP
+.B 0x8
+user instruction
+.TP
+.B 0x9
+supervisor instruction
+.TP
+.B 0xa
+user data
+.TP
+.B 0xb
+supervisor data
+.TP
+.B 0xc
+flush segment
+.TP
+.B 0xd
+flush page
+.TP
+.B 0xe
+flush context
+.TP
+.B 0xf
+cache data
+.PD
+.RE
+.RE
+.\"
+.HP 
+.B t\|
+.RI [ program "]	(Sun-3 systems only)"
+.br
+Trace the indicated standalone
+.IR program .  
+Works only with programs that do not affect interrupt vectors.
+.\"
+.HP
+.B u
+[
+.I echo
+]
+.br
+.PD 0
+.HP
+.B u
+[
+.I port
+] [
+.I options
+] [
+.I baud_rate
+]
+.br
+.HP
+.B u
+[
+.B u
+] [
+.I virtual_address
+]
+.br
+.PD
+With no arguments, display the current I/O device characteristics
+including:
+current input device,
+current output device, 
+baud rates for serial ports A and B,
+an input-to-output echo indicator,
+and virtual addresses of mapped
+.SM UART
+devices.
+With arguments, set or configure the current I/O device.  With the 
+.B u
+argument
+.RB ( uu .\|.\|.),
+set the I/O device to be the
+.I virtual_address
+of a
+.SM UART
+device currently mapped.
+.RS
+.RS
+.TP 12
+.I echo
+Can be either
+.B e
+to enable input to be echoed to the output device, or
+.BR ne ,
+to indicate that input is not echoed.
+.TP
+.I port
+Assign the indicated 
+.I port
+to be the current I/O device.
+.I port
+can be one of:
+.RS
+.RS
+.TP 4
+.B a
+serial port A
+.PD 0
+.TP
+.B b
+serial port B (except on Sun386i systems)
+.TP
+.B k
+the workstation keyboard
+.TP
+.B s
+the workstation screen
+.PD
+.RE
+.RE
+.TP
+.I baud_rate
+Any legal baud rate.
+.IP
+.I options
+can be any combination of:
+.RS
+.RS
+.TP 4
+.PD 0
+.B i
+input
+.TP
+.B o
+output
+.TP
+.B u
+.SM UART
+.TP
+.B e
+echo input to output
+.TP
+.B ne
+do not echo input
+.TP
+.B r
+reset indicated serial port 
+.RB ( a
+and
+.B b
+ports only)
+.RE
+.RE
+.PD
+.IP
+If either
+.B a
+or 
+.B b
+is supplied, and no
+.I options
+are given, the serial port is assigned for both input and output.  If
+.B k
+is supplied with no options, it is assigned for input only.  If
+.B s
+is supplied with no options, it is assigned for output only.
+.RE
+.RE
+.\"
+.br
+.ne 10
+.HP 
+.BI v " virtual_address1 virtual_address2 "
+.RI [ size "]	(Sun-3 and Sun-4 systems only)"
+.br
+Display the contents of 
+.I virtual_address1 
+(lower)
+.I virtual_address2
+(higher)
+in the format specified by
+.IR size : 
+.RS
+.RS
+.PD 0
+.TP 4
+.B b
+byte format (the default)
+.TP
+.B w
+word format
+.TP
+.B l
+long word format
+.PD
+.RE
+.RE
+.IP
+Enter return to pause for viewing; enter another return character 
+to resume the display.  To terminate the display at any time, 
+press the space bar.
+.IP
+For example, the following command displays the contents of virtual 
+address space from address 0x1000 to 0x2000 in word format:
+.RS
+.RS
+.IP
+.B v 1000 2000 W
+.RE
+.RE
+.\"
+.br
+.ne 10
+.HP
+.B w\|
+.RI [ virtual_address\| ]\|[ argument\| "]	(Sun-3 and Sun-4 systems only)"
+.br
+Set the execution vector to a predetermined or default routine.
+Pass 
+.I virtual_address
+and
+.I argument
+to that routine.
+.IP
+To set up a predetermined routine to jump to, a user program must,
+prior to executing the monitor's
+.B w
+command, set the variable 
+.B *romp->v_vector_cmd
+to be equal to the virtual address of the desired routine.
+Predetermined routines need not necessarily return control
+to the monitor.
+.IP
+The default routine, defined by the monitor, prints the user-supplied
+.I vector
+according to the format supplied in 
+.IR argument .
+This format can be one of:
+.RS
+.RS
+.TP 4
+.PD 0
+.B %x
+hexadecimal
+.TP
+.B %d
+decimal
+.PD
+.RE
+.RE
+.\"
+.TP 
+.BR x "	(Sun-3 and Sun-4 systems only)"
+Display a menu of extended tests.
+These diagnostics permit additional testing of such things as the I/O
+port connectors, video memory, workstation memory and
+keyboard, and boot device paths.
+.\"
+.TP
+.BI y\|c " context_number	\fR(Sun-4 systems only)"
+.PD 0
+.TP
+.BI y\|p\fR|s\| " context_number virtual_address"
+.\"
+Flush the indicated context, context page, or context segment.  
+.RS
+.RS
+.TP 3
+.B c
+.PD 0
+flush context
+.IR context_number
+.TP
+.B p
+flush the page beginning at
+.I virtual_address
+within context
+.IR context_number
+.TP
+.B s
+flush the segment beginning at
+.I virtual_address
+within context
+.IR context_number
+.PD
+.RE
+.RE
+.\"
+.br
+.ne 13
+.TP
+\fBz\fP [\fInumber\fP] [\fIbreakpoint_virtual_address\fP [\fItype\fP] [\fIlen\fP]]  	(Sun386i systems only)
+Set or reset breakpoints for debugging.
+With no arguments, this command displays the existing breakpoints. 
+The
+.I number
+argument is a values from 0 to 3, corresponding to the processor debug
+registers, 
+.SB DR0
+to
+.SM
+.BR DR3 ,
+respectively.  Up to 4 distinct breakpoints can be specified. 
+If
+.I number
+is not specified then the monitor chooses a breakpoint number. 
+The
+.I "breakpoint_virtual_address"
+argument specifies the breakpoint address.  
+The 
+.I "type"
+argument can be one of:
+.RS
+.RS
+.TP 4
+.B x
+.PD 0
+Instruction Execution breakpoint (the default)
+.TP
+.B m
+for Data Write only breakpoint
+.TP
+.B r
+Data Reads and Writes only breakpoint.
+.PD
+.RE
+.RE
+.IP
+The
+.I "len"
+argument can be one of:
+.RB ` b ',
+.RB ` w ',
+or
+.RB ` l ',
+corresponding to the breakpoint field length of byte, word,
+or 
+long-word, respectively.  The default is
+.RB ` b '.
+Since the breakpoints are set in the on-chip registers, an instruction
+breakpoint can be placed in
+.SM ROM
+code or in code shared by several tasks. 
+If the 
+.I "number"
+argument is specified but not
+.IR "breakpoint_virtual_address" ,
+the corresponding breakpoint is reset.
+.\"
+.HP 
+.B z\|
+.RI [ virtual_address "]	(Sun-3 systems only)"
+.br
+Set a breakpoint at
+.I virtual_address
+in the address space selected by the
+.B s
+command.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+.SH SEE ALSO
+.BR boot (8S),
+.BR eeprom (8S),
+.BR openboot (8S)
+.LP
+.I "Open \s-1PROM\s0 Toolkit User's Guide"
+.br
+.I "Open \s-1PROM\s0 2.0 Toolkit User's Guide"

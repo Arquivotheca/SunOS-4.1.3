@@ -1,0 +1,141 @@
+.\" @(#)w.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH W 1 "9 September 1987"
+.SH NAME
+w \- who is logged in, and what are they doing
+.SH SYNOPSIS
+.B w
+[
+.B \-hls
+] [
+.I user
+]
+.IX  "w command"  ""  "\fLw\fP \(em what are users doing"
+.IX  "what are users doing"  ""  "what are users doing \(em \fLw\fP"
+.IX  users  "what are they doing"  users  "what are they doing \(em \fLw\fP"
+.IX  login  "what are users doing"  login  "what are users doing \(em \fLw\fP"
+.SH DESCRIPTION
+.LP
+.B w
+displays a summary of the current activity on the system,
+including what each user is doing.
+The heading line shows the current time of day, how long the system has
+been up, the number of users logged into the system,
+and the load averages.
+The load average numbers give the number of jobs in the run queue
+averaged over 1, 5 and 15 minutes.
+.LP
+The fields displayed are: the users login name, the name of the tty
+the user is on, the time of day the user logged on (in hours:minutes),
+the idle time \(em that is, the number of minutes since the user last
+typed anything (in hours:minutes), the
+.SM CPU
+time used by all processes and their children on that terminal
+(in minutes:seconds), the
+.SM CPU
+time used by the currently active processes
+(in minutes:seconds), the name and arguments of the current process.
+.LP
+If a
+.I user
+name is included, output is restricted to that user.
+.SH OPTIONS
+.TP
+.B \-h
+Suppress the heading.
+.TP
+.B \-l
+Produce a long form of output, which is the default.
+.TP
+.B \-s
+Produce a short form of output.
+In the short form, the tty is abbreviated,
+the login time and
+.SM CPU
+times are left off, as are the arguments to commands.
+.SH EXAMPLE
+.RS
+.ft B
+.nf
+example% w
+7:36am  up 6 days, 16:45,  1 users,  load average: 0.20, 0.23, 0.18
+User	tty	login@	idle	\s-1JCPU\s0	\s-1PCPU\s0	what
+ralph	console	7:10am	   1	10:05	4:31	w
+example%
+.ft R
+.fi
+.RE
+.SH ENVIRONMENT
+.LP 
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and 
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR w .
+On entry to
+.BR w ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and 
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+.TP
+.B /dev/kmem
+.TP
+.B /dev/drum
+.PD
+.SH "SEE ALSO"
+.BR ps (1),
+.BR who (1),
+.BR utmp (5V)
+.SH BUGS
+.LP
+The notion of the \*(lqcurrent process\*(rq is muddy.
+The current algorithm is
+`the highest numbered process on the terminal that is not ignoring
+interrupts, or, if there is none, the highest numbered process on the
+terminal'.  This fails, for example, in critical sections of programs
+like the shell and editor, or when faulty programs running in the
+background fork and fail to ignore interrupts.  In cases where no
+process can be found,
+.B w
+prints
+.RB ` \- '.
+.LP
+The
+.SM CPU
+time is only an estimate, in particular, if someone leaves a
+background process running after logging out, the person currently
+on that terminal is \*(lqcharged\*(rq with the time.
+.LP
+Background processes are not shown, even though they account for
+much of the load on the system.
+.LP
+Sometimes processes, typically those in the background, are
+printed with null or garbaged arguments.
+In these cases, the name of the command is printed in parentheses.
+.LP
+.B w
+does not know about the new conventions for detecting background
+jobs.
+It will sometimes find a background job instead of the right one.

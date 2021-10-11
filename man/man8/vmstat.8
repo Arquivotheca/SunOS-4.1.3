@@ -1,0 +1,231 @@
+.\" @(#)vmstat.8 1.1 92/07/30 SMI; from UCB 6.3 3/15/86
+.TH VMSTAT 8 "7 September 1988"
+.SH NAME
+vmstat \- report virtual memory statistics
+.SH SYNOPSIS
+.B vmstat
+[
+.B \-cfisS
+] [
+.I interval
+[
+.I count
+] ]
+.SH DESCRIPTION
+.IX  "vmstat command"  ""  "\fLvmstat\fP \(em display virtual memory statistics"
+.B vmstat
+delves into the system and normally reports
+certain statistics kept about
+process, virtual memory, disk, trap and
+.SM CPU
+activity.
+.LP
+Without options,
+.B vmstat
+displays a one-line summary of the virtual memory activity
+since the system has been booted.  If
+.I interval
+is specified,
+.B vmstat
+summarizes activity over the last
+.I interval
+seconds.  If a
+.I count
+is given, the statistics are repeated
+.I count
+times.
+.LP
+For example, the following command displays a summary of what the
+system is doing every five seconds.
+This is a good choice of printing interval since this is how often
+some of the statistics are sampled in the system.
+.\"others vary every
+.\"second, running the output for a while will make it apparent which
+.\"are recomputed every second.
+.RS
+.nf
+.ft B
+example% vmstat 5
+.sp .5v
+procs     memory                       page      faults
+r b w   avm  fre  re at  pi  po  fr  de  sr x0 x1 x2 x3  in   sy  cs  us  sy  id
+2 0 0   918  286   0  0   0   0   0   0    0  1  0   0   0    4  12    5   3   5  91
+1 0 0   846  254   0  0   0   0   0   0    0  6  0   1   0   42 153  31  7  40  54
+1 0 0   840  268   0  0   0   0   0   0    0  5  0   0   0   27 103  25  8  26  66
+1 0 0   620  312   0  0   0   0   0   0    0  6  0   0   0   26  76\^  25  6  27  \^67
+.sp .5v
+.SM CTRL-C
+example%
+.fi
+.ft R
+.RE
+.LP
+The fields of
+.BR vmstat 's
+display are:
+.TP 8
+.B procs
+Report the number of processes in each of the three following states:
+.RS
+.PD 0
+.TP 8
+.B r
+in run queue
+.TP
+.B b
+blocked for resources (i/o, paging, etc.)
+.TP
+.B w
+runnable or short sleeper (< 20 secs) but swapped
+.RE
+.PD
+.TP 8
+.B memory
+Report on usage of virtual and real memory.
+Virtual memory is considered active if it belongs to processes which
+are running or have run in the last 20 seconds.
+.\"A ``page'' here is 2048 bytes.
+.RS
+.PD 0
+.TP 8
+.B avm
+number of active virtual Kbytes
+.TP
+.B fre
+size of the free list in Kbytes
+.RE
+.PD
+.TP 8
+.B page
+Report information about page faults and paging activity.
+The information on each of the following
+activities is averaged each five
+seconds, and given in units per second.
+.RS
+.PD 0
+.TP 8
+.B re
+page reclaims \(em but see the
+.B \-S
+option for how this field is modified.
+.TP
+.B at
+number of attaches \(em but see the
+.B \-S
+option for how this field is modified.
+.TP
+.B pi
+kilobytes per second paged in 
+.TP
+.B po
+kilobytes per second paged out 
+.TP
+.B fr
+kilobytes freed per second
+.TP
+.B de
+anticipated short term memory shortfall in Kbytes
+.TP
+.B sr
+pages scanned by clock algorithm, per-second
+.RE
+.PD
+.TP 8
+.B disk
+Report number of disk operations per
+second (this field is system dependent).
+For Sun systems, four slots are available for up to four drives: ``x0''
+(or ``s0'' for SCSI disks), ``x1'', ``x2'', and ``x3''.
+.\"Typically paging will be split across
+.\"several of the available drives.
+.\"The number under each of these is the unit number.
+.TP 8
+.B faults
+Report trap/interrupt rate averages per second over last 5 seconds.
+.RS
+.PD 0
+.TP 8
+.B in
+(non clock) device interrupts per second
+.TP
+.B sy
+system calls per second
+.TP
+.B cs
+.SM CPU
+context switch rate (switches/sec)
+.RE
+.PD
+.ne 6
+.TP 8
+.B cpu
+Give a breakdown of percentage usage of
+.SM CPU
+time.
+.RS
+.PD 0
+.TP 8
+.B us
+user time for normal and low priority processes
+.TP
+.B sy
+system time
+.TP
+.B id
+.SM CPU
+idle
+.RE
+.PD
+.SH OPTIONS
+.TP
+.B \-c
+Report cache flushing statistics.  By default, report the total number
+of each kind of cache flushed since boot time.  The types are:
+user, context, region, segment, page, and partial-page.
+.TP
+.B \-f
+Report on the number of
+.B forks
+and
+.B vforks
+since system startup and the number of
+pages of virtual memory involved in each
+kind of fork.
+.TP
+.B \-i
+Report the number of interrupts per device.
+Autovectored interrupts (including the clock) are listed first.
+.TP
+.B \-s
+Display the contents of the
+.B sum
+structure, giving the total number of several kinds of paging-related
+events which have occurred since boot.
+.TP
+.B \-S
+Report on swapping rather than paging activity.
+This option will change two fields in
+.BR vmstat 's
+``paging'' display:  rather than
+the ``re'' and ``at'' fields,
+.B vmstat
+will report ``si'' (swap-ins),
+and ``so'' (swap-outs).
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/kmem
+.TP
+.B /vmunix
+.PD
+.SH BUGS
+If more than one autovectored device has the same name, interrupts
+are counted for all like-named devices regardless of unit number.
+Such devices are listed with a unit number of
+.RB ` ? '.
+.\"There should be a screen oriented program which combines
+.\".B vmstat
+.\"and
+.\".IR ps (1)
+.\"in real time
+.\"as well as reporting on other system activity.

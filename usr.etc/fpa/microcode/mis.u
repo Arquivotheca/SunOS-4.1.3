@@ -1,0 +1,337 @@
+|* @(#)mis.u	1.1	1.1	7/30/92
+|*
+|*	FPA MICROCODE
+|* Written by Mark Moyer
+|* For modifications, see "FPA MICRO-CODE GUIDE", #800-1870-01
+|*
+|*
+|*		Idle 1
+|*
+	;		;			;		;	;
+idle1:
+	map idl1;	lmap cslmac;		opdsp;		recclk;	rcssp imm2;
+|*
+|*		Invalid Instructions
+|*
+|*	Shadow Ram Accesses
+routine inv.h1 r0111000xxxx lnop ssub
+|*	Other Register Accesses
+routine inv.r1 x01111xxxxxx lnop ssub
+|*	Register Accesses Via the Load Pointer
+routine inv.l1 x011101001xx lnop ssub
+routine inv.l2 x01110101xxx lnop ssub
+|*   NOTE: w0111011111x is Defined as an invalid instruction forever more
+|*   (it's used in the O.S. to generate the unimplimented status.)
+routine inv.l3 x0111011xxxx lnop ssub
+|*	Single Precision
+routine inv.s1 r00xxxxxxxx0 lnop ssub
+|*	Command
+routine inv.c1 r010xxxxxxxx lnop ssub
+routine inv.c2 w0101001010x lnop ssub
+routine inv.c3 w0101001100x lnop ssub
+routine inv.c4 w0101011010x lnop ssub
+routine inv.c5 w0101100010x lnop ssub
+routine inv.c6 w0101100110x lnop ssub
+routine inv.c7 w0101101010x lnop ssub
+routine inv.c8 w01011011x0x lnop ssub
+routine inv.c9 w0101110110x lnop ssub
+routine inv.ca w0101111110x lnop ssub
+routine inv.cb w010000101xx lnop ssub
+routine inv.cc w01000011xxx lnop ssub
+routine inv.cd w0100011011x lnop ssub
+routine inv.ce w01000111xxx lnop ssub
+routine inv.cf w0100110111x lnop ssub
+routine inv.cg1 w01001110000 lnop ssub
+routine inv.cg3 w010011101xx lnop ssub
+routine inv.cg4 w01001111xxx lnop ssub
+routine inv.ch1 w01001011111 lnop ssub
+routine inv.ch w0100101110x lnop ssub
+routine inv.ci w01001011011 lnop ssub
+routine inv.ci2 w0100101100x lnop ssub
+routine inv.cj w0100101010x lnop ssub
+routine inv.ck w010010100xx lnop ssub
+routine inv.cl w0100100xxx0 lnop ssub
+routine inv.cm w01001010111 lnop ssub
+routine inv.cn w0100001001x lnop ssub
+routine inv.stan w01000000100 lnop ssub
+routine inv.dtan w01000000101 lnop ssub
+routine inv.ssqrt w01000010000 lnop ssub
+routine inv.dsqrt w01000010001 lnop ssub
+|*	Write Weitek Status
+routine inv.w1 r0111001xxxx lnop ssub
+|*	Not Used (some detected by hardware)
+routine inv.nu1 x01101xxxxxx lnop ssub
+routine inv.nu2 w01110010101 lnop ssub
+routine inv.nu3 w01110010110 lnop ssub
+routine inv.nu4 w01110010111 lnop ssub
+routine inv.nu5 w01110011001 lnop ssub
+routine inv.nu6 w01110011010 lnop ssub
+routine inv.nu7 w01110011011 lnop ssub
+routine inv.nu8 w01110011100 lnop ssub
+routine inv.nu9 w01110011101 lnop ssub
+routine inv.nua w01110011110 lnop ssub
+routine inv.nub w01110011111 lnop ssub
+invalid:
+	;		;			;		;	;
+	cstat unimpl;	;			;		;	;
+	hng;		;			;		;	;
+	call idle1;	;			;		;	;
+|*	Double Precision
+routine inv.d1 r00xxxxxxxx1 lnop ssub
+|*	Extended
+routine inv.x1 r1xxxxxxxxxx lnop ssub
+routine inv.x2 w1000xxxxxx1 lnop ssub
+routine inv.x3 w10010xxxxx1 lnop ssub
+routine inv.x4 w1011xxxxxxx lnop ssub
+routine inv.x5 w111011xxxxx lnop ssub
+routine inv.x6 w1111xxxxxxx lnop ssub
+invalid2:
+	;		;			;		;	;
+	jclr clp idl2;	;			;		;	;
+	cstat unimpl;	;			;		;	;
+	hng;		;			;		;	;
+	call idle1;	;			;		;	;
+|*
+|*		General Routines
+|*
+
+|*	Wait (delay will be (lpreg+1) * 2)
+wait:
+	jloop wait;	;			;		;	;
+	rtn;		;			;		;	;	lpreg-
+wait5:
+	;		;			;		;	;
+wait4:
+	;		;			;		;	;
+wait3:
+	;		;			;		;	;
+wait2:
+	;		;			;		;	;
+wait1:
+	rtn;		;			;		;	;
+|*
+|*		Clear Pipe Clean-up Routines
+|*	If there is a clear pipe command, the microengine must wait
+|*	until the current Weitek operation (if any) is completed.
+|*	The delay must be long enough such that any new operation
+|*	will not be loaded until the time when the unload is normally
+|*	done.
+
+|*	Must wait 56 instructions
+clp56:
+	;		;			;		;	;	lpreg!26
+	call wait;	;			;		;	;
+	call idle1;	;			;		;	;
+|*	Must wait 24 instructions
+clp24:
+clp20:
+	;		;			;		;	;	lpreg!10
+	call wait;	;			;		;	;
+	call idle1;	;			;		;	;
+|*	Must wait 4 instructions
+clp4:
+	;		;			;		;	;
+|*	Must wait 3 instructions
+clp3:
+	;		;			;		;	;
+clp2:
+	;		;			;		;	;
+|*	No operation going on
+|*	Must wait 1 instructions
+clp:
+clp1:
+	call idle1;	;			;		;	;
+||*
+||*		Write Weitek Status Instructions
+||*
+|routine w.0 w01110010000 lnop ssub
+|	;		;			;		;	;	ptr5!szero
+|	;		;			;		;	rcssp ptr5;
+|	;		lasf scmp0 csla;	reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.1 w01110010001 lnop ssub
+|	;		;			;		;	;	ptr5!smone
+|	;		;			;		;	rcssp ptr5;
+|	;		lasf scmp0 csla;	reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.2 w01110010010 lnop ssub
+|	;		;			;		;	;	ptr5!sone
+|	;		;			;		;	rcssp ptr5;
+|	;		lasf scmp0 csla;	reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.3 w01110010011 lnop ssub
+|	;		;			;		;	;	ptr5!c_smaxnorm
+|	;		;			;		;	rcssp ptr5;	ptr5!sone
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf ssub csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.4 w01110010100 lnop ssub
+|	call invalid;	;			;		;	;
+|routine w.5 w01110010101 lnop ssub
+|	;		;			;		;	;	ptr5!c_smaxnorm
+|	;		;			;		;	rcssp ptr5;	ptr5!c_smaxnorm
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf sadd csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.6 w01110010110 lnop ssub
+|	;		;			;		;	;	ptr5!shalf
+|	;		;			;		;	rcssp ptr5;	ptr5!c_sminnorm
+|	;		las cslm;		reg;		;	rcssp ptr5;
+|	;		lbsf smul cslm;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.7 w01110010111 lnop ssub
+|	;		;			;		;	;	ptr5!c_sminnorm
+|	;		;			;		;	rcssp ptr5;	ptr5!c_sminnorm
+|	;		las cslm;		reg;		;	rcssp ptr5;
+|	;		lbsf smul cslm;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.8 w01110011000 lnop ssub
+|	;		;			;		;	;	ptr5!c_sminsub
+|	;		;			;		;	rcssp ptr5;
+|	;		lasf scmp0 cslm;	reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.9 w01110011001 lnop ssub
+|	;		;			;		;	;	ptr5!szero
+|	;		;			;		;	rcssp ptr5;	ptr5!c_sminsub
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf sadd csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.a w01110011010 lnop ssub
+|	;		;			;		;	;	ptr5!c_sminsub
+|	;		;			;		;	rcssp ptr5;	ptr5!c_sminsub
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf sadd csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.b w01110011011 lnop ssub
+|	;		;			;		;	;	ptr5!sone
+|	;		;			;		;	rcssp ptr5;	ptr5!szero
+|	;		las csla;		reg;		;	rcssp ptr5;
+||#				(Note: 12 will cause a delay of 26)
+|	;		lbsf sdiv csla;		reg;		;	;	lpreg!12
+|	call wait;	;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.c w01110011100 lnop ssub
+|	;		;			;		;	;	ptr5!c_ssnan
+|	;		;			;		;	rcssp ptr5;	ptr5!szero
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf sadd csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.d w01110011101 lnop ssub
+|	;		;			;		;	;	ptr5!szero
+|	;		;			;		;	rcssp ptr5;	ptr5!c_ssnan
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf sadd csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.e w01110011110 lnop ssub
+|	;		;			;		;	;	ptr5!c_ssnan
+|	;		;			;		;	rcssp ptr5;	ptr5!c_ssnan
+|	;		las csla;		reg;		;	rcssp ptr5;
+|	;		lbsf sadd csla;		reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|routine w.f w01110011111 lnop ssub
+|	;		;			;		;	;	ptr5!c_ssnan
+|	;		;			;		;	rcssp ptr5;
+|	;		lasf scmp0 csla;	reg;		;	;
+|	;		;			;		;	;
+|	;		;			;		;	;
+|	;		csuxa;			;		;	;
+|	;		;			;		;	;
+|	call idle1 cstat;woea;			;		;	;
+|*
+|*		Weitek Error Routines
+|*	Whenever the Weitek chips get an error we hang.
+|*	For instructions that have written to reg1 we must restore it.
+|*	For more complicated operations we might have to wait for
+|*	the other Weitek chip to finish first.
+|*
+|*	This routine is entered in the middle of a write.  We play it safe
+|*	and finish the write cleanly.
+|*
+|*   Double Precision - restore from recovery to ptr2
+der2:
+	;		;			;		;	ramwe ptr2;
+	;		;			;		recoe;	ramwe rcsmsw ptr2;
+	;		;			;		recoe recclk;ramwe ptr2;
+	;		;			;		recoe;	ramwe rcslsw ptr2;
+	call hang;	;			;		recoe;	ramwe ptr2;
+|*   Single Precision - restore from recovery to ptr2
+ser2:
+	;		;			;		recclk;	ptr2;
+	;		;			;		recoe;	ramwe rcssp ptr2;
+	call hang;	;			;		recoe;	ramwe ptr2;
+|*   Double Precision - restore from recovery to ptr1
+der1:
+	;		;			;		;	ramwe ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	call hang;	;			;		recoe;	ramwe ptr1;
+|*   Single Precision - restore from recovery to ptr1
+ser1:
+	;		;			;		recclk;	ptr1;
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	call hang;	;			;		recoe;	ramwe ptr1;
+|*		When we jump here with another jump following immediately,
+|*		we must do a jump here (hence the jump werr).
+prewerr:
+	jmp werr;	;			;		;	;
+werr:
+	call hang;	;			;		;	;
+hang:
+	hng;		;			;		;	;
+	;		;			;		;	;
+	call idle1;	;			;		;	;

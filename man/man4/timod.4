@@ -1,0 +1,176 @@
+.\" @(#)timod.4 1.1 92/07/30 SMI; new for 4.1 RFS from SVR3.2
+.TH TIMOD 4 "17 January 1990"
+.SH NAME
+timod \- Transport Interface cooperating STREAMS module
+.SH CONFIG
+.B pseudo-device  tim64
+.SH DESCRIPTION
+.LP
+.B timod
+is a
+.SM STREAMS
+module for use with the Transport Interface (\s-1TI\s+1)
+functions of the Network Services library (see Section 3). 
+The
+.B timod
+module converts a set of
+.BR ioctl (2)
+calls into
+.SM STREAMS
+messages that may be consumed by a transport protocol
+provider which supports the Transport Interface.
+This allows a user to initiate certain
+.SM TI
+functions as atomic operations.
+.LP
+The
+.B timod
+module must be pushed
+onto only a
+.I stream
+terminated by a transport protocol provider which supports the
+.SM TI\s0.
+.LP
+All
+.SM STREAMS
+messages, with the exception of the message
+types generated from the
+.B ioctl(\|)
+commands described below, are transparently
+passed to the neighboring
+.SM STREAMS
+module or driver.
+The messages generated from the following
+.B ioctl(\|)
+commands are recognized and processed by the
+.B timod
+module.
+The format of the
+.B ioctl(\|)
+call is:
+.LP
+.RE
+.LP
+Where, on issuance,
+.B size
+is the size of the appropriate
+.SM TI
+message to be sent to the transport provider and on
+return
+.B size
+is the size of the appropriate
+.SM TI\s0
+message
+from the transport provider in response to the issued
+.SM TI
+message.
+.B buf
+is a pointer to a buffer large enough to hold
+the contents of the appropriate
+.SM TI
+messages.
+The
+.SM TI
+message types are defined in
+.BR <sys/tihdr.h> .
+The possible values for the
+.B cmd
+field are:
+.TP 20
+.SM TI_BIND
+Bind an address to the underlying transport protocol provider.
+The message issued to the
+.SM TI_BIND
+.B ioctl(\|)
+is equivalent to
+the
+.SM TI
+message type
+.SM T_BIND_REQ
+and the message returned by the successful
+completion of the
+.B ioctl(\|)
+is equivalent to the
+.SM TI
+message type
+.SM T_BIND_ACK\s0.
+.TP
+.SM TI_UNBIND
+Unbind an address from the underlying transport protocol provider.
+The message issued to the
+.SM TI_UNBIND
+.B ioctl(\|)
+is equivalent to
+the
+.SM TI
+message type
+.SM T_UNBIND_REQ
+and the message returned by the successful
+completion of the
+.B ioctl(\|)
+is equivalent to the
+.SM TI
+message type
+.SM T_OK_ACK\s0.
+.TP
+.SM TI_GETINFO
+Get the
+.SM TI
+protocol specific
+information from the transport protocol provider.
+The message issued to the
+.SM TI_GETINFO
+.B ioctl(\|)
+is equivalent to the
+.SM TI
+message type
+.SM T_INFO_REQ
+and the message returned by the successful
+completion of the
+.B ioctl(\|)
+is equivalent to the
+.SM TI
+message type
+.SM T_INFO_ACK\s0.
+.TP
+.SM TI_OPTMGMT
+Get, set or negotiate protocol specific options
+with the transport protocol provider.
+The message issued to the
+.SM TI_OPTMGMT
+.B ioctl(\|)
+is equivalent to
+the
+.SM TI
+message type
+.SM T_OPTMGMT_REQ
+and the message returned by the successful
+completion of the
+.B ioctl(\|)
+is equivalent to the
+.SM TI
+message type
+.SM T_OPTMGMT_ACK\s0.
+.SH SEE ALSO
+.BR tirdwr (4)
+.LP
+.TX NETP
+.SH DIAGNOSTICS
+.LP
+If the
+.B ioctl(\|)
+system call returns with a value greater than 0, the
+lower 8 bits of the return value will
+be one of the
+.SM TI
+error codes as defined in
+.BR <sys/tiuser.h> .
+If the
+.SM TI
+error is of type
+.SM TSYSERR\s0,
+then the next 8 bits of the return
+value will contain an error as defined in
+.B <sys/errno.h>
+(see
+.BR intro (2)).

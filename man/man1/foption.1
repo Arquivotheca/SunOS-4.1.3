@@ -1,0 +1,72 @@
+.\" @(#)foption.1 1.1 92/07/30 SMI;
+.TH FOPTION 1 "8 December 1987"
+.SH NAME
+foption \- determine available floating-point code generation options
+.SH SYNOPSIS
+.B foption
+[
+.BI \-f type
+]
+.SH AVAILABILITY
+This command is not available for the Sun386i.
+.SH DESCRIPTION
+.IX  foption  ""  "\fLfoption\fP \(em determine available floating-point code generation options"
+.IX  floating-point
+.LP
+.B foption
+has two uses.
+Called without an argument, it sends
+a string to standard output which is the compiler floating-point option
+corresponding to the type of floating-point hardware
+that would be used by a program compiled with 
+.BR \-fswitch .
+Exit status is undefined.
+This usage is intended for interactively determining available 
+floating-point hardware.  On systems without floating-point hardware,
+the result would be
+.RS
+.sp .5
+.nf
+.ft B
+example% foption
+soft
+.ft R
+.fi
+.RE
+.LP
+corresponding to the compiler option 
+.BR \-fsoft .
+.LP
+Called with an argument which is one of the compiler floating-point options 
+.BR \-ffpa ,
+.BR \-f68881 ,
+.\".BR \-fsky ,
+.BR \-fsoft ,
+or
+.BR \-fswitch ,
+it produces no output but returns
+exit status 0 (true) if a program compiled with that option could execute
+on this machine, and status 1 (false) otherwise.  
+Thus
+.B "foption \-fsoft"
+and
+.B "foption \-fswitch"
+always produce exit status 0.
+This usage is intended for shell scripts and Makefiles that, for instance,
+select different executable files or link with different libraries according
+to the floating-point hardware present.
+.LP
+.B foption
+is undefined on Sun-4 systems since there are no floating-point
+code generation options.
+.SH OPTIONS
+.TP 6
+.BI \-f type
+Return exit status 0 if a program compiled 
+.BI \-f type 
+could execute on this machine.
+.SH "SEE ALSO"
+.BR cc (1V),
+.\".BR skyversion (8),
+.BR fpaversion (8),
+.BR mc68881version (8)

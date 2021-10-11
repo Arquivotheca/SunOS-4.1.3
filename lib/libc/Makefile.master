@@ -1,0 +1,176 @@
+#
+# @(#)Makefile.master 1.1 92/07/30 SMI
+#
+# Copyright (c) 1987 by Sun Microsystems, Inc
+#
+CC = /bin/cc
+CPP = /lib/cpp
+SED = /bin/sed
+AWK = /bin/awk
+COMMON_DIRS =	obj obj_p shared s5 s5_p shared_s5 shared_4.2 obj_f
+
+LIBS-mc68010 = libc_comm.so libc.a libc_p.a libc.so libcs5.a libcs5_p.a libcs5.so libbsdmalloc.a
+LIBS-mc68020 = $(LIBS-mc68010)
+LIBS-sparc = $(LIBS-mc68010)
+LIBS-i386 = libc.a libc_p.a libcs5.a libcs5_p.a libbsdmalloc.a
+LIBS = $(LIBS$(TARGET_MACH))
+
+LIBS_SA-mc68010 = libc.sa libcs5.sa
+LIBS_SA-mc68020 = $(LIBS_SA-mc68010)
+LIBS_SA-sparc = $(LIBS_SA-mc68010)
+LIBS_SA-i386 =
+LIBS_SA = $(LIBS_SA$(TARGET_MACH))
+
+LIBS_PIC-mc68010 = libc_pic.a libcs5_pic.a
+LIBS_PIC-mc68020 = $(LIBS_PIC-mc68010)
+LIBS_PIC-sparc = $(LIBS_PIC-mc68010)
+LIBS_PIC-i386 =
+LIBS_PIC = $(LIBS_PIC$(TARGET_MACH))
+
+ASFLAGS-mc68010 += $(TARGET_MACH)
+ASFLAGS-mc68020 += $(TARGET_MACH)
+ASFLAGS-sparc 	+= $(TARGET_MACH) -P -DLOCORE
+ASFLAGS-i386	+= $(TARGET_MACH)
+
+CFLAGS-mc68010 	+= $(TARGET_MACH)
+CFLAGS-mc68020 	+= $(TARGET_MACH)
+CFLAGS-sparc 	+= $(TARGET_MACH)
+CFLAGS-i386	+= $(TARGET_MACH)
+
+CPP_RULE-sparc =
+CPP_RULE-mc68020 = $(CPP) $(CPPFLAGS) $(CPPFLAGS$(TARGET_MACH)) -DLOCORE $< > tmp.s
+CPP_RULE-mc68010 = $(CPP_RULE-mc68020)
+CPP_RULE-i386 =
+
+AS_RULE-sparc = $(AS) $(ASFLAGS$(TARGET_MACH)) $(ASFLAGS) $(CPPFLAGS) -o $@ $<
+AS_RULE-mc68020 = $(AS) $(ASFLAGS$(TARGET_MACH)) $(ASFLAGS) -o $@ tmp.s; rm -f tmp.s
+AS_RULE-mc68010 = $(AS_RULE-mc68020)
+AS_RULE-i386=
+
+libc.a		:=	VARIANT = obj
+libc_p.a	:=	VARIANT = obj_p
+libbsdmalloc.a	:=	VARIANT = obj_f
+libc.so		:=	VARIANT = shared_4.2
+libcs5.a	:= 	VARIANT = s5
+libcs5_p.a	:=	VARIANT = s5_p
+libcs5.so	:=	VARIANT = shared_s5
+libc_comm.so	:= 	VARIANT = shared
+
+libc.a		:=	LIB = libc.a
+libc_p.a	:=	LIB = libc_p.a
+libbsdmalloc.a	:=	LIB = libbsdmalloc.a
+libc.so		:=	LIB = libc.so
+libcs5.a	:=	LIB = libcs5.a
+libcs5_p.a	:=	LIB = libcs5_p.a
+libcs5.so	:=	LIB = libcs5.so
+libc_comm.so	:= 	LIB = libc_comm.so
+#
+# Now CC is explicitly specified CC=/bin/cc, so -I flags for
+# libc.a, libc_p.a, libc.so are usually are not needed.
+# But specify them to make it sure even if 'make' was invoked
+# given CC value.
+# (example)
+#	make CC=other_cc
+#
+libc.a		:=	CPPFLAGS += -I/usr/ucbinclude -I/usr/src/include
+libc_p.a	:=	CPPFLAGS += -I/usr/ucbinclude -DPROF -I/usr/src/include
+libbsdmalloc.a	:=	CPPFLAGS += -I/usr/ucbinclude -I/usr/src/include
+libc.so		:= 	CPPFLAGS += -I/usr/ucbinclude -DPIC -I/usr/src/include
+libcs5.a	:=	CPPFLAGS += -I/usr/5include -DS5EMUL -I/usr/src/include
+libcs5_p.a	:= 	CPPFLAGS += -I/usr/5include -DS5EMUL -DPROF -I/usr/src/include
+libcs5.so	:= 	CPPFLAGS += -I/usr/5include -DS5EMUL -DPIC -I/usr/src/include
+libc_comm.so	:= 	CPPFLAGS += -I/usr/ucbinclude -DPIC -I/usr/src/include
+
+CFLAGS = -O
+libc.a		:=	CFLAGS += -I/usr/ucbinclude -I/usr/src/include
+libc_p.a	:=	CFLAGS += -I/usr/ucbinclude -p -I/usr/src/include
+libbsdmalloc.a	:=	CFLAGS += -I/usr/ucbinclude -I/usr/src/include
+libc.so		:=	CFLAGS += -I/usr/ucbinclude -pic -I/usr/src/include
+libcs5.a	:=	CFLAGS += -I/usr/5include -DS5EMUL -I/usr/src/include
+libcs5_p.a	:=	CFLAGS += -I/usr/5include -DS5EMUL -p -I/usr/src/include
+libcs5.so	:=	CFLAGS += -I/usr/5include -DS5EMUL -pic -I/usr/src/include
+libc_comm.so	:=	CFLAGS += -I/usr/ucbinclude -pic -I/usr/src/include
+
+libc.so 	:= 	ASFLAGS += -k
+libcs5.so 	:= 	ASFLAGS += -k
+libc_comm.so	:=	ASFLAGS += -k
+
+#
+# When making the non-profiled libraries, strip all but the global symbols
+# from the object files; those symbols don't participate in linking, so
+# they only waste space.
+# When making the profiled libraries, strip ONLY the "L...." non-global symbols
+# (which are generally compiler-generated labels) from the object files;
+# symbols for static routines must appear in the symbol table so that time
+# and calls can be properly charged to them.
+#
+libc.a libcs5.a libbsdmalloc.a := LD_ACTION = $(LD) -r -x $@; mv a.out $@
+libc_p.a libcs5_p.a := LD_ACTION = $(LD) -r -X $@; mv a.out $@
+LD_ACTION= -@true
+
+# dont xstr unless it is for shared object
+libc.a		:=	XSTR_ACTION = cat > x.c
+libc_p.a	:=	XSTR_ACTION = cat > x.c
+libbsdmalloc.a	:=	XSTR_ACTION = cat > x.c
+libc.so		:=	XSTR_ACTION = xstr -l libc_xstr -c -
+libcs5.a	:= 	XSTR_ACTION = cat > x.c
+libcs5_p.a	:=	XSTR_ACTION = cat > x.c
+libcs5.so	:=	XSTR_ACTION = xstr -l libc_xstr -c -
+libc_comm.so	:= 	XSTR_ACTION = xstr -l libc_xstr -c -
+
+# the .c.o rules invoke sed to strip away the sccsid string - this has been
+# added to improve shared library performance
+
+$$(VARIANT)/%.o:	$$(MACH)/%.s
+	$(CPP_RULE$(TARGET_MACH))
+	$(AS_RULE$(TARGET_MACH))
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	$$(MACH)/%.c
+	fgrep -v "sccsid[]" $< > _XX.c
+	$(CC) $(CFLAGS$(TARGET_MACH)) $(CFLAGS) -E _XX.c | $(XSTR_ACTION)
+	$(CC) $(CFLAGS$(TARGET_MACH)) $(CFLAGS) -o $@ -c x.c
+	rm -f x.c
+	rm -f _XX.c
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.s
+	$(CPP_RULE$(TARGET_MACH))
+	$(AS_RULE$(TARGET_MACH))
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.S
+	$(CPP_RULE$(TARGET_MACH))
+	$(AS_RULE$(TARGET_MACH))
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.c
+	fgrep -v "sccsid[]" $< > _XX.c
+	$(CC) $(CFLAGS$(TARGET_MACH)) $(CFLAGS) -E _XX.c | $(XSTR_ACTION)
+	$(CC) $(CFLAGS$(TARGET_MACH)) $(CFLAGS) -o $@ -c x.c
+	rm -f x.c
+	rm -f _XX.c
+	$(LD_ACTION)
+
+$(COMMON_DIRS):
+	test -d $@ || mkdir $@
+
+.KEEP_STATE:
+
+master.clean:
+	rm -fr $(COMMON_DIRS)
+_clean_libc.a :
+	rm -rf obj
+_clean_libc_p.a :
+	rm -rf obj_p
+_clean_libbsdmalloc.a :
+	rm -rf obj_f
+_clean_libc.so:
+	rm  -rf shared
+_clean_libcs5.a :
+	rm -rf s5
+_clean_libcs5_p.a :
+	rm -rf s5_p
+_clean_libcs5.so:
+	rm  -rf shared_s5
+

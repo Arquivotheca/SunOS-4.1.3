@@ -1,0 +1,253 @@
+.\" @(#)ln.1v 1.1 92/07/30 SMI;
+.TH LN 1V "16 September 1989"
+.SH NAME
+ln \- make hard or symbolic links to files
+.SH SYNOPSIS
+.B ln
+[
+.B \-fs
+]
+.I filename
+[
+.I linkname
+]
+.br
+.B ln
+[
+.B \-fs
+]
+.IR pathname .\|.\|.
+.I directory
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/ln
+[
+.B \-fFs
+]
+.I filename
+[
+.I linkname
+]
+.br
+.B ln
+[
+.B \-fFs
+]
+.IR pathname .\|.\|.
+.I directory
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  file  "make link to"  ""  "make link to \(em \fLln\fP"
+.IX  directory  "make link to"  ""  "make link to \(em \fLln\fP"
+.IX  "hard link, make \(em \fLln\fP"
+.IX  "symbolic link, make \(em \fLln\fP"
+.IX  make "hard link to file \(em \fLln\fP"
+.IX  make "symbolic link to file \(em \fLln\fP"
+.LP
+.B ln
+creates an additional directory entry, called a
+.IR link ,
+to a file or directory.  Any number of links can be assigned to a
+file.  The number of links does not affect other file attributes such
+as size, protections, data, etc.
+.LP
+.I filename
+is the name of the original file or directory.
+.I linkname
+is the new name to associate with the file or filename.  If
+.I linkname
+is omitted, the last component of
+.I filename
+is used as the name of the link.
+.LP
+If the last argument is the name of a directory, symbolic links
+are made in that directory for each
+.I pathname
+argument;
+.B ln
+uses the last component of each
+.I pathname
+as the name of each link in the named
+.IR directory .
+.LP
+A hard link (the default) is a standard directory entry just like the
+one made when the file was created.  Hard links can only be made to
+existing files.  Hard links cannot be made across file systems (disk
+partitions, mounted file systems).  To remove a file, all hard links
+to it must be removed, including the name by which it was first
+created; removing the last hard link releases the inode associated
+with the file.
+.LP
+A symbolic link, made with the
+.B \-s
+option, is a special directory entry that points to another named file.
+Symbolic links can span file systems and point to directories.  In fact,
+you can create a symbolic link that points to a file that is currently
+absent from the file system; removing the file that it points to does not
+affect or alter the symbolic link itself.
+.LP
+A symbolic link to a directory behaves differently than you might expect
+in certain cases.  While an
+.BR ls (1V)
+on such a link displays the files in the pointed-to directory, an
+.RB ` "ls \-l" '
+displays information about the link itself:
+.RS
+.ft B
+.nf
+example% ln \-s dir link
+example% ls link
+file1 file2 file3 file4
+example% ls \-l link
+lrwxrwxrwx  1 user            7 Jan 11 23:27 link -> dir
+.ft R
+.fi
+.RE
+.LP
+When you
+.BR cd (1)
+to a directory through a symbolic link, you wind up in the pointed-to
+location within the file system.  This means that the parent of the new
+working directory is not the parent of the symbolic link, but rather,
+the parent of the pointed-to directory.  For instance, in the following
+case the final working directory is
+.B /usr
+and not
+.BR /home/user/linktest .
+.RS
+.ft B
+.nf
+example% pwd
+/home/user/linktest
+example% ln \-s /usr/tmp symlink
+example% cd symlink
+example% cd .\|.
+example% pwd
+/usr
+.fi
+.ft R
+.RE
+.LP
+C shell user's can avoid any resulting navigation problems by using the
+.B pushd
+and
+.B popd
+built-in commands instead of
+.BR cd .
+.SH SYSTEM V DESCRIPTION
+The
+.I System V
+version of 
+.B ln
+behaves as described above except for the following.
+If the linkname is an existing file and its mode does not forbid writing,
+then its contents are destroyed.
+If however its mode does not allow writing,
+the mode is printed, and the user asked for a response.
+.SH OPTIONS
+.TP
+.B \-f
+Force a hard link to a directory \(em
+this option is only available to the super-user.
+.TP
+.B \-s
+Create a symbolic link or links.
+.SH SYSTEM V OPTIONS
+.TP
+.B \-f
+Force files to be linked without displaying permissions, asking questions
+or reporting errors.
+.TP
+.B \-F
+Force a hard link to a directory \(em
+this option is only available to the super-user.
+.TP
+.B \-s
+Create a symbolic link or links.
+.br
+.ne 8
+.br
+.ne 8
+.SH EXAMPLE
+.LP
+The commands below illustrate the effects of the different forms of the
+.B ln
+command:
+.sp .5
+.RS
+.ft B
+.nf
+example% ln file link 
+example% ls \-F file link
+file   link
+example% ln \-s file symlink 
+example% ls \-F file symlink
+file   symlink@
+example% ls \-li file link symlink
+ 10606 -rw-r--r--  2 user            0 Jan 12 00:06 file
+ 10606 -rw-r--r--  2 user            0 Jan 12 00:06 link
+ 10607 lrwxrwxrwx  1 user            4 Jan 12 00:06 symlink -> file
+example% ln \-s nonesuch devoid
+example% ls \-F devoid
+devoid@
+example% cat devoid
+devoid: No such file or directory
+example% ln \-s /proto/bin/* /tmp/bin
+example% ls \-F /proto/bin /tmp/bin
+/proto/bin:
+x*      y*      z*
+
+/tmp/bin:
+x@      y@      z@
+.fi
+.ft R
+.RE
+.SH SEE ALSO
+.BR cp (1),
+.BR ls (1V),
+.BR mv (1),
+.BR rm (1),
+.BR link (2V),
+.BR readlink (2),
+.BR stat (2V),
+.BR symlink (2)
+.SH BUGS
+.LP
+When the last argument is a directory, simple basenames should not
+be used for
+.I pathname
+arguments.  If a basename is used, the resulting symbolic link points
+to itself:
+.sp .5
+.RS
+.ft B
+.nf
+example% ln \-s file /tmp
+example% ls \-l /tmp/file
+lrwxrwxrwx  1 user            4 Jan 12 00:16 /tmp/file -> file
+example% cat /tmp/file
+/tmp/file: Too many levels of symbolic links
+.fi
+.ft R
+.RE
+.br
+.ne 6
+.LP
+To avoid this problem, use full pathnames, or prepend a
+reference to the
+.SB PWD
+variable to files in the working directory:
+.sp .5
+.RS
+.ft B
+.nf
+example% rm /tmp/file
+example% ln \-s $\s-1PWD\s0/file /tmp
+lrwxrwxrwx  1 user            4 Jan 12 00:16 /tmp/file -> /home/user/subdir/file
+.fi
+.ft R
+.RE

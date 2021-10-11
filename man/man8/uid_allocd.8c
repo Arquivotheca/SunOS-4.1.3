@@ -1,0 +1,165 @@
+.\" @(#)uid_allocd.8c 1.1 92/07/30 SMI; 
+.TH UID_ALLOCD 8C "6 October 1989"
+.SH NAME
+uid_allocd, gid_allocd \- UID and GID allocator daemons
+.SH SYNOPSIS 
+.B /usr/etc/rpc.uid_allocd
+.br
+.B /usr/etc/rpc.gid_allocd
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "uid_allocd" "" "\fLuid_allocd\fP \(em UID Allocator Daemon"
+.IX "gid_allocd" "" "\fLgid_allocd\fP \(em GID Allocator Daemon"
+.LP
+The
+.SM UID
+(or
+.SM GID\s0)
+allocator will temporarily allocate an unused
+.SM UID
+(or
+.SM GID\s0)
+for use by account administration tools.
+It maintains a cache of
+.SM UID\s0s
+(\s-1GID\s0s) that have been allocated
+by potentially multiple tools (or instances of tools) in
+a distributed system, so that they can create accounts (or groups)
+concurrently.
+It also provides the ability to safely enter a 
+.SM UID
+(\s-1GID\s0) into the
+cache which was allocated using some other method, such as
+manually by an administrator; and
+the ability to delete entries from the cache.
+Entries in this cache persist for at least
+an hour even through system crashes.
+.LP
+These allocators are available on the system which contains
+the master copy of the list of 
+.SM UID\s0s
+(or 
+.SM GID\s0).
+Since this list is currently maintained using the
+Network Information Service
+(\s-1NIS\s0),
+the service is available on the master of the
+.B passwd.byuid
+.RB ( group.bygid )
+.SM NIS
+map.
+The service could be provided using a 
+.SM UID
+database service other than the
+.SM NIS
+service.
+.LP
+This implementation uses 
+.SM DES
+authentication (the Sun Secure 
+.SM RPC
+protocol) to restrict access to this function.
+The only clients privileged to allocate 
+.SM UID\s0s
+(\s-1GID\s0s) are those whose
+net
+.SM ID\s0s
+are in the
+.I accounts
+group (fixed at 
+.SM GID\s0 11).
+All machine
+.SM ID\s0s
+are allowed to allocate 
+.SM UID\s0s
+(\s-1GID\s0s).
+.LP
+If the file
+.B /etc/ugid_alloc.range
+exists, the allocator only allocates 
+.SM UID\s0s
+(\s-1GID\s0s) in the range listed there.
+This feature is intended to be used by sites which have
+multiple 
+.SM NIS
+domains on their networks; each 
+.SM NIS
+domain would be assigned a unique range of 
+.SM UID\s0s
+(\s-1GID\s0s).
+If the file exists, and the local 
+.SM NIS
+domain is not explicitly assigned a unique range of 
+.SM UID\s0s
+or 
+.SM GID\s0,
+none will be allocated.
+Without a mechanism to ensure that 
+.SM UID\s0s
+are uniquely assigned between 
+.SM NIS
+domains that share resources, normal
+.SM NFS
+security mechanisms (excluding Secure
+.SM NFS\s0)
+may fail to serve
+as an advisory security mechanism.
+Common alternative methods for ensuring 
+.SM UID
+uniqueness
+include using a function of some preexisting identifier
+such as an employee number, or using a single
+.SM NIS
+domain
+for the entire site.
+.SH FILES
+.PD 0
+.TP 20
+.BI /var/yp/ domainname /passwd.byuid.{dir,pag}
+.TP
+.BI /var/yp/ domainname /group.bygid.{dir,pag}
+.TP
+.BI /var/yp/ domainname /netid.byname.{dir,pag}
+.TP
+.B /etc/uid_alloc.cache
+.TP
+.B /etc/gid_alloc.cache
+.TP
+.B /etc/ugid_alloc.range
+.TP
+.B /usr/include/rpcsvc/uid_alloc.x
+.TP
+.B /usr/include/rpcsvc/gid_alloc.x
+.PD
+.SH SEE ALSO
+.BR snap (1),
+.BR ugid_alloc.range (5),
+.BR logintool (8)
+.SH BUGS
+.LP
+Using 
+.SM UID
+(\s-1GID\s0) ranges does not solve the problem that two different
+machines, or groups of machines, may assign different meaning to a given 
+.SM UID
+(\s-1GID\s0).
+.LP
+The current implementation of the daemon is tuned towards small
+lists of active 
+.SM UID\s0s
+(\s-1GID\s0s), both in the
+.SM NIS
+service and in the cache it maintains.
+.br
+.ne 5
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

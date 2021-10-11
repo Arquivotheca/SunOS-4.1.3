@@ -1,0 +1,620 @@
+
+;
+;      @(#)transparency.hasm 1.1 92/07/30 17:42:10
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+;	ld		#stack, sp
+;
+; Test file for transparency
+;
+; Draw 16 spheres at all screen-door transparency levels except 0.0.
+; Draw some lines before and after to make sure they're not transparent.
+;
+; Note: this file assumes a lot of other things work.
+;
+
+	set_attribute	hk_transparency_quality
+	.word		HK_ALPHA_BLEND	; Screen door = 0, 1 = blend
+
+	set_attribute	hk_front_surface_color
+	.rgb		< 1.0, 0.0, 0.0 >
+
+;
+	set_attribute	hk_use_back_props
+	.word		FALSE
+
+	set_attribute	hk_front_lighting_degree
+	.word		HK_NO_LIGHTING
+;
+	set_attribute	hk_z_buffer_compare
+	.word		TRUE
+	set_attribute	hk_z_buffer_update
+	.word		HK_Z_UPDATE_NORMAL
+
+; r3 is table pointer
+; r2 is incrementer
+	ld		#table, r3
+	ld		#tbl1, r2
+	sub		r3, r2			; Negative one word
+;
+	set_attribute	hk_line_color
+	.rgb		< 0.5, 1.0, 0.5 >
+	set_attribute	hk_line_width
+	.word		20.0
+	jmpl		lines, r6
+	jmpl		sixteen_spheres, r6
+	set_attribute	hk_pre_concat_lmt
+	.translate	< 0.13, 0.13, 0.01 >
+	set_attribute	hk_line_color
+	.rgb		< 1.0, 1.0, 1.0 >
+	jmpl		lines, r6
+;
+	trap		0			; Exit
+
+;
+; Table of transparency coefficients
+;
+
+table:
+	.word		0.125
+tbl1:
+	.word		0.25
+	.word		0.375
+	.word		0.50
+	.word		0.625
+	.word		0.75
+	.word		0.875
+	.word		1.0
+; Change opacity quality here
+	.word		0.125
+	.word		0.25
+	.word		0.375
+	.word		0.50
+	.word		0.625
+	.word		0.75
+	.word		0.875
+	.word		1.0
+;
+; Draw some lines
+;
+lines:
+	set_attribute	hk_line_geom_format
+	.word		HK_LINE_XYZ
+	polyline	2
+	.xyz		<-0.9, 0.71,0.1 >
+	.xyz		< 0.9, 0.79,0.1 >
+	polyline	2
+	.xyz		<-0.9, 0.21,0.1 >
+	.xyz		< 0.9, 0.29,0.1 >
+	polyline	2
+	.xyz		<-0.9,-0.29,0.1 >
+	.xyz		< 0.9,-0.21,0.1 >
+	polyline	2
+	.xyz		<-0.9,-0.79,0.1 >
+	.xyz		< 0.9,-0.71,0.1 >
+	polyline	2
+	.xyz		< 0.79,-0.9,0.05 >
+	.xyz		< 0.71, 0.9,0.05 >
+	polyline	2
+	.xyz		< 0.29,-0.9,0.05 >
+	.xyz		< 0.21, 0.9,0.05 >
+	polyline	2
+	.xyz		<-0.21,-0.9,0.05 >
+	.xyz		<-0.29, 0.9,0.05 >
+	polyline	2
+	.xyz		<-0.71,-0.9,0.05 >
+	.xyz		<-0.79, 0.9,0.05 >
+	jmpl		(r6+0),r6	; Return
+
+;
+; Draw 16 spheres with the help of matrix pushes and pops.
+;
+
+; Make room for 16 spheres on the screen
+;
+sixteen_spheres:
+	push		r6
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	set_attribute	hk_pre_concat_lmt, @scale_one_fourth
+
+; Start at the top
+	set_attribute	hk_pre_concat_lmt, @up_two
+	jmpl		four_spheres, r6
+	set_attribute	hk_pre_concat_lmt, @down_one
+	jmpl		four_spheres, r6
+; Change opacity quality for second half
+	set_attribute	hk_transparency_quality
+	.word		HK_ALPHA_BLEND
+;
+	set_attribute	hk_pre_concat_lmt, @down_one
+	jmpl		four_spheres, r6
+	set_attribute	hk_pre_concat_lmt, @down_one
+	jmpl		four_spheres, r6
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	pop		r6
+	jmpl		(r6+0),r6	; Return
+;
+
+four_spheres:
+	push		r6
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	set_attribute	hk_pre_concat_lmt, @left_two
+	jmpl		sphere, r6
+	set_attribute	hk_pre_concat_lmt, @right_one
+	jmpl		sphere, r6
+	set_attribute	hk_pre_concat_lmt, @right_one
+	jmpl		sphere, r6
+	set_attribute	hk_pre_concat_lmt, @right_one
+	jmpl		sphere, r6
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	pop		r6
+	jmpl		(r6+0),r6	; Return
+
+
+
+scale_one_fourth:
+	.scale		0.25
+
+left_two:
+	.translate	< -3.0, 0.0, 0.0 >
+
+up_two:
+	.translate	< 0.0, 3.0, 0.0 >
+
+right_one:
+	.translate	< 2.0, 0.0, 0.0 >
+
+down_one:
+	.translate	< 0.0, -2.0, 0.0 >
+
+
+;
+; draw a sphere with 10 vertices per 90 degrees
+;
+sphere:
+
+	push		r6
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+;
+	ld		#trans, r1
+	block_move	1, (r3), (r1)		; Set coefficient
+	add		r2, r3			; Move to next value
+;
+	set_attribute	hk_front_material_properties
+	.word		0.2			; Ambient
+	.word		0.8			; Diffuse
+	.word		1.0			; Specular
+	.word		20.0			; Specular exponent
+
+	set_attribute	hk_front_transparency_degree
+trans:
+	.word		0.50			; Transparency coefficient
+;
+	jmpl		half_sphere, r6
+	set_attribute	hk_pre_concat_lmt, @swap_180
+	jmpl		half_sphere, r6
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	pop		r6
+	jmpl		(r6+0),r6	; Return
+
+swap_180:
+	.matrix	\
+		< <-1.0, 0.0, 0.0, 0.0 > , \
+		  < 0.0, 1.0, 0.0, 0.0 > , \
+		  < 0.0, 0.0,-1.0, 0.0 > , \
+		  < 0.0, 0.0, 0.0, 1.0 > >
+
+half_sphere:
+	push		r6
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	jmpl		eighth_sphere, r6
+	set_attribute	hk_pre_concat_lmt, @rot_90
+	jmpl		eighth_sphere, r6
+	set_attribute	hk_pre_concat_lmt, @rot_90
+	jmpl		eighth_sphere, r6
+	set_attribute	hk_pre_concat_lmt, @rot_90
+	jmpl		eighth_sphere, r6
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	.word		0x00000000
+	pop		r6
+	jmpl		(r6+0),r6	; Return
+
+rot_90:
+	.matrix \
+		< < 0.0,-1.0, 0.0, 0.0 > , \
+		  < 1.0, 0.0, 0.0, 0.0 > , \
+		  < 0.0, 0.0, 1.0, 0.0 > , \
+		  < 0.0, 0.0, 0.0, 1.0 > >
+
+eighth_sphere:
+	set_attribute	hk_tri_geom_format
+	.word		HK_TRI_XYZ_VNORMAL
+	triangle_list	19
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< 0, 0, 1 >
+	.norm		< 0, 0, 1 >
+	.tri_r1
+	.xyz		< .173648, 0, .984808 >
+	.norm		< .173648, 0, .984808 >
+	.tri_r1
+	.xyz		< 0, .173648, .984808 >
+	.norm		< 0, .173648, .984808 >
+	.tri_r1
+	.xyz		< .192126, .173648, .965885 >
+	.norm		< .192126, .173648, .965885 >
+	.tri_r1
+	.xyz		< 0, .34202, .939693 >
+	.norm		< 0, .34202, .939693 >
+	.tri_r1
+	.xyz		< .209101, .34202, .916133 >
+	.norm		< .209101, .34202, .916133 >
+	.tri_r1
+	.xyz		< 0, .5, .866025 >
+	.norm		< 0, .5, .866025 >
+	.tri_r1
+	.xyz		< .224144, .5, .836516 >
+	.norm		< .224144, .5, .836516 >
+	.tri_r1
+	.xyz		< 0, .642788, .766044 >
+	.norm		< 0, .642788, .766044 >
+	.tri_r1
+	.xyz		< .236721, .642788, .728552 >
+	.norm		< .236721, .642788, .728552 >
+	.tri_r1
+	.xyz		< 0, .766044, .642788 >
+	.norm		< 0, .766044, .642788 >
+	.tri_r1
+	.xyz		< .245984, .766044, .593858 >
+	.norm		< .245984, .766044, .593858 >
+	.tri_r1
+	.xyz		< 0, .866025, .5 >
+	.norm		< 0, .866025, .5 >
+	.tri_r1
+	.xyz		< .25, .866025, .433013 >
+	.norm		< .25, .866025, .433013 >
+	.tri_r1
+	.xyz		< 0, .939693, .34202 >
+	.norm		< 0, .939693, .34202 >
+	.tri_r1
+	.xyz		< .241845, .939693, .241845 >
+	.norm		< .241845, .939693, .241845 >
+	.tri_r1
+	.xyz		< 0, .984808, .173648 >
+	.norm		< 0, .984808, .173648 >
+	.tri_r1
+	.xyz		< .173648, .984808, 0 >
+	.norm		< .173648, .984808, 0 >
+	.tri_r1
+	.xyz		< 0, 1, 0 >
+	.norm		< 0, 1, 0 >
+	triangle_list	17
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .173648, 0, .984808 >
+	.norm		< .173648, 0, .984808 >
+	.tri_r1
+	.xyz		< .34202, 0, .939693 >
+	.norm		< .34202, 0, .939693 >
+	.tri_r1
+	.xyz		< .192126, .173648, .965885 >
+	.norm		< .192126, .173648, .965885 >
+	.tri_r1
+	.xyz		< .37687, .173648, .909844 >
+	.norm		< .37687, .173648, .909844 >
+	.tri_r1
+	.xyz		< .209101, .34202, .916133 >
+	.norm		< .209101, .34202, .916133 >
+	.tri_r1
+	.xyz		< .407717, .34202, .846634 >
+	.norm		< .407717, .34202, .846634 >
+	.tri_r1
+	.xyz		< .224144, .5, .836516 >
+	.norm		< .224144, .5, .836516 >
+	.tri_r1
+	.xyz		< .433013, .5, .75 >
+	.norm		< .433013, .5, .75 >
+	.tri_r1
+	.xyz		< .236721, .642788, .728552 >
+	.norm		< .236721, .642788, .728552 >
+	.tri_r1
+	.xyz		< .45027, .642788, .619743 >
+	.norm		< .45027, .642788, .619743 >
+	.tri_r1
+	.xyz		< .245984, .766044, .593858 >
+	.norm		< .245984, .766044, .593858 >
+	.tri_r1
+	.xyz		< .45452, .766044, .45452 >
+	.norm		< .45452, .766044, .45452 >
+	.tri_r1
+	.xyz		< .25, .866025, .433013 >
+	.norm		< .25, .866025, .433013 >
+	.tri_r1
+	.xyz		< .433013, .866025, .25 >
+	.norm		< .433013, .866025, .25 >
+	.tri_r1
+	.xyz		< .241845, .939693, .241845 >
+	.norm		< .241845, .939693, .241845 >
+	.tri_r1
+	.xyz		< .34202, .939693, 0 >
+	.norm		< .34202, .939693, 0 >
+	.tri_r1
+	.xyz		< .173648, .984808, 0 >
+	.norm		< .173648, .984808, 0 >
+	triangle_list	15
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .34202, 0, .939693 >
+	.norm		< .34202, 0, .939693 >
+	.tri_r1
+	.xyz		< .5, 0, .866025 >
+	.norm		< .5, 0, .866025 >
+	.tri_r1
+	.xyz		< .37687, .173648, .909844 >
+	.norm		< .37687, .173648, .909844 >
+	.tri_r1
+	.xyz		< .54713, .173648, .818838 >
+	.norm		< .54713, .173648, .818838 >
+	.tri_r1
+	.xyz		< .407717, .34202, .846634 >
+	.norm		< .407717, .34202, .846634 >
+	.tri_r1
+	.xyz		< .585889, .34202, .734681 >
+	.norm		< .585889, .34202, .734681 >
+	.tri_r1
+	.xyz		< .433013, .5, .75 >
+	.norm		< .433013, .5, .75 >
+	.tri_r1
+	.xyz		< .612372, .5, .612372 >
+	.norm		< .612372, .5, .612372 >
+	.tri_r1
+	.xyz		< .45027, .642788, .619743 >
+	.norm		< .45027, .642788, .619743 >
+	.tri_r1
+	.xyz		< .619743, .642788, .45027 >
+	.norm		< .619743, .642788, .45027 >
+	.tri_r1
+	.xyz		< .45452, .766044, .45452 >
+	.norm		< .45452, .766044, .45452 >
+	.tri_r1
+	.xyz		< .593858, .766044, .245984 >
+	.norm		< .593858, .766044, .245984 >
+	.tri_r1
+	.xyz		< .433013, .866025, .25 >
+	.norm		< .433013, .866025, .25 >
+	.tri_r1
+	.xyz		< .5, .866025, 0 >
+	.norm		< .5, .866025, 0 >
+	.tri_r1
+	.xyz		< .34202, .939693, 0 >
+	.norm		< .34202, .939693, 0 >
+	triangle_list	13
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .5, 0, .866025 >
+	.norm		< .5, 0, .866025 >
+	.tri_r1
+	.xyz		< .642788, 0, .766044 >
+	.norm		< .642788, 0, .766044 >
+	.tri_r1
+	.xyz		< .54713, .173648, .818838 >
+	.norm		< .54713, .173648, .818838 >
+	.tri_r1
+	.xyz		< .696364, .173648, .696364 >
+	.norm		< .696364, .173648, .696364 >
+	.tri_r1
+	.xyz		< .585889, .34202, .734681 >
+	.norm		< .585889, .34202, .734681 >
+	.tri_r1
+	.xyz		< .734681, .34202, .585889 >
+	.norm		< .734681, .34202, .585889 >
+	.tri_r1
+	.xyz		< .612372, .5, .612372 >
+	.norm		< .612372, .5, .612372 >
+	.tri_r1
+	.xyz		< .75, .5, .433013 >
+	.norm		< .75, .5, .433013 >
+	.tri_r1
+	.xyz		< .619743, .642788, .45027 >
+	.norm		< .619743, .642788, .45027 >
+	.tri_r1
+	.xyz		< .728552, .642788, .236721 >
+	.norm		< .728552, .642788, .236721 >
+	.tri_r1
+	.xyz		< .593858, .766044, .245984 >
+	.norm		< .593858, .766044, .245984 >
+	.tri_r1
+	.xyz		< .642788, .766044, 0 >
+	.norm		< .642788, .766044, 0 >
+	.tri_r1
+	.xyz		< .5, .866025, 0 >
+	.norm		< .5, .866025, 0 >
+	triangle_list	11
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .642788, 0, .766044 >
+	.norm		< .642788, 0, .766044 >
+	.tri_r1
+	.xyz		< .766044, 0, .642788 >
+	.norm		< .766044, 0, .642788 >
+	.tri_r1
+	.xyz		< .696364, .173648, .696364 >
+	.norm		< .696364, .173648, .696364 >
+	.tri_r1
+	.xyz		< .818838, .173648, .54713 >
+	.norm		< .818838, .173648, .54713 >
+	.tri_r1
+	.xyz		< .734681, .34202, .585889 >
+	.norm		< .734681, .34202, .585889 >
+	.tri_r1
+	.xyz		< .846634, .34202, .407717 >
+	.norm		< .846634, .34202, .407717 >
+	.tri_r1
+	.xyz		< .75, .5, .433013 >
+	.norm		< .75, .5, .433013 >
+	.tri_r1
+	.xyz		< .836516, .5, .224144 >
+	.norm		< .836516, .5, .224144 >
+	.tri_r1
+	.xyz		< .728552, .642788, .236721 >
+	.norm		< .728552, .642788, .236721 >
+	.tri_r1
+	.xyz		< .766044, .642788, 0 >
+	.norm		< .766044, .642788, 0 >
+	.tri_r1
+	.xyz		< .642788, .766044, 0 >
+	.norm		< .642788, .766044, 0 >
+	triangle_list	9
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .766044, 0, .642788 >
+	.norm		< .766044, 0, .642788 >
+	.tri_r1
+	.xyz		< .866025, 0, .5 >
+	.norm		< .866025, 0, .5 >
+	.tri_r1
+	.xyz		< .818838, .173648, .54713 >
+	.norm		< .818838, .173648, .54713 >
+	.tri_r1
+	.xyz		< .909844, .173648, .37687 >
+	.norm		< .909844, .173648, .37687 >
+	.tri_r1
+	.xyz		< .846634, .34202, .407717 >
+	.norm		< .846634, .34202, .407717 >
+	.tri_r1
+	.xyz		< .916133, .34202, .209101 >
+	.norm		< .916133, .34202, .209101 >
+	.tri_r1
+	.xyz		< .836516, .5, .224144 >
+	.norm		< .836516, .5, .224144 >
+	.tri_r1
+	.xyz		< .866025, .5, 0 >
+	.norm		< .866025, .5, 0 >
+	.tri_r1
+	.xyz		< .766044, .642788, 0 >
+	.norm		< .766044, .642788, 0 >
+	triangle_list	7
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .866025, 0, .5 >
+	.norm		< .866025, 0, .5 >
+	.tri_r1
+	.xyz		< .939693, 0, .34202 >
+	.norm		< .939693, 0, .34202 >
+	.tri_r1
+	.xyz		< .909844, .173648, .37687 >
+	.norm		< .909844, .173648, .37687 >
+	.tri_r1
+	.xyz		< .965885, .173648, .192126 >
+	.norm		< .965885, .173648, .192126 >
+	.tri_r1
+	.xyz		< .916133, .34202, .209101 >
+	.norm		< .916133, .34202, .209101 >
+	.tri_r1
+	.xyz		< .939693, .34202, 0 >
+	.norm		< .939693, .34202, 0 >
+	.tri_r1
+	.xyz		< .866025, .5, 0 >
+	.norm		< .866025, .5, 0 >
+	triangle_list	5
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .939693, 0, .34202 >
+	.norm		< .939693, 0, .34202 >
+	.tri_r1
+	.xyz		< .984808, 0, .173648 >
+	.norm		< .984808, 0, .173648 >
+	.tri_r1
+	.xyz		< .965885, .173648, .192126 >
+	.norm		< .965885, .173648, .192126 >
+	.tri_r1
+	.xyz		< .984808, .173648, 0 >
+	.norm		< .984808, .173648, 0 >
+	.tri_r1
+	.xyz		< .939693, .34202, 0 >
+	.norm		< .939693, .34202, 0 >
+	triangle_list	3
+;	.tri_start
+	.word		0x80000000	; Clockwise
+	.xyz		< .984808, 0, .173648 >
+	.norm		< .984808, 0, .173648 >
+	.tri_r1
+	.xyz		< 1, 0, 0 >
+	.norm		< 1, 0, 0 >
+	.tri_r1
+	.xyz		< .984808, .173648, 0 >
+	.norm		< .984808, .173648, 0 >
+
+	jmpl		(r6+0),r6	; Return
+
+;
+; Stack space (40000 bytes)
+;
+	.res		10000
+stack:

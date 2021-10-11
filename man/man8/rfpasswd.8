@@ -1,0 +1,81 @@
+.\" @(#)rfpasswd.8 1.1 92/07/30 SMI; from S5R3
+.TH RFPASSWD 8 "30 June 1988"
+.SH NAME
+rfpasswd \- change RFS host password
+.SH SYNOPSIS
+.B rfpasswd
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "rfpasswd change" "" "\fLrfpasswd\fP \(em change \s-1RFS\s0 host password"
+.IX password "change RFS host password" "password" "change \s-1RFS\s0 host password"
+.IX RFS "change RFS host password" "\s-1RFS\s0" "change \s-1RFS\s0 host password"
+.IX change "RFS host password" "change" "\s-1RFS\s0 host password"
+.LP
+.B rfpasswd
+updates the Remote File Sharing
+(\s-1RFS\s0)
+authentication password for a host;
+processing of the new password
+follows the same criteria as
+.BR passwd (1).
+The updated password is registered at the domain name server
+.RB ( /usr/nserve/auth.info/\fIdomain\fP/passwd )
+and replaces the password stored at the local host
+.RB ( /usr/nserve/loc.passwd/file ).
+.LP
+This command is restricted to the super-user.
+.LP
+Note: if you change your host password, make sure that hosts that
+validate your password are notified of this change.
+To receive the new password, hosts must obtain a copy of the
+.IB domain / passwd
+file from the domain's primary name server.
+If this is not done,
+.IR "attempts to mount remote resources may fail" .
+.LP
+If any of the following is true an error message
+will be sent to the standard error:
+.RS
+.TP 3
+\(bu
+The old password entered from this command does not
+match the existing password for this machine.
+.TP
+\(bu
+The two new passwords entered from this command do not match.
+.TP
+\(bu
+The new password does not satisfy the security criteria in
+.BR passwd (1).
+.TP
+\(bu
+The domain name server does not know about this machine.
+.TP
+\(bu
+The command is not run with super-user privileges.
+.RE
+.LP
+Also, 
+.SM RFS
+must be running
+on your host and your domain's primary name server.
+A new password cannot be logged if a secondary
+is acting as the domain name server.
+.SH FILES
+.PD 0
+.TP 20
+.BI /usr/nserve/auth.info/ domain /passwd
+.TP
+.B /usr/nserve/loc.passwd
+.PD
+.SH "SEE ALSO"
+.BR passwd (1),
+.BR rfadmin (8),
+.BR rfstart (8)

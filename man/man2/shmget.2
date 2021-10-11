@@ -1,0 +1,230 @@
+.\" @(#)shmget.2 1.1 92/07/30 SMI; from S5R3
+.TH SHMGET 2 "21 January 1990"
+.SH NAME
+shmget \- get shared memory segment identifier
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int shmget(key, size, shmflg)
+key_t key;
+int size, shmflg;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  shmget()  ""  "\fLshmget()\fR \(em get shared memory segment"
+.IX  "shared memory" "get segment \(em\fLshmget()\fR"
+.LP
+.B shmget(\|)
+returns the shared memory identifier associated with
+.IR key .
+.LP
+A shared memory identifier and associated data structure and shared memory
+segment of at least
+.I size
+bytes (see
+.BR intro (2))
+are created for
+.I key
+if one of the following are true:
+.TP 3
+\(bu
+.I key
+is equal to
+.SM
+.BR IPC_PRIVATE \s0.
+.TP
+\(bu
+.I key
+does not already have a shared memory identifier associated with it, and
+.RI ( shmflg " & "
+.SM
+.BR IPC_CREAT \s0)
+is ``true''.
+.LP
+Upon creation, the data structure associated with the new shared memory
+identifier is initialized as follows:
+.TP 3
+\(bu
+.BR shm_perm.cuid ", " shm_perm.uid ,
+.BR shm_perm.cgid ", and " shm_perm.gid
+are set equal to the effective user
+.SM ID
+and effective group
+.SM ID\s0,
+respectively, of the calling process.
+.TP
+\(bu
+The low-order 9 bits of
+.B shm_perm.mode
+are set equal to the low-order 9 bits of
+.IR shmflg .
+.TP
+\(bu
+.B shm_segsz
+is set equal to the value of
+.IR size .
+.TP
+\(bu
+.BR shm_lpid ", " shm_nattch ",
+.BR shm_atime ", and " shm_dtime "
+are set equal to 0.
+.TP
+\(bu
+.B shm_ctime
+is set equal to the current time.
+.LP
+A shared memory identifier (shmid) is a unique positive integer created by a
+.BR shmget (2)
+system call.
+Each shmid has a segment of memory (referred to as a shared memory segment)
+and a data structure associated with it.
+The data structure is referred to as
+.B shmid_ds
+and contains the following members:
+.LP
+.RS
+.ta 8n 28n
+.nf
+.ft B
+struct	ipc_perm shm_perm;	/\(** operation permission struct \(**/
+int	shm_segsz;	/\(** size of segment \(**/
+ushort	shm_cpid;	/\(** creator pid \(**/
+ushort	shm_lpid;	/\(** pid of last operation \(**/
+short	shm_nattch;	/\(** number of current attaches \(**/
+time_t	shm_atime;	/\(** last attach time \(**/
+time_t	shm_dtime;	/\(** last detach time \(**/
+time_t	shm_ctime;	/\(** last change time \(**/
+		/\(** Times measured in secs since \(**/
+		/\(** 00:00:00 \s-1GMT\s+1, Jan. 1, 1970 \(**/
+.ft
+.fi
+.RE
+.LP
+.B shm_perm
+is an
+.B ipc_perm
+structure that
+specifies the shared memory operation permission (see below).
+This structure includes the following members:
+.LP
+.RS
+.ta 8n 28n
+.nf
+.ft B
+ushort	cuid;	/\(** creator user id \(**/
+ushort	cgid;	/\(** creator group id \(**/
+ushort	uid;	/\(** user id \(**/
+ushort	gid;	/\(** group id \(**/
+ushort	mode;	/\(** r/w permission \(**/
+.ft
+.fi
+.RE
+.br
+.ne 7
+.LP
+.B shm_segsz
+specifies the size of the shared memory segment.
+.B shm_cpid
+is the process
+.SM ID
+of the process that created the shared memory identifier.
+.B shm_lpid
+is the process
+.SM ID
+of the last process that performed a
+.BR shmop (2)
+operation.
+.B shm_nattch
+is the number of processes that currently have this segment attached.
+.B shm_atime
+is the time of the last
+.I shmat
+operation,
+.B shm_dtime
+is the time of the last
+.I shmdt
+operation, and
+.B shm_ctime
+is the time of the last
+.BR shmctl (2)
+operation that changed one of the members of the above structure.
+.SH RETURN VALUES
+.B shmget(\|)
+returns
+a non-negative shared memory identifier
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+A shared memory identifier exists for
+.I key
+but operation permission (see
+.BR intro (2))
+as specified by the low-order 9 bits of
+.I shmflg
+would not be granted.
+.TP
+.SM EEXIST
+A shared memory identifier exists for
+.I key
+but
+.RI "( (" shmflg " & "
+.SM
+.BR IPC_CREAT\*S ") && ("\c
+.IR shmflg " & "
+.SM
+.BR IPC_EXCL\*S ") )"
+is ``true''.
+.TP
+.SM EINVAL
+.I size
+is less than the system-imposed minimum
+or greater than the system-imposed maximum.
+.IP
+A shared memory identifier exists for
+.I key
+but the size of the segment associated with it is less than
+.I size
+and
+.I size
+is not equal to zero.
+.TP
+.SM ENOENT
+A shared memory identifier does not exist for
+.I key
+and
+.RI ( shmflg " &"
+.SM
+.BR IPC_CREAT \s0)
+is ``false''.
+.TP
+.SM ENOMEM
+A shared memory identifier and associated shared memory segment are to be
+created but the amount of available physical memory is not sufficient to
+fill the request.
+.TP
+.SM ENOSPC
+A shared memory identifier is to be created but
+the system-imposed limit on the maximum number of
+allowed shared memory identifiers system wide
+would be exceeded.
+.SH SEE ALSO
+.BR ipcrm (1),
+.BR ipcs (1),
+.BR intro (2),
+.BR shmctl (2),
+.BR shmop (2)

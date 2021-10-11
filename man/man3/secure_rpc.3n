@@ -1,0 +1,429 @@
+.\" @(#)secure_rpc.3n 1.1 92/07/30 SMI;
+.TH SECURE_RPC 3N "20 January 1990"
+.SH NAME
+authdes_create, authdes_getucred, get_myaddress, getnetname, host2netname, key_decryptsession, key_encryptsession, key_gendes, key_setsecret, netname2host, netname2user, user2netname \- library routines for secure remote procedure calls
+.SH DESCRIPTION
+.IX "rpc routines" "authdes_seccreate()" "" "\fLauthdes_seccreate()\fP \(em secure RPC"
+.IX "rpc routines" "authdes_getucred()" "" "\fLauthdes_getucred()\fP \(em secure RPC"
+.IX "rpc routines" "get_myaddress()" "" "\fLget_myaddress()\fP \(em secure RPC"
+.IX "rpc routines" "getnetname()" "" "\fLgetnetname()\fP \(em secure RPC"
+.IX "rpc routines" "host2netname()" "" "\fLhost2netname()\fP \(em secure RPC"
+.IX "rpc routines" "key_decryptsession()" "" "\fLkey_decryptsession()\fP \(em secure RPC"
+.IX "rpc routines" "key_encryptsession()" "" "\fLkey_encryptsession()\fP \(em secure RPC"
+.IX "rpc routines" "key_gendes()" "" "\fLkey_gendes()\fP \(em secure RPC"
+.IX "rpc routines" "key_setsecret()" "" "\fLkey_setsecret()\fP \(em secure RPC"
+.IX "rpc routines" "netname2host()" "" "\fLnetname2host()\fP \(em secure RPC"
+.IX "rpc routines" "netname2user()" "" "\fLnetname2user()\fP \(em secure RPC"
+.IX "rpc routines" "user2netname()" "" "\fLuser2netname()\fP \(em secure RPC"
+.IX "authdes_seccreate()" "" "\fLauthdes_seccreate()\fP \(em secure RPC"
+.IX "authdes_getucred()" "" "\fLauthdes_getucred()\fP \(em secure RPC"
+.IX "get_myaddress()" "" "\fLget_myaddress()\fP \(em secure RPC"
+.IX "getnetname()" "" "\fLgetnetname()\fP \(em secure RPC"
+.IX "host2netname()" "" "\fLhost2netname()\fP \(em secure RPC"
+.IX "key_decryptsession()" "" "\fLkey_decryptsession()\fP \(em secure RPC"
+.IX "key_encryptsession()" "" "\fLkey_encryptsession()\fP \(em secure RPC"
+.IX "key_gendes()" "" "\fLkey_gendes()\fP \(em secure RPC"
+.IX "key_setsecret()" "" "\fLkey_setsecret()\fP \(em secure RPC"
+.IX "netname2host()" "" "\fLnetname2host()\fP \(em secure RPC"
+.IX "netname2user()" "" "\fLnetname2user()\fP \(em secure RPC"
+.IX "user2netname()" "" "\fLuser2netname()\fP \(em secure RPC"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+.SM RPC
+allows various authentication flavors
+The
+.B authdes_getucred(\|)
+and
+.B authdes_create(\|)
+routines implement the
+.SM DES
+authentication flavor.
+See
+.BR rpc_clnt_auth (3N)
+for routines relating to the
+.SB AUTH_NONE 
+and 
+.SB AUTH_UNIX
+authentication types.
+.IP
+Note: 
+Both the client and server should have their keys in the 
+.BR publickey (5) 
+database.
+Also, the keyserver daemon
+.BR keyserv (8C)
+must be running on both the client and server hosts for the
+.SM DES
+authentication system to work.
+.SS Routines
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+\s-1AUTH\s0 * authdes_create(netname, window, syncaddr, deskeyp)
+char *netname;
+unsigned window;
+struct sockaddr_in *syncaddr;
+des_block *deskeyp;
+.fi
+.ft R
+.IP
+.B authdes_create(\|)
+is an interface to the
+.SM RPC
+secure authentication system, known as
+.SM DES
+authentication.
+.IP
+Used on the client side,
+.B authdes_create(\|)
+returns an authentication handle that
+enables the use of the secure authentication system.
+The first parameter
+.I netname
+is the network name
+of the owner of the server process.
+This field usually represents a
+.I host
+derived from the utility routine
+.BR host2netname(\|) ,
+but could also represent a user name using
+.BR user2netname(\|) .
+The second field is window on the validity of
+the client credential, given in seconds.  A small
+window is more secure than a large one, but choosing
+too small of a window will increase the frequency of
+resynchronizations because of clock drift. The third
+parameter
+.I syncaddr
+is optional.  If it is
+.SM NULL\s0,
+then the authentication system will assume
+that the local clock is always in sync with the server's
+clock, and will not attempt to synchronize with the server. If an address
+is supplied then the system will use it
+for consulting the remote time service whenever
+resynchronization
+is required. This parameter is usually the
+address of the
+.SM RPC
+server itself. The final parameter
+.I deskeyp
+is also optional.  If it is
+.SM NULL\s0,
+then the authentication system will
+generate a random
+.SM DES
+key to be used for the encryption of credentials.
+If 
+.I deskeyp
+is supplied then it is used instead.
+.br
+.ne 12
+.LP
+.ft B
+.nf
+.sp .5
+int authdes_getucred(adc, uidp, gidp, gidlenp, gidlistp)
+struct authdes_cred *adc;
+short *uidp;
+short *gidp;
+short *gidlenp;
+int *gidlistp;
+.fi
+.ft R
+.IP
+.BR authdes_getucred(\|) ,
+is a
+.SM DES
+authentication routine used by the server for converting a
+.SM DES
+credential, which is
+operating system independent, into a
+.SM UNIX
+credential. 
+.I uidp 
+points to the user
+.SM ID\s0
+of the user associated with
+.IR adc ; 
+.I gidp 
+refers to the user's current group
+.SM ID\s0; 
+.I gidlistp 
+refers to an array of groups to which the user belongs and
+.I gidlenp 
+has the count of the entries in this array.
+.br
+.ne 5
+.IP
+This routine differs from the utility routine
+.B netname2user(\|)
+in that
+.B authdes_getucred(\|)
+pulls its information from a cache, and does not have to do a
+.SM NIS
+name service
+lookup every time it is called to get its information.
+Returns 1 if it succeeds and 0 if it fails. 
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void get_myaddress(addr)
+struct sockaddr_in *addr;
+.fi
+.ft R
+.IP
+Return  the machine's
+.SM IP
+address in
+.IR addr.
+The port number is always set to
+.BR htons(\s-1PMAPPORT\s0) .
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+int getnetname(netname)
+char netname[\s-1MAXNETNAMELEN\s0];
+.fi
+.ft R
+.IP
+Return the unique, operating-system independent netname of
+the
+caller in the fixed-length array
+.IR netname .
+Returns 1 if it succeeds and 0
+if it fails.
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+int host2netname(netname, host, domain)
+char netname[\s-1MAXNETNAMELEN\s0];
+char *host;
+char *domain;
+.fi
+.ft R
+.IP
+Convert from a domain-specific hostname to an
+operating-system independent netname. 
+This routine is normally used to get the netname of the
+server, which is then used to get an authentication handle
+by calling
+.BR authdes_create(\|) .
+This routine should be used if the owner of the server process
+is the machine that is, the user with effective user
+.SM ID
+zero.
+Returns 1 if it succeeds and 0
+if it fails. This routine is the inverse of
+.BR netname2host(\|) .
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+int key_decryptsession(netname, deskeyp)
+char *netname;
+des_block *deskeyp;
+.fi
+.ft R
+.IP
+An interface routine to the keyserver daemon, which is associated
+with
+.SM RPC\s0's
+secure authentication system (\s-1DES\s0
+authentication).
+User programs rarely need to call it, or its associated routines
+.BR key_encryptsession(\|) ,
+.B key_gendes(\|)
+and
+.BR key_setsecret(\|) .
+System commands such as
+.B login
+and the
+.SM RPC
+library are the main clients of these four routines.
+.IP
+.B key_decryptsession(\|)
+takes the netname of a server and a
+.SM DES
+key, and decrypts the key by
+using the public key of the server and the secret key
+associated with the effective user
+.SM ID
+of the calling process.  Returns 0 if 
+it succeeds and \-1 if it fails. This routine 
+is the inverse of
+.BR key_encryptsession(\|) .
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+int key_encryptsession(netname, deskeyp)
+char *netname;
+des_block *deskeyp;
+.fi
+.ft R
+.IP
+A keyserver interface routine. It
+takes the netname of the server and a des key, and encrypts
+it using the public key of the server and the secret key
+associated with the effective user
+.SM ID
+of the calling process.  Returns 0 if 
+it succeeds and \-1 if it fails. This routine 
+is the inverse of
+.BR key_decryptsession(\|) .
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+int key_gendes(deskeyp)
+des_block *deskeyp;
+.fi
+.ft R
+.IP
+A keyserver interface routine. It
+is used to ask the keyserver for a secure conversation key.
+Choosing one at \*(lqrandom\*(rq is usually not good enough,
+because
+the common ways of choosing random numbers, such as using the
+current time, are very easy to guess. Returns 0 if 
+it succeeds and \-1 if it fails. 
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+int key_setsecret(keyp)
+char *keyp;
+.fi
+.ft R
+.IP
+A keyserver interface routine. It is used to set the secret key for
+the effective user
+.SM ID
+of the calling process.
+Returns 0 if 
+it succeeds and \-1 if it fails. 
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+int netname2host(netname, host, hostlen)
+char *netname;
+char *host;
+int hostlen;
+.fi
+.ft R
+.IP
+Convert an operating-system independent netname to a
+domain-specific hostname.
+.I hostlen
+specifies the size of the array pointed to by 
+.I host.
+It returns 1 if it succeeds and 0 if it fails.
+This routine is the inverse of
+.BR host2netname(\|) .
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+int netname2user(netname, uidp, gidp, gidlenp, gidlistp)
+char *name;
+int *uidp;
+int *gidp;
+int *gidlenp;
+int *gidlistp;
+.fi
+.ft R
+.IP
+Convert an operating-system independent netname to a
+domain-specific user
+.SM ID\s0.
+.I uidp 
+points to the user
+.SM ID\s0
+of the user; 
+.I gidp 
+refers to the user's current group
+.SM ID\s0; 
+.I gidlistp 
+refers to an array of groups to which the user belongs and
+.I gidlenp 
+has the count of the entries in this array.
+It returns 1 if it succeeds and 0 if it fails.
+This routine is the inverse of
+.BR user2netname(\|) .
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+int user2netname(netname, uid, domain)
+char name[\s-1MAXNETNAMELEN\s0];
+int uid;
+char *domain;
+.fi
+.ft R
+.IP
+Convert  a domain-specific username to an operating-system
+independent netname. 
+.I uid
+is the user
+.SM ID\s0
+of the owner of the server process.
+This routine is normally used to get the netname of the
+server, which is then used to get an authentication handle
+by calling
+.BR authdes_create(\|) .
+Returns
+1 if it succeeds and 0 if it fails.
+This routine is the inverse of
+.BR netname2user(\|) .
+.SH SEE ALSO
+.BR login (1),
+.BR chkey (1),
+.BR rpc (3N),
+.BR rpc_clnt_auth (3N),
+.BR publickey (5),
+.BR keyserv (8C),
+.BR newkey (8)

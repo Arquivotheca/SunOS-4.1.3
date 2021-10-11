@@ -1,0 +1,439 @@
+.\" @(#)nit_pf.4m 1.1 92/07/30 SMI;
+.TH NIT_PF 4M "24 January 1990"
+.SH NAME
+nit_pf \- STREAMS NIT packet filtering module
+.SH CONFIG
+.B
+pseudo-device	pf
+.SH SYNOPSIS
+.nf
+.B
+#include <sys/ioctl.h>
+.B
+#include <net/nit_pf.h>
+.sp 0.25v
+	\fBioctl(\fP\fIfd\fP\fB, \|\s-1I_PUSH\s0, \|"pf");\fP
+.fi
+.SH DESCRIPTION
+.IX "nit_pf module" "" "\fLnit_pf\fP, \s-1NIT\s0 packet filtering module"
+.IX STREAMS nit_pf "" "\fLnit_pf\fP, \s-1NIT\s0 packet filtering module"
+.LP
+.B nit_pf
+is a
+.SM STREAMS
+module that subjects messages arriving on its read queue
+to a packet filter
+and passes only those messages that the filter accepts on
+to its upstream neighbor.
+Such filtering can be very useful for user-level protocol implementations
+and for networking monitoring programs
+that wish to view only specific types of events.
+.SS "Read-side Behavior"
+.B nit_pf
+applies the current packet filter to all
+.SB M_DATA
+and
+.SB M_PROTO
+messages arriving on its read queue.
+The module prepares these messages for examination
+by first skipping over all leading
+.SB M_PROTO
+message blocks to arrive at the beginning of the message's data portion.
+If there is no data portion,
+.B nit_pf
+accepts the message and passes it along to its upstream neighbor.
+Otherwise,
+the module ensures that the part of the message's data
+that the packet filter might examine
+lies in contiguous memory,
+calling the
+.I pullupmsg
+utility routine if necessary to force contiguity.
+(Note:
+this action destroys any sharing relationships
+that the subject message might have had with other messages.)
+Finally,
+it applies the packet filter to the message's data,
+passing the entire message upstream to the next module
+if the filter accepts,
+and discarding the message otherwise.
+See
+.SM "PACKET FILTERS"
+below for details on how the filter works.
+.LP
+If there is no packet filter yet in effect,
+the module acts as if the filter exists but does nothing,
+implying that all incoming messages are accepted.
+.SM IOCTLS
+below describes how to associate a packet filter
+with an instance of
+.BR nit_pf .
+.LP
+.B nit_pf
+handles other message types as follows.
+Upon receiving an
+.SB M_FLUSH
+message specifying that the read queue be flushed,
+the module does so,
+and passes the message on to its upstream neighbor.
+It passes all other messages through unaltered to its upper neighbor.
+.SS "Write-side Behavior"
+.B nit_pf
+intercepts
+.SB M_IOCTL
+messages for the
+.IR ioctl
+described below.
+Upon receiving an
+.SB M_FLUSH
+message specifying that the write queue be flushed,
+the module does so and
+passes the message on to the module or driver below.
+The module passes all other messages through unaltered
+to its lower neighbor.
+.SH IOCTLS
+.LP
+.B nit_pf
+responds to the following
+.IR ioctl .
+.nr Xx \w'\fB\s-1NIOCSETF\s0\fP'u+(3n)u
+.TP \n(Xxu
+.SB NIOCSETF
+This
+.I ioctl
+directs the module to replace its current packet filter,
+if any,
+with the filter specified by the
+.RB ` "struct packetfilt" '
+pointer named by its final argument.
+This structure is defined in
+.B <net/packetfilt.h>
+as
+.\"	Ugh! Nesting shouldn't be required here!
+.\"
+.\"	The formatting here is ugly and should be fixed
+.\"	(and would be if I had any good ideas...).
+.RS
+.RS
+.nf
+.ft B
+.if t .ta \w'stru'u  +\w'u_short   'u  +\w'Pf_FilterLen;   'u
+.if n .ta \w'stru'u  +\w'u_short  'u  +\w'Pf_FilterLen;  'u
+struct packetfilt {
+	u_char	Pf_Priority;	/* priority of filter */
+	u_char	Pf_FilterLen;	/* # of cmds in list */
+	u_short	Pf_Filter[\s-1ENMAXFILTERS\s0];
+					/* filter command list */
+};
+.DT
+.ft R
+.fi
+.RE
+.RE
+.br
+.ne 8
+.IP
+The
+.I Pf_Priority
+field is included only for compatibility
+with other packet filter implementations
+and is otherwise ignored.
+The packet filter itself is specified in the
+.I Pf_Filter
+array as a sequence of two-byte commands,
+with the
+.I Pf_FilterLen
+field giving the number of commands in the sequence.
+This implementation restricts
+the maximum number of commands in a filter
+.RB ( \s-1ENMAXFILTERS\s0 )
+to 40.
+The next section describes the available commands and their semantics.
+.\"
+.SH "PACKET FILTERS"
+.LP
+A packet filter consists of the filter command list length
+(in units of
+.IR u_short s),
+and the filter command list itself.
+(The priority field mentioned above
+is ignored in this implementation.)
+Each filter command list specifies a sequence of actions
+that operate on an internal stack of
+.IR u_short s
+(\*(lqshortwords\*(rq).
+Each shortword of the command list specifies one of the actions
+.SM ENF_PUSHLIT\s0,
+.SM ENF_PUSHZERO\s0,
+or
+.SM ENF_PUSHWORD\s0\c
+.RI + n ,
+which respectively push the next shortword of the command list,
+zero,
+or shortword
+.I n
+of the subject message on the stack,
+and a binary operator
+from the set {
+.SM ENF_EQ\s0,
+.SM ENF_NEQ\s0,
+.SM ENF_LT\s0,
+.SM ENF_LE\s0,
+.SM ENF_GT\s0,
+.SM ENF_GE\s0,
+.SM ENF_AND\s0,
+.SM ENF_OR\s0,
+.SM ENF_XOR
+}
+which then operates on the top two elements of the stack
+and replaces them with its result.
+When both an action and operator are specified in the same shortword,
+the action is performed followed by the operation.
+.LP
+The binary operator can also be from the set {
+.SM ENF_COR\s0,
+.SM ENF_CAND\s0,
+.SM ENF_CNOR\s0,
+.SM ENF_CNAND\s0
+}.
+These are \*(lqshort-circuit\*(rq operators,
+in that they terminate the execution of the filter immediately
+if the condition they are checking for is found,
+and continue otherwise.
+All pop two elements from the stack and compare them for equality;
+.SM ENF_CAND
+returns false if the result is false;
+.SM ENF_COR
+returns true if the result is true;
+.SM ENF_CNAND
+returns true if the result is false;
+.SM ENF_CNOR
+returns false if the result is true.
+Unlike the other binary operators,
+these four do not leave a result on the stack,
+even if they continue.
+.LP
+The short-circuit operators should be used when possible,
+to reduce the amount of time spent evaluating filters.
+When they are used,
+you should also arrange the order of the tests
+so that the filter will succeed or fail as soon as possible;
+for example,
+checking the
+.SM IP
+destination field of a
+.SM UDP
+packet is more likely to indicate failure than the packet type field.
+.LP
+The
+special action
+.SM ENF_NOPUSH
+and the special operator
+.SM ENF_NOP
+can be used to only
+perform the binary operation or to only push a value on the stack.
+Since both are (conveniently) defined to be zero,
+indicating only an action actually specifies the action followed by
+.SM ENF_NOP\s0,
+and indicating only an operation actually specifies
+.SM ENF_NOPUSH
+followed by the operation.
+.LP
+After executing the filter command list,
+a non-zero value (true) left on top of the stack
+(or an empty stack) causes the incoming
+packet to be accepted
+and a zero value (false) causes the packet to be rejected.
+(If the filter exits as the result of a short-circuit operator,
+the top-of-stack value is ignored.)
+Specifying an undefined operation or action in the command list
+or performing an illegal operation or action
+(such as pushing a shortword offset past the end of the packet
+or executing a binary operator with fewer than two shortwords on the stack)
+causes a filter to reject the packet.
+.\"
+.\" The notion of priority is currently unimplemented. **********
+.\".LP
+.\"In an attempt to deal with the problem of
+.\"overlapping and/or conflicting packet filters,
+.\"the filters for each open
+.\".I enet
+.\"file are ordered by the driver
+.\"according to their priority
+.\"(lowest priority is 0, highest is 255).
+.\"When processing incoming Ethernet packets,
+.\"filters are applied according to their priority
+.\"(from highest to lowest)
+.\"and for identical priority values
+.\"according to their relative \*(lqbusyness\*(rq
+.\"(the filter that has previously matched the most packets is checked first)
+.\"until one or more filters accept the packet
+.\"or all filters reject it and it is discarded.
+.\".LP
+.\"Filters at a priority of 2 or higher are called \*(lqhigh priority\*(rq
+.\"filters.
+.\"Once a packet is delivered to one of these \*(lqhigh priority\*(rq
+.\".I enet
+.\"files,
+.\"no further filters are examined,
+.\"that is,
+.\"the packet is delivered only
+.\"to the first
+.\".I enet
+.\"file with a \*(lqhigh priority\*(rq filter that accepts the packet.
+.\"A packet may be delivered to more than one filter
+.\"with a priority below 2;
+.\"this might be useful,
+.\"for example, in building replicated programs.
+.\"However,
+.\"the use of low-priority filters imposes an additional cost on the system,
+.\"as these filters each must be checked against all packets
+.\"not accepted by a high-priority filter.
+.\".LP
+.\"The packet filter for an
+.\".I enet
+.\"file is initialized
+.\"with length 0 at priority 0 by
+.\".BR open (2V),
+.\"and hence by default accepts all packets
+.\"that no \*(lqhigh priority\*(rq filter is interested in.
+.\".LP
+.\"Priorities should be assigned so that,
+.\"in general,
+.\"the more packets a filter is expected to match,
+.\"the higher its priority.
+.\"This will prevent a lot of needless checking
+.\"of packets against filters that aren't likely to match them.
+.\" End of commented out section **********
+.\"
+.SH EXAMPLES
+.LP
+The reverse
+.SM ARP
+daemon program
+.RB ( rarpd (8C))
+uses code similar to the following fragment to construct a filter
+that rejects all but
+.SM RARP
+packets.
+That is,
+is accepts only packets whose Ethernet type field
+has the value
+.SM ETHERTYPE_REVARP\s0.
+.LP
+.ft B
+.nf
+	struct ether_header eh;		/* used only for offset values */
+	struct packetfilt pf;
+	register u_short *fwp = pf.Pf_Filter;
+	u_short offset;
+
+	/*
+	 * Set up filter.  Offset is the displacement of the Ethernet
+	 * type field from the beginning of the packet in units of
+	 * u_shorts.
+	 */
+.br
+.ne 10
+	offset = ((u_int) &eh.ether_type - (u_int) &eh.ether_dhost) / sizeof (u_short);
+	*fwp++ = \s-1ENF_PUSHWORD\s0 + offset;
+	*fwp++ = \s-1ENF_PUSHLIT\s0;
+	*fwp++ = htons(\s-1ETHERTYPE_REVARP\s0);
+	*fwp++ = \s-1ENF_EQ\s0;
+	pf.Pf_FilterLen = fwp - &pf.Pf_Filter[0];
+.ft R
+.fi
+.LP
+This filter can be abbreviated by taking advantage
+of the ability to combine actions and operations:
+.LP
+.nf
+	.\|.\|.
+.ft B
+	*fwp++ = \s-1ENF_PUSHWORD\s0 + offset;
+	*fwp++ = \s-1ENF_PUSHLIT\s0 | \s-1ENF_EQ\s0;
+	*fwp++ = htons(\s-1ETHERTYPE_REVARP\s0);
+.ft R
+	.\|.\|.
+.fi
+.\"
+.\" XXX: These examples should be revised to better fit the Sun environment.
+.\"      If no alternatives come to hand, it'd probably be best simply to
+.\"      drop the remaining examples.
+.\"
+.\"      Done!                                       ****************
+.\".LP
+.\"The following filter would accept all incoming
+.\".I pup
+.\"packets on a 3mb Ethernet
+.\"with Pup types in the range 1-0200:
+.\".LP
+.\".nf
+.\".ft B
+.\".ta \w'struct 'u \w'struct ENF_PUSHWORD+8, ENF_PUSHLIT, 0xFF00, ENF_AND,      'u
+.\"struct packetfilt f = {
+.\"	10, 19,	/* priority and length */
+.\"	\s-1ENF_PUSHWORD\s0+1, \s-1ENF_PUSHLIT\s0, 2, \s-1ENF_EQ\s0,	/* packet type \s-1PUP\s0 */
+.\"	\s-1ENF_PUSHWORD\s0+3, \s-1ENF_PUSHLIT\s0, 0x\s-1FF\s000, \s-1ENF_AND\s0,	/* mask hi byte */
+.\"	\s-1ENF_PUSHZERO\s0, \s-1ENF_GT\s0,	/* PupType > 0 */
+.\"	\s-1ENF_PUSHWORD\s0+3, \s-1ENF_PUSHLIT\s0, 0x\s-1FF\s000, \s-1ENF_AND\s0,	/* mask hi byte */
+.\"	\s-1ENF_PUSHLIT\s0, 0100, \s-1ENF_LE\s0,	/* PupType <= 0100 */
+.\"	\s-1ENF_AND\s0,	/* 0 < PupType <= 0100 */
+.\"	\s-1ENF_AND\s0	/* && packet type == \s-1PUP\s0 */
+.\"};
+.\".DT
+.\".ft R
+.\".fi
+.\".LP
+.\"Note:
+.\"shortwords,
+.\"such as the packet type field,
+.\"are byte-swapped and so the literals you compare them to
+.\"must be byte-swapped.
+.\"Also,
+.\"although for this example the word offsets are constants,
+.\"code that must run with either 3mb or 10mb Ethernets must use
+.\"offsets that depend on the device type.
+.\".LP
+.\"A different example shows the use of \*(lqshort-circuit\*(rq operators
+.\"to create a more efficient filter.
+.\"This one accepts Pup packets
+.\"(on a 3Mbit Ethernet)
+.\"with a Socket field of 12345.
+.\"Note:
+.\"we check the Socket field before the packet type field,
+.\"since in most packets the Socket is not likely to match.
+.\".sp
+.\".nf
+.\".ta \w'struct 'u \w'struct ENF_PUSHWORD+3, ENF_PUSHLIT | ENF_CAND, 12345,      'u
+.\".ft B
+.\"struct packetfilt f = {
+.\"	10, 9,	/* priority and length */
+.\"	\s-1ENF_PUSHWORD\s0+7, \s-1ENF_PUSHLIT\s0 | \s-1ENF_CAND\s0, 0,	/* Hi word of socket */
+.\"	\s-1ENF_PUSHWORD\s0+8, \s-1ENF_PUSHLIT\s0 | \s-1ENF_CAND\s0, 12345,	/* Lo word of socket */
+.\"	\s-1ENF_PUSHWORD\s0+1, \s-1ENF_PUSHLIT\s0 | \s-1ENF_CAN\s0D, 2	/* packet type == Pup */
+.\"};
+.\".ft R
+.\".DT
+.\".fi
+.\" End of commented out section **********
+.\"
+.SH WARNINGS
+.LP
+The module name
+.RB ` pf '
+used in the system configuration file and as argument to the
+.SB I_PUSH
+.I ioctl
+is provisional and subject to change.
+.LP
+The
+.I Pf_Priority
+field of the
+.I packetfilt
+structure is likely to be removed.
+.SH "SEE ALSO"
+.BR inet (4F),
+.BR nit (4P),
+.BR nit_buf (4M),
+.BR nit_if (4M)

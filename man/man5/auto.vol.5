@@ -1,0 +1,102 @@
+.\" @(#)auto.vol.5 1.1 92/07/30 SMI;
+.TH AUTO.VOL 5 "19 February 1988"
+.SH NAME
+auto.vol \- automount map for volumes
+.SH SYNOPSIS
+.B /etc/auto.vol
+.SH AVAILABILTITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX  "auto.vol" "" "\fLauto.vol\fP \(em automount map for volumes" ""
+.LP
+.B auto.vol
+resides in the
+.B /etc
+directory, and contains
+.BR automount (8)
+map entries for 
+.BR volumes .
+On Sun386i systems, this file is used to build the 
+.B auto.vol
+Network Information Service
+(\s-1NIS\s0)
+map used by
+.BR automount (8)
+at system startup.
+.B automouunt
+reads the 
+.B auto.master
+.SM NIS
+map, which contains an entry for
+.B auto.vol
+and
+.BR /vol .
+.LP
+References to
+.BI /vol/ volume_name
+are translated by the automount daemon using the 
+.B auto.vol
+map,
+and the directory specified in the map entry is mounted.
+.LP
+The concept of a volume is that it is a self contained directory hierarchy
+that can be
+.SM NFS
+mounted.
+It is referenced using a known
+.IR volume_name .
+The use of an automount map is suggested so that the volume and its
+contents can be
+referenced through
+.BR /vol .
+This is advantageous because location-transparency
+(that is, which host the volume is on) and replication of read-only
+volumes can be provided using the automount mechanism.
+The format of the entry is described in 
+.BR automount (8).
+An example entry is:
+.IP
+.ft B
+archive		system4:/export/archive
+.ft R
+.LP
+In the above example, the
+.B archive
+volume is currently on line on
+.BR system4 .
+Users and programs can reference it via
+.BR /vol/archive .
+If for some reason the volume had to be moved to another system,
+.B system2
+for example,
+the network or system administrator simply edits the map entry for
+the archive volume and changes the hostname to
+.B system2
+and then rebuilds the 
+.SM NIS
+maps.
+.IP
+.ftB
+archive		system2:/export/archive
+.ft R
+.LP
+Users and programs can continue to refer to the archive volume using 
+.BR /vol/archive ,
+unaware that the volume was moved to another system.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/auto.vol
+.PD
+.SH "SEE ALSO"
+.BR automount (8)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

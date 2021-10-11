@@ -1,0 +1,159 @@
+.\" @(#)finger.1 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH FINGER 1 "10 January 1988"
+.SH NAME
+finger \- display information about users
+.SH SYNOPSIS
+.B finger
+[
+.I options
+] 
+.IR name .\|.\|.
+.SH DESCRIPTION
+.IX  "finger command"  ""  "\fLfinger\fP \(em info on users"
+.IX  users  "info on users"  users  "info on users \(em \fLfinger\fP"
+.IX  login  "info on users"  login  "info on users \(em \fLfinger\fP"
+.LP
+By default,
+.B finger
+displays information about each logged-in user, including his or her:
+login name, full name, terminal name (prepended with a
+.RB ` \(** '
+if write-permission is denied), idle time, login time, and
+location (comment field in
+.B /etc/ttytab
+for users logged in locally, hostname for users logged in remotely)
+if known.
+.LP
+Idle time is minutes if it is a single integer,
+hours and minutes if a
+.RB ' : \|'
+is present, or days and hours if a
+.B d
+is present.
+.LP
+When one or more
+.I name
+arguments are given, more detailed information is given for each
+.I name
+specified, whether they are logged in or not.  A
+.I name
+may be a first or last name, or an account name.
+Information is presented in a multi-line format, and
+includes, in addition to the information mentioned above:
+.RS
+the user's home directory and login shell
+.br
+the time they logged in if they are currently logged in,
+or the time they last logged in if they are not, as well as the terminal
+or host from which they logged in and, if a terminal, the comment field in
+.B /etc/ttytab
+for that terminal
+.br
+the last time they received mail,
+and the last time they read their mail
+.br
+any plan contained in the file
+.B .plan
+in the user's home directory
+.br
+and any project on which they are 
+working described in the file
+.B .project
+(also in that directory)
+.RE
+.LP
+If a 
+.I name
+argument contains an at-sign,
+.RB ` @ ',
+then a connection
+is attempted to the machine named after the at-sign, and the remote 
+finger daemon is queried.
+The data returned by that daemon is printed. 
+If a long format printout is to be produced,
+.B finger
+passes the
+.B \-l
+option to the remote finger daemon over the network using the
+.B /W
+feature of the protocol
+(see
+.I \s-1NAME\s0/\s-1FINGER\s0 Protocol).
+.SH OPTIONS
+.TP
+.B \-m
+Match arguments only on user name (not first or last name).
+.TP
+.B \-l
+Force long output format.
+.TP
+.B \-s
+Force short output format.
+.TP
+.B \-q
+Force quick output format, which is similar to short format except that only
+the login name, terminal, and login time are printed.
+.TP
+.B \-i
+Force ``idle'' output format, which is similar to short format except that
+only the login name, terminal, login time, and idle time are printed.
+.TP
+.B \-b
+Suppress printing the user's home directory and shell in a long format
+printout.
+.TP
+.B \-f
+Suppress printing the header that is normally printed in a non-long format
+printout.
+.TP
+.B \-w
+Suppress printing the full name in a short format printout.
+.TP
+.B \-h
+Suppress printing of the
+.B .project
+file in a long format printout.
+.TP
+.B \-p
+Suppress printing of the
+.B .plan
+file in a long format printout.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+who is logged in
+.TP
+.B /etc/passwd
+for users' names
+.TP
+.B /var/adm/lastlog
+last login times
+.TP
+.B /etc/ttytab
+terminal locations
+.TP
+.B ~/.plan
+plans
+.TP
+.B ~/.project
+projects
+.PD
+.SH "SEE ALSO"
+.BR passwd (1),
+.BR w (1),
+.BR who (1),
+.BR whois (1)
+.LP
+Harrenstien, K.,
+.I \s-1NAME\s0/\s-1FINGER\s0 Protocol,
+1977 December 30, RFC 742.
+.SH BUGS
+.LP
+Only the first line of the
+.B .project
+file is printed.

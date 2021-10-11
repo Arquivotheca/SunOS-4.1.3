@@ -1,0 +1,223 @@
+.\"Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)ctags.1 1.1 92/07/30 SMI; from UCB 6.2 5/30/85
+.TH CTAGS 1 "26 October 1988"
+.SH NAME
+ctags \- create a tags file for use with ex and vi
+.SH SYNOPSIS
+.B ctags
+[ 
+.B \-aBFtuvwx
+] 
+[
+.B \-f 
+.I tagsfile
+]
+.IR filename .\|.\|.
+.SH DESCRIPTION
+.IX  ctags  ""  "\fLctags\fP \(em create tags file"
+.IX  "programming tools"  "ctags command"  ""  "\fLctags\fP \(em create tags file"
+.IX  "C programming language"  "ctags command"  ""  "\fLctags\fP \(em create tags file"
+.IX  "yacc" "" "\fLyacc\fP language tags file \(em \fLctags\fP"
+.IX  "lex" "" "\fLlex\fP language tags file \(em \fLctags\fP"
+.IX  create  "tags file"
+.B ctags
+makes a tags file for
+.BR ex (1)
+from the specified C, Pascal,
+.SM FORTRAN\s0,
+.BR yacc (1),
+and 
+.BR lex (1)
+sources.
+A tags file gives the locations of specified objects (in this case
+functions and type definitions) in a group of files.  Each entry in the
+tags is composed of three fields separated by white space, the object
+name, the file in which it is defined, and an address specification.
+Function definitions are located using regular expression patterns,
+type definitions, using a line number.
+.LP
+.BR ex
+and
+.BR vi (1)
+use entries in the tags file to locate and display a definition.
+.LP
+Normally 
+.B ctags
+places the tag descriptions in a file called
+.BR tags ;
+this may be overridden with the
+.B \-f
+option.
+By default, the tags file is sorted in lexicographic
+(\s-1ASCII\s0)
+order, and
+.B ex
+expects its entries to be so sorted.
+.LP
+Files with names ending in 
+.B \&.c
+or
+.B \&.h
+are assumed to be C 
+source files and are searched for C 
+routine and macro definitions.
+Files with names ending in
+.B \&.y
+are assumed to be 
+.B yacc
+source files.
+Files with names ending in
+.B \&.l
+are assumed to be 
+.B lex
+files.  Others are first examined to see if
+they contain any Pascal or
+.SM FORTRAN
+routine definitions; if not, they are processed again looking for C 
+definitions.
+.LP
+The tag for the
+.B main(\|)
+function is treated specially in C 
+programs.  The tag formed is created by prepending
+.B M
+to
+.IR filename ,
+with a trailing 
+.B \&.c 
+removed, if any, and leading pathname components also removed.  
+This makes use of
+.B ctags
+practical in directories with more than one program.
+.SH OPTIONS
+.TP
+.B \-a
+Append output to an existing tags file.  The resulting file is
+not sorted.  To preserve the order, use
+.BR \-u
+instead.
+.TP
+.B \-B
+Use backward searching patterns
+.RB ( ? .\|.\|.\| ? ).
+.TP
+.B \-F
+Use forward searching patterns
+.RB ( / .\|.\|.\| / )
+(default).
+.TP
+.B \-t
+Create tags for typedefs.
+.TP
+.B \-u
+Update the specified files
+in the tags file.   Entries that refer to them are deleted
+and then replaced in lexicographic order.
+Beware: this option is implemented in a way which is rather slow;
+it may be faster simply to rebuild the tags file.
+.TP
+.B \-v
+Produce
+an index of the form expected by
+.BR vgrind (1)
+on the standard output.
+This listing contains the function name,
+file name, and page number
+(assuming 64 line pages).
+Since the output will be sorted into lexicographic order,
+it may be desired to run the output through
+.RB ` "sort \-f" '.
+See
+.SM EXAMPLES\s0.
+.TP
+.B \-w
+Suppress warning diagnostics.
+.TP
+.B \-x
+Produce a list of object names, the line number and file
+name on which each is defined, as well as the text of that line
+and prints this on the standard output.  This is a simple index
+which can be printed out as an off-line readable function index.
+.SH EXAMPLES
+Using
+.B ctags
+with the 
+.B \-v 
+option produces entries in an order which may not always be appropriate
+for
+.BR vgrind .
+To produce results in alphabetical order, you may want to run the
+output through
+.RB ` "sort \-f" '.
+.sp .5
+.RS
+.nf
+.ft B
+example% ctags \-v filename.c filename.h | sort \-f \|>\| index
+example% vgrind \-x index
+.ft
+.fi
+.RE
+.br
+.ne 5
+.LP
+To build a tags file for C sources in a directory hierarchy,
+first create an empty tags file, and then run the following
+.BR find (1)
+command:
+.LP
+.RS
+.ft B
+.nf
+example% cd ~/src ; rm \-f tags ; touch tags
+example% find ~/src \e( -name '*.c' -o -name '*.h' \e) -exec ctags -u -f /usr/src/tags {} \e;
+.fi
+.ft
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B tags
+output tags file
+.PD
+.SH SEE ALSO
+.BR cc (1V),
+.BR ex (1),
+.BR find (1),
+.BR vgrind (1),
+.BR vi (1)
+.SH NOTES
+While the compiler allows 8-bit strings and comments,
+8-bits are not allowed anywhere else.
+See
+.BR cc (1V)
+for an explanation about why
+.B cc
+is not 8-bit clean.
+.SH BUGS
+Recognition of
+.BR functions ,
+.B subroutines
+and
+.B procedures
+for
+.SM FORTRAN
+and Pascal is done is a very simpleminded way.
+No attempt is made to deal with block structure; if you have two
+Pascal procedures in different blocks with the same name,
+.B ctags
+will only make an entry for one.
+.LP
+.B ctags
+does not know about
+.BR #ifdefs .
+.LP
+.B ctags
+should know about Pascal types.
+Relies on the input being well formed to detect typedefs.
+Use of
+.B \-tx
+shows only the last line of typedefs.

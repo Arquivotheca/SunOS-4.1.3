@@ -1,0 +1,93 @@
+.\" @(#)fseek.3s 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH FSEEK 3S  "6 October 1987"
+.SH NAME
+fseek, ftell, rewind \- reposition a stream
+.SH SYNOPSIS
+.nf
+.B #include <stdio.h>
+.LP
+.B fseek(stream, offset, ptrname)
+.B \s-1FILE\s0 *stream;
+.B long offset;
+.LP
+.B long ftell(stream)
+.B \s-1FILE\s0 *stream;
+.LP
+.B rewind(stream)
+.B \s-1FILE\s0 *stream;
+.fi
+.SH DESCRIPTION
+.IX  "fseek()"  ""  "\fLfseek()\fP \(em seek on stream"
+.IX  "seek on stream"  "" "seek on stream \(em \fLfseek()\fP"
+.IX  stream  seek  stream  "seek \(em \fLfseek()\fP"
+.IX  "ftell()"  ""  "\fLftell()\fP \(em get stream position"
+.IX  get "position of stream \(em \fLftell()\fP"
+.IX  stream  "get position of"  stream  "get position of \(em \fLftell()\fP"
+.IX  "rewind()"  ""  "\fLrewind()\fP \(em rewind stream"
+.IX  "rewind stream"  ""  "rewind stream \(em \fLrewind()\fP"
+.IX  stream  rewind  stream  "rewind \(em \fLrewind()\fP"
+.IX  stream  reposition  stream  "reposition \(em \fLrewind()\fP"
+.IX  "reposition stream"  fseek()  ""  \fLfseek()\fP
+.IX  "reposition stream"  ftell()  ""  \fLftell()\fP
+.IX  "reposition stream"  rewind()  ""  \fLrewind()\fP
+.LP
+.B fseek(\|)
+sets the position of the next input or output operation on the stream.
+The new position is at the signed distance
+.I offset
+bytes from the beginning, the current position, or the end of the file,
+according as
+.I ptrname
+has the value 0, 1, or 2.
+.LP
+.BI rewind( stream )
+is equivalent to
+.BI fseek( stream\fR,
+0L, 0), except that no value is returned.
+.LP
+.B fseek(\|)
+and
+.B rewind(\|)
+undo any effects of
+.BR ungetc (3S).
+.LP
+After
+.B fseek(\|)
+or
+.BR rewind(\|) ,
+the next operation on a file opened for update
+may be either input or output.
+.LP
+.B ftell(\|)
+returns the offset of the current byte relative to the beginning
+of the file associated with the named stream.
+.SH "SEE ALSO"
+.BR lseek (2V),
+.BR fopen (3V),
+.BR popen (3S),
+.BR ungetc (3S)
+.SH DIAGNOSTICS
+.LP
+.B fseek(\|)
+returns \-1 for improper seeks, otherwise zero.
+An improper seek can be, for example, an
+.B fseek(\|)
+done on a file associated with a non-seekable device,
+such as a tty or a pipe; in particular,
+.B fseek(\|)
+may not be used on a terminal, or on a file opened using
+.BR popen (3S).
+.SH WARNING
+.LP
+Although on the
+.SM UNIX
+system an offset returned by
+.B ftell(\|)
+is measured in bytes, and it is permissible to seek to positions
+relative to that offset,
+portability to a (non-\s-1UNIX\s0) system requires that
+an offset be used by
+.B fseek(\|)
+directly.
+Arithmetic may not meaningfully be performed on such
+an offset, which is not necessarily measured in bytes.

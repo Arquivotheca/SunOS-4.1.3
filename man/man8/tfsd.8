@@ -1,0 +1,58 @@
+.\" @(#)tfsd.8 1.1 92/07/30 SMI;
+.TH TFSD 8 "23 November 1988"
+.SH NAME
+tfsd \- TFS daemon
+.SH SYNOPSIS
+.B /usr/etc/tfsd
+.SH DESCRIPTION
+.IX "tfsd TFS" "" "\fLtfsd\fP \(em \s-1TFS\s0" ""
+.IX daemon "TFS" "daemon" "\s-1TFS\s0"
+.LP
+.B tfsd
+is the daemon for the Translucent File Service
+(\s-1TFS\s0).
+This daemon is started by
+.BR inetd (8C)
+whenever a
+.SM TFS
+request is made.
+.LP
+.B tfsd
+looks up a file by looking in the frontmost directory (see
+.BR tfs (4S)).
+If the file is not found in this directory, 
+.B tfsd
+follows the
+.I searchlink
+from the frontmost directory to the directory immediately behind it.
+.B tfsd
+continues to search for the file until one of the following
+conditions is met:
+.RS
+.TP 3
+\(bu
+The file is found in a directory.
+.TP
+\(bu
+There are no more searchlinks to follow.
+.TP
+\(bu
+A
+.I whiteout
+entry for the file is found.
+.RE
+The searchlinks and whiteout entries are
+specified in
+.B .tfs_info
+files.
+.SH FILES
+.PD 0
+.TP 20
+.B .tfs_info
+holds searchlink and whiteout entries
+.PD
+.SH "SEE ALSO"
+.BR unwhiteout (1),
+.BR lsw (1),
+.BR tfs (4S),
+.BR mount_tfs (8)

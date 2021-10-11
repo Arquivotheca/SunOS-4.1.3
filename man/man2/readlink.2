@@ -1,0 +1,83 @@
+.\" @(#)readlink.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH READLINK 2 "21 January 1990"
+.SH NAME
+readlink \- read value of a symbolic link
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int readlink(path, buf, bufsiz)
+char *path, *buf;
+int bufsiz;
+.ft R
+.fi
+.IX  readlink()  ""  \fLreadlink()\fP
+.IX  "file system"  readlink()  ""  \fLreadlink()\fP
+.IX  "symbolic link"  "read value of"
+.IX  link  "read value of symbolic"
+.SH DESCRIPTION
+.LP
+.B readlink(\|)
+places the contents of the symbolic link referred to by
+.I path
+in the buffer
+.I buf
+which has size
+.IR bufsiz .
+The contents of the link are not null terminated when returned.
+.SH RETURN VALUES
+.LP
+.B readlink(\|)
+returns
+the number of characters placed in the buffer
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B readlink(\|)
+will fail and the buffer will be unchanged if:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.SM EFAULT
+.I path
+or
+.I buf
+extends outside the process's allocated address space.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM EINVAL
+The named file is not a symbolic link.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The named file does not exist.
+.SH SEE ALSO
+.BR stat (2V),
+.BR symlink (2)

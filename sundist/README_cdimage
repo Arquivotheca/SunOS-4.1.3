@@ -1,0 +1,349 @@
+#
+## @(#)README_cdimage 1.1 92/07/30 Copyright 1990 Sun Microsystems, Inc.
+#
+
+OVERVIEW
+
+This document describes the SunOS cdrom release process.
+Unlike the traditional distribution media which consist of
+separate tape sets per architecture and per OS release,
+one cdrom combines all the deliverables for supported 
+architectures from multiple releases.  Each CD has a maximum 
+capacity of about 600 MB.
+
+For example, the 4.1/4.1 PSR-A CD includes deliverables
+for the following releases and architectures:
+
+		SunOS 4.1: 	 sun4
+				 sun4c
+				 sun3x
+				 sun3
+
+		SunOS 4.1 PSR A: sun4
+
+The deliverables are organized into partitions within
+a single image, described as follows:
+
+   Partition A:
+
+   The first partition (A) contains all the tarfiles in 
+   High Sierra File System (HSFS) format.  The directory
+   structure of a HSFS is similar to a Unix File System (UFS),
+   except that it doesn't allow uppercase letters and some
+   characters like dashes, pluses, and multiple dots in a 
+   filename.  This partition is organized very much like the 
+   file system of a heterogeneous server supporting clients 
+   running different releases.  
+
+   For example, the kernel architectures each have their own 
+   directories for the Kvm and Sys modules, while the exec 
+   directory (~/usr) is shared among identical application 
+   architectures.  You will note, however, that we currently 
+   have multiple copies of the Manual module under ~/share,
+   which is not the case on a heter server's file system.
+   This is necessary as a work-around to a bug in the
+   4.1 version of suninstall.
+
+   Once you have created the cdimage in Step #4, you can
+   preview the contents of Partition A by looking at how 
+   the /cdrom_tarfiles hierarchy is structured.
+   Note that in addition to the normal deliverables found
+   on an installed system, this partition also contains
+   copies of the miniroot, xdrtoc and copyright.
+
+   Partitions B to H:
+
+   The remaining seven partitions are reserved for the
+   bootable images of the supported releases and architectures.
+   We have the following partitions assigned for the 4.1 PSR A CD: 
+
+	Partition B	4.1 sun4 
+		  C	4.1 sun4c 
+		  D	4.1 PSR A sun4
+		  E	4.1 sun3x
+		  F	4.1 sun3
+		  G-H	Unused
+
+   Please note that although bootable images exist for both
+   4.1 sun3 and sun3x, they are not documented or supported
+   as bootable configurations.  For this reason, we should
+   always put them last; eg: we shifted them one slot down
+   (to E and F) from their 4.1 partitions (D and E) in order to
+   make room for the supported bootable image of sun4-PSR A in 
+   partition D. 
+
+
+CREATING THE IMAGE
+
+The CD image should be created only after you have verified
+that your tape distribution media is satisfactory.
+
+Follow these steps to generate a cdimage: 
+
+   1.   ON YOUR INTEGRATION MACHINE:
+
+   	o  Update the cdrom-related makefiles located in
+	   /usr/src/sundist.  Pay particular attention
+	   to the macros listed below, and refer to the
+	   comments sections contained in the makefiles
+	   for more details.
+
+	   Makefile.common_cd:
+
+	   	PART_*
+	   	CDLABEL_*
+
+	   cdimage.mk:
+
+	   	TOP_VERS	
+	   	ARCHS_*
+	   	RELEASE
+	   	PSR_RELEASE*
+	   	NUM_ARCHS
+	   	PART_ARCHS_*
+	   	CDTAR_*
+	   	RELEASE_FILE
+
+	   You should also familiarize yourself with these
+	   other CD files that may occasionally need updating:
+
+	   	cdrom.mk
+	   	cdpatch.README	
+	   	README_cdimage
+	
+   2.	ON EACH OF YOUR BUILD MACHINES: 
+
+   	o  Create /tarfiles directory:
+
+	   This directory would normally be created as part
+	   of your tape generation process.  It should have
+	   at least 75MB of disk space either in its own
+	   partition, or as a symlink to another directory.
+	   (Allow an additional 35MB for sun4c compressed 
+	   tarfiles.)
+
+	o  Set up access permissions to your build machine:
+
+	   Export these partitions or directories read-only 
+	   to 'engineering':
+	   
+		/usr/src
+		/tarfiles 
+		/proto
+
+	o   Add this entry to /.rhosts:
+
+		valis root  (This is necessary for Step #3)
+
+   	o   Create CDROM bootable image:
+
+		%	su
+		#	cd /usr/src/sundist
+		#	make cdrom 
+		
+			(proceed through parse/size/fit 
+			routines as if you were creating a tape)
+
+	   This step uses 'Makefile', 'cdrom.mk' and 
+	   'Makefile.common_cd' to construct the bootable 
+	   image (called cdrom_part_sun*) which is made up 
+	   of the following components:
+
+		bootimage.cdrom.sun (contains bootblock,
+			MUNIX and copyright)
+		munixfs.sun*.cdrom
+		miniroot.sun*
+
+	   MUNIX for cdrom is slightly different from the generic
+	   version found in /proto in that it knows what to use
+	   for root and swap, and how to load ramdisk.  The 
+	   partition assignments in 'Makefile.common_cd' determine
+	   which values are adb'd into munix for loading
+	   ramdisk, which is necessary for the sun4c arch.
+
+   3.	ON THE DISKFARM (valis):
+
+	This step saves the cdimage dependencies onto a diskfarm.
+	These files are created by step #2 on your build machine(s),
+	and generally consist of:
+
+		binaries from /tarfiles
+		patches from /proto/UNDISTRIBUTED
+		bootable image, copyright, table of
+		  contents and miniroot from /usr/src/sundist
+
+	It is important to archive these files, since CD releases
+	are cumulative.  For example, the 4.1 PSR B CD will include
+	not only the new release for sun4c, but also past releases,
+	specifically, 4.1 PSR A (sun4) and 4.1 (sun3/3x/4).
+
+        o  Set up a partition to contain archives of CDROM image 
+	   components.  Space requirements are:
+
+   	   4.1       (archs: sun3,sun3x,sun4,sun4c)        ~ 380 MB
+   	   4.1_PSR_A (arch : sun4)                         ~ 100 MB
+
+        o  Copy the latest version of archiving utility, named
+   	   'save_cd_depends', which is available in /usr/src/release 
+	   on the integration machines.  Review the script and update 
+	   macros to apply to your release.  Pay particular attention
+	   to these variables:
+
+		release_host
+		tar_path_sun4*
+		sundist_path_sun*
+		patch_path
+	
+	   'save_cd_depends' contains further information about 
+	   setting up your archives and naming your partition.
+
+	o  Execute the script as super-user.
+
+		valis#	save_cd_depends
+
+        o  Remount your archive partition read-only, update the
+	   exports file, and execute 'exportfs'.
+
+
+   4.	ON THE CDROM BUILD MACHINE (trackless):
+
+   	o  Set up partitions:
+
+	   You will need a large amount of disk space to generate 
+	   your final CDROM image.  For the 4.1 release, we 
+	   utilized the following:
+
+	   1)	SunOS tar files directory structure:	~180 MB
+
+	   2)	/usr/src directory - contains the final
+		CD image:				~252 MB
+
+   	o Set up /usr/src, and make sure that the suninstall
+	  utilities 'cd_tar' and 'toc_xlat' are up-to-date.  You
+	  can do this by mounting and linking to your 
+	  SCCS_DIRECTORIES structure from /usr/src, 
+	  building usr.etc/suninstall, and installing
+	  the binaries DESTDIR=/ (not /proto).  The suninstall
+	  sources require that /usr/src/include and /usr/src/sundist
+	  files be available, so you should also link these
+	  directories to SCCS before building the suninstall
+	  binaries.
+
+	o If your tarfiles partition is not mounted to
+	  /cdrom_tarfiles, make sure that a sym link points to
+	  it, as in:
+
+	  	/cdrom_tarfiles -> /cdrom_tarfiles_psr_xx
+
+   	o Build /usr/src/sundist following your procedure for
+	  generating distribution tapes.
+
+   	o Identify archives to be used for generating the image by
+	  creating your release file(s) in /usr/src/sundist.  
+
+	  For example, if you are releasing the base OS, say
+	  version 4.1, the diskfarm partition to be mounted
+	  will be named /usr/cdrom_4.1;  you should therefore 
+	  create the release file to match it: 
+
+	   % echo "4.1" > /usr/src/sundist/RELEASE
+
+	   To include a PSR release with the base OS, create a second
+	   release file as in:
+
+	   % echo "4.1_PSR_A_BETA" > /usr/src/sundist/PSR_RELEASE_A
+
+	o  Create the image
+
+		% cd /usr/src/sundist
+		% su
+		
+		4.1 CDROM RELEASE:
+
+			# make -f cdimage.mk
+
+		4.1 and PSR_A CDROM RELEASE:
+
+		If you have updated the TOP_VERS macro to 'psr_a',
+		the command is the same as above.  Otherwise,
+		pass the value of TOP_VERS using:
+
+			# make TOP_VERS=psr_a -f cdimage.mk
+
+		Following is a brief rundown of how the cdimage
+		is actually created:
+
+			o Partitions containing archived
+			  deliverables from various
+			  releases are automatically mounted,
+			  using release files created in
+			  previous bullet item.
+
+			o Partition A is constructed by 'cd_tar'
+			  and stored in /cdrom_tarfiles.
+
+			o Bootable images are copied from 
+			  archives to the /usr/src/sundist/cdromdist
+			  directory.
+
+			o Copyright file is constructed, using
+			  macros in Makefile.common_cd
+			  
+			o A prototype image is created by the
+			  'mkcdproto' utility and placed in
+			  sundist/cdromdist/cdimage.
+
+			o Tarfiles and bootable partitions are 
+			  installed into the prototype image.
+
+			o A label is written onto cdimage.
+
+   	o  Create the master tapes.  This currently consists of three
+	   volumes using 9-track tapes, 6250 bpi, 8k block size.
+
+		# make tapes -f cdimage.mk
+
+	o  There will be occasions when you'll need to test your
+	   image on a SCSI disk prior to cutting your CD master.
+	   To do this, hook up a scsi disk (say sd4) to your
+	   CD build machine by following these steps:
+
+	      -	Identify scsi disk with ID=2 by positioning
+		dip switch #2 to the left; all other switches 
+		should be to the right.
+
+	      -	Halt your system, hook up your cables, and
+		boot.  Format the scsi disk and label it
+		using the 'format' command (default partition
+		will do).
+
+	      - Copy your cdimage to the scsi disk:
+
+			% su
+			# cd /usr/src/sundist
+			# make disk -f cdimage.mk
+		
+	      - With the system still in multiuser mode,
+		check Partition A of the image on scsi disk
+		by powering off the disk, and identifying
+		it with ID=6  (position dip switches
+		#2 and #4 to the left).  Power the scsi
+		disk up, and mount the high sierra file
+		system containing the tarfiles using:
+
+			# mount -rt hsfs /dev/sd4a /mnt
+			# cd /mnt
+
+	      -	Make sure that the tarfiles are readable
+		using a command similar to:
+
+			# tar tf tarfile_name > /dev/null
+		
+	      - Test the bootable partitions by halting
+		your CD build machine and reconnecting your 
+		scsi disk to systems having the supported
+		bootable configurations.  Refer to
+		Ross Margo's document dated 1/23/90 for
+		instructions on booting a CDROM.  
+
+

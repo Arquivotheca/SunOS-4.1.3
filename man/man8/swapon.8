@@ -1,0 +1,73 @@
+.\" @(#)swapon.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH SWAPON 8 "31 October 1988"
+.SH NAME
+swapon \- specify additional device for paging and swapping
+.SH SYNOPSIS
+.B "/usr/etc/swapon"
+.B \-a
+.LP
+.B "/usr/etc/swapon"
+.IR name .\|.\|.
+.SH DESCRIPTION
+.IX  "swapon command"  ""  "\fLswapon\fP \(em specify paging device"
+.IX  "swapping devices, specify swapon"  ""  "swapping devices, specify \(em \fLswapon\fP"
+.IX  "paging devices, specify swapon"  ""  "paging devices, specify \(em \fLswapon\fP"
+.IX  "devices"  "swapping, specify swapon"  ""  "swapping, specify \(em \fLswapon\fP"
+.IX  "devices"  "paging, specify swapon"  ""  "paging, specify \(em \fLswapon\fP"
+.IX  "additional paging/swapping devices, specify"  ""  "additional paging/swapping devices, specify \(em \fLswapon\fP"
+.B swapon
+specifies additional devices or files on which
+paging and swapping are to take place.
+The system begins by swapping and paging on only a single device
+so that only one disk is required at bootstrap time.  Calls to
+.B swapon
+normally occur in the system multi-user initialization file
+.B /etc/rc
+making all swap devices available, so that the paging and swapping
+activity is interleaved across several devices.
+.LP
+The second form gives individual block devices or files as given
+in the system swap configuration table.
+The call makes only this space
+available to the system for swap allocation.
+.LP
+Note: \*(lqswap files\*(rq made with
+.BR mkfile (8)
+can be used as
+swap areas over
+.SM NFS\s0.
+.SH OPTIONS
+.TP
+.B \-a
+Make available all devices of type
+.B swap
+in
+.BR /etc/fstab .
+Using
+.B swapon
+with the
+.B \-a
+option is the normal usage.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/sd?b
+.TP
+.B /dev/xy?b
+.TP
+.B /dev/xd?b
+normal paging devices
+.TP
+.B /etc/fstab
+.TP
+.B /etc/rc
+.PD
+.SH SEE ALSO
+.BR swapon (2),
+.BR fstab (5),
+.BR init (8),
+.BR mkfile (8)
+.SH BUGS
+There is no way to stop paging and swapping on a device.
+It is therefore not possible to make use of devices which may be
+dismounted during system operation.

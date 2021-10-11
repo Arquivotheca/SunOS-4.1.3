@@ -1,0 +1,210 @@
+.\" @(#)nfsstat.8c 1.1 92/07/30 SMI;
+.TH NFSSTAT 8C "7 October 1990"
+.SH NAME
+nfsstat \- Network File System statistics
+.SH SYNOPSIS
+.B nfsstat
+[
+.B \-cmnrsz
+]
+.SH AVAILABILITY
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "nfsstat command"  ""  "\fLnfsstat\fP \(em display network statistics"
+.IX  "NFS statistics, display \(em \fLnfsstat\fP"
+.IX  "statistics of NFS, display \(em \fLnfsstat\fP"
+.B nfsstat
+displays statistical information about the
+.SM NFS
+(Network File System) and
+.SM RPC
+(Remote Procedure Call), interfaces to the kernel.
+It can also be used to reinitialize this information.
+If no options are given the default is
+.IP
+.B nfsstat \-cnrs
+.LP
+That is, display everything, but reinitialize nothing.
+.SH OPTIONS
+.TP
+.B \-c
+Display client information.
+Only the client side
+.SM NFS
+and
+.SM RPC
+information will be printed.
+Can be combined with the
+.B \-n
+and
+.B \-r
+options to print client
+.SM NFS
+or client
+.SM RPC
+information only.
+.TP
+.B \-m
+Display statistics for each
+.SM NFS
+mounted file system.
+This includes the server name and address, 
+mount flags, current read and write sizes, the
+retransmission count, and the timers used for
+dynamic retransmission.
+The
+.B srtt
+value contains the smoothed round trip time, the
+.B dev
+value contains the estimated deviation,
+and the 
+.B cur
+value is the current backed-off retransmission value.
+.TP
+.B \-n
+Display
+.SM NFS
+information.
+.SM NFS
+information for both the client and server side will be printed.
+Can be combined with the
+.B \-c
+and
+.B \-s
+options to print client or server
+.SM NFS
+information only.
+.TP
+.B \-r
+Display
+.SM RPC
+information.
+.TP
+.B \-s
+Display server information.
+.TP
+.B \-z
+Zero (reinitialize) statistics.
+This option is for use by the super-user only, and
+can be combined with any of the above options to
+zero particular sets of statistics after printing them.
+.SH DISPLAYS
+.LP
+The server
+.SM RPC
+display includes the following fields:
+.RS
+.TP 10
+.B calls
+.PD 0
+The total number of
+.SM RPC
+calls received.
+.PD
+.TP
+.B badcalls
+The total number of calls rejected by the
+.SM RPC
+layer (the sum of
+.B badlen
+and
+.B xdrcall
+as defined below).
+.TP
+.B nullrecv
+The number of times an
+.SM RPC
+call was not available when it was thought to be received.
+.TP
+.B badlen
+The number of
+.SM RPC
+calls with a length shorter than a minimum-sized
+.SM RPC
+call.
+.TP
+.B xdrcall
+The number of 
+.SM RPC
+calls whose header could not be
+.SM XDR
+decoded.
+.RE
+.LP
+The server
+.SM NFS
+display shows the number of 
+.SM NFS
+calls received 
+.RB ( calls )
+and rejected
+.RB ( badcalls ),
+and the counts and percentages for the various calls that were
+made.
+.LP
+The client 
+.SM RPC
+display includes the following fields:
+.RS
+.TP 10
+.B calls
+.PD 0
+The total number of 
+.SM RPC
+calls made.
+.TP
+.B badcalls
+The total number of calls rejected by the
+.SM RPC
+layer.
+.TP
+.B retrans
+The number of times a call had to be retransmitted
+due to a timeout while waiting for a reply from the server.
+.TP
+.B badxid
+The number of times a reply from a server was received which did
+not correspond to any outstanding call.
+.TP
+.B timeout
+The number of times a call timed out while waiting for a reply from the
+server.
+.TP
+.B wait
+The number of times a call had to wait because no client handle was
+avaiable.
+.TP
+.B newcred
+The number of times authentication information had to be refreshed.
+.TP
+.B timers
+The number of times the calculated time-out value was greater than
+or equal to the minimum specified time-out value for a call.
+.PD
+.RE
+.LP
+The client
+.SM NFS
+display shows the number of calls sent and rejected, as well
+as the number of times a
+.SB CLIENT
+handle was received
+.RB ( nclget ),
+the number of times a call had to sleep while awaiting a
+handle
+.RB ( nclsleep ),
+as well as a count of the various calls and their respective
+percentages.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+system namelist
+.TP
+.B /dev/kmem
+kernel memory
+.PD

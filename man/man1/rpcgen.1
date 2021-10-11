@@ -1,0 +1,417 @@
+.\" @(#)rpcgen.1 1.1 92/07/30 SMI
+.TH RPCGEN 1 "20 January 1990"
+.SH NAME
+rpcgen \- RPC protocol compiler
+.SH SYNOPSIS
+.BI rpcgen " infile"
+.br
+.B rpcgen
+[
+.BI \-D name [= value ]
+] [
+.B \-I
+[
+.BI \-K " seconds"
+] ] [
+.B \-L
+] [
+.B \-T
+]
+.I infile
+.br
+.B rpcgen
+.B "\-c \|| \|\-h \|| \|\-l \|| \|\-m \|| \|\-t"
+[
+.BI \-o " outfile"
+]
+[
+.I infile
+]
+.br
+.B rpcgen
+.B \-s
+.I transport
+[
+.BI \-o " outfile"
+]
+[
+.I infile
+]
+.SH DESCRIPTION
+.IX "compilers" rpcgen "" "\fLrpcgen\fR \(em generate RPC protocols, C header files"
+.IX rpcgen "" "\fLrpcgen\fR \(em generate RPC protocol, C header files, and server skeleton"
+.IX RPC "generate protocols \(em \fLrpcgen\fR"
+.LP
+.B rpcgen
+generates C code to implement an
+.SM RPC
+protocol.
+The input to
+.B rpcgen
+is a language similar to C
+known as the
+.SM RPC
+Language (Remote Procedure Call Language).
+Information about the syntax of
+.SM RPC
+Language is available in the
+.RI ` rpcgen ' " Programming Guide"
+in the
+.TX NETP
+manual.
+.LP
+.B rpcgen
+is normally used as in the first synopsis where it takes an input file
+and generates four output files.
+If the
+.I infile
+is named
+.BR proto.x ,
+then
+.B rpcgen
+generates a header file in
+.BR proto.h ,
+.SM XDR
+routines in
+.BR proto_xdr.c ,
+server side stubs in
+.BR proto_svc.c ,
+and client side stubs in
+.BR proto_clnt.c .
+With the
+.B \-T
+option, it also generates the
+.SM RPC
+dispatch table in
+.BR proto_tbl.i .
+.LP 
+The second synposis provides special features which
+allow for the creation of more sophisticated
+.SM RPC
+servers.
+These features include support for
+.SM RPC
+dispatch tables,
+and user provided
+.BR #defines .
+The entries in the
+.SM RPC
+dispatch table contain:
+.LP
+.RS
+.PD 0
+.TP 3
+\(bu
+pointers to the service routine corresponding
+to that procedure
+.TP
+\(bu
+a pointer to the input and output arguments
+.TP
+\(bu
+the size of these routines
+.PD
+.RE
+.LP
+A server can use the dispatch table to check authorization
+and then to execute the service routine;
+a client library may use it to deal with the details
+of storage management and
+.SM XDR
+data conversion.
+.LP
+The other two synopses shown above are used when one does not want to
+generate all the output files, but only a particular one. Their
+usage is described in the
+.SM EXAMPLES
+section below.
+.LP
+The C-preprocessor,
+.BR cpp (1),
+is run on the input file before it is actually
+interpreted by
+.BR rpcgen ,
+so all the
+.B cpp
+directives are legal within an
+.B rpcgen
+input file. For each type of output file,
+.B rpcgen
+defines a special
+.B cpp
+symbol for use by the
+.B rpcgen
+programmer:
+.LP
+.RS
+.PD 0
+.TP 12
+.SB RPC_HDR
+defined when compiling into header files
+.TP
+.SB RPC_XDR
+defined when compiling into
+.SM XDR
+routines
+.TP
+.SB RPC_SVC
+defined when compiling into server side stubs
+.TP
+.SB RPC_CLNT
+defined when compiling into client side stubs
+.TP
+.SB RPC_TBL
+defined when compiling into
+.SM RPC
+dispatch tables
+.PD
+.RE
+.LP
+In addition,
+.B rpcgen
+does a little preprocessing of its own.
+Any line beginning with
+.RB ` % '
+is passed directly into the output file, uninterpreted by
+.BR rpcgen .
+For every data type referred to in
+.IR infile ,
+.B rpcgen
+assumes that there exists a routine with the string
+.RB ` xdr_ '
+prepended to the data type.
+If this routine does not exist in the
+.SM RPC/XDR
+library, it must be provided.
+Providing an undefined data type
+allows customization of
+.SM XDR
+routines.
+.SH OPTIONS
+.TP 12
+.B \-c
+Compile into
+.SM XDR
+routines.
+.TP
+.BI \-D name [= value ]
+Define a symbol
+.IR name .
+Equivalent to the
+.B #define
+directive in the source.
+If no
+.I value
+is given,
+.I name
+is defined as 1.
+This option may be called more than once.
+.TP
+.B \-h
+Compile into C data-definitions (a header file).
+The
+.B \-T
+option can be used in conjunction to produce a header file which supports
+.SM RPC
+dispatch tables.
+.TP
+.B \-I
+Compile support for
+.BR inetd (8C)
+in the server side stubs.
+Such servers can be self started or can be started by
+.BR inetd .
+When the server is self-started, it backgrounds itself by default.
+A special define symbol
+.SB RPC_SVC_FG
+can be used to run the server process in foreground, or alternately the
+user may just compile it without the
+.B \-I
+option.
+If there are no pending client requests, the
+.B inetd
+servers exit after 120 seconds (default).
+The default can be changed with the
+.B \-K
+option.
+All the error messages for
+.B inetd
+servers are always logged in with
+.BR syslog (3).
+.TP
+.BI \-K " seconds"
+If the server was started by
+.BR inetd ,
+specify the time in seconds after which the server should exit if there is
+no further activity.
+This option is useful for customization.
+If
+.I seconds
+is 0, the server exits after serving that given request.
+If
+.I seconds
+is
+\-1, the server hangs around for ever after being started by
+.BR inetd .
+This option is valid only with the
+.B \-I
+option.
+.TP
+.B \-l
+Compile into client side stubs.
+.TP
+.B \-L
+When the servers are started in foreground, use
+.B syslog(\|)
+to log the server errors instead of printing them on the standard error.
+.TP
+.B \-m
+Compile into server side stubs, but do not generate a \*(lqmain\*(rq routine.
+This option is useful for doing callback-routines and for people who
+need to write their own \*(lqmain\*(rq routine to do initialization.
+For
+.B inetd
+support, they should be compiled with the
+.B \-I
+option. In such cases, it defines 2 global variables:
+.B _rpcpmstart
+and
+.BR _rpcfdtype .
+The value of
+.B _rpcpmstart
+should be 1 or 0 depending upon whether it was started by
+.B inetd
+or not. The value of
+.B _rpcfdtype
+should be
+.SB SOCK_STREAM
+or
+.SB SOCK_DGRAM
+depending upon the type of the connection.
+.TP
+.BI \-o " outfile"
+Specify the name of the output file.
+If none is specified, the standard output is used
+.RB ( \-c ,
+.BR \-h ,
+.BR \-l ,
+.BR \-m ,
+.B \-s
+and
+.B \-t
+modes only).
+.TP
+.BI \-s " transport"
+Compile into server side stubs for the given transport.
+The supported transports are
+.B udp
+and
+.BR tcp .
+This option may be called more than once
+so as to compile a server that serves multiple transports.
+For
+.B inetd
+support, they should be compiled with the
+.B \-I
+option.
+.TP
+.B \-t
+Compile into
+.SM RPC
+dispatch table.
+.TP
+.B \-T
+Generate the code to support
+.SM RPC
+dispatch tables.
+.LP
+The options 
+.BR \-c ,
+.BR \-h ,
+.BR \-l ,
+.BR \-m ,
+.B \-s
+and
+.B \-t
+are used exclusively to generate a particular type of file, while the options
+.BR \-D ,
+.BR \-I ,
+.B \-L
+and
+.B \-T
+are global and can be used with the other options.
+.br
+.ne 5
+.SH EXAMPLES
+.LP
+The following example generates all the five files:
+.BR prot.h,
+.BR prot_clnt.c ,
+.BR prot_svc.c ,
+.B prot_xdr.c
+and
+.BR prot_tbl.i .
+The server error messages are logged, instead of being sent
+to the standard error.
+.IP
+.ft B
+example% rpcgen \-LT prot.x
+.ft R
+.LP
+The following example generates
+.BR prot.h ,
+.BR prot_clnt.c ,
+.B prot_xdr.c
+and
+.BR prot_svc.c .
+.B prot_svc.c
+supports server invocation by
+.BR inetd .
+If the server is started by
+.BR inetd ,
+the server exits after 20 seconds of inactivity.
+.IP
+.ft B
+example% rpcgen \-I \-K 20 prot.x
+.ft R
+.LP
+The following example sends the header file
+(with support for dispatch tables)
+on the standard output.
+.IP
+.ft B
+example% rpcgen \-hT prot.x
+.ft R
+.LP
+The following example sends the server side stubs
+file for the transport
+.B tcp
+on the standard output.
+.IP
+.ft B
+example% rpcgen \-s tcp prot.x
+.ft R
+.SH "SEE ALSO"
+.BR cpp (1),
+.BR rpc (3N),
+.BR inetd (8C)
+.LP
+.RI ` rpcgen ' " Programming Guide"
+in
+.TX NETP
+.br
+.ne 7
+.SH BUGS
+.LP
+The
+.SM RPC
+Language does not support nesting of structures.
+As a work-around,
+structures can be declared at the top-level,
+and their name used inside other structures in
+order to achieve the same effect.
+.LP
+Name clashes can occur when using program definitions, since the apparent
+scoping does not really apply.
+Most of these can be avoided by giving
+unique names for programs, versions, procedures and types.

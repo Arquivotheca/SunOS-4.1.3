@@ -1,0 +1,422 @@
+.\" @(#)diff.1 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5R2 6.2
+.TH DIFF 1 "2 October 1989"
+.SH NAME
+diff \- display line-by-line differences between pairs of text files
+.SH SYNOPSIS
+.B diff
+[
+.B \-bitw
+]
+[
+.B \-c
+[
+.I #
+] |
+.B \-e
+|
+.B \-f
+|
+.B \-n
+|
+.B \-h
+] 
+.I "\0filename1 filename2"
+.br
+.B diff
+[
+.B \-bitw
+] [
+.BI \-D string
+] 
+.I "\0filename1 filename2"
+.br
+.B diff
+[
+.B \-bitw
+] [
+.B \-c
+[
+.I #
+] | 
+.B \-e
+| 
+.B \-f
+|
+.B \-n
+|
+.B \-h
+] [
+.B \-l
+] [
+.B \-r
+] [
+.B \-s
+] [
+.BI \-S name
+] 
+.I "\0directory1 directory2"
+.SH DESCRIPTION
+.IX "diff command"  ""  "\fLdiff\fP \(em differential compare"
+.IX files  "differential compare"
+.IX files  "find differences"
+.IX directory  "differential compare"
+.IX compare  "files differentially"
+.LP
+.B diff
+is a
+.I differential
+file comparator.  When run
+on regular files, and when
+comparing text files that differ during directory comparison (see the
+notes below on comparing directories),
+.B diff
+tells what lines must be changed in the
+files to bring them into agreement.
+Except in rare circumstances,
+.B diff
+finds a smallest sufficient set of differences.  If neither
+.I filename1
+nor
+.I filename2
+is a directory, either may be given as 
+.RB ` \- ',
+in which case the standard input is used.  If
+.I filename1
+is a directory,
+a file in that directory whose filename is
+the same as the filename of
+.I filename2
+is used (and vice versa).
+.LP
+There are several options for output format;
+the default output format contains lines of these forms:
+.IP "" 5
+.I n\|1
+.B a
+.IR n\|3 , \|n\|4
+.br
+.IR n\|1 , \|n\|2
+.B d
+.I n\|3
+.br
+.IR n\|1 , \|n\|2
+.B c
+.IR n\|3 , \|n\|4
+.LP
+These lines resemble
+.BR ed (1)
+commands to convert
+.I filename1
+into
+.IR filename2 .
+The numbers after the letters pertain to
+.IR filename2 .
+In fact, by exchanging
+.B a
+for
+.B d
+and reading backward
+one may ascertain equally how to convert 
+.I filename2
+into
+.IR filename1 .
+As in 
+.BR ed (1),
+identical pairs, where
+.I n\|1
+=
+.I n\|2
+or
+.I n\|3
+=
+.IR n\|4 ,
+are abbreviated as a single number.
+.LP
+Following each of these lines come all the lines that are
+affected in the first file flagged by
+.RB ` < ', 
+then all the lines that are affected in the second file
+flagged by
+.RB ` > '.
+.LP
+If both arguments are directories,
+.B diff
+sorts the contents of the directories
+by name, and then runs the regular file
+.B diff
+program as described above on text files which are different.
+Binary files which differ, common
+subdirectories, and files which appear
+in only one directory are listed.
+.SH OPTIONS
+.TP
+.B \-b
+Ignore trailing blanks (\s-1SPACE\s0 and
+.SM TAB
+characters)
+and treat all other strings of blanks as equivalent.
+.TP
+.B \-i
+Ignore the case of letters; for example,
+.RB ` A '
+will compare equal to
+.RB ` a '.
+.TP
+.B \-t
+Expand
+.SM TAB
+characters in output lines.  Normal or
+.B \-c
+output adds character(s) to the front of each line which may alter
+the indentation of the original source
+lines and make the output listing
+difficult to interpret.  This option will
+preserve the original source's indentation.
+.TP
+.B \-w
+Ignore all blanks (\s-1SPACE\s0 and
+.SM TAB
+characters); for example,
+.RB ` "if\ (\ a\ =\|=\ b\ )" '
+will compare equal to
+.RB ` if(a=\|=b) '.
+.LP
+The following four options are mutually exclusive:
+.TP
+.BR \-c [\fI#\fP]
+Produce a listing of differences with lines of context.
+The default is to present 3 lines of context
+and may be changed, (to 10, for example), by
+.BR \-c10 \&.
+With
+.B \-c
+the output format is modified slightly:  output begins with
+identification of the files involved and their creation dates, then
+each change is separated by a line with a dozen
+.BR * \|s.
+The lines removed from
+.I filename1
+are marked with
+.RB ` "\(mi " ';
+those added to
+.I filename2
+are marked
+.RB ` "+ " '.
+Lines which are changed from one
+file to the other are marked in both files with
+.RB ` "! " '.
+.IP
+Changes which lie within <context> lines of each other are grouped
+together on output.  This is a change from the previous 
+.RB ` "diff \-c" '
+but the resulting output is usually much easier to interpret.
+.TP
+.B \-e
+Produce a script of
+.BR a ,
+.BR c ,
+and 
+.B d
+commands for the editor
+.BR ed ,
+which will recreate
+.I filename2
+from
+.IR filename1 .
+.br
+.ne 5
+.IP
+In connection with
+.BR \-e ,
+the following shell program may help
+maintain multiple versions of a file.
+Only an ancestral file ($1) and a chain of version-to-version
+.B ed
+scripts ($2,\|$3,\|.\|.\|.) made by
+.B diff
+need be on hand.
+A `latest version' appears on the standard output.
+.sp .5
+.RS
+.RS
+.B "(shift; cat $*; echo \'1,$p\') \(bv ed \- $1"
+.RE
+.RE
+.IP
+Extra commands are added to the output
+when comparing directories with
+.BR \-e ,
+so that the result is a
+.BR sh
+script for converting text files
+which are common to the two directories
+from their state in
+.I directory1
+to their state in
+.IR directory2 .
+.TP
+.B \-f
+Produce a script similar to that of
+.B \-e,
+not useful with
+.BR ed ,
+which is in the opposite order.
+.TP
+.B \-n
+Produce a script similar to that of
+.BR \-e ,
+but in the opposite order and with a count of changed lines on each
+insert or delete command.
+.TP
+.B \-h
+Do a fast, half-hearted job.
+It works only when changed stretches are short and well separated,
+but does work on files of unlimited length.
+.LP
+Options for the second form of 
+.B diff
+are as follows:
+.TP
+.BI \-D string
+Create a merged version of
+.I filename1
+and
+.I filename2
+on the standard output, with C preprocessor controls included so that
+a compilation of the result without defining 
+.I string
+is equivalent
+to compiling
+.IR filename1 ,
+while defining
+.I string
+will yield
+.IR filename2 .
+.LP
+Options when comparing directories are:
+.TP
+.B \-l
+Long output format; each text file
+.B diff
+is piped through
+.BR pr (1V)
+to paginate it, other differences are remembered and summarized
+after all text file differences are reported.
+.TP
+.B \-r
+Apply
+.B diff
+recursively to common subdirectories encountered.
+.TP
+.B \-s
+Report files which are the same, which are otherwise not mentioned.
+.TP
+.BI \-S name
+Start a directory
+.B diff
+in the middle, beginning with file
+.IR name .
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR diff .
+On entry to
+.BR diff ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp/d?????
+.TP
+.B /usr/lib/diffh
+for 
+.B \-h
+.PD
+.SH "SEE ALSO"
+.BR cc (1V),
+.BR cmp (1),
+.BR comm (1),
+.BR cpp (1),
+.BR diff3 (1V),
+.BR ed (1),
+.BR pr (1V),
+.BR locale (5),
+.BR iso_8859_1 (7)
+.SH DIAGNOSTICS
+.LP
+Exit status is 0 for no differences,
+1 for some differences, 2 for trouble.
+.TP 5
+.BI "Missing newline at end of file" X
+Indicates that the last line of file
+.I X
+did not have a
+.SM NEWLINE\s0.
+If the lines are different, they will be flagged and output,
+although the output will seem to indicate they are the same.
+.br
+.ne 9
+.SH BUGS
+.LP
+Editing scripts produced under the
+.B \-e 
+or
+.B \-f 
+option are naive about
+creating lines consisting of a single 
+.RB ` . '.
+.LP
+When comparing directories with the
+.BR \-b ,
+.BR \-w ,
+or
+.B \-i
+options specified,
+.B diff
+first compares the files (as in 
+.BR cmp (1),
+and then runs the regular
+.B diff
+algorithm if they are not equal.
+This may cause a small amount of spurious output if the files
+then turn out to be identical because the only differences are
+insignificant blank string or case differences.
+.LP
+The 
+.B \-D
+option ignores existing preprocessor controls in the source
+files, and can generate 
+.BR #ifdefs 's
+with overlapping scope.  The output should be checked by hand,
+or run through
+.RB ` "cc \-E" '
+(see
+.BR cc (1V))
+and then 
+.BR diff ed
+with the original source files.  Discrepancies revealed should be
+corrected before compilation.

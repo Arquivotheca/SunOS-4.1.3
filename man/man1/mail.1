@@ -1,0 +1,2223 @@
+.\" @(#)mail.1 1.1 92/07/30 SMI; from UCB 4.2 and S5
+.ds ~ \u\(ap\d
+.TH MAIL 1 "19 December 1988"
+.SH NAME
+mail, Mail \- read or send mail messages
+.SH SYNOPSIS
+.B Mail
+.RB [ " \-deHinNUv " ]
+.RB [ " \-f " 
+.RI [ " filename " | " \fB+\fPfolder"
+] ]
+.RB [ " \-T "
+.IR file " ]"
+.if n .ti +0.5i
+.RB [ " \-u "
+.IR user " ]"
+.LP
+.B Mail
+.RB [ " \-dFinUv " ]
+.RB [ " \-h "
+.IR number " ]"
+.RB [ " \-r "
+.IR address " ]"
+.RB [ " \-s "
+.IR subject " ]"
+.if n .ti +0.5i
+.I recipient
+\&.\|.\|.
+.LP
+.B /usr/ucb/mail
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  "mail command"  ""  "\fLmail\fP \(em send and receive mail"  ""  PAGE START
+.IX  "send and receive mail"  ""  "send and receive mail \(em \fLmail\fP"  ""  PAGE START
+.IX  "read mail"  ""  "read mail \(em \fLmail\fP"  ""  PAGE START
+.IX  communications  mail  ""  "\fLmail\fP \(em send and receive mail"  PAGE START
+.LP
+.B mail
+is a comfortable, flexible, interactive program for composing, sending
+and receiving electronic messages.  While reading messages,
+.B mail
+provides you with
+commands to browse, display, save, delete, and respond to messages.
+While sending mail, 
+.B mail
+allows editing and reviewing of messages being composed, and the
+inclusion of text from files or other messages.
+.LP
+Incoming mail is stored in the
+.I system mailbox 
+for each user.  This is a file named after the user in
+.BR /var/spool/mail .
+.B mail
+normally looks in this file for incoming messages, but you
+can use the
+.SB MAIL
+environment variable to have it look in a different file.
+When you read a message, it is
+marked to be moved to a secondary file for storage. 
+This secondary file, called the 
+.IR mbox ,
+is normally the file
+.B mbox
+in your home directory. 
+This file can also be changed by setting the
+.SB MBOX
+environment variable.  Messages remain in the 
+.I mbox
+file until deliberately removed.
+.SH OPTIONS
+.LP
+If no 
+.I recipient 
+is specified, 
+.B mail
+attempts to read messages from the system mailbox.  
+.TP 14
+.B \-d
+Turn on debugging output.  
+(Neither particularly interesting nor recommended.)
+.TP 
+.B \-e
+Test for presence of mail.
+If there is no mail,
+.B mail
+prints nothing and exits (with a successful return code).
+.TP
+.B \-F
+Record the message in a file named after the first recipient.
+Override the 
+.B record 
+variable, if set.
+.TP
+.B \-H
+Print header summary only.
+.TP
+.B \-i
+Ignore interrupts (as with the
+.B ignore 
+variable).
+.TP 
+.B \-n
+Do not initialize from the system default
+.B Mail.rc
+file.
+.TP
+.B \-N
+Do not print initial header summary.
+.TP
+.B \-U
+Convert
+.B uucp
+style addresses to Internet standards.
+Overrides the 
+.B conv
+environment variable.
+.TP
+.B \-v
+Pass the
+.B \-v
+flag to
+.BR sendmail (8).
+.TP
+.BI "\-f\fR [\fP" filename\fR]
+Read messages from 
+.I filename
+instead of system mailbox.  If no 
+.I filename
+is specified, the 
+.I mbox
+is used.
+.TP
+.BI "\-f\fR \fP+" folder
+Use the file
+.I folder
+in the folder directory (same as the
+.BR fold er 
+command).  The name of this directory is listed in the
+.B folder
+variable.
+.TP
+.BI \-h " number"
+The number of network \*(lqhops\*(rq made so far.
+This is provided for network
+software to avoid infinite delivery loops.
+.TP
+.BI \-r " address"
+Pass
+.I address
+to network delivery software.
+All tilde
+.RB ( \(ap )
+commands are disabled.
+.TP
+.BI \-s " subject"
+Set the
+.B Subject
+header field to
+.IR subject .
+.TP
+.BI \-T " file"
+Print the contents of the
+.I article-id
+fields of all messages that were read or deleted on
+.IR file 
+(for the use of
+network news programs if available).
+.TP
+.BI \-u " user"
+Read
+.IR user 's
+system mailbox.
+This is only effective if
+.IR user 's
+system mailbox is not read protected.
+.SH USAGE
+Refer to 
+.TX GSBG
+for tutorial information about 
+.BR mail .
+.SS Starting Mail
+.LP
+As it starts,
+.B mail
+reads commands from a system-wide file
+.RB ( /usr/lib/Mail.rc \|)
+to initialize certain variables,
+then it reads from a private start-up file called the
+.I \&.mailrc
+file (it is normally the file
+.B \&.mailrc
+in your home directory, but can be changed by setting the
+.SB MAILRC
+environment variable) for your personal commands and variable settings.  
+Most 
+.B mail
+commands are legal inside start-up files.  The most common uses
+for this file are to set up initial display options and alias lists.
+The following commands are 
+.I not 
+legal in the start-up file:
+.BR ! ,
+.BR C opy,
+.BR e dit,
+.BR fo llowup,
+.BR F ollowup,
+.BR ho ld,
+.BR m ail,
+.BR pre serve,
+.BR r eply,
+.BR R eply,
+.BR replya ll,
+.BR replys ender,
+.BR sh ell,
+and
+.BR v isual.
+Any errors in the start-up file cause the remaining lines in that file 
+to be ignored.
+.LP
+You can use the 
+.B mail
+command to send a message directly by including names of recipients as 
+arguments on the command line.  When no recipients appear on the 
+.B mail
+command line, it enters command mode, from which you can read
+messages sent to you.  If you list no recipients and have no messages,
+.B mail
+prints the message:
+.RB ` "No mail for \fIusername\fP" '
+and exits.
+.LP
+When in command mode (while reading messages), you can send messages 
+using the 
+.BR m ail
+command.
+.SS Sending Mail
+.LP
+While you are composing a message to send,
+.B mail
+is in 
+.I input 
+mode. 
+If no subject is specified as an argument to the command
+a prompt for the subject is printed. 
+After entering the subject line,
+.B mail
+enters 
+.I input 
+mode to accept the text of your message to send.
+.LP
+As you type in the message,
+.B mail 
+stores it in a temporary file.
+To review or modify the message, enter the appropriate 
+.IR "tilde escapes" ,
+listed below, at the beginning of an input line.
+.LP
+To indicate that the message is ready to send, type a dot
+(or
+.SM EOF
+character, normally
+.SM CTRL-D\s0 )
+on a line by itself.  
+.B mail
+submits the message to
+.BR sendmail (8)
+for routing to each 
+.IR recipient .
+.LP
+Recipients can be;
+.IP \(bu
+local usernames
+.IP \(bu
+Internet addresses of the form:
+.RS
+.IP
+.IB name @ domain
+.RE
+.IP \(bu
+.BR uucp (1C)
+addresses of the form:
+.RS
+.IP
+[\fIhost\fB!\fR.\|.\|.\fIhost\fB!\fR]\fIhost\fB!\fIusername
+.RE
+.IP \(bu
+filenames for which you have write permission
+.IP \(bu
+alias groups
+.LP
+If the name of the
+.I recipient 
+begins with a pipe symbol 
+.RB ( \||\| ),
+the remainder of the name is taken as a shell command to pipe
+the message through.  This provides an automatic interface with
+any program that reads the standard input, such as
+.BR lpr (1)
+to record outgoing mail on paper.
+An alias group is the name of a list of recipients that is set by the 
+.B alias
+command, taken from the host's
+.B /etc/aliases
+file, or taken from the 
+Network Information Service
+(\s-1NIS\s0)
+aliases domain.
+See
+.BR aliases (5)
+for more information about mail addresses and aliases.
+.SS Tilde Escapes
+.IX  "mail tilde escapes"  ""  "\fLmail\fP tilde escapes"  ""  PAGE START
+.IX  "tilde escapes in mail"  ""  "tilde escapes in \fLmail\fP"  ""  PAGE START
+The following 
+.I tilde escape
+commands can be used when composing messages to send. 
+Each must appear at the beginning of an input line.
+The escape character (\|\(ap\|), can be changed by setting a new
+value for the 
+.B escape
+variable.
+The escape character can be entered as text by typing it twice.
+.HP
+.B \(ap! 
+.RI [ shell-command ]
+.br
+.IX  "mail tilde escapes"  "~!"  "\fLmail\fP tilde escapes"  "\fL\(ap!\fP\ \ \ "
+.IX  "~! mail tilde escape"  ""  "\fL\(ap!\fP\ \ \ \(em mail tilde escape"
+Escape to the shell.
+If present, run
+.IR shell-command .
+.TP
+.B \(ap.
+.IX  "mail tilde escapes"  "~."  "\fLmail\fP tilde escapes"  "\fL\(ap.\fP\ \ \ "
+.IX  "~. mail tilde escape"  ""  "\fL\(ap.\fP\ \ \ \(em mail tilde escape"
+Simulate
+.SM EOF
+(terminate message input).
+.HP
+.B \(ap: 
+.I mail-command
+.br
+.PD 0
+.HP
+.B \(ap_ 
+.I mail-command
+.br
+.IX  "mail tilde escapes"  "~:"  "\fLmail\fP tilde escapes"  "\fL\(ap:\fP\ \ \ "
+.IX  "~: mail tilde escape"  ""  "\fL\(ap:\fP\ \ \ \(em mail tilde escape"
+.IX  "mail tilde escapes"  "~_"  "\fLmail\fP tilde escapes"  "\fL\(ap_\fP\ \ \ "
+.IX  "~_ mail tilde escape"  ""  "\fL\(ap_\fP\ \ \ \(em mail tilde escape"
+Perform the indicated
+.B mail
+command.
+Valid only when sending a message while reading mail.
+.PD
+.TP
+.B \(ap?
+.IX  "mail tilde escapes"  "~?"  "\fLmail\fP tilde escapes"  "\fL\(ap?\fP\ \ \ "
+.IX  "~? mail tilde escape"  ""  "\fL\(ap?\fP\ \ \ \(em mail tilde escape"
+Print a summary of tilde escapes.
+.TP
+.B \(apA
+.IX  "mail tilde escapes"  "~A"  "\fLmail\fP tilde escapes"  "\fL\(apA\fP\ \ \ "
+.IX  "A"  ""  "\fL\(apA\fP\ \ \ \(em mail tilde escape"
+Insert the autograph string 
+.B Sign
+into the message.
+.TP
+.B \(apa
+.IX  "mail tilde escapes"  "~a"  "\fLmail\fP tilde escapes"  "\fL\(apa\fP\ \ \ "
+.IX  "a"  ""  "\fL\(apa\fP\ \ \ \(em mail tilde escape"
+Insert the autograph string 
+.B sign
+into the message.
+.TP
+\fB\(apb\fI name\fR .\|.\|.
+.IX  "mail tilde escapes"  "~b"  "\fLmail\fP tilde escapes"  "\fL\(apb\fP\ \ \ "
+.IX  "b"  ""  "\fL\(apb\fP\ \ \ \(em mail tilde escape"
+Add the 
+.IR name s
+to the blind carbon copy
+.RB ( Bcc )
+list.  This is like the carbon copy
+.RB ( Cc )
+list, except that the names in the
+.B Bcc
+list are not shown in the header
+of the mail message.
+.TP
+\fB\(apc\fI name\fR .\|.\|.
+.IX  "mail tilde escapes"  "~c"  "\fLmail\fP tilde escapes"  "\fL\(apc\fP\ \ \ "
+.IX  "c"  ""  "\fL\(apc\fP\ \ \ \(em mail tilde escape"
+Add the 
+.IR name s
+to the carbon copy
+.RB ( Cc )
+list.
+.TP
+.B \(apd
+.IX  "mail tilde escapes"  "~d"  "\fLmail\fP tilde escapes"  "\fL\(apd\fP\ \ \ "
+.IX  "d"  ""  "\fL\(apd\fP\ \ \ \(em mail tilde escape"
+Read in the 
+.I dead.letter
+file.
+The name of this file is listed in the variable
+.BR \s-1DEAD\s0 .
+.TP
+.B \(ape
+.IX  "mail tilde escapes"  "~e"  "\fLmail\fP tilde escapes"  "\fL\(ape\fP\ \ \ "
+.IX  "e"  ""  "\fL\(ape\fP\ \ \ \(em mail tilde escape"
+Invoke the editor to edit the message. 
+The name of the editor is listed in the
+.SB EDITOR
+variable.
+The default editor is
+.BR ex (1).
+.HP
+.BI \(apf 
+.RI [ message-list ]
+.br
+.IX  "mail tilde escapes"  "~f"  "\fLmail\fP tilde escapes"  "\fL\(apf\fP\ \ \ "
+.IX  "f"  ""  "\fL\(apf\fP\ \ \ \(em mail tilde escape"
+Forward the listed messages, or the current message being read.
+Valid only when sending a message while reading mail;
+the messages are inserted without alteration (as opposed to the
+.B \(apm
+escape).  
+.TP
+.B \(aph
+.IX  "mail tilde escapes"  "~h"  "\fLmail\fP tilde escapes"  "\fL\(aph\fP\ \ \ "
+.IX  "h"  ""  "\fL\(aph\fP\ \ \ \(em mail tilde escape"
+Prompt for the message header lines:
+.BR Subject ,
+.BR To ,
+.BR Cc ,
+and
+.BR Bcc .
+If the header line contains text, you can edit the text by
+backspacing over it and retyping.
+.TP
+.BI \(api " variable"
+.IX  "mail tilde escapes"  "~i"  "\fLmail\fP tilde escapes"  "\fL\(api\fP\ \ \ "
+.IX  "i"  ""  "\fL\(api\fP\ \ \ \(em mail tilde escape"
+Insert the value of the named
+.I variable
+into the message.
+.HP
+.BI \(apm 
+.RI [ message-list ]
+.br
+.IX  "mail tilde escapes"  "~m"  "\fLmail\fP tilde escapes"  "\fL\(apm\fP\ \ \ "
+.IX  "m"  ""  "\fL\(apm\fP\ \ \ \(em mail tilde escape"
+Insert text from the specified messages, or the current message,
+into the letter.  Valid only when sending a message while reading mail;
+the text the message is shifted to the right, and the string contained
+in the
+.B indentprefix
+variable is inserted as the leftmost characters of each line.
+If 
+.B indentprefix
+is not set, a
+.SM TAB
+character is inserted into each line.
+.TP
+.B \(app
+.IX  "mail tilde escapes"  "~p"  "\fLmail\fP tilde escapes"  "\fL\(app\fP\ \ \ "
+.IX  "p"  ""  "\fL\(app\fP\ \ \ \(em mail tilde escape"
+Print the message being entered.
+.TP
+.B \(apq
+.IX  "mail tilde escapes"  "~q"  "\fLmail\fP tilde escapes"  "\fL\(apq\fP\ \ \ "
+.IX  "q"  ""  "\fL\(apq\fP\ \ \ \(em mail tilde escape"
+Quit from input mode by simulating an interrupt.  If the body of the 
+message is not empty, the partial message is saved in the 
+.I dead.letter
+file.
+.TP
+.BI \(apr " filename"
+.PD 0
+.TP
+.BI \(ap< " filename"
+.TP
+.BI \(ap<! " shell-command"
+.IX  "mail tilde escapes"  "~r"  "\fLmail\fP tilde escapes"  "\fL\(apr\fP\ \ \ "
+.IX  "r"  ""  "\fL\(apr\fP\ \ \ \(em mail tilde escape"
+.IX  "mail tilde escapes"  "~<"  "\fLmail\fP tilde escapes"  "\fL\(ap<\fP\ \ \ "
+.IX  "~< mail tilde escape"  ""  "\fL\(ap<\fP\ \ \ \(em mail tilde escape"
+Read in text from the specified file or the standard output of
+the specified
+.IR shell-command .
+.PD
+.TP
+.BI \(aps " subject"
+.IX  "mail tilde escapes"  "~s"  "\fLmail\fP tilde escapes"  "\fL\(aps\fP\ \ \ "
+.IX  "s"  ""  "\fL\(aps\fP\ \ \ \(em mail tilde escape"
+Set the subject line to
+.IR subject .
+.TP
+.BI \(apt " name .\|.\|."
+.IX  "mail tilde escapes"  "~t"  "\fLmail\fP tilde escapes"  "\fL\(apt\fP\ \ \ "
+.IX  "t"  ""  "\fL\(apt\fP\ \ \ \(em mail tilde escape"
+Add each 
+.I name
+to the list of recipients.
+.TP
+.B \(apv
+.IX  "mail tilde escapes"  "~v"  "\fLmail\fP tilde escapes"  "\fL\(apv\fP\ \ \ "
+.IX  "v"  ""  "\fL\(apv\fP\ \ \ \(em mail tilde escape"
+Invoke a visual editor to edit the message.  The name of the editor
+is listed in the
+.SB VISUAL
+variable.  The default visual editor is
+.BR vi (1).
+.TP
+.BI \(apw " filename"
+.IX  "mail tilde escapes"  "~w"  "\fLmail\fP tilde escapes"  "\fL\(apw\fP\ \ \ "
+.IX  "w mail tilde escape"  ""  "\fL\(apw\fP\ \ \ \(em mail tilde escape"
+Write the message text onto the given file, without the header.
+.TP
+.B \(apx
+.IX  "mail tilde escapes"  "~x"  "\fLmail\fP tilde escapes"  "\fL\(apx\fP\ \ \ "
+.IX  "x mail tilde escape"  ""  "\fL\(apx\fP\ \ \ \(em mail tilde escape"
+Exit as with
+.B \(apq
+but do not save the message in the
+.I dead.letter
+file.
+.TP
+.BI \(ap| " shell-command"
+.IX  "mail tilde escapes"  "~|"  "\fLmail\fP tilde escapes"  "\fL\(ap|\fP\ \ \ "
+.IX  "~| mail tilde escape"  ""  "\fL\(ap|\fP\ \ \ \(em mail tilde escape"
+Pipe the body of the message through the given 
+.IR shell-command .
+If 
+.I shell-command
+returns a successful exit status,
+the output of the command replaces the message.
+.IX  "mail tilde escapes"  ""  "\fLmail\fP tilde escapes"  ""  PAGE END
+.IX  "tilde escapes in mail"  ""  "tilde escapes in \fLmail\fP"  ""  PAGE END
+.IX  "tilde escapes in mail"  ""  "tilde escapes in \fLmail\fP"  ""  PRINT "see also \fLmail\fP tilde escapes"
+.SS Reading Mail
+When you enter
+.I command 
+mode in order to read your messages, 
+.B mail
+displays a header summary of the first several messages,
+followed by a prompt for one of the commands listed below.
+The default prompt is the
+.B &
+(ampersand character).
+.LP
+Message are listed and referred to by number.
+There is, at any time, a 
+.B current
+message, which is marked by a
+.B >
+in the header summary.  
+For commands that take an optional list of messages,
+if you omit a message number as an argument, the command applies
+to the current message.
+.LP
+A 
+.I message-list
+is a list of message specifications, separated by
+.SM SPACE
+characters, which may include:
+.RS
+.TP
+.B \&.
+The current message.
+.PD 0
+.TP
+.I n
+Message number
+.IR n .
+.TP
+.B ^
+The first undeleted message.
+.TP
+.B $
+The last message.
+.TP
+.B +
+The next undeleted message.
+.TP
+.B \-
+The previous undeleted message.
+.TP
+.B *
+All messages.
+.TP
+.IB n \- m
+An inclusive range of message numbers.
+.TP
+.I user
+All messages from
+.IR user .
+.TP
+.BI / string
+All messages with
+.I string
+in the subject line (case ignored).
+.TP
+.BI : c
+All messages of type
+.IR c ,
+where
+.I c
+is one of:
+.sp .5
+.RS
+.RS
+.TP
+.B d
+deleted messages
+.TP
+.B n
+new messages
+.TP
+.B o
+old messages
+.TP
+.B r
+read messages
+.TP
+.B u
+unread messages
+.RE
+.RE
+.IP
+Note: the context of the command determines whether this type of
+message specification makes sense.
+.PD
+.RE
+.LP
+Additional arguments are treated as strings whose usage
+depends on the command involved.  Filenames, where expected,
+are expanded using the normal shell filename-substitution
+mechanism.
+.LP
+Special characters, recognized by certain commands, are
+documented with those commands.
+.SS Commands
+.IX  "mail commands"  ""  "\fLmail\fP commands"  ""  PAGE START
+While in command mode, if you type in an empty command line
+(a
+.SM RETURN
+or
+.SM NEWLINE
+only), the
+.BR p rint
+command is assumed.  The following is a complete list of 
+.B mail
+commands:
+.TP 18
+.BI ! " shell-command"
+.IX  "mail commands"  "!"  "\fLmail\fP commands"  "\fL!\fP"
+.IX  "! mail command"  ""  "\fL!\fP mail command"
+Escape to the shell.  The name of the shell to use is listed in
+the 
+.SB SHELL
+variable.
+.TP
+.BI # " arguments"
+.IX  "mail commands"  "#"  "\fLmail\fP commands"  "\fL#\fP"
+.IX  "# mail command"  ""  "\fL#\fP mail command"
+Null command.  This may be used as if it were a comment in 
+.I \&.mailrc
+files, but note that it must be separated from its arguments
+(commentary) by white space.
+.TP
+.B =
+.IX  "mail commands"  "="  "\fLmail\fP commands"  "\fL=\fP"
+.IX  "= mail command"  ""  "\fL=\fP mail command"
+Print the current message number.
+.TP
+.B ?
+.IX  "mail commands"  "?"  "\fLmail\fP commands"  "\fL?\fP"
+.IX  "? mail command"  ""  "\fL?\fP mail command"
+Print a summary of commands.
+.HP
+.BR a lias 
+.RI [ "alias recipient" \|.\|.\|.\^]
+.br
+.PD 0
+.HP
+.BR g roup 
+.RI [ "alias recipient" \|.\|.\|.\^]
+.br
+.IX  "mail commands"  "alias"  "\fLmail\fP commands"  "\fLalias\fP"
+.IX  "alias mail command"  ""  "\fLalias\fP mail command"
+.IX  "mail commands"  "group"  "\fLmail\fP commands"  "\fLgroup\fP"
+.IX  "group mail command"  ""  "\fLgroup\fP mail command"
+Declare an alias for the given list of recipients. 
+The list will be substituted when the
+.I alias
+is used as a recipient while sending mail.  When put in the
+.I \&.mailrc
+file, this command provides you with a record of the alias.  With no 
+arguments, the command displays the list of defined aliases.
+.PD
+.TP
+.BR alt "ernates\fI name \fP.\|.\|."
+.IX  "mail commands"  "alternates"  "\fLmail\fP commands"  "\fLalternates\fP"
+.IX  "alternates mail command"  ""  "\fLalternates\fP mail command"
+Declare a list of alternate names for your login.
+When responding to a message,
+these names are removed from the list of recipients for the response.
+With no arguments,
+.BR alt ernates
+prints the current list of alternate names.
+.HP
+.BR cd [ 
+.IR directory ]
+.br
+.PD 0
+.TP
+.BR ch "dir [\fIdirectory\fP]"
+.IX  "mail commands"  "cd"  "\fLmail\fP commands"  "\fLcd\fP"
+.IX  "cd mail command"  ""  "\fLcd\fP mail command"
+.IX  "mail commands"  "chdir"  "\fLmail\fP commands"  "\fLchdir\fP"
+.IX  "chdir mail command"  ""  "\fLchdir\fP mail command"
+Change directory.  If 
+.I directory
+is not specified,
+.SM $HOME
+is used.
+.PD
+.HP
+.BR c opy 
+.RI [ message-list ]
+.RI [ filename ]
+.br
+.IX  "mail commands"  "copy"  "\fLmail\fP commands"  "\fLcopy\fP"
+.IX  "copy mail command"  ""  "\fLcopy\fP mail command"
+Copy messages to the file without marking the messages as saved.
+Otherwise equivalent to the
+.BR s ave
+command.
+.TP
+.BR C "opy [\fImessage-list\fP]"
+.IX  "mail commands"  "copya"  "\fLmail\fP commands"  "\fLCopy\fP"
+.IX  "copya mail command"  ""  "\fLCopy\fP mail command"
+Save the specified messages in a file whose name is derived from the
+author of the
+message to be saved, without marking the messages as saved.
+Otherwise equivalent to the
+.BR S ave
+command.
+.TP
+.BR d "elete [\fImessage-list\fP]"
+.IX  "mail commands"  "delete"  "\fLmail\fP commands"  "\fLdelete\fP"
+.IX  "delete mail command"  ""  "\fLdelete\fP mail command"
+Delete messages from the system mailbox.  If the variable
+.B autoprint
+is set, print the message following the last message deleted.
+.HP
+.BR di scard 
+.RI [ header-field .\|.\|.\^]
+.br
+.PD 0
+.HP
+.BR ig nore
+.RI [ header-field .\|.\|.\^]
+.br
+.IX  "mail commands"  "discard"  "\fLmail\fP commands"  "\fLdiscard\fP"
+.IX  "discard mail command"  ""  "\fLdiscard\fP mail command"
+.IX  "mail commands"  "ignore"  "\fLmail\fP commands"  "\fLignore\fP"
+.IX  "ignore mail command"  ""  "\fLignore\fP mail command"
+Suppress printing of the specified header fields when displaying 
+messages on the screen, such as 
+\*(lqStatus\*(rq and \*(lqReceived\*(rq.
+The fields are included when the message is saved unless the
+variable
+.B alwaysignore
+is set.
+The
+.BR P rint
+and
+.BR T ype
+commands display all header fields, ignored or not.
+.PD
+.HP
+.B dp 
+.RI [ message-list ]
+.br
+.PD 0
+.HP
+.BR dt " [\fImessage-list\fP]"
+.br
+.IX  "mail commands"  "dp"  "\fLmail\fP commands"  "\fLdp\fP"
+.IX  "dp mail command"  ""  "\fLdp\fP mail command"
+.IX  "mail commands"  "dt"  "\fLmail\fP commands"  "\fLdt\fP"
+.IX  "dt mail command"  ""  "\fLdt\fP mail command"
+Delete the specified messages from the system mailbox, and print the 
+message after the last one deleted.  Equivalent to a
+.BR d elete
+command followed by a
+.BR p rint
+command.
+.PD
+.TP
+.BR ec "ho [\fIstring \fP.\|.\|.\|]"
+.IX  "mail commands"  "echo"  "\fLmail\fP commands"  "\fLecho\fP"
+.IX  "echo mail command"  ""  "\fLecho\fP mail command"
+Echo the given strings (like
+.BR echo (1V)).
+.TP
+.BR e "dit [\fImessage-list\fP]"
+.IX  "mail commands"  "edit"  "\fLmail\fP commands"  "\fLedit\fP"
+.IX  "edit mail command"  ""  "\fLedit\fP mail command"
+Edit the given messages.
+The messages are placed in a temporary file and the
+.SB EDITOR
+variable is used to get the name of the editor.
+The default editor is
+.BR ex (1).
+.TP
+.BR ex it
+.PD 0
+.TP
+.BR x it
+.IX  "mail commands"  "exit"  "\fLmail\fP commands"  "\fLexit\fP"
+.IX  "exit mail command"  ""  "\fLexit\fP mail command"
+.IX  "mail commands"  "xit"  "\fLmail\fP commands"  "\fLxit\fP"
+.IX  "xit mail command"  ""  "\fLxit\fP mail command"
+Exit from 
+.B mail
+without changing the system mailbox.
+No messages are saved in the 
+.I mbox
+(see also
+.BR q uit).
+.PD
+.HP
+.BR fi le 
+.RI [ filename ]
+.br
+.PD 0
+.TP
+.BR fold "er [\fIfilename\fP]
+.IX  "mail commands"  "file"  "\fLmail\fP commands"  "\fLfile\fP"
+.IX  "file mail command"  ""  "\fLfile\fP mail command"
+.IX  "mail commands"  "folder"  "\fLmail\fP commands"  "\fLfolder\fP"
+.IX  "folder mail command"  ""  "\fLfolder\fP mail command"
+Quit from the current mailbox file and read in the named mailbox
+file.  Several special characters are recognized when used as file 
+names:
+.PD
+.RS
+.RS
+.TP 10
+.B %
+.PD 0
+Your system mailbox.
+.TP
+.BI % user
+The system mailbox for
+.IR user .
+.TP
+.B #
+The previous mail file.
+.TP
+.B &
+Your
+.I mbox
+file (of messages previously read).
+.TP
+.BI + filename
+The named file in the 
+.I folder
+directory (listed in the
+.B folder
+variable).
+.PD
+.RE
+.RE
+.IP
+With no arguments,
+.BR fi le
+prints the name of the current mail file, and the number of messages 
+and characters it contains.
+.TP
+.B folders
+.IX  "mail commands"  "folders"  "\fLmail\fP commands"  "\fLfolders\fP"
+.IX  "folders mail command"  ""  "\fLfolders\fP mail command"
+Print the name of each mail file in the 
+.I folder
+directory (listed in the
+.B folder
+variable).
+.TP
+.BR fo "llowup [\fImessage\fP]"
+.IX  "mail commands"  "followup"  "\fLmail\fP commands"  "\fLfollowup\fP"
+.IX  "followup mail command"  ""  "\fLfollowup\fP mail command"
+Respond to a message, recording the response in a file, name of which 
+is derived from the author of the message (overrides the 
+.B record
+variable, if set).
+See also the
+.BR F ollowup,
+.BR S ave,
+and
+.BR C opy
+commands and the
+.B outfolder
+variable.
+.HP
+.BR F ollowup 
+.RI [ message-list ]
+.br
+.IX  "mail commands"  "followupa"  "\fLmail\fP commands"  "\fLFollowup\fP"
+.IX  "followupa mail command"  ""  "\fLFollowup\fP mail command"
+Respond to the first message in the message list,
+sending the message to the author of each message in the list.
+The subject line is taken from the first message,
+and the response is recorded in a file, the name of which is derived 
+from the author of the first message (overrides the
+.B record
+variable, if set).
+See also the
+.BR fo llowup,
+.BR S ave,
+and
+.BR C opy
+commands and the
+.B outfolder
+variable.
+.TP
+.BR f "rom [\fImessage-list\fP]"
+.IX  "mail commands"  "from"  "\fLmail\fP commands"  "\fLfrom\fP"
+.IX  "from mail command"  ""  "\fLfrom\fP mail command"
+Print the header summary for the indicated messages or the
+current message.
+.TP
+.BR g "roup\fI alias name\fP .\|.\|."
+Same as the 
+.BR a lias
+command.
+.TP
+.BR h "eaders [\fImessage\fP]"
+.IX  "mail commands"  "headers"  "\fLmail\fP commands"  "\fLheaders\fP"
+.IX  "headers mail command"  ""  "\fLheaders\fP mail command"
+Print the page of headers that includes the message specified,
+or the current message.  The 
+.B screen
+variable sets the number of headers per page.
+See also the
+.B z
+command.
+.TP
+.BR hel p
+.IX  "mail commands"  "help"  "\fLmail\fP commands"  "\fLhelp\fP"
+.IX  "help mail command"  ""  "\fLhelp\fP mail command"
+Print a summary of commands.
+.br
+.ne 4
+.HP
+.BR ho ld 
+.RI [ message-list ]
+.br
+.PD 0
+.HP
+.BR pre serve 
+.RI  [ message-list ]
+.br
+.IX  "mail commands"  "hold"  "\fLmail\fP commands"  "\fLhold\fP"
+.IX  "hold mail command"  ""  "\fLhold\fP mail command"
+.IX  "mail commands"  "preserve"  "\fLmail\fP commands"  "\fLpreserve\fP"
+.IX  "preserve mail command"  ""  "\fLpreserve\fP mail command"
+Hold the specified messages in the system mailbox.
+.PD
+.HP
+.BR i f 
+.IR s \||\| r \||\| t
+.br
+.PD 0
+.TP
+.I mail-command
+.TP
+\&.\|.\|.
+.TP
+.BR el se
+.TP
+.I mail-command
+.TP
+\&.\|.\|.
+.TP
+.BR en dif
+.IX  "mail commands"  "if"  "\fLmail\fP commands"  "\fLif\fP"
+.IX  "if mail command"  ""  "\fLif\fP mail command"
+.IX  "mail commands"  "else"  "\fLmail\fP commands"  "\fLelse\fP"
+.IX  "else mail command"  ""  "\fLelse\fP mail command"
+.IX  "mail commands"  "endif"  "\fLmail\fP commands"  "\fLendif\fP"
+.IX  "endif mail command"  ""  "\fLendif\fP mail command"
+Conditional execution, where
+.I s
+will execute following 
+.I mail-command
+up to an
+.BR el se
+or
+.BR en dif,
+if the program is in
+.I send
+mode,
+.I r
+executes the 
+.I mail-command
+only in
+.I receive
+mode, and
+.I t
+executes the 
+.I mail-command
+only if
+.B mail
+is being run from a terminal.  Useful primarily in the 
+.I \&.mailrc
+file.
+.PD
+.HP
+.BR ig nore 
+.RI  [ header-field .\|.\|.\|]
+.br
+Same as the 
+.BR di scard
+command.
+.TP
+.B inc
+.IX  "mail commands"  "inc"  "\fLmail\fP commands"  "\fLinc\fP"
+.IX  "inc mail command"  ""  "\fLinc\fP mail command"
+Incorporate messages that arrive while you are reading the
+system mailbox.  The new messages are added to the message list in the
+current
+.B mail
+session.  This command does not commit changes made during
+the session, and prior messages are not renumbered.
+.TP
+.BR l ist
+.IX  "mail commands"  "list"  "\fLmail\fP commands"  "\fLlist\fP"
+.IX  "list mail command"  ""  "\fLlist\fP mail command"
+Prints all commands available.  No explanation is given.
+.HP
+.BR lo ad
+.RI [ message ]
+.I filename
+.br
+.IX  "mail commands"  "load"  "\fLmail\fP commands"  "\fLload\fP"
+.IX  "load mail command"  ""  "\fLload\fP mail command"
+Load the specified message from the name file.
+.I filename
+should contain a single mail message including mail headers
+(as saved by the
+.BR s ave
+command).
+.TP
+.BR m "ail\fI recipient \fP.\|.\|."
+.IX  "mail commands"  "mail"  "\fLmail\fP commands"  "\fLmail\fP"
+.IX  "mail mail command"  ""  "\fLmail\fP mail command"
+Mail a message to the specified recipients.
+.TP
+.BR mb "ox [\fImessage-list\fP]"
+.IX  "mail commands"  "mbox"  "\fLmail\fP commands"  "\fLmbox\fP"
+.IX  "mbox mail command"  ""  "\fLmbox\fP mail command"
+Arrange for the given messages to end up in the standard 
+.I mbox
+file when 
+.B mail
+terminates normally.
+See also the
+.BR ex it
+and
+.BR q uit
+commands.
+.HP
+.BR ne w
+.RI [ message-list ]
+.br
+.PD 0
+.BR N ew
+.RI [ message-list ]
+.br
+.BR unr ead
+.RI [ message-list ]
+.br
+.HP
+.BR U nread 
+.RI [ message-list ]
+.br
+.IX  "mail commands"  "new"  "\fLmail\fP commands"  "\fLnew\fP"
+.IX  "new mail command"  ""  "\fLnew\fP mail command"
+.IX  "mail commands"  "unread"  "\fLmail\fP commands"  "\fLunread\fP"
+.IX  "unread mail command"  ""  "\fLunread\fP mail command"
+Take a message list and mark each message as
+.I not
+having been read.
+.PD
+.TP
+.BR n "ext\fI message\fP"
+.IX  "mail commands"  "next"  "\fLmail\fP commands"  "\fLnext\fP"
+.IX  "next mail command"  ""  "\fLnext\fP mail command"
+Go to next message matching 
+.IR message .
+A 
+.I message-list
+can be given instead of
+.IR message ,
+but only first valid message in the list is used.  (This can be used, 
+for instance, to jump to the next message from a specific user.)
+.HP
+.BR pi pe 
+.RI [ message-list ]
+.RI [ shell-command ]
+.br
+.PD 0
+.HP
+.B | 
+.RI [ message-list ]
+.RI [ shell-command ]
+.br
+.IX  "mail commands"  "pipe"  "\fLmail\fP commands"  "\fLpipe\fP"
+.IX  "pipe mail command"  ""  "\fLpipe\fP mail command"
+.IX  "mail commands"  "|"  "\fLmail\fP commands"  "\fL|\fP"
+.IX  "| mail command"  ""  "\fL|\fP mail command"
+Pipe the message through 
+.IR shell-command .
+The message is treated marked as read (and normally saved to the
+.I mbox
+file when 
+.B mail 
+exits).  If no arguments are given, the current message is piped 
+through the command specified by the value of the 
+.B cmd 
+variable.  If the 
+.B page
+variable is set, a form feed character is inserted after each message.
+.PD
+.HP
+.BR pre serve 
+.RI [ message-list ]
+.br
+Same as the 
+.BR ho ld
+command.
+.HP
+.BR p rint 
+.RI [ message-list ]
+.br
+.PD 0
+.TP
+.BR t "ype [\fImessage-list\fP]"
+.IX  "mail commands"  "print"  "\fLmail\fP commands"  "\fLprint\fP"
+.IX  "print mail command"  ""  "\fLprint\fP mail command"
+.IX  "mail commands"  "type"  "\fLmail\fP commands"  "\fLtype\fP"
+.IX  "type mail command"  ""  "\fLtype\fP mail command"
+Print the specified messages.  If the 
+.B crt
+variable is set, messages longer than the number of lines it indicates
+paged through the command specified by the
+.SB PAGER
+variable.  The default paging command is
+.BR more (1).
+.PD
+.HP
+.BR P rint 
+.RI [ message-list ]
+.br
+.PD 0
+.TP
+.BR T "ype [\fImessage-list\fP]"
+.IX  "mail commands"  "printa"  "\fLmail\fP commands"  "\fLPrint\fP"
+.IX  "printa mail command"  ""  "\fLPrint\fP mail command"
+.IX  "mail commands"  "typea"  "\fLmail\fP commands"  "\fLType\fP"
+.IX  "typea mail command"  ""  "\fLType\fP mail command"
+Print the specified messages on the screen, including all header fields.
+Overrides suppression of fields by the
+.BR ig nore
+and
+.BR ret ain
+commands.
+.PD
+.TP
+.BR q uit
+.IX  "mail commands"  "quit"  "\fLmail\fP commands"  "\fLquit\fP"
+.IX  "quit mail command"  ""  "\fLquit\fP mail command"
+Exit from 
+.B mail
+storing messages that were read in the
+.I mbox
+file and unread messages in the system mailbox.
+Messages that have been explicitly saved in a file are deleted
+unless the variable
+.B keepsave
+is set.
+.HP
+.BR r eply 
+.RI  [ message-list ]
+.br
+.PD 0
+.HP
+.BR r espond 
+.RI  [ message-list ]
+.br
+.HP
+.BR replys ender 
+.RI  [ message-list ]
+.br
+.IX  "mail commands"  "reply"  "\fLmail\fP commands"  "\fLreply\fP"
+.IX  "reply mail command"  ""  "\fLreply\fP mail command"
+.IX  "mail commands"  "respond"  "\fLmail\fP commands"  "\fLrespond\fP"
+.IX  "respond mail command"  ""  "\fLrespond\fP mail command"
+.IX  "mail commands"  "replysender"  "\fLmail\fP commands"  "\fLreplysender\fP"
+.IX  "replysender mail command"  ""  "\fLreplysender\fP mail command"
+Send a response to the author of each message in the 
+.IR message-list .
+The subject line is taken from the first message.  If 
+.B record
+is set to a filename, a copy of the
+reply is added to that file.
+If the 
+.B replyall
+variable is set, the actions of
+.BR R eply/ R espond
+and
+.BR r eply/ r espond
+are reversed.
+The
+.BR replys ender
+command is not 
+affected by the 
+.B replyall
+variable, but sends each reply only to the sender of each
+message.
+.PD
+.HP
+.BR R eply 
+.RI [ message ]
+.br
+.PD 0
+.HP
+.BR R espond 
+.RI [ message ]
+.br
+.TP
+.BR replya "ll [\fImessage\fP]"
+.IX  "mail commands"  "replya"  "\fLmail\fP commands"  "\fLReply\fP"
+.IX  "replya mail command"  ""  "\fLReply\fP mail command"
+.IX  "mail commands"  "responda"  "\fLmail\fP commands"  "\fLRespond\fP"
+.IX  "responda mail command"  ""  "\fLRespond\fP mail command"
+.IX  "mail commands"  "replyalla"  "\fLmail\fP commands"  "\fLReplyall\fP"
+.IX  "replyalla mail command"  ""  "\fLReplyall\fP mail command"
+Reply to the specified message, including all other recipients of that
+message.  If the variable
+.B record
+is set to a filename, a copy of the reply added to that file.
+If the 
+.B replyall
+variable is set, the actions of
+.BR R eply/ R espond
+and
+.BR r eply/ r espond
+are reversed.  The
+.BR replya ll
+command is not affected by the 
+.B replyall
+variable, but always sends the reply to all recipients of the
+message.
+.PD
+.TP
+.BR ret ain
+Add the list of header fields named to the
+.IR "retained list" .
+Only the header fields in the retain list
+are shown on your terminal when you print a message.
+All other header fields are suppressed.  The set of retained fields
+specified by the
+.BR ret ain
+command overrides any list of ignored fields specified by the
+.BR ig nore
+command.
+The
+.BR T ype
+and
+.BR P rint
+commands can be used to print a message in its entirety.
+If
+.BR ret ain
+is executed with no arguments, it lists the current set of
+retained fields.
+.HP
+.BR s ave 
+.RI [ message-list ]
+.RI [ filename ]
+.br
+.IX  "mail commands"  "save"  "\fLmail\fP commands"  "\fLsave\fP"
+.IX  "save mail command"  ""  "\fLsave\fP mail command"
+Save the specified messages in the named file.
+The file is created if it does not exist.  If no
+.I filename
+is specified, the file named in the
+.SB MBOX
+variable is used, 
+.B mbox
+in your home directory by default.
+Each saved message is deleted from the system mailbox when
+.B mail
+terminates unless the
+.B keepsave
+variable is set.
+See also the
+.BR ex it
+and
+.BR q uit
+commands.
+.TP
+.BR S "ave [\fImessage-list\fP]"
+.IX  "mail commands"  "savea"  "\fLmail\fP commands"  "\fLSave\fP"
+.IX  "save mail command"  ""  "\fLSave\fP mail command"
+Save the specified messages in a file whose name is derived from
+the author of the first message.
+The name of the file is taken from the author's name, with all
+network addressing stripped off.  See also the
+.BR C opy,
+.BR fo llowup,
+and
+.BR F ollowup
+commands and the
+.B outfolder
+variables.
+.HP
+.BR se t
+.RI [ variable [\c
+.BI = value \fR]\|]
+.br
+.IX  "mail commands"  "set"  "\fLmail\fP commands"  "\fLset\fP"
+.IX  "set mail command"  ""  "\fLset\fP mail command"
+Define a 
+.IR variable .
+To assign a 
+.I value 
+to
+.IR variable ,
+separate the variable name from the value by an
+.RB ` = '
+(there must be no space before or after the
+.RB ` = ').
+A variable may be given a null, string, or numeric 
+.IR value .
+To embed
+.SM SPACE
+characters within a
+.I value
+enclose it in quotes.
+.IP
+With no arguments,
+.BR se t
+displays all defined variables and any values they might have.
+See 
+.B Variables
+for a description of all predefined
+.B mail
+variables.
+.TP
+.BR sh ell
+.IX  "mail commands"  "shell"  "\fLmail\fP commands"  "\fLshell\fP"
+.IX  "shell mail command"  ""  "\fLshell\fP mail command"
+Invoke the interactive shell listed in the
+.SB SHELL
+variable.
+.TP
+.BR si "ze [\fImessage-list\fP]"
+.IX  "mail commands"  "size"  "\fLmail\fP commands"  "\fLsize\fP"
+.IX  "size mail command"  ""  "\fLsize\fP mail command"
+Print the size in characters of the specified messages.
+.TP
+.BR so "urce\fI filename\fP"
+.IX  "mail commands"  "source"  "\fLmail\fP commands"  "\fLsource\fP"
+.IX  "source mail command"  ""  "\fLsource\fP mail command"
+Read commands from the given file and return to command mode.
+.TP
+.BR to "p [\fImessage-list\fP]"
+.IX  "mail commands"  "top"  "\fLmail\fP commands"  "\fLtop\fP"
+.IX  "top mail command"  ""  "\fLtop\fP mail command"
+Print the top few lines of the specified messages.
+If the 
+.B toplines
+variable is set, it is taken as the number of lines to print.
+The default number is 5.
+.TP
+.BR tou "ch [\fImessage-list\fP]"
+.IX  "mail commands"  "touch"  "\fLmail\fP commands"  "\fLtouch\fP"
+.IX  "touch mail command"  ""  "\fLtouch\fP mail command"
+Touch the specified messages.  If any message in 
+.I message-list
+is not specifically saved in a file, it will be placed in the 
+.I mbox
+upon normal termination.  See also the
+.BR ex it
+and
+.BR q uit
+commands.
+.TP
+.BR t "ype [\fImessage-list\fP]"
+Same as the
+.BR p rint 
+command.
+.TP
+.BR T "ype [\fImessage-list\fP]"
+Same as the 
+.BR P rint
+command.
+.HP
+.BR u ndelete 
+.RI [ message-list ]
+.br
+.IX  "mail commands"  "undelete"  "\fLmail\fP commands"  "\fLundelete\fP"
+.IX  "undelete mail command"  ""  "\fLundelete\fP mail command"
+Restore deleted messages.  This command
+only restores messages 
+.I
+deleted in the current mail session.
+If the 
+.B autoprint
+variable is set, the last message restored is printed.
+.HP
+.BR unr ead
+.RI [ message-list ]
+.br
+.PD 0
+.HP
+.BR U nread 
+.RI [ message-list ]
+.br
+Same as the 
+.BR ne w
+command.
+.TP
+.BR uns "et \fIvariable \fP.\|.\|."
+.IX  "mail commands"  "unset"  "\fLmail\fP commands"  "\fLunset\fP"
+.IX  "unset mail command"  ""  "\fLunset\fP mail command"
+Erase the specified variables.
+If the variable was imported from the environment (that is, an
+environment variable or exported shell variable), it cannot be 
+unset from within
+.BR mail .
+.PD
+.TP
+.BR ve rsion
+.IX  "mail commands"  "version"  "\fLmail\fP commands"  "\fLversion\fP"
+.IX  "version mail command"  ""  "\fLversion\fP mail command"
+Print the current version and release date of the
+.B mail
+utility.
+.TP
+.BR v "isual [\fImessage-list\fP]"
+.IX  "mail commands"  "visual"  "\fLmail\fP commands"  "\fLvisual\fP"
+.IX  "visual mail command"  ""  "\fLvisual\fP mail command"
+Edit the given messages with the screen editor listed in the
+.SB VISUAL
+variable.  The default screen editor is
+.BR vi (1).
+Each message is placed in a temporary file for editing.
+.HP
+.BR w rite 
+.RI  [ message-list ]
+.RI [ filename ]
+.br
+.IX  "mail commands"  "write"  "\fLmail\fP commands"  "\fLwrite\fP"
+.IX  "write mail command"  ""  "\fLwrite\fP mail command"
+Write the given messages onto the specified file, but without the header
+and trailing blank line.  Otherwise, this is  equivalent to the
+.BR s ave
+command.
+.TP
+.BR x it
+Same as the
+.BR ex it
+command.
+.TP
+.BR z [\| + \||\| \- \|]
+.IX  "mail commands"  "z"  "\fLmail\fP commands"  "\fLz\fP"
+.IX  "z mail command"  ""  "\fLz\fP mail command"
+Scroll the header display forward 
+.RB ( + )
+or backward 
+.RB ( \- )
+one screenfull.  The number of headers displayed is set by the 
+.B screen
+variable.
+.IX  "mail commands"  ""  "\fLmail\fP commands"  ""  PAGE END
+.SS Forwarding Messages
+.IX "forwarding mail"
+.IX "mail forwarding messages" "" "\fLmail\fR, forwarding messages"
+.IX "forward" "" "\fL.forward\fR file"
+.LP
+To forward a specific message, include it in a message to the
+desired recipients with the
+.B \(apf
+or
+.B \(apm
+tilde escapes. 
+To forward mail automatically, add a comma-separated list of addresses
+for additional recipients to the 
+.B \&.forward
+file in your home directory.  This is different from the format
+of the
+.B alias
+command, which takes a space-separated list instead.
+Note: forwarding addresses must be valid (as described in
+.BR aliases (5)),
+or the messages will \*(lqbounce.\*(rq  You cannot, for
+instance, reroute your mail to a new host by forwarding it to your
+new address if it is not yet listed in the
+.SM NIS
+aliases domain.
+.SS Variables
+.IX  "mail variables"  ""  "\fLmail\fP variables"  "\fL\fP"  PAGE START
+.IX  "environment variables in mail"  ""  "environment variables in \fLmail\fP"  ""  PAGE START
+.LP
+The behavior of 
+.B mail
+is governed by a set of predefined variables
+that are set and cleared using the
+.BR se t
+and
+.BR uns et
+commands.  
+.SS "\fIEnvironment Variables\fR"
+Values for the following variables are read in 
+automatically from the environment; they cannot be altered from within
+.BR mail :
+.HP 14
+.SB HOME\c
+.BI = directory
+.br
+.IX  "mail environment variables"  "HOME"  "\fLmail\fP environment variables"  "\fLHOME\fP"
+.IX  "HOME mail environment variable"  ""  "\fLHOME\fP mail environment variable"
+The user's home directory.
+.HP
+.SB MAIL\c
+.BI = filename
+.br
+.IX  "mail environment variables"  "MAIL"  "\fLmail\fP environment variables"  "\fLMAIL\fP"
+.IX  "MAIL mail environment variable"  ""  "\fLMAIL\fP mail environment variable"
+The name of the initial mailbox file to read (in lieu of the
+standard system mailbox).  The default is 
+.BR /var/spool/mail/\fIusername\|\fR.
+.HP
+.SB MAILRC\c
+.BI = filename
+.br
+.IX  "mail environment variables"  "MAILRC"  "\fLmail\fP environment variables"  "\fLMAILRC\fP"
+.IX  "MAILRC mail environment variable"  ""  "\fLMAILRC\fP mail environment variable"
+The name of the personal start-up file.  The
+default is 
+.BR $\s-1HOME\s0/.mailrc .
+.br
+.ne 6
+.SS "\fIMail Variables"
+.LP
+The following variables can be initialized within the
+.I \&.mailrc
+file, or set and altered interactively using the
+.BR se t
+command.  
+They can also be imported from the environment (in which
+case their values cannot be changed within
+.BR mail ).
+The
+.BR uns et
+command clears variables. The set command can also be used to
+clear a variable by prefixing the word
+.B no
+to the name of the variable to clear.
+.LP
+Variables for which values are normally supplied are indicated
+with an equal-sign
+.RB ( = ).  
+The equal-sign is required by the 
+.BR se t 
+command, and there can be no spaces between the variable-name,
+equal-sign, and value, using
+.B set
+to assign a value.
+.TP 14
+.B allnet
+.IX  "mail variables"  "allnet"  "\fLmail\fP variables"  "\fLallnet\fP"
+.IX  "allnet mail variable"  ""  "\fLallnet\fP mail variable"
+All network names whose last component (login name) match are treated as
+identical.
+This causes the message list specifications to behave similarly.
+Default is
+.BR noallnet .
+See also the
+.BR alt ernates
+command and the 
+.B metoo
+variable.
+.TP
+.B alwaysignore
+.IX  "mail variables"  "alwaysignore"  "\fLmail\fP variables"  "\fLalwaysignore\fP"
+.IX  "alwaysignore mail variable"  ""  "\fLalwaysignore\fP mail variable"
+Ignore header fields with
+.BR ig nore
+everywhere, not just during
+.BR p rint
+or
+.BR t ype.
+Affects the
+.BR s ave,
+.BR S ave,
+.BR c opy,
+.BR C opy,
+.BR to p,
+.BR pi pe,
+and
+.BR w rite
+commands, and the
+.B \(apm
+and
+.B \(apf
+tilde escapes.
+.TP
+.B append
+.IX  "mail variables"  "append"  "\fLmail\fP variables"  "\fLappend\fP"
+.IX  "append mail variable"  ""  "\fLappend\fP mail variable"
+Upon termination, append messages to the end of the 
+.I mbox
+file instead of prepending them.
+Default is
+.B noappend
+but
+.B append
+is set in the global start-up file (which can be suppressed with the
+.B \-n
+command line option).
+.TP
+.B askcc
+.IX  "mail variables"  "askcc"  "\fLmail\fP variables"  "\fLaskcc\fP"
+.IX  "askcc mail variable"  ""  "\fLaskcc\fP mail variable"
+Prompt for the
+.B Cc
+list after message is entered.
+Default is
+.BR noaskcc .
+.TP
+.B asksub
+.IX  "mail variables"  "asksub"  "\fLmail\fP variables"  "\fLasksub\fP"
+.IX  "asksub mail variable"  ""  "\fLasksub\fP mail variable"
+Prompt for subject if it is not specified on the command line
+with the
+.B \-s
+option.
+Enabled by default.
+.TP
+.B autoprint
+.IX  "mail variables"  "autoprint"  "\fLmail\fP variables"  "\fLautoprint\fP"
+.IX  "autoprint mail variable"  ""  "\fLautoprint\fP mail variable"
+Enable automatic printing of messages after
+.BR d elete
+and
+.BR u ndelete
+commands.
+Default is
+.BR noautoprint .
+.TP
+.B bang
+.IX  "mail variables"  "bang"  "\fLmail\fP variables"  "\fLbang\fP"
+.IX  "bang mail variable"  ""  "\fLbang\fP mail variable"
+Enable the special-casing of exclamation points (!) in shell escape
+command lines
+as in
+.BR vi (1).
+Default is
+.BR nobang .
+.TP
+.BI cmd= shell-command
+.IX  "mail variables"  "cmd"  "\fLmail\fP variables"  "\fLcmd\fP"
+.IX  "cmd mail variable"  ""  "\fLcmd\fP mail variable"
+Set the default command for the
+.BR pi pe
+command.
+No default value.
+.TP
+.BI conv= conversion
+.IX  "mail variables"  "conv"  "\fLmail\fP variables"  "\fLconv\fP"
+.IX  "conv mail variable"  ""  "\fLconv\fP mail variable"
+Convert
+.B uucp
+addresses to the address style specified by
+.IR conversion ,
+which can be either:
+.RS
+.TP
+.B internet 
+This requires a mail delivery program conforming to the
+.SM RFC\s0822
+standard for electronic mail addressing.
+.TP
+.B optimize
+Remove loops in 
+.BR uucp (1C)
+address paths (typically generated by the
+.BR r eply
+command).  No rerouting is performed;
+.B mail
+has no knowledge of 
+.SM UUCP
+routes or connections.
+.RE
+.IP
+Conversion is disabled by default.  See also 
+.BR sendmail (8)
+and the
+.B \-U
+command line option.
+.TP
+.BI crt= number
+.IX  "mail variables"  "crt"  "\fLmail\fP variables"  "\fLcrt\fP"
+.IX  "crt mail variable"  ""  "\fLcrt\fP mail variable"
+Pipe messages having more than \fInumber\fR lines
+through the command specified by the value of the 
+.SB PAGER
+variable
+.RI ( more
+by default).
+Disabled by default.
+.HP
+.SB DEAD\c 
+.BI = filename
+.br
+.IX  "mail variables"  "DEAD"  "\fLmail\fP variables"  "\fLDEAD\fP"
+.IX  "DEAD mail variable"  ""  "\fLDEAD\fP mail variable"
+The name of the file in which to save partial letters
+in case of untimely interrupt or delivery errors.
+Default is the file
+.B dead.letter
+in your home directory.
+.TP
+.B debug
+.IX  "mail variables"  "debug"  "\fLmail\fP variables"  "\fLdebug\fP"
+.IX  "debug mail variable"  ""  "\fLdebug\fP mail variable"
+Enable verbose diagnostics for debugging.
+Messages are not delivered.
+Default is
+.BR nodebug .
+.br
+.ne 4
+.TP
+.B dot
+.IX  "mail variables"  "dot"  "\fLmail\fP variables"  "\fLdot\fP"
+.IX  "dot mail variable"  ""  "\fLdot\fP mail variable"
+Take a period on a line by itself during input from a terminal as
+.SM EOF\s0.
+Default is
+.B nodot
+but
+.B dot
+is set in the global start-up file (which can be suppressed with the
+.B \-n
+command line option).
+.IX "mail variables" "editheaders" "\fLmail\fP variables" "\fLeditheaders\fP"
+.IX "editheaders mail variable" "" "\fLeditheaders\fP mail variable" ""
+.TP
+.B editheaders
+Include message headers in the text to be edited by the
+.B ~e
+and
+.B ~v
+commands.
+.HP
+.SB EDITOR\c
+.BI = shell-command
+.br
+.IX  "mail variables"  "EDITOR"  "\fLmail\fP variables"  "\fLEDITOR\fP"
+.IX  "EDITOR mail variable"  ""  "\fLEDITOR\fP mail variable"
+The command to run when the
+.BR e dit
+or
+.B \(ape
+command is used.
+Default is
+.BR ex (1).
+.TP
+.BI escape= c
+.IX  "mail variables"  "escape"  "\fLmail\fP variables"  "\fLescape\fP"
+.IX  "escape mail variable"  ""  "\fLescape\fP mail variable"
+Substitute
+.I c
+for the \(ap escape character.
+.TP
+.BI folder= directory
+.IX  "mail variables"  "folder"  "\fLmail\fP variables"  "\fLfolder\fP"
+.IX  "folder mail variable"  ""  "\fLfolder\fP mail variable"
+The directory for saving standard mail files.
+User specified file names beginning with a plus
+.RB ( + )
+are expanded by preceding the filename with
+this directory name to obtain the real filename.
+If 
+.I directory
+does not start with a slash 
+.RB ( / ),
+the value of 
+.SB HOME 
+is prepended to it.  There is no default for the 
+.B folder
+variable.
+See also 
+.B outfolder
+below.
+.TP
+.B header
+.IX  "mail variables"  "header"  "\fLmail\fP variables"  "\fLheader\fP"
+.IX  "header mail variable"  ""  "\fLheader\fP mail variable"
+Enable printing of the header summary when entering 
+.BR mail .
+Enabled by default.
+.TP
+.B hold
+.IX  "mail variables"  "hold"  "\fLmail\fP variables"  "\fLhold\fP"
+.IX  "hold mail variable"  ""  "\fLhold\fP mail variable"
+Preserve all messages that are read in
+the system mailbox instead of putting them
+in the standard 
+.I mbox
+save file.
+Default is
+.BR nohold
+for
+.BR mail
+and 
+.B hold
+for
+.BR mailtool (1).
+.TP
+.B ignore
+.IX  "mail variables"  "ignore"  "\fLmail\fP variables"  "\fLignore\fP"
+.IX  "ignore mail variable"  ""  "\fLignore\fP mail variable"
+Ignore interrupts while entering messages.
+Handy for noisy dial-up lines.
+Default is
+.BR noignore .
+.TP
+.B ignoreeof
+.IX  "mail variables"  "ignoreeof"  "\fLmail\fP variables"  "\fLignoreeof\fP"
+.IX  "ignoreeof mail variable"  ""  "\fLignoreeof\fP mail variable"
+Ignore
+.SM EOF
+during message input.
+Input must be terminated by a period
+.RB (` . ')
+on a line by itself
+or by the
+.RB ` \(ap. '
+command.
+Default is
+.BR noignoreeof .
+See also 
+.B dot
+above.
+.TP
+.BI indentprefix= string
+.IX  "mail variables"  "indentprefix"  "\fLmail\fP variables"  "\fLindentprefix\fP"
+.IX  "indentprefix mail variable"  ""  "\fLindentprefix\fP mail variable"
+When 
+.B indentprefix
+is set,
+.I string
+is used to mark indented lines from messages included with
+.BR \(apm .
+The default is a
+.SM TAB
+character.
+.TP
+.B keep
+.IX  "mail variables"  "keep"  "\fLmail\fP variables"  "\fLkeep\fP"
+.IX  "keep mail variable"  ""  "\fLkeep\fP mail variable"
+When the system mailbox is empty,
+truncate it to zero length instead of removing it.
+Disabled by default.
+.TP
+.B keepsave
+.IX  "mail variables"  "keepsave"  "\fLmail\fP variables"  "\fLkeepsave\fP"
+.IX  "keepsave mail variable"  ""  "\fLkeepsave\fP mail variable"
+Keep messages that have been saved in other files in the system
+mailbox instead of deleting them.
+Default is
+.BR nokeepsave .
+.HP
+.SB LISTER\c
+.BI = shell-command
+.br
+.IX  "mail variables"  "LISTER"  "\fLmail\fP variables"  "\fLLISTER\fP"
+.IX  "LISTER mail variable"  ""  "\fLLISTER\fP mail variable"
+The command (and options) to use when listing the files in the 
+.B folder
+directory.  The default is
+.BR ls (1V).
+.HP
+.SB MBOX\c
+.BI = filename
+.br
+.IX  "mail variables"  "MBOX"  "\fLmail\fP variables"  "\fLMBOX\fP"
+.IX  "MBOX mail variable"  ""  "\fLMBOX\fP mail variable"
+The name of the file to save messages which have been read.
+The
+.BR x it
+command overrides this variable,
+as does saving the message explicitly to another file.
+Default is the file
+.B mbox
+in your home directory.
+.TP
+.B metoo
+.IX  "mail variables"  "metoo"  "\fLmail\fP variables"  "\fLmetoo\fP"
+.IX  "metoo mail variable"  ""  "\fLmetoo\fP mail variable"
+If your login appears as a recipient,
+do not delete it from the list.
+Default is
+.BR nometoo .
+.TP
+.B no
+.IX  "mail variables"  "no"  "\fLmail\fP variables"  "\fLno\fP"
+.IX  "no mail variable"  ""  "\fLno\fP mail variable"
+When used as a prefix to a variable name, has the effect of
+unsetting the variable.
+.TP
+.B onehop
+.IX  "mail variables"  "onehop"  "\fLmail\fP variables"  "\fLonehop\fP"
+.IX  "onehop mail variable"  ""  "\fLonehop\fP mail variable"
+When responding to a message that was originally sent to several
+recipients,
+the other recipient addresses are normally forced to be relative to the
+originating author's machine for the response.
+This flag disables alteration of the recipients' addresses,
+improving efficiency in a network where all machines can send directly
+to all other machines (that is, one \*(lqhop\*(rq away).
+.br
+.ne 4
+.TP
+.B outfolder
+.IX  "mail variables"  "outfolder"  "\fLmail\fP variables"  "\fLoutfolder\fP"
+.IX  "outfolder mail variable"  ""  "\fLoutfolder\fP mail variable"
+Locate the files used to record outgoing messages
+in the directory specified by the 
+.B folder
+variable unless the
+pathname is absolute.  Default is
+.BR nooutfolder .
+See 
+.B folder
+above and the
+.BR S ave,
+.BR C opy,
+.BR fo llowup,
+and
+.BR F ollowup
+commands.
+.br
+.ne 3
+.TP
+.B page
+.IX  "mail variables"  "page"  "\fLmail\fP variables"  "\fLpage\fP"
+.IX  "page mail variable"  ""  "\fLpage\fP mail variable"
+Used with the
+.BR pi pe
+command to insert a form feed after each message sent through the pipe.
+Default is
+.BR nopage .
+.HP
+.SB PAGER\c
+.BI = shell-command
+.br
+.IX  "mail variables"  "PAGER"  "\fLmail\fP variables"  "\fLPAGER\fP"
+.IX  "PAGER mail variable"  ""  "\fLPAGER\fP mail variable"
+The command to use as a filter for paginating output, along
+with any options to be used.
+Default is
+.BR more (1).
+.TP
+.BI prompt= string
+.IX  "mail variables"  "prompt"  "\fLmail\fP variables"  "\fLprompt\fP"
+.IX  "prompt mail variable"  ""  "\fLprompt\fP mail variable"
+Set the
+.I command mode
+prompt to 
+.IR string .
+Default is 
+.RB ` & '.
+.br
+.ne 3
+.TP
+.B quiet
+.IX  "mail variables"  "quiet"  "\fLmail\fP variables"  "\fLquiet\fP"
+.IX  "quiet mail variable"  ""  "\fLquiet\fP mail variable"
+Refrain from printing the opening message and version when entering 
+.BR mail .
+Default is
+.BR noquiet .
+.TP
+.BI record= filename
+.IX  "mail variables"  "record"  "\fLmail\fP variables"  "\fLrecord\fP"
+.IX  "record mail variable"  ""  "\fLrecord\fP mail variable"
+Record all outgoing mail in 
+.IR filename .
+Disabled by default.
+See also the variable
+.BR outfolder .
+.TP
+.B replyall
+.IX  "mail variables"  "replyall"  "\fLmail\fP variables"  "\fLreplyall\fP"
+.IX  "replyall mail variable"  ""  "\fLreplyall\fP mail variable"
+Reverse the effect of the
+.BR r eply
+and
+.BR R eply
+commands.
+.TP
+.B save
+.IX  "mail variables"  "save"  "\fLmail\fP variables"  "\fLsave\fP"
+.IX  "save mail variable"  ""  "\fLsave\fP mail variable"
+Enable saving of messages in the 
+.I dead.letter
+file on interrupt or delivery error.
+See 
+.SB DEAD
+for a description of this file.  Enabled by default.
+.TP
+.BI screen= number
+Set the number of lines in a screen\-full of headers for the
+.BR h eaders
+command.
+.TP
+.BI sendmail= shell-command
+.IX  "mail variables"  "sendmail"  "\fLmail\fP variables"  "\fLsendmail\fP"
+.IX  "sendmail mail variable"  ""  "\fLsendmail\fP mail variable"
+Alternate command for delivering messages.  Note:
+in addition to the expected list of recipients,
+.B mail
+also passes the
+.BR \-i
+and
+.BR \-m ,
+flags to the command.  Since these flags are not appropriate to
+other commands, you may have to use a shell script that strips them
+from the arguments list before invoking the desired command.
+.TP
+.B sendwait
+.IX  "mail variables"  "sendwait"  "\fLmail\fP variables"  "\fLsendwait\fP"
+.IX  "sendwait mail variable"  ""  "\fLsendwait\fP mail variable"
+Wait for background mailer to finish before returning.
+Default is
+.BR nosendwait .
+.HP
+.SB SHELL\c
+.BI = shell-command
+.br
+.IX  "mail variables"  "SHELL"  "\fLmail\fP variables"  "\fLSHELL\fP"
+.IX  "SHELL mail variable"  ""  "\fLSHELL\fP mail variable"
+The name of a preferred command interpreter.
+Typically inherited from the environment, the shell is normally
+the one you always use.  Otherwise defaults to 
+.BR sh (1).
+.TP
+.B showto
+.IX  "mail variables"  "showto"  "\fLmail\fP variables"  "\fLshowto\fP"
+.IX  "showto mail variable"  ""  "\fLshowto\fP mail variable"
+When displaying the header summary and the message is from you,
+print the recipient's name instead of the author's name.
+.TP
+.BI sign= autograph
+.IX  "mail variables"  "sign"  "\fLmail\fP variables"  "\fLsign\fP"
+.IX  "sign mail variable"  ""  "\fLsign\fP mail variable"
+The 
+.I autograph
+text inserted into the message when the
+.B \(apa
+(autograph) command is given.
+No default
+(see also the
+.B \(api
+tilde escape).
+.TP
+.BI Sign= autograph
+.IX  "mail variables"  "sign"  "\fLmail\fP variables"  "\fLSign\fP"
+.IX  "sign mail variable"  ""  "\fLSign\fP mail variable"
+The 
+.I autograph 
+text inserted into the message when the
+.B \(apA
+command is given.  No default (see also the
+.B \(api
+tilde escape).
+.TP
+.BI toplines= number
+.IX  "mail variables"  "toplines"  "\fLmail\fP variables"  "\fLtoplines\fP"
+.IX  "toplines mail variable"  ""  "\fLtoplines\fP mail variable"
+The number of lines of header to print with the
+.BR to p
+command.  Default is 5.
+.TP
+.B verbose
+.IX  "mail variables"  "verbose"  "\fLmail\fP variables"  "\fLverbose\fP"
+.IX  "verbose mail variable"  ""  "\fLverbose\fP mail variable"
+Invoke
+.B sendmail
+with the
+.B \-v
+flag.
+.HP
+.SB VISUAL\c
+.BI = shell-command
+.br
+.IX  "mail variables"  "VISUAL"  "\fLmail\fP variables"  "\fLVISUAL\fP"
+.IX  "VISUAL mail variable"  ""  "\fLVISUAL\fP mail variable"
+The name of a preferred screen editor.  Default is
+.BR vi .
+.IX  "mail variables"  ""  "\fLmail\fP variables"  "\fL\fP"  PAGE END
+.IX  "environment variables in mail"  ""  "environment variables in \fLmail\fP"  ""  PAGE END
+.IX  "environment variables in mail"  ""  "environment variables in \fLmail\fP"  ""  PRINT "see also \fLmail\fP environment variables"
+.SH FILES
+.PD 0
+.TP 20
+.BI $\s-1HOME\s0/ .mailrc
+personal start-up file
+.TP 
+.BI $\s-1HOME\s0/ .forward
+list of recipients for automatic forwarding of messages
+.TP
+.BI $\s-1HOME\s0/ mbox
+secondary storage file
+.TP 
+.BI $\s-1HOME\s0/ dead.letter
+undeliverable messages file
+.TP 
+.B /var/spool/mail
+directory for system mailboxes
+.TP
+.B /usr/lib/Mail.help*
+help message files
+.TP
+.B /usr/lib/Mail.rc
+global start-up file
+.TP
+.B /tmp/R[emqsx]*
+temporary files
+.PD
+.br
+.ne 6
+.SH SEE ALSO
+.BR biff (1),
+.BR bin-mail (1),
+.BR echo (1V),
+.BR ex (1),
+.BR fmt (1),
+.BR ls (1V),
+.BR mailtool (1),
+.BR more (1),
+.BR sh (1),
+.BR uucp (1C),
+.BR vacation (1),
+.BR vi (1),
+.BR aliases (5),
+.BR newaliases (8),
+.BR sendmail (8)
+.LP
+.TX GSBG
+.LP
+.B mail 
+is found in 
+.BR /usr/ucb/Mail , 
+as a link to 
+.BR /usr/ucb/mail .
+If you wish to use the original
+(version 7)
+.SM UNIX
+mail program, you can find it in 
+.BR /usr/bin/mail .  
+Its man page is named
+.BR bin-mail (1).
+.SH BUGS
+.LP
+Where 
+.I shell-command
+is shown as valid, arguments are not always allowed.
+Experimentation is recommended.
+.LP
+Internal variables imported from the execution environment cannot be
+.BR uns et.
+.LP
+Replies do not always generate correct return addresses.  Try
+resending the errant reply with
+.B onehop
+set.
+.LP
+.B mail 
+does not lock your record file.  So, if you use a record file
+and send two or more messages simultaneously, lines from the
+messages may be interleaved in the record file.
+.LP
+The format for the
+.B alias
+command is a space-separated list of recipients, while the
+format for an alias in either the 
+.B \&.forward
+or
+.B /etc/aliases
+is a comma-separated list.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+.IX  "mail command"  ""  "\fLmail\fP \(em send and receive mail"  ""  PAGE END
+.IX  "send and receive mail"  ""  "send and receive mail \(em \fLmail\fP"  ""  PAGE END
+.IX  "read mail"  ""  "read mail \(em \fLmail\fP"  ""  PAGE END
+.IX  communications  mail  ""  "\fLmail\fP \(em send and receive mail"  PAGE END

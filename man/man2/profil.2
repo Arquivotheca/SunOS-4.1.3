@@ -1,0 +1,65 @@
+.\" @(#)profil.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH PROFIL 2 "21 January 1990"
+.SH NAME
+profil \- execution time profile
+.SH SYNOPSIS
+.nf
+.ft B
+int profil(buf, bufsiz, offset, scale)
+short *buf;
+int bufsiz;
+void (*offset)();
+int scale;
+.ft
+.fi
+.IX  profil()  ""  \fLprofil()\fP
+.IX  "timing and statistics"  profil()  ""  \fLprofil()\fP
+.IX  statistics  profil()  ""  \fLprofil()\fP
+.SH DESCRIPTION
+.LP
+.B profil(\|)
+enables run-time execution profiling, and
+reserves a buffer for maintaining raw profiling statistics.
+.I buf
+points to an area of core of length
+.IR bufsiz
+(in bytes).
+After the call to
+.BR profil(\|) ,
+the user's program counter (pc) is examined at each clock tick
+(10 milliseconds on Sun-4 systems, 20 milliseconds on Sun-3 systems);
+.I offset
+is subtracted from its value, and the result multiplied by
+.IR scale .
+If the resulting number corresponds to a word within the buffer,
+that word is incremented.
+.LP
+.I scale
+is interpreted as an unsigned, fixed-point fraction with binary point
+at the left: 0xffff gives a 1-to-1 mapping of pc values to words in
+.IR buf ;
+0x7fff maps each pair of instruction words together.
+0x2 maps all instructions onto the beginning of
+.I buf
+(producing a non-interrupting core clock).
+.LP
+Profiling is turned off by giving a
+.I scale
+of 0 or 1.  It is rendered ineffective by giving a
+.I bufsiz
+of 0.  Profiling is turned off when an
+.B execve(\|)
+is executed, but remains on in child and parent both after a
+.BR fork(\|) .
+Profiling is turned off if an update in
+.I buf
+would cause a memory fault.
+.SH RETURN VALUES
+.LP
+.B profil(\|)
+always succeeds and
+returns 0.
+.SH "SEE ALSO"
+.BR gprof (1),
+.BR getitimer (2),
+.BR monitor (3)

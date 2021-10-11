@@ -1,0 +1,440 @@
+'\" t
+.\" @(#)execve.2v 1.1 92/07/30 SMI; from UCB 4.3
+.\"
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH EXECVE 2V "21 January 1990"
+.SH NAME
+execve \- execute a file
+.SH SYNOPSIS
+.ft B
+.nf
+int execve(path, argv, envp)
+char *path, *argv[\|], *envp[\|];
+.fi
+.IX  execve()  ""  \fLexecve()\fP
+.IX  "processes and protection"  execve()  ""  \fLexecve()\fP
+.IX  file  execute
+.IX  "execute file"
+.SH DESCRIPTION
+.LP
+.B execve(\|)
+transforms the calling process into a new process.
+The new process is constructed from an ordinary file,
+whose name is pointed to by
+.IR path ,
+called the
+.IR "new process file" .
+This file is either an executable object file,
+or a file of data for an interpreter.
+An executable object file consists of an identifying header,
+followed by pages of data representing the initial program (text)
+and initialized data pages.  Additional pages may be specified
+by the header to be initialized with zero data.  See
+.BR a.out (5).
+.LP
+An interpreter file begins with a line of the form
+.RB ` "#! \fIinterpreter\fP [\fIarg\fP]" '.
+Only the first thirty-two characters of this line are significant.
+When
+.I path
+refers to an interpreter file,
+.B execve(\|)
+invokes the specified
+.IR interpreter .
+If the optional
+.I arg
+is specified, it becomes the first argument to the
+.IR interpreter ,
+and the pathname to which
+.I path
+points becomes the second argument.
+Otherwise, the pathname to which
+.I path
+points becomes the first argument. 
+The original arguments are shifted over to
+become the subsequent arguments.
+The zeroth argument, normally the pathname to which
+.I path
+points, is left unchanged.
+.LP
+There can be no return from a successful
+.B execve(\|)
+because the calling process image is lost.
+This is the mechanism whereby different process images become active.
+.LP
+The argument
+.I argv
+is a pointer to a
+null-terminated
+array of character pointers to
+null-terminated
+character strings.  These strings constitute
+the argument list to be made available to the new
+process.  By convention, at least one argument must be present in
+this array, and the first element of this array should be
+the name of the executed program (that is, the last component of
+.IR path ).
+.LP
+The argument
+.I envp
+is also a pointer to a
+null-terminated
+array of character pointers to
+null-terminated
+strings.  These strings pass information to the
+new process which are not directly arguments to the command (see
+.BR environ (5V)).
+.LP
+The number of bytes available for the new process's combined argument
+and environment lists (including null terminators, pointers and
+alignment bytes) is
+.SM {ARG_MAX}
+(see
+.BR sysconf (2V)).
+On SunOS systems,
+.SM {ARG_MAX}
+is currently one megabyte.
+.LP
+Descriptors open in the calling process remain open in
+the new process, except for those for which the close-on-exec
+flag is set (see
+.BR close (2V)
+and
+.BR fcntl (2V)).
+Descriptors which remain open are unaffected by
+.BR execve(\|) .
+.LP
+Signals set to the default action
+(\s-1SIG_DFL\s0)
+in the calling process image are
+set to the default action in the new process image.
+Signals set to be ignored
+(\s-1SIG_IGN\s0)
+by the calling process image are ignored by the
+new process image.
+Signals set to be caught by the calling process image are reset to the
+default action in the new process image.
+Signals set to be blocked in the calling process image remain blocked
+in the new process image, regardless of changes to the signal action.
+The signal stack is reset to be undefined (see
+.BR sigvec (2)
+for more information).
+.LP
+Each process has a
+.I real
+user
+.SM ID
+and group
+.SM ID
+and an
+.I effective
+user
+.SM ID
+and group
+.SM ID\s0.
+The
+.I real
+.SM ID
+identifies the person using the system; the
+.I effective
+.SM ID
+determines their access privileges.
+.B execve(\|)
+changes the effective user or group
+.SM ID
+to the owner or group of the executed file if the file has the
+\(lqset-user-\s-1ID\s0\(rq or \(lqset-group-\s-1ID\s0\(rq modes.  The
+.I real
+.SM UID
+and 
+.SM GID
+are not affected.
+The effective user
+.SM ID
+and effective group
+.SM ID
+of the new process image are saved as the
+saved
+set-user-\s-1ID\s0
+and saved
+set-group-\s-1ID\s0
+respectively,
+for use by
+.BR setuid (3V).
+.LP
+.B execve(\|)
+sets the
+.SM SEXECED
+flag for the new process image
+(see
+.BR setpgid (2V)).
+.LP
+The shared memory segments attached to the calling process will not be
+attached to the new process (see
+.BR shmop (2)).
+.LP
+Profiling is disabled for the new process; see
+.BR profil (2).
+.LP
+Upon successful completion,
+.B execve(\|)
+marks for update the
+.B st_atime
+field of the file.
+.B execve(\|)
+also marks
+.B st_atime
+for update if it fails, but is able find the process image file.
+.LP
+If
+.B execve(\|)
+succeeds, the process image file is considered to have been opened
+(see
+.BR open (2V)).
+The corresponding close
+(see
+.BR close (2V))
+is considered to occur after the open, but before process
+termination or successful completion of a subsequent call to
+.BR execve(\|) .
+.LP
+The new process also inherits the following attributes from
+the calling process:
+.LP
+.\" === troff version ===
+.if n .ig IG
+.RS
+.TS
+lI lI
+l l .
+attribute	see
+_
+process \s-1ID\s0	\fBgetpid\fP(2)
+parent process \s-1ID\s0	\fBgetpid\fP(2)
+process group \s-1ID\s0	\fBgetpgrp\fP(2V), \fBsetpgid\fP(2V)
+session membership	\fBsetsid\fP(2)
+real user \s-1ID\s0	\fBgetuid\fP(2)
+real group \s-1ID\s0	\fBgetgid\fP(2)
+supplementary group \s-1ID\s0s	\fBIntro\fP(2)
+time left until an alarm	\fBalarm\fP(3C)
+supplementary group \s-1ID\s0s	\fBgetgroups\fP(2)
+semadj values	\fBsemop\fP(2)
+working directory	\fBchdir\fP(2)
+root directory	\fBchroot\fP(2)
+controlling terminal	\fBtermio\fP(4)
+trace flag	\fBptrace\fP(2), request 0
+resource usages	\fBgetrusage\fP(2)
+interval timers	\fBgetitimer\fP(2)
+resource limits	\fBgetrlimit\fP(2)
+file mode mask	\fBumask\fP(2)
+process signal mask	\fBsigvec\fP(2), \fBsigprocmask\fP(2V), \fBsigsetmask\fP(2)
+pending signals	\fBsigpending\fP(2)
+\fBtms_utime\fP, \fBtms_stime\fP,
+\fBtms_cutime\fP, \fBtms_cstime\fP	\fBtimes\fP(3C)
+.TE
+.RE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.RS
+.TS
+lI lI
+l l .
+attribute	see
+process \s-1ID\s0	\fBgetpid\fP(2)
+parent process \s-1ID\s0	\fBgetpid\fP(2)
+process group \s-1ID\s0	\fBgetpgrp\fP(2V), \fBsetpgid\fP(2V)
+session membership	\fBsetsid\fP(2)
+real user \s-1ID\s0	\fBgetuid\fP(2)
+real group \s-1ID\s0	\fBgetgid\fP(2)
+supplementary group \s-1ID\s0s	\fBIntro\fP(2)
+time left until an alarm	\fBalarm\fP(3C)
+supplementary group \s-1ID\s0s	\fBgetgroups\fP(2)
+semadj values	\fBsemop\fP(2)
+working directory	\fBchdir\fP(2)
+root directory	\fBchroot\fP(2)
+controlling terminal	\fBtermio\fP(4)
+trace flag	\fBptrace\fP(2), request 0
+resource usages	\fBgetrusage\fP(2)
+interval timers	\fBgetitimer\fP(2)
+resource limits	\fBgetrlimit\fP(2)
+file mode mask	\fBumask\fP(2)
+process signal mask	\fBsigvec\fP(2), \fBsigprocmask\fP(2V), 
+	\fBsigsetmask\fP(2)
+pending signals	\fBsigpending\fP(2)
+\fBtms_utime\fP, \fBtms_stime\fP,
+\fBtms_cutime\fP, \fBtms_cstime\fP	\fBtimes\fP(3C)
+.TE
+.RE
+.IG
+.\" === end nroff version ===
+.LP
+When the executed program begins, it is called as follows:
+.LP
+.RS
+.ft B
+.nf
+main(argc, argv, envp)
+int argc;
+char *argv[\|], *envp[\|];
+.ft R
+.fi
+.RE
+.LP
+where
+.I argc
+is the number of elements in
+.I argv
+(the \*(lqarg count\*(rq, not counting the
+.SM NULL
+terminating pointer) and
+.I argv
+points to the array of character pointers
+to the arguments themselves.
+.LP
+.I envp
+is a pointer to an array of strings that constitute the
+.I environment
+of the process.
+A pointer to this array is also stored in the global variable
+.BR environ .
+Each string consists of a name, an \(lq=\(rq, and a
+null-terminated
+value.  The array of pointers is terminated by a
+.SM NULL
+pointer.  The shell
+.BR sh (1)
+passes an environment entry for each global shell variable
+defined when the program is called.  See
+.BR environ (5V)
+for some conventionally used names.
+.LP
+Note:
+Passing values for
+.IR argc ,
+.IR argv ,
+and
+.I envp
+to
+.B main(\|)
+is optional.
+.SH RETURN VALUES
+.LP
+.B execve(\|)
+returns to the calling process only on failure.
+It returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM E2BIG
+The total number of bytes in the new process file's argument and
+environment lists
+exceeds
+.SM {ARG_MAX}
+(see
+.BR sysconf (2V)).
+.TP
+.SM EACCES
+Search permission is denied for a component of the new process file's
+path prefix.
+.IP
+The new process file is not an regular file.
+.IP
+Execute permission is denied for the new process file.
+.TP
+.SM EFAULT
+The new process file is not as long as indicated by
+the size values in its header.
+.IP
+.IR path ,
+.IR argv ,
+or
+.I envp
+points to an illegal address.
+.TP
+.SM EIO
+An I/O error occurred while reading from the file system.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENOENT
+One or more components of the path prefix of the new process file
+does not exist.
+.IP
+The new process file does not exist.
+.TP
+.SM ENOEXEC
+The new process file has the appropriate access
+permission, but has an invalid magic number in its header.
+.TP
+.SM ENOMEM
+The new process file requires more virtual memory than
+is allowed by the imposed maximum
+.RB ( getrlimit (2)).
+.TP
+.SM ENOTDIR
+A component of the path prefix of the new process file is not a directory.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to a null pathname.
+.SH SEE ALSO
+.BR sh (1),
+.BR chdir (2V),
+.BR chroot (2),
+.BR close (2V),
+.BR exit (2V),
+.BR fcntl (2V),
+.BR fork (2V),
+.BR getgroups (2V),
+.BR getitimer (2),
+.BR getpid (2V),
+.BR getrlimit (2),
+.BR getrusage (2),
+.BR profil (2),
+.BR ptrace (2),
+.BR semop (2),
+.BR getpgrp (2V),
+.BR shmop (2),
+.BR sigvec (2),
+.BR execl (3V),
+.BR setuid (3V),
+.BR termio (4),
+.BR a.out (5),
+.BR environ (5V)
+.SH WARNINGS
+.LP
+If a program is
+.B setuid(\|)
+.\" Fix this.  Don't use a function name as a participial adjective.
+to a non-super-user, but is executed when
+the real user
+.SM ID
+is super-user, then the program has some of the powers
+of a super-user as well.

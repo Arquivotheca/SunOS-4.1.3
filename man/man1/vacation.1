@@ -1,0 +1,210 @@
+.\" @(#)vacation.1 1.1 92/07/30 SMI;
+.hw precedence
+.TH VACATION 1 "25 November 1987"
+.SH NAME
+vacation \- reply to mail automatically
+.SH SYNOPSIS
+.B vacation
+[
+.B \-I
+]
+.br
+.B vacation
+[
+.B \-j
+]
+[
+.BI \-a " alias"
+]
+[
+.BI \-t N
+]
+.I username
+.SH DESCRIPTION
+.IX vacation "" "\fLvacation\fR \(em automatic mail replies"
+.LP
+.B vacation
+automatically replies to incoming mail.  The reply is
+contained in the file
+.BR .vacation.msg
+in your home directory.  
+.\"(or the file
+.\".B /usr/lib/vacation.def
+.\"by default).
+The
+.B vacation
+program run interactively will create a 
+.BR .vacation.msg
+file for you (which you may edit).  
+Type 
+.B
+vacation
+with no arguments.  (See
+.B
+USAGE 
+below.)
+.LP
+For example, the message created by
+.B
+vacation
+is:
+.RS
+.sp .5
+.nf
+.ft B
+Subject: away from my mail
+From:  smith (via the vacation program)
+I will not be reading my mail for a while.
+Your mail regarding "$\s-1SUBJECT\s0" will be read when I return
+.ft R
+.fi
+.RE
+.LP
+The
+.BR .vacation.msg
+file should include a header with at least a
+.RB ` Subject: '
+line (it should not contain a
+.RB ` To: '
+line and need not contain a
+.RB ` From: '
+line, since these are generated automatically).
+.LP
+If the string
+.SB $SUBJECT
+appears in the
+.B \&.vacation.msg
+file, it is replaced with the subject of the original message when the
+reply is sent.  
+.LP
+No message is sent if the
+.RB ` To: '
+or the
+.RB ` Cc: '
+line does not list the user to whom the original message was sent or
+one of a number of aliases for them,
+if the initial
+.B From
+line includes the string
+.BR \-\s-1REQUEST\s0@ ,
+or if a
+.RB ` "Precedence: bulk" '
+or
+.RB ` "Precedence: junk" '
+line is included in the header.
+.SH OPTIONS
+.TP
+.B \-I
+Initialize the
+.B \&.vacation.pag
+and
+.B \&.vacation.dir
+files and start
+.BR vacation .
+.LP
+If the
+.B \-I
+flag is not specified, and a
+.I user
+argument is given,
+.B vacation
+reads the first line from the standard input
+(for a
+.RB ` From: '
+line, no colon).
+If absent, it produces an error message.  The following options may be
+specified:
+.TP
+.BI \-a " alias"
+Indicate that
+.I alias
+is one of the valid aliases for the user running
+.BR vacation ,
+so that mail addressed to that alias generates a reply.
+.TP
+.B \-j
+Do not check whether the recipient appears in the
+.RB ` To: '
+or the
+.RB ` Cc: '
+line.
+.TP
+.BI \-t N
+Change the interval between repeat replies to the same sender.
+The default is 1 week.
+A trailing
+.BR s ,
+.BR m ,
+.BR h ,
+.BR d ,
+or
+.B w
+scales
+.I N
+to seconds, minutes, hours, days, or weeks respectively.
+.SH USAGE
+.LP
+To start
+.BR vacation ,
+create a
+.B \&.forward
+file in your home directory containing a line of the form:
+.IP
+\fB\e\fIusername\fB, "|/usr/ucb/vacation \fIusername\fB"\fR
+.LP
+where
+.I username
+is your login name.
+.LP
+Then type in the command:
+.IP
+.B vacation \-I
+.LP
+To stop
+.BR vacation ,
+remove the
+.B \&.forward
+file, or move it to a new name.
+.br
+.ne 6
+.LP
+If
+.B vacation
+is run with no arguments, it will permit you to interactively turn
+.B vacation
+on or off.  It will create a
+.B \&.vacation.msg
+file for you, or edit an existing one, using the editor specified by the
+.SB VISUAL
+or
+.SB EDITOR
+environment variable, or
+.BR vi (1)
+if neither of those environment variables are set.  If a
+.B \&.forward
+file is present in your home directory, it will ask whether you want
+to remove it and turn off
+.BR vacation .
+If it is not present in your home directory, it creates
+it for you, and automatically performs a
+.RB ` "vacation \-I" '
+function, turning on
+.BR vacation .
+.SH FILES
+.PD 0
+.TP 20
+.B .forward
+.\".TP
+.\".B /usr/lib/vacation.def
+.TP
+.B $\s-1HOME\s0/.vacation.msg
+.PD
+.LP
+A list of senders is kept in the files
+.B \&.vacation.pag
+and
+.B \&.vacation.dir
+in your home directory.
+.SH SEE ALSO
+.BR vi (1),
+.BR sendmail (8)

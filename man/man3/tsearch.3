@@ -1,0 +1,282 @@
+.\" @(#)tsearch.3 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH TSEARCH 3 "6 October 1987"
+.SH NAME
+tsearch, tfind, tdelete, twalk \- manage binary search trees
+.SH SYNOPSIS
+.nf
+.B #include <search.h>
+.LP
+.B "char \(**tsearch((char \(**) key, (char \(**\(**) rootp, compar)"
+.B int (\(**compar)( );
+.LP
+.B "char \(**tfind((char \(**) key, (char \(**\(**) rootp, compar)"
+.B int (\(**compar)( );
+.LP
+.B "char \(**tdelete((char \(**) key, (char \(**\(**) rootp, compar)"
+.B int (\(**compar)( );
+.LP
+.B "void twalk((char \(**) root, action)"
+.B void (\(**action)( );
+.fi
+.SH DESCRIPTION
+.IX tsearch() "" "\fLtsearch()\fR \(em build and search binary tree"
+.IX tfind() "" "\fLtfind()\fR \(em search binary tree"
+.IX tdelete() "" "\fLtdelete()\fR \(em delete binary tree node"
+.IX twalk() "" "\fLtwalk()\fR \(em traverse binary tree"
+.IX "binary tree routines"
+.LP
+.BR tsearch(\|) ,
+.BR tfind(\|) ,
+.BR tdelete(\|) ,
+and
+.B twalk(\|)
+are routines for manipulating binary search trees.
+They are generalized from Knuth (6.2.2) Algorithms T and D.
+All comparisons are done with a user-supplied routine.
+This routine is called with two arguments,
+the pointers to the elements being compared.
+It returns an integer less than, equal to,
+or greater than 0, according to whether the first argument
+is to be considered less than, equal to or greater than the
+second argument.
+The comparison function need not compare every byte,
+so arbitrary data may be contained in the elements
+in addition to the values
+being compared.
+.LP
+.B tsearch(\|)
+is used to build and access the tree.
+.I key
+is a pointer to a datum to be accessed or stored.
+If there is a datum in the tree equal to
+.BI \(** key
+(the value pointed to by
+.IR key ),
+a pointer to this found
+datum is returned.  Otherwise,
+.BI \(** key
+is inserted, and a pointer to it returned.
+Only pointers are copied, so the calling routine must
+store the data.
+.I rootp
+points to a variable that points to the root
+of the tree.  A
+.SM NULL
+value for the variable pointed to by
+.I rootp
+denotes an empty tree; in this case,
+the variable will be set to point to the datum
+which will be at the root of the new tree.
+.LP
+Like
+.BR tsearch(\|) ,
+.B tfind(\|)
+will search for a datum in the tree, returning a pointer
+to it if found.  However, if it is not found,
+.B tfind(\|)
+will return a
+.SM NULL
+pointer.  The arguments for
+.B tfind(\|)
+are the same as for
+.BR tsearch(\|) .
+.LP
+.B tdelete(\|)
+deletes a node from a binary search tree.
+The arguments are the same as for
+.BR tsearch(\|) .
+The variable pointed to by
+.I rootp
+will be changed if the deleted node was the root of the tree.
+.B tdelete(\|)
+returns a pointer to the parent of the deleted node,
+or a
+.SM NULL
+pointer if the node is not found.
+.LP
+.B twalk(\|)
+traverses a binary search tree.
+.I root
+is the root of the tree to be traversed.
+(Any node in a tree may be used as the
+root for a walk below that node.)
+.I action
+is the name of a routine to be invoked at each node.
+This routine is, in turn, called with three arguments.
+The first argument is the address of the
+node being visited.  The second argument is a
+value from an enumeration data type
+.B "typedef enum { preorder, postorder, endorder, leaf }"
+.BR \s-1VISIT\s0 ;
+(defined in the
+.B <search.h>
+header file),
+depending on whether this is the first, second or third
+time that the node has been visited
+(during a depth-first, left-to-right traversal of the tree),
+or whether the node is a leaf.
+The third argument is the level of the node
+in the tree, with the root being level zero.
+.LP
+The pointers to the key and the root of the tree should be
+of type pointer-to-element,
+and cast to type pointer-to-pointer-to-character.
+Similarly, although declared as type pointer-to-character,
+the value returned should be cast into type pointer-to-element.
+.SH EXAMPLES
+.LP
+The following code reads in strings and
+stores structures containing a pointer to each string
+and a count of its length.
+It then walks the tree, printing out the stored strings
+and their lengths in alphabetical order.
+.br
+.ne 10
+.RS
+.nf
+.ft B
+#include <search.h>
+#include <stdio.h>
+.sp .5
+void twalk(\|);
+char *tsearch(\|);
+.sp .5
+struct node {		/* pointers to these are stored in the tree */
+	char *string;
+	int count;
+};
+.sp .5
+#define \s-1MAXNODES\s0	12
+#define \s-1MAXSTRING\s0	100
+#define \s-1MINSTRING\s0	3		/* char, newline, eos */
+.sp .5
+char string_space[\s-1MAXSTRING\s0];		/* space to store strings */
+struct node node_space[\s-1MAXNODES\s0];	/* nodes to store */
+struct node *root = \s-1NULL\s0;		/* this points to the root */
+.sp .5
+main(\|)
+{
+	char *strptr = string_space;
+	int maxstrlen = \s-1MAXSTRING\s0;
+	struct node *nodeptr = node_space;
+	int node_compare(\|);
+	void print_node(\|);
+	struct node **found;
+	int length;
+.sp .5
+	while (fgets(strptr, maxstrlen, stdin) != \s-1NULL\s0) {
+		/* remove the trailing newline */
+		length = strlen(strptr);
+		strptr[length-1] = 0;
+		/* set node */
+		nodeptr->string = strptr;
+		/* locate node into the tree */
+		found = (struct node **)
+		    tsearch((char *) nodeptr, (char **) &root, node_compare);
+		/* bump the count */
+		(*found)->count++;
+.sp .5
+		if (*found == nodeptr) {
+			/* node was inserted, so get a new one */
+			strptr += length;
+			maxstrlen -= length;
+			if (maxstrlen < \s-1MINSTRING\s0)
+				break;
+			if (++nodeptr >= &node_space[\s-1MAXNODES\s0])
+				break;
+		}
+	}
+	twalk((char *)root, print_node);
+}
+.sp .5
+.ne 10
+/*
+     This routine compares two nodes, based on an
+     alphabetical ordering of the string field.
+*/
+.sp .5
+int node_compare(node1, node2)
+	struct node *node1, *node2;
+{
+	return strcmp(node1->string, node2->string);
+}
+.sp .5
+/* Print out nodes in alphabetical order */
+/*\s-1ARGSUSED2\s0*/
+void
+print_node(node, order, level)
+	struct node **node;
+	\s-1VISIT\s0 order;
+	int level;
+{
+	if (order == postorder || order == leaf) {
+		(void) printf("string = %20s,  count = %d\n",
+		    (*node)->string, (*node)->count);
+	}
+}
+.fi
+.ft R
+.RE
+.SH SEE ALSO
+.BR bsearch (3),
+.BR hsearch (3),
+.BR lsearch (3)
+.SH DIAGNOSTICS
+.LP
+A
+.SM NULL
+pointer is returned by
+.B tsearch(\|)
+if there is not enough space available to create a new node.
+.LP
+A
+.SM NULL
+pointer is returned by
+.BR tsearch(\|) ,
+.B tfind(\|)
+and
+.B tdelete(\|)
+if
+.I rootp
+is
+.SM NULL
+on entry.
+.LP
+If the datum is found, both
+.B tsearch(\|)
+and
+.B tfind(\|)
+return a pointer to it.  If not,
+.B tfind(\|)
+returns
+.SM NULL\s0,
+and
+.B tsearch(\|)
+returns a pointer to the inserted item.
+.SH WARNINGS
+The
+.I root
+argument to
+.B twalk(\|)
+is one level of indirection less than the
+.I rootp
+arguments to
+.B tsearch(\|)
+and
+.BR tdelete(\|) .
+.LP
+There are two nomenclatures used to refer to
+the order in which tree nodes are visited.
+.B tsearch(\|)
+uses preorder, postorder and endorder
+to respectively refer to visting a node before
+any of its children, after its left child
+and before its right, and after both its children.
+The alternate nomenclature uses preorder, inorder
+and postorder to refer to the same visits, which
+could result in some confusion over
+the meaning of postorder.
+.SH BUGS
+.LP
+If the calling function alters the pointer to the
+root, results are unpredictable.

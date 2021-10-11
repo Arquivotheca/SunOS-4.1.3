@@ -1,0 +1,356 @@
+.\" @(#)directory.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH DIRECTORY 3V "24 January 1990"
+.SH NAME
+directory, opendir, readdir, telldir, seekdir, rewinddir, closedir \- directory operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <dirent.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1DIR\s0 *opendir(dirname)
+char *dirname;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct dirent *readdir(dirp)
+\s-1DIR\s0 *dirp;
+.ft
+.fi
+.LP
+.nf
+.ft B
+long telldir(dirp)
+\s-1DIR\s0 *dirp;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void seekdir(dirp, loc)
+\s-1DIR\s0 *dirp;
+long loc;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void rewinddir(dirp)
+\s-1DIR\s0 *dirp;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int closedir(dirp)
+\s-1DIR\s0 *dirp;
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.LP
+For
+.SM XPG2
+conformance, use:
+.LP
+.nf
+.ft B
+#include <sys/dirent.h>
+.ft
+.fi
+.SH DESCRIPTION
+.IX  "opendir()"  ""  "\fLopendir()\fP \(em open directory stream"
+.IX  "open directory stream \(em \fLopendir()\fP"
+.IX  "directory operations"  opendir()  ""  \fLopendir()\fP
+.LP
+.B opendir(\|)
+opens the directory named by
+.I dirname
+and associates a
+.I directory stream
+with it.
+.B opendir(\|)
+returns a pointer to be used to identify the
+directory stream
+in subsequent operations.
+A
+.SM NULL
+pointer is returned if
+.I dirname
+cannot be accessed or is not a directory, or if it cannot
+.BR malloc (3V)
+enough memory to hold the whole thing.
+.IX  "readdir()"  ""  "\fLreaddir()\fP \(em read directory stream"
+.IX  "read directory stream \(em \fLreaddir()\fP"
+.IX  "directory operations"  readdir()  ""  \fLreaddir()\fP
+.LP
+.B readdir(\|)
+returns a pointer to the next directory entry.  It returns
+.SM NULL
+upon reaching the end of the directory or detecting an invalid
+.B seekdir(\|)
+operation.
+.LP
+.IX  "telldir()"  ""  "\fLtelldir()\fP \(em position of directory stream"
+.IX  "position of directory stream \(em \fLtelldir()\fP"
+.IX  "directory operations"  telldir()  ""  \fLtelldir()\fP
+.B telldir(\|)
+returns the current location associated with the named
+directory stream.
+.LP
+.IX  "seekdir()"  ""  "\fLseekdir()\fP \(em seek in directory stream"
+.IX  "seek in directory stream \(em \fLseekdir()\fP"
+.IX  "directory operations"  seekdir()  ""  \fLseekdir()\fP
+.B seekdir(\|)
+sets the position of the next
+.B readdir(\|)
+operation on the directory stream.
+The new position reverts to the one associated with the
+directory stream
+when the
+.B telldir(\|)
+operation was performed.  Values returned by
+.B telldir(\|)
+are good only for the lifetime of the
+.SM DIR
+pointer from which they are derived.
+If the directory is closed and then reopened, the
+.B telldir(\|)
+value may be invalidated due to undetected directory compaction.
+It is safe to use a previous
+.B telldir(\|)
+value immediately after a call to
+.B opendir(\|)
+and before any calls to
+.BR readdir .
+.LP
+.IX  "rewinddir()"  ""  "\fLrewinddir()\fP \(em rewind directory stream"
+.IX  "rewind directory stream \(em \fLrewinddir()\fP"
+.IX  "directory operations"  rewinddir()  ""  \fLrewinddir()\fP
+.B rewinddir(\|)
+resets the position of the named
+directory stream
+to the beginning of the directory.
+I also causes the directory stream to refer to the current
+state of the corresponding directory,
+as a call to
+.B opendir(\|)
+would have done.
+.LP
+.IX  "closedir()"  ""  "\fLclosedir()\fP \(em close directory stream"
+.IX  "close directory stream \(em \fLclosedir()\fP"
+.IX  "directory operations"  closedir()  ""  \fLclosedir()\fP
+.B closedir(\|)
+closes the named
+directory stream
+and frees the structure associated with the
+.SM DIR
+pointer.
+.br
+.ne 11
+.SH RETURN VALUES
+.LP
+.B opendir(\|)
+returns
+a pointer to an object of type
+.SB DIR
+on success.
+On failure,
+it returns
+.SM NULL
+and sets
+.B errno
+to indicate the error.
+.LP
+.B readdir(\|)
+returns
+a pointer to an object of type
+.B "struct dirent" 
+on success.
+On failure,
+it returns
+.SM NULL
+and sets
+.B errno
+to indicate the error.
+When the end of the directory is encountered,
+.B readdir(\|)
+returns
+.SM NULL
+and leaves
+.B errno
+unchanged.
+.LP
+.B closedir(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.LP
+.B telldir(\|)
+returns the current location associated with the specified
+directory stream.
+.SH ERRORS
+If any of the following conditions occur,
+.B opendir(\|)
+sets
+.B errno
+to:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of
+.IR dirname .
+.IP
+Read permission is denied for
+.IR dirname .
+.TP
+.SM ENAMETOOLONG
+The length of
+.I dirname
+exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The named directory does not exist.
+.TP
+.SM ENOTDIR
+A component of
+.I dirname
+is not a directory.
+.LP
+for each of the following conditions,
+when the condition is detected,
+.B opendir(\|)
+sets
+.B errno
+to one of the following:
+.TP 20
+.SM EMFILE
+Too many file descriptors are currently open for the process.
+.TP
+.SM ENFILE
+Too many file descriptors are currently open in the system.
+.LP
+For each of the following conditions,
+when the condition is detected,
+.B readdir(\|)
+sets
+.B errno
+to the following:
+.TP 20
+.SM EBADF
+.I dirp
+does not refer to an open directory stream.
+.LP
+For each of the following conditions,
+when the condition is detected,
+.B closedir(\|)
+sets
+.B errno
+to the following:
+.TP 20
+.SM EBADF
+.I dirp
+does not refer to an open directory stream.
+.SH SYSTEM V ERRORS
+In addition to the above,
+.B opendir(\|)
+may set
+.B errno
+to the following:
+.TP 20
+.SM ENOENT
+.I dirname
+points to an empty string.
+.SH EXAMPLES
+.LP
+Sample code which searchs a directory for entry ``name'' is:
+.IP
+.nf
+.ft B
+	dirp = opendir(".");
+	for (dp = readdir(dirp); dp != \s-1NULL\s0; dp = readdir(dirp))
+		if (!strcmp(dp->d_name, name)) {
+ 			closedir (dirp);
+			return \s-1FOUND\s0;
+		}
+ 	closedir (dirp);
+	return \s-1NOT_FOUND\s0;
+.ft R
+.fi
+.SH "SEE ALSO"
+.BR close (2V),
+.BR lseek (2V),
+.BR open (2V),
+.BR read (2V),
+.BR getwd (3),
+.BR malloc (3V),
+.BR dir (5)
+.SH NOTES
+.LP
+The
+.B directory
+library routines now use a new include file,
+.BR <dirent.h> .
+This replaces the file,
+.BR <sys/dir.h> ,
+used in previous releases.
+Furthermore, with the use of this new file, the
+.B readdir(\|)
+routine returns directory entries whose structure is named
+.B struct dirent
+rather than
+.B struct direct
+as before. The file
+.B <sys/dir.h>
+is retained in the current Sun\s-1OS\s0 release for purposes of
+backwards source code compatibility;
+programs which use the
+.B directory(\|)
+library and
+.B <sys/dir.h>
+will continue to compile and run without source code modifications.
+However,
+existing programs should convert to the use of the
+new include file,
+.BR <dirent.h> ,
+as
+.BR <sys/dir.h>
+will be removed in a future major release.
+.LP
+The
+.I "X/Open Portability Guide, issue 2"
+(\s-1XPG2\s0)
+requires
+.B <sys/dirent.h>
+rather than
+.BR <dirent.h> .
+.B /usr/xpg2include/sys/dirent.h
+is functionally equivalent to
+.BR /usr/include/dirent.h .
+In future SunOS releases, X/Open conformance will
+require
+.BR <dirent.h> .

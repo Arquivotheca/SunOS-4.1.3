@@ -1,0 +1,92 @@
+.\" @(#)pwd.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH PWD 1 "9 September 1987"
+.SH NAME
+pwd \- display the pathname of the current working directory
+.SH SYNOPSIS
+.B pwd
+.SH DESCRIPTION
+.IX  "pwd command"  ""  "\fLpwd\fP \(em print working directory name"
+.IX  display "working directory name \(em \fLpwd\fP"
+.IX  "working directory"  "display name of"  ""  "display name of \(em \fLpwd\fP"
+.IX  directory  "display name of working"  ""  "display name of working \(em \fLpwd\fP"
+.IX  print "working directory name \(em \fLpwd\fP"
+.IX  "file system"  "where am I"  ""  "where am I \(em \fLpwd\fP"
+.LP
+.B pwd
+prints the pathname of the working (current)
+directory.
+.LP
+If you are using
+.BR csh (1),
+you can use the
+.B dirs
+builtin command to do the same job more quickly;
+.I but
+.B dirs
+can give a
+different answer in the rare case that the current directory or a
+containing directory was moved after the shell descended into it.
+This is because
+.B pwd
+searches back up the directory tree to report
+the true pathname, whereas
+.B dirs
+remembers the pathname from the
+last
+.BR cd (1)
+command.  The example below illustrates the differences.
+.LP
+.RS
+.nf
+.ft B
+example% cd  /usr/wendy/january/reports
+example% pwd
+/usr/wendy/january/reports
+example% dirs
+\s+2~\s0/january/reports
+example% mv \s+2~\s0/january \s+2~\s0/february
+example% pwd
+/usr/wendy/february/reports
+example% dirs
+\s+2~\s0/january/reports
+example%
+.ft R
+.fi
+.RE
+.LP
+.B pwd
+and
+.B dirs
+also give different answers when you change
+directory through a symbolic
+link.  For example:
+.RS
+.nf
+.ft B
+example% cd  /usr/wendy/january/reports
+example% pwd
+/usr/wendy/january/reports
+example% dirs
+\s+2~\s0/january/reports
+example% ls \-l /usr/wendy/january
+lrwxrwxrwx  1 wendy          17 Jan 30  1983 /usr/wendy/january \-> /usr/wendy/1984/jan/
+example% cd  /usr/wendy/january
+example% pwd
+/usr/wendy/1984/jan
+example% dirs
+/usr/wendy/january
+.ft R
+.fi
+.RE
+.LP
+The pathnames of files mounted with the Automounter can also
+change if the file is not used for a certain time interval (the default
+is five minutes).  To prevent this, set the environment variable
+.SM AUTOMOUNT_FIXNAMES.
+See
+.BR automount (8)
+for more information.
+.SH "SEE ALSO"
+.BR cd (1),
+.BR csh (1),
+.BR automount (8)

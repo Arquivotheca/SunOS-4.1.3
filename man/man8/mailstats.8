@@ -1,0 +1,63 @@
+.\" @(#)mailstats.8 1.1 92/07/30 SMI;
+.TH MAILSTATS 8 "9 September 1987"
+.SH NAME
+mailstats \- print statistics collected by sendmail
+.SH SYNOPSIS
+.IX  "mailstats command"  ""  "\fLmailstats\fP \(em mail delivery statistics"
+.IX  "mail utilities" "statistics \(em \fLmailstats\fP" "\fLmail\fR utilities"
+.B /usr/etc/mailstats
+[
+.I filename
+]
+.SH DESCRIPTION
+.B mailstats
+prints out the statistics collected by the
+.B sendmail
+program on mailer usage.
+These statistics are collected if the file indicated by the
+.B S
+configuration option of
+.B sendmail
+exists.  The
+.B mailstats
+program first prints the time that the statistics file was
+created and the last time it was modified.
+It will then print a table with one row for each mailer specified in
+the configuration file.
+The first column is the mailer number, followed by the symbolic
+name of the mailer.
+The next two columns refer to the number of messages received by
+.IR sendmail ,
+and the last two columns refer to messages sent by
+.IR sendmail .
+The number of messages and their total
+size (in 1024 byte units) is given.
+No numbers are printed if no messages
+were sent (or received) for any mailer.
+.LP
+You might want to add an entry to
+.B /var/spool/cron/crontab/root
+to reinitialize
+the statistics file once a night.
+Copy
+.B /dev/null
+into the statistics file or otherwise truncate it
+to reset the counters.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/sendmail.st
+default statistics file
+.TP
+.B /etc/sendmail.cf
+sendmail configuration file
+.TP
+.B /var/spool/cron/crontab/root
+.TP
+.B /dev/null
+.PD
+.SH SEE\ ALSO
+.BR sendmail (8)
+.SH BUGS
+Mailstats should read the configuration file instead of having
+a hard-wired table mapping mailer numbers to names.

@@ -1,0 +1,239 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)getrusage.2 1.1 92/07/30 SMI; from UCB 6.4 5/13/86
+.TH GETRUSAGE 2 "21 January 1990"
+.SH NAME
+getrusage \- get information about resource utilization
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/time.h>
+#include <sys/resource.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getrusage(who, rusage)
+int who;
+struct rusage *rusage;
+.ft R
+.fi
+.IX  getrusage()  ""  \fLgetrusage()\fP
+.IX  "resource control"  getrusage()  ""  \fLgetrusage()\fP
+.IX  "resource utilization, get information about \(em \fLgetrusage()\fR"
+.SH DESCRIPTION
+.LP
+.B getrusage(\|)
+returns information about the resources utilized by the current
+process, or all its terminated child processes.
+The interpretation for some values reported, such as
+.BR ru_idrss ,
+are dependent on the clock tick interval.
+This interval is an implementation dependent value; for example,
+on Sun-3 sytems the clock tick interval is 1/50 of a second,
+while on Sun-4 systems the clock tick interval is 1/100 of a second.
+.LP
+The
+.I who
+parameter is one of
+.SB RUSAGE_SELF
+or
+.BR \s-1RUSAGE_CHILDREN\s0 .
+The buffer to which
+.I rusage
+points will be filled in with
+the following structure:
+.LP
+.nf
+.RS
+.DT
+.ft B
+struct	rusage {
+	struct timeval ru_utime;		/* user time used */
+	struct timeval ru_stime;		/* system time used */
+	int	ru_maxrss;		/* maximum resident set size */
+	int	ru_ixrss;		/* currently 0 */
+	int	ru_idrss;		/* integral resident set size */
+	int	ru_isrss;		/* currently 0 */
+	int	ru_minflt;		/* page faults not requiring physical I/O */
+	int	ru_majflt;		/* page faults requiring physical I/O */
+	int	ru_nswap;		/* swaps */
+	int	ru_inblock;		/* block input operations */
+	int	ru_oublock;		/* block output operations */
+	int	ru_msgsnd;		/* messages sent */
+	int	ru_msgrcv;		/* messages received */
+	int	ru_nsignals;		/* signals received */
+	int	ru_nvcsw;		/* voluntary context switches */
+	int	ru_nivcsw;		/* involuntary context switches */
+};
+.ft R
+.RE
+.fi
+.LP
+The fields are interpreted as follows:
+.TP 15
+.B ru_utime
+The total amount of time spent executing in user mode.
+Time is given in seconds and microseconds.
+.TP
+.B ru_stime
+The total amount of time spent executing in system mode.
+Time is given in seconds and microseconds.
+.TP
+.B ru_maxrss
+The maximum resident set size. 
+Size is given in pages (the size of a page, in bytes, is given by the
+.BR getpagesize (2)
+system call).  Also, see
+.SM WARNINGS\s0.
+.TP
+.B ru_ixrss
+Currently returns 0.
+.br
+.ne 5
+.TP
+.B ru_idrss
+An \*(lqintegral\*(rq value indicating the amount of memory in use
+by a process while the process is running.
+This value is the sum of the resident set sizes of the
+process running when a clock tick occurs.
+The value is given in pages times clock ticks.
+Note: it does not take sharing into account.
+Also, see
+.SM WARNINGS\s0.
+.br
+.ne 5
+.TP
+.B ru_isrss
+Currently returns 0.
+.TP
+.B ru_minflt
+The number of page faults serviced which did not
+require any physical I/O activity.
+Also, see
+.SM WARNINGS\s0.
+.TP
+.B ru_majflt
+The number of page faults serviced which required physical I/O activity.
+This could include page ahead operations by the kernel.
+Also, see
+.SM WARNINGS\s0.
+.TP
+.B ru_nswap
+The number of times a process was swapped out of main memory.
+.TP
+.B ru_inblock
+The number of times the file system had to perform input in
+servicing a
+.BR read (2V)
+request.
+.TP
+.B ru_oublock
+The number of times the file system had to perform output in
+servicing a
+.BR write (2V)
+request.
+.TP
+.B ru_msgsnd
+The number of messages sent over sockets.
+.TP
+.B ru_msgrcv
+The number of messages received from sockets.
+.TP
+.B ru_nsignals
+The number of signals delivered.
+.TP
+.B ru_nvcsw
+The number of times a context switch resulted due to a process
+voluntarily giving up the processor before its time slice was
+completed (usually to await availability of a resource).
+.TP
+.B ru_nivcsw
+The number of times a context switch resulted due to a higher
+priority process becoming runnable or because the current process
+exceeded its time slice.
+.SH RETURN VALUES
+.LP
+.B getrusage(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+The address specified by the
+.I rusage
+argument is not in a valid portion of the process's address space.
+.TP
+.SM EINVAL
+The
+.I who
+parameter is not a valid value.
+.SH SEE ALSO
+.BR gettimeofday (2),
+.BR read (2V),
+.BR wait (2V),
+.BR write (2V)
+.SH WARNINGS
+.LP
+The numbers
+.B ru_inblock
+and
+.B ru_oublock
+account only for real I/O, and are approximate measures at best.
+Data supplied by the caching mechanism is charged only
+to the first process to read and the last process to write the data.
+.LP
+The way resident set size is calculated is an approximation,
+and could misrepresent the true resident set size.
+.LP
+Page faults can be generated from a variety of sources and for
+a variety of reasons.
+The customary cause for a page fault is a direct reference
+by the program to a page which is not in memory. 
+Now, however, the kernel can generate page faults on
+behalf of the user, for example, servicing
+.BR read (2V)
+and
+.BR write (2V)
+system calls. 
+Also, a page fault can be caused by an absent hardware translation
+to a page, even though the page is in physical memory.
+.LP
+In addition to hardware detected page faults, the kernel may
+cause pseudo page faults in order to perform some housekeeping. 
+For example, the kernel may generate page faults, even if the pages
+exist in physical memory, in order to lock down pages involved
+in a raw I/O request.
+.LP
+By definition,
+.I major
+page faults require physical I/O, while
+.I minor
+page faults do not require physical I/O.
+For example, reclaiming the page from the free list would
+avoid I/O and generate a minor page fault.
+More commonly, minor page faults occur during process
+startup as references to pages which are already in memory.
+For example, if an address space faults on some \*(lqhot\*(rq
+executable or shared library, this results in a minor
+page fault for the address space.
+Also, any one doing a
+.BR read (2V)
+or
+.BR write (2V)
+to something that is in the page cache will
+get a minor page fault(s) as well.
+.SH BUGS
+.LP
+There is no way to obtain information about a child process
+which has not yet terminated.

@@ -1,0 +1,146 @@
+.\" @(#)tunefs.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH TUNEFS 8 "5 July 1990"
+.SH NAME
+tunefs \- tune up an existing (dismounted) file system
+.SH SYNOPSIS
+.B /usr/etc/tunefs
+[
+.B \-a
+.I maxcontig
+] [
+.B \-d
+.I rotdelay
+] [
+.B \-e
+.I maxbpg
+] [
+.B \-m
+.I minfree
+]
+.IR special\  |\  filesystem
+.SH DESCRIPTION
+.IX  "tunefs command"  ""  "\fLtunefs\fP \(em tune file system"
+.IX  "file system"  "tune"  "file system"  "tune \(em \fLtunefs\fP"
+.B tunefs
+is designed to change the dynamic parameters of a file system
+which affect the layout policies.
+The parameters which are to be changed are indicated by the
+.SM OPTIONS
+given below:
+.SH OPTIONS
+.TP
+.BI \-a " maxcontig"
+This specifies the maximum number of blocks, belonging to 
+the same file, that will be
+allocated contiguously before inserting a rotational delay (see
+.B \-d
+below). 
+.sp
+Formerly, this value was always 1 because neither the device drivers
+nor the Unix file system (UFS) could handle multiple block requests.
+UFS has been modified to cluster together several (up to
+.IR maxcontig )
+blocks when doing sequential
+reads and writes, resulting in higher I/O rates.  This is especially
+beneficial on drives or controllers with track buffers; in some cases it can
+double or triple the I/O rates.
+.sp
+.I Newfs
+sets the value to 7 for many drives, but
+the best value varies from drive to drive because of the track buffer size
+as well as the drive geometry.  People interested in the getting the
+utmost performace from their drives can try something like this
+(note that only the
+read case is of interest - the write case goes into the cache):
+.sp
+.in +4
+.nf
+for i in 1 2 3 4 5 6 7
+do	umount /mnt
+	tunefs -a $i /mnt
+	mount /mnt
+	dd if=/dev/zero of=/mnt/XXX bs=8k count=1000
+	umount /mnt; mount /mnt	# to clear the cache
+	time dd of=/dev/null if=/mnt/XXX bs=8k
+done
+.fi
+.in
+.sp
+.br
+.ne 5
+.sp
+This parameter is limited in the following way:
+.sp
+.ti +4
+\fIblocksize\fR * \fImaxcontig\fR must be <= \fImaxphys\fR
+.sp
+.I maxphys
+is a read-only kernel variable that specifies
+the maximum block transfer size (in bytes) that 
+the I/O subsystem is capable of satisfying.  On most machines, 
+.I maxphys 
+is 56 Kbytes; on the 
+.B sun4c
+architecture it is currently 124 Kbytes which allows 
+.I maxcontig 
+to vary from 1 to 15.  This value is subject to change.
+(The limit is enforced by 
+.IR mount (2),
+not by 
+.I newfs
+or 
+.IR mkfs .)
+.TP
+.BI \-d " rotdelay"
+This specifies the expected time (in milliseconds)
+to service a transfer completion
+interrupt and initiate a new transfer on the same disk.
+It is used to decide how much rotational spacing to place between
+successive blocks in a file.
+For drives with track buffers a
+.I rotdelay
+of 0 is usually the best choice.  
+.TP
+.BI \-e " maxbpg"
+This indicates the maximum number of blocks any single file can
+allocate out of a cylinder group before it is forced to begin
+allocating blocks from another cylinder group.
+Typically this value is set to about one quarter of the total blocks
+in a cylinder group.
+The intent is to prevent any single file from using up all the
+blocks in a single cylinder group,
+thus degrading access times for all files subsequently allocated
+in that cylinder group.
+The effect of this limit is to cause big files to do long seeks
+more frequently than if they were allowed to allocate all the blocks
+in a cylinder group before seeking elsewhere.
+For file systems with exclusively large files,
+this parameter should be set higher.
+.TP
+.BI \-m " minfree"
+This value specifies the percentage of space held back
+from normal users; the minimum free space threshold.
+The default value used is 10%.
+This value can be set to zero, however up to a factor of three
+in throughput will be lost over the performance obtained at a 10%
+threshold.
+Note: if the value is raised above the current usage level,
+users will be unable to allocate files until enough files have
+been deleted to get under the higher threshold.
+.SH "SEE ALSO"
+.BR fs (5),
+.BR dumpfs (8),
+.BR mkfs (8),
+.BR newfs (8)
+.LP
+.TX ADMIN
+.SH BUGS
+This program should work on mounted and active file systems.
+Because the super-block is not kept in the buffer cache,
+the program will only take effect if it
+is run on dismounted file systems;
+if run on the root file system, the system must be rebooted.
+.\" Take this out and a Unix Demon will dog your steps from now until
+.\" the time_t's wrap around.
+.sp
+You can tune a file system, but you can't tune a fish.

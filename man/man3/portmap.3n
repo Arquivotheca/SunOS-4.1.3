@@ -1,0 +1,266 @@
+.\" @(#)portmap.3n 1.1 92/07/30 SMI;
+.TH PORTMAP 3N "20 January 1990"
+.SH NAME
+pmap_getmaps, pmap_getport, pmap_rmtcall, pmap_set, pmap_unset,
+xdr_pamp, xdr_pmaplist \- library routines for RPC bind service
+.SH DESCRIPTION
+.IX "rpc routines" "pmap_getmaps()" "" "\fLpmap_getmaps()\fP \(em RPC bind servie"
+.IX "rpc routines" "pmap_getport()" "" "\fLpmap_getport()\fP \(em RPC bind servie"
+.IX "rpc routines" "pmap_rmtcall()" "" "\fLpmap_rmtcall()\fP \(em RPC bind servie"
+.IX "rpc routines" "pmap_set()" "" "\fLpmap_set()\fP \(em RPC bind servie"
+.IX "rpc routines" "pmap_unset()" "" "\fLpmap_unset()\fP \(em RPC bind servie"
+.IX "rpc routines" "xdr_pmap()" "" "\fLxdr_pmap()\fP \(em RPC bind servie"
+.IX "rpc routines" "xdr_pmaplist()" "" "\fLxdr_pmaplist()\fP \(em RPC bind servie"
+.IX "pmap_getmaps()" "" "\fLpmap_getmaps()\fP \(em RPC bind servie"
+.IX "pmap_getport()" "" "\fLpmap_getport()\fP \(em RPC bind servie"
+.IX "pmap_rmtcall()" "" "\fLpmap_rmtcall()\fP \(em RPC bind servie"
+.IX "pmap_set()" "" "\fLpmap_set()\fP \(em RPC bind servie"
+.IX "pmap_unset()" "" "\fLpmap_unset()\fP \(em RPC bind servie"
+.IX "xdr_pmap()" "" "\fLxdr_pmap()\fP \(em RPC bind servie"
+.IX "xdr_pmaplist()" "" "\fLxdr_pmaplist()\fP \(em RPC bind servie"
+.LP
+These routines allow client C programs to make procedure
+calls to the
+.SM RPC
+binder service.
+.BR portmap (1)
+maintains a list of mappings between programs
+and their universal addresses.
+.SS Routines
+.LP
+.nf
+.ft B
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+struct pmaplist * pmap_getmaps(addr)
+struct sockaddr_in *addr;
+.fi
+.ft R
+.IP
+Return a list of the current
+.SM RPC
+program-to-address mappings
+on the host located at
+.SM IP
+address
+.IR *addr .
+This routine returns
+.SM NULL 
+if the remote portmap service could not be contacted.
+The command
+.RB ` "rpcinfo \-p" '
+uses this routine
+(see
+.BR rpcinfo (8C)).
+.br
+.if t .ne 12
+.LP
+.ft B
+.nf
+.sp .5
+u_short pmap_getport(addr, prognum, versnum, protocol)
+struct sockaddr_in *addr;
+u_long prognum, versnum, protocol;
+.fi
+.ft R
+.IP
+Return the port number
+on which waits a service that supports program number
+.IR prognum ,
+version
+.IR versnum ,
+and speaks the transport protocol 
+.IR protocol .
+The address is returned in
+.IR addr ,
+which should be preallocated.
+The value of
+.I protocol
+can be either
+.SB IPPROTO_UDP
+or
+.BR \s-1IPPROTO_TCP\s0 .
+A return value of zero means that the mapping does not exist
+or that the
+.SM RPC
+system failed to contact the remote
+.B portmap
+service.  In the latter case, the global variable
+.B rpc_createer
+(see
+.BR rpc_clnt_create (3N))
+contains the
+.SM RPC
+status. 
+If the requested version number is not registered, but
+at least a version number is registered for the given program
+number, the call returns a port number.
+Note: 
+.B pmap_getport(\|)
+returns the port number in host byte order.
+Some other network routines may require
+the port number in network byte order.
+For example, if the port number is used as part of the
+.B sockaddr_in
+structure,
+then it should be converted to
+network byte order using
+.BR htons (3N).
+.br
+.if t .ne 15
+.LP
+.ft B
+.nf
+.sp .5
+enum clnt_stat pmap_rmtcall(addr, prognum, versnum, procnum, inproc, in, outproc, out, timeout, portp)
+struct sockaddr_in *addr;
+u_long prognum, versnum, procnum;
+char *in, *out;
+xdrproc_t inproc, outproc;
+struct timeval timeout;
+u_long *portp;
+.fi
+.ft R
+.IP
+Request that the
+.B portmap
+on the host at
+.SM IP
+address
+.I *addr
+make an
+.SM RPC
+on the behalf of the caller to a procedure on that host.
+.I *portp
+is modified to the program's port number if the
+procedure succeeds.
+The definitions of other parameters are discussed
+in
+.B callrpc(\|)
+and
+.B clnt_call(\|)
+(see
+.BR rpc_clnt_calls (3N)).
+.IP
+Warning: 
+If the requested remote procedure is not registered with the
+remote 
+.BR portmap 
+then no error response is returned and the call times out.
+Also, no authentication is done.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+bool_t pmap_set(prognum, versnum, protocol, port)
+u_long prognum, versnum;
+int protocol;
+u_short port;
+.fi
+.ft R
+.IP
+Registers a mapping between the triple
+.RI [ prognum , versnum , protocol\fR]
+and
+.I port
+on the local machine's
+.B portmap
+service. The value of
+.I protocol
+can be either
+.SB IPPROTO_UDP
+or
+.BR \s-1IPPROTO_TCP\s0 .
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+It is called by servers to register themselves with the local
+.BR portmap.
+Automatically done by
+.BR svc_register(\|) .
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t pmap_unset(prognum, versnum)
+u_long prognum, versnum;
+.fi
+.ft R
+.IP
+Deregisters all mappings between the triple
+.RI [ prognum , versnum , *\fR]
+and ports
+on the local machine's
+.B portmap
+service. 
+It is called by servers to deregister themselves with the local
+.BR portmap.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_pmap(xdrs, regp)
+\s-1XDR\s0 *xdrs;
+struct pmap *regp;
+.fi
+.ft R
+.IP
+Used for creating parameters to various
+.B portmap
+procedures, externally.
+This routine is useful for users who wish to generate
+these parameters without using the
+.B pmap
+interface.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_pmaplist(xdrs, rp)
+\s-1XDR\s0 *xdrs;
+struct pmaplist **rp;
+.fi
+.ft R
+.IP
+Used for creating a list of port mappings, externally.
+This routine is useful for users who wish to generate
+these parameters without using the
+.B pmap
+interface.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.SH SEE ALSO
+.BR rpc (3N),
+.BR portmap (8C),
+.BR rpcinfo (8C)

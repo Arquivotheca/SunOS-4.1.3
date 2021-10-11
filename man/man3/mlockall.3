@@ -1,0 +1,110 @@
+.\" @(#)mlockall.3 1.1 92/07/30 SMI;
+.TH MLOCKALL 3 "21 January 1990"
+.SH NAME
+mlockall, munlockall \- lock (or unlock) address space
+.SH SYNOPSIS
+.LP
+.nf 
+.ft B
+#include <sys/mman.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int mlockall(flags)
+int flags;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int munlockall(\|)
+.ft R
+.fi
+.IX mlockall() "" "\fLmlockall()\fP \(em lock address space"
+.IX "memory management" mlockall() "" \fLmlockall()\fP
+.IX "lock address space \(em \fLmlockall()\fP"
+.IX munlockall() "" "\fLmunlockall()\fP \(em unlock address space"
+.IX "memory management" munlockall() "" \fLmunlockall()\fP
+.IX "unlock address space \(em \fLmunlockall()\fP"
+.SH DESCRIPTION
+.LP
+.B mlockall(\|)
+locks all pages mapped by an address space in memory.
+The value of 
+.I flags
+determines whether the pages to be locked are simply
+those currently mapped by the address space, those that will be mapped in the
+future, or both.  
+.I flags
+is built from the options defined in
+.B <sys/mman.h>
+as:
+.LP
+.RS
+.ta 25n 35n
+.nf
+.ft B
+#define \s-1MCL_CURRENT\s0	0x1	/* lock current mappings */
+#define \s-1MCL_FUTURE\s0	0x2	/* lock future mappings */
+.ft R
+.fi
+.RE
+.LP
+If 
+.SB MCL_FUTURE
+is specified to 
+.B mlockall(\|) ,
+then as mappings are added to the address space (or existing mappings are
+replaced) they will also be locked, provided sufficient memory is 
+available.
+.LP
+Mappings locked via 
+.B mlockall(\|)
+with any option may be explicitly unlocked with a
+.B munlock(\|)
+call.
+.LP
+.B munlockall(\|)
+removes address space locks and locks on mappings in the address space.
+.LP
+All conditions and constraints on the use of locked memory as exist for
+.B mlock(\|)
+apply to 
+.B mlockall(\|) .
+.SH RETURN VALUES
+.LP
+.B mlockall(\|)
+and
+.B munlockall(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+(\fBmlockall(\|)\fP only.)  Some or all of the memory in the address space could
+not be locked due to sufficient resources.
+.TP
+.SM EINVAL
+.I flags
+contains values other than
+.SB MCL_CURRENT
+and 
+.BR \s-1MCL_FUTURE\s0 .
+.TP
+.SM EPERM
+The process's effective user
+.SM ID
+is not super-user.
+.SH SEE ALSO
+.BR mctl (2),
+.BR mlock (3),
+.BR mmap (2)

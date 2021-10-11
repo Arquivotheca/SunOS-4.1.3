@@ -1,0 +1,158 @@
+.\" @(#)prof.1 1.1 92/07/30 SMI
+.TH PROF 1 "22 December 1987"
+.SH NAME
+prof \- display profile data
+.SH SYNOPSIS
+.B prof
+[
+.B \-alnsz
+] [
+.B \-v
+.BI \- low
+[
+\fB\-\fIhigh\fR
+] ]
+.if n .ti +0.5i
+[
+.I image-file
+[
+.I profile-file
+\&.\|.\|. ] ]
+.SH DESCRIPTION
+.IX  "prof command"  ""  "\fLprof\fP \(em display program profile"
+.IX  display "program profile \(em \fLprof\fP"
+.IX  "programming tools"  prof  ""  "\fLprof\fP \(em display program profile"
+.IX  "performance monitoring"  prof  ""  "\fLprof\fP \(em display program profile"
+.IX  profiling  prof  ""  "\fLprof\fP \(em display program profile"
+.LP
+.B prof
+produces an execution profile of a program.
+The profile data is taken from the profile file
+which is created by programs compiled with the 
+.B \-p
+option of
+.BR cc (1V)
+and other compilers.
+That option also links in versions of the library routines (see
+.BR monitor (3))
+which are compiled for profiling.  The symbol table in the executable image
+file
+.I image-file
+.RB ( a.out
+by default) is read and correlated with the profile file
+.I profile-file
+.RB ( mon.out
+by default).  For each external symbol,
+the percentage of time spent executing
+between that symbol and the next is printed (in
+decreasing order), together
+with the number of times that routine was called and the number of
+milliseconds per call.  If more than one profile file is specified,
+the
+.B prof
+output shows the sum of the profile
+information in the given profile files.
+.LP
+To tally the number of calls to a routine, the modules that make up the
+program must be compiled with the
+.RB ' "cc \-p" '
+option (see 
+.BR cc (1V)).
+This option also means that the profile file is produced automatically.
+.LP
+A single function may be split into subfunctions for profiling
+by means of the 
+.SB MARK
+macro (see 
+.BR prof (3)).
+.LP
+Beware of quantization errors.
+.LP
+The profiled program must call 
+.BR exit (2V)
+or return normally for the profiling information to be saved in the
+.B mon.out
+file.
+.SH OPTIONS
+.TP
+.B \-a
+Report all symbols rather than just external symbols.
+.TP
+.B \-l
+Sort the output by symbol value.
+.TP
+.B \-n
+Sort the output by number of calls.
+.TP
+.B \-s
+Produce a summary profile file in
+.BR mon.sum .
+This is really only useful when more
+than one profile file is specified.
+.TP
+.B \-z
+Display routines which have zero usage (as indicated by call counts
+and accumulated time).
+.TP
+\fB\-v\fR [ \fB\-\fIlow\fR [ \fB\-\fIhigh\fR ]]
+Suppress all printing and produce a graphic version of the profile
+on the standard output for display by the
+.BR plot (1G)
+filters.  When plotting, the numbers
+.I low
+and
+.I high,
+(by default 0 and 100), select a percentage of the
+profile to be plotted, with accordingly higher resolution.
+.SH ENVIRONMENT
+.TP
+.SB PROFDIR
+If this environment variable contains a value, place profiling
+output within that directory, in a file named
+\fIpid\fB.\fIprogramname\fR.
+.I pid
+is the process
+.SM ID\s0,
+and
+.I programname
+is the name of the program being profiled, as determined by removing any path
+prefix from the
+.B argv[0]
+with which the program was called.
+If the variable contains a
+.SM NULL
+value, no profiling output is
+produced.  Otherwise, profiling output is placed in the file
+.BR mon.out .
+.SH FILES
+.PD 0
+.TP 20
+.B a.out
+executable file containing namelist
+.TP
+\fB\s-1$PROFDIR\s0/\fIpid\fB.\fIprogramname\fR
+.TP
+.B mon.out
+profiling output
+.TP
+.B mon.sum
+summary profile
+.PD
+.SH "SEE ALSO"
+.BR cc (1V),
+.BR gprof (1),
+.BR plot (1G),
+.BR tcov (1),
+.BR exit (2V),
+.BR profil (2),
+.BR monitor (3)
+.br
+.ne 4
+.SH BUGS
+.LP
+.B prof
+is confused by the
+.SM FORTRAN
+compiler which puts the entry points at the
+bottom of subroutines and
+functions.

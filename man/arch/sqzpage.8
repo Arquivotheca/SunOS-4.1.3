@@ -1,0 +1,128 @@
+.\" @(#)sqzpage.8 1.3 88/05/16 SMI
+.TH SQZPAGE 8 "06 April 1988"
+.SH NAME
+sqzpage \- synchronize with sqz to reduce real memory
+.SH SYNOPSIS
+.B sqzpage
+.I pages-to-hold
+.SH DESCRIPTION
+.LP
+.B sqzpage
+forks a
+.BR sqz (8)
+command with the request to make
+.I pages-to-hold
+physical pages unavailable.
+.B sqzpage
+then monitors the progress of the request.
+After the request has been satisfied,
+.B sqzpage
+emits the process
+.SM ID
+of the forked
+.B sqz
+process on the standard out, and exits.
+Since the 
+.B sqz
+request can take a while, and
+.B sqzpage
+waits for the request to be satisfied,
+.B sqzpage
+is useful for running a series of tests while varying the
+available memory. 
+After the tests are run, the
+.B sqz
+process can be killed,
+which will make the pages available again.
+.\".LP
+.\"It is often useful to run a series of tests while varying
+.\"the available memory.
+.\".BR sqz (8)
+.\"can be used to reduce available physical memory pages.
+.\"But since it can take a while to actually squeeze out the
+.\"pages from the system,
+.\"the tests should wait until all the pages are made unavailable.
+.\"The question of how long to wait is addressed by
+.\".BR sqzpage .
+.\".B sqzpage
+.\"will fork off a
+.\".BR sqz (8)
+.\"command to request that
+.\".I pages-to-hold
+.\"pages be made unavailable,
+.\"and then monitor the progress of the request.
+.SH OPTIONS
+.TP
+.I pages-to-hold
+Specify the number of pages to withhold from the system.
+.SH EXAMPLE
+.LP
+The following example shows the effect removing 100
+and then 200 pages from the system will have on the
+.SM VM
+cache and a file intensive process, for example,
+.BR sum (1).
+.B sum
+is run more than once to involve the
+.SM VM
+cache.  This example was run on a
+.SM 4MB
+machine with about 270 pages in the
+.SM VM
+cache.  Note: the real time increased when 200 pages were
+made unavailable.
+.RS
+.sp .5v
+.ft B
+.nf
+example% cat demosqzpage
+#! /bin/sh \-ue
+for hold in 0 100 200
+do
+	pid=`sqzpage $hold`
+	sqz status
+	for repeat in 1 2 3 4
+	do
+		echo "  "`/bin/time sum /vmunix 2>&1`
+	done
+	kill $pid
+done
+example% demosqzpage
+holding 0 pages (0K) here; 0 pages (0K) total
+	59466 662 5.0 real 4.0 user 0.6 sys
+	59466 662 4.3 real 4.0 user 0.3 sys
+	59466 662 4.4 real 4.0 user 0.2 sys
+	59466 662 4.4 real 4.0 user 0.3 sys
+holding 0 pages (0K) here; 100 pages (800K) total
+	59466 662 4.7 real 4.2 user 0.2 sys
+	59466 662 4.3 real 4.0 user 0.2 sys
+	59466 662 4.3 real 3.9 user 0.3 sys
+	59466 662 4.4 real 4.1 user 0.2 sys
+holding 0 pages (0K) here; 200 pages (1600K) total
+	59466 662 5.7 real 4.3 user 0.5 sys
+	59466 662 5.5 real 4.2 user 0.5 sys
+	59466 662 5.5 real 4.1 user 0.6 sys
+	59466 662 6.0 real 4.1 user 0.6 sys
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/sqz*
+.SH "SEE ALSO"
+.BR sqz (4S),
+.BR sqz (8)
+.PD
+.SH BUGS
+.LP
+.B sqzpage
+expects to be the only process using
+.BR sqz (4S),
+as it always uses
+.B /dev/sqz0
+and
+.BR /dev/sqz1 ,
+and only checks the total memory reserved by all
+.BR sqz (4S)
+devices.

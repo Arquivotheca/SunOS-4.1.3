@@ -1,0 +1,245 @@
+|*	@(#)satan.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Single Precision ArcTangent (x)
+|*
+routine xs.atan 001000000110	;				regtotmp;	rcssp imm2;
+|* Check Mode
+|* Make sure rounding mode is the default: 2.
+|* The current rounding mode is stored at 0x700+0xF3
+|* The correct rounding mode is stored at 0x700+0xF2
+|*     Do a single precision compare of both values and if they're
+|*     not equal, goto hang
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF3
+        ;                       i2cmp enra halt;                regtoti;        rcssp ptr5;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF2
+        ;                       i2cmp enrb halt;		regtoti;        rcssp ptr5;
+|*  Determine if x is NaN by comparing it to itself, SP.  If not equal, then x is NaN
+|*  and call routine to determine what kind of NaN:
+	;			;				;		ptr5;	ptr5!c_ssin
+	jne hang cstat;		smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr2;
+	jtierr bail.out cstat;	scmp enra enrb halt;		regtoti;	rcssp ptr2;
+	;			;				;		ptr5;		ptr5!c_s7_16
+	jne sretnan;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!stwom7
+	jge tges7_16;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!stwom14
+	jge tges2m7;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr2;
+	jlt retsptr1;		smul enra enrb halt;		regtoti;	rcssp ptr2;
+	;			halt;				;		ptr5;		ptr5!c_satana_0
+	;			smul mulbmul enra halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		ptr2;
+	;			smul mulbmul enra halt;		regtoti;	rcssp ptr2;
+	;			halt;				;		ptr2;
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr2;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+tges2m7:
+	;			;				;		ptr2;
+	;			smul enra enrb halt;		regtoti;	rcssp ptr2;
+	;			;				;		ptr5;	ptr5!c_satana_4
+	;			srccmul clkcc;			;		ptr5;
+	call satanser;		smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			smul mulaalu mulbcreg;		;		ptr2;
+	;			smul mulbmul enra halt;		regtoti;	rcssp ptr2;
+	;			halt;				;		ptr2;
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr2;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+tges7_16:
+	;			;				;		ptr5;		ptr5!c_s19_16
+	;			scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_s11_16
+	jge tges19_16;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!stwo
+	jge tges11_16;		saddam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			smma tioe tisp halt;		titotmp;	rcssp;
+	;			halt;				;		ptr5;	ptr5!sone
+	;			ssub aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			enra tioe tisp halt;		;		;
+	;			;				;		;
+	;			sdiv enrb halt;			tmptoti;	;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		;		
+	;			smul enra enrb tioe tisp halt;	;		;
+	;					;		;		ptr5;	ptr5!c_satana_4
+	;			srccmul clkcc;			;		ptr5;
+	call satanser;		smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!sone
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			smul enrb tioe tisp halt;	;		;
+	;			smul;				;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd;				;		ptr5;	ptr5!c_datanhi_0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			;				;		;	
+	;			enra tioe tisp halt;		titotmp;	;	ptr5!szero
+	;			snop enrb halt;			regtoti;	rcssp ptr5;
+	;			scmp enra halt;			regtoti;	rcssp ptr2;
+	;			;				;		;
+	jge tmpidle1;		sneg enra halt;			tmptoti;	;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+tges11_16:
+	;			;				;		ptr5;	ptr5!sone
+	;			saddam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			ssubam tioe tisp halt;		titotmp;	rcssp;
+	;			;				;		;
+	;			enra tioe tisp halt;		;		;
+	;			sdiv enrb halt;			tmptoti;	;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		;		
+	;			smul enra enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!c_satana_4
+	;			srccmul clkcc;			;		ptr5;
+	call satanser;		smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!sone
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			smul enrb tioe tisp halt;	;		;
+	;			smul;				;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd;				;		ptr5;	ptr5!c_datanhi_1
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			;				;		;	
+	;			enra tioe tisp halt;		titotmp;	;	ptr5!szero
+	;			snop enrb halt;			regtoti;	rcssp ptr5;
+	;			scmp enra halt;			regtoti;	rcssp ptr2;
+	;			;				;		;
+	jge tmpidle1;		sneg enra halt;			tmptoti;	;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+tges19_16:
+	;			;				;		ptr5;		ptr5!c_s39_16
+	;			scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!sonehalf
+	jge tges39_16;		smma enrb halt;			regtoti;	rcssp ptr5;
+	;			halt;				;		ptr5;	ptr5!sone
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			tioe tisp halt;			titotmp;	;	ptr5!sonehalf
+	;			ssubam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			enra tioe tisp halt;		;		;
+	;			sdiv enrb halt;			tmptoti;	;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		;		
+	;			smul enra enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!c_satana_4
+	;			srccmul clkcc;			;		ptr5;
+	call satanser;		smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!sone
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			smul enrb tioe tisp halt;	;		;
+	;			smul;				;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd;				;		ptr5;	ptr5!c_datanhi_2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			;				;		;	
+	;			enra tioe tisp halt;		titotmp;	;	ptr5!szero
+	;			snop enrb halt;			regtoti;	rcssp ptr5;
+	;			scmp enra halt;			regtoti;	rcssp ptr2;
+	;			;				;		;
+	jge tmpidle1;		sneg enra halt;			tmptoti;	;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+tges39_16:
+	;			;				;		ptr5;		ptr5!c_satanbig
+	;			scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;	
+	jge sretnpi;		sabs halt;			;		;		
+	;			;				;		;
+	;			tioe tisp halt;			titotmp;	;	ptr5!smone
+	;			enra halt;			regtoti;	rcssp ptr5;
+	;			sdiv enrb halt;			tmptoti;	;
+	;			halt;				;		;
+	;			halt;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		;		
+	;			smul enra enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!c_satana_4
+	;			srccmul clkcc;			;		ptr5;
+	call satanser;		smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!sone
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			smul enrb tioe tisp halt;	;		;
+	;			smul;				;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd enra tioe tisp loaddp halt;;		;
+	;			scvtd;				;		ptr5;	ptr5!c_datanhi_3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			;				;		;	
+	;			enra tioe tisp halt;		titotmp;	;	ptr5!szero
+	;			snop enrb halt;			regtoti;	rcssp ptr5;
+	;			scmp enra halt;			regtoti;	rcssp ptr2;
+	;			;				;		;
+	jge tmpidle1;		sneg enra halt;			tmptoti;	;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+sretnpi:
+	;			;				;		ptr5;	ptr5!szero
+	;			scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_datanhi_3
+	jge xispos;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcvts enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			;				;		;
+	;			sneg enra tioe tisp halt;	;		;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+xispos:
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+satanser:
+	;			halt;				;		ptr5;	ptr5!c_satana_3
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_satana_2
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_satana_1
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_satana_0
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	rtn;			halt;				;		;
+retsptr1:
+	;			;				;		ptr1;
+tmpidle1:
+	call idle1;		;				tmptoreg;	rcssp ptr1;
+

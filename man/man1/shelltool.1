@@ -1,0 +1,524 @@
+.\" @(#)shelltool.1 1.1 92/07/30 SMI;
+.TH SHELLTOOL 1 "26 May 1988"
+.SH NAME
+shelltool \- run a shell (or other program) in a SunView terminal window
+.SH SYNOPSIS
+.B shelltool
+[
+.B \-C
+]
+[
+.B \-B
+.I boldstyle
+]
+[
+.B \-I
+.I command
+]
+[
+.I generic-tool-arguments
+]
+[
+.I program 
+[
+.I arguments
+] ]
+.SH AVAILABILITY
+This command is available with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX shelltool "" "\fLshelltool\fR \(em shell terminal window"
+.IX "shell window" "\fLshelltool\fR"
+.LP
+.B shelltool
+is a standard SunView facility for shells or other programs
+that may use a standard tty-based interface.
+.LP
+When invoked, 
+.B shelltool
+runs a program, (usually a shell) in an interactive terminal emulator
+based on a tty subwindow.
+Keyboard input is passed to that program.
+If the program is a shell, it
+accepts commands and runs programs in the usual way.
+.LP
+.BR cmdtool (1),
+which provides moused-based editing, logging, and scrolling
+capabilities, also supports shell-level programs.
+See 
+.TX SVBG
+for more information.
+.LP
+To run graphics programs, use 
+.BR gfxtool (1).
+.SH OPTIONS
+.TP 15
+.B \-C
+Redirect system console output to this 
+.BR shelltool .
+.TP
+.BI \-B " boldstyle"
+Set the style for displaying bold text to
+.IR boldstyle .
+.I boldstyle
+can be a string specifying one of the choices for the
+.B /Tty/Bold_style
+default, see
+.BR "Defaults Options" ,
+below, or it may be a numerical value for one of those choices,
+from 0 to 8, corresponding to the placement of the choice in the list.
+.TP
+.BI \-I " command"
+Pass
+.I command
+to the shell. 
+.SM SPACE
+characters within the command must be escaped.
+.TP
+.I generic-tool-arguments
+.B shelltool
+accepts the generic tool arguments
+listed in
+.BR sunview (1).
+.LP
+If a
+.I program
+argument is present,
+.B shelltool
+runs it.
+If no
+.I program
+is given,
+.B shelltool
+runs the program indicated by the
+.SB SHELL
+environment variable, or
+.B /usr/bin/sh
+by default.
+.SH USAGE
+.SS Defaults Options
+These options are available through
+.BR defaultsedit (1).
+.TP
+.B /Tty/Bold_style
+Select a style for emphasized text:
+.RS
+.TP 20
+.B None
+Disable emphasis.
+.PD 0
+.TP
+.B Offset_X
+Thicken characters horizontally.
+.TP
+.B Offset_Y
+Thicken characters vertically.
+.TP
+.B Offset_X_and_Y
+Thicken characters both horizontally and vertically.
+.TP
+.B Offset_\s-1XY\s0
+Thicken characters diagonally.
+.TP
+.B Offset_X_and_\s-1XY\s0
+Thicken character both horizontally and diagonally.
+.TP
+.B Offset_Y_and_\s-1XY\s0
+Thicken characters both vertically and diagonally.
+.TP
+.B Offset_X_and_Y_and_\s-1XY\s0
+Thicken characters horizontally, vertically and diagonally.
+.TP
+.B Invert
+Display emphasis as inverse video (the standard default).
+.PD
+.RE
+.TP
+.B /Tty/Inverse_mode
+Select a style for inverse video display:
+.RS
+.TP 20
+.B Enable
+Enable inverse mode for inverted text.
+.PD 0
+.TP
+.B Disable
+Disable inverse mode for inverted text.
+.TP
+.B Same_as_bold
+Display inverted text as bold text.
+.PD
+.RE
+.br
+.ne 5
+.TP
+.B /Tty/Underline_mode
+Select a style for underlined text:
+.RS
+.TP  20
+.B Enable
+Enable underline mode for underlined text.
+.PD 0
+.TP
+.B Disable
+Disable underline mode for underlined text.
+.TP
+.B Same_as_bold
+Display underlined text as bold text.
+.PD
+.RE
+.TP
+.B /Tty/Retained
+When set to \*(lqYes\*(rq, hidden tty subwindow areas are retained in memory.
+This enhances the speed of repainting the screen at the expense
+of memory area.  \*(lqNo\*(rq is the standard default; it specifies that tty
+subwindows are not retained.
+.SS The Terminal Emulator
+.LP
+The tty subwindow is a terminal emulator.
+Whenever a tty subwindow is created, the startup file
+.B ~/.ttyswrc
+is read for initialization parameters that are specific to the
+tty subwindow.
+.SS The .ttyswrc File
+A sample
+.B \&.ttyswrc
+file can be found in
+.BR /usr/lib/ttyswrc .
+The command format for this file is:
+.LP
+.RS
+.PD 0
+.TP 20
+.B #
+Comment.
+.TP
+.BI set " variable"
+Turn on the specified variable.
+.TP
+.BI mapi " key text"
+When
+.I key
+is typed pretend
+.I text
+was input.
+.TP
+.BI mapo " key text"
+When
+.I key
+is typed pretend
+.I text
+was output.
+.PD
+.RE
+.LP		       
+The only currently defined variable is 
+.BR pagemode .
+.I key
+is one of L1-L15, F1-F15, T1-T15, R1-R15,
+.SM LEFT\s0,
+or
+.SM RIGHT 
+(see note below).
+.I text
+may contain escapes such as \eE, \en, ^X, etc. 
+(\s-1ESC\s0,
+.SM RETURN\s0,
+and
+.SM CTRL-X\s0,
+respectively).  
+See 
+.BR termcap (5) 
+for the format of the string escapes that are recognized.
+Note: 
+.B mapi
+and
+.B mapo
+may be replaced by another keymapping mechanism in the future.
+.LP
+When using the default kernel keyboard tables, the keys
+L1,
+.SM LEFT\s0,
+.SM RIGHT\s0,
+.SM BREAK\s0,
+R8, R10, R12, and R14
+cannot be mapped in this way; they send special values
+to the tty subwindow.
+Also, when using the default kernel keyboard tables,
+L1-L10 are now used by SunView.
+See 
+.BR input_from_defaults (1)
+and
+.BR kbd (4S) 
+for more information on how to change the behavior of the keyboard.
+.LP		
+It is possible to have terminal-based programs drive
+the tool in which its tty subwindow resides by sending
+special escape sequences.
+These escape sequences may also
+be sent by typing a key appropriately mapped
+using the
+.B mapo
+function described above.
+The following functions pertain to the tool in which the tty
+subwindow resides, not the tty subwindow itself. 
+.LP
+.RS
+.PD 0
+.TP 20
+.B \eE[1t
+\- open
+.TP
+.B \eE[2t
+\- close (become iconic)
+.TP
+.B \eE[3t
+\- move, with interactive feedback
+.TP
+.B \eE[3;\s-1TOP\s0;\s-1LEFT\s0t
+\- move, to
+.SB TOP LEFT
+(pixel coordinates)
+.TP
+.B \eE[4t
+\- stretch, with interactive feedback
+.TP
+.B \eE[4;\s-1HT\s0;\s-1WIDTH\s0t
+\- stretch, to
+.SB HT WIDTH
+size (in pixels)
+.TP
+.B \eE[5t
+\- front
+.TP
+.B \eE[6t
+\- back
+.TP
+.B \eE[7t
+\- refresh
+.TP
+.B \eE[8;\s-1ROWS\s0;\s-1COLS\s0t
+\- stretch, to
+.SB ROWS COLS
+size (in characters)
+.TP
+.B \eE[11t
+\- report if open or iconic by sending
+.B \eE[1t\fP or \fB\eE[2t
+.TP
+.B \eE[13t
+\- report position by sending
+.B \eE[3;\s-1TOP\s0;\s-1LEFT\s0t
+.TP
+.B \eE[14t
+\- report size in pixels by sending
+.B \eE[4;\s-1HT\s0;\s-1WIDTH\s0t
+.TP
+.B \eE[18t
+\- report size in characters by sending
+.B \eE[8;\s-1ROWS\s0;\s-1COLS\s0t
+.TP
+.B \eE[20t
+\- report icon label by sending
+.B \eE]Llabel\eE\e
+.TP
+.B \eE[21t
+\- report tool header by sending
+.B \eE]llabel\eE\e
+.TP
+.B \eE]ltext\eE\e
+\- set tool header to
+.RB text 
+.TP
+.B \eE]Ifile\eE\e
+\- set icon to the icon contained in
+.RB file ;
+.RB file
+must be in
+.I iconedit
+output format
+.TP
+.B \eE]Llabel\eE\e
+\- set icon label to
+.RB label
+.TP
+.B \eE[>\s-1OPT\s0;\|.\|.\|.h
+\- turn
+SB OPT
+on
+.RB ( \s-1OPT\s0
+= 1 => pagemode), for example,
+.B \eE[>1;3;4h
+.TP
+.B \eE[>\s-1OPT\s0;\|.\|.\|.k
+\- report
+.BR \s-1OPT\s0 ;
+sends
+.B \eE[>\s-1OPT\s0l
+or
+.B \eE[>\s-1OPT\s0h
+for each
+.SB OPT
+.TP
+.B \eE[>\s-1OPT\s0;\|.\|.\|.l
+\- turn
+.SB OPT
+off
+.RB ( \s-1OPT\s0
+= 1 => pagemode), for example,
+.B \eE[>1;3;4l
+.PD
+.RE
+.LP
+See
+.SB EXAMPLES
+for an example of using this facility.
+.SS Selections
+.LP
+Terminal subwindows support a selection facility that allows you
+to capture a block of text, move it between windows, and
+replicate it. 
+You can make a selection by clicking the left
+button on the mouse at the top-left character of the block to
+capture, and then clicking the middle
+button on the bottom-right character.
+The selected text is highlighted.
+Multiple clicks of the
+.SM LEFT
+mouse button capture:
+.RS
+.TP 10
+.PD 0
+1 click
+a character
+.TP
+2 clicks
+a word
+.TP
+3 clicks
+a line
+.TP
+4 clicks
+a screenful
+.PD
+.RE
+.LP
+You can also make a selection by moving the mouse while holding
+the select button, and then releasing it.
+The selection is deselected if you type any key or new output
+is written to the window that holds the selection.
+.SS Menu
+To manipulate your selection, press the menu button over the terminal
+subwindow.  
+A
+.I ttysw
+menu appears with the menu items discussed
+below:
+.\"
+.TP 20
+.B Copy, then Paste
+When there is a selection in any window,
+the entire item is active.  Selecting it copies the selection both to
+the clipboard and to the insertion point (cursor).
+It copies selections in tty, text, command, and panel subwindows, and
+It is intended to bridge the gap between
+.B Stuff
+and the selection facility (see
+.TX SVBG .
+When there is no selection but there is text
+on the clipboard, only
+.B Paste
+is active.  In this case, the contents of the clipboard are
+copied to the insertion point (cursor).
+When there is no selection and nothing on the clipboard,
+this item is inactive.
+.\"
+.TP
+.B Enable Page Mode
+.PD 0
+.TP
+.B Disable Page Mode
+.PD
+Toggle page mode on and off.
+Page mode prevents output from scrolling off the screen.  It is an
+alternative to
+.BR more (1).
+When page mode is on, the cursor changes to resemble a tiny stop-sign
+when ever a screenful of output is displayed.  To restart output, type
+any key, or select the 
+.B Continue
+menu item that temporarily replaces 
+.BR "Enable Page Mode" .
+.TP
+.B Stuff
+is provided for backward compatibility.  It 
+copies the selection to the insertion point (cursor)
+as though they had been typed from the keyboard.
+.B Stuff
+can only handle selections made in a tty subwindow.
+.br
+.ne 4
+.TP
+.B Flush Input
+Occasionally the input buffer fills up and the terminal emulator
+appears to freeze.  If this happens, the 
+.RB ` "Flush Input" '
+appears in the menu; choosing it clears the buffer and
+allows you to continue.
+.br
+.ne 10
+.SH EXAMPLES
+.LP
+The following aliases can be put into your
+.B ~/.cshrc
+file:
+.RS
+.sp .5
+.nf
+.ft B
+# dynamically set the name stripe of the tool:
+alias header 'echo \-n "\eE]l\e!*\eE\e"'
+# dynamically set the label on the icon:
+alias iheader 'echo \-n "\eE]L\e!*\eE\e"'
+# dynamically set the image on the icon:
+alias icon 'echo \-n "\eE]I\e!*\eE\e"'
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B ~/.ttyswrc
+.TP
+.B /usr/lib/ttyswrc
+.TP
+.B /usr/demo/*
+.PD
+.SH "SEE ALSO"
+.LP
+.BR cmdtool (1),
+.BR defaultsedit (1),
+.BR gfxtool (1),
+.BR input_from_defaults (1),
+.BR more (1),
+.BR rlogin (1C),
+.BR sunview (1),
+.BR kbd (4S),
+.BR termcap (5)
+.LP
+.TX SVBG
+.SH BUGS
+If more than 256 characters are input to a terminal emulator subwindow
+without an intervening
+.SM NEWLINE\s0,
+the terminal emulator may hang.
+If this occurs, an alert will come up with a message saying
+.RB ` "Too many keystrokes in input buffer" '.
+Choosing the
+.B "Flush Input Buffer"
+menu item may correct the problem.
+This is a bug for a terminal emulator subwindow running on top of or
+.BR rlogin (1C)
+to a machine with pre-4.0 release kernel.

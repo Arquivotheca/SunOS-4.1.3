@@ -1,0 +1,272 @@
+.\" @(#)ms.7 1.1 92/07/30 SMI; from UCB 4.2
+.TH MS 7 "16 February 1988"
+.SH NAME
+ms \- text formatting macros
+.SH SYNOPSIS
+.B nroff\ \-ms
+[
+.I options
+]
+.I filename
+\&.\|.\|.
+.LP
+.B troff\ \-ms
+[
+.I options
+] 
+.I filename 
+\&.\|.\|.
+.IX  "ms file"  ""  "\fL\-ms\fP \(em macro package"
+.IX  "document production"  "ms file"  ""  "\fL\-ms\fP \(em macro package"
+.SH DESCRIPTION
+.LP
+This package of
+.BR nroff (1)
+and
+.BR troff (1)
+macro definitions provides a formatting facility
+for various styles of articles, theses, and books.
+When producing 2-column output on a terminal or lineprinter,
+or when reverse line motions are needed, filter the output through
+.BR col (1V).
+All external
+.B \-ms
+macros are defined below.
+.LP
+Note: this 
+.B \-ms
+macro package is an extended version written at Berkeley and is a
+superset of the standard 
+.B \-ms
+macro packages as supplied by Bell Labs.  Some of the Bell Labs macros
+have been removed; for instance, it is assumed that the user has little
+interest in producing headers stating that the memo was generated at
+Whippany Labs.
+.LP
+Many
+.B nroff
+and
+.B troff
+requests are unsafe in conjunction with this package.
+However, the first four requests below
+may be used with impunity after initialization,
+and the last two may be used even before initialization:
+.LP
+.RS
+.PD 0
+.TP 8
+.B \&.bp
+begin new page
+.TP
+.B \&.br
+break output line
+.TP
+.BI \&.sp " n"
+insert n spacing lines
+.TP
+.BI \&.ce " n"
+center next n lines
+.TP
+.BI \&.ls " n"
+line spacing:
+.IB n =1
+single,
+.IB n =2
+double space
+.TP
+.B \&.na
+no alignment of right margin
+.PD
+.RE
+.LP
+Font and point size changes with
+.B \ef
+and
+.B \es
+are also allowed; for example,
+.B \efIword\efR
+will italicize
+.IR word .
+Output of the
+.BR tbl (1),
+.BR eqn (1)
+and
+.BR refer (1)
+preprocessors for equations, tables, and references is acceptable as input.
+.SH REQUESTS
+.if n .in 0
+.ds x \fIx\fP
+.ds y \fIy\fP
+.ds z \fI y\fP
+.ds Y \fIx y\fP
+.ta \w'MacroNam'u +\w'InitialVal\ \ 'u +\w'Break?\ \ \ \ 'u
+.sp .3
+.nf
+Macro	Initial	Break?	\0 Explanation
+Name	Value	Reset?
+.sp .3
+\fB\s-1\&.AB\fR\s0 \*x	\-	y	begin abstract; if \*x=no do not label abstract
+\fB\s-1\&.AE\fR\s0	\-	y	end abstract
+\fB\s-1\&.AI\fR\s0	\-	y	author's institution
+\fB\s-1\&.AM\fR\s0	\-	n	better accent mark definitions
+\fB\s-1\&.AU\fR\s0	\-	y	author's name
+\fB\&.B\fR \*x	\-	n	embolden \*x; if no \*x, switch to boldface
+\fB\&.B1\fR	\-	y	begin text to be enclosed in a box
+\fB\&.B2\fR	\-	y	end boxed text and print it
+\fB\s-1\&.BT\fR\s0	date	n	bottom title, printed at foot of page
+\fB\s-1\&.BX\fR\s0 \*x	\-	n	print word \*x in a box
+\fB\s-1\&.CM\fR\s0	if t	n	cut mark between pages
+\fB\s-1\&.CT\fR\s0	\-	y,y	chapter title: page number moved to \s-1CF\s0 (\s-1TM\s0 only)
+\fB\s-1\&.DA\fR\s0 \*x	if n	n	force date \*x at bottom of page; today if no \*x
+\fB\s-1\&.DE\fR\s0	\-	y	end display (unfilled text) of any kind
+\fB\s-1\&.DS\fR\s0 \*Y	I	y	begin display with keep; \*x=I,\|L,\|C,\|B; \*y=indent 
+\fB\s-1\&.ID\fR\s0\*z	8n,.5i	y	indented display with no keep; \*y=indent
+\fB\s-1\&.LD\fR\s0	\-	y	left display with no keep
+\fB\s-1\&.CD\fR\s0	\-	y	centered display with no keep
+\fB\s-1\&.BD\fR\s0	\-	y	block display; center entire block
+\fB\s-1\&.EF\fR\s0 \*x	\-	n	even page footer \*x (3 part as for \fB.tl\fR)
+\fB\s-1\&.EH\fR\s0 \*x	\-	n	even page header \*x (3 part as for \fB.tl\fR)
+\fB\s-1\&.EN\fR\s0	\-	y	end displayed equation produced by \fBeqn\fP
+\fB\s-1\&.EQ\fR\s0 \*Y	\-	y	break out equation; \*x=L,I,C; \*y=equation number
+\fB\s-1\&.FE\fR\s0	\-	n	end footnote to be placed at bottom of page
+\fB\s-1\&.FP\fR\s0	\-	n	numbered footnote paragraph; may be redefined
+\fB\s-1\&.FS\fR\s0 \*x	\-	n	start footnote; \*x is optional footnote label
+\fB\s-1\&.HD\fR\s0	undef	n	optional page header below header margin
+\fB\&.I\fR \*x	\-	n	italicize \*x; if no \*x, switch to italics
+\fB\s-1\&.IP\fR\s0 \*Y	\-	y,y	indented paragraph, with hanging tag \*x; \*y=indent
+\fB\s-1\&.IX\fR\s0 \*Y	\-	y	index words \*x \*y and so on (up to 5 levels)
+\fB\s-1\&.KE\fR\s0	\-	n	end keep of any kind
+\fB\s-1\&.KF\fR\s0	\-	n	begin floating keep; text fills remainder of page
+\fB\s-1\&.KS\fR\s0	\-	y	begin keep; unit kept together on a single page
+\fB\s-1\&.LG\fR\s0	\-	n	larger; increase point size by 2
+\fB\s-1\&.LP\fR\s0	\-	y,y	left (block) paragraph.
+\fB\s-1\&.MC\fR\s0 \*x	\-	y,y	multiple columns; \*x=column width
+\fB\s-1\&.ND\fR\s0 \*x	if t	n	no date in page footer; \*x is date on cover
+\fB\s-1\&.NH\fR\s0 \*Y	\-	y,y	numbered header; \*x=level, \*x=0 resets, \*x=S sets to \*y
+\fB\s-1\&.NL\fR\s0	10p	n	set point size back to normal
+\fB\s-1\&.OF\fR\s0 \*x	\-	n	odd page footer \*x (3 part as for \fB.tl\fR)
+\fB\s-1\&.OH\fR\s0 \*x	\-	n	odd page header \*x (3 part as for \fB.tl\fR)
+\fB\&.P1\fR	if \s-1TM\s0	n	print header on first page
+\fB\s-1\&.PP\fR\s0	\-	y,y	paragraph with first line indented
+\fB\s-1\&.PT\fR\s0	- % -	n	page title, printed at head of page
+\fB\s-1\&.PX\fR\s0 \*x	\-	y	print index (table of contents); \*x=no suppresses title
+\fB\s-1\&.QP\fR\s0	\-	y,y	quote paragraph (indented and shorter)
+\fB\&.R\fR	on	n	return to Roman font
+\fB\s-1\&.RE\fR\s0	5n	y,y	retreat: end level of relative indentation
+\fB\s-1\&.RP\fR\s0 \*x	\-	n	released paper format; \*x=no stops title on first page
+\fB\s-1\&.RS\fR\s0	5n	y,y	right shift: start level of relative indentation
+\fB\s-1\&.SH\fR\s0	\-	y,y	section header, in boldface
+\fB\s-1\&.SM\fR\s0	\-	n	smaller; decrease point size by 2
+\fB\s-1\&.TA\fR\s0	8n,5n	n	set \s-1TAB\s0 characters to 8n 16n .\|.\|. (\fBnroff\fR) 5n 10n .\|.\|. (\fBtroff\fR)
+\fB\s-1\&.TC\fR\s0 \*x	\-	y	print table of contents at end; \*x=no suppresses title
+\fB\s-1\&.TE\fR\s0	\-	y	end of table processed by \fBtbl\fP
+\fB\s-1\&.TH\fR\s0	\-	y	end multi-page header of table
+\fB\s-1\&.TL\fR\s0	\-	y	title in boldface and two points larger
+\fB\s-1\&.TM\fR\s0	off	n	\s-1UC\s0 Berkeley thesis mode
+\fB\s-1\&.TS\fR\s0 \*x	\-	y,y	begin table; if \*x=H table has multi-page header
+\fB\s-1\&.UL\fR\s0 \*x	\-	n	underline \*x, even in \fBtroff\fP
+\fB\s-1\&.UX\fR\s0 \*x	\-	n	\s-1UNIX\s0; trademark message first time; \*x appended
+\fB\s-1\&.XA\fR\s0 \*Y	\-	y	another index entry; \*x=page or no for none; \*y=indent
+\fB\s-1\&.XE\fR\s0	\-	y	end index entry (or series of \fB\s-1.IX\fP\s0 entries)
+\fB\s-1\&.XP\fR\s0	\-	y,y	paragraph with first line exdented, others indented
+\fB\s-1\&.XS\fR\s0 \*Y	\-	y	begin index entry; \*x=page or no for none; \*y=indent
+\fB\&.1C\fR	on	y,y	one column format, on a new page
+\fB\&.2C\fR	\-	y,y	begin two column format
+\fB\&.]\|\-\fR	\-	n	beginning of \fBrefer\fP reference
+\fB\&.[\|0\fR	\-	n	end of unclassifiable type of reference
+\fB\&.[\|N\fR	\-	n	N= 1:journal-article, 2:book, 3:book-article, 4:report
+.fi
+.DT
+.SH REGISTERS
+.LP
+Formatting distances can be controlled in
+.B \-ms
+by means of built-in number registers.
+For example, this sets the line length to 6.5 inches:
+.IP
+.B \&.nr  LL  6.5i
+.LP
+Here is a table of number registers and their default values:
+.LP
+.RS
+.nf
+.ta .5i +\w'Name\0'u +\w'paragraph distance 'u +\w'Takes Effect\ \ \  'u
+Name	Register Controls	Takes Effect	Default
+.sp .3
+\fB\s-1PS\fR\s0	point size      	paragraph	10
+\fB\s-1VS\fR\s0	vertical spacing	paragraph	12
+\fB\s-1LL\fR\s0	line length     	paragraph	6i
+\fB\s-1LT\fR\s0	title length    	next page	same as \fB\s-1LL\fR\s0
+\fB\s-1FL\fR\s0	footnote length 	next \fB\s-1.FS\fR\s0	5.5i
+\fB\s-1PD\fR\s0	paragraph distance	paragraph	1v (if n), .3v (if t)
+\fB\s-1DD\fR\s0	display distance	displays	1v (if n), .5v (if t)
+\fB\s-1PI\fR\s0	paragraph indent	paragraph	5n
+\fB\s-1QI\fR\s0	quote indent    	next \fB\s-1.QP\fR\s0	5n
+\fB\s-1FI\fR\s0	footnote indent 	next \fB\s-1.FS\fR\s0	2n
+\fB\s-1PO\fR\s0	page offset     	next page	0 (if n), \(ap1i (if t)
+\fB\s-1HM\fR\s0	header margin   	next page	1i
+\fB\s-1FM\fR\s0	footer margin   	next page	1i
+\fB\s-1FF\fR\s0	footnote format 	next \fB\s-1.FS\fR\s0	0 (1, 2, 3 available)
+.fi
+.RE
+.LP
+When resetting these values,
+make sure to specify the appropriate units.
+Setting the line length to 7, for example,
+will result in output with one character per line.
+Setting
+.SB FF
+to 1 suppresses footnote superscripting;
+setting it to 2 also suppresses indentation of the first line;
+and setting it to 3 produces an
+.BR \s-1\&.IP\s0 -like
+footnote paragraph.
+.LP
+Here is a list of string registers available in
+.BR \-ms ;
+they may be used anywhere in the text:
+.LP
+.RS
+.nf
+.ta .5i 1.1i
+Name	String's Function
+.sp .3
+\fB\e*Q\fR	quote (\fB"\fR in \fBnroff,\fP\| \fB``\fR in \fBtroff\fP )
+\fB\e*U\fR 	unquote (\fB"\fR in \fBnroff,\fP\| \fB''\fR in \fBtroff\fP )
+\fB\e*\-\fR	dash (\fB--\fR in \fBnroff,\fP \fB\(em\fR in \fBtroff\fP )
+\fB\e*(\s-1MO\fR\s0	month (month of the year)
+\fB\e*(\s-1DY\fR\s0	day (current date)
+\fB\e**\fR	automatically numbered footnote
+\fB\e*\'\fR	acute accent (before letter)
+\fB\e*\`\fR	grave accent (before letter)
+\fB\e*\d^\fR	\ucircumflex (before letter)
+\fB\e*,\fR	cedilla (before letter)
+\fB\e*:\fR	umlaut (before letter)
+\fB\e*\d~\fR	\utilde (before letter)
+.fi
+.RE
+.LP
+When using the extended accent mark definitions available with
+.BR \s-1\&.AM\s0 ,
+these strings should come after, rather than before,
+the letter to be accented.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/share/lib/tmac/tmac.s
+.TP
+.B /usr/share/lib/ms/ms.???
+.PD
+.SH SEE ALSO
+.BR col (1V),
+.BR eqn (1),
+.BR nroff (1),
+.BR refer (1),
+.BR tbl (1),
+.BR troff (1)
+.LP
+.TX DOCS
+.SH BUGS
+.LP
+Floating keeps and regular keeps are diverted to the same space,
+so they cannot be mixed together with predictable results.

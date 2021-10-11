@@ -1,0 +1,138 @@
+.\" @(#)paste.1v 1.1 92/07/30 SMI; from S5R2 6.2
+.TH PASTE 1V "17 September 1989"
+.SH NAME
+paste \- join corresponding lines of several files, or subsequent lines of one file
+.SH SYNOPSIS
+.B paste 
+.I filename1
+.I filename2
+\&.\|.\|.
+.br
+.B paste
+.BI \-d list
+.I filename1
+.I filename2
+\&.\|.\|.
+.br
+.B paste
+.B \-s
+[
+.BI \-d list
+]
+.I filename
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX paste "" "\fLpaste\fR \(em horizontal merge"
+.IX files paste "" "\fLpaste\fR \(em horizontal merge"
+.IX "merge files \(em \fLpaste\fR"
+In the first two forms,
+.B paste
+concatenates corresponding lines of the given input
+files
+.IR filename1 ,
+.IR filename2 ,
+etc.
+It treats each file as a column or columns
+of a table and pastes them together horizontally
+(parallel merging).
+It is the counterpart of
+.BR cat (1V)
+which concatenates vertically, that is,
+one file after the other.
+In the last form above,
+.B paste
+replaces the function of an older command with the same name
+by combining subsequent lines of the input file (serial merging).
+In all cases,
+lines are glued together with the
+.SM TAB
+character, or with characters from an optionally specified
+.IR list .
+.B paste
+can be used as a filter, if
+.B \-
+is used in place of a filename.
+.SH OPTIONS
+.TP
+.B "\-d"
+Without this option, the
+.SM NEWLINE
+characters of each but the last file
+(or last line in case of the
+.B \-s
+option)
+are replaced by a
+.SM  TAB
+character.  This option allows replacing the
+.SM TAB
+character by one or more alternate characters in
+.I list.
+The list is used circularly; when exhausted, it is reused.
+In parallel merging (no
+.B \-s
+option),
+the lines from the last file are always terminated with a
+.SM NEWLINE
+character,
+not from the
+.IR list .
+.I list
+may contain the special escape sequences:
+.B \en
+.BR  (\s-1NEWLINE\s0),
+.B \et
+.BR  (tab),
+.B \e\e
+.BR  (backslash), " and"
+.B \e0
+(empty string, not a null character).
+Quoting may be necessary, if characters
+have special meaning to the shell.
+.TP
+.B "\-s"
+Merge subsequent lines rather than one from each input file.
+Use
+.SM TAB
+for concatenation, unless
+.I list
+is specified
+with
+.BR \-d .
+Regardless of the
+.IR list ,
+the very last character of the file is forced to be a
+.SM NEWLINE\s0.
+.SH EXAMPLES
+.\".TP
+.\"\fBls \|\(bv\| paste \|\-d" " \|\-\fR
+.\"List directory in one column.
+.LP 
+List directory in four columns:
+.IP
+.B "ls | paste\|\-\|\-\|\-\|\-"
+.LP
+Combine pairs of lines into lines:
+.IP
+.ft B
+paste \-s \-d"\e\|t\e\|n" filename
+.ft
+.LP
+.SH "SEE ALSO"
+.BR cat (1V),
+.BR cut (1V),
+.BR grep (1V),
+.BR pr (1V)
+.SH DIAGNOSTICS
+.TP
+.B "line too long"
+Output lines are restricted to 511 characters.
+.TP
+.B "too many files"
+Except for
+.B \-s
+option, no more than 12 input files may be specified.

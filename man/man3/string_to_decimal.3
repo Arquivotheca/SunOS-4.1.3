@@ -1,0 +1,312 @@
+.\" @(#)string_to_decimal.3 1.1 92/07/30 SMI;
+.TH STRING_TO_DECIMAL 3 "21 January 1988"
+.SH NAME
+string_to_decimal, file_to_decimal, func_to_decimal \- parse characters into decimal record
+.SH SYNOPSIS
+.nf
+.B #include <floatingpoint.h>
+.B #include <stdio.h>
+.LP
+.B void string_to_decimal(pc,nmax,fortran_conventions,pd,pform,pechar)
+.B char **pc;
+.B int nmax;
+.B int fortran_conventions;
+.B decimal_record *pd;
+.B enum decimal_string_form *pform;
+.B char **pechar;
+.LP
+.B void   file_to_decimal(pc,nmax,fortran_conventions,pd,pform,pechar,pf,pnread)
+.B char **pc;
+.B int nmax;
+.B int fortran_conventions;
+.B decimal_record *pd;
+.B enum decimal_string_form *pform;
+.B char **pechar;
+.B \s-1FILE\s0 *pf;
+.B int *pnread;
+.LP
+.B void   func_to_decimal(pc,nmax,fortran_conventions,pd,pform,pechar,pget,pnread,punget)
+.B char **pc;
+.B int nmax;
+.B int fortran_conventions;
+.B decimal_record *pd;
+.B enum decimal_string_form *pform;
+.B char **pechar;
+.B int  (*pget)(\|);
+.B int *pnread;
+.B int  (*punget)(\|);
+.fi
+.SH DESCRIPTION
+.IX  "string_to_decimal()"  ""  "\fLstring_to_decimal()\fP \(em decimal record from character string"
+.IX  "file_to_decimal()"  ""  "\fLfile_to_decimal()\fP \(em decimal record from character stream"
+.IX  "func_to_decimal()"  ""  "\fLfile_to_decimal()\fP \(em decimal record from character function"
+.LP
+The
+.B char_to_decimal(\|)
+functions parse a numeric token from at most
+.I nmax
+characters in a string
+.I **pc
+or file
+.I *pf
+or function
+.IB (*pget) (\|)
+into a decimal record
+.IR *pd ,
+classifying the form of the string in
+.I *pform
+and
+.IR *pechar .
+The accepted syntax is intended to be sufficiently
+flexible to accomodate many languages:
+.IP
+.I whitespace value
+.LP
+or
+.IP
+.I whitespace sign value
+.LP
+where
+.I whitespace
+is any number of characters defined by
+.I isspace
+in
+.BR <ctype.h> ,
+.I sign
+is either of [+\-], and
+.I value
+can be
+.IR number ,
+.IR nan ,
+or
+.IR inf .
+.I inf
+can be
+.SM INF
+.RI ( inf_form )
+or
+.SM INFINITY
+.RI ( infinity_form )
+without regard to case.
+.I nan
+can be
+.SM NAN
+.RI ( nan_form )
+or
+.SM
+.RI NAN\s0( nstring )
+.RI ( nanstring_form )
+without regard to case;
+.I nstring
+is any string of characters not containing
+.RB ' ) '
+or
+the null character;
+.I nstring
+is copied to
+.IB pd \->ds
+and, currently, not used subsequently.
+.I number
+consists of
+.IP
+.I significant
+.LP
+or
+.IP
+.I significant efield
+.LP
+where
+.I significant
+must contain one or more digits and may contain
+one point; possible forms are
+.IP
+.nf
+.IR digits		(int_form)
+.IR digits.		(intdot_form)
+.IR .digits		(dotfrac_form)
+.IR digits . digits	(intdotfrac_form)
+.fi
+.LP
+.I efield
+consists of
+.IP
+.I echar digits
+.LP
+or
+.IP
+.I echar sign digits
+.LP
+where
+.I echar
+is one of [Ee], and
+.I digits
+contains one or more digits.
+.LP
+When
+.I fortran_conventions
+is nonzero, additional input forms are accepted
+according to various Fortran conventions:
+.PD 0
+.TP 5
+0
+no Fortran conventions
+.TP
+1
+Fortran list-directed input conventions
+.TP
+2
+Fortran formatted input conventions, ignore blanks
+.BR  (\s-1BN\s0)
+.TP
+3
+Fortran formatted input conventions, blanks are zeros
+.BR  (\s-1BZ\s0)
+.PD
+.LP
+When
+.I fortran_conventions
+is nonzero,
+.I echar
+may also be one of [Dd], and
+.I efield
+may also have the form
+.IP
+.IR "sign digits" .
+.LP
+When
+.IR fortran_conventions ">= 2,"
+blanks may appear in the
+.I digits
+strings for the integer, fraction, and exponent
+fields and may appear between
+.I echar
+and the exponent sign and after the infinity
+and NaN forms.  If
+.IR fortran_conventions "== 2,"
+the blanks are ignored.  When
+.IR fortran_conventions "== 3,"
+the blanks that appear in
+.I digits
+strings are interpreted as zeros,
+and other blanks are ignored.
+.LP
+When
+.I fortran_conventions
+is zero, the current locale's decimal point character is used as the decimal
+point; when
+.I fortran_conventions
+is nonzero, the period is used as the decimal point.
+.LP
+The form of the accepted decimal string is placed in
+.IR *peform .
+If an
+.I efield
+is recognized,
+.I *pechar
+is set to point to the
+.IR echar .
+.LP
+On input,
+.I *pc
+points to the beginning of a character string buffer of length >=
+.IR nmax .
+On output,
+.I *pc
+points to a character in that buffer, one past the last accepted character.
+.B string_to_decimal(\|)
+gets its characters from the buffer;
+.B file_to_decimal(\|)
+gets its characters from
+.I *pf
+and records them in the buffer,
+and places a null after the last character read.
+.B func_to_decimal(\|)
+gets its characters from an int function
+.IB (*pget) (\|)\fR.
+.LP
+The scan continues until no more characters
+could possibly fit the acceptable syntax or until
+.I nmax
+characters have been scanned.  If the
+.I nmax
+limit is not reached then at least one extra
+character will usually be scanned that is not
+part of the accepted syntax.
+.B file_to_decimal(\|)
+and
+.B func_to_decimal(\|)
+set
+.I *pnread
+to the number of characters read from the file;
+if greater than
+.IR nmax ,
+some characters were lost.
+If no characters were lost,
+.B file_to_decimal(\|)
+and
+.B func_to_decimal(\|)
+attempt to push back, with
+.BR ungetc (3S)
+or
+.IB (*punget) (\|)\fR,
+as many as possible of the excess characters
+read, adjusting
+.I *pnread
+accordingly.
+If all unget calls are successful, then
+.I **pc
+will be
+a null character.
+No push back will be attempted if
+.IB (*punget) (\|)
+is
+.SM NULL\s0.
+.br
+.ne 11
+.LP
+Typical declarations for
+.IB *pget (\|)
+and
+.IB *punget (\|)
+are:
+.LP
+.RS
+.nf
+.ft B
+	int xget(\|)
+	{ .\|.\|.  }
+	int (*pget)(\|) = xget;
+	int xunget(c)
+	char c ;
+	{ .\|.\|. }
+	int (*punget)(\|) = xunget;
+.ft R
+.fi
+.RE
+.LP
+If no valid number was detected,
+.IB pd \->fpclass
+is set to
+.BR fp_signaling ,
+.I *pc
+is unchanged,
+and
+.I *pform
+is set to
+.BR invalid_form .
+.LP
+.B atof(\|)
+and
+.BR strtod (3)
+use
+.BR string_to_decimal(\|) .
+.BR scanf (3V)
+uses
+.BR file_to_decimal(\|) .
+.SH "SEE ALSO"
+.BR ctype (3V),
+.BR localeconv (3),
+.BR scanf (3V),
+.BR setlocale (3V),
+.BR strtod (3),
+.BR ungetc (3S)

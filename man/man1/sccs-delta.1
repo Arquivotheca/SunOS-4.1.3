@@ -1,0 +1,234 @@
+.\" @(#)sccs-delta.1 1.1 92/07/30 SMI;
+.TH SCCS-DELTA 1 "19 December 1989"
+.SH NAME
+sccs-delta, delta \- make a delta to an SCCS file
+.SH SYNOPSIS
+.B /usr/sccs/delta
+[ 
+.B \-nps
+]
+[ 
+.BI \-g sid-list
+]
+[
+.BI \-m mr-list
+]
+.if n .ti +0.5i
+[
+.BI \-r sid
+]
+[
+.B \-y\c
+.RI [ comment ]
+]
+.I s.filename
+\&.\|.\|.
+.SH DESCRIPTION
+.IX delta "make SCCS delta \(em \fLdelta\fR"
+.IX create "delta \(em \fLdelta\fR"
+.IX create  "SCCS delta \(em \fLdelta\fR"
+.IX make  "delta, SCCS \(em \fLdelta\fR"
+.IX make  "SCCS delta \(em \fLdelta\fR"
+.IX "SCCS delta" "create \(em \fLdelta\fR"
+.LP
+.B delta
+checks in a record of the line-by-line differences made to a
+checked-out version of a file under
+.SM SCCS
+control.  These changes are taken from the writable working
+copy that was retrieved using the
+.SM SCCS
+.B get
+command (see
+.BR sccs-get (1)).
+This working copy does not have the
+.RB ` s. '
+prefix, and is also referred to as a
+.BR g -file.
+.LP
+If a directory name is used in place of the
+.IR s.filename ,
+argument, the
+.B delta
+command applies to all
+.BR s. files
+in that directory.
+Unreadable
+.BR s. files
+produce an error; processing continues with the next file (if
+any).
+The
+use of
+.RB ` \- '
+as the
+.I s.filename
+argument indicates that the names of files are to be read from the
+standard input, one
+.BR s.file 
+per line (requires
+.BR \-y ,
+and in some cases,
+.BR \-m ).
+.LP
+.B delta
+may issue prompts on the standard output depending upon
+the options specified and the flags that are set in the
+.BR s. file
+(see
+.BR sccs-admin (1),
+and the
+.B \-m
+and
+.B \-y
+options below, for details).
+.SH OPTIONS
+.TP
+.B \-n
+Retain the edited
+.BR g -file,
+which is normally removed at the completion of processing.
+.TP
+.B \-p
+Display line-by-line differences (in
+.BR diff (1)
+format) on the standard output.
+.TP
+.B \-s
+Silent.  Do not display warning or confirmation messages.  Do
+not suppress error messages (which are written to standard error).
+.TP
+.BI \-g sid-list
+Specify a list of deltas to omit when the file is accessed at the
+.SM SCCS
+version
+.SM ID
+(\s-1SID\s0)
+created by this delta.
+.I sid-list
+is a comma-separated list of
+.SM SID\s0s.
+To specify a range of deltas, use a
+.RB ` \- '
+separator instead of a comma, between two
+.SM SID\s0s
+in the list.
+.TP
+.B \-m\fR\|[\|\fImr-list\fR\|]
+If the SCCS file has the
+.B v
+flag set (see
+.BR sccs-admin (1)),
+you must supply one or more Modification Request (MR) numbers
+for the new delta.
+When specifying more than one MR number on the command line,
+.I mr-list
+takes the form of a quoted, space-separated list.
+If
+.B \-m
+is not used and the standard input is a terminal,
+.B delta
+prompts with
+.B \s-1MR\s0s?
+for the list (before issuing the
+.B comments?
+prompt).
+If the
+.B v
+flag in the
+.BR s. file
+has a value, it is
+taken to be the name of a program to validate the MR numbers.
+If
+that validation program returns a non-zero exit status,
+.B delta
+terminates without checking in the changes.
+.TP
+.BI \-r sid
+When two or more versions are checked out, specify the version
+to check in.
+This
+.SM SID
+value can be either the
+.SM SID
+specified on the
+.B get
+command line, or the
+.SM SID
+of the new version to be checked in
+as reported by
+.BR get .
+A diagnostic results if the specified
+.SM SID
+is ambiguous, or if one is required but not supplied.
+.HP
+.B \-y\c
+.RI [ comment ]
+.br
+Supply a comment for the delta table (version log).  A
+null
+comment is accepted, and produces an empty commentary in the log.  If
+.B \-y
+is not specified and the standard input is a terminal,
+.B delta
+prompts with
+.RB ` comments? '.
+An unescaped
+.SM NEWLINE
+terminates the comment.
+.SH FILES
+.PD 0
+.TP 20
+.BI d. file
+temporary file of differences
+.TP
+.BI p. file
+lock file for a checked-out version
+.TP
+.BI q. file
+temporary file
+.TP
+.BI s. file
+.SM SCCS
+history file
+.TP
+.BI x. file
+temporary copy of the
+.BR s. file
+.TP
+.BI z. file
+temporary file
+.PD
+.SH WARNINGS
+.LP
+Lines beginning with an
+.SM ASCII SOH
+character (binary 001) cannot be placed in the
+.SM SCCS
+file unless the
+.SM SOH
+is escaped.  This character has special meaning to
+.SM SCCS
+(see
+.BR sccsfile (5))
+and produces an error.
+.SH "SEE ALSO"
+.BR sccs (1),
+.BR sccs-admin (1),
+.BR sccs-cdc (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-prt (1),
+.BR sccs-rmdel (1),
+.BR sccs-sccsdiff (1),
+.BR sccs-unget (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH DIAGNOSTICS
+Use the
+.SM SCCS
+.B help
+command for explanations
+.RB ( sccs-help (1)).

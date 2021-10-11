@@ -1,0 +1,148 @@
+.\" @(#)rpc_clnt_auth.3n 1.1 92/07/30 SMI;
+.TH RPC_CLNT_AUTH 3N "20 January 1990"
+.SH NAME
+auth_destroy, authnone_create, authunix_create, authunix_create_default \- library routines for client side remote procedure call authentication
+.SH DESCRIPTION
+.IX "rpc routines" "auth_destroy()" "" "\fLauth_destroy()\fR \(em client side authentication"
+.IX "rpc routines" "authnone_create()" "" "\fLauthnone_create()\fR \(em client side authentication"
+.IX "rpc routines" "authunix_create()" "" "\fLauthunix_create()\fR \(em client side authentication"
+.IX "rpc routines" "authunix_create_default()" "" "\fLauthunix_create_default()\fR \(em client side authentication"
+.IX "auth_destroy()" "" "\fLauth_destroy()\fR \(em client side authentication"
+.IX "authnone_create()" "" "\fLauthnone_create()\fR \(em client side authentication"
+.IX "authunix_create()" "" "\fLauthunix_create()\fR \(em client side authentication"
+.IX "authunix_create_default()" "" "\fLauthunix_create_default()\fR \(em client side authentication"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+.SM RPC
+allows various authentication types.
+Currently, it supports
+.BR \s-1AUTH_NONE\s0 ,
+.BR \s-1AUTH_UNIX\s0 ,
+.BR AUTH_DES\s0 .
+For routines relating to the
+.SB AUTH_DES
+type, see
+.BR secure_rpc (3N).
+.LP
+These routines are called after creating the
+.SM CLIENT
+handle.
+The client's authentication information
+is passed to the server when the
+.SM RPC
+call is made.
+.SS Routines
+.LP
+The following routines require that the header
+.BR <rpc.h> .
+be included.
+The
+.SB AUTH
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions of the
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void
+auth_destroy(auth)
+\s-1AUTH\s0 *auth;
+.fi
+.ft R
+.IP
+Destroy the authentication information associated with
+.IR auth .
+Destruction usually involves deallocation of private data
+structures. The use of
+.I auth
+is undefined after calling
+.BR auth_destroy(\|) .
+.br
+.if t .ne 13
+.LP
+.ft B
+.nf
+.sp .5
+\s-1AUTH\s0 *
+authnone_create(\|)
+.fi
+.ft R
+.IP
+Create and return an
+.SM RPC
+authentication handle that passes no usable authentication
+information with each remote procedure call.
+This is the default authentication used by
+.SM RPC\s0.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+\s-1AUTH\s0 *
+authunix_create(host, uid, gid, grouplen, gidlistp)
+char *host;
+int uid, gid, grouplen, *gidlistp;
+.fi
+.ft R
+.IP
+Create and return an
+.SM RPC
+authentication handle that contains
+.UX
+authentication information.
+The parameter
+.I host
+is the name of the machine on which the information was
+created;
+.I uid
+is the user's user
+.SM ID\s0;
+.I gid
+is the user's current group
+.SM ID\s0;
+.I grouplen
+and
+.I gidlistp
+refer to a counted array of groups to which the user belongs.
+Warning:
+It is not very difficult to impersonate a user.
+.br
+.if t .ne 5
+.LP
+.ft B
+.nf
+.sp .5
+\s-1AUTH\s0 *
+authunix_create_default(\|)
+.fi
+.ft R
+.IP
+Call
+.B authunix_create(\|)
+with the appropriate parameters.
+.SH SEE ALSO
+.BR rpc (3N),
+.BR rpc_clnt_create (3N),
+.BR rpc_clnt_calls (3N)

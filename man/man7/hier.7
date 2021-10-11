@@ -1,0 +1,849 @@
+.\" @(#)hier.7 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH HIER 7 "10 January 1988"
+.SH NAME
+hier \- file system hierarchy
+.SH DESCRIPTION
+.IX "hier table" "" "\fLhier\fP \(em file system hierarchy"
+.LP
+The following outline gives a quick tour through a typical
+SunOS file system hierarchy:
+.LP
+.na
+.nh
+.PD 0
+.TP
+.B /
+root directory of the file system
+.TP
+.B /dev/
+devices (Section 4)
+.
+.RS
+.TP
+.SB MAKEDEV
+shell script to create special files
+.TP
+.B \s-1MAKEDEV\s0.local
+site specific part of
+.SB MAKEDEV
+.TP
+.B console
+main system console,
+.BR console (4S)
+.TP
+.B drum
+paging device,
+.BR drum (4)
+.TP
+.B *mem
+memory special files,
+.BR mem (4S)
+.TP
+.B null
+null file or data sink,
+.BR null (4)
+.TP
+.B pty[p-z]*
+pseudo terminal controllers,
+.BR pty (4)
+.TP
+.B tty[ab]
+CPU serial ports,
+.BR zs (4S)
+.TP
+.B tty[0123][0-f]
+MTI serial ports
+.BR mti (4S)
+.TP
+.B tty[hijk][0-f]
+ALM-2 serial ports
+.BR mcp (4S)
+.TP
+.B tty[p-z]*
+pseudo terminals,
+.BR pty (4)
+.TP
+.B vme*
+VME bus special files,
+.BR mem (4S)
+.TP
+.B win
+window system special files,
+.BR win (4S)
+.TP
+.B xy*
+disks,
+.BR xy (4S)
+.TP
+.B rxy*
+raw disk interfaces,
+.BR xy (4S)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B /etc/
+system-specific maintenance and data files
+.
+.RS
+.TP
+.B dumpdates
+dump history,
+.BR dump (8)
+.TP
+.B exports
+table of file systems exportable with NFS,
+.BR exports (5)
+.TP
+.B fstab
+file system configuration table,
+.BR fstab (5)
+.TP
+.B group
+group file,
+.BR group (5)
+.TP
+.B hosts
+host name to network address mapping file,
+.BR hosts (5)
+.TP
+.B hosts.equiv
+list of trusted systems,
+.BR hosts.equiv (5)
+.TP
+.B motd
+message of the day,
+.BR login (1)
+.TP
+.B mtab
+mounted file table,
+.BR mtab (5)
+.TP
+.B networks
+network name to network number mapping file,
+.BR networks (5)
+.TP
+.B passwd
+password file,
+.BR passwd (5)
+.TP
+.B phones
+private phone numbers for remote hosts, as described in
+.BR phones (5)
+.TP
+.B printcap
+table of printers and capabilities,
+.BR printcap (5)
+.TP
+.B protocols
+protocol name to protocol number mapping file,
+.BR protocols (5)
+.TP
+.B rc
+shell program to bring the system up multiuser
+.TP
+.B rc.boot
+startup file run at boot time
+.TP
+.B rc.local
+site dependent portion of 
+.B rc
+.TP
+.B remote
+names and description of remote hosts for 
+.BR tip (1C),
+.BR remote (5)
+.TP
+.B services
+network services definition file,
+.BR services (5)
+.TP
+.B ttytab
+database of terminal information used by
+.BR getty (8)
+.TP
+\&.\|.\|.
+.RE
+.br
+.ne 5
+.TP
+.B /export/
+directory of exported files and file systems for clients, including
+swap files, root, and
+.B /usr
+file systems
+.TP
+.B /home/
+directory of mount points for remote-mounted home directories and
+shared file systems
+.
+.RS
+.TP
+.I user
+home (initial working) directory for
+.I user
+.
+.RS
+.TP
+.B .profile
+set environment for
+.BR sh (1),
+.BR environ (5V)
+.TP
+.B .project
+what you are doing (used by
+.RB ( finger (1))
+.TP
+.B .cshrc
+startup file for
+.BR csh (1)
+.TP
+.B .exrc
+startup file for
+.BR ex (1)
+.TP
+.B .plan
+what your short-term plans are (used by
+.BR finger (1))
+.TP
+.B .rhosts
+host equivalence file for 
+.BR rlogin (1C)
+.TP
+.B .mailrc
+startup file for
+.BR mail (1)
+.TP
+.B calendar
+user's datebook for
+.BR calendar (1)
+.TP
+\&.\|.\|.
+.RE
+.
+.RE
+.
+.TP
+.B /lost+found
+directory for connecting detached files for
+.BR fsck (8)
+.TP
+.B /mnt/
+mount point for file systems mounted temporarily
+.TP
+.B /sbin/
+executable programs needed to mount 
+.B /usr/
+.RS
+.TP
+.B hostname
+.TP
+.B ifconfig
+.TP
+.B init
+.TP
+.B mount
+.TP
+.B sh
+.RE
+.TP
+.B /tmp/
+temporary files, usually on a fast device, see also
+.B /var/tmp/
+.
+.RS
+.TP
+.B ctm*
+used by 
+.BR cc (1V)
+.TP
+.B e*
+used by
+.BR ed (1)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B /var/
+directory of files that tend to grow or vary in size
+.
+.RS
+.TP
+.B adm/
+administrative log files
+.
+.RS
+.TP
+.B lastlog
+record of recent logins,
+.BR utmp (5V)
+.TP
+.B lpacct
+line printer accounting
+.BR lpr (1)
+.TP
+.B messages
+system messages
+.TP
+.B tracct
+phototypesetter accounting,
+.BR troff (1)
+.TP
+.B utmp
+table of currently logged in users,
+.BR utmp (5V)
+.TP
+.B "vaacct, vpacct"
+varian and versatec accounting
+.BR vtroff (1),
+.BR pac (8)
+.TP
+.B wtmp
+login history,
+.BR utmp (5V)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B preserve/
+editor temporaries preserved here after crashes/hangups
+.TP
+.B spool/
+delayed execution files
+.
+.RS
+.TP
+.B cron/
+used by 
+.BR cron (8)
+.TP
+.B lpd/
+used by
+.BR lpr (1)
+.
+.RS
+.TP
+.B lock
+present when line printer is active
+.TP
+.B cf*
+copy of file to be printed, if necessary
+.TP
+.B df*
+control file for print job
+.TP
+.B tf*
+transient control file, while 
+.I lpr
+is working
+.RE
+.
+.br
+.ne 7
+.TP
+.B mail/
+mailboxes for
+.BR mail (1)
+.
+.RS
+.TP
+.I name
+mail file for user
+.I name
+.TP
+.IB name .lock
+lock file while
+.I name
+is receiving mail
+.RE
+.
+.TP
+.B mqueue/
+mail queue for 
+.BR sendmail (8)
+.br
+.ne 5
+.TP
+.B secretmail/
+like
+.BR mail/ ,
+but used by
+.BR xsend (1)
+.TP
+.B uucp/
+work files and staging area for 
+.BR uucp (1C)
+.
+.RS
+.TP
+.SB LOGFILE
+summary log
+.TP
+.SB LOG\s0.*
+log file for one transaction
+.RE
+.
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B tmp/
+temporary files, to keep 
+.B /tmp/ 
+small
+.
+.RS
+.TP
+.B raster
+used by
+.BR plot (1G)
+.TP
+.B stm*
+used by
+.BR sort (1V)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B yp/
+Network Information Service
+(\s-1NIS\s0)
+database files,
+.BR ypfiles (5)
+.RE
+.
+.TP
+.B /usr/
+general-purpose directory, usually a mounted file system
+.
+.RS
+.TP
+.B bin/
+utility programs
+.
+.RS
+.TP
+.B as
+assembler,
+.BR as (1)
+.TP
+.B cc
+C compiler executive, c.f. 
+.BR /usr/lib/ccom , 
+.BR /usr/lib/cpp , 
+.B /usr/lib/c2
+.TP
+.B csh
+the C-shell,
+.BR csh (1)
+.TP
+.B sh
+the Bourne shell,
+.BR sh (1)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B demo/
+demonstration programs
+.TP
+.B diag/
+system tests and diagnostics
+.TP
+.B dict/
+word lists, etc.
+.
+.RS
+.TP
+.B spellhist
+history file for
+.BR spell (1)
+.TP
+.B words
+principal word list, used by
+.BR look (1)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B etc/
+system administration programs; c.f. section 8
+.
+.RS
+.TP
+.B catman
+update preformatted man pages,
+.BR catman (8)
+.TP
+.B cron
+the clock daemon,
+.BR cron (8)
+.TP
+.B dump
+file system backup program
+.BR dump (8)
+.TP
+.B getty
+part of
+.BR login (1),
+.BR getty (8)
+.TP
+.B in.comsat
+biff server (incoming mail daemon),
+.BR comsat (8C)
+.TP
+.B init
+the parent of all processes,
+.BR init (8)
+.TP
+.B mount
+.BR mount (8)
+.TP
+.B yp/
+.SM NIS
+programs
+.
+.RS
+.TP
+.B ypinit
+build and install
+.SM NIS
+database,
+.BR ypinit (8)
+.TP
+.B yppush
+force propagation of a changed
+.SM NIS
+map,
+.BR yppush (8)
+.TP
+.B ypset
+point
+.B ypbind
+at a particular server,
+.BR ypset (8)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B games/
+.
+.RS
+.TP
+.B backgammon
+.br
+.ne 15
+.TP
+.B lib/
+library directory for game scores, etc.
+.
+.RS
+.TP
+.B quiz.k/
+what
+.BR quiz (6)
+knows
+.
+.RS
+.TP
+.B africa
+countries and capitals
+.TP
+.B index
+category index
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B hosts/
+symbolic links to 
+.BR rsh (1C)
+for commonly accessed remote hosts
+.TP
+.B include/
+standard 
+.B #include
+files
+.
+.RS
+.TP
+.B a.out.h
+object file layout,
+.BR a.out (5)
+.TP
+.B images/
+icon images
+.TP
+.B machine/
+header files from 
+.BR /usr/share/sys/sys/machine ;
+may be a symbolic link
+.TP
+.B math.h
+.BR intro (3M)
+.TP
+.B net/
+header files from 
+.BR /usr/share/sys/sys/net ; 
+may be a symbolic link
+.TP
+.B nfs/
+header files used in the Network File System (NFS)
+.TP
+.B stdio.h
+standard I/O,
+.BR intro (3)
+.TP
+.B sys/
+kernel header files, c.f. 
+.B /usr/share/sys/sys
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B lib/
+object libraries, compiler program binaries, and other data
+.
+.RS
+.TP
+.B ccom
+C compiler proper
+.TP
+.B cpp
+C preprocessor
+.TP
+.B c2
+C code improver
+.TP
+.B eign
+list of English words to be ignored by
+.BR ptx (1)
+.TP
+.B font/
+fonts for
+.BR troff (1)
+.
+.RS
+.TP
+.B ftR
+Times Roman
+.TP
+.B ftB
+Times Bold
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B libc.a
+system calls, standard I/O, etc. (2,3,3S)
+.TP
+.B libm.a
+math library,
+.BR intro (3M)
+.TP
+.B lint/
+utility files for lint
+.
+.RS
+.TP
+.B lint[12]
+subprocesses for
+.BR lint (1V)
+.TP
+.B llib-lc
+dummy declarations for 
+.BR /usr/lib/libc.a ,
+used by
+.BR lint (1V)
+.TP
+.B llib-lm
+dummy declarations for
+.B /usr/lib/libm.a
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B units
+conversion tables for
+.BR units (1)
+.TP
+.B uucp/
+programs and data for
+.BR uucp (1C)
+.
+.RS
+.TP
+.B L.sys
+remote system names and numbers
+.TP
+.B uucico
+the real copy program
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B local/
+locally maintained software
+.TP
+.B old/
+obsolete and unsupported programs
+.TP
+.B pub/
+publicly readable data files
+.TP
+.B sccs/
+binaries of programs that compose the source code control system (SCCS)
+.TP
+.B src/
+system source code tree
+.TP
+.B stand/
+standalone programs (not run under the Sun Operating System)
+.TP
+.B share/
+architecture independent files
+.
+.RS
+.TP
+.B lib/
+architecture independent data files
+.RS
+.TP
+.B termcap
+description of terminal capabilities,
+.BR termcap (5)
+.br
+.ne 11
+.TP
+.B tmac/
+macros for
+.BR troff (1)
+.
+.RS
+.TP
+.B tmac.an
+macros for
+.BR man (7)
+.TP
+.B tmac.s
+macros for
+.BR ms (7)
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+\&.\|.\|.
+.RE
+.TP
+.B man/
+on-line reference manual pages,
+.BR man (1)
+.
+.RS
+.TP
+.B man?/
+source files
+.RB ( nroff (1))
+for sections 1 through 8 of the manual
+.
+.RS
+.TP
+.B as.1
+.TP
+\&.\|.\|.
+.RE
+.
+.TP
+.B cat?/
+preformatted pages for sections 1 through 8 of the manual
+.TP
+\&.\|.\|.
+.RE
+.TP
+.B sys/
+SunOS kernel source and object modules
+.RE
+.
+.TP
+.B ucb/
+binaries of programs developed at the University of California,
+Berkeley
+.
+.RS
+.TP
+.B ex
+line-oriented editor for experienced users,
+.BR ex (1)
+.TP
+.B vi
+screen-oriented editor,
+.BR vi (1)
+.TP
+\&.\|.\|.
+.RE
+.
+.RE
+.
+.TP
+.B /vmunix
+the SunOS kernel binary
+.ad
+.PD
+.SH SEE ALSO
+.BR filesystem (7),
+.BR find (1),
+.BR finger (1),
+.BR grep (1V),
+.BR ls (1V),
+.BR rlogin (1C),
+.BR whatis (1),
+.BR whereis (1),
+.BR which (1),
+.BR ncheck (8)
+.SH BUGS
+.LP
+The locations of files are subject to change without notice;
+the organization of your file system may vary.
+.LP
+This list is incomplete.
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

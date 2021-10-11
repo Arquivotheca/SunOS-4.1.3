@@ -1,0 +1,266 @@
+.\" @(#)ldfcn.3	1.1 92/07/30 SMI; from SVID
+.TH LDFCN 3 "19 February 1988"
+.SH NAME
+ldfcn \- common object file access routines
+.SH SYNOPSIS
+.nf
+.ft B
+.B #include <stdio.h>
+.B #include <filehdr.h>
+.B #include <ldfcn.h>
+.ft R
+.fi
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldfcn()" "" "\fLldfcn()\fP function"
+.LP
+These routines
+are for reading
+.SM COFF
+object files and
+archives containing
+.SM COFF
+object files.
+Although the calling program must know the detailed structure of the
+parts of the object file that it processes,
+the routines effectively insulate the calling program
+from knowledge of the overall structure of the object file.
+.LP
+The interface between the calling program and the object file access
+routines is based on
+the defined type
+.SM
+.BR LDFILE ,
+defined as
+.BR "struct ldfile" ,
+declared in the header file
+.BR ldfcn.h .
+The primary purpose of this structure is to provide uniform access to
+both simple object files and to object files that are members of an
+archive file.
+.LP
+The function
+.BR ldopen (3X)
+allocates and initializes the
+.SB LDFILE
+structure and returns a pointer 
+to the structure
+to the calling program.
+The fields of the
+.SB LDFILE
+structure may be accessed individually through
+macros defined in
+.B ldfcn.h
+and contain the following information:
+.TP 15
+\s-1LDFILE\s+1		\(**ldptr;
+.TP 15
+\s-1TYPE\s+1(ldptr)
+The file magic number used to distinguish between archive members and simple
+object files.
+.TP 15
+\s-1IOPTR\s+1(ldptr)
+The file pointer returned by \f2fopen\fP and used
+by the standard input/output functions.
+.TP 15
+\s-1OFFSET\s+1(ldptr)
+The file address of the beginning of the object file;
+the offset is non-zero if the object file is a member of an archive file.
+.TP 15
+\s-1HEADER\s+1(ldptr)
+The file header structure of the object file.
+.LP
+The object file access functions themselves may be divided into four
+categories:
+.RS
+.PP
+(1)  Functions that open or close an object file
+.PP
+.RS
+.BR ldopen (3X)
+and
+.B ldaopen(\|)
+(see 
+.BR ldopen (3X))
+.RS
+open a common object file
+.RE
+.BR ldclose (3X)
+and
+.B ldaclose(\|) 
+(see 
+.BR ldclose (3X))
+.RS
+close a common object file
+.RE
+.RE
+.PP
+(2)  Functions that read header or symbol table information
+.PP
+.RS
+.BR ldahread (3X)
+.RS
+read the archive header of a member of an archive file
+.RE
+.BR ldfhread (3X)
+.RS
+read the file header of a common object file
+.RE
+.BR ldshread (3X)
+and
+.B ldnshread(\|) 
+(see
+.BR ldshread (3X))
+.RS
+read a section header of a common object file
+.RE
+.BR ldtbread (3X)
+.RS
+read a symbol table entry of a common object file
+.RE
+.BR ldgetname (3X)
+.RS
+retrieve a symbol name from a symbol table entry or from the string table
+.RE
+.RE
+.PP
+(3)  Functions that position an object file at (seek to)
+the start of the section, relocation,
+or line number information for a particular section.
+.PP
+.RS
+.BR ldohseek (3X)
+.RS
+seek to the optional file header of a common object file
+.RE
+.BR ldsseek (3X)
+and
+.B ldnsseek(\|) 
+(see
+.BR ldsseek (3X))
+.RS
+seek to a section of a common object file
+.RE
+.BR ldrseek (3X)
+and
+.B ldnrseek(\|) 
+(see
+.BR ldrseek (3X))
+.RS
+seek to the relocation information for a section of a common
+object file
+.RE
+.BR ldlseek (3X)
+and
+.B ldnlseek(\|) 
+(see
+.BR ldlseek (3X))
+.RS
+seek to the line number information for a section of a common object file
+.RE
+.BR ldtbseek (3X)
+.RS
+seek to the symbol table of a common object file
+.RE
+.RE
+.PP
+(4) The unction
+.BR ldtbindex (3X),
+which returns the 
+index of a particular common object 
+file symbol table entry.
+.RE
+.LP
+These functions are described in detail on their respective manual pages.
+.LP
+All the functions except
+.BR ldopen (3X),
+.BR ldgetname (3X),
+.BR ldtbindex (3X)
+return either
+.BR \s-1SUCCESS\s+1 " or " \s-1FAILURE\s+1 ,
+both constants defined in
+.BR ldfcn.h .
+.BR ldopen (3X)
+and 
+.B ldaopen(\|)
+(see 
+.BR ldopen (3X))
+both return pointers to an
+.BR \s-1LDFILE\s+1 " structure."
+.LP
+Additional access to an object file is provided through a set of macros
+defined in
+.BR ldfcn.h .
+These macros parallel the standard
+input/output file reading and manipulating functions,
+translating a reference 
+of the
+.B \s-1LDFILE\s+1
+structure into a reference to its file descriptor field.
+.LP
+The following macros are provided:
+.PP
+.RS
+.nf
+GETC(ldptr)
+FGETC(ldptr)
+GETW(ldptr)
+UNGETC(c, ldptr)
+FGETS(s, n, ldptr)
+FREAD((char \(**) ptr, sizeof (\(**ptr), nitems, ldptr)
+FSEEK(ldptr, offset, ptrname)
+FTELL(ldptr)
+REWIND(ldptr)
+FEOF(ldptr)
+FERROR(ldptr)
+FILENO(ldptr)
+SETBUF(ldptr, buf)
+STROFFSET(ldptr)
+.RE
+.fi
+.br
+.ne 5
+.PP
+The
+.SM STROFFSET
+macro calculates the address of the string table.
+See the manual entries for the corresponding standard input/output library
+functions for details on the use of the rest of the macros.
+.LP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.SH "SEE ALSO"
+.BR fseek (3S),
+.BR ldahread (3X),
+.BR ldclose (3X),
+.BR ldgetname (3X),
+.BR ldfhread (3X),
+.BR ldlread (3X),
+.BR ldlseek (3X),
+.BR ldohseek (3X),
+.BR ldopen (3X),
+.BR ldrseek (3X),
+.BR ldlseek (3X),
+.BR ldshread (3X),
+.BR ldtbindex (3X),
+.BR ldtbread (3X),
+.BR ldtbseek (3X),
+.BR stdio (3V),
+.BR intro (5)
+.SH WARNING
+.LP
+The macro
+.SB FSEEK
+defined in the header file
+.B ldfcn.h
+translates into a call to the 
+standard input/output function
+.BR fseek (3S).
+.SB FSEEK
+should not be used to seek from the end of an archive file since
+the end of an archive file may not be the same as the end of one of
+its object file members.

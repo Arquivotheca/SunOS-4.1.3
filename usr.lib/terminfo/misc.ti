@@ -1,0 +1,867 @@
+#
+# @(#)misc.ti 1.1 92/07/30 SMI; from S5R3.1 1.16
+#
+# # --------------------------------
+#
+# misc: MISCELLANEOUS TERMINALS
+#
+# Manufacturer:	MISCELLANEOUS TERMINALS
+# Class:	III
+# 
+# Info:
+#	This file is for manufacturers with only a few terminals.
+#	They are included alphabetically by manufacturer. Hard copy
+#	terminals, personal computers, special "made up" terminals
+#	and homemade terminals go in separate files.
+#
+abm80|amtek business machines 80,
+	am, bw, cols#80, lines#24,
+	bel=^G, cbt=^T, clear=\E^\, cr=^M, cub1=^H, cud1=^J,
+	cuf1=^P, cup=\E^Q%p2%'\s'%+%c%p1%'\s'%+%c, cuu1=\E^L,
+	dl1=\E^S, ed=\E^X, el=\E^O, home=\E^R, il1=\E^Z,
+	ind=^J,
+aed512|AED512|aed|AED|AED 512,
+	cr=^M, cud1=^J, bel=^G,
+	cols#64, lines#40, clear=^L,
+	cub1=^H, cuf1=\Ei0800\001,
+	cnorm=\E\072004=000200??\001,
+	flash=\EK0001??0000K0001202080\001,
+	smso=\E\07200>8000140[80C00\001, rmso=\E[00C80\001,
+	smul=\E\07200>8000140\001, rmul=\E\07200>8000100\001,
+	uc=\Ei???>l0800i0102\001,
+	smcup=\E\07200>8000140{<04<0??00001010L<0\072004=0002??00\001,
+	rmcup=\E\07200>8000100{804<0??00001000L80\072004=000200??\001,
+	ind=\E;1100\072004=000200??;1300\047\200\001\n\E\072004=0002??00;1200\001\n,
+	cuu1=^K, .cup=\E;1300%p1%c%p2%c\001,
+ampex|d80|dialogue|dialogue80|ampex dialogue 80,
+	tbc=\E3, hts=\E1, cr=^M, cud1=^J, ind=^J, bel=^G,
+	is2=\EA, ul, smul=\El, rmul=\Em,
+	am, bw, cub1=^H, ht=^I, clear=\E*$<75>, cup=\E=%p1%' '%+%c%p2%' '%+%c,
+	il1=\EE$<5*>, cbt=\EI, ich1=\EQ, dl1=\ER$<5*>, dch1=\EW,
+	el=\Et, ed=\Ey, smso=\Ej, rmso=\Ek, lines#24, cols#80, cuf1=^L, cuu1=^K,
+# Info:
+#	Tue Aug  9 20:11:37 1983
+#	No backspace key in the main QWERTY cluster. Fortunately,
+#	it has a NEWLINE/PAGE key just above RETURN that sends a strange
+#	single-character code. Given a suitable Unix (one that lets you
+#	set an echo-erase-as-BS-SP-BS mode), this key can be used as 
+#	the erase key; I find I like this. Because some people and 
+#	some systems may not, there is another termcap ("ax175e") that 
+#	suppresses this little eccentricity by omitting the relevant 
+#	capability.
+#	
+#	Problems:
+#	 	- I haven't done tab-setting yet.
+#	 	- The initialization sequence doesn't use the terminal's
+#	 	  reset-everything code because it would require a delay
+#	 	  in the middle of the is sequence.
+#
+ampex175|ampex d175,
+	cr=^M, cud1=^J, ind=^J, bel=^G, il1=\EE, am, cub1=^H,
+	ed=\Ey, el=\Et, clear=\E+, cup=\E=%p1%' '%+%c%p2%' '%+%c,
+	cols#80, dch1=\EW, dl1=\ER,
+	home=\036, ich1=\EQ, is2=\EX\EA\EF,
+	kcud1=^J, khome=\036, kcub1=^H, kcuf1=^L,
+	kcuu1=^K, kil1=\EE, kdl1=\ER, kich1=\EQ, kdch1=\EW,
+	lines#24, ll=\036^K, cuf1=^L,
+	rmso=\Ek, smso=\Ej, rmcup=\EF, smcup=\EN, rmul=\Em, cuu1=^K,
+	smul=\El,
+ampex175-b|ampex d175 using left arrow for erase,
+	kbs=^_, use=ampex175,
+# Info:
+#	Below are the termcap entries I've been using. The problem 
+#	with scrolling in vi can only be fixed by getting BBN to put 
+#	smarter scroll logic in the terminal or changing vi or padding 
+#	scrolls with about 500 ms delay.
+#	
+#	I always thought the problem was related to the terminal 
+#	counting newlines in its input buffer before scrolling and 
+#	then moving the screen that much. Then vi comes along and 
+#	paints lines in on the bottom line of the screen, so you get 
+#	this big white gap.
+#	 
+#	We have not had sufficient demand for vi (most use emacs or 
+#	rand) here to fix this problem.
+#	
+#	[Sounds like the BitGraph should stop looking ahead when it 
+#	sees escape - ]
+#
+bitgraph|bbn bitgraph,
+	use=bg3.10rv,
+bg3.10rv|bgrv|bbn bitgraph (reverse video),
+	use=bg2.0rv,
+bg3.10nv|bgnv|bbn bitgraph (normal video),
+	use=bg2.0nv,
+bg3.10|bgn|bbn bitgraph (no init),
+	use=bg2.0,
+bg2.0rv|bbn bitgraph (reverse video),
+	is2=\E>\E[?5h\E[?7h, flash=\E[?5l\E[?5h, use=bg2.0,
+bg2.0nv|bbn bitgraph (normal video),
+	is2=\E>\E[?5l\E[?7h, flash=\E[?5h\E[?5l, use=bg2.0,
+bg2.0|bbn bitgraph (no init),
+	cr=^M, cud1=^J, bel=^G,
+	il1=\E[L$<2*>, cub1=^H, ed=\E[J$<150>, el=\E[K$<2>,
+	clear=\E[H\E[J$<150>, cup=%i\E[%p1%d;%p2%dH, cols#85, csr=\E[%i%p1%d;%p2%dr,
+	dl1=\E[M$<2*>, cud1=\E[B, kf1=\EOP, kf2=\EOQ, kf3=\EOR, kf4=\EOS,
+	kcud1=\E[B, rmkx=\E>, kcub1=\E[D, kcuf1=\E[C, smkx=\E=,
+	kcuu1=\E[A, lf1=PF1, lf2=PF2, lf3=PF3, lf4=PF4, lines#64,
+	cuf1=\E[C,  ht=^I, rc=\E8, sc=\E7, rmso=\E[0m, ind=\n$<280>,
+	smso=\E[7m, cuu1=\E[A, xenl,
+bg1.25rv|bbn bitgraph (reverse video),
+	flash=\E[?5l\E[?5h, is2=\E>\E[?5h\E[?7h, use=bg1.25,
+bg1.25nv|bbn bitgraph (normal video),
+	is2=\E>\E[?5l\E[?7h, flash=\E[?5h\E[?5l, use=bg1.25,
+bg1.25|bbn bitgraph,
+	cr=^M, cud1=^J, bel=^G, il1=\E[L$<2*>, cub1=^H,
+	ed=\E[J$<150>, el=\E[K$<2>, clear=\E[H\E[J$<150>, cup=%i\E[%p1%d;%p2%dH,
+	cols#85, dl1=\E[M$<2*>, cud1=\E[B, kf1=\EP, kf2=\EQ, kf3=\ER,
+	kf4=\ES, kcud1=\EB, rmkx=\E>, kcub1=\ED, kcuf1=\EC, smkx=\E=,
+	kcuu1=\EA, lines#64, ll=\E[64;1H, lf1=PF1, lf2=PF2, lf3=PF3,
+	lf4=PF4, cuf1=\E[C, ht=^I, rmso=\E[0m, ind=\n$<280>,
+ 	smso=\E[7m, cuu1=\E[A,
+ca22851|computer automation 22851,
+	cr=^M, cud1=^J, ind=^J, bel=^G, cup=\02%i%p1%c%p2%c, cols#80,
+	lines#24, clear=^L$<8>, am, cub1=\025, cuu1=\026, home=\036,
+	el=\035, ed=\034, cuf1=\011, kcub1=\025, kcuu1=\026,
+	kcud1=\027, khome=\036,
+cad68-3|cgc3|cad68 basic monitor transparent mode size 3 chars,
+	am, cols#73, lines#36,
+	bel=^G, clear=^Z, cr=^M, cub1=^H, cud1=^J, cuf1=^L,
+	cuu1=^K, home=^^, ind=^J,
+cad68-2|cgc2|cad68 basic monitor transparent mode size 2 chars,
+	cols#85, lines#39, use=cad68-3,
+# Info:
+#	CHROMATICS
+#	Following is revised version. As I mentioned, I recompiled 
+#	curses in order to accomodate the large amount of definition.
+#	I have put the long strings in ti/te. Ti sets up a window 
+#	that is smaller than the screen, and puts up a warning message 
+#	outside the window. Te erases the warning message, puts the 
+#	window back to be the whole screen, and puts the cursor at just
+#	below the small window. A defined vs and ve to really turn 
+#	the cursor on and off, but I have taken this out since I don't 
+#	like the cursor being turned off when vi exits.   
+#
+cg7900|chromatics|chromatics 7900,
+	cr=^M, cud1=^J, ind=^J, bel=^G, cols#80, lines#40, am,
+	clear=^L, cub1=^H, cup=^AM%p2%d\,%p1%d\,, cuf1=\035, cuu1=^K,
+	home=\034, ll=^A|, el=^A`, ed=^Al, il1=^A>2, dl1=^A<2,
+	ich1=^A>1, dch1=^A<1,
+	smso=^AC4\,^Ac7\,, rmso=^AC1\,^Ac2\,, uc=^A^A_^A\0,
+	smcup=^AP0^AO1^AR1^AC4\,^Ac0\,^L^AM0\,42\,WARNING DOUBLE ENTER ESCAPE and ^U^AC1\,^Ac2\,^AW0\,0\,79\,39\,,
+	rmcup=^AW0\,40\,85\,48\,^L^AW0\,0\,85\,48\,^AM0\,40\,,
+# Info:
+#	C. ITOH
+# CIT 80  - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+cit80|Citoh 80,
+	am, cols#80, lines#24,
+	bel=^G, clear=\E[;H\EJ, cr=^M, cub1=^H, cud1=^J,
+	cuf1=\E[C, cup=\E[%i%p1%2.2d;%p2%2.2dH, cuu1=\E[A,
+	ed=\EJ, el=\EK, ind=^J, is2=\E>, kcub1=\EOD,
+	kcud1=\EOB, kcuf1=\EOC, kcuu1=\EOA, rmkx=\E[?1l\E>,
+	smkx=\E[?1h\E=,
+# AlternateCIT 101 - vt 100 emulator, the termcap has been modified to remove
+#           the delay times and do an auto tab set rather than the indirect 
+#           file used in vt100.
+#	    Uses 23 lines so can run citsys (like h19sys).
+citc|Citoh fast vt100,
+	am, cols#80, lines#23,
+	bel=^G, clear=\E[;H\E[2J, cr=^M, cub1=^H, cud1=^J,
+	cuf1=\E[C, cup=\E[%i%p1%2.2d;%p2%2.2dH, cuu1=\E[A,
+	dch1=\E[P, dl1=\E[M, ed=\E[J, el=\E[K,
+	flash=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l,
+	ich1=\E[@, il1=\E[L, ind=^J,
+	is2=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g,
+	kcub1=\EOD, kcud1=\EOB, kcuf1=\EOC, kcuu1=\EOA,
+	rmkx=\E[?1l\E>, rmso=\E[m, rmul=\E[m, smkx=\E[?1h\E=,
+	smso=\E[7m, smul=\E[4m,
+cita,
+	am, cols#80, lines#23,
+	bel=^G, clear=\E[;H\E[2J, cr=^M, cub1=^H, cud1=^J,
+	cuf1=\E[C, cup=\E[%i%p1%2.2d;%p2%2.2dH, cuu1=\E[A,
+	ed=\E[J, el=\E[K,
+	flash=\E[?5h\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\E[?5l,
+	ind=^J,
+	is2=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h\E[3g\E[>5g,
+	kcub1=\EOD, kcud1=\EOB, kcuf1=\EOC, kcuu1=\EOA,
+	rmkx=\E[?1l\E>, rmso=\E[m, rmul=\E[m, smkx=\E[?1h\E=,
+	smso=\E[7m, smul=\E[4m,
+cit101,
+	lines#24, flash@, use=cita,
+cit101b,
+	lines#24, use=cita,
+cops10|cops|cops-10|,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H, bw, ed=^w, el=^v,
+	clear=30^x, cup=^p%p1%' '%+%c%p2%' '%+%c, cols#80, cud1=\n, kbs=^h, kcud1=\n,
+	khome=^y, kcub1=^h, kcuf1=^l, kcuu1=^k, lines#24, cuf1=^l,
+	cuu1=^k,
+# Info:
+#	CYBERNEX
+#	We recently discovered (it wasn't clearly documented) that the 
+#	Cybernex XL-83 terminal has a reverse-scroll capability; I 
+#	enclose a revised termcap entry with "sr" added.
+#
+xl83|cybernex XL-83,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H, ed=^P$<62>, el=^O$<3>,
+	clear=^L$<62>, cup=^W%p1%' '%+%c%p2%' '%+%c, cols#80, home=^K,
+	kcud1=^J, kcub1=^H, kcuf1=^I, kcuu1=^N,
+	lines#24, cuu1=^N, cuf1=^I, ri=^N,
+mdl110|cybernex mdl-110,
+	cup=^P%p1%' '%+%c%p2%' '%+%c, cols#80, lines#24, am, clear=^X$<70>,
+	cub1=^H, cr=^M, cud1=^J, ind=^J, bel=^G, cuf1=^U, cuu1=^Z, home=^Y,
+	el=^N@^V$<145>, ed=^NA^W$<145>, il1=^NA^N^]$<65>, dl1=^NA^N^^$<40>,
+	ich1=^NA^]$<3.5>, dch1=^NA^^$<3.5>, smso=^NF, rmso=^NG,
+	ht=\t$<43>, ed=^N@^V$<6>,
+# Info:
+#	DATA GENERAL
+#	
+#	It has one or two quirks, though; in vi you have to use <cr> to
+#	advance to the next line instead of just hitting the big NEWLINE
+#	key (which is cursor down to vi).
+#	 
+#	One pain with using the dasher on unix though is the fact 
+#	that they use # ^H for home cursor. This causes problems with 
+#	reading news and help files on the system that assume ^H is 
+#	backspace.
+#	
+#	The trouble with this terminal is that you can't give it a 
+#	linefeed without having it add a carriage return. And there 
+#	isn't any switch that will turn off auto carriage return 
+#	on receipt of linefeed.
+#	
+#	Is there any way around this? [I used cud1=^Z to try to 
+#	describe this -]
+#
+d200|d100|data general dasher 200,
+	am, bel=^G, bw, clear=^L, cols#80, cr=^M,
+	cub1=^Y, cud1=^Z, cuf1=^X, cup=^P%p2%c%p1%c, cuu1=^W,
+	el=^K, home=^H, ind=^J, kcub1=^Y, kcud1=^Z, kcuf1=^X, kcuu1=^W,
+	kf0=^^z, kf1=^^q, kf2=^^r, kf3=^^s, kf4=^^t, kf5=^^u, kf6=^^v, kf7=^^w,
+	kf8=^^x, kf9=^^y, khome=^H, lf0=f10,
+	lines#24, nel=^J, rmso=^^E, rmul=^U, smso=^^D, smul=^T,
+dg|605x|dg6053|6053|data general 6053,
+	cr=^M, cud1=^J, ind=^J, bel=^G,
+	am, cub1=^H, cup=^P%p2%c%p1%c, clear=^L, home=^H, cuf1=^S,
+	cuu1=^W, el=^K, cols#80, lines#24,
+d132|datagraphix|datagraphix 132a,
+	cr=^M, cud1=^J, ind=^J, bel=^G,
+	cols#80, lines#30, clear=^l, home=\Et, da, db, ind=\Ev, ri=\Ew,
+	cuu1=\Ek, cuf1=\El, cvvis=\Ex, cnorm=\Em\En,
+	il1=\E3, ich1=\E5, dch1=\E6, in, ich1=\E5,
+# Info:
+#	DATAPOINT (see also pc)
+#
+datapoint|dp3|dp3360|datapoint 3360,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H,
+	ed=^_, el=^^, clear=^]^_, cols#82, home=^], lines#25, cuf1=^x, cuu1=^z,
+# Info:
+#	DELTA DATA
+#	This is untested. The cup sequence is hairy enough that it 
+#	probably needs work. The idea is ctrl(O), dd(row), dd(col), 
+#	where dd(x) is x - 2*(x%16) + '9'
+#
+delta|dd5000|delta data 5000,
+	cud1=^J, ind=^J, bel=^G, am, cub1=^H, clear=^NR,
+	cup=^O%p1%p1%{16}%m%{2}%*%-%'9'%+%c%p2%p2%{16}%m%{2}%*%-%'9'%+%c,
+	cols#80, lines#27, home=^NQ, cuf1=^Y, cuu1=^Z, el=^NU, dch1=^NV,
+digilog|333|digilog 333,
+	cub1=^H, cols#80, el=\030, home=^n, lines#16, cuf1=^i, cuu1=^o,
+	cr=^M, cud1=^J, ind=^J, bel=^G,
+# Info:
+#	DIRECT
+#	I think the direct is supposed to be vt100 compatible, so all 
+#	this should probably be replaced by a use=vt100, but I can't 
+#	test it.
+#
+d800|direct|direct800|direct 800/a,
+	cr=^M, cud1=^J, ind=^J, bel=^G, cols#80, lines#24, am,
+	clear=\E[1;1H\E[2J, cub1=^H, cup=\E[%i%p1%d;%p2%dH,
+	cuf1=\E[C, cuu1=\E[A, el=\E[K, ed=\E[J, smso=\E[7m, rmso=\E[0m,
+	smul=\E[4m, rmul=\E[0m, xhp, cvvis=\E[>12l, cnorm=\E[>12h,
+	ind=\ED, ri=\EM, da, db, smacs=\E[1m, rmacs=\E[0m, msgr, ht=^I,
+	kcub1=\E[D, kcuf1=\E[C, kcuu1=\E[A, kcud1=\E[B,
+	kf1=\EOP, kf2=\EOQ, kf3=\EOR, kf4=\EOS,
+	kf5=\EOT, kf6=\EOU, kf7=\EOV, kf8=\EOW,
+env230|envision230|envision 230 graphics terminal,
+	am, mir, msgr, xon,
+	cols#80, it#8, lines#24, vt#3,
+	acsc=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
+	bel=^G, blink=\E[5m$<2>, bold=\E[1m$<2>,
+	clear=\E[H\E[J$<50>, cr=\r, csr=\E[%i%p1%d;%p2%dr,
+	cub=\E[%p1%dD, cub1=\b, cud=\E[%p1%dB, cud1=\n,
+	cuf=\E[%p1%dC, cuf1=\E[C$<2>,
+	cup=\E[%i%p1%d;%p2%dH$<5>, cuu=\E[%p1%dA,
+	cuu1=\E[A$<2>, ed=\E[J$<50>, el=\E[K$<3>,
+	el1=\E[1K$<3>, enacs=\E(B\E)0, home=\E[H, ht=\t,
+	hts=\EH, ind=\n, ka1=\EOq, ka3=\EOs, kb2=\EOr, kbs=\b,
+	kc1=\EOp, kc3=\EOn, kcub1=\EOD, kcud1=\EOB,
+	kcuf1=\EOC, kcuu1=\EOA, kent=\EOM, kf0=\EOy, kf1=\EOP,
+	kf10=\EOx, kf2=\EOQ, kf3=\EOR, kf4=\EOS, kf5=\EOt,
+	kf6=\EOu, kf7=\EOv, kf8=\EOl, kf9=\EOw, mc0=\E[0i,
+	mc4=\E[4i, mc5=\E[5i, rc=\E8, rev=\E[7m$<2>,
+	ri=\EM$<5>, rmacs=^O, rmkx=\E[?1l\E>, rmso=\E[0m<2>,
+	rmul=\E[m$<2>, rs2=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h,
+	sc=\E7,
+	sgr=\E[%?%p1%t;1%;%?%p2%t;4%;%?%p3%t;7%;%?%p4%t;5%;%?%p6%t;1%;m,
+	sgr0=\E[m^O$<2>, smacs=^N, smkx=\E[?1h\E=, smso=\E[1m<2>,
+	smul=\E[4m$<2>, tbc=\E[3g,
+falco|ts1|ts-1|falco ts-1,
+	cr=^M, cud1=^J, ind=^J, bel=^G, cols#80, lines#24, ht=^I,
+	is2=\Eu\E3, il1=\EE, am, el=\ET\EG0^H, cup=\E=%p1%' '%+%c%p2%' '%+%c,
+	clear=\E*, ed=\EY, dch1=\EW, cub1=^H, dl1=\ER, rmir=\Er, smir=\Eq,
+	home=^^, kf0=^A0\r, kcud1=^J, kcub1=^H, kcuf1=^L, kcuu1=^K, cuf1=^L,
+	rmso=\Eg0, smso=\Eg1, cuu1=^K, smul=\Eg1, rmul=\Eg0,
+# Info:
+#	For falcos with the paging option (very nice it turns out - 
+#	they can store several hundred lines of text, as well as have 
+#	a separate screen for vi and other such programs usage)...
+#
+falco-p|falco-tsl-1sp|falco with paging option,
+	cr=^M, cud1=^J, ind=^J, bel=^G, is2=\EZ\E3\E_c, il1=\EE, am,
+	cub1=^H, el=\ET\EG0^H\Eg0, clear=\E*, ed=\EY, cols#80,
+	dch1=\EW, dl1=\ER, kcud1=\E[B, kcub1=\E[D, rmir=\Er, smir=\Eq,
+	ht=^I, db, kcuf1=\E[C, kcuu1=\E[A, lines#24, cuf1=\E[C,
+	rmso=\Eg0, smso=\Eg4, cuu1=\E[A, smul=\Eg1, smcup=\E_d,
+	rmcup=\E_b, rmul=\Eg0, cud1=\E[B, cup=\E=%p1%' '%+%c%p2%' '%+%c,
+	msgr, ul, khome=\E[H, da, mir, cbt=\EI,
+ts100|ts100-sp|falco ts100-sp,
+	am, mir, msgr, xenl, xon,
+	cols#80, it#8, lines#24, vt#3,
+	acsc=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
+	bel=^G, blink=\E[5m$<2>, bold=\E[1m$<2>,
+	clear=\E[H\E[J$<50>, cr=\r, csr=\E[%i%p1%d;%p2%dr,
+	cub=\E[%p1%dD, cub1=\b, cud=\E[%p1%dB, cud1=\n,
+	cuf=\E[%p1%dC, cuf1=\E[C$<2>,
+	cup=\E[%i%p1%d;%p2%dH$<5>, cuu=\E[%p1%dA,
+	cuu1=\E[A$<2>, dch1=\E~W, dl1=\E~R, ed=\E[J$<50>,
+	el=\E[K$<3>, el1=\E[1K$<3>, enacs=\E(B\E)0, home=\E[H,
+	ht=\t, hts=\EH, ich1=\E~Q, il1=\E~E, ind=\n,
+	is1=\E~)\E~ea, ka1=\EOq, ka3=\EOs, kb2=\EOr, kbs=\b,
+	kc1=\EOp, kc3=\EOn, kcub1=\EOD, kcud1=\EOB,
+	kcuf1=\EOC, kcuu1=\EOA, kent=\EOM, kf0=\EOy, kf1=\EOP,
+	kf10=\EOx, kf2=\EOQ, kf3=\EOR, kf4=\EOS, kf5=\EOt,
+	kf6=\EOu, kf7=\EOv, kf8=\EOl, kf9=\EOw, rc=\E8,
+	rev=\E[7m$<2>, ri=\EM$<5>, rmacs=^O, rmkx=\E[?1l\E>,
+	rmso=\E[m$<2>, rmul=\E[m$<2>,
+	rs2=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h, sc=\E7,
+	sgr=\E[0%?%p1%p6%|%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;m%?%p9%t^N%e^O%;,
+	sgr0=\E[m^O$<2>, smacs=^N, smkx=\E[?1h\E=,
+	smso=\E[1;7m$<2>, smul=\E[4m$<2>, tbc=\E[3g,
+ts100-ctxt|falco ts-100 saving context,
+	smcup=\E~_d\E[2J, rmcup=\E~_b, use=ts100,
+# Info:
+#	FLUKE
+#	The 1720a differences from ANSI: no auto margin, destructive 
+#	tabs, # of lines, funny highlighting and underlining
+#
+f1720|f1720a|fluke 1720A,
+	cr=^M, ind=^J, cud1=^J, bel=^G,
+	is2=\E[;H\E[2J, cols#80, lines#16,
+	cuu1=\E[A, cud1=\E[B, cuf1=\E[C, cub1=^H, cup=\E[%i%p1%d;%p2%dH,
+	ind=\ED, ri=\EM,
+	kcuu1=\034, kcud1=\035, kcuf1=\036, kcub1=\037,
+	smso=\E[7m, rmso=\E[m, xmc#1,
+	smul=\E[4m, rmul=\E[m,
+	el=\E[K, ed=\E[J,
+	xt, clear=\E[;H\E[2J, 
+# Info:
+#	INTERTEC
+#	Intertec: I can't tell if these are the same terminal or not.
+#	the cup entries are different. The it2 looks suspiciously 
+#	like an an Adds Regent 100, complete with the bug [mrh].
+#
+it|intertube|intertec|Intertec InterTube,
+	cr=^M, ind=^J, cud1=^J, bel=^G, cub1=^H, am,
+	clear=^L, home=^A, cuu1=^Z, cuf1=^F,
+	cup=\EY%p1%' '%+%c%p2%' '%+%c$<50>,
+	smso=\E0P, rmso=\E0@, cols#80, lines#25,
+# Info:
+#	The intertube 2 has the "full duplex" problem like the tek 
+#	4025: if you are typing and a command comes in, the keystrokes 
+#	you type get interspersed with the command and it messes up. 
+#
+it2|intertube2|intertec data systems intertube 2,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H,
+	clear=^L, cols#80, home=^A, lines#25, cuu1=^Z, el=\EK,
+	hpa=^P%p1%{10}%/%{16}%*%p1%{10}%m%+%c, vpa=^K%p1%c,
+	cup=^N%p1%c^P%p2%{10}%/%{16}%*%p2%{10}%m%+%c,
+	cuf1=^F, cud1=\n, ll=^K^X\r, smso=\E0P, rmso=\E0@,
+superbrain|intertec superbrain,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H, ed=\E~k<10*>,
+	el=\E~K$<15>, bw, clear=\f$<5*>,
+	cup=\EY%p1%' '%+%c%p2%' '%+%c$<20>, cols#80,
+	kcud1=^J, kcub1=^U, kcuf1=^F, kcuu1=^K, lines#24,
+	cuf1=^F, ht=^I, rmcup=\f, smcup=\f, cuu1=^k,
+# FREEDOM 100 by Liberty Electronics USA, SF.
+f100|freedom|freedom100|freedom model 100,
+	am, bw, mir, msgr, xon, cols#80, lines#24,
+	cr=^M, ind=^J, bel=^G, clear=^Z, home=^^,
+	cud1=^J, cuf1=^L, cuu1=^K, cub1=^H,
+	tbc=\E3, hts=\E1, ht=^I, is2=\Eg\Ef\r\Ed,
+	cup=\E=%p1%' '%+%c%p2%' '%+%c,
+	hpa=\E]%p1%' '%+%c, vpa=\E[%p1%' '%+%c,
+	ri=\Ej, ip=$<6>,
+	il1=\EE$<8.5*>, cbt=\EI, ed=\EY, el=\ET, dch1=\EW,
+	dl1=\ER$<11.5*>, rmir=\Er, smir=\Eq,
+	rmso=\EG0, smso=\EG4, rmul=\EG0, smul=\EG8,
+	rmacs=\E$, smacs=\E%, flash=\Eb$<50>\Ed,
+	kbs=^H, kcub1=^H, kcud1=^V, kcuu1=^K, kcuf1=^L, khome=^^,
+	kf1=^A@\r, kf2=^AA\r, kf3=^AB\r, kf4=^AC\r, kf5=^AD\r,
+	kf6=^AE\r, kf7=^AF\r, kf8=^AG\r, kf9=^AH\r, kf0=^AI\r,
+	hs, tsl=\Eg\Ef, fsl=\r, dsl=\Eg\Ef\r,
+f100-rv|freedom-rv|freedom 100 in reverse video,
+	is2=\Eg\Ef\r\Eb, flash=\Ed$<50>\Eb, use=f100,
+# VI at 9600 baud (or EMACS at 1200 -- but may be more than is needed for emacs)
+f100-v|freedom100-v|freedom-v|freedom100 for 9600 vi or 1200 emacs,
+	dl1=\ER$<11.5*>,
+	flash=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed,
+	il1=\EE$<6.5*>, use=freedom100,
+f100-v-rv|freedom100-v-rv|freedom-v-rv|freedom100 rev. vid. for 9600 vi,
+	dl1=\ER$<11.5*>,
+	flash=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb,
+	il1=\EE$<6.5*>, is2=\Eg\Ef\r\Eb, use=freedom100,
+# EMACS at 9600 baud -- this still needs some more work on the padding
+f100-e|freedom100-e|freedom-e|freedom100 for 9600 emacs,
+	dl1=\ER$<11.5*>,
+	flash=\Eb\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Ed,
+	il1=\EE$<8.5*>, ip=$<6>, use=freedom100,
+f100-e-rv|freedom100-e-rv|freedom-e-rv|freedom100 rev. vid. for emacs 9600,
+	dl1=\ER$<11.5*>,
+	flash=\Ed\200\200\200\200\200\200\200\200\200\200\200\200\200\200\200\Eb,
+	il1=\EE$<8.5*>, ip=$<6>, is2=\Eg\Ef\r\Eb, use=freedom100,
+#	
+#	Problem with vi(1). Liberty terminals use the ^V
+#	code for the down cursor key. When kcud1 is defined in terminfo
+#	as ^V, the Control Character Quoting capability (^V in insert mode)
+#	is lost! It cannot be remapped in vi because it is necessary to enter
+#	a ^V to to quote the ^V that is being remapped!!!
+#	
+#	f110 users will have to decide whether
+#	to lose the down cursor key or the quoting capability. We will opt
+#	initially for leaving the quoting capability out, since use of VI
+#	is not generally applicable to most interactive applications
+#	
+#	The same applies to f200 users, except that another option exists.
+#	This option has been chosen locally. It will not be distributed unless
+#	a user runs into this problem and requests assistance. Very few users,
+#	if any, should run into this problem. The local solution is in
+#	vifix.local.ti. The f200 has the ability to reprogram the down cursor
+#	key. The key is reprogrammed to ^J (linefeed). This value is remembered
+#	in non-volatile RAM, so powering the terminal off and on will not cause
+#	the change to be lost. The terminfo definition for the f200 is changed
+#	to identify kcud1 as ^J instead of ^V.
+#	
+#
+f110|freedom110|Liberty Freedom 110,
+	am, bel=^G, cols#80, lines#24, cr=^M, hs, mir, msgr,
+	eslok, xon, it#8, wsl#80, cbt=\EI,
+	tbc=\e3, clear=^Z,
+	el=\ET, ed=\EY, hpa=\E]%p1%' '%+%c, vpa=\E[%p1%' '%+%c,
+	cup=\e=%p1%' '%+%c%p2%' '%+%c, cud1=^V, home=^^,
+	cub1=\b, cuf1=^L, cuu1=^K, dch1=\eW,
+	dl1=\eR, dsl=\ef\r, smacs=\e$, rmacs=\e%%, blink=\eG2,
+	bold=\eG0, dim=\EG@, rev=\EG4, rmul=\eG0,
+	invis=\eG1, smso=\eG<, smul=\eG8, rmso=\eG0, sgr0=\eG0,
+	flash=\Eb\0\0\0\0\Ed, fsl=\r,
+	il1=\eE, kbs=\b, kclr=^^, kdch1=\eW, kdl1=\eR,
+	kel=\eT, ked=\eY, kf1=^A@\r, kf2=^AA\r, kf3=^AB\r, kf4=^AC\r,
+	kf5=^AD\r, kf6=^AE\r, kf7=^AF\r, kf8=^AG\r, kf9=^AH\r,
+	kf0=^AI\r, kich1=\eQ, kil1=\eE, kcub1=\b, kcuf1=^L, kcuu1=^K,
+	mc4=\ea, mc5=\e`, hts=\e1, tsl=\ef, ind=\n, ri=\eJ
+	smir=\eO\eq, rmir=\er\eO, kcud1=^V,
+	cnorm=\e.2, cvvis=\e.2, civis=\e.1,
+f110-14|Liberty Freedom 110 14inch,
+	dch1@,use=f110,
+f110-w|Liberty Freedom 110 - 132 cols,
+	cols#132, use=f110,
+f110-14w|Liberty Freedom 110 14in/132 cols,
+	cols#132, dch1@, use=f110,
+f200|freedom200|Liberty Freedom 200,
+	am, bel=^G, cols#80, lines#24, cr=^M, hs, mir, msgr,
+	eslok, xon, it#8, wsl#80, cbt=\EI,
+	csr=\em0%p1%' '%+%c%p2%' '%+%c, tbc=\e3, clear=^Z,
+	el=\ET, ed=\EY, hpa=\E]%p1%' '%+%c, vpa=\E[%p1%' '%+%c,
+	cup=\e=%p1%' '%+%c%p2%' '%+%c, cud1=^V, home=^^, civis=\e.0,
+	cub1=\b, cnorm=\e.1, cuf1=^L, cuu1=^K, cvvis=\e.1, dch1=\eW,
+	dl1=\eR, dsl=\ef\r, smacs=\e$, rmacs=\e%%, blink=\eG2,
+	bold=\eG0, dim=\EG@, smir=\eq, rmir=\er, rev=\EG4, rmul=\eG0,
+	invis=\eG1, smso=\eG<, smul=\eG8, rmso=\eG0, sgr0=\eG0,
+	flash=\Eo\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\en, fsl=\r,
+	il1=\eE, kbs=\b, kclr=^^, kdch1=\eW, kdl1=\eR, kcud1=^V,
+	kel=\eT, ked=\eY, kf1=^A@\r, kf2=^AA\r, kf3=^AB\r, kf4=^AC\r,
+	kf5=^AD\r, kf6=^AE\r, kf7=^AF\r, kf8=^AG\r, kf9=^AH\r,
+	kf0=^AI\r, kich1=\eQ, kil1=\eE, kcub1=\b, kcuf1=^L, kcuu1=^K,
+	mc4=\ea, mc5=\e`, hts=\e1, tsl=\ef, ind=\n, ri=\eJ,
+f200-w|Liberty Freedom 200 - 132 cols,
+	cols#132, use=f200,
+f200vi|Liberty Freedom 200 for vi,
+	am, bel=^G, cols#80, lines#24, cr=^M, hs, mir, msgr,
+	eslok, xon, it#8, wsl#80, cbt=\EI,
+	csr=\em0%p1%' '%+%c%p2%' '%+%c, tbc=\e3, clear=^Z,
+	el=\ET, ed=\EY, hpa=\E]%p1%' '%+%c, vpa=\E[%p1%' '%+%c,
+	cup=\e=%p1%' '%+%c%p2%' '%+%c, cud1=^V, home=^^, civis=\e.0,
+	cub1=\b, cnorm=\e.1, cuf1=^L, cuu1=^K, cvvis=\e.1, dch1=\eW,
+	dl1=\eR, dsl=\ef\r, smacs=\e$, rmacs=\e%%, blink=\eG2,
+	bold=\eG0, dim=\EG@, smir=\eq, rmir=\er, rev=\EG4, rmul=\eG0,
+	invis=\eG1, smso=\eG<, smul=\eG8, rmso=\eG0, sgr0=\eG0,
+	flash=\Eb\0\0\0\0\Ed, fsl=\r,
+	il1=\eE, kbs=\b, kclr=^^, kdch1=\eW, kdl1=\eR, kcud1=^J,
+	kel=\eT, ked=\eY, kf1=^A@\r, kf2=^AA\r, kf3=^AB\r, kf4=^AC\r,
+	kf5=^AD\r, kf6=^AE\r, kf7=^AF\r, kf8=^AG\r, kf9=^AH\r,
+	kf0=^AI\r, kich1=\eQ, kil1=\eE, kcub1=\b, kcuf1=^L, kcuu1=^K,
+	mc4=\ea, mc5=\e`, hts=\e1, tsl=\ef, ind=\n, ri=\eJ,
+f200vi-w|Liberty Freedom 200 - 132 cols for vi,
+	cols#132, use=f200vi,
+omron|omron 8025AG,
+	cr=^M, cud1=^J, ind=^J, bel=^G, il1=\EL, am, cub1=^H, ed=\ER,
+	cols#80, el=\EK, clear=\EJ, da, db, dch1=\EP, dl1=\EM, home=\EH,
+	lines#24, cuf1=\EC, rmso=\E4, ind=\ES, smso=\Ef, ri=\ET,
+	cuu1=\EA, cvvis=\EN,
+plasma|plasma panel,
+	am, cub1=^H, clear=^L, cols#85, home=^^, lines#45, cuf1=\030,
+	cuu1=\026, cr=^M, cud1=^J, ind=^J, bel=^G,
+ramtek|ramtek 6000,
+	cr=^M, cud1=^J, ind=^J, bel=^G, lines#24, cols#78, am,
+	clear=[alpha]\n[erase]\n, cub1=^H,
+soroc|iq120|soroc 120,
+	am,
+	cols#80, lines#24,
+	bel=^G, clear=\E*$<2>, cr=\r, cub1=\b, cud1=\n,
+	cuf1=\f, cup=\E=%p1%'\s'%+%c%p2%'\s'%+%c, cuu1=^K,
+	ed=\EY, el=\ET, home=^^, ind=\n, kcub1=\b, kcud1=\n,
+	kcuf1=\f, kcuu1=^K,
+# Info:
+#	Note standout and underline are really sg#1, but when you 
+#	backspace up the whole screen does standout or underline! 
+#	The solution is to not specify sg#1 and live with it.
+#	
+#	iq140 standout and underline are confused. What we have 
+#	included here are reasonable possiblities for these two.
+#	Neither are really correct.
+#
+iq140|soroc 140,
+	cr=^M, cud1=^J, ind=^J, bel=^G, cols#80, lines#24, am,
+	clear=\E+, cub1=^H, cup=\E=%p1%' '%+%c%p2%' '%+%c, cuf1=^L, cuu1=^K,
+	home=^^, ll=^^^K, el=\Et, ed=\Ey, il1=\Ee$<1*>, dl1=\Er$<.7*>,
+	smir=\E9, cbt=\EI, rmir=\E8, mir, dch1=\Ew, smso=\E\177, rmso=\E\177,
+	kbs=^H, kcuf1=^L, khome=^^, kcuu1=^K, kf0=^A0\r,
+	kf1=^A@\r, kf2=^AA\r, kf3=^AB\r, kf4=^AC\r, kf5=^AD\r,
+	kf6=^AE\r, kf7=^AF\r, kf8=^AG\r, kf9=^AH\r, smul=\E^A,
+	rmul=\E^A,
+swtp|ct82|southwest technical products ct82,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H, il1=^\^y,
+	ed=^v, el=^F, clear=^L, cup=^k%p2%c%p1%c, cols#82, lines#20, dl1=^z,
+	cuf1=^s, cuu1=^a, smso=^^^v, rmso=^^^F, dch1=^\^h, ich1=^\^x, home=^p,
+	ind=^n, ri=^o, ll=^c,
+	is2=^\^r^^^s^^^d^]^w^i^s^^^]^^^o^]^w^r^i,
+# Info:	
+#	Another new terminal, tested, seems to work fine with vi.
+#
+synertek|ktm|380|Synertek KTM 3/80 tubeless terminal,
+	am, cub1=^H, cols#80, lines#24, ed=\EJ, el=\EK, clear=^Z,
+	cup=\E=%p1%' '%+%c%p2%' '%+%c, cuu1=^K, cuf1=^L, 
+# Info:
+#	TAB
+#	The tab 132 uses xon/xoff, so no padding needed.
+#	smkx/rmkx have nothing to do with arrow keys.
+#	is2 sets 80 col mode, normal video, autowrap on (for am).
+#	Seems to be no way to get rid of status line.
+#
+tab132|tab|tab 132/15,
+	am, da, db, mir, msgr, xenl, xon,
+	cols#80, it#8, lines#24, lm#96, vt#3,
+	acsc=``aaffggjjkkllmmnnooppqqrrssttuuvvwwxxyyzz{{||}}~~,
+	bel=^G, blink=\E[5m$<2>, bold=\E[1m$<2>,
+	clear=\E[H\E[J$<50>, cr=\r, csr=\E[%i%p1%d;%p2%dr,
+	cub=\E[%p1%dD, cub1=\b, cud=\E[%p1%dB, cud1=\n,
+	cuf=\E[%p1%dC, cuf1=\E[C$<2>, cup=\E[%i%p1%d;%p2%dH,
+	cuu=\E[%p1%dA, cuu1=\E[A$<2>, dch1=\E[P, dl1=\E[M,
+	ed=\E[J$<50>, el=\E[K$<3>, el1=\E[1K$<3>,
+	enacs=\E(B\E)0, home=\E[H, ht=\t, hts=\EH, il1=\E[L,
+	ind=\n, is2=\E[?7h\E[?3l\E[?5l, ka1=\EOq, ka3=\EOs,
+	kb2=\EOr, kbs=\b, kc1=\EOp, kc3=\EOn, kcub1=\E[D,
+	kcud1=\E[B, kcuf1=\EOC, kcuu1=\E[A, kent=\EOM,
+	kf0=\EOy, kf1=\EOP, kf10=\EOx, kf2=\EOQ, kf3=\EOR,
+	kf4=\EOS, kf5=\EOt, kf6=\EOu, kf7=\EOv, kf8=\EOl,
+	kf9=\EOw, rc=\E8, rev=\E[7m$<2>, ri=\EM$<5>, rmacs=^O,
+	rmir=\E[4l, rmso=\E[m$<2>, rmul=\E[m$<2>,
+	rs2=\E>\E[?3l\E[?4l\E[?5l\E[?7h\E[?8h, sc=\E7,
+	sgr=\E[0%?%p1%p6%|%t;1%;%?%p2%t;4%;%?%p1%p3%|%t;7%;%?%p4%t;5%;m%?%p9%t^N%e^O%;,
+	sgr0=\E[m^O$<2>, smacs=^N, smir=\E[4h,
+	smso=\E[1;7m$<2>, smul=\E[4m$<2>, tbc=\E[3g,
+tab132-w|tab132w,
+	cols#132, is2=\E[?7h\E[?3h\E[?5l, use=tab132,
+tab132-rv|tab132rv,
+	is2=\E[?7h\E[?3l\E[?5h, use=tab132,
+tab132-w-rv|tab132wrv,
+	is2=\E[?7h\E[?3h\E[?5h, use=tab132-w,
+# Info:
+#	TEC (various terminals labelled "tec" - manufacturers unknown)
+#	tec is untested, and taken from CB/Unix virtual terminal driver.
+#	Upper case terminal, uses lower case for control sequences!!!
+#	The driver shows the C ~ operator used on CM coordinates.
+#
+tec400|tec scope,
+	cr=^M, cud1=^J, ind=^J, bel=^G, cup=l%p2%~%c%p1%~%c,
+	cuu1=x, cud1=h, cuf1=g, cub1=w, home=i, smso={, rmso=|,
+	xmc#1, clear=f, il1=e, dl1=u, ich1=d, dch1=t, el=c, ed=s,
+tec500|tec 500,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H,
+	cup=\E=%p1%' '%+%c%p2%' '%+%c, clear=^Z$<20>,
+	cols#80, home=^^, lines#24, cuf1=^L, cuu1=^K, smso=^], rmso=^\,
+tec,
+	lines#24, cols#80, clear=^l, cuu1=^k, cuf1=\037, am,
+	cub1=^H, home=\036, cr=^M, cud1=^J, ind=^J, bel=^G,
+teletec|teletec datascreen,
+	cr=^M, cud1=^J, ind=^J, bel=^G,
+	am, cub1=^H, cols#80, clear=^l, home=^^, lines#24, cuf1=^_, cuu1=^k,
+vc404|volker-craig 404,
+	cr=^M, cud1=^J, ind=^J, bel=^G, am, cub1=^H, ed=^W$<40>, el=^V$<20>,
+	clear=^X$<40>, cup=^P%p1%' '%+%c%p2%' '%+%c, cols#80, home=^Y$<40>,
+	kcud1=^J, kcub1=^H, kcuf1=^U, kcuu1=^Z, lines#24, cuf1=^U, cuu1=^Z,
+vc404-s|volker-craig 404 w/standout mode,
+	rmso=^O, smso=^N, use=vc404,
+vc404-na|volker-craig 404 w/no arrow keys,
+	kcuf1@, kcuu1@, use=vc404,
+vc404-s-na|volker-craig 404 w/standout mode and no arrow keys,
+	rmso=^O, smso=^N, use=vc404-na,
+vc415|volker-craig 415,
+	clear=^L, use=vc404,
+# Info:
+#	Missing in vc303a and vc303 descriptions: they scroll 2 lines 
+#	at a time every other linefeed.
+#
+vc303-a|vc303a|volker-craig 303a,
+	cr=^M, cud1=^J, bel=^G, am, cub1=^H, el=^V$<20>, clear=^X$<40>,
+	cols#80, home=^Y$<40>, kcud1=^J, kcub1=^H, kcuf1=^U,
+	kcuu1=^Z, lines#24, ll=^P^@W, cuf1=^U, cuu1=^Z,
+vc303|vc103|vc203|volker-craig 303,
+	cr=^M, cud1=^J, bel=^G, am, cub1=^H, clear=^L$<40>, cols#80,
+	home=^K$<40>, kcud1=^J, kcub1=^H, kcuf1=^I, kcuu1=^N, lines#24,
+	ll=^O$<1>W, cuf1=^I, cuu1=^N,
+zen30|z30|zentec 30,
+	cr=^M, cud1=^J, ind=^J, bel=^G, mir, cols#80, lines#24,
+	ul, il1=\EE$<1.5*>, cub1=^H, el=\ET$<1.0*>,
+	cup=\E=%p1%' '%+%c%p2%' '%+%c, clear=\E*, home=^^, cuf1=^L,
+	rmso=\EG0, smso=\EG6, cuu1=^K, smir=\Eq, rmir=\Er,
+	am, dch1=\EW, dl1=\ER$<1.5*>, ed=\EY,
+# Info:	
+#	COMPUCOLOR, ISC, INTECOLOR (?)
+#	These compucolors appear similar, but they at least have 
+#	different sized screens. I don't know what's going on here.
+#	
+#	There is further confusion since intecolor seems to call 
+#	themselves isc too.
+#	
+#	The following termcap for the Intelligent Systems Corporation 
+#	8001 color terminal with lower-case and 48-line options 
+#	disallows global motion to get around the 2-lines-at-a-time 
+#	scrolling problem. It has been tested and works fine except 
+#	when indented lines are scrolled in from the bottom of the 
+#	screen. The latter problem originates with firmware which 
+#	interprets NL as NL-CR when the cursor is on the bottom line 
+#	of the screen.
+#
+8001|isc|isc8001|ISC8001|intecolor|compucolor|compucolor 8001,
+	cr=^M$<1>, cud1=^J$<1>, ind=^J$<1>, bel=^G, am, cols#80, lines#47,
+	il1=\EU$<5*>, dl1=\EV^\$<5*>, clear=^L$<31>, smir=^S\EQ$<1>,
+	rmir=^R\EK$<1>, kcub1=^Z, kcuf1=^Y, kcuu1=^\, kcud1=^J, khome=^H,
+	cub1=^Z$<1>, cuf1=^Y$<1>, cuu1=^\$<1>, smul=^Q$<1>, rmul=^R$<1>,
+#	cup=^C%p2%c%p1%c,
+compucolor2|compucolorii|compucolorII|compucolor II,
+	cr=^M, cud1=^J, ind=^J, bel=^G,
+	ht=^I, am, cup=^C%p2%c%p1%c, cub1=^Z, lines#32, cols#64,
+	clear=^L, home=^H, cuf1=^Y, cuu1=^\,
+# Info:
+#	INTERACTIVE SYSTEMS
+#	smkx/rmkx from dgc, to make insert mode key work in Rand Editor.
+#	probably needs more keys defined.
+#
+intext|Interactive Systems Corporation modified owl 1200,
+	cr=^M, cud1=^J, ind=^J, bel=^G, il1=\020$<5.5*>, am, cub1=^_,
+	cub1=^H, cbt=^Y, ed=\026J$<5.5*>, el=^K\160^R,
+	clear=\014$<132>, cup=\017%p1%' '%+%c%p2%' '%+%c, cols#80,
+	dch1=\022$<5.5*>, dl1=\021$<5.5*>, rmir=\026\074,
+	smir=\026\073, ip=$<5.5*>, lines#24, cuf1=\036, ht=^I,
+	cuu1=\034, rmso=^V# , xmc#1, smso=^V$\054,
+	smkx=\036\072\264\026%, rmkx=\269,
+	kcub1=^_, kcud1=^J, kcuf1=^^, kcuu1=\034, kbs=^H, khome=^Z,
+	kf1=^VA\r, kf2=^VB\r, kf3=^VC\r, kf4=^VD\r, kf5=^VE\r,
+	kf6=^VF\r, kf7=^VG\r, kf8=^VH\r, kf9=^VI\r, kf0=^VJ\r,
+intext2|intextii|INTERACTIVE modified owl 1251,
+	cr=^M, cud1=^J, ind=^J, bel=^G, il1=\E[L, am, cbt=\E[Z,
+	bw, ed=\E[J, el=\E[K, hpa=\E[%p1%{1}%+%dG, clear=\E[H\E[2J,
+	cup=\E[%i%p1%d;%p2%dH, cols#80, dch1=\E[P, dl1=\E[M,
+	cud1=\E[B, ich1=\E[@, kf0=\E@\r,
+	lf0=REFRSH, kf1=\EP\r, lf1=DEL CH, kf2=\EQ\r, lf2=TABSET,
+	kf3=\ES\r, lf3=GOTO, kf4=\ET\r, lf4=+PAGE, kf5=\EU\r,
+	lf5=+SRCH, kf6=\EV\r, lf6=-PAGE, kf7=\EW\r, lf7=-SRCH,
+	kf8=\EX\r, lf8=LEFT, kf9=\EY\r, lf9=RIGHT, kbs=^h, kcud1=\EB\r,
+	khome=\ER\r, kcub1=\ED\r, kcuf1=\EC\r, kcuu1=\EA\r, lines#24,
+	cuf1=\E[C, ht=^I, rmso=\E[2 D, ind=\E[S, smso=\E[6 D, ri=\E[T,
+	rmul=\E[2 D, xmc#0, ul, cuu1=\E[A, smul=\E[18 D,
+	flash=\E[;;;;;;;;;2;;u\E[;;;;;;;;;1;;u,
+wind,
+	xon,
+	cols#80, lines#24,
+	bel=^G, clear=\EnP^X\Eo, cr=\r, cub1=\b, cud1=^],
+	cuf1=\f, cup=\Ep%p2%c%p1%c, cuu1=^K, home=\Ep\200\200,
+	ind=^], kcub1=\E3, kcud1=\E2, kcuf1=\E4, kcuu1=\E1,
+	kf1=\E5, kf2=\E6, kf3=\E7, kf4=\E8, rmso=\Em^C,
+	smso=\Em\f,
+wind16,
+	cols#80, lines#16,
+	bel=^G, clear=\EnP^P\Eo, cr=^M, cub1=^H, cud1=^],
+	cuf1=^L, cup=\Ep%p2%c%p1%c, cuu1=^K, home=\Ep\200\200,
+	ind=^], rmso=\Em^C, smso=\Em^L,
+wind40,
+	cols#80, lines#40,
+	bel=^G, clear=\EnP(\Eo, cr=^M, cub1=\b, cud1=^],
+	cuf1=^L, cup=\Ep%p2%c%p1%c, cuu1=^K, home=\Ep\200\200,
+	ind=^], rmso=\Em^C, smso=\Em^L,
+wind50,
+	cols#88, lines#50,
+	bel=^G, clear=\EnX2\Eo, cr=^M, cub1=\b, cud1=^],
+	cuf1=^L, cup=\Ep%p2%c%p1%c, cuu1=^K, home=\Ep\200\200,
+	ind=^], kcub1=\E3, kcud1=\E2, kcuf1=\E4, kcuu1=\E1,
+	kf1=\E5, kf2=\E6, kf3=\E7, kf4=\E8, rmso=\Em^C,
+	smso=\Em^L,
+# Info:
+#	Wyse-50 termcap is a modified version of the Televideo 920 
+#	termcap.
+#	This one is here just in case anyone ever finds a use for it.
+#	Emacs gets confused drawing mode lines when the terminal is in
+#	Wyse mode.  --tpm
+#	The problem with mode lines is that EMACS assume 1) that video
+#	attributes are in effect to the end of the line, not the end of
+#	the display, and 2) that the "ce" capability will, on any terminal
+#	with the standout glitch, turn off standout mode to the end of the
+#	line.  Neither are true of the Wyse-50 (or Wyse-30) in Wyse mode.
+#	    --gh
+#	This has been merged with the Sun "termcap" entry, which combines
+#	an entry from Steve Hartwell and the 4.3BSD entry.  The trick of
+#	using protected mode for standout mode has been observed to well
+#	and truly hang the terminal up, so we fall back on using the regular
+#	set attribute sequence.
+#
+wy|wyse50|w50|wy50|wyse-50|wy-50|Wyse WY-50 in Wyse mode,
+	am,		bel=^G,			cbt=\EI,
+	civis=\E`0,	clear=\E+,		cols#80,
+	cnorm=\E`1,	cr=^M,			cub1=^H,
+	cud1=^J,	cuf1=^L,		cup=\E=%p1%' '%+%c%p2%' '%+%c,
+	cuu1=^K,				dch1=\EW,
+	dl1=\ER,	ed=\EY,			el=\ET,
+	home=^^,	ht=^I,
+	if=/usr/share/lib/tabset/stdcrt,
+	il1=\EE,	ind=\n,
+	is1=\E`\072\200\EC\EDF\E'\E(,
+	kbs=^H,		kcub1=^H,		kcud1=^J,
+	kcuf1=^L,	kcuu1=^K,		kdch1=\EW,
+	kdl1=\ER,	ked=\EY,		kel=\ET,
+	kf0=^A@^M,	kf1=^AA^M,		kf2=^AB^M,
+	kf3=^AC^M,	kf4=^AD^M,		kf5=^AE^M,
+	kf6=^AF^M,	kf7=^AG^M,		kf8=^AH^M,
+	kf9=^AI^M,	khome=^^,		kich1=\EQ,
+	kil1=\EE,	knp=\EK,		kpp=\EJ,
+	lines#24,	mc0=\EP,		mc4=^T,
+	mc5=^R,		nel=^M^J,
+	ri=\Ej,		rmir=\Er,		rmso=\EG0,
+	rmul=\EG0,	smir=\Eq,		smso=\EG4,
+	smul=\EG8,	tbc=\E0,		xon,
+#
+# This entry is suspect. See above.
+#
+w5|wy50n|wyse50n|Wyse WY-50 w/out standout glitch,
+        smso=\E), rmso=\E(, xmc#0, use=wyse50,
+#
+# The following seems to be the best mode to run a Wyse-50 in.  It works
+#  with Emacs using this termcap entry.  Wyse mode seems to be a loser.
+#  Note that you have to manually set emulation mode to ADDSVP and turn
+#  ENHANCE on. --tpm
+# Tab support, better is and rs, and wyse-nk added Jan85 by sun!gnu
+# (termcap had xon, ht=^I, rs2=\E`:\E`9^O\Er, smso=^N, smul=^N)
+#
+wv|wyse-vp|wyse|Wyse 50 in ADDS Viewpoint emulation mode with "enhance" on,
+	am, bel=^G, cr=^M, cud1=^J, ind=^J, cub1=^H, lines#24, cols#80,
+	cup=\EY%p1%' '%+%c%p2%' '%+%c, is2=\E`\072\E`9^O\Er,
+	is1=\E`\072\E`9^O\Er,
+	ed=\Ek, el=\EK, cuf1=^F, cuu1=^Z, clear=^L,
+	home=^A, ll=^A^Z, if=/usr/share/lib/tabset/wyse-adds,
+	kcub1=^U, kcuf1=^F, kcud1=^J, kcuu1=^Z, khome=^A,
+	kf0=^B1, kf2=^B2, kf3=^B!, kf4=^B", kf5=^B#,
+	rmso=^O, smso=\E0P^N, rmul=^O, smul=\E0`^N,
+	dl1=\El, il1=\EM, smir=\Eq, rmir=\Er, dch1=\EW,
+# This is the same as above, but with no keys.  This makes vi ^F, ^B, work.
+wk|wyse-nk|Wyse 50 in ADDS Viewpoint enhanced mode with cursor keys gone,
+	kcub1@, kcuf1@, kcud1@, kcuu1@, use=wyse-vp,
+# The Wyse-50 does not correctly emulate a Televideo 925.
+vw|w9|wyse925|wyse-925|Wyse-50 emulating tvi925,
+	xenl@, flash@,  use=tvi925,
+wy100|100|wyse 100,
+	cr=^M, cud1=^J, ind=^J, bel=^G, is2=\Eu\E0, il1=\EE, cub1=^H,
+	el=\ET, cup=\E=%p1%' '%+%c%p2%' '%+%c, clear=\E;, cols#80, dch1=\EW,
+	dl1=\ER, rmir=\Er, smir=\Eq, lines#24, mir, cuf1=^L, ed=\EY, cuu1=^K,
+	cbt=^D, smul=\EG8, rmul=\EG0, rmso=\EG0, smso=\EG4, kf1=@,
+	kf2=^AA^M, kf3=^AB^M, kf4=^AC^M, kf5=^AD^M, kf6=^AE^M, kf7=^AF^M,
+	kf8=^AG^M,
+	kcub1=^H, kcud1=^J, khome=\E{,
+	kbs=^H, kcuu1=^K, kcuf1=^L, hs, is2=\EA30,
+	tsl=\EF, fsl=\004, dsl=\EA31,
+#
+# Native Wyse WY-30 from yoonkim@Sun.COM
+#
+w3|wyse30|w30|wy30|wyse-30|wy-30|Wyse WY-30 in Wyse mode,
+	clear=\E*, el=\Et, xmc#1, use=wyse50,
+wn|wy30n|wyse30n|Wyse 30 w/out standout glitch,
+        smso=\E), rmso=\E(, xmc#0, use=wyse30,
+#
+ncr7900i|7900i|ncr7900|7900|ncr 7900 model 1,
+	am, bel=^G, bw, clear=^L, cols#80, cr=^M,
+	cub1=^H, cud1=^J, cuf1=^F, cuu1=^Z,
+	ind=^J, ll=^A,
+	cup=\E1%p2%c%p1%c,
+	ed=\Ek, el=\EK,
+	kcud1=^J, kcub1=^U, kcuf1=^F, kcuu1=^Z, khome=^A,
+	is2=\E0@\b\E3\E4\E7, lines#24,
+	rmso=\E0@, xmc#1, smso=\E0Q,
+	blink=\E0B, dim=\E0A, rev=\E0P,
+	smul=\E0`, rmul=\E0@, ul, sgr0=\E0@,
+	sgr=\E0%p5%'@'%+%p4%{2}%*%+%p3%{16}%*%+%p2%{32}%*%+%p1%{17}%*%+%c,
+	mc4=^T, mc5=^R,
+7900i-na|ncr7900i-na|ncr7900-na|7900-na|ncr 7900 model 1 with no arrows,
+	kcud1@,   kcub1@,   kcuf1@,   kcuu1@,   use=ncr7900i,
+7900iv|ncr7900iv|ncr 7900 model 4,
+	am,	bw,	hs,	eslok,
+	cols#80,	lines#24,
+	bel=^G,	cr=\r,	clear=\f,
+	cup=^K%p1%'@'%+%c\E^E%p2%02d,	cud1=\n,	home=^K@\E^E00,
+	cub1=\b,	dl1=\E^O,	dsl=\Ey1,
+	fsl=\Ek\Ey5,	il1=\E^N,	kbs=\b,
+	kcud1=\EB,	kf1=\ES,	kf2=\ET,
+	kf3=\EU,	kf4=\EV,	kf5=\EW,
+	kf6=\EP,	kf7=\EQ,	kf8=\ER,
+	khome=\EH,	kcub1=\ED,	kcuf1=\EC,
+	kcuu1=\EA,	lf6=blue,	lf7=red,
+	lf8=white,	nel=\r\n,	ind=\n,
+	tsl=\Ej\Ex5\Ex1\EY8%p1%' '%+%c\Eo,
+	ind=^J,
+ncr7901|7901|ncr 7901 model,
+	cols#80, lines#24,
+	am, bel=^G, bw, clear=^L, cr=^M,
+	cub1=^H, cud1=^J, cuf1=^F, cuu1=^Z,
+	ind=^J, ll=^A,
+	ed=\Ek, el=\EK,
+	civis=^W, cnorm=^X,
+	mc4=^T, mc5=^R,
+	kcud1=^J, kcub1=^U, kcuf1=^F, kcuu1=^Z, khome=^H, kclr=^L,
+	is2=^X,
+	cup=\EY%p1%' '%+%c%p2%' '%+%c,
+	vpa=^K%p1%'@'%+%c,
+	hpa=^P%p1%{10}%/%{16}%*%p1%{10}%m%+%c,
+	sgr=\E0%p5%'@'%+%p4%{2}%*%+%p3%{16}%*%+%p2%{32}%*%+%p1%{17}%*%+%c^N,
+	is2=\E4^O,
+	blink=\E0B, dim=\E0A, rev=\E0P,
+	smso=\E0Q^N, rmso=^O,
+	smul=\E0`^N, rmul=^O, sgr0=^O, ul,

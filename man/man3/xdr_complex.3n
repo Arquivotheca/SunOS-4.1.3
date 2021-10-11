@@ -1,0 +1,415 @@
+.\" @(#)xdr_complex.3n 1.1 92/07/30 SMI;
+.TH XDR_COMPLEX 3N "20 January 1990"
+.SH NAME
+xdr_array, xdr_bytes, xdr_opaque, xdr_pointer, xdr_reference, xdr_string, xdr_union, xdr_vector, xdr_wrapstring \- library routines for translating complex data types
+.SH DESCRIPTION
+.IX "xdr routines" "xdr_array()" "" "\fLxdr_array()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_bytes()" "" "\fLxdr_bytes()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_opaque()" "" "\fLxdr_opaque()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_pointer()" "" "\fLxdr_pointer()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_reference()" "" "\fLxdr_reference()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_string()" "" "\fLxdr_string()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_union()" "" "\fLxdr_union()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_vector()" "" "\fLxdr_vector()\fP \(em describe format of XDR data"
+.IX "xdr routines" "xdr_wrapstring()" "" "\fLxdr_wrapstring()\fP \(em describe format of XDR data"
+.IX "xdr_array()" "" "\fLxdr_array()\fP \(em describe format of XDR data"
+.IX "xdr_bytes()" "" "\fLxdr_bytes()\fP \(em describe format of XDR data"
+.IX "xdr_opaque()" "" "\fLxdr_opaque()\fP \(em describe format of XDR data"
+.IX "xdr_pointer()" "" "\fLxdr_pointer()\fP \(em describe format of XDR data"
+.IX "xdr_reference()" "" "\fLxdr_reference()\fP \(em describe format of XDR data"
+.IX "xdr_string()" "" "\fLxdr_string()\fP \(em describe format of XDR data"
+.IX "xdr_union()" "" "\fLxdr_union()\fP \(em describe format of XDR data"
+.IX "xdr_vector()" "" "\fLxdr_vector()\fP \(em describe format of XDR data"
+.IX "xdr_wrapstring()" "" "\fLxdr_wrapstring()\fP \(em describe format of XDR data"
+.LP
+.SM XDR
+library routines allow C programmers to describe
+complex data structures in a machine-independent fashion.
+Protocols such as remote procedure calls (\s-1RPC\s0)
+use these routines to describe the format of the data.
+.SS Routines
+.LP
+The
+.SB XDR
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions of the 
+.TX NETP .
+.br
+.ne 10
+.LP
+.ft B
+.nf
+#include <rpc/xdr.h>
+.fi
+.ft 1
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_array(xdrs, arrp, sizep, maxsize, elsize, elproc)
+\s-1XDR\s0 *xdrs;
+char **arrp;
+u_int *sizep, maxsize, elsize;
+xdrproc_t elproc;
+.fi
+.ft R
+.IP
+A filter primitive that translates between a variable-length
+array and its corresponding external representations.
+The parameter
+.I arrp
+is the address of the pointer to the array, while
+.I sizep
+is the address of the element count of the array. 
+This value is used
+by the filter while encoding and is set by it while decoding;
+the routine fails if the element count exceeds
+.IR maxsize .
+The parameter
+.I elsize
+is the
+.I sizeof
+each of the array's elements, and
+.I elproc
+is an
+.SM XDR
+filter that translates between
+the array elements' C form, and their external
+representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_bytes(xdrs, arrp, sizep, maxsize)
+\s-1XDR\s0 *xdrs;
+char **arrp;
+u_int *sizep, maxsize;
+.fi
+.ft R
+.IP
+A filter primitive that translates between an array of bytes
+and its external representation.
+It treats the array of bytes as opaque data.
+The parameter
+.I arrp
+is the address of the array of bytes.
+While decoding if
+.I *arrp 
+is
+.SM NULL\s0,
+then the necessary storage is allocated to hold the array.
+This storage can be freed by using
+.B xdr_free(\|) 
+(see
+.BR xdr_simple (3N)).
+.I sizep 
+is the pointer to the actual length specifier for the array.
+This value is 
+used by the filter while encoding and is set by it when decoding.
+.I maxsize
+is the maximum length of the array.
+The routine fails if the actual length of the array is 
+greater than
+.I maxsize
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_opaque(xdrs, cp, cnt)
+\s-1XDR\s0 *xdrs;
+char *cp;
+u_int cnt;
+.fi
+.ft R
+.IP
+A filter primitive that translates between fixed size opaque
+data and its external representation.
+The parameter
+.I cp
+is the address of the opaque object, and
+.I cnt
+is its size in bytes.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_pointer(xdrs, objpp, objsize, objproc)
+\s-1XDR\s0 *xdrs;
+char **objpp;
+u_int objsize;
+xdrproc_t objproc;
+.fi
+.ft R
+.IP
+Like
+.B xdr_reference(\|)
+except that it serializes
+.SM NULL
+pointers, whereas
+.B xdr_reference(\|)
+does not.
+Thus,
+.B xdr_pointer(\|)
+can represent
+recursive data structures, such as binary trees or
+linked lists. 
+The parameter
+.I objpp
+is the address of the pointer;
+.I objsize
+is the
+.I sizeof
+the structure that
+.I *objpp
+points to; and
+.I objproc
+is an
+.SM XDR
+procedure that filters the structure
+between its C form and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 11
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_reference(xdrs, pp, size, proc)
+\s-1XDR\s0 *xdrs;
+char **pp;
+u_int size;
+xdrproc_t proc;
+.fi
+.ft R
+.IP
+A primitive that provides pointer chasing within structures.
+The parameter
+.I pp
+is the address of the pointer;
+.I size
+is the
+.I sizeof
+the structure that
+.I *pp
+points to; and
+.I proc
+is an
+.SM XDR
+procedure that filters the structure
+between its C form and its external representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.IP
+Warning: 
+This routine does not understand
+.SM NULL
+pointers. Use
+.B xdr_pointer(\|)
+instead.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_string(xdrs, strp, maxsize)
+\s-1XDR\s0 *xdrs;
+char **strp;
+u_int maxsize;
+.fi
+.ft R
+.IP
+A filter primitive that translates between C strings and
+their
+corresponding external representations.
+The routine fails if the string being translated
+is longer than
+.IR maxsize .
+.I strp
+is the address of the pointer to the string. While decoding if 
+.I *strp
+is 
+.SM NULL\s0,
+then the necessary storage is allocated
+to hold this 
+null-terminated string and 
+.I *strp 
+is set to point to this.
+This storage can be freed by using
+.B xdr_free(\|)
+(see
+.BR xdr_simple (3N)).
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 16
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_union(xdrs, dscmp, unp, choices, defaultarm)
+\s-1XDR\s0 *xdrs;
+int *dscmp;
+char *unp;
+struct xdr_discrim *choices;
+bool_t (*defaultarm) (\|);  /* may be \s-1NULL\s0 */
+.fi
+.ft R
+.IP
+A filter primitive that translates between a discriminated C
+.B union
+and its corresponding external representation. 
+It first translates the discriminant of the union located at
+.IR dscmp .
+This discriminant is always an
+.BR enum_t .
+Next the union located at
+.I unp
+is translated.
+The parameter
+.I choices
+is a pointer to an array of
+.B xdr_discrim
+structures.
+Each structure contains an ordered pair of
+.RI [ value , proc ].
+If the union's discriminant is equal to any of the 
+.IR value s,
+then the associated 
+.I proc
+is called to translate the union.
+The end of the
+.B xdr_discrim
+structure array is denoted by a 
+.SM NULL
+pointer.
+If the discriminant is not found in the
+.I choices
+array, then the
+.I defaultarm
+procedure is called (if it is not
+.SM NULL\s0).
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_vector(xdrs, arrp, size, elsize, elproc)
+\s-1XDR\s0 *xdrs;
+char *arrp;
+u_int size, elsize;
+xdrproc_t elproc;
+.fi
+.ft R
+.IP
+A filter primitive that translates between fixed-length
+arrays and their corresponding external representations.
+The parameter
+.I arrp
+is the address of the array, while
+.I size
+is the element count of the array.
+The parameter
+.I elsize
+is the
+.I sizeof
+each of the array's elements, and
+.I elproc
+is an
+.SM XDR
+filter that translates between
+the array elements' C form, and their external
+representation.
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t xdr_wrapstring(xdrs, strp)
+\s-1XDR\s0 *xdrs;
+char **strp;
+.fi
+.ft R
+.IP
+A primitive that calls
+.B "xdr_string("xdrs, strp, "\s-1MAXUNSIGNED\s0 );"
+where
+.SB MAXUNSIGNED
+is the maximum value of an unsigned integer.
+.B xdr_wrapstring(\|)
+is handy because the
+.SM RPC
+package passes a maximum of two
+.SM XDR
+routines as parameters, and
+.BR xdr_string(\|) ,
+one of the most frequently used primitives, requires three.
+.I strp
+is the address of the pointer to the string.
+While decoding if 
+.I *strp
+is 
+.SM NULL\s0,
+then the necessary storage is allocated
+to hold the 
+null-terminated string and 
+.I *strp 
+is set to point to this.
+This storage can be freed by using
+.B xdr_free(\|)
+(see
+.BR xdr_simple (3N)).
+This routine returns 
+.SM TRUE
+if it succeeds, 
+.SM FALSE
+otherwise.
+.SH SEE ALSO
+.BR xdr (3N),
+.BR xdr_admin (3N),
+.BR xdr_create (3N),
+.BR xdr_simple (3N)

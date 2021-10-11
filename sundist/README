@@ -1,0 +1,208 @@
+
+4.1.3 build
+===========
+
+Builds are done for all architectures (currently sun4, 4m and 4c)
+on different build machines of each architecture. Most of the following
+steps are done in parallel on all the build machines. Only the media
+generation steps at the end are done on a single, central machine.
+At the end is a guide for setting up the build machines. Most build
+commands are placed in background and the output saved to a file.
+
+Pre-Flight:
+-----------
+update  /usr/src/sys/RELEASE
+
+Prepare /usr/src:
+-----------------
+<as root>
+# umount /usr/src
+# newfs /usr/src
+# mount /usr/src
+# chgrp staff /usr/src
+# chmod g+w /usr/src
+# mkdir /usr/src/SCCS_DIRECTORIES
+# mount  /usr/src/SCCS_DIRECTORIES
+
+<as user>
+% cd /usr/src
+% ln -s SCCS_DIRECTORIES/SCCS
+
+Prepare SIDlist: (done only on the first build. Thereafter, the SID list
+		  is updated manually for the files that change)
+----------------
+% sccs get /usr/src/SCCS_DIRECTORIES/sys/conf.common/RELEASE
+% snapshot -v							58 minutes
+
+Populate /usr/src:
+------------------
+<as user; put these in your .cshrc>
+% umask 2
+% limit stacksize 32M
+
+
+% cd /usr/src
+% sccs get /usr/src/SCCS_DIRECTORIES/sys/conf.common/RELEASE
+% make POPULATED			(Sun4c - 90 minutes)
+					(Sun4  - 120 minutes)
+
+Environment:
+------------
+<as user; put these in your .cshrc>
+% set OPENWINHOME=/usr/openwin
+% setenv OPENWINHOME /usr/openwin 
+
+% set XGLHOME=/xgl_file/`arch`
+% setenv XGLHOME /xgl_file/`arch` 
+
+Build /usr/src:
+---------------
+% su -c "make makeinstall"		(2 minutes)
+
+% make					(Sun4c - 15.5 hours)
+<builds bwos>				(Sun4  - 21.0 hours)
+
+Install build into prototyping area:
+------------------------------------
+<as root>
+# make proto				(Sun4c - 120 minutes)
+
+Note: The following ">>" items are now done automatically by
+the above "make proto". They are left as a note here
+for historical reasons
+
+>> # make international
+
+>> # install -d /proto/UNDISTRIBUTED/patches
+>> # cd /UNDISTRIBUTED
+>> # find . -print | cpio -pdlm /proto/UNDISTRIBUTED/patches
+>> # du -s /UNDISTRIBUTED/*
+>> # du -s /proto/UNDISTRIBUTED/patches/*
+ 
+>> # cd /usr/src/sundist
+>> # make
+>> # make cdrom
+ 
+>> # make sunupgrade_target
+ 
+# exportfs /proto
+# exportfs /usr/src
+
+
+{this following stuff is only run from the "central"
+ build machine, currently the sun4c machine.}
+
+# save_cd_depends <options>     (30 minutes)
+
+# rm -rf /cdrom_tarfiles_gen/tar-files
+# cp /usr/src/sys/conf.common/RELEASE RELEASE
+# make -f cdimage.mk (machine names in script... check)		(20 minutes)
+# make exabyte -f cdimage.mk (machine names in script... check) (30 minutes)
+
+CDimage on a disk: (cdimage on a disk. Allows debugging the image
+		    without having to burn a CDROM master)
+------------------
+# make disk -f cdimage.mk (prompts for disk)
+
+
+==========================================================================
+==========================================================================
+
+Appendix: setting up the release/build machines
+
+There will exist one build machine for every architecture to
+be built. They will all share a common SCCS source base, exported
+from a a fourth machine, referred to as the "disk farm". This
+disk farm will also contain various files for building the Open Window
+tarfiles, the XGL tarfiles, the upgrade files, and the patch files
+for the patch area of the CDROM. Release dependent machine names
+are located in the files release/save_cd_depends and sundist/cdimage.mk.
+---------------------------------------------------------------------------
+
+Here is the structure of the central build machine:
+
+Filesystem            kbytes    used   avail capacity  Mounted on
+/dev/sd0a              14983    4692    8793    35%    /
+/dev/sd0g             138608  104315   20433    84%    /usr
+swap                   57276     420   56856     1%    /tmp 
+
+	A large swap area using tmpfs makes the build go faster.
+---------------------------------------------------------------------------
+
+/dev/sd0d             889470  308410  492113    39%    /usr/src
+ 
+        All the source is built in this area. Set up as a large partition
+	because the cdimage will be stored here under sundist/cdimage
+	(on the central machine only).
+
+---------------------------------------------------------------------------
+eichler:/usr/src.412/SCCS_DIRECTORIES
+                      471631  272354  152113    64%    /usr/src/SCCS_DIRECTORIES
+
+        The SCCS sources themselves (the real McCoy).
+
+---------------------------------------------------------------------------
+/dev/sd0e             229808  135579   71249    66%    /proto
+ 
+        The built source is installed here in a root/usr filesystem 
+        image prior to being turned into tarfiles. 
+ 
+---------------------------------------------------------------------------
+/dev/sd0d               3823    3155     668    83%    /miniroot
+ 
+        The bootable images of the MUNIX & Miniroot filesystems 
+        are built here. 
+ 
+---------------------------------------------------------------------------
+/dev/sd1g             229808  133506   73322    65%    /tarfiles 
+ 
+        The tarfiles are built and stored here until they are moved 
+        to the disk farm in preparation for the CDROM creation. 
+ 
+---------------------------------------------------------------------------
+/dev/sd0h             146313      26  131656     0%    /sunupgrade_tmp
+
+	Used for creating the upgrade file for the release
+
+---------------------------------------------------------------------------
+/dev/sd2h             613252  518449   94803    85%    /usr/cdrom_4.1.3
+ 
+        Holding area for the various tarfiles, sundist images, etc.
+
+---------------------------------------------------------------------------
+/dev/sd2h             613252  191305  360622    35%    /cdrom_tarfiles_gen
+
+	Here is where an intermediate image of the tarfiles is stored
+	prior to being incorporated into the CD image itself.
+
+---------------------------------------------------------------------------
+eichler:/ow_xgl_undistrib_412/xgl_file
+                      208477  139305   48324    74%    /xgl_file
+eichler:/ow_xgl_undistrib_412/openwin_files
+                      208477  139305   48324    74%    /openwin_files
+eichler:/ow_xgl_undistrib_412/UNDISTRIBUTED
+                      208477  139305   48324    74%    /UNDISTRIBUTED
+
+	The OW, XGL, and patch files. OW & XGL go into the /tarfiles
+	area along with those from /proto. The patches are put into
+	the CDROM at the same time the tarfiles are moved into the
+	CD image.
+
+---------------------------------------------------------------------------
+eichler:/411_sunupgrade/tarfiles
+                      720096  379727  268359    59%    /411_cdrom
+eichler:/411_sunupgrade/untarfiles
+                      720096  379727  268359    59%    /411_cdrom_untar
+eichler:/411_sunupgrade/proto_sunupgrade
+                      720096  379727  268359    59%    /proto_sunupgrade
+
+	Files used by sunupgrade to produce the upgrade portion
+	of the build.
+
+---------------------------------------------------------------------------
+eichler:/OW3_XGL_cd/OpenWindows/sun4
+                      205183   78859  105805    43%    /openwin_files-V3
+
+	Some graphics executables use the OW3 libraries.
+
+---------------------------------------------------------------------------

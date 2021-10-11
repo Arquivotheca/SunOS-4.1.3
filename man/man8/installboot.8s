@@ -1,0 +1,147 @@
+.\" @(#)installboot.8s 1.1 92/07/30 SMI;
+.TH INSTALLBOOT 8S "1 July 1990"
+.SH NAME
+installboot \- install bootblocks in a disk partition
+.SH SYNOPSIS
+.B /usr/kvm/mdec/installboot
+[
+.B \-hltv
+]
+.I bootfile protobootblk bootdevice
+.br
+.SH DESCRIPTION
+.IX  "boot command"  ""  "\fLboot\fP \(em system startup procedures"
+.IX  "bootstrap procedures"  ""  "bootstrap procedures \(em \fLboot\fP"
+.IX  "autoboot procedures"  ""  "autoboot procedures \(em \fLboot\fP"
+.IX  "startup procedures"  ""  "startup procedures \(em \fLboot\fP"
+.IX  "installboot procedures" "" "installboot procedures \(em \fLboot\fP"
+.LP
+The
+.BR boot (8S)
+program is loaded
+from disk by bootblock code which resides in the
+bootblock area of a disk partition.
+In order for the bootblock code to read the
+boot program (usually
+.BR /boot )
+it is necessary for it to
+know the block numbers occupied by the boot program.
+.LP
+.B installboot
+plugs the block numbers of the
+boot program into a table in the bootblock code,
+and writes the modified bootblock code
+onto the disk.
+Note:
+.B installboot
+must be run every time the boot program is reinstalled, since in
+general, the block list of the boot program will change each time it
+is written.
+.LP
+.I bootfile
+is the name of the boot program, usually
+.BR /boot .
+.I protobootblk
+is the name of the bootblock code into which the block numbers
+of the boot program are to be inserted.
+Sun distributes a number of prototype boot blocks for different
+Sun-supported devices in
+.BR /usr/kvm/mdec .
+The prototype bootblock file must have an
+.BR a.out (5)
+header, but it will be written out to the
+device with the header removed.
+See 
+.RB ` "\s-1SPARC\s0station 1 Systems Only" '
+below for exceptions.
+.I bootdevice
+is the name of the disk device onto which the
+bootblock code is to be installed.
+.LP
+You can see how
+.B installboot
+works by making the destination
+a regular file instead of a device, and examining the result with
+.BR od (1V).
+.SS SPARCstation 1 Systems Only
+.LP
+The \s-1SPARC\s0station 1 system (or any machine of 
+kernel architecture
+.BR sun4c )
+uses bootblocks which are regular
+.BR a.out (5)
+executables.
+This means the header is left intact when the
+bootblock is transferred to the disk.
+This is primarily used to
+distinguish bootable floppy disks: since the header contains
+a machine type code,
+a machine of one architecture can avoid attempting
+to boot a floppy which contains bootblocks for a different
+architecture.
+.LP
+.B installboot
+distributed with the
+.B sun4c 
+executables leaves the header on the bootblock automatically;
+this behavior may be duplicated by other versions of 
+.B installboot
+by using the 
+.B \-h
+flag described below.
+.SH OPTIONS
+.TP
+.B \-h
+Leave the 
+.B a.out
+header on the bootblock when installed on disk.
+.TP
+.B \-l
+Print out the list of block numbers of the boot program.
+.TP
+.B \-t
+Test.
+Display various internal test messages.
+.TP
+.B \-v
+Verbose.
+Display detailed information about the size of the
+boot program, etc.
+.SH EXAMPLE
+.LP
+To install the bootblocks onto the root partition on a Xylogics disk:
+.RS
+.ft B
+.nf
+example% cd /usr/kvm/mdec
+example% installboot \-vlt /boot bootxy /dev/rxy0a
+.ft R
+.fi
+.RE
+.LP
+For an
+.SM SD
+disk,
+you would use
+.B bootsd
+and
+.BR /dev/rsd0a ,
+respectively, in place of
+.B bootxy
+and
+.BR /dev/rxy0a .
+.SH SEE ALSO
+.BR od (1V),
+.BR a.out (5),
+.BR boot (8S),
+.BR bootparamd (8),
+.BR init (8),
+.BR kadb (8S),
+.BR monitor (8S),
+.BR ndbootd (8C),
+.BR rc (8),
+.BR reboot (8)
+.LP
+.TX ADMIN
+.br
+.TX INSTALL

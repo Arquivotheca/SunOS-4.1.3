@@ -1,0 +1,133 @@
+.\" @(#)madvise.3 1.1 92/07/30 SMI;
+.TH MADVISE 3 "21 January 1990"
+.SH NAME
+madvise \- provide advice to VM system
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/mman.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int madvise(addr, len, advice)
+caddr_t addr;
+size_t len;
+int advice;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "madvise()" "" "\fLmadvise()\fR \(em provide advice to VM system"
+.IX "memory" "optimizing usage of user mapped memory"
+.IX "optimize" "user mapped memory usage" 
+.LP
+.B madvise(\|)
+advises the kernel that a region of user mapped memory
+in the range
+[\fIaddr, addr + len\fP\^)
+will be accessed following a type of pattern.
+The kernel uses this information to optimize the procedure
+for manipulating and maintaining the resources associated with
+the specified mapping range.
+.LP
+Values for
+.I advice
+are defined in
+.B <sys/mman.h>
+as:
+.LP
+.nf
+.ta 25n 35n
+.ft B
+#define \s-1MADV_NORMAL\s0	0x0	/* No further special treatment */
+#define \s-1MADV_RANDOM\s0	0x1	/* Expect random page references */
+#define \s-1MADV_SEQUENTIAL\s0	0x2	/* Expect sequential page references */
+#define \s-1MADV_WILLNEED\s0	0x3	/* Will need these pages */
+#define \s-1MADV_DONTNEED\s0	0x4	/* Don't need these pages */
+.ft R
+.fi
+.TP
+.SB MADV_NORMAL
+The default system characteristic where
+accessing memory within the address range causes
+the system to read data from the mapped file.
+The kernel reads all data from files into pages
+which are retained for a period of time as a \*(lqcache\*(rq.
+System pages can be a scarce resource, so the
+kernel steals pages from other mappings when needed.
+This is a likely occurrence but only adversely
+affects system performance if a large amount of
+memory is accessed.
+.TP
+.SB MADV_RANDOM
+Tells the kernel to read in a minimum amount of data
+from a mapped file when doing any single particular access.
+Normally when an address of a mapped file is accessed,
+the system tries to read in as much data from the file as reasonable,
+in anticipation of other accesses within a certain locality.
+.TP
+.SB MADV_SEQUENTIAL
+Tells the system that addresses in this range are likely to
+only be accessed once, so the system will free the resources
+used to map the address range as quickly as possible.
+This is used in the
+.BR cat (1V)
+and 
+.BR cp (1)
+utilities.
+.TP
+.SB MADV_WILLNEED
+Tells the system that a certain address range
+is definitely needed, so the kernel will read the
+specified range into memory immediately.
+This might be beneficial to programs who want to minimize the
+time it takes to access memory the first time since the kernel
+would need to read in from the file.
+.TP
+.SB MADV_DONTNEED
+Tells the kernel that the specified address range is no
+longer needed, so the system immediately frees the resources
+associated with the address range.
+.LP
+.B madvise(\|)
+should be used by programs that have specific knowledge of their
+access patterns over a memory object (for example, a mapped file)
+and wish to increase system performance.
+.SH RETURN VALUES
+.LP
+.B madvise(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+.I addr
+is not a multiple of the page size as returned by
+.BR getpagesize (2).
+.IP
+The length of the specified address range is less than or equal to 0.
+.IP	
+.I advice
+was invalid.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ENOMEM
+Addresses in the range
+[\fIaddr, addr + len\fP\^)
+are outside the valid range for the address space of a process,
+or specify one or more pages that are not mapped.
+.SH SEE ALSO
+.BR mctl (2),
+.BR mmap (2)

@@ -1,0 +1,103 @@
+.\" @(#)aiowait.3 1.1 92/07/30 SMI;
+.TH AIOWAIT 3 "21 January 1990"
+.SH NAME
+aiowait \- wait for completion of asynchronous I/O operation
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/asynch.h>
+#include <sys/time.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+aio_result_t *aiowait(timeout)
+struct timeval *timeout;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "aiowait()" "" "\fLaiowait()\fR \(em wait for completion of asynchronous I/O operation" ""
+.IX "asynchronous I/O" "aiowait()" "" "\fLaiowait()\fR"
+.IX "wait" "for asynchronous I/O"
+.LP
+.B aiowait(\|)
+suspends the calling process until one of its outstanding
+asynchronous I/O operations completes.
+This provides a synchronous method of notification.
+.LP
+If
+.I timeout
+is a non-zero pointer, it specifies a maximum interval to
+wait for the completion of an asynchronous I/O operation.
+If
+.I timeout
+is a zero pointer, then
+.B aiowait(\|)
+blocks indefinitely. 
+To effect a poll, the
+.I timeout
+parameter should be non-zero, pointing to a zero-valued
+.I timeval
+structure.
+The
+.I timeval
+structure is defined in
+.B <sys/time.h>
+as:
+.RS
+.nf
+.ft B
+struct timeval {
+	long  tv_sec;			/* seconds		*/
+	long  tv_usec;			/* and microseconds	*/
+};
+.ft R
+.fi
+.RE
+.LP
+.SH NOTES
+.LP
+.B aiowait(\|)
+is the only way to dequeue an
+asynchronous notification.
+It may be used either inside a
+.SB SIGIO
+signal handler or in the main program.
+Note: one
+.SB SIGIO
+signal may represent several queued events.
+.SH RETURN VALUES
+.LP
+On success,
+.B aiowait(\|)
+returns
+a pointer to the result structure used when the completed asynchronous
+I/O operation was requested.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.B aiowait(\|) returns
+0
+if the time limit expires.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+.I timeout
+points to an address outside the address space of the
+requesting process.
+.TP
+.SM EINTR
+A signal was delivered before an asynchronous I/O operation
+completed.
+.IP
+The time limit expired.
+.TP
+.SM EINVAL
+There are no outstanding asynchronous I/O requests.
+.SH "SEE ALSO"
+.BR aiocancel (3),
+.BR aioread (3)

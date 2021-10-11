@@ -1,0 +1,620 @@
+.\" @(#)nawk.1 1.1 92/07/30 SMI; new for 4.1 from SVr4
+.TH NAWK 1 "9 October 1989"
+.SH NAME
+nawk \- pattern scanning and processing language
+.SH SYNOPSIS
+.B awk
+[
+.BI \-f " program-file"
+]
+[
+.BI \-F " c"
+]
+[
+.I program
+]
+[
+.I variable
+.BI = value\fR 
+\&.\|.\|. ]
+[
+.IR filename \.\|.\|.\|]
+.SH DESCRIPTION
+.IX  awk  ""  "\fLawk\fP \(em scan and process patterns"
+.IX  "text processing utilities"  "awk command"  ""  "\fLawk\fP \(em scan and process patterns"
+.LP
+.B nawk
+is a new version of
+.BR awk (1)
+that provides additional features including,
+dynamic regular expressions, additional built-ins and operators,
+and user defined functions.
+Other implementations refer to this command
+by its original name,
+.BR awk ,
+choosing to replace the original program with the enhanced one.
+Since there is a slight incompatibility between the two versions
+(see
+.SM BUGS
+below)
+both versions are available in the SunOS environment,
+the original,
+.BR awk ,
+and the enhanced,
+.BR nawk .
+.\"
+.\" Find out from shannon what are the future plans for awk and nawk.
+.\"
+.LP
+.B nawk
+scans each input 
+.I filename
+for lines that match any of a set of patterns specified in
+.IR program .
+.I program
+string must be enclosed in single quotes
+.RB ( \|'\| )
+to protect it from the shell.
+For each pattern in
+.I program
+there may be an associated action performed
+when a line of a 
+.I filename
+matches the pattern.
+The set of pattern-action statements may appear literally as
+.I program
+or in a file
+specified with the
+.BI \-f " program-file"
+option.
+.SH OPTIONS
+.TP
+.BI \-f " filename"
+Specify the contents of
+.I filename
+as the source for the program.
+.TP
+.BI \-F " c"
+Set the input field separator to 
+.IR c .
+If the field separator is longer than one character,
+it is taken to be a regular expression, and should
+be enclosed in single quotes to protect special characters
+from the shell.
+.TP
+.IB variable = value
+Set a built-in variable to
+.I value 
+before the first record of the next 
+.I filename
+is read.
+See 
+.B Built-in Variables
+below for a complete list of available variables.
+.SH USAGE
+.SS Input Lines
+.LP
+Input files are read in order;
+if there are no files, the standard input is read.
+The file name
+.RB ` \- '
+means the standard input.
+Each input line is matched against the
+pattern portion of every pattern-action statement;
+the associated action is performed for each matched pattern.
+.LP
+An input line is normally made up of fields separated by white space.
+This default can be changed by using the
+.SM FS
+built-in variable or the
+.BI \-F " c"
+option.)
+The fields are denoted
+.BR $1 ,
+.BR $2 ,
+\&.\|.\|.\|;
+.B $0
+refers to the entire line.
+.SS Pattern-action Statements
+.LP
+.B nawk
+programs contain pattern-action statements of the form:
+.LP
+.RS
+.IR pattern " { " action " }"
+.RE
+.LP
+Either pattern or action may be omitted.
+If there is no action with a pattern,
+the matching line is printed.
+If there is no pattern with an action,
+the action is performed on every input line.
+.LP
+Patterns are arbitrary Boolean combinations
+.RB ( ! ,
+\(bv\^\(bv,
+.BR && ,
+and parentheses) of
+relational expressions and
+regular expressions.
+A relational expression is one of the following:
+.LP
+.RS
+.nf
+.I expression relop expression
+.I expression matchop regular expression
+.IB expression " in " array-name
+.IB "(expression, expression, .\|.\|.\|) " in " array-name"
+.fi
+.RE
+.LP
+where 
+.I relop
+is any of the six relational operators in C,
+and 
+.I matchop
+is either
+\fB~\f1
+(contains)
+or
+\fB!~\f1
+(does not contain).
+An expression is an arithmetic expression,
+a relational expression, the special expression
+.LP
+.RS
+var \f3in\f1 array,
+.RE
+.LP
+or a Boolean combination of these.
+.LP
+The special patterns
+.SM BEGIN
+and
+.SM END
+may be used to capture control before the first input line has been read
+and after the last input line has been read respectively.
+They are the only patterns that require an 
+.I action
+statement.
+These keywords do not combine with any other patterns.
+.LP
+Regular expressions are as in
+.B egrep
+(see
+.BR grep (1V).
+In patterns they must be surrounded by slashes.
+Isolated regular expressions
+in a pattern apply to the entire line.
+Regular expressions may also occur in
+relational expressions.
+A pattern may consist of two patterns separated by a comma;
+in this case, the action is performed for all lines
+between an occurrence of the first pattern
+and the next occurrence of the second pattern.
+.LP
+An action is a sequence of statements.
+A statement may be one of the following:
+.LP
+.RS
+.nf
+\fBif\f1 ( \fIexpression\fP ) \fIstatement\fP [ \fBelse\f1 \fIstatement\fP ]
+\fBwhile\f1 ( \fIexpression\fP ) \fIstatement\fP
+\fBdo\f1 \fIstatement\fP \fBwhile\f1 ( \fIexpression\fP )
+\fBfor\f1 ( \fIexpression\fP ; \fIexpression\fP ; \fIexpression\fP ) \fIstatement\fP
+\fBfor\f1 ( \fIvar\fP \fBin\f1 array ) \fIstatement\fP
+\fBdelete\f1 array[\fIsubscript\fP]
+\fBbreak\f1
+\fBcontinue\f1
+{ [ statement\fP ] .\|.\|. }
+\fIexpression\fP	# commonly variable = \fIexpression\fP
+\fBprint\f1 [ \fIexpression-list\fP ] [ >\fIexpression\fP ]
+\fBprintf\f1 \fIformat\fP [ , \fIexpression-list\fP ] [ >\fIexpression\fP ]
+\fBnext\f1		# skip remaining patterns on this input line
+\fBexit\f1 [\fIexpr\fP]	# skip the rest of the input; exit status is expr
+\fBreturn\f1 [\fIexpr\fP]
+.fi
+.RE
+.LP
+Statements are terminated by
+semicolons, right braces, or
+.SM NEWLINE
+characters.
+An empty expression-list stands for the whole input line.
+Expressions take on string or numeric values as appropriate,
+and are built using the operators
+.BR + ,
+.BR \- ,
+.BR \(** ,
+.BR / ,
+.BR % ,
+and concatenation (indicated by a blank).
+The
+.B
+C operators
+.BR ++ ,
+.BR \-\- ,
+.BR += ,
+.BR \-= ,
+.BR \(**= ,
+.BR /= ,
+and
+.B %=
+are also available in expressions.
+Variables may be scalars, array elements
+(denoted
+.IR x [ i ]),
+or fields.
+Variables are initialized to the null string or zero.
+Array subscripts may be any string,
+not necessarily numeric;
+this allows for a form of associative memory.
+String constants are quoted (\f3"\fP).
+.LP
+The 
+.B print
+statement prints its arguments on the standard output,
+or on a file if
+.BI > expression
+is present,
+or on a pipe if 
+.RB ` "| \fIcmd\fP" '
+is present.
+The arguments are separated by the current output field separator
+and terminated by the output record separator.
+The 
+.B printf
+statement formats its expression list according to the format
+(see 
+.BR printf (3V)).
+.SS Built-in Variables
+.LP
+A regular expression may be used to separate fields by
+using the 
+.B \-F " c"
+option or by assigning the expression to
+the built-in variable
+.BR \s-1FS\s0 .
+The default is to ignore leading blanks and to separate fields
+by blanks and/or tab characters.
+However, if
+.SM FS
+is assigned a value,
+leading blanks are no longer ignored.
+.LP
+Built-in variables include:
+.TP 1.0i
+.SM ARGC
+Command line argument count.
+.TP 1.0i
+.SM ARGV
+Command line argument array.
+.TP 1.0i
+.SM FILENAME
+Name of the current input file.
+.TP 1.0i
+.SM FNR
+Ordinal number of the current record in the current file.
+.TP 1.0i
+.SM FS
+Input field separator regular expression (default blank).
+.TP 1.0i
+.SM NF
+Number of fields in the current record.
+.TP 1.0i
+.SM NR
+Ordinal number of the current record.
+.TP 1.0i
+.SM OFMT
+Output format for numbers (default
+.BR %.6g ).
+.TP 1.0i
+.SM OFS
+Output field separator (default blank).
+.TP 1.0i
+.SM ORS
+Output record separator (default
+.SM NEWLINE\s0).
+.TP 1.0i
+.SM RS
+Input record separator (default
+.SM NEWLINE\s0).
+.TP 1.0i
+.SM SUBSEP
+Separates multiple subscripts (default is 034).
+.LP
+.B nawk
+has a variety of built-in functions:
+arithmetic, string, input/output, and general.
+.LP
+The arithmetic functions are:
+\f2atan2\f1,
+\f2cos\f1,
+\f2exp\f1,
+\f2int\f1,
+\f2log\f1,
+\f2rand\f1,
+\f2sin\f1,
+\f2sqrt\f1,
+and
+\f2srand\f1.
+\f2int\f1 
+truncates its argument to an integer.
+\f2rand\f1
+returns a random number between 0 and 1.
+\f2srand\f1 ( expr )
+sets the seed value for
+\f2rand\f1 to \f2expr\f1 
+or uses the time of day if
+\f2expr\f1
+is omitted.
+.LP
+The string functions are:
+.SP
+.TP 1.0i
+\fBgsub\fR(\fIfor\fR,`\fIrepl\fR,`\fIin\fR)
+behaves like
+\fBsub\f1
+(see below),
+except that it replaces successive occurrences
+of the regular expression (like the
+.B ed
+global substitute command).
+.TP 1.0i
+.BR index ( s , t )
+returns the position in string
+.B s
+where string
+.B t
+first occurs, or 0 if it does not occur at all.
+.TP 1.0i
+.B int
+truncates to an integer value.
+.TP 1.0i
+.BR length ( s )
+returns the length of its argument
+taken as a string,
+or of the whole line if there is no argument.
+.TP 1.0i
+.BR match ( s , `re )
+returns the position in string
+.B s
+where the regular expression
+.B re
+occurs, or 0 if it does not occur at all.
+.SM RSTART
+is set to the starting position (which is
+the same as the returned value), and
+.SM RLENGTH
+is set to the length of the matched string.
+.TP 1.0i
+.B rand
+random number on (0, 1).
+.TP 1.0i
+\fBsplit\fR(\fIs\fR,`\fIa\fR,`\fIfs\fR)
+splits the string
+.B s
+into array elements
+.IR a [ 1 ],
+.IR a [ 2 ],
+\...,
+.IR a [ n ],
+and returns
+.IR n .
+The separation is done with the regular expression
+.B fs
+or with the field separator FS if
+.B fs
+is not given.
+.TP 1.0i
+.B srand
+sets the seed for \fBrand\f1
+.TP 1.0i
+\fBsprintf\fR(\fIfmt\fR,`\fIexpr\fR,`\fIexpr\fR,`.\|.\|.)
+formats the expressions according to the
+.BR printf (3V)
+format given by
+.B fmt
+and returns the resulting string.
+.TP 1.0i
+\fBsub\fR(\fIfor\fR,`\fIrepl\fR,`\fIin\fR)
+substitutes the string
+.B repl
+in place of the first instance of
+the regular expression
+.B for
+in string
+.B in
+and returns the number of substitutions.
+If
+.B in
+is omitted,
+.B nawk
+substitutes in the current record
+.RB ( $0 ).
+.TP 1.0i
+\fBsubstr\fR(\fIs\fR,`\fIm\fR,`\fIn\fR)
+returns the
+.IR n -character
+substring of
+.B s
+that begins at position
+.IR m .
+.P
+The input/output and general functions are:
+.TP 1.0i
+.BR close ( filename )
+closes the file or pipe named
+.IR filename .
+.TP 1.0i
+\f2cmd\|\f1| \fBgetline\f1
+pipes the output of
+.I cmd
+into
+.BR getline ;
+each successive call to
+.B getline
+returns the next line of output from
+.IR cmd .
+.TP 1.0i
+.B getline
+sets
+.B $0
+to the next input record from the current input file.
+.TP 1.0i
+.BR "getline\ " < file
+sets
+.B $0
+to the next record from
+.IR file .
+.TP 1.0i
+.B "getline x"
+sets variable
+.B x
+instead.
+.TP 1.0i
+.BR "getline x\ " < file
+sets
+.B x
+from the next record of
+.IR file .
+.TP 1.0i
+.IR system ( cmd )
+executes
+.B cmd
+and returns its exit status.
+.P
+All forms of
+.B getline
+return 1 for successful input, 0 for end of file, and \-1 for an error.
+.br
+.ne 5
+.LP
+.B nawk
+also provides user-defined functions.
+Such functions may be defined (in the pattern position of a pattern-action
+statement) as
+.LP
+.RS
+.nf
+.IR "function name" ( args ",...) { " stmts " }"
+.IR "func name" ( args ",...) { " stmts " }"
+.fi
+.RE
+.LP
+Function arguments are passed by value if scalar and by reference if array name.
+Argument names are local to the function; all other variable names are global.
+Function calls may be nested and functions may be recursive.
+The \f3return\f1 statement may be used to return a value.
+.SH EXAMPLES
+.LP
+Print lines longer than 72 characters:
+.LP
+.RS
+.B length > 72
+.RE
+.LP
+Print first two fields in opposite order:
+.LP
+.RS
+.B { print $2, $1 }
+.RE
+.LP
+Same, with input fields separated by comma and/or blanks and tabs:
+.LP
+.RS
+.ft B
+\s-1BEGIN\s+1 { \s-1FS\s+1 = ",[\ \et]*|[\ \et]+" }
+.ft R
+.RS
+.B { print $2, $1 }
+.RE
+.RE
+.LP
+Add up first column, print sum and average:
+.LP
+.RS
+.B { s += $1 }
+.br
+.ft B
+\s-1END\s0	{ print "sum is", s, " average is", s/NR }
+.ft R
+.RE
+.LP
+Print fields in reverse order:
+.LP
+.RS
+.ft B
+{ for (i = NF; i > 0; \-\-i) print $i }
+.ft R
+.RE
+.LP
+Print all lines between start/stop pairs:
+.LP
+.RS
+.B /start/, /stop/
+.RE
+.LP
+Print all lines whose first field is different from previous one:
+.LP
+.RS
+.ft B
+$1 != prev { print; prev = $1 }
+.ft R
+.RE
+.LP
+Simulate
+.BR echo (1V):
+.LP
+.RS
+.ft B
+.nf
+\s-1BEGIN\s0 {
+	for (i = 1; i < \s-1ARGC\s0; i++)
+		printf "%s", \s-1ARGV\s0[i]
+	printf "\en"
+	exit
+}
+.fi
+.ft R
+.RE
+.RE
+.LP
+Print file, filling in page numbers starting at 5:
+.LP
+.RS
+.ft B
+/Page/ { $2 = n++; }
+       { print }
+.ft R
+.RE
+.IP
+.ft B
+example%  nawk \-f program n=5 input
+.ft R
+.SH SEE ALSO
+.BR grep (1V),
+.BR lex (1),
+.BR sed (1V),
+.BR printf (3V)
+.LP
+.TX TEXT
+.LP
+A. V. Aho, B. W. Kerninghan, P. J. Weinberger,
+\f2The AWK Programming Language\f1
+Addison-Wesley, 1988.
+.br
+.ne 8
+.SH BUGS
+.LP
+Input white space is not preserved on output if fields are involved.
+.LP
+There are no explicit conversions between numbers and strings.
+To force an expression to be treated as a number add 0 to it;
+to force it to be treated as a string concatenate the
+null string
+(\f3"\^"\fP) to it.
+.LP
+Pattern-action statements must be separated by either a semi-colon or a
+.SM NEWLINE\s0.
+This is an incompatibility with the old version of \f3awk\f1.

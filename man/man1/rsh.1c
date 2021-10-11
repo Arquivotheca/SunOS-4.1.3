@@ -1,0 +1,310 @@
+.\" @(#)rsh.1c 1.1 92/07/30 SMI;
+.hw rlogin
+.TH RSH 1C "17 December 1987"
+.SH NAME
+rsh \- remote shell
+.SH SYNOPSIS
+.B rsh
+[
+.B \-l
+.I username
+] [
+.B \-n
+]
+.I hostname
+[
+.I command
+]
+.br
+.B rsh
+.I hostname
+[
+.B \-l
+.I username
+] [
+.B \-n
+]
+[
+.I command
+]
+.LP
+.I hostname
+[
+.B \-l
+.I username
+] [
+.B \-n
+]
+[
+.I command
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "rsh command"  ""  "\fLrsh\fP \(em remote shell"
+.IX  "remote shell"  ""  "remote shell \(em \fLrsh\fP"
+.IX  shell  remote  shell  "remote \(em \fLrsh\fP"
+.LP
+.B rsh
+connects to the specified
+.I hostname
+and executes the specified
+.IR command .
+.B rsh
+copies its standard input to the remote command, the standard
+output of the remote command to its standard output, and the
+standard error of the remote command to its standard error.
+Interrupt, quit and terminate signals are propagated to the remote
+command;
+.B rsh
+normally terminates when the remote command does.
+.LP
+If you omit
+.IR command ,
+instead of executing a single command,
+.B rsh
+logs you in on the remote host using
+.BR rlogin (1C).
+.LP
+Shell metacharacters which are not quoted are interpreted
+on the local machine, while quoted metacharacters are interpreted on
+the remote machine. See
+.SM EXAMPLES\s0.
+.LP
+Hostnames are given in the 
+.I hosts
+database, which may be contained in the 
+.B /etc/hosts
+file,
+the 
+Network Information Service
+(\s-1NIS\s0)
+.I hosts 
+database, the Internet domain name database,
+or some combination of the three.
+Each host has one official name (the first
+name in the database entry)
+and optionally one or more nicknames.
+Official hostnames or nicknames may be given as
+.IR hostname .
+.LP
+If the name of the file from which 
+.B rsh
+is executed is anything other than ``rsh,''
+.B rsh 
+takes this name as its
+.I hostname
+argument.
+This allows you to create a symbolic link to
+.B rsh
+in the name of a host which, when executed, will invoke a remote
+shell on that host.
+The
+.B /usr/hosts
+directory is provided to be populated with symbolic links in the names
+of commonly used hosts.
+By including
+.B /usr/hosts
+in your shell's search path,
+you can run
+.B rsh
+by typing 
+.B hostname 
+to your shell.
+.LP
+Each remote machine may have a file named
+.B /etc/hosts.equiv
+containing a list of trusted hostnames
+with which it shares usernames.
+Users with the same username on both the local and
+remote machine may 
+.B rsh
+from the machines listed in the remote machine's
+.B /etc/hosts
+file.
+Individual users may set up a similar private
+equivalence list with the file
+.B \&.rhosts
+in their home directories.
+Each line in this file contains two names: a
+.I hostname
+and a
+.I username
+separated by a
+.SM SPACE\s0.
+The entry permits the user named
+.I username
+who is logged into
+.I hostname
+to use
+.B rsh
+to access the remote machine as the remote user.
+If the name of the local host is not found in the
+.B /etc/hosts.equiv
+file on the remote machine,
+and the local username and hostname are not
+found in the remote user's
+.B \&.rhosts
+file, then the access is denied.
+The hostnames listed in the
+.B /etc/hosts.equiv
+and
+.B \&.rhosts
+files must be the official hostnames listed in the hosts database;
+nicknames may not be used in either of these files.
+.LP
+.B rsh
+will not prompt for a password if access is denied on the remote machine
+unless the
+.I command
+argument is omited.
+.SH OPTIONS
+.TP
+.BI \-l " username"
+Use
+.I username
+as the remote username instead of your local username.  In the absence
+of this option, the remote username is the same as your local username.
+.TP
+.B \-n
+Redirect the input of
+.B rsh
+to
+.BR /dev/null .
+You sometimes need this option to avoid
+unfortunate interactions between
+.B rsh
+and the shell which invokes it. 
+For example, if you are running
+.B rsh
+and start a
+.B rsh
+in the background without redirecting its input
+away from the terminal, it will block even if no reads
+are posted by the remote command.  The
+.B \-n
+option will prevent this.
+.LP
+The type of remote shell
+.RB ( sh ,
+.BR rsh ,
+or other) is determined by the user's
+entry in the file
+.B /etc/passwd
+on the remote system.
+.SH EXAMPLES
+.LP
+The following command appends the remote file 
+.B lizard.file
+from the machine called
+.B lizard
+to the file called
+.B example.file
+on the machine called
+.BR example .
+.IP
+.B
+example% rsh lizard cat lizard.file >> example.file
+.LP
+This example appends the file
+.B lizard.file
+on the machine called
+.B lizard
+to the file
+.B another.lizard.file
+which also resides on the machine called
+.BR lizard .
+.IP
+.ft B
+example%  rsh lizard cat lizard.file ">>" another.lizard.file
+.ft R
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/hosts
+.TP
+.B /usr/hosts/*
+.TP
+.B /etc/passwd
+.PD
+.SH SEE ALSO
+.BR rlogin (1C),
+.BR vi (1),
+.BR ypcat (1),
+.BR hosts (5),
+.BR named (8C),
+.BR rshd (8C)
+.SH BUGS
+.LP
+You cannot run an interactive command (such as
+.BR vi (1));
+use
+.B rlogin
+if you wish to do so.
+.LP
+Stop signals stop the local
+.B rsh
+process only; this is arguably
+wrong, but currently hard to fix for reasons too complicated to
+explain here.
+.LP
+The current local environment is not passed to the remote shell.
+.LP
+Sometimes the
+.B \-n
+option is needed for reasons that are less than obvious.
+For example, the command below puts your shell into a strange state.
+.IP
+.B
+example% rsh somehost dd if=/dev/nrmt0 bs=20b | tar xvpBf \-
+.LP
+Evidently, what happens is
+that the
+.B tar
+terminates before the
+.BR rsh .
+The
+.B rsh
+then tries to write into the \*(lqbroken pipe\*(rq and,
+instead of terminating neatly,
+proceeds to compete with your shell for its standard input.  Invoking
+.B rsh
+with the
+.B \-n
+option avoids such incidents.
+.LP
+Note: this bug occurs only when
+.B rsh
+is at the beginning of a pipeline and
+is not reading standard input.
+Do not use the
+.B \-n
+if
+.B rsh
+actually needs to read standard input.
+For example, the following command
+does not produce the bug. 
+.IP
+.B
+example% tar cf \- . | rsh sundial dd of=/dev/rmt0 obs=20b
+.LP
+If you were to use the
+.B \-n
+in a case like this,
+.B rsh
+would incorrectly read from
+.B /dev/null
+instead of from the pipe.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

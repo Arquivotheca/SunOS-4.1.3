@@ -1,0 +1,2606 @@
+|*	@(#)sincos.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988, 1989
+|* 
+|*	Double precisioin Sin, Cos, SinCos.
+|*      lpreg is 0 for cos, 1 for sin, 2 for sincos
+|* 
+routine xd.sin 001000000001	;				;		;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF3
+        ;                       i2cmp enra halt;                regtoti;        rcssp ptr5;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF2
+        ;                       i2cmp enrb halt;		regtoti;        rcssp ptr5;
+	;			;				;		ptr2;		lpreg!1
+        jne hang cstat;		dnop enra loaddp halt;		regtitmp;	rcsmsw ptr2;
+	;			dabs enra loaddp halt;		regtitmp;	rcslsw ptr2;	
+	call dtrig;		dnop;				;		;	
+routine xd.cos 001000000011	;				;		;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF3
+        ;                       i2cmp enra halt;                regtoti;        rcssp ptr5;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF2
+        ;                       i2cmp enrb halt;		regtoti;        rcssp ptr5;
+	;			;				;		ptr2;		lpreg!0
+        jne hang cstat;		dnop enra loaddp halt;		regtitmp;	rcsmsw ptr2;
+	;			dabs enra loaddp halt;		regtitmp;	rcslsw ptr2;	
+	call dtrig;		dnop;				;		;	
+routine xd.sincos 001001100001	;				;		;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF3
+        ;                       i2cmp enra halt;                regtoti;        rcssp ptr5;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF2
+        ;                       i2cmp enrb halt;		regtoti;        rcssp ptr5;
+	;			;				;		ptr2;		lpreg!2
+        jne hang cstat;		dnop enra loaddp halt;		regtitmp;	rcsmsw ptr2;
+	;			dabs enra loaddp halt;		regtitmp;	rcslsw ptr2;	
+	call dtrig;		dnop;				;		;	
+dtrig:
+	call dnotfinxs;		i2cmp enra srccalu clkcc tioe timsw halt;;	;
+goforit:
+	;			dnop;				;		ptr5;	ptr5!c_dtrtiny
+	jge tmore2246;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dzero85
+	jlt tlesstiny;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt; regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr2;
+	jlt tless085;		dnop enra enrb loaddp halt;	regtitmp;	rcsmsw ptr2;
+	;			dmul enra enrb loaddp halt;	regtitmp;	rcslsw ptr2;    
+	;			dmul;				;		ptr5;	ptr5!c_dsin1
+	jloop0 dcosgt085;	dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulbmul enra srccmul clkcc loaddp halt;regtoti; 	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_dsin0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;  lpreg-
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;	;		;
+	;			dnop enra tioe tilsw loaddp halt;	;		;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dmul;				;		;
+	;			dnop halt;			;		;
+	;			dmul mulacreg mulbmul halt;	;		;
+	;			dmul;				;		;
+	;			dnop halt;			;		;
+	jloop0 dsingt085;	drsub aluamul alubrb halt;	; 		;
+	;			dnop;				;		ptr1;
+|* Sincos from here on:
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;	
+	;			dnop;				;		ptr5;	ptr5!c_dcos0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;    
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;	;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;	;	;
+	;			dmul;				;		ptr5;	ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr4;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr4;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr4;
+dsingt085:
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;	
+dcosgt085:
+	;			dnop;				;		ptr5;	ptr5!c_dcos0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;    
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		ptr5;	ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;	ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+tless085:
+	;			dmul;				;		ptr5;	ptr5!c_dsin0		
+	jloop0 dcoslt085;	dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulara enrb srccmul clkcc loaddp halt;regtoti;rcslsw ptr5;	lpreg-
+	;			dmul;				;		ptr2;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dmul mulacreg mulbmul enrb loaddp halt;regtoti;	rcslsw ptr2;
+	;			dmul;				;		ptr4;
+	;			dnop halt;			regtotmp;	rcslsw ptr4;
+	jloop0 dsinlt085;	drsub aluamul alubrb halt;	;		;		
+	;			dnop;				;		ptr1;
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;	lpreg-
+	;			dnop;				;		ptr5;	ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;		ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr4; 
+	jtierr der4;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr4;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr4;
+dsinlt085:
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+dcoslt085:
+	;			dnop;				;		ptr5;		ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;		ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1; 
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+tlesstiny:
+	jloop0 dcostiny;	dnop;				;		ptr1;		
+	;			;				tmptoreg;	rcslsw ptr1;	lpreg-
+	jloop0 idle1;		;				tmptoreg;	rcsmsw ptr1;
+|* If sin , return x
+	;			;				;		ptr5;	ptr5!done
+	;			;				;		ptr4;
+	;			;				regtotmp;	rcslsw ptr4;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dabs enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				; 		ptr4;
+	jtierr der4;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr4;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr4;
+dcostiny:
+	;			;				;		ptr5;		ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dabs enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				; 		ptr1;
+	jtierr der1;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+tmore2246:
+	;			;				;		ptr5;	ptr5!szero
+	;			;				regtotmp;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD4
+|* store j = 0
+	;			;				tmptoreg;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+|* store n = 0
+	;			;				tmptoreg;	rcssp ptr5;
+	;			;				regtotmp;	rcsmsw ptr2;
+	;			;				regtotmp;	rcslsw ptr2;
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+|* store y1 = x
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+|* Compare abs(x) to pio4
+	;			;				;		ptr5;	ptr5!c_dpio4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dpio2
+	jle tlepio4;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+|* store j = 1
+	;			dnop halt;			;		ptr5;	ptr5!sone
+	;			dnop halt;			regtotmp;	rcssp ptr5;
+	;			dnop halt;			;		ptr5;	ptr5!0x700+0xD4
+	;			dcmp aluacreg alubrb halt;	tmptoreg;	rcssp ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtrmedium
+	jle tlepio2;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	jle tlemed;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dabs enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDC
+	call dpargred;		i2cmp enra tioe timsw halt;	titoreg;	rcsmsw ptr5;
+|* dpargred call scfinal at the end :-)
+tlemed:
+	;			;				;		ptr5;		ptr5!c_dinvpio2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		;		
+	;			dnop;				;		;		
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvtint enra tioe tilsw loaddp halt;;		;
+	;			dcvtint;			;		ptr5;	ptr5!0x700+0xD2
+	;			dfloat enra tioe tisp halt;	titoreg;	rcssp ptr5;
+	;			dfloat enra tioe tisp halt;	;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD3
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!c_dpio2_1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;		ptr5!c_dpio2_2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul alubcreg enrb loaddp halt;regtoti;rcslsw ptr5;
+	;			dnop;					;		;
+|* abs(x) will no longer be in C reg. z = (t - n*pio2_1) is.
+	;			dmul srccalu clkcc tioe tilsw halt;	;		;
+	;			dmul srccalu clkcc tioe timsw halt;	;		;
+	;			dmul;				;		;
+	;			dnop;				;		;
+|* Tioutput -- RA ('w')
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			drsub alubcreg enra tioe tilsw loaddp halt;;	ptr5;	ptr5!0x700+0xD0
+	;			dnop;				;		ptr5;
+	;			dnop enrb tioe timsw loaddp halt;	titoreg;  	rcsmsw ptr5;
+	;			dsub aluacreg enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			drsub enrb tioe tilsw loaddp halt;;		;	
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call cksign;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call scfinal;		;				;		;
+tlepio2:
+	;			;				;		ptr5;		ptr5!c_sione
+	;			;				regtotmp;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD2
+	;			;				tmptoreg;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_dpio2_1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dpio2_2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xD0
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dsub aluacreg enrb tioe tilsw loaddp halt;titoreg;rcslsw ptr5;
+	;			dnop;						;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			drsub aluara enrb tioe tilsw loaddp halt;;	ptr5;	ptr5!0x700+0xD1
+	;			dnop;				;		;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call cksign;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call scfinal;		dnop;				;		;
+|*   y1 = x: D0
+|*   y2 = ?: D1
+|*int n = 0: D2
+|*DP  n = 0: D3
+|*    j = 0: D4
+|*   cc = ?: D5
+|*   ss =  : D6
+|*    w =  : DA
+
+tlepio4:  
+scfinal:
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enra enrb loaddp halt;	regtoti;	rcsmsw ptr5;
+	;			dmul enra enrb loaddp halt;	regtoti;	rcslsw ptr5;	
+	;			dmul;				;		;		
+	jloop notcos;		dnop halt;			;		;		
+	;			dnop srccmul clkcc halt;	;		ptr5;		ptr5!c_sione
+|* if DO_COS, n++.
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;	lpreg!1
+|* Add to lpreg so that after notcos: if we're doing a cos, when we lpreg-, the result will
+|* be 0 if we're doing a cos.  (if we're doing a sin, it'll be 0).
+	;			;				;		ptr5;		ptr5!0x700+0xD2
+	;			i2add enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		ptr5;
+	;			tioe tisp halt;			titoreg;	rcssp ptr5;
+notcos:
+	;			;				;		ptr5;		ptr5!0x700+0xD2
+|*
+|*  (n anded 1) == 0 
+|*
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;	lpreg-
+	;			;				;		ptr5;	ptr5!c_sione
+	jloop dosincos;		i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!szero
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	jne docos;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	; 			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;	
+	;			;				;		;	ptr5!c_dsin5
+	call ss;		;				;		ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD4
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD6
+	jne sincos2;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulbcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+|* compute w = y1 - y1*z*ss
+	;			dmul mulbcreg;			;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;	
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call trigend;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+sincos2:
+|*
+|* compute w = y1 - (y1*z*ss - (y2-0.5*(z*y2)))
+|*
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		ptr5;	ptr5!dhalf
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD6
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dnop enrb tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;	;	;
+	;			dsub enrb tioe tilsw loaddp halt;	;	;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call trigend;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+docos:
+	;			;				;		;	ptr5!c_dcos5
+	call cc;		;				;		ptr5;		
+	;			;				;		ptr5;	ptr5!0x700+0xD4
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	jeq sincos3;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;
+|* cc in C register
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+sincos3:
+	;			;				;		ptr5;		ptr5!c_dtrthresh1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	ptr5!dhalf
+	jlt thresh2;		dnop halt;			;		ptr5;		
+	;			dnop halt;			;		ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_d3_8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_d5_8
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dsub alubcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call trigend;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+thresh2:
+	;			dnop;				;		ptr5;	ptr5!c_dtrthresh2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	ptr5!dhalf
+	jlt thresh3;		dnop halt;			;		ptr5;		
+	;			dnop halt;			;		ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_d3_16
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_d13_16
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dsub alubcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call trigend;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+thresh3:
+	;			dnop;				;		ptr5;	ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!done
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dsub alubcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call trigend;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+dnotfinxs:
+|*  Check for x - NAN or inf, and for inexact (doing this by squaring c_ssin, which _will_ generate
+|*  an inexact.  If IMASK bit is set, the jnotierr will fail and so we will bail out.
+|*  Enter with msw(x) in RA register.  Return if (x) != NAN or inf, with 0.002246 in ptr5
+|*  First, get absolute value of DP (x).  Then load msw (infinity) into RB.
+|*  Check to see if (x) is (inf) or (NaN).  Look at msw[abs(x)] ANDed with 0x7FF00000 (i.e. (x) with
+|*  a max exponent, and compare with msw(infinity).  If =, then we have NAN or infinity.
+|*  Get msw[abs(x)] and store in RA as SP.  Store msw(infinity) in RB.  Treat as integers and logical
+|*  AND.  Get masked msw[abs(x)] and compare with msw(infinity).
+	;			;				;		ptr5;	ptr5!dinf
+	;			i2land enrb halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!c_ssin
+	jeq dtrignan;		smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_dtwo46
+	jnotierr goforit cstat;	dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+|*  Inexact mask bit set.  Bailout.
+	call bail.out;		;				;		;
+dtrignan:
+|* argument was a NAN of infinity. 
+	;			;				;		ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		;
+	jtierr bail.out cstat;	dnop halt;			;		;
+	;			dnop halt;			;		;
+	call bail.out;		;				;		;
+|* compute ss
+ss:
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_dsin4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;	ptr5!c_dsin3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;	ptr5!c_dsin2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;	ptr5!c_dsin1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;	ptr5!c_dsin0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD6
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	rtn;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* compute cc
+cc:
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;		ptr5!c_dcos4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;		ptr5!c_dcos3	
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;		ptr5!c_dcos2	
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;		ptr5!c_dcos1	
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul;				;		ptr5;	ptr5!c_dcos0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dmul mulbcreg enra tioe tilsw loaddp halt;;	;
+	;			dmul mulbcreg;			;		;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dmul mulacreg enrb tioe tilsw loaddp halt;;	;
+	;			dmul mulacreg;			;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	rtn;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+trigend:
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sitwo
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!szero
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xDA
+	jeq posw;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+posw:	
+	;			dnop;				;		;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+cksign:
+|*  if x is negative, return n = -n, y1 = -y1, y2 = -y2;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr2;	ptr5!dzero
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xD0
+	jge cksend;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xD1
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xD2
+	;			i2negy2 enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;
+	;			tioe tisp halt;			titoreg;	rcssp ptr5;
+cksend:
+	rtn;			;				;		;
+dosincos:
+	;			;				;		;		ptr5!c_dsin5
+	call ss;		;				;		ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD4
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD6
+	jne sincos22;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulbcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+|* compute w = y1 - y1*z*ss
+	;			dmul mulbcreg;			;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;	
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call sincosend;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+sincos22:
+|*
+|* compute w = y1 - (y1*z*ss - (y2-0.5*(z*y2)))
+|*
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		ptr5;	ptr5!dhalf
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD6
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dnop enrb tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dsub enrb tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call sincosend;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+sincosend:
+	;			;				;		;	ptr5!c_dcos5
+	call cc;		;				;		ptr5;		
+	;			;				;		ptr5;	ptr5!0x700+0xD4
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	jeq sincos33;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;
+|* cc in C register
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+sincos33:
+	;			;				;		ptr5;		ptr5!c_dtrthresh1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	ptr5!dhalf
+	jlt thresh22;		dnop halt;			;		ptr5;		
+	;			dnop halt;			;		ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_d3_8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_d5_8
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dsub alubcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call sincosend2;	dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+thresh22:
+	;			dnop;				;		ptr5;	ptr5!c_dtrthresh2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp aluacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	ptr5!dhalf
+	jlt thresh33;		dnop halt;			;		ptr5;		
+	;			dnop halt;			;		ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_d3_16
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			drsub alubcreg enra loaddp halt;regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_d13_16
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dsub alubcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call sincosend2;	dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+thresh33:
+	;			dnop;				;		ptr5;	ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xD5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!done
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dsub alubcreg enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;		ptr5!0x700+0xDA
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	call sincosend2;	dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+sincosend2:
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sithree
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sizero
+|* Route output to input RA 
+        ;                       i2cmp enra tioe tisp halt;      ;               ptr5; 
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sione
+	jeq quad0;		i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sitwo
+	jeq quad1;		i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDA
+	jeq quad2;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;	ptr5!0x700+0xDB
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr4;
+	;			;				tmptoreg;	rcsmsw ptr4;
+	call idle1;		;				tmptoreg;	rcslsw ptr4;
+quad2:
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr4;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr4;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr4;	ptr5!0x700+0xDB
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr1;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr1;
+	call idle1;		dnop tioe timsw halt;		titoreg;	rcsmsw ptr1;
+quad1:
+	;			;				;		ptr5;	ptr5!0x700+0xDB
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr4;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr4;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr4;	ptr5!0x700+0xDA
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr1;
+	;			;				tmptoreg;	rcsmsw ptr1;
+	call idle1;		;				tmptoreg;	rcslsw ptr1;
+quad0:
+	;			;				;		ptr5;	ptr5!0x700+0xDB
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr1;
+	;			;				tmptoreg;	rcsmsw ptr1;
+	;			;				tmptoreg;	rcslsw ptr1;	ptr5!0x700+0xDA
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr4;
+	;			;				tmptoreg;	rcsmsw ptr4;
+	call idle1;		;				tmptoreg;	rcslsw ptr4;
+ckmode:
+|* Make sure rounding mode is the default: 2.
+|* The current rounding mode is stored at 0x700+0xF3
+|* The correct rounding mode is stored at 0x700+0xF2
+|*     Do a single precision compare of both values and if they're
+|*     not equal, goto hang
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF3
+        ;                       i2cmp enra halt;                regtoti;        rcssp ptr5;
+        ;                       ;                               ;               rcssp ptr5;     ptr5!0x700+0xF2
+        ;                       i2cmp enrb halt;		regtoti;        rcssp ptr5;
+        ;                       ;				;               ;
+        jne hang cstat;		halt;                           ;               ;
+	;			halt;				;		;
+	rtn;			;				;		ptr2;
+|* Routine DP.ARGRED to reduce huge arguments for DP sin/cos/sincos
+|*	Variables and registers used:
+|*	
+|*		0x700 + 0xE0 ... 0xE7:  q[0], q[1],... q[7]
+|*		0x700 + 0xE8 ... 0xEF:  fv[0], fv[1],... fv[7]
+|*		
+|*		0x700+0xDC: abs(x)
+|*		0x700+0xDD: int k
+|*		0x700+0xDE: z
+|*		
+|*		0x500+0xE0: x1
+|*		0x500+0xE1: x2
+|*		0x500+0xE2: x3
+|*		0x500+0xE3: t
+|*		0x500+0xE4: t1
+|*		0x500+0xE5: t2
+|*		0x500+0xE6: t3
+|*		0x500+0xE7: p3
+|*		0x500+0xE8: y
+|*		0x500+0xEA: fvm1
+|*		0x500+0xEB: fvm2
+|*		0x500+0xEC: q1
+|*		0x500+0xED: q2
+|*		0x500+0xEE: q3
+|*		0x500+0xEF: int mm
+|*	
+|*	
+dpargred:
+|* First, get ILOGB(abs(x))
+	;			tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!c_si20
+	;			i2sftrl	enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	;			i2cmp enra tioe tisp halt;	titoreg;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_si38
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si24
+	;			idiv enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDC
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			halt;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra tioe tisp halt;	titoreg;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_si24
+	jle setkto0;		imul enrb halt;			regtoti;	rcssp ptr5;
+|* else x = scalbn(x , -24*k)
+	;			;				;		;
+doscalbn:
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftll enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enrb tioe tisp halt;	;		ptr5;	ptr5!0x700+0xDC
+	;			i2sub enra halt;		regtoti;	rcsmsw ptr5;
+	;			i2sub;				;		;
+	;			tioe tisp halt;			titotmp;	rcsmsw ptr5;
+	;			tioe tisp halt;			titoreg;	rcsmsw ptr5;
+|* get py[n1] &= 0xffffffe0
+|*
+startpyn:
+	;			;				;		ptr5;	ptr5!c_simskar0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDC
+	;			i2land enrb halt;		regtoti;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE2
+	;			i2cmp enra tioe tisp halt;	titoreg;	rcslsw ptr5;
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!c_simskar1
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE0
+	;			tioe tisp halt;			titoreg;	rcslsw ptr5;
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE2
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	jlt noadjust;		i2add halt;			;		;
+|* The following loop is to get pr[k-1]
+|* set K = (k-1) + 2 = k + 1
+|* set ptr5 to base of pr - 1; loop: incr ptr5, decr RA (K),compare to 1, if not equal, loop
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+argloop1:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop1;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEA
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	jle noadjust;		halt;				;		;
+|* get fvm2
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop2:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop2;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!c_dtwo24
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEB
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+noadjust:
+|* get fv[0]
+	;			;				;		ptr5;	ptr5!c_sitwo
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop3:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop3;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!c_dtwon24
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra enrb loaddp halt;	regtoti;	rcsmsw ptr5;
+	;			dmul enra enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* Get fv[1]
+	;			;				;		ptr5;	ptr5!c_sithree
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop4:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop4;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* Get fv[2]
+	;			;				;		ptr5;	ptr5!c_sifour
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop5:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop5;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* Get fv[3]
+	;			;				;		ptr5;	ptr5!c_sifive
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop6:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop6;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* Get fv[4]
+	;			;				;		ptr5;	ptr5!c_sisix
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop7:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop7;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* compute q[0]...q[4]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE1
+	jne x3notzero;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	jne x2notzero;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+|* get q[0]
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[1]
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[2]
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE2
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[3]
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE3
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[4]
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE4
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call trimoff;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x2notzero:
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sizero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE0
+	jgt addtoq0;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+contwq:
+|* get q[1]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[2]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE2
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[3]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE3
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[4]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE4
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call trimoff;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x3notzero:
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE0
+	jge another;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[2]
+getq2:
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;	ptr5!0x500+0xE2
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		;
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE2
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[3]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE3
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get q[4]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE4
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call trimoff;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+another:
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	jgt an2;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+conwan2:
+|* get q[1]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call getq2;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+an2:
+|* get q[0]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call conwan2;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+addtoq0:
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEA
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE0
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call contwq;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+trimoff:
+|* Now get q[0]:
+	;			;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!d1o8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!c_dtwo52
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcpmam enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	jgt snochange;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+|* get AINT(RA)	
+	;			dnop;				;		ptr5;ptr5!c_dtwo52
+	jlt sq0minus;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;			;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dsub enra tioe tilsw loaddp halt;;		;
+	;			dsub;				;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;	ptr5!deight
+snochange:
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* Now get new q[1]:
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE1
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!d1o8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!c_dtwo52
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcpmam enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	jgt sqnochange;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+|* get AINT(RA)	
+	;			dnop;				;		ptr5;	ptr5!c_dtwo52
+	jlt sq1minus;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dsub enra tioe tilsw loaddp halt;;		;
+	;			dsub;				;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;	ptr5!deight
+sqnochange:
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x700+0xE1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* get new n:
+sgetnewn:
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!d1o8
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dhalf
+	jlt snislt0;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5; 
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+scontwithn:
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvtint enra tioe tilsw loaddp halt;;		;
+	;			dnop;				;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sithree
+	jeq skeepgoing;		i2sftll enrb halt;		regtoti;	rcssp ptr5;
+|* modify q[2]
+	;			i2sftll;			;		;
+	;			dfloat enra tioe tisp halt;	;		;
+	;			dfloat enra tioe tisp halt;	;		;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dnop enrb tioe tilsw loaddp halt;;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+skeepgoing:
+|* Sum q[0] to q[4]:
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE4
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dadd;				;		ptr5;	ptr5!0x700+0xE2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dadd alubalu;			;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xE1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dadd;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dadd alubalu;			;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* Sum t2
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x700+0xE1
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dadd alubalu;			;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xE2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dadd;				;		ptr5;	ptr5!0x700+0xE3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dadd alubalu;			;		;	
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dadd;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* Get mm = (int) t; t = t - (double) mm
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dhalf
+	jlt stis0;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+scontt:
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvtint enra tioe tilsw loaddp halt;;		;
+	;			dcvtint;			;		ptr5;	ptr5!0x500+0xEF
+	;			dfloat enra tioe tisp loaddp halt;titoreg;	rcssp ptr5;
+	;			dfloat enra tioe tisp loaddp halt;;		;
+	;			dfloat;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t1 = t + t2
+|* t2 = t2 + ( t - t1)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dsub enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* Check to see if t1>0.5 || (t1 = 0.5 LAND t2 > zero)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dhalf
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dcmp;				;		;
+	jgt sadjustt;		dcmp halt;			;		;
+	;			dcmp halt;			;		ptr5;	ptr5!0x500+0xE5
+	jne doilogs;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!done
+	jle doilogs;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcslsw ptr5;
+saddtot:
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEF
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	call doilogs;		tioe tisp halt;			titoreg;	rcssp ptr5;
+doilogs:
+|* check to see if ilogb(t1) - ilogb(q[3]) >= 20
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!sqnan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			tioe tisp halt;			titotmp;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xE3
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!sqnan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			i2sub enra halt;		tmptoti;	rcssp;
+	;			;				;		ptr5;	ptr5!c_si20
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	jlt bigadjust;		halt;				regtotmp;	rcsmsw ptr5;
+	;			halt;				regtotmp;	rcslsw ptr5;
+theend:
+|* breadk t1 =t2 into 3 peices, t1+t2+t3 with t1 and t2 24 bit
+	;			;				;		ptr5;	ptr5!0x500+0xE9
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE5
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE3
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!c_simskar0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			i2land enrb halt;		regtoti;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE6
+	;			i2cmp enra tioe tisp halt;	titoreg;	rcslsw ptr5;
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!c_simskar1
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			tioe tisp halt;			titoreg;	rcslsw ptr5;
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE6
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* t3 = t - (t3 - z) ; t3 already in RA
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE9
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE6
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* q3 = p2*t2 + p3*t1 + p1*t3
+	;			dnop;				;		ptr5;	ptr5!c_dredp2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_dredp3
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!c_dredp1
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE6
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;  	;		;
+	;			dadd aluamul alubcreg halt;  	;		;
+	;			dadd aluamul alubcreg;  	;		ptr5;	ptr5!0x500+0xEE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* q2 = p1*t2 + p2*t1
+	;			dnop;				;		ptr5;	ptr5!c_dredp2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!c_dredp1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xED
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5; 
+|* q1 = p1 * t1
+	;			dnop;				;		ptr5;	ptr5!c_dredp1
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEC
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t1 = q1 + t2
+	;			dnop;				;		ptr5;	ptr5!0x500+0xED
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = q3 - ((t1-q1)-q2)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xED
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			drsub alubalu;			;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dnop enrb tioe tilsw loaddp halt;;		ptr5;	ptr5!0x500+0xEE
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* y1 = t1 + t2
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* y2 = t2 - (y1-t1)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* check to see if x is positive
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr2;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr2;
+	;			dnop;				;		ptr5;	ptr5!dzero
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dcmp enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD0
+	jge retmmand;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dneg enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEF
+	;			i2negy2 enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+tetmmand2:
+	;			;				;		ptr5;	ptr5!c_siseven
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	call erase500;		tioe tisp halt;			titoreg;	rcssp ptr5;
+retmmand:
+	;			;				;		ptr5;	ptr5!0x500+0xEF
+	call tetmmand2;		i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+bigadjust:
+|* t2 = q[1]
+	;			;				;		ptr5;	ptr5!0x700+0xE1
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE5
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+|* t = q[0] - (double) mm
+	;			;				;		ptr5;	ptr5!0x500+0xEF
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dnop enrb tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t1 = t2 + t
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = q[2] - ((t1 - t) - t2)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE2
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* t = t1
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop;				regtotmp;	rcsmsw ptr5;
+	;			dnop;				regtotmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		tmptoreg;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		tmptoreg;	rcslsw ptr5;
+|* t1 = t2 + t
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = q[3] - ((t1 - t) - t2)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE3
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* t = t1
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop;				regtotmp;	rcsmsw ptr5;
+	;			dnop;				regtotmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		tmptoreg;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		tmptoreg;	rcslsw ptr5;
+|* t1 = t2 + t
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = q[4] - ((t1 - t) - t2)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE4
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* z = z * twon24
+|* z was already computed at the end of fv[4]./
+|* Get fv[5]
+	;			;				;		ptr5;	ptr5!c_siseven
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop8:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop8;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xED
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* check if x3 == 0
+	;			;				;		ptr5;	ptr5!c_sizero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE2
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE1
+	jne x3not0;		i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xED
+	jne x2not0;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x2not0:
+|* get q[5]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xED
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop enra srccmul clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x3not0:
+|* get q[5]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xED
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEB
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+checkag:
+|* check to see if ilogb(t1) - ilogb(q[4]) >= 20
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!sqnan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			tioe tisp halt;			titotmp;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xE4
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!sqnan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			i2sub enra halt;		tmptoti;	rcssp;
+	;			;				;		ptr5;	ptr5!c_si20
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE5
+	jlt adtandt1;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call finaladj;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+adtandt1:
+|* t = t1
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop;				regtotmp;	rcsmsw ptr5;
+	;			dnop;				regtotmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		tmptoreg;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		tmptoreg;	rcslsw ptr5;
+|* t1 = t2 + t
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = q[5] - ((t1 - t) - t2)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* z = z * twon24
+|* z was already computed at the end of fv[4]./
+|* Get fv[6]
+	;			;				;		ptr5;	ptr5!c_sieight
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloop9:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloop9;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!c_dtwon24
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xDE
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* check if x3 == 0
+	;			;				;		ptr5;	ptr5!c_sizero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE2
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE1
+	jne x33not0;		i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xEE
+	jne x22not0;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE6
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag2;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x22not0:
+|* get q[6]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop enra srccmul clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xED
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE6
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag2;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x33not0:
+|* get q[5]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xED
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEC
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE6
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag2;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+checkag2:
+|* check to see if ilogb(t1) - ilogb(q[5]) >= 20
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!sqnan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			tioe tisp halt;			titotmp;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xE5
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr5;
+	;			;				;		ptr5;	ptr5!sqnan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_si20
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sibias
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			i2sub enra halt;		tmptoti;	rcssp;
+	;			;				;		ptr5;	ptr5!c_si20
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE5
+	jlt adtandt12;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE6
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call finaladj;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+adtandt12:
+|* t = t1
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop;				regtotmp;	rcsmsw ptr5;
+	;			dnop;				regtotmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		tmptoreg;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		tmptoreg;	rcslsw ptr5;
+|* t1 = t2 + t
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = q[5] - ((t1 - t) - t2)
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			drsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enrb tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE6
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* z = z * twon24
+|* z was already computed at the end of fv[6]./
+|* Get fv[7]
+	;			;				;		ptr5;	ptr5!c_sinine
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	;			i2add enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+	;			i2cmp enra tioe tisp halt;	;		ptr5;	ptr5!c_sione
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0x6F
+argloopA:
+	;			i2sub halt;			;		;
+	;			;				;		;	ptr5+
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne argloopA;		halt;				;		;
+	;			;				;		ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		ptr5;	ptr5!0x700+0xDE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEF
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+|* check if x3 == 0
+	;			;				;		ptr5;	ptr5!c_sizero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE2
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE1
+	jne x333not0;		i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xEF
+	jne x222not0;		dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE7
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag3;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x222not0:
+|* get q[7]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEF
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop enra srccmul clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE7
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag3;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+x333not0:
+|* get q[7]
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE0
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEF
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		ptr5;	ptr5!0x500+0xE1
+	;			dnop srccmul clkcc;		;		;
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xEE
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x500+0xE2
+	;			dnop enra srccalu clkcc loaddp halt;regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xED
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg halt;	;		;
+	;			dadd aluamul alubcreg;		;		ptr5;	ptr5!0x700+0xE6
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call checkag3;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+checkag3:
+|* t2 = t2 + q[7]
+	;			;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xE7
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call finaladj;		dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+finaladj:
+|* t = t1
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop;				regtotmp;	rcsmsw ptr5;
+	;			dnop;				regtotmp;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enra loaddp halt;		tmptoreg;	rcsmsw ptr5;
+	;			dnop enra loaddp halt;		tmptoreg;	rcslsw ptr5;
+|* t1 = t2 + t
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE4
+	;			dnop enra tioe timsw loaddp halt;titoreg;	rcsmsw ptr5;
+	;			dnop enra tioe tilsw loaddp halt;titoreg;	rcslsw ptr5;
+|* t2 = t2 - (t1 - t) 
+	;			dnop;				;		ptr5;	ptr5!0x500+0xE3
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dsub;				;		ptr5;	ptr5!0x500+0xE5
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dsub alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			halt;				regtotmp;	rcsmsw ptr5;
+	call theend;		halt;				regtotmp;	rcslsw ptr5;
+setkto0:
+|* Don't use temp register 'cause it'll overwrite msw of x3
+	;			;				;		ptr5;	ptr5!c_sizero
+	;			snop enra halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xDD
+	call startpyn;		tioe tisp halt;			titoreg;	rcssp ptr5;
+sadjustt:
+	;			dnop;				;		ptr5;	ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	call saddtot;		dnop enrb loaddp halt;		regtoti;	rcslsw ptr5;
+snislt0:
+	jmp scontwithn;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5; 
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+sq0minus:
+	;			dsub halt;			;		;
+	;			dsub halt;			;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dsub enra tioe tilsw loaddp halt;;		;
+	;			dsub;				;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	
+	;			dnop enra tioe timsw loaddp halt;;		;	ptr5!deight
+	call snochange;		dnop enra tioe tilsw loaddp halt;;		;	
+sq1minus:
+	;			dsub halt;			;		;
+	;			dsub halt;			;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dsub enra tioe tilsw loaddp halt;;		;
+	;			dsub;				;		ptr5;	ptr5!done
+	;			dnop enra loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd alubalu enra loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop;				;		;	
+	;			dnop enra tioe timsw loaddp halt;;		;	ptr5!deight
+	call sqnochange;	dnop enra tioe tilsw loaddp halt;;		;	
+stis0:
+	jmp scontt;		dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd enrb loaddp halt;		regtoti;	rcslsw ptr5;
+erase500:
+|*  Need to zero 0 x 500 +E0 thru EF, so that checksums will not fail.
+|*  fpa_download generates a checksum on the constants file up to 0x7cf.  It expects
+|*  locations 0x5e0 thru ef to be zero.  The dpargred routine uses them to store
+|*  temporary variables.  In order for 'fparel' to not fail -- it checks the checksum,
+|*  I need to zero those locations, at an obvious loss of performance
+	;			;				;		ptr5;	ptr5!dzero
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE0
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE1
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE2
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE3
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE4
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE5
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE6
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE7
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE8
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xE9
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEA
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEB
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEC
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xED
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEE
+	;			;				tmptoreg;	rcsmsw ptr5;
+	;			;				tmptoreg;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x500+0xEF
+	;			;				tmptoreg;	rcsmsw ptr5;
+	call scfinal;		;				tmptoreg;	rcslsw ptr5;
+

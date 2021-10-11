@@ -1,0 +1,267 @@
+.\" @(#)swin.1 1.1 92/07/30 SMI;
+.TH SWIN 1 "21 December 1987"
+.SH NAME
+swin \- set or get SunView user input options
+.SH SYNOPSIS
+.B swin
+[
+.B \-cghm
+]
+[
+.B \-r
+.I event
+.I value
+.I shift_state
+]
+[
+.B \-s
+.I event
+.I value
+.I shift_state
+]
+[
+.B \-t
+.I seconds
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX swin "" "\fLswin\fR \(em set window input behavior"
+.LP
+The
+.B swin
+(set window; analogous to
+.BR stty (1V))
+command lets you change some of the input behavior of your SunView
+environment.
+By default, your keyboard input follows your pointer.
+This means that in order to type to a window you position the 
+pointer over the window.  This is called
+.I keyboard-follows-mouse
+mode.
+.LP
+You can specify that the keyboard
+input continues to go to the same window,
+regardless of the pointer position,
+until you take some specific action, like clicking the mouse.
+When this is done, you can roam around the screen with the 
+pointer and not change the window to which keyboard input is directed.
+Running SunView like this is said to be operating in
+.I click-to-type
+mode.
+.LP
+When running in click-to-type mode, one user action
+.I sets
+the type-in point in the window that you want to receive keyboard input.
+The default user action to do this is the clicking of the
+.SM LEFT
+mouse button while positioning the pointer
+over the new type-in point.
+This user action can be changed.
+.LP
+Another user action
+.I restores
+the previous type-in point in the window that
+you want to receive keyboard input.
+The default user action to do this is the clicking of the
+.SM MIDDLE
+mouse button while positioning the pointer
+over the window.  This user action can be changed.
+.SH OPTIONS
+.TP
+.B \-c
+Turn on click-to-type mode using the default user actions: the
+.SM LEFT
+mouse button sets the type-in point and the
+.SM MIDDLE
+mouse button restores
+the type-in point.  You can use the
+.BR defaultsedit (1)
+program to set
+click-to-type on permanently; see the
+.B Click_to_Type
+option of
+.BR sunview (1).
+.TP
+.B \-g
+Get the state of the user input options controlled by
+.BR swin .
+If no arguments are supplied to
+.B swin
+then
+.B \-g
+is implied.
+.TP
+.B \-h
+Print out a help message that briefly describes the options to
+.BR swin .
+.TP
+.B \-m
+Run in keyboard-follows-mouse mode.
+.TP
+.BI \-s " event value shift_state"
+Set the user action that sets the type-in point and
+sets the keyboard input window.  The
+.I event
+identifies the particular user action and is one of:
+.RS
+.TP
+.SM LOC_WINENTER
+pointer entering a window
+.TP
+.SM MS_LEFT
+.SM LEFT
+mouse button
+.TP
+.SM MS_MIDDLE
+.SM MIDDLE
+mouse button
+.TP
+.SM MS_RIGHT
+.SM RIGHT
+mouse button
+.br
+.ne 5
+.TP
+.I decimal_number
+place the decimal number of a firm event here;
+see list of events in
+.B <sundev/vuid_event.h>
+(avoid function keys, normally unused control-\s-1ASCII\s0
+characters are
+.SM OK\s0,
+normally unused
+.SM SHIFT
+keys are
+.SM OK\s0).
+.LP
+.I value
+identifies the transition of the
+.I event
+and is one of:
+.TP
+.SM ENTER
+the pointer entering a window (use with
+.SM LOC_WINENTER\s0)
+.TP
+.SM DOWN
+the button associated with
+.I event
+went down
+.TP
+.SM UP
+the button associated with
+.I event
+went up (avoid this)
+.br
+.ne 6
+.LP
+The
+.I shift_state
+identifies the state of the 
+.SM SHIFT
+keys at the time of the
+.IR event / value
+pair in order for that pair to be used to
+control the keyboard input window.  The
+.I shift_state
+is one of:
+.TP
+.SM SHIFT_DONT_CARE
+Ignore the state of the 
+.SM SHIFT
+keys
+.TP
+.SM SHIFT_ALL_UP
+All the 
+.SM SHIFT
+keys must be up
+.TP
+.SM SHIFT_LEFT
+The left
+.SM SHIFT
+key must be down (not the key labeled
+.SM LEFT\s0)
+.TP
+\s-1SHIFT_RIGHT\s0
+the right 
+.SM SHIFT
+key must be down (not the key labeled
+\s-1RIGHT\s0)
+.TP
+\s-1SHIFT_LEFTCTRL\s0
+the left 
+.SM CTRL
+key must be down
+.TP
+\s-1SHIFT_RIGHTCTRL\s0
+the right 
+.SM CTRL
+key must be down
+.RE
+.TP
+.BI \-r " event value shift_state"
+Set the user action that restores the type-in point and
+sets the keyboard input window.
+This user action is swallowed so that the application that owns the window
+does not see it.  However, if the window already has keyboard input or
+if the window refuses keyboard input then
+this user action is passed on through to the application.
+The parameters to this command are like those for
+.BR \-s .
+The following example shows modifying the default click-to-type user
+actions so that a
+.SM SHIFT
+left is required for the restore user event:
+.RS
+.IP
+.B
+example% swin \-c \-r \s-1MS_MIDDLE DOWN SHIFT_LEFT\s0
+.RE
+.TP
+.BI \-t " seconds"
+SunView synchronizes input so that it does not hand out the next user
+action until the application fielding the current user action finishes
+its processing.  This allows type-ahead and mouse-ahead.
+If an application does not finish processing within a given
+length of time (process virtual time; not wall clock time),
+the next user action is handed out anyway.
+This avoids any one application from hanging the workstation.
+The
+.B \-t
+command sets this time limit.
+A
+.I seconds
+value of 0 tells SunView to run unsynchronized;
+beware of race conditions in this mode.  The default seconds value
+is 2 and the
+.B \-c
+command makes it 10 seconds.
+.SH SEE ALSO
+.BR defaultsedit (1),
+.BR stty (1V),
+.BR sunview (1)
+.LP
+.TX SVBG
+.br
+.ne 5
+.SH DIAGNOSTICS
+.TP
+.B "swin not passed parent window in environment"
+.B swin
+does not work unless SunView is started already.
+.br
+.ne 5
+.SH BUGS
+.LP
+.B swin
+gets you no help in preventing you from specifying
+.B \-r
+or
+.B \-s
+parameters that are not sensible.

@@ -1,0 +1,113 @@
+.\" @(#)bsearch.3 1.1 92/07/30 SMI; from S5
+.TH BSEARCH 3 "6 October 1987"
+.SH NAME
+bsearch \- binary search a sorted table
+.SH SYNOPSIS
+.nf
+.B #include <search.h>
+.LP
+.B "char *bsearch ((char *) key, (char *) base, nel, sizeof (*key), compar)"
+.B unsigned nel;
+.B int (*compar)( );
+.fi
+.SH DESCRIPTION
+.IX "bsearch()" "" "\fLbsearch()\fR \(em binary search of a sorted table"
+.IX "binary search of sorted table \(em \fLbsearch()\fR"
+.IX "search functions" "bsearch()" "" "\fLbsearch()\fR binary search"
+.LP
+.B bsearch(\|)
+is a binary search routine generalized from Knuth (6.2.1) Algorithm B.
+It returns a pointer into a table indicating where a datum may be found.
+The table must be previously sorted in increasing order
+according to a provided comparison function.
+.I key
+points to a datum instance to be sought in the table.
+.I base
+points to the element at the base of the table.
+.I nel
+is the number of elements in the table.
+.I compar
+is the name of the comparison function,
+which is called with two arguments that point to the elements being compared.
+The function must return an integer less than, equal to, or greater than zero
+as accordingly the first argument is to be considered
+less than, equal to, or greater than the second.
+.SH EXAMPLE
+The example below searches a table containing pointers
+to nodes consisting of a string and its length.
+The table is ordered alphabetically on the string in the
+node pointed to by each entry.
+.LP
+This code fragment reads in strings and either finds the
+corresponding node, in which case it prints out the string and its length,
+or it prints an error message.
+.br
+.ne 43
+.RS
+.nf
+.ft B
+#include <stdio.h>
+#include <search.h>
+#define	\s-1TABSIZE\s+1	1000
+struct node {			/* these are stored in the table */
+	char *string;
+	int length;
+};
+struct node table[\s-1TABSIZE\s+1];	/* table to be searched */
+	.
+	.
+	.
+{
+	struct node *node_ptr, node;
+	int node_compare( );  /* routine to compare 2 nodes */
+	char str_space[20];   /* space to read string into */
+	.
+	.
+	.
+	node.string = str_space;
+	while (scanf("%s", node.string) != \s-1EOF\s0) {
+		node_ptr = (struct node *)bsearch((char *)(&node),
+			   (char *)table, \s-1TABSIZE\s0,
+			   sizeof(struct node), node_compare);
+		if (node_ptr != \s-1NULL\s0) {
+			 (void)printf("string = %20s, length = %d\en",
+				node_ptr\(mi>string, node_ptr\(mi>length);
+		} else {
+			 (void)printf("not found: %s\en", node.string);
+		}
+	}
+}
+/*
+	This routine compares two nodes based on an
+	alphabetical ordering of the string field.
+*/
+int
+node_compare(node1, node2)
+struct node *node1, *node2;
+{
+	return strcmp(node1\(mi>string, node2\(mi>string);
+}
+.ft R
+.fi
+.RE
+.SH NOTES
+.LP
+The pointers to the key and the element at the base of
+the table should be of type pointer-to-element,
+and cast to type pointer-to-character.
+.LP
+The comparison function need not compare every byte,
+so arbitrary data may be contained in the elements in addition to the values
+being compared.
+.LP
+Although declared as type pointer-to-character,
+the value returned should be cast into type pointer-to-element.
+.SH SEE ALSO
+.BR hsearch (3),
+.BR lsearch (3),
+.BR qsort (3),
+.BR tsearch (3)
+.SH DIAGNOSTICS
+A
+.SM NULL
+pointer is returned if the key cannot be found in the table.

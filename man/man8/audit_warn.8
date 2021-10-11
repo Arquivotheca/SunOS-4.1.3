@@ -1,0 +1,106 @@
+.\" @(#)audit_warn.8 1.1 92/07/30 SMI;
+.TH AUDIT_WARN 8 "7 September 1988"
+.SH NAME
+audit_warn \- audit daemon warning script
+.SH SYNOPSIS
+.B /usr/etc/audit_warn
+[ \fIoption\fP [ \fIarguments\fP ]\|]
+.br
+.SH DESCRIPTION
+.IX "audit_warn command" "" "\fLaudit_warn\fP command"
+The
+.B audit_warn
+script processes warning or error messages from the audit daemon.
+When a problem is encountered, the audit daemon,
+.BR auditd (8)
+calls
+.B audit_warn
+with the appropriate arguments.
+The
+.I option
+argument specifies the error type.
+.LP
+The system administrator can specify a list of mail recpients
+using the script's
+.SB RECIPIENTS
+variable.
+The default recipient is root.
+.SH OPTIONS
+.TP
+.BI soft " filename"
+indicates that the soft limit for
+.I filename
+has been exceeded.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.B allsoft
+indicates that the soft limit for all filesystems has been exceeded.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.BI hard " filename"
+indicates that the hard limit for the file has been exceeded.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.BI allhard " count"
+indicates that the hard limit for all filesystems has been exceeded
+.I count
+times.
+The default action for this option is to send mail to the system
+administrator only if the
+.I count
+is
+.BR 1 ,
+and to send a message to console every time.
+It is recommended that mail
+.I not
+be send every time.
+.TP
+.B ebusy
+indicates that the audit daemon is already running.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.B tmpfile
+indicates that the temporary audit file already exists indicating a
+fatal error.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.B nostart
+indicates that auditing cannot be started because the system audit
+state is
+.SM
+.BR AUC_FCHDONE .
+The default action for this option is to send mail to the system
+administrator.  Some system administrators may prefer to have the
+script reboot the system at this point.
+.TP
+.B auditoff
+indicates that someone other than the audit daemon changed the system
+audit state to something other than
+.SM
+.BR AUC_AUDITING .
+The audit
+daemon will have exited in this case.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.B postsigterm
+indicates that an error occurred during the orderly shutdown of the
+audit daemon.
+The default action for this option is to send mail to the system
+administrator.
+.TP
+.B getacdir
+indicates that there is a problem getting the directory list from:
+.BR /etc/security/audit/audit_control .
+.IP
+The audit daemon will hang in a sleep loop until the file is fixed.
+.SH "SEE ALSO"
+.BR audit.log (5),
+.BR audit_control (5),
+.BR audit (8),
+.BR auditd (8)

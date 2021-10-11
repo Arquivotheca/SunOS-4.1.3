@@ -1,0 +1,444 @@
+.\" @(#)restore.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH RESTORE 8 "7 September 1988"
+.SH NAME
+restore, rrestore \- incremental file system restore
+.SH SYNOPSIS
+.B /usr/etc/restore
+.B \-irRtx
+[
+.IR filename
+\&.\|.\|.
+]
+.SH DESCRIPTION
+.IX  "restore command"  ""  "\fLrestore\fP \(em restore file system"
+.IX  "restore file system"  ""  "restore file system \(em \fLrestore\fP"
+.IX  "file system restore"  ""  "file system restore \(em \fLrestore\fP"
+.IX  "incremental file system restore"  ""  "incremental file system restore \(em \fLrestore\fP"
+.LP
+.B restore
+restores files from backup tapes created with the
+.BR dump (8)
+command.
+.I options
+is a string of at least one of the options listed below, along with
+any modifiers and arguments you supply.  Remaining arguments to
+.B restore
+are the names of files (or directories whose files) are to be
+restored to disk.  Unless the
+.B h
+modifier is in effect, a directory name refers
+to the files it contains, and (recursively) its subdirectories and
+the files they contain.
+.SH OPTIONS
+.LP
+.TP 5n
+.B  i
+Interactive.
+After reading in the directory information from the tape,
+.B restore
+invokes an interactive interface that allows you to browse
+through the dump tape's directory hierarchy, and select
+individual files to be extracted.  See
+.BR "Interactive Commands" ,
+below, for a description of available commands.
+.TP 5n
+.B r
+Restore the entire tape.
+Load the tape's full contents into the current directory.  This
+option should only be used to restore a complete dump tape onto a clear
+filesystem, or to restore an incremental dump tape after a full
+\*(lqlevel \fB0\fP\*(rq
+restore.  For example:
+.RS
+.RS
+.ft B
+.nf
+example# /usr/etc/newfs /dev/rxy0g
+example# /usr/etc/mount /dev/xy0g /mnt
+example# cd /mnt
+example# restore r
+.fi
+.ft R
+.RE
+.RE
+.IP
+is a typical sequence to restore a \*(lqlevel \fB0\fP\*(rq 
+dump.  Another
+.B restore
+can be done to get an incremental dump in on top of this.
+.TP
+.B  R
+Resume restoring.
+.B restore
+requests a particular tape of a multivolume set from which to
+resume a full restore (see the
+.B r
+option above).  This allows
+.B restore
+to start from a checkpoint when it is interrupted in the middle of
+a full restore.
+.TP 5n
+.B  t
+Table of contents.  List each
+.I filename
+that appears on the tape.
+If no
+.I filename
+argument is given, the root directory is listed.
+This results in a list of all files on the tape, unless the
+.B h
+modifier is in effect. (The
+.B t
+option replaces the function of the old
+.B dumpdir
+program).
+.br
+.ne 3
+.TP 5n
+.B  x
+Extract the named files from the tape.  If a named file matches a
+directory whose contents were written onto the tape, and the
+.B h
+modifier is not in effect, the directory is recursively extracted.
+The owner, modification time, and mode are restored (if possible).
+If no
+.I filename
+argument is given, the root directory is extracted.
+This results in the entire tape being extracted unless the
+.B h
+modifier is in effect.
+.SS "Modifiers"
+.LP
+Some of the following modifiers take arguments that are given as
+separate words on the command line.  When more than one such modifier
+appears within
+.I options,
+the arguments must appear in the same order as the modifiers that they
+apply to.
+.TP
+.BI a " archive-file"
+The dump table of contents is taken from the specified
+.I archive-file
+instead of from a dump tape.
+If a requested file is present in the table of contents,
+.I restore
+will prompt for the tape volume to be mounted.
+If only contents information is needed, for example when the
+.I t
+option is specified, or the
+.I i
+option is specified without a corresponding 
+.I extract
+request, no dump tape will have to be mounted.
+.TP 5n
+.B c
+Convert the contents of the dump tape to the new filesystem format.
+.TP 5n
+.B  d
+Debug.  Turn on debugging output.
+.br
+.ne 3
+.TP 5n
+.B h
+Extract the actual directory, rather than the files that it references.
+This prevents hierarchical restoration
+of complete subtrees from the tape.
+.TP 5n
+.B m
+Extract by inode numbers rather than by filename to avoid regenerating
+complete pathnames.  This is useful if
+only a few files are being extracted.
+.TP 5n
+.B  v
+Verbose.
+.B restore
+displays the name of each file it restores, preceded by its file type.
+.TP 5n
+.B y
+Do not ask whether to abort the restore in the event of tape errors.
+.B restore
+tries to skip over the bad tape block(s) and continue as best it can.
+.TP 5n
+.BI  b " factor"
+Blocking factor.  Specify the blocking factor for tape reads.
+By default,
+.B restore
+will attempt to figure out the block size of the tape.
+Note: a tape block is 512 bytes.
+.TP 5n
+.BI f " dump-file"
+Use
+.I dump-file
+instead of
+.B /dev/rmt?
+as the file to restore from.
+If
+.I dump-file
+is specified as
+.RB ` \- ',
+.B restore
+reads from the standard input.
+.ne 5
+This allows,
+.BR dump (8)
+and
+.B restore
+to be used in a pipeline to dump and restore a file system:
+.IP
+.ft B
+example# dump 0f \- /dev/rxy0g |  (cd /mnt; restore xf \-)
+.ft R
+.IP
+If the name of the file is of the form
+.IB machine : device
+the restore is done from the specified machine over the network using
+.BR rmt (8C).
+Since
+.B restore
+is normally run by root,
+the name of the local machine must appear in the
+.B .rhosts
+file of the remote machine.
+If the file is specified as
+.IB user @ machine : device\fR,
+.B restore
+will attempt to execute as the specified user on the remote machine.
+The specified user must have a
+.B .rhosts
+file on the remote machine that allows root from the local machine.
+.\"If
+.\".B restore
+.\"is called as
+.\".B rrestore,
+.\"the tape defaults to
+.\".BR dumphost:/dev/rmt8\fR .
+.\"To direct the input from a desired remote machine,
+.\"set up an alias for
+.\".B dumphost
+.\"in the file
+.\".BR /etc/hosts .
+.TP 5n
+.BI s " n"
+Skip to the
+.IR n 'th
+file when there are multiple dump files on the same tape.
+For example, the command:
+.RS
+.RS
+.ft B
+example# restore xfs /dev/nrar0 5
+.ft R
+.RE
+.RE
+.IP
+would position you at the fifth file on the tape.
+.SH USAGE
+.SS Interactive Commands
+.B restore
+enters interactive mode when invoked with the
+.B i
+option.  Interactive commands are reminiscent of the shell.
+For those commands that accept an argument, the default is the current
+directory.
+.HP
+.B ls
+[
+.I directory
+]
+.br
+List files in
+.I directory
+or the current directory, represented by a 
+.RB ` . ' 
+(period).
+Directories are appended with a
+.RB ` / '
+(slash).
+Entries marked for extraction are prefixed with a
+.RB ` * '
+(asterisk).
+If the verbose option is in effect, inode numbers are also listed.
+.TP
+.BI cd  " directory"
+Change to directory
+.I directory
+(within the dump-tape).
+.TP
+.B pwd
+Print the full pathname of the current working directory.
+.HP
+.B add
+[
+.I filename
+]
+.br
+Add the current directory, or the named file or directory
+.B directory
+to the list of files to extract.  If a directory is specified, add that
+directory and its files (recursively) to
+the extraction list (unless the
+.B h
+modifier is in effect).
+.HP
+.B delete
+[
+.I filename
+]
+.br
+Delete the current directory, or the
+named file or directory from the list of
+files to extract.  If a directory is specified, delete that
+directory and all its descendents from the extraction list (unless the
+.B h
+modifier is in effect).  The most expedient way to extract
+a majority of files from a directory is to add that directory to the
+extraction list, and then delete specific files to omit.
+.br
+.ne 4
+.TP
+.B extract
+Extract all files on the extraction list from the dump tape.
+.B restore
+asks which volume the user wishes to mount.
+The fastest way to extract a
+small number of files is to start with the
+last tape volume and work toward
+the first.
+.TP
+.B verbose
+Toggle the status of the
+.B v
+modifier.  While
+.B v
+is in effect, the
+.B ls
+command lists the inode numbers of all entries, and
+.B restore
+displays information about each file as it is extracted.
+.TP
+.B help
+Display a summary of the available commands.
+.TP
+.B quit
+.B restore
+exits immediately, even if the extraction list is not empty.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rmt8
+the default tape drive
+.TP
+.B dumphost:/dev/rmt8
+the default tape drive if called as
+.B rrestore
+.TP
+.B /tmp/rstdir*
+file containing directories on the tape
+.TP
+.B /tmp/rstmode*
+owner, mode, and timestamps for directories
+.TP
+.B \&./restoresymtable
+information passed between incremental restores
+.PD
+.SH SEE ALSO
+.BR dump (8),
+.BR mkfs (8),
+.BR mount (8),
+.BR newfs (8),
+.BR rmt (8C)
+.SH DIAGNOSTICS
+.B restore
+complains about bad option characters.
+.LP
+Read errors result in complaints.  If
+.B y
+has been specified, or the user responds
+.BR y ,
+.B restore
+will attempt to continue.
+.LP
+If the dump extends over more than one tape,
+.B restore
+asks the user to change tapes.  If the
+.B x
+or
+.B i
+option has been specified,
+.B restore
+also asks which volume the user wishes to mount.
+.LP
+There are numerous consistency checks that can be listed by
+.BR restore .
+Most checks are self-explanatory or can \*(lqnever happen\*(rq.
+Common errors are given below.
+.TP
+.B Converting to new file system format.
+A dump tape created from the old file system has been loaded.
+It is automatically converted to the new file system format.
+.TP
+.IB filename ": not found on tape"
+The specified file name was listed in the tape directory,
+but was not found on the tape.
+This is caused by tape read errors while looking for the file,
+and from using a dump tape created on an active file system.
+.TP
+.BI "expected next file " inumber ", got " inumber
+A file that was not listed in the directory showed up.
+This can occur when using a dump tape created on an active file system.
+.TP
+.B Incremental tape too low
+When doing an incremental restore,
+a tape that was written before the previous incremental tape,
+or that has too low an incremental level has been loaded.
+.TP
+.B
+Incremental tape too high 
+When doing incremental restore,
+a tape that does not begin its coverage where the previous incremental
+tape left off,
+or one that has too high an incremental level has been loaded.
+.br
+.ne 8
+.TP
+.BI "Tape read error while restoring " filename
+.PD 0
+.TP
+.B "Tape read error while skipping over inode " inumber
+.TP
+.B "Tape read error while trying to resynchronize"
+.TP
+.B "A tape read error has occurred."
+If a file name is specified,
+then its contents are probably partially wrong.
+If an inode is being skipped or the tape is trying to resynchronize,
+then no extracted files have been corrupted,
+though files may not be found on the tape.
+.br
+.ne 4
+.TP
+.BI "resync restore, skipped " num " blocks
+After a tape read error,
+.B restore
+may have to resynchronize itself.
+This message lists the number of blocks that were skipped over.
+.PD
+.SH BUGS
+.LP
+.B restore
+can get confused when doing incremental restores from
+dump tapes that were made on active file systems.
+.LP
+A \*(lqlevel \fB0\fP\*(rq 
+dump must be done after a full restore.
+Because 
+.B restore 
+runs in user mode,
+it has no control over inode allocation;
+this means that
+.B restore
+repositions the files, although it
+does not change their contents. 
+Thus, a full dump must be done to get a
+new set of directories reflecting the new file positions, so that later
+incremental dumps will be correct.

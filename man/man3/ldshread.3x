@@ -1,0 +1,72 @@
+.\" @(#)ldshread.3x 1.1 92/07/30 SMI; from SVID
+.TH LDSHREAD 3X "19 February 1988"
+.SH NAME
+ldshread, ldnshread \- read an indexed\/named section header of a COFF file
+.SH SYNOPSIS
+.ta \w'unsigned\ 'u +\w'short\ \ 'u
+.nf
+.ft B
+.B #include <stdio.h>
+.B #include <filehdr.h>
+.B #include <scnhdr.h>
+.B #include <ldfcn.h>
+.LP
+.B int ldshread (ldptr, sectindx, secthead)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B unsigned short sectindx;
+.B \s-1SCNHDR\s+1 \(**secthead;
+.LP
+.B int ldnshread (ldptr, sectname, secthead)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B char \(**sectname;
+.B \s-1SCNHDR\s+1 \(**secthead;
+.fi
+.ft R
+.DT
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldshread()" "" "\fLldshread()\fP function"
+.IX "ldnshread()" "" "\fLldnshread()\fP function"
+.LP
+.B ldshread(\|)
+reads the section header specified by
+.I sectindx
+of the
+.SM COFF
+file currently associated with
+.I ldptr
+into the area of memory beginning at
+.IR secthead .
+.LP
+.B ldnshread(\|)
+reads the section header specified by
+.I sectname
+into the area of memory beginning at
+.IR secthead .
+.LP
+.B ldshread(\|)
+and
+.B ldnshread(\|)
+return
+.BR \s-1SUCCESS\s+1 " or " \s-1FAILURE\s+1 .
+.B ldshread(\|)
+will fail if 
+.I sectindx
+is greater than the number of sections in the object file;
+.B ldnshread(\|)
+will fail if there is no section name corresponding with
+.IR sectname .
+Either function will fail if it cannot read the specified section header.
+.LP
+Note: the first section header has an index of
+.IR one .
+.LP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.SH SEE ALSO
+.BR ldclose (3X),
+.BR ldfcn (3),
+.BR ldopen (3X)

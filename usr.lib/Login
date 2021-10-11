@@ -1,0 +1,91 @@
+# @(#)Login 1.1 92/07/30 SMI
+##################################################################
+#
+#         .login file
+#
+#         Read in after the .cshrc file when you log in.
+#         Not read in for subsequent shells.  For setting up
+#         terminal and global environment characteristics.
+#
+##################################################################
+
+
+#         terminal characteristics for remote terminals:
+
+#         Leave lines for all but your remote terminal commented
+#         out (or add a new line if your terminal does not appear).
+
+if ($TERM != "sun") then
+#eval `tset -sQ -m dialup:?925 -m switch:?925 -m dumb:?925 $TERM`
+#eval `tset -sQ -m dialup:?h19 -m switch:?h19 -m dumb:?h19 $TERM`
+#eval `tset -sQ -m dialup:?mac -m switch:?mac -m dumb:?mac $TERM`
+#eval `tset -sQ -m dialup:?vt100 -m switch:?vt100 -m dumb:?vt100 $TERM`
+#eval `tset -sQ -m dialup:?wyse-nk -m switch:?wyse-nk -m dumb:?wyse-nk $TERM`
+#eval `tset -sQ -m dialup:?wyse-vp -m switch:?wyse-vp -m dumb:?wyse-vp $TERM`
+endif
+
+#         general terminal characteristics
+
+#stty -crterase
+#stty -tabs
+#stty crt
+#stty erase '^h'
+#stty werase '^?'
+#stty kill '^['
+#stty new
+
+#         environment variables
+
+#setenv EXINIT 'set sh=/bin/csh sw=4 ai report=2'
+#setenv MORE '-c'
+#setenv PRINTER lw
+
+#         commands to perform at login
+
+#w         # see who is logged in
+
+#
+# If possible, start the windows system.  Give user a chance to bail out
+#
+if ( `tty` != "/dev/console" || $TERM != "sun" ) then
+ 	exit	# leave user at regular C shell prompt
+endif
+
+if ( ${?OPENWINHOME} == 0 ) then 	
+  setenv OPENWINHOME /usr/openwin
+endif           		
+
+if ( ! -e $OPENWINHOME/bin/openwin ) then
+	set mychoice=sunview
+endif
+
+echo ""
+#click -n	# click -n turns off key click
+
+echo ""
+switch( $mychoice )
+case	openwin:
+	unset mychoice
+  	echo -n "Starting OpenWindows (type Control-C to interrupt)"
+  	sleep 5
+	$OPENWINHOME/bin/openwin
+	clear_colormap	# get rid of annoying colourmap bug
+	clear		# get rid of annoying cursor rectangle
+	echo -n "Automatically logging out (type Control-C to interrupt)"
+	sleep 5
+	logout		# logout after leaving windows system
+	breaksw
+	#
+case	sunview:
+	unset mychoice
+	echo -n "Starting SunView (type Control-C to interrupt)"
+	sleep 5
+	# default sunview background looks best with pastels
+	sunview
+	clear		# get rid of annoying cursor rectangle
+	echo -n "Automatically logging out (type Control-C to interrupt)"
+	sleep 5
+	logout		# logout after leaving windows system
+	breaksw
+	#
+endsw

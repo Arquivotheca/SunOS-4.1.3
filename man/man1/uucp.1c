@@ -1,0 +1,389 @@
+'\" t
+.\" @(#)uucp.1c 1.1 92/07/30 SMI; from S5R3
+.TH UUCP 1C "8 June 1988"
+.SH NAME
+uucp, uulog, uuname \- system to system copy
+.SH SYNOPSIS
+.B uucp
+[
+.B \-cCdfjmr
+] [
+.BI \-g grade
+] [
+.BI \-n username
+]
+.if n .ti +5
+[
+.BI \-x " debug_level"
+]
+.\".if t .ti +.5i
+.I source-file
+\&.\|.\|.
+.I destination-file
+.LP
+.B uulog
+[
+.B \-x
+] [
+.BI \-f system
+] [
+.BI \-s system
+] [
+.BI \- number
+]
+.LP
+.B uuname
+[
+.B \-cl
+]
+.SH AVAILABILITY
+.LP
+These commands are available with the
+.I uucp
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "uucp command"  ""  "\fLuucp\fP \(em system to system copy"
+.IX  "uulog command"  ""  "\fLuulog\fP \(em UUCP log"
+.IX  "uuname command"  ""  "\fLuuname\fP \(em UUCP list of names"
+.IX  "system to system copy"  ""  "system to system copy \(em \fLuucp\fP"
+.IX  "UUCP log"  ""  "UUCP log \(em \fLuulog\fP"
+.IX  communications  uucp  ""  "\fLuucp\fP \(em system to system copy"
+.IX  communications  uulog  ""  "\fLuulog\fP \(em UUCP log"
+.IX  communications  uuname  ""  "\fLuuname\fP \(em UUCP list of names"
+.SS uucp
+.LP
+.B uucp
+copies each
+.I source-file
+to the named
+.IR destination-file .
+A filename may be a path name on your machine, or may
+have the form
+.IP
+.IB system-name ! pathname
+.LP
+where
+.I system-name
+is taken from a list of system names that
+.B uucp
+knows about.
+The
+.I system-name
+may also be a list of names such as
+.LP
+.RS
+\fIsystem-name\fB!\fIsystem-name\fB!\fR.\|.\|.\fB!\fIsystem-name\fB!\fIpathname\fR
+.RE
+.LP
+in which case an attempt is made to send the file by
+way of the specified route, to the destination.
+See
+.SM WARNINGS
+and
+.SM BUGS
+below for restrictions.
+Care should be taken to ensure that intermediate nodes in the
+route are willing to foward information
+(see
+.SM WARNINGS
+below for restrictions).
+.LP
+The shell metacharacters
+.BR ? ,
+.BR \(** ,
+and
+.B [\ ]
+appearing in the pathname part will be expanded on the appropriate system.
+.LP
+Path names may be one of:
+.RS
+.TP 4
+\(bu
+a full pathname;
+.TP
+\(bu
+a pathname preceded by
+.BI ~ username /\fR;
+.I username
+is interpreted as a username on the specified system
+and is replaced by that user's login directory on that system;
+.TP
+\(bu
+a pathname preceded by
+.BI ~/ destination /\fR;
+the
+.B ~/
+is replaced by the
+\*(lqpublic
+.SM UUCP\s0\*(rq
+directory on the remote machine
+Note:  this destination will be treated as a file name unless
+more than one file is being transferred by this request or
+the destination is already a directory.
+To ensure that it is a directory, follow the destination with a
+.RB ' / '.
+For example
+.B ~/dan/
+as the destination will make the directory
+.B /usr/spool/uucppublic/dan
+if it does not exist and put the requested file(s) in that directory;
+.TP
+\(bu
+a partial pathname, which is prefixed by the pathname of current directory.
+.RE
+.LP
+If the result is an erroneous pathname for the remote system,
+the copy will fail.
+If the
+.I destination-file
+is a directory, the last component of the
+.I source-file
+name is used.
+.LP
+.B uucp
+preserves execute permissions across the transmission
+and gives 0666 read and write permissions (see
+.BR chmod (2V)).
+.SS uulog
+.LP
+.B uulog
+queries the log file
+.BI /var/spool/uucp/.Log/uucico/ system
+of 
+.B uucp
+transactions for system
+.IR system ,
+or the log file
+.BI /var/spool/uucp/.Log/uuxqt/ system
+of
+.BR uux (1C)
+transactions for system
+.IR system .
+.SS uuname
+.LP
+.B uuname
+lists the
+.SM UUCP
+names of systems that can be accessed using
+.BR uucp .
+.br
+.ne 8
+.SH OPTIONS
+.SS uucp
+.TP
+.B \-c
+Use the source file when copying out rather than
+copying the file to the spool directory. 
+This is the default.
+.TP
+.B \-C
+Make a copy of outgoing files in the
+.SM UUCP
+spool directory,
+rather than copying the source file directly to the target system.
+This lets you remove the source file after issuing the
+.B uucp
+command.
+.TP
+.B \-d
+Make all necessary directories for the file copy. 
+This is the default.
+.TP
+.B \-f
+Do not make intermediate directories for the file copy.
+.TP
+.B \-j
+Output the job identification
+.SM ASCII
+string on the standard output.
+This job identification can be used by
+.BR uustat (1C)
+to obtain the status or terminate a job.
+.TP
+.B \-m
+Send mail to the requester when the copy is complete.
+.TP
+.B \-r
+Do not start
+.BR uucico (8C),
+just queue the job.
+.TP
+.BI \-g grade
+.I grade
+is a single letter or number, from
+.B 0
+to
+.BR 9 ,
+.B A
+to
+.BR Z ,
+or
+.B a
+to
+.BR z ;
+.B 0
+is the highest grade, and
+.B z
+is the lowest grade.
+Lower grades
+will cause the job to be transmitted earlier during a particular
+conversation.
+The default
+.I grade
+is
+.BR n .
+By way of comparison,
+.BR uux (1C)
+defaults to
+.BR A ;
+mail is usually sent at grade
+.BR C .
+.TP
+.BI \-n username
+Notify
+.I username
+on the remote system (that is, send
+.I username
+mail) that a file was sent.
+.TP
+.BI \-x " debug_level"
+Produce debugging output on the standard output.
+.I debug_level
+is a number between 0 and 9; higher numbers give more detailed information.
+5, 7, and 9 are good numbers to try;
+they give increasing amounts of detail.
+.SS uulog 
+.TP
+.B \-x
+Look in the
+.BR uuxqt (8C)
+log file for the given system.
+.TP
+.BI \-f system
+Does a
+.RB ` "tail \-f" '
+of the file transfer log for
+.IR system .
+You must hit
+.SM BREAK
+to exit this function.
+.TP
+.BI \-s system
+Print information about work involving system
+.IR system .
+.TP
+.BI \- number
+Indicate that a
+.B tail
+command of
+.I number
+lines should be executed.
+.SS uuname 
+.TP
+.B \-c
+Display the names of systems known to
+.BR cu (1C).
+The two lists are the same, unless your machine is using
+different
+.B Systems
+files for
+.B cu
+and
+.BR uucp .
+See the
+.B Sysfiles
+file.
+.TP
+.B \-l
+Display the local system name.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/spool/uucp
+spool directories
+.TP
+.B /var/spool/uucppublic
+public directory for receiving and sending
+.TP
+.B /etc/uucp/\(**
+other data files
+.TP
+.B /usr/lib/uucp/\(**
+other program files
+.PD
+.br
+.ne 5
+.SH SEE ALSO
+.BR mail (1),
+.BR uustat (1C),
+.BR uux (1C),
+.BR chmod (2V),
+.BR uucico (8C),
+.BR uuxqt (8C)
+.LP
+.TX ADMIN
+.SH WARNINGS
+.LP
+The domain of remotely accessible files can
+(and for obvious security reasons, usually should)
+be severely restricted.
+You will very likely not be able to fetch files
+by path name;
+ask a responsible person on the remote system to
+send them to you.
+For the same reasons you will probably not be able
+to send files to arbitrary path names.
+As distributed, the remotely accessible files are
+those whose names begin
+.B /usr/spool/uucppublic
+(equivalent to
+.BR ~/ ).
+.LP
+All files received by
+.B uucp
+will be owned by the user
+.SM ID
+.BR uucp .
+.LP
+The
+.B \-m
+option will only work sending files or receiving
+a single file.
+Receiving multiple files specified by special shell
+characters
+.BR ? ,
+.BR \(** ,
+and
+.B [\ ]
+will not activate the
+.B \-m
+option.
+.LP
+The forwarding of files through other systems may not be compatible
+with other versions of
+.SM UUCP\s0.
+If forwarding is used, all
+systems in the route must have the same version of
+.SM UUCP\s0.
+.LP
+When invoking
+.B uucp
+from
+.BR csh (1),
+the
+.B !
+character must be prefixed by the
+.B \e
+escape to inhibit
+.BR csh 's
+history mechanism. Quotes are not sufficient.
+.SH BUGS
+.LP
+Protected files and files that are in protected directories that
+are owned by the requestor can be sent by
+.BR uucp .
+However, if the requestor is root, and the directory is not searchable
+by \*(lqother\*(rq or the file is not readable by
+\*(lqother\*(rq, the request will fail.

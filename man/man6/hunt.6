@@ -1,0 +1,280 @@
+.\" @(#)hunt.6 1.1 92/07/30 SMI; from UCB 6.2 85/08/26
+.TH HUNT 6 "16 February 1988"
+.SH NAME
+hunt \- a multiplayer multiterminal game
+.SH SYNOPSIS
+.BR /usr/games/hunt [ \-m "] ["
+.IR hostname "] ["
+.B \-l
+.IR name " ]"
+.SH DESCRIPTION
+.IX "hunt game" "" "\fLhunt\fP game"
+.LP
+The object of the game
+.B hunt
+is to kill off the other players.
+There are no rooms, no treasures, and no monsters.
+Instead, you wander around a maze, find grenades, trip mines, and shoot down
+walls and players.
+.LP
+Your score is the ratio of number of kills to number
+of times you entered the game and is only kept for the duration
+of a single session of
+.BR hunt .
+The more players you kill before you die, the better your score is.
+.LP
+.B hunt
+normally looks for an active game on the local network; if none is found,
+it starts one up on the local host.  One may specify the location of the
+game by giving the
+.IR hostname argument.
+.LP
+.B hunt
+only works on crt (vdt) terminals with at least 24 lines, 80 columns, and
+cursor addressing.  The screen is divided in to 3 areas.
+On the right hand side is the status area.
+It shows you how much damage you've sustained,
+how many charges you have left,
+who's in the game,
+who's scanning (the asterisk in front of the name),
+who's cloaked (the plus sign in front of the name),
+and other players' scores.
+Most of the rest of the screen is taken up by your map of the maze,
+except for the 24th line,
+which is used for longer messages that do not fit in the status area.
+.LP
+.B hunt
+uses the same keys to move as
+.B vi
+does, for instance, 
+.BR h , j , k ,
+and
+.B l
+for left, down, up, right respectively.
+To change which direction you're facing in the maze,
+use the upper case version of the movement key
+(for instance, 
+.SM HJKL\s0).
+.TP
+Other commands are:
+.sp
+.nf
+.ta
+.ta \w'>\|<\|^\|v\ \ 'u
+f	 Fire (in the direction you're facing) (Takes 1 charge)
+g	 Throw grenade (in the direction you're facing) (Takes 9 charges)
+F	 Throw satchel charge (Takes 25 charges)
+G	 Throw bomb (Takes 49 charges)
+o	 Throw small slime bomb (Takes 15 charges)
+O	 Throw big slime bomb (Takes 30 charges)
+s	 Scan (where other players are) (Takes 1 charge)
+c	 Cloak (where you are) (Takes 1 charge)
+^L	 Redraw screen
+q	 Quit
+.fi
+.LP
+Knowing what the symbols on the screen often helps:
+.RS
+.TP
+\-\||\|+
+Walls
+.TP
+/\|\\
+Diagonal (deflecting) walls
+.TP
+#
+Doors (dispersion walls)
+.TP
+;
+Small mine
+.TP
+g
+Large mine
+.TP
+:	
+Shot
+.TP
+o
+Grenade
+.TP
+O
+Satchel charge
+.TP
+@
+Bomb
+.TP
+s
+Small slime bomb
+.TP
+$	
+Big slime bomb
+.TP
+>\|<\|^\|v
+You facing right, left, up, or down
+.TP
+}\|{\|i\|!
+Other players facing right, left, up, or down
+.TP
+\(**
+Explosion
+.LP
+.ne 3
+.cs R 24
+.cs I 24
+\ \ \fR\\|/\fP
+.cs R
+.br
+.I \-\(**E\-
+\ \ \|Grenade and large mine explosion
+.fl
+.cs R 24
+.br
+\ \ \fR/|\\\fP
+.cs R
+.cs I
+.RE
+.LP
+Satchel and bomb explosions are larger than grenades (5x5,
+7x7, and 3x3 respectively).
+.LP
+Other helpful hints:
+.sp
+.ie n .ds b []
+.el .ds b \(bu
+.RS
+.PD 0
+.TP
+You can only fire in the direction you are facing.
+.TP
+You can only fire three shots in a row, then the gun must cool.
+.TP
+A shot only affects the square it hits.
+.TP
+Shots and grenades move 5 times faster than you do.
+.TP
+To stab someone,
+you must face that player and move at them.
+.TP
+Stabbing does 3 points worth of damage and shooting does 5 points.
+.TP
+You start with 15 charges and get 5 more for every new player.
+.TP
+A grenade affects the nine squares centered about the square it hits.
+.TP
+A satchel affects the twenty-five squares centered about the square it hits.
+.TP
+A bomb affects the forty-nine squares centered about the square it hits.
+.TP
+One small mine and one large mine is placed in the maze for every new player.
+.TP
+A mine has a 5% probability of tripping when you walk directly at it;
+50% when going sideways on to it;
+95% when backing up on to it.
+.TP
+Tripping a mine costs you 5 points or 10 points respectively.
+.TP
+Defusing a mine is worth 1 charge or 9 charges respectively.
+.TP
+You cannot see behind you.
+.TP
+Scanning lasts for (20 times the number of players) turns.
+Scanning takes 1 ammo charge,
+so do not waste all your charges scanning.
+.TP
+You get 2 more damage capacity points and 2 damage points taken away
+whenever you kill someone.
+.TP
+Maximum typeahead is 5 characters.
+.TP
+A shot destroys normal (for instance, non-diagonal, non-door) walls.
+.TP
+Diagonal walls deflect shots and change orientation.
+.TP
+Doors disperse shots in random directions (up, down, left, right).
+.TP
+Diagonal walls and doors cannot be destroyed by direct shots but may
+be destroyed by an adjacent grenade explosion.
+.TP
+Walls regenerate, reappearing in the order they were destroyed.
+One percent of the regenerated walls will be diagonal walls or doors.
+When a wall is generated directly beneath a player, he is thrown in
+a random direction for a random period of time.  When he lands, he
+sustains damage (up to 20 percent of the amount of damage he had before
+impact); that is, the less damage he had, the more nimble he is and
+therefore less likely to hurt himself on landing.
+.\".TP
+.\"There is a volcano close to the center of the maze which goes off
+.\"close to every 100 deaths.
+.RE
+.PD
+.SH ENVIRONMENT
+.LP
+The environment variable
+.SB HUNT
+is checked to get the player name.
+If you do not have this variable set,
+.B hunt
+will ask you what name you want to play under.
+You may also set up a single character keyboard map, but then you have to
+enumerate the options. For example:
+.IP
+.B setenv \s-1HUNT\s0 ``name=Sneaky,mapkey=zoFfGg1f2g3F4G''
+.LP
+sets the player name to Sneaky,
+and the maps 
+.B z 
+to 
+.BR o , 
+.B F 
+to
+.BR f ,
+.B G 
+to
+.BR g ,
+.B 1
+to
+.BR f ,
+.B 2 
+to 
+.BR g , 
+.B 3 
+to
+.BR F , 
+and
+.B 4
+to
+.BR G .
+.LP
+The
+.I mapkey
+option must be last.
+.TP
+It is a boring game if you are the only one playing.
+.SH OPTIONS
+.TP
+.B \-m
+You enter the game as a monitor
+(you can see the action but you cannot play).
+.TP
+.BI \-l " name"
+Enter the game as player
+.IR name .
+.SH FILES
+.PD 0
+.TP 25
+.B /usr/games/lib/hunt.driver
+game coordinator
+.PD
+.DT
+.SH LIMITATIONS
+.LP
+.B hunt
+normally drives up the load average to be about
+(number_of_players + 0.5) greater than it would be without a
+.B hunt
+game executing.  A limit of three players per host and nine players
+total is enforced by
+.BR hunt .
+.SH BUGS
+.LP
+To keep up the pace, not everything is as realistic as possible.

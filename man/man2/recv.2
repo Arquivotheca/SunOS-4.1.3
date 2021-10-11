@@ -1,0 +1,218 @@
+.\" @(#)recv.2 1.1 92/07/30 SMI; from UCB 4.3
+.hw EWOULDBLOCK
+.TH RECV 2 "21 January 1990"
+.SH NAME
+recv, recvfrom, recvmsg \- receive a message from a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int recv(s, buf, len, flags)
+int s;
+char *buf;
+int len, flags;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int recvfrom(s, buf, len, flags, from, fromlen)
+int s;
+char *buf;
+int len, flags;
+struct sockaddr *from;
+int *fromlen;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int recvmsg(s, msg, flags)
+int s;
+struct msghdr *msg;
+int flags;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  recv()  ""  "\fLrecv()\fP \(em receive message from socket"
+.IX  "socket operations"  recv()  ""  \fLrecv()\fP
+.IX  "interprocess communication"  recv()  ""  \fLrecv()\fP
+.IX  recvfrom()  ""  \fLrecvfrom()\fP
+.IX  "socket operations"  recvfrom()  ""  \fLrecvfrom()\fP
+.IX  "interprocess communication"  recvfrom()  ""  \fLrecvfrom()\fP
+.IX  recvmsg()  ""  \fLrecvmsg()\fP
+.IX  "socket operations"  recvmsg()  ""  \fLrecvmsg()\fP
+.IX  "interprocess communication"  recvmsg()  ""  \fLrecvmsg()\fP
+.IX  "receive message from socket"
+.IX  message  "receive from socket \(em \fLrecv()\fR"
+.LP
+.I s
+is a socket created with
+.BR socket (2).
+.BR recv(\|) ,
+.BR recvfrom(\|) ,
+and
+.BR recvmsg(\|)
+are used to receive messages from another socket.
+.B recv(\|)
+may be used only on a
+.I connected
+socket (see
+.BR connect (2)),
+while
+.B recvfrom(\|)
+and
+.B recvmsg(\|)
+may be used to receive data on a socket whether
+it is in a connected state or not.
+.LP
+If
+.I from
+is not a
+.SM NULL
+pointer, the source address of the message is filled in.
+.I fromlen
+is a value-result parameter, initialized to the size of
+the buffer associated with
+.IR from ,
+and modified on return to indicate the actual size of the
+address stored there.
+The length of the message is returned.
+If a message is too long to fit in the supplied buffer,
+excess bytes may be discarded depending on the type of socket
+the message is received from (see
+.BR socket (2)).
+.LP
+If no messages are available at the socket, the
+receive call waits for a message to arrive, unless
+the socket is non-blocking (see
+.BR ioctl (2))
+in which case \-1 is returned with the external variable
+.B errno
+set to
+.SM EWOULDBLOCK\s0.
+.LP
+The
+.BR select (2)
+call may be used to determine when more data arrive.
+.LP
+If the process calling
+.BR recv(\|) ,
+.BR recvfrom(\|)
+or
+.BR recvmsg(\|)
+receives a signal before any data are available,
+the system call is restarted unless the calling process
+explicitly set the signal to interrupt these calls using
+.B sigvec(\|)
+or
+.B sigaction(\|)
+(see the discussions of
+.SB SV_INTERRUPT
+on
+.BR sigvec (2),
+and
+.SB SA_INTERRUPT
+on
+.BR sigaction (3V)).
+.LP
+The
+.I flags
+parameter is formed by
+.SM OR\s0ing
+one or more of the following:
+.TP 15
+.SB MSG_OOB
+Read any \*(lqout-of-band\*(rq data present on the socket, rather than the
+regular \*(lqin-band\*(rq data.
+.TP
+.SB MSG_PEEK
+\*(lqPeek\*(rq at the data present on the socket; the data are returned, but
+not consumed, so that a subsequent receive operation will see the same data.
+.LP
+The
+.B recvmsg(\|)
+call uses a
+.B msghdr
+structure to minimize the number of directly supplied parameters.
+This structure is defined in
+.BR <sys/socket.h> ,
+and includes the following members:
+.br
+.ne 6
+.LP
+.RS
+.nf
+.ft B
+.ta +\w'struct iovec\0'u +\w'msg_accrightslen;\0'u
+caddr_t	msg_name;		/* optional address */
+int	msg_namelen;		/* size of address */
+struct iovec	*msg_iov;		/* scatter/gather array */
+int	msg_iovlen;		/* # elements in msg_iov */
+caddr_t	msg_accrights;		/* access rights sent/received */
+int	msg_accrightslen;
+.ft R
+.fi
+.DT
+.RE
+.LP
+Here
+.B msg_name
+and
+.B msg_namelen
+specify the destination address if the socket is unconnected;
+.B msg_name
+may be given as a
+.SM NULL
+pointer if no names are desired or required.
+The
+.B msg_iov
+and
+.B msg_iovlen
+describe the scatter-gather locations, as described in
+.BR read (2V).
+A buffer to receive any access rights sent along with the message is specified
+in
+.BR msg_accrights ,
+which has length
+.BR msg_accrightslen .
+.SH RETURN VALUES
+.LP
+These calls return the number of bytes received, or \-1 if an error occurred.
+.SH ERRORS
+.TP 20
+.SM EBADF
+.I s
+is an invalid descriptor.
+.TP
+.SM EFAULT
+The data were specified to be received into a non-existent
+or protected part of the process address space.
+.TP
+.SM EINTR
+The calling process received a signal before
+any data were available to be received, and the signal was
+set to interrupt the system call.
+.TP
+.SM ENOTSOCK
+.I s
+is a descriptor for a file, not a socket.
+.TP
+.SM EWOULDBLOCK
+The socket is marked non-blocking and the requested operation
+would block.
+.SH SEE ALSO
+.BR connect (2),
+.BR fcntl (2V),
+.BR getsockopt (2),
+.BR ioctl (2),
+.BR read (2V),
+.BR select (2),
+.BR send (2),
+.BR socket (2)

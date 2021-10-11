@@ -1,0 +1,300 @@
+.\" @(#)ieee_flags.3m 1.1 92/07/30 SMI;
+.TH IEEE_FLAGS 3M  "16 May 1989"
+.UC 4
+.de Pi		\" PI stuff sign
+.if n \\
+\\$2pi\\$1
+.if t \\
+\\$2\\(*p\\$1
+..
+.ds up \fIulp\fR
+.SH NAME
+ieee_flags \- mode and status function for IEEE standard arithmetic
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/ieeefp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int ieee_flags(action, mode, in, out)
+char *action, *mode, *in, **out;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "ieee_flags()" "" "\fLieee_flags()\fP function"
+.LP
+This function provides easy access to the modes and status required to
+fully exploit
+.SM ANSI/IEEE
+Std 754-1985 arithmetic in a C program.  All
+arguments are pointers to strings.
+Results arising from invalid arguments and
+invalid combinations are undefined for efficiency.
+.LP
+There are four types of
+.IR action :
+.BR get ,
+.BR set ,
+.B clear
+and
+.BR clearall .
+There are three valid settings for
+.IR mode ,
+two corresponding to modes of
+.SM IEEE
+arithmetic:
+.LP
+.RS
+.TP 15
+.B direction
+current rounding direction mode
+.TP
+.B precision
+current rounding precision mode
+.RE
+.LP
+and one corresponding to status of
+.SM IEEE
+arithmetic:
+.LP
+.RS
+.TP 15
+.B exception
+accrued exception-occurred status
+.RE
+.LP
+There are fourteen types of
+.I in
+and
+.IR out :
+.LP
+.RS
+.TP 15
+.B nearest
+round toward nearest
+.TP
+.B tozero
+round toward zero
+.TP
+.B negative
+round toward negative infinity
+.TP
+.B positive
+round toward positive infinity
+.TP
+.B extended
+.TP
+.B double
+.TP
+.B single
+.TP
+.B inexact
+.TP
+.B division
+division by zero exception
+.TP
+.B underflow
+.TP
+.B overflow
+.TP
+.B invalid
+.TP
+.B all
+all five exceptions above
+.TP
+.B common
+invalid, overflow, and division exceptions
+.RE
+.LP
+Note:
+.B all
+and
+.B common
+only make sense with
+.B set
+or
+.BR clear .
+.LP
+For
+.BR clearall ,
+.B ieee_flags(\|)
+returns 0 and restores all default modes and status.
+Nothing will be assigned to
+.IR out .
+Thus
+.LP
+.RS
+.nf
+.ft B
+char *mode, *out, *in;
+ieee_flags("clearall", mode, in, &out);
+.ft R
+.fi
+.RE
+.LP
+set rounding direction to
+.BR nearest ,
+rounding precision to
+.BR extended ,
+and all accrued exception-occurred status to zero.
+.br
+.ne 6
+.LP
+For
+.BR clear ,
+.B ieee_flags(\|)
+returns 0 and restores the default mode or status.
+Nothing will be assigned to
+.IR out .
+Thus
+.LP
+.RS
+.nf
+.ft B
+char *out, *in;
+ieee_flags("clear", "direction", in, &out);       \fP.\|.\|. set rounding direction to round to nearest.
+.fi
+.ft R
+.RE
+.LP
+For
+.BR set ,
+.B ieee_flags(\|)
+returns 0 if the action is
+successful and 1 if the corresponding required status or mode is not
+available (for instance, not supported in
+hardware). Nothing will be assigned to
+.IR out .
+Thus
+.LP
+.RS
+.nf
+.ft B
+char *out, *in;
+ieee_flags ("set", "direction", "tozero", &out);	\fPset rounding direction to round toward zero;
+.fi
+.ft R
+.RE
+.LP
+For
+.BR get ,
+we have the following cases:
+.LP
+Case 1:
+.I mode
+is
+.BR direction .
+In that case,
+.I out
+returns one of the four strings
+.BR nearest ,
+.BR tozero ,
+.BR positive ,
+.BR negative ,
+and
+.B ieee_flags(\|)
+returns a value corresponding to
+.I out
+according to the
+.B enum fp_direction_type
+defined in
+.BR <sys/ieeefp.h> .
+.LP
+Case 2:
+.I mode
+is
+.BR precision .
+In that case,
+.I out
+returns one of the three strings
+.BR extended ,
+.B double
+and
+.BR single ,
+and
+.B ieee_flags(\|)
+returns a value corresponding to
+.I out
+according to the
+.B enum fp_precision_type
+defined in
+.BR <sys/ieeefp.h> .
+.br
+.ne 10
+.LP
+Case 3:
+.I mode
+is
+.BR exception .
+In that case,
+.I out
+returns
+.LP
+.RS
+.TP 15
+.B not available
+if information on exception is not available.
+.TP
+.B no exception
+if no accrued exception.
+.LP
+the accrued exception that has the highest priority
+according to the following list:
+.LP
+.RS
+.nf
+.ft B
+the exception named by \fIin\fP
+invalid
+overflow
+division
+underflow
+inexact
+.ft
+.fi
+.RE
+.RE
+.LP
+In this case
+.B ieee_flags(\|)
+returns a five or six bit value where each bit
+(see
+.B enum fp_exception_type
+in
+.BR <sys/ieeefp.h> )
+corresponds to an exception-occurred accrued
+status flag: 0 = off, 1 = on.  The bit corresponding to 
+a particular exception varies among architectures
+(see
+.BR <sys/ieeefp.h> ).
+.LP
+Example:
+.LP
+.RS
+.nf
+.ft B
+char *out; int k, ieee_flags(\|);
+ieee_flags("clear", "exception", "all", &out);	/* clear all accrued exceptions */
+.ft
+\&.\|.\|.
+.ft B
+\fIcode that generates three exceptions:\fP overflow\fI,\fP invalid\fI,\fP inexact
+.ft
+\&.\|.\|.
+.ft B
+k = ieee_flags("get", "exception", "overflow", &out);
+.ft R
+.fi
+.RE
+.LP
+then
+.I out
+is
+.BR overflow ,
+and on a Sun-3,
+.I k
+is 25.

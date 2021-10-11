@@ -1,0 +1,73 @@
+.\" @(#)fingerd.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH FINGERD 8C "9 September 1987"
+.SH NAME
+fingerd, in.fingerd \- remote user information server
+.SH SYNOPSIS
+.B /usr/etc/in.fingerd
+.SH DESCRIPTION
+.IX "fingerd daemon" "" "\fLfingerd\fP daemon"
+.B fingerd
+implements the server side of the Name/Finger protocol,
+specified in
+.SM RFC
+742.
+The Name/Finger protocol provides a remote interface to programs
+which display information on system status and individual users.
+The protocol imposes little structure on the format of the
+exchange between client and server.
+The client provides a single \*(lqcommand line\*(rq to the finger
+server which returns a printable reply.
+.LP
+.B fingerd
+waits for connections on
+.SM TCP
+port 79.
+Once connected it reads a single command line
+terminated by a \s-1LINEFEED\s0 which is passed to
+.BR finger (1).
+.B fingerd
+closes its connections as soon as the output is finished.
+.LP
+If the line is null (only a
+.SM LINEFEED
+is sent) then
+.B finger
+returns a \*(lqdefault\*(rq report that lists all people logged into
+the system at that moment.
+.LP
+If a user name is specified (for instance,
+eric\s-1LINEFEED\s0) then the
+response lists more extended information for only that particular user,
+whether logged in or not.
+Allowable \*(lqnames\*(rq in the command line include both \*(lqlogin names\*(rq
+and \*(lquser names\*(rq.
+If a name is ambiguous, all possible derivations are returned.
+.SH SEE ALSO
+.BR finger (1)
+.LP
+Harrenstien, Ken,
+.IR \s-1NAME/FINGER\s0 ,
+\s-1RFC\s0 742,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+December 1977.
+.SH BUGS
+Connecting directly to the server from a
+.SM TIP
+or an equally narrow-minded
+.SM TELNET\s0-protocol
+user program can result
+in meaningless attempts at option negotiation being sent to the
+server, which will foul up the command line interpretation.
+.B fingerd
+should be taught to filter out
+.SM IAC\s0's
+and perhaps even respond
+negatively (\s-1IAC\s0
+.I will not)
+to all option commands received.

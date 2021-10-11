@@ -1,0 +1,164 @@
+.\" @(#)gtconfig.8 1.1 92/07/30 SMI;
+.TH GTCONFIG 8 "2 July 1991"
+.SH NAME
+gtconfig \- initialize the GT Graphics Accelerator and download 
+microcode.
+.SH SYNOPSIS
+.B /usr/etc/gtconfig
+[
+.BI \-d " device-filename"
+]
+[
+.BI \-f " filename"
+]
+[
+.BI \-s0 " filename"
+]
+[
+.BI \-s1 " filename"
+]
+[
+.BI \-I " microcode-directory"
+]
+[
+.BI \-E " bit-code"
+]
+[
+.BI \-g|G " gamma-value"
+]
+[
+.BI \-degamma8|DEGAMMA8 " on|off"
+[
+.B \-i
+]
+[
+.BI \-m|M " monitor-type"
+]
+[
+.BI \-c " 1-14"
+]
+[
+.BI \-w " 2-9"
+]
+[
+.B \-v
+]
+.SH DESCRIPTION
+.IX gtconfig "" "\fLgtconfig\fR \(em initialize \fLgt\fR Graphics Accelerator"
+.IX "GT, initialize graphics accelerator \(em \fLgtconfig\fR"
+.LP
+.B gtconfig
+initializes the GT Graphics Accelerator and downloads 
+microcode from the host. It is normally run as a part of 
+.B /etc/rc.local 
+to download \s-2GT\s+2 microcode files and to complete \s-2GT\s+2 
+initialization.
+.LP
+The standard version of the file
+.B /etc/rc.local
+contains the following
+.B gtconfig
+command line:
+.IP
+.B "/usr/etc/gtconfig "
+.LP
+If another configuration is desired, edit the command line in
+.BR /etc/rc.local .
+.LP
+It is inadvisable to run the
+.B gtconfig
+command while the configured device is being used;
+unpredictable results may occur.
+If it is necessary to change the \fBgtconfig\fR command,
+bring the system down gently, boot single user, edit the
+.B gtconfig
+line in the
+.B /etc/rc.local
+file, and bring the system back up multi-user.
+.LP
+Filenames may be either relative or absolute pathnames. 
+Relative pathnames are prepended with the path specified by \fB-I\fR, 
+or the default path \fB/usr/lib\fR.
+.SH OPTIONS
+.TP
+.BI \-d " device-filename"
+Specifies the \s-2GT\s+2 special file. The default is \fB/dev/gt0\fR.
+.TP
+.BI \-f " filename"
+Specifies the Front End microcode file. The default is \fBgt.ucode\fR.
+.TP
+.BI \-s0 " filename"
+Specifies the Setup Processor 0 microcode file. The default is
+\fBgt.c30.ucode\fR.
+.TP
+.BI \-s1 " filename"
+Specifies the Setup Processor 1 microcode file. The default is
+\fBgt.c31.ucode\fR.
+.TP
+.BI \-I " microcode-directory"
+Specifies the directory containing microcode files. The default is
+\fB/usr/lib\fR.
+.TP
+.BI \-E " bit-code"
+Initializes the cursor enable plane to contain all zeros or all ones.  The default is 
+\fB0\fR.
+.TP
+.BI \-g " gamma-value"
+Specifies the gamma correction value. The default is 2.22.
+.TP
+.BI \-G " gamma-value"
+Loads the gamma correction table only; does not initialize the GT or 
+download microcode. 
+.TP
+.BI \-degamma8 " on|off"
+Specifies automatic inverse gamma correction of 8-bit indexed color maps.  This allows colormaps with built-in gamma correction to work properly on GT.  The default is 
+\fBon\fR.
+.TP
+.BI \-DEGAMMA8 " on|off"
+Like degamma8, but only specifies automatic inverse gamma correction; does not otherwise initialize GT or download microcode.
+.TP
+.BI \-i 
+Initialize the \s-2GT\s+2 backend. 
+.TP
+.BI \-m " monitor-type"
+Specifies the monitor type of 1280_76, 1280_67, or stereo. The 
+default is 1280_67. 
+.TP
+.BI \-M " monitor-type"
+Sets the monitor type only; does not initialize the GT or 
+download microcode. 
+.TP
+.BI \-c " 1-14"
+Sets the OpenWindows server \s-2CLUT\s+2 quota. The default is 8.
+.TP
+.BI \-w " 2-9"
+Sets the OpenWindows server \s-2WID\s+2 plane quota. The default is 5.
+.TP
+.BI \-v
+Sets verbose mode. 
+.SH FILES
+.PD 0
+.TP 30
+.BI /dev/gt0
+GT Graphics Accelerator file
+.TP
+.B gt.ucode
+GT Front End microcode file
+.TP
+.B gt.c30.ucode
+Setup Processor 0  microcode file
+.TP
+.B gt.c31.ucode
+Setup Processor 1 microcode file
+.TP
+.B /usr/lib 
+directory that normally contains the microcode files
+.TP
+.B /etc/rc.local
+local boot script
+.PD
+.SH "SEE ALSO"
+.BR gt (4S),
+.BR fbio (4S),
+.BR mmap (2),
+

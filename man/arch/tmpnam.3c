@@ -1,0 +1,66 @@
+.\" @(#)tmpnam.3c 1.1 92/07/30 SMI; from UCB 4.2
+.TH TMPNAM 3C "27 February 1985"
+.SH NAME
+tmpnam \- create a name for a temporary file
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+.sp .5v
+char *tmpnam(s)
+char *s;
+.IX  "create name for temporary file"  ""  "create name for temporary file \(em \fLtmpnam\fP"
+.IX  "make name for temporary file"  ""  "make name for temporary file \(em \fLtmpnam\fP"
+.IX  "temporary file"  "create name for"  ""  "create name for \(em \fLtmpnam\fP"
+.IX  file  "create temporary name"  file  "create temporary name \(em \fLtmpnam\fP"
+.IX  "tmpnam function"  ""  "\fLtmpnam\fP \(em make temporary file name"
+.SH DESCRIPTION
+This routine is included for System V compatibility.
+.LP
+.I Tmpnam
+generates a file name that can safely be used for a temprary file.
+If (int)\fIs\fP is zero,
+.I tmpnam
+leaves its result in an internal static area and returns a pointer
+to that area.  The next call to
+.I tmpnam
+will destroy the contents of the area.
+If (int)\fIs\fP is nonzero,
+.I s
+is assumed to be the address of an array of at least
+.B L_tmpnam
+bytes;
+.I tmpnam
+places its result in that array and returns
+.I s
+as its value.
+.LP
+.I Tmpnam
+generates a different file name each time it is called.
+.LP
+Files created using
+.I tmpnam
+and either
+.I fopen
+or
+.I creat
+are only temporary in the sense that they reside in a directory intended for
+temporary use, and their names are unique.  It is the user's responsibility
+to use
+.IR unlink (2)
+to remove the file when its use is ended.
+.SH "SEE ALSO"
+creat(2), unlink(2), mktemp(3), fopen(3S)
+.SH BUGS
+If called more than 17,576 times in a single process,
+.I tmpnam
+will start recycling previously used names.
+.LP
+Between the time a file name is created and the file is opened,
+it is possible for some other process to create a file with the same
+name.  This can never happen if that other process is using
+.I tmpnam
+or
+.I mktemp,
+and the file names are chosen so as to render duplication by other
+means unlikely.

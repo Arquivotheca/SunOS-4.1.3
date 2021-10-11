@@ -1,0 +1,191 @@
+#
+#       @(#)script_gen	1.7 8/28/91 SMI
+#
+##################################################
+script_it(){
+    symb=$1
+    file=$2
+    old_suffix=$3
+# REPLACE="&"  # 4.1.1/4.1.2 file replaced by 4.1.3 file.
+# SAVE_OLD="+" # 4.1.3 file replaces 4.1.1/4.1.2 file; 4.1.1/4.1.2 file saved with .411/.412 tag.
+# MAKE_NEW="-" # 4.1.1/4.1.2 file is retained; 4.1.3 file added with .413 tag.
+
+    if [ x_$old_suffix = "x_" ]; then
+	old_suffix=$OLD_SUFFIX
+    fi
+    $DUMMY && $ECHO $file >> $COALESCE_LIST
+
+    save_old $file >> $before_file
+    restore_old $file >> $sos_file
+    restore_perm_access $file >> $rest_own_acc
+
+    if [ $symb = $MAKE_NEW ]; then
+	store_new $file >> $after_file
+	restore_old $file >> $after_file
+	comp_files $file $NEW_SUFFIX >> $after_file
+    fi
+    if [ $symb = $SAVE_OLD ]; then
+	comp_files $file $old_suffix >> $after_file
+    fi
+}
+##################################################
+script_it2(){
+    symb=$1
+    file=$2
+    old_suffix=$3
+    to_file=$4
+# REPLACE="&"  # 4.1.1/4.1.2 file replaced by 4.1.3 file.
+# SAVE_OLD="+" # 4.1.3 file replaces 4.1.1/4.1.2 file; 4.1.1/4.1.2 file saved with .411/.412 tag.
+# MAKE_NEW="-" # 4.1.1/4.1.2 file is retained; 4.1.3 file added with .413 tag.
+
+    if [ x_$old_suffix = "x_" ]; then
+	old_suffix=$OLD_SUFFIX
+    fi
+    $DUMMY && $ECHO $file >> $COALESCE_LIST
+
+    if [ -f $to_file ]; then
+    $ECHO $MV " -f " $file " " $to_file$old_suffix >> $before_file
+    fi
+
+    if [ $symb = $SAVE_OLD ]; then
+	comp_files $file $old_suffix >> $after_file
+    fi
+}
+save_old(){
+     if [ -f $1 ]; then
+     $ECHO $MV  " -f " $1 " " $1$old_suffix
+     fi
+}
+restore_old(){
+    $ECHO $MV  " -f " $1$old_suffix " " $1
+}
+store_new(){
+    $ECHO $MV  " -f " $1 " " $1$NEW_SUFFIX
+}
+remove_old(){
+    $ECHO $RM  " -rf " $1$old_suffix
+}
+comp_files(){
+    $ECHO eq='`'are_equal $1 $1$2'`'
+    $ECHO if ' $eq ; then'
+    $ECHO     rm  -f $1$2
+    $ECHO else
+    $ECHO     $ECHO $1 '>>' $COALESCE_LIST
+    $ECHO fi
+}
+##################################################
+restore_perm_access(){
+    file_org=$1
+#Check if exists
+    if [ -f $file_org ]; then
+	$LS -lg $file_org | \
+$NAWK '{
+    perm="u="substr($1, 2, 3) ",g=" substr($1, 5, 3) ",o="substr($1, 8, 3)
+    gsub(/-/,"",perm)
+    print "'$CHMOD'  " perm " '$file_org' ;"
+    print "'$CHOWN' " $3"."$4 " '$file_org' ;"
+    }'
+    else
+# Warning issue
+	$ECHO $ECHO $file_org "not found ;" $ECHO "Restore permission and owner.group manually."
+    fi
+}
+##################################################
+make_delete(){
+    del_list=$1
+    if [ $os_path0 = "/" ]; then
+	$NAWK '{ print "'$RM' -rf '$export_point'"substr( $1 , 2 ) }' \
+			$del_list 
+    else
+	$NAWK '{ print "'$RM' -rf '$os_path'" substr( $1 , 2 ) }' \
+			$del_list
+    fi
+}
+##################################################
+fix_the_list(){
+    inc_file=$1
+# incl file with os_path -> to $INC
+    if [ $os_path0 = "/" ]; then
+	$NAWK '{ print substr( $1 , 2 ) }' \
+			$inc_file | $SORT > $INC
+    else
+	$NAWK '{ print "'$os_path0'" substr( $1 , 2 ) }' \
+			$inc_file | $SORT > $INC
+    fi
+
+    s_comm=`$COMM -12 $INC $VOL_NAMES`
+    if [ "x_$s_comm" != "x_" ]; then
+	for xxx in `$CAT $VOL0`; do
+	    if [ $xxx = $SAVE_OLD -o\
+		 $xxx = $MAKE_NEW -o\
+		 $xxx = $REPLACE ]; then
+		symb=$xxx
+	    else
+		vol_file=$xxx
+		for file in $s_comm; do
+	    	    if [ $file = $vol_file ]; then
+   			if [ $os_path0 != "/"  -a x_$export_point != x_ ]; then
+			    n=`$EXPR $os_path0 : '.*'`
+			    nn=`$EXPR $n + 1`
+			    file=`$EXPR substr $file $nn 128`
+			fi
+			script_it $symb "$export_point$file" $2 $3
+		    fi
+		done
+	    fi
+	done
+    fi
+}
+##################################################
+fix_the_list2(){
+    inc_file=$1
+# incl file with os_path -> to $INC
+    if [ $os_path0 = "/" ]; then
+	$NAWK '{ print substr( $1 , 2 ) }' \
+			$inc_file | $SORT > $INC
+    else
+	$NAWK '{ print "'$os_path0'" substr( $1 , 2 ) }' \
+			$inc_file | $SORT > $INC
+    fi
+    s_comm=`$COMM -12 $INC $VOL_NAMES`
+    if [ "x_$s_comm" != "x_" ]; then
+	for xxx in `$CAT $VOL0`; do
+	    if [ $xxx = $SAVE_OLD -o\
+		 $xxx = $MAKE_NEW -o\
+		 $xxx = $REPLACE ]; then
+		symb=$xxx
+	    else
+		vol_file=$xxx
+		for file in $s_comm; do
+	    	    if [ $file = $vol_file ]; then
+   			if [ $os_path0 != "/"  -a x_$export_point != x_ ]; then
+			    n=`$EXPR $os_path0 : '.*'`
+			    nn=`$EXPR $n + 1`
+			    file=`$EXPR substr $file $nn 128`
+			fi
+			script_it2 $symb "$export_point$file" $2 "$3$file"
+		    fi
+		done
+	    fi
+	done
+    fi
+}
+##################################################
+make_tar(){
+    here=`$PWD`
+    $ECHO $CD $2
+    if [ x_$3 = "x_" ]; then
+        $ECHO $TAR $TAR_OPTIONS $1
+    else
+        $ECHO $TAR $TAR_OPTIONS $1 -I $3
+    fi
+
+    if $DUMMY ; then
+	return
+    fi
+    $ECHO tar_rc='$?'
+    $ECHO $LDCONFIG
+    $ECHO $CD $here
+}
+##################################################
+

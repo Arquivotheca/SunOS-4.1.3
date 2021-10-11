@@ -1,0 +1,224 @@
+.\" @(#)pcfs.4s 1.1 92/07/30 SMI; new for 4.1
+.TH PCFS 4S "9 May 1990"
+.SH NAME
+PCFS \- MS-DOS formatted filesystem
+.SH CONFIG
+.B options \s-1PCFS\s0
+.SH AVAILABILITY
+.LP
+Available only on Sun-3/80, and Desktop \s-1SPARC\s0systems with
+internal floppy drives.
+.SH DESCRIPTION
+.IX "PCFS" "" "\fLPCFS\fP \(em MS-DOS filesystem"
+.IX "MS-DOS filesystem" "" "MS-DOS filesystem \fLPCFS\fR"
+.LP
+.SM PCFS
+is a filesystem type that allows users direct access to files on
+.SM MS-DOS
+formatted disks from within the SunOS operating system.
+Once mounted, a
+.SM PCFS
+filesystem provides standard SunOS file operations and semantics.
+That is, users can create, delete, read, write files on an
+.SM MS-DOS
+formatted disk.
+They can also create/delete directories and list files in a directory.
+.LP
+.SM PCFS 
+filesystems are mounted either with the command:
+.IP
+.B "mount \-t pcfs " \fIdevice-special\fP \fIdirectory-name\fP
+.LP
+or
+.IP
+.B "mount /pcfs"
+.LP
+if the following line
+.IP
+.B "/dev/fd0	/pcfs	pcfs rw,noauto 0 0"
+.LP
+is in your
+.B /etc/fstab.
+.LP
+File and directories created through
+.SM PCFS
+have to comply with the
+.SM MS-DOS
+file name convention, which is of the form
+\fIfilename\fP[.\fIext\fP], where 
+.I filename
+consists of one through eight
+upper-case characters, while the optional 
+.I ext
+consists of one through
+three upper-case characters.
+.SM PCFS
+converts all the lower-case characters in a file name to upper-case, and
+chops off any extra characters in 
+.I filename
+or 
+.IR ext .
+When displaying file names,
+.SM PCFS
+only shows them in lower-case.
+.LP
+One can use either the
+.SM MS-DOS
+.SB FORMAT
+command, or
+.IP
+.B fdformat \-d
+.LP
+command in the SunOS system to format a diskette in
+.SM MS-DOS
+format.
+.SH EXAMPLES
+.LP
+If you copy a file
+.IP
+.B financial.data
+.LP
+from a
+.SM UNIX
+filesystem to a
+.SM PCFS
+filesystem, it will show up as
+.IP
+.SB FINANCIA.DAT
+.LP
+on the
+.SM MS-DOS
+disk.
+.LP
+The following file names
+.IP
+.B .login
+.IP
+.B test.sh.orig
+.IP
+.B data+
+.LP
+are considered illegal in
+.SM MS-DOS\s0,
+therefore can not be created through
+.BR \s-1PCFS\s0 .
+.SH NOTES
+.LP
+The following are all the legal characters that are allowed in file
+names or extentions in
+.SM PCFS\s0:
+.IP
+.B 0-9, a-z, A-Z, and $#&@!%()-{}<>`_\e^~|'
+.LP
+Since
+.B SunOS
+and
+.B DOS
+operating systems
+use different character sets, and have different requirements for the text
+file format, one can use
+.IP
+.B dos2unix
+.LP
+or
+.IP
+.B unix2dos
+.LP
+command to convert files between them.
+.LP
+.SM PCFS
+offers a convenient transportation vehicle for files between Sun Workstations
+and
+.SM PC\s0's.
+Since the
+.SM MS-DOS
+disk format was designed for use under
+.SM DOS\s0,
+it is quite inefficient to operate under the SunOS system.
+Therefore, it should not be used
+as the format for a regular local storage.
+You should use
+.B ufs
+for local storage within the SunOS system.
+.BR
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/etc/mount_pcfs
+.SH "SEE ALSO"
+.br
+.BR dos (1),
+.BR dos2unix (1),
+.BR eject (1),
+.BR fd (4),
+.BR fdformat(1),
+.BR unix2dos (1),
+.BR fstab (5),
+.BR mount (8)
+.SH DIAGNOSTICS
+.BR mount (8)
+will fail and produce the following message:
+.TP
+.B "mount_pcfs: /dev/fd0 on /pcfs type pcfs: Invalid argument"
+if the floppy in the
+.B fd0
+drive is not in
+.SM MS-DOS
+format. 
+For example,
+if you try to mount a
+.B ufs
+formatted floppy as a
+.SM PCFS
+filesystem.
+.TP
+.B "mount_pcfs: /dev/fd0 on /pcfs type pcfs: No such device"
+if configuration option
+.B options PCFS
+is missing from the kernel.
+.SH WARNINGS
+.LP
+It is not recommended to physically eject an
+.SM MS-DOS
+floppy while
+the device is still mounted as a
+.SM PCFS
+filesystem.
+.LP
+Since
+.SM PCFS
+truncates any extra characters in file names and extentions like
+.SM MS-DOS\s0,
+be careful when copying files from a
+.SM UNIX
+filesystem to a
+.SM PCFS
+filesystem.
+For instance, the following two files
+.IP
+.B test.data1 test.data2
+.LP
+in a
+.SM UNIX
+filesystem will get copied to the same file
+.IP
+.SB TEST.DAT
+.LP
+in
+.SM PCFS\s0.
+.SH BUGS
+.LP
+.SM PCFS
+should handle the disk change condition like
+.SM MS-DOS\s0,
+so that the user does not need to unmount the filesystem to change floppies.
+.SM PCFS
+is currently not
+.SM NFS
+mountable. Trying to mount a
+.SM PCFS
+filesystem through
+.SM NFS
+will fail with an
+.SM EACCES
+error.

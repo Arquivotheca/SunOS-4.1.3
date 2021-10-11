@@ -1,0 +1,174 @@
+.\" @(#)hsearch.3 1.1 92/07/30 SMI; from S5
+.TH HSEARCH 3 "7 September 1988"
+.SH NAME
+hsearch, hcreate, hdestroy \- manage hash search tables
+.SH SYNOPSIS
+.B #include <search.h>
+.LP
+.nf
+.B \s-1ENTRY\s+1 \(**hsearch (item, action)
+.B \s-1ENTRY\s+1 item;
+.B \s-1ACTION\s+1 action;
+.fi
+.LP
+.nf
+.B int hcreate (nel)
+.B unsigned nel;
+.fi
+.LP
+.B void hdestroy ( )
+.SH DESCRIPTION
+.IX "hsearch()" "" "\fLhsearch()\fR \(em hash table search routine"
+.IX "hash table search routine \(em \fLhsearch()\fR"
+.IX "search functions" "hsearch()" "" "\fLhsearch()\fR \(em hash table search"
+.IX "hcreate()" "" "\fLhcreate()\fR \(em create hash table"
+.IX "create" "hash table \(em \fLhcreate()\fR"
+.IX "hdestroy()" "" "\fLhdestroy()\fR \(em destroy hash table"
+.IX "destroy hash table \(em \fLhdestroy()\fR"
+.LP
+.B hsearch(\|)
+is a hash-table search routine generalized from Knuth (6.4) Algorithm D.
+It returns a pointer into a hash table indicating the location at which
+an entry can be found.
+.I item
+is a structure of type
+.SM ENTRY
+(defined in the
+.B <search.h>
+header file)
+containing two pointers:
+.I item.key
+points to the comparison key, and
+.I item.data
+points to any other data to be associated with that key.
+(Pointers to types other than character
+should be cast to pointer-to-character.)
+.I action
+is a member of an enumeration type
+.SM ACTION
+indicating the disposition of the entry if it cannot be found in the table.
+.SB ENTER
+indicates that the item should be inserted in the table at an
+appropriate point.
+.SB FIND
+indicates that no entry should be made.
+Unsuccessful resolution is
+indicated by the return of a
+.SM NULL
+pointer.
+.LP
+.B hcreate(\|)
+allocates sufficient space for the table, and must be called before
+.B hsearch(\|)
+is used.
+.I nel
+is an estimate of the maximum number of entries that
+the table will contain.
+This number may be adjusted upward by the
+algorithm in order to obtain certain mathematically favorable
+circumstances.
+.LP
+.B hdestroy(\|)
+destroys the search table,
+and may be followed by another call to
+.BR hcreate .
+.SH NOTES
+.B hsearch(\|)
+uses
+.B open addressing
+with a
+.I multiplicative
+hash function.
+.SH EXAMPLE
+The following example will read in strings followed by two
+numbers and store them in a hash table, discarding duplicates.
+It will then read in strings and find the matching entry
+in the hash table and print it out.
+.LP
+.RS
+.nf
+.ft B
+.ss 18
+#include <stdio.h>
+#include <search.h>
+struct info {		/\(** this is the info stored in the table \(**/
+	int age, room;	/\(** other than the key. \(**/
+};
+#define
+\s-1NUM_EMPL\s0    5000    /\(** # of elements in search table \(**/
+main( )
+{
+	/\(** space to store strings \(**/
+	char string_space[\s-1NUM_EMPL\s+1\(**20];
+	/\(** space to store employee info \(**/
+	struct info info_space[\s-1NUM_EMPL\s+1];
+	/\(** next avail space in string_space \(**/
+	char \(**str_ptr = string_space;
+	/\(** next avail space in info_space \(**/
+	struct info \(**info_ptr = info_space;
+	\s-1ENTRY\s+1 item, \(**found_item, \(**hsearch( );
+	/\(** name to look for in table \(**/
+	char name_to_find[30];	
+	int i = 0;
+	/\(** create table \(**/
+	(void) hcreate(\s-1NUM_EMPL\s+1);
+	while (scanf("%s%d%d", str_ptr, &info_ptr\(mi>age,
+	       &info_ptr\(mi>room) !=
+\s-1EOF\s0 && i++ <
+\s-1NUM_EMPL\s0) {
+		/\(** put info in structure, and structure in item \(**/
+		item.key = str_ptr;
+		item.data = (char \(**)info_ptr;
+		str_ptr += strlen(str_ptr) + 1;
+		info_ptr++;
+		/\(** put item into table \(**/
+		(void) hsearch(item,
+\s-1ENTER\s0);
+	}
+	/\(** access table \(**/
+	item.key = name_to_find;
+	while (scanf("%s", item.key) != \s-1EOF\s0) {
+	    if ((found_item = hsearch(item,
+\s-1FIND\s0)) != \s-1NULL\s0) {
+		/\(** if item is in the table \(**/
+		 (void)printf("found %s, age = %d, room = %d\en",
+			found_item\(mi>key,
+			((struct info \(**)found_item\(mi>data)\(mi>age,
+			((struct info \(**)found_item\(mi>data)\(mi>room);
+	    } else {
+		 (void)printf("no such employee %s\en",
+			name_to_find);
+	    }
+	}
+}
+.ft R
+.fi
+.RE
+.SH SEE ALSO
+.BR bsearch (3),
+.BR lsearch (3),
+.BR malloc (3V),
+.BR string (3),
+.BR tsearch (3)
+.SH DIAGNOSTICS
+.B hsearch(\|)
+returns a
+.SM NULL
+pointer if either the action is
+.SB FIND
+and the item could not be found or the action is
+.SB ENTER
+and the table is full.
+.LP
+.B hcreate(\|)
+returns zero if it cannot allocate sufficient space for the
+table.
+.SH WARNING
+.B hsearch(\|)
+and
+.B hcreate(\|)
+use
+.BR malloc (3V)
+to allocate space.
+.SH BUGS
+Only one hash search table may be active at any given time.

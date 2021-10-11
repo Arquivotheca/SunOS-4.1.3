@@ -1,0 +1,183 @@
+.\" @(#)set4.8 1.1 92/07/30 SMI;
+.TH SET4 8 "6 October 1989"
+.SH NAME
+set4, unset4, check4 \- set, unset, and check the 4 megabyte process virtual address space limit flag in a Sun386i module
+.SH SYNOPSIS
+.B set4
+[
+.B \-d
+.I working_directory
+] [
+.B \-
+|
+.I filename
+] .\|.\|.
+.LP
+.B unset4
+.IR filename \|.\|.\|.
+.LP
+.B check4
+.IR filename \|.\|.\|.
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "set4 command" "" "\fLset4\fP command"
+.IX "virtual address space limiting" "" "virtual address space limiting \(em \fLset4\fP command"
+.IX "limiting virtual address space" "" "limiting virtual address space \(em \fLset4\fP command"
+.IX "address space limiting" "" "address space limiting \(em \fLset4\fP command"
+.IX "unset4 command" "" "\fLunset4\fP command"
+.IX "unlimit virtual address space" "" "unlimit virtual address space \(em \fLunset4\fP command"
+.IX "virtual address space unlimit" "" "virtual address space unlimit \(em \fLunset4\fP command"
+.IX "address space unlimit" "" "address space unlimit \(em \fLunset4\fP command"
+.IX "check4 command" "" "\fLcheck4\fP command"
+.IX "virtual address space limits" "" "check virtual address space limits \(em \fLcheck4\fP command"
+.IX "address space limit checking" "" "address space limit checking \(em \fLcheck4\fP command"
+.LP
+.B set4
+sets the 4 megabyte process memory flag in each
+.I filename
+program image,
+limiting the virtual address space for each program to 4 megabytes.
+If a 
+.RB ` \- '
+is used,
+.B set4
+reads the standard input for a list of files to set the 4 megabyte limit on.
+Lines in the standard input whose first character is
+.RB ` # '
+are ignored, so files may include comments.
+.LP
+.B unset4
+clears the 4 megabyte process memory flag in the program image,
+so the process virtual address space is not limited to 4 megabytes.
+.LP
+.B check4
+reports programs that do not have the 4 megabyte limit set,
+and does not report programs with the limit set.
+.SH OPTIONS
+.TP
+.BI \-d " working_directory"
+This specifies a directory prefix for file names that
+.B set4
+processes.
+.SH EXAMPLES
+.LP
+Suppose that the file
+.B small_progs
+contains the following:
+.RS
+.sp .5
+.nf
+.B "# These files should have their virtual address spaces limited to 4 MB:"
+.B /bin/date
+.B /bin/true
+.fi
+.sp .5
+.RE
+Then the following command will run
+.B set4
+on
+.BR /build/bin/false ,
+.BR /build/bin/date ,
+.BR /build/bin/true ,
+and
+.BR /build/bin/cat .
+.RS
+.sp .5
+.nf
+.B example%  set4  \-d  /build  /bin/false " \-  "
+.B /bin/cat  <  small_progs
+.br
+.B example%
+.fi
+.RE
+.LP
+In this example,
+.B unset4
+clears the 4 megabyte limit flag in
+.BR date ,
+and
+.BR clri .
+.RS
+.sp .5
+.nf
+.B example%  unset4  /bin/date  /etc/clri
+.B example%
+.fi
+.RE
+.LP
+In the last example,
+.B check4
+shows that
+.B date
+and
+.B clri
+are 4 megabyte processes, but
+.B basename
+is not.
+.RS
+.sp
+.nf
+.B example%  check4 /bin/date /etc/clri /usr/bin/basename
+.B basename is not a 4MB process
+.B example%
+.fi
+.RE
+.SH SEE ALSO
+.BR execve (2V)
+.BR execl (3V)
+.SH BUGS
+.LP
+There is a problem in the way that processes that have the 4 megabyte
+limit set
+.B exec(\|)
+processes that do not have the limit set.  (See
+.BR execve (2V)
+and
+.BR execl (3V)
+for descriptions of
+.B exec(\|)
+processing.)
+For a short time during the
+.BR exec(\|) ,
+a child has the parent's data and stack limits.
+During this time, the
+program is checked to see if it will fit into memory.
+If the parent had the 4 megabyte limit set, the test fails, because the
+child program is running with the parent's 4 megabyte limit. 
+This only affects programs which have more than 4 megabytes
+of global or static data compiled into the program.
+It does not affect programs which use
+.BR malloc (3V)
+to obtain memory.
+.LP
+For example,
+.BR csh (1)
+and
+.BR sh (1)
+may be 4 megabyte processes.
+If they are, and if you try to run a program with
+more than 4 megabytes of global and static data, the shell cannot
+successfully
+.BR exec(\|) .
+To fix this problem, become root on your machine and enter the following
+commands:
+.RS
+.nf
+.sp .25
+.ft B
+	example%  /etc/mount  \-o  remount,rw  /usr
+	/usr/etc/unset4  /bin/csh  /bin/sh
+	example%
+.ft
+.sp .25
+.fi
+.RE
+Then log out and back in again to run the modified shell.
+This makes
+.B csh
+and
+.B sh
+\*(lqnormal\*(rq processes.

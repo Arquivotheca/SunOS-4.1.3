@@ -1,0 +1,184 @@
+.\" @(#)acct.8 1.1 92/07/30 SMI; from S5R2
+.TH ACCT 8 "13 January 1990"
+.SH NAME
+acctdisk, acctdusg, accton, acctwtmp \- overview of accounting and miscellaneous accounting commands
+.SH SYNOPSIS
+.B /usr/lib/acct/acctdisk
+.LP
+.B /usr/lib/acct/acctdusg
+[
+.BI \-u " filename"
+] [
+.BI \-p " filename"
+]
+.LP
+.B /usr/lib/acct/accton
+[
+.I filename
+]
+.LP
+.B /usr/lib/acct/acctwtmp
+.I reason
+.SH DESCRIPTION
+.IX "acct" "" "\fLacct\fP \(em miscellaneous accounting commands" ""
+.IX "acctdisk" "" "\fLacctdisk\fP \(em create disk usage records" ""
+.IX "acctdusg" "" "\fLacctdusg\fP \(em compute disk usage by login" ""
+.IX "accton" "" "\fLaccton\fP \(em turn on process accounting" ""
+.\" .IX "acctwtmp" "" "\fLacctwtmp\fP \(em "
+.LP
+Accounting software is structured as a set of tools
+(consisting of both C programs and shell procedures)
+that can be used
+to build accounting systems.
+.BR acctsh (8)
+describes the set of shell procedures built on top of
+the C programs.
+.LP
+Connect time accounting is handled by various programs that write
+records into
+.BR /etc/utmp ,
+as described in
+.BR utmp (5V).
+The programs described in
+.BR acctcon (8)
+convert this file into session and charging records,
+which are then summarized by
+.BR acctmerg (8).
+.LP
+Process accounting is performed by the
+.SM UNIX
+system kernel.
+Upon termination of a process,
+one record per process is written to a file
+(normally
+.BR /var/adm/pacct ).
+The programs in
+.BR acctprc (8)
+summarize this data for charging purposes;
+.BR acctcms (8)
+is used to summarize command usage.
+Current process data may be examined using
+.BR acctcom (1).
+.LP
+Process accounting and connect time accounting (or any accounting records
+in the format described in
+.BR acct (5))
+can be merged and summarized into total accounting records by
+.B acctmerg
+(see
+.B tacct
+format in
+.BR acct (5)).
+.B prtacct
+(see
+.BR acctsh (8))
+is used to format any or all accounting records.
+.LP
+.B acctdisk
+reads lines that contain user
+.SM ID\*S,
+login name, and number of
+disk blocks and converts them to total accounting
+records that can be merged with other accounting records.
+.LP
+.B acctdusg
+reads its standard input (usually from
+.RB ` "find / \-print" ')
+and computes disk resource consumption
+(including indirect blocks) by login.
+.LP
+.B accton
+without arguments turns process accounting off.
+If
+.I filename
+is given,
+it must be the name of an existing file,
+to which the kernel appends process accounting records
+(see
+.BR acct (2V)
+and
+.BR acct (5)).
+You must be super-user to use this command.
+.LP
+.B acctwtmp
+writes a
+.BR utmp (5V)
+record to its standard output.
+The record contains the current time
+and
+a string of characters that describe the
+.IR reason .
+The login name for this record is set to
+.B @@acct
+(see
+.BR utmp (5V)).
+.I reason
+must be a string of 8 or fewer characters, numbers,
+.BR $ ,
+or
+.SM SPACE
+characters.
+If 
+.I reason
+contains a
+.SM SPACE
+character, it must be enclosed in double quotes.
+For example, the following are suggestions
+for use in reboot and shutdown procedures, respectively:
+.LP
+.RS
+.ft B
+acctwtmp \|\*`uname\*` \|>> /var/adm/wtmp
+.ft R
+.br
+.ft B
+acctwtmp \|fsave \|>> /var/adm/wtmp
+.ft R
+.RE
+.SH OPTIONS
+.SS acctdusg
+.TP
+.BI \-u " filename"
+Place records consisting of those file names for which
+.B acctdusg
+charges no one in
+.I filename
+(a potential source for finding users trying to avoid disk charges).
+.TP
+.BI \-p " filename"
+Use
+.I filename
+as the password file, rather than
+.BR /etc/passwd .
+(See
+.BR diskusg (8)
+for more details.)
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+used for login name to user
+.SM ID
+conversions
+.TP
+.B /usr/lib/acct
+holds all accounting commands listed in section 8 of this manual
+.TP
+.B /var/adm/pacct
+current process accounting file
+.TP
+.B /var/adm/wtmp
+login/logoff history file
+.SH SEE ALSO
+.BR acctcom (1),
+.BR acct (2V),
+.BR acct (5),
+.BR utmp (5V),
+.BR acctcms (8),
+.BR acctcon (8),
+.BR acctmerg (8),
+.BR acctprc (8),
+.BR acctsh (8),
+.BR diskusg (8),
+.BR fwtmp (8),
+.BR runacct (8)

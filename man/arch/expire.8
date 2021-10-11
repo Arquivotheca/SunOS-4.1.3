@@ -1,0 +1,105 @@
+.\" @(#)expire.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH EXPIRE 8 "1 February 1985"
+.SH NAME
+expire \- remove outdated news articles
+.SH SYNOPSIS
+.B /usr/lib/news/expire 
+[
+.B \-n
+.I newsgroups
+] [
+.B \-i 
+] [
+.B \-I 
+]
+.if n .ti +0.5i
+[
+.BR \-v [\c
+.IR level " ] ] [ "
+\fB\-e\fI\  days\fR
+] [
+.B \-a
+]
+.if t .ti +0.5i
+[
+.B \-r
+] [
+.B \-h
+]
+.SH DESCRIPTION
+.IX  "expire command"  ""  "\fLexpire\fP \(em remove outdated news articles"
+.IX  "remove outdated news articles"  ""  "remove outdated news articles \(em \fLexpire\fP"
+.IX  "delete outdated news articles"  ""  "delete outdated news articles \(em \fLexpire\fP"
+.IX  "news articles"  "remove outdated"  ""  "remove outdated \(em \fLexpire\fP"
+.I Expire
+is normally started up by
+.IR cron (8)
+every night to remove all expired news.
+If no newsgroups are specified, the default is to expire
+.BR all .
+.LP
+Articles whose specified expiration date has already passed
+are considered expirable.
+.SH OPTIONS
+.TP
+.BI \-n " newsgroups"
+List of newsgroups to expire.  Elements in the list of newsgroups must
+be separated by commas and/or spaces.
+.TP
+.B \-a
+archive articles in /usr/spool/oldnews.
+Articles are unlinked in the absence of the
+.B \-a
+option.
+.TP
+\fB\-v\fP[\fIlevel\fP\^]
+be more verbose.  A verbosity
+.I level
+(default 1) can follow the
+.B \-v
+flag, as in
+.B \-v3
+for even more output.
+This is useful if articles aren't being expired and you want to know why.
+.TP
+\fB\-e\fI\  days\fR
+give the number of days to use for a default expiration date.
+If not given, an installation dependent default (often 2 weeks) is used.
+Note that you must use a space between \fB\-e\fP and \fIdays\fP.
+.TP
+.B \-i
+.PD 0
+.TP
+.B \-I
+ignore any expiration date explicitly given on articles.
+This can be used when disk space is really tight.
+.B \-I
+always ignores expiration dates, while
+.B \-i
+only ignores the date if ignoring it would expire the article sooner.
+.I WARNING:
+If you have articles archived by giving them expiration dates far into the
+future, these options might remove these files anyway.
+.PD
+.TP
+.B \-r
+rebuild the history file without removing any files.  In the process,
+.I expire
+formats the
+.IR dbm (3)
+format files associated with the history file.
+.TP
+.B \-h
+expire articles without using the history file.  Both the
+.B \-r
+and
+.B \-h
+flags use the active file for newsgroup information rather than the history
+file.
+.SH "SEE ALSO"
+checknews(1),
+inews(1),
+readnews(1),
+recnews(8),
+sendnews(8),
+uurec(8)

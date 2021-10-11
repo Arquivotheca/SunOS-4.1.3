@@ -1,0 +1,81 @@
+.\" @(#)rfudaemon.8 1.1 92/07/30 SMI; from S5r3
+.TH RFUDAEMON 8 "30 September 1988"
+.SH NAME
+rfudaemon \- Remote File Sharing daemon
+.SH SYNOPSIS
+.B rfudaemon
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "rfudaemon RFS" "" "\fLrfudaemon\fP \(em \s-1RFS\s0 daemon" ""
+.IX RFS "daemon" "\s-1RFS\s0" "daemon"
+.IX daemon "RFS" "daemon" "\s-1RFS\s0" 
+The
+.SM RFS
+daemon,
+.BR rfudaemon ,
+is started automatically by
+.BR rfstart (8)
+and runs as a daemon process while Remote File Sharing is active.
+It listens for unexpected events, such as broken
+network connections and forced unmounts, and invokes
+.BR rfuadmin (8)
+to execute the appropriate administrative procedures.
+Events recognized by
+.B rfudaemon
+are as follows:
+.TP
+.B disconnect
+A link to a remote resource has been cut.
+.B rfudaemon
+executes
+.BR rfuadmin , 
+with two arguments:
+.B disconnect
+and the name of the disconnected resource.
+.TP 
+.B fumount
+A remote server machine has forced an unmount of a resource
+a local machine has mounted.
+.B rfudaemon
+executes
+.BR rfuadmin , 
+with two arguments:
+.B fumount
+and the name of the disconnected resource.
+.TP
+.B getumsg
+A remote user-level program has sent a message
+to the local
+.BR rfudaemon .  
+Currently the only message sent is
+.BR fuwarn , 
+which notifies
+.B rfuadmin 
+that a resource is about to be unmounted.  
+.B rfudaemon
+sends
+.B rfuadmin 
+the
+.BR fuwarn , 
+the resource name, and the number of seconds in
+which the forced unmount will occur.
+.TP 
+.B lastumsg
+The local machine wants to stop the
+.B rfudaemon 
+.RB ( rfstop (8)).
+This causes
+.B rfudaemon 
+to exit.
+.PD
+.SH "SEE ALSO"
+.BR rfstart (8),
+.BR rfstop  (8),
+.BR rfuadmin (8)

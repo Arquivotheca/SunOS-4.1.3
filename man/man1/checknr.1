@@ -1,0 +1,157 @@
+.\" @(#)checknr.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH CHECKNR 1 "22 December 1987"
+.SH NAME
+checknr \- check nroff and troff input files; report possible errors
+.SH SYNOPSIS
+.B checknr
+[
+.B \-fs
+]
+[
+.B \-a
+.BI \&. \|x1
+.BI \&. \|y1
+.BI \&. \|x2
+.BI \&. \|y2
+\&.\|.\|.
+.BI \&. \|xn
+.BI \&. \|yn
+] 
+.if n .ti +0.5i
+[
+.B \-c
+.BI \&. \|x1
+.BI \&. \|x2
+.BI \&. \|x3
+\&.\|.\|.
+.BI \&. \|xn
+] 
+[
+.I filename
+\&.\|.\|.
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  checknr  ""  "\fLchecknr\fP \(em check nroff/troff files"
+.IX  "document production"  "checknr command"  ""  "\fLchecknr\fP \(em check nroff/troff files"
+.IX  "nroff utilities"  "checknr"  "\fLnroff\fP utilities" "\fLchecknr\fP \(em check nroff/troff files"
+.IX  "troff utilities"  "checknr"  "\fLtroff\fP utilities" "\fLchecknr\fP \(em check nroff/troff files"
+.LP
+.B checknr
+checks a list of
+.BR nroff (1)
+or
+.BR troff (1)
+input files for certain kinds of errors
+involving mismatched opening and closing delimiters and
+unknown commands. If no files are specified,
+.B checknr
+checks the standard input.
+Delimiters checked are:
+.RS
+.TP 3
+\(bu
+Font changes using \fB\ef\fIx \fR.\|.\|. \fB\efP\fR.
+.TP
+\(bu
+Size changes using \fB\es\fIx \fR.\|.\|. \fB\es0\fR.
+.TP
+\(bu
+Macros that come in open .\|.\|. 
+close forms, for example, the
+.SB \&.TS
+and
+.SB \&.TE
+macros which must always come in pairs.
+.RE
+.LP
+.B checknr
+knows about the
+.BR ms (7)
+and
+.BR me (7)
+macro packages.
+.LP
+.B checknr
+is intended to be used on documents that are prepared with
+.B checknr
+in mind.  It expects a certain
+document writing style for
+.B \ef
+and
+.B \es
+commands, in that each
+.BI \ef x
+must be terminated with
+.B \efP
+and each
+.BI \es x
+must be terminated with
+.BR \es0 .
+While it will work to directly go into the next font
+or explicitly specify the
+original font or point size, and many existing
+documents actually do this,
+such a practice will produce complaints from
+.BR checknr .
+Since it is probably better to use the
+.B \efP
+and
+.B \es0
+forms anyway, you
+should think of this as a contribution to your
+document preparation style.
+.SH OPTIONS
+.TP
+.B \-f
+Ignore
+.B \ef
+font changes.
+.TP
+.B \-s
+Ignore
+.B \es
+size changes.
+.TP
+.BI "\-a ." "x1 " . y1\fR.\|.\|. 
+Add pairs of macros to the list.
+The pairs of macros are assumed
+to be those (such as
+.SB \&.DS
+and
+.BR \s-1.DE\s0 )
+that should be checked for
+balance.  The
+.B \-a
+option must be followed by groups of six characters,
+each group defining a pair of macros. 
+The six characters are a period, the
+first macro name, another period, and the second macro name.
+For example, to define a pair
+.SB \&.BS
+and
+.BR \s-1.ES\s0 ,
+use
+.RB ` "\-a.\s-1BS.ES\s0" '
+.TP
+.BI "\-c ." x1\fR\|.\|.\|.
+Define commands which
+.B checknr
+would otherwise complain about
+as undefined.
+.SH SEE\ ALSO
+.BR eqn (1),
+.BR nroff (1),
+.BR troff (1),
+.BR me (7), 
+.BR ms (7)
+.SH BUGS
+There is no way to define a one-character macro name using the
+.B \-a 
+option.

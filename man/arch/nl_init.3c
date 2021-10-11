@@ -1,0 +1,79 @@
+.\" @(#)nl_init.3c 1.1 92/07/30 SMI; from XPG2
+.TH NL_INIT 3C "22 January 1990"
+.SH NAME
+nl_init - initialize NLS operation
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int nl_init (lang)
+char *lang;
+.fi
+.ft R
+.SH DESCRIPTION
+.IX "nl_init()" "" "\fLnl_init()\fR \(em initialize NLS operation" ""
+.LP
+.B nl_init(\|) 
+initializes 
+.SM NLS 
+operation for the language identified by
+.IR lang ,
+which is a pointer to a string containing settings of
+.IR language ,
+.I territory
+and
+.I codeset
+as defined for the
+.SB LANG
+environment variable (see
+.B environ (5V)).
+.LP
+Typically, 
+.B nl_init(\|)
+is used to bind program operation to the user's specified 
+language requirements, that is
+.LP
+.RS
+.ft B
+nl_init (getenv ("LANG"));
+.ft R
+.RE
+.LP
+A call to
+.B nl_init(\|)
+will fail if the string pointed to by
+.I lang
+does not identify a valid 
+.IR language / territory / codeset
+combination.
+If 
+.B nl_init(\|)
+has already been called successfully,
+operation will continue for the language identified on the last
+successful call.
+Otherwise, if
+.B nl_init(\|) 
+has not already been called successfully,
+the various
+.SM NLS
+library functions will each revert to their own
+default mode of operation.
+.SH RETURN VALUE
+.LP
+If successful,
+.B nl_init(\|)
+returns 0,
+otherwise, \-1 is returned.
+.SH SEE ALSO
+.BR getenv (3V),
+.BR environ (5V)
+.SH APPLICATION USAGE
+.LP
+An internationalized application program will not provide the 
+correct language operation until
+.B nl_init(\|)
+has been called successfully.
+Subsequent calls to
+.B nl_init(\|)
+can be used to switch operation from one 
+supported language to another.

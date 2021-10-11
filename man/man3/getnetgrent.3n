@@ -1,0 +1,126 @@
+.\" @(#)getnetgrent.3n 1.1 92/07/30 SMI
+.TH GETNETGRENT 3N "14 December 1987"
+.SH NAME
+getnetgrent, setnetgrent, endnetgrent, innetgr \- get network group entry
+.SH SYNOPSIS
+.nf
+.ft B
+getnetgrent(machinep, userp, domainp)
+char **machinep, **userp, **domainp;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+setnetgrent(netgroup)
+char *netgroup
+.ft R
+.fi
+.LP
+.nf
+.ft B
+endnetgrent(\|)
+.ft R
+.fi
+.LP
+.nf
+.ft B
+innetgr(netgroup, machine, user, domain)
+char *netgroup, *machine, *user, *domain;
+.ft R
+.fi
+.IX  get "network group entry \(em \fLgetnetgrent()\fR"
+.IX  set "network group entry \(em \fLsetnetgrent()\fR"
+.IX  "network group entry, get \(em \fLgetnetgrent()\fR"
+.IX  "group entry, network \(em \fLgetnetgrent()\fR"
+.IX  "getnetgrent()"  ""  "\fLgetnetgrent()\fP \(em get network group entry"
+.IX  "setnetgrent()"  ""  "\fLsetnetgrent()\fP \(em get network group entry"
+.IX  "endnetgrent()"  ""  "\fLendnetgrent()\fP \(em get network group entry"
+.IX  "innetgr()"  ""  "\fLinnetgr()\fP \(em get network group entry"
+.SH DESCRIPTION
+.LP
+.B getnetgrent(\|)
+returns the next member of a network group.
+After the call,
+.I machinep
+will contain a pointer to a string containing the name
+of the machine part of the network group member, and similarly for
+.I userp
+and
+.IR domainp .
+If any of
+.IR machinep ,
+.I userp
+or
+.I domainp
+is returned as a
+.SM NULL
+pointer, it signifies a wild card.
+.B getnetgrent(\|)
+will use
+.BR malloc (3V)
+to allocate space for the name.
+This space is released when a
+.B endnetgrent(\|)
+call is made.
+.B getnetgrent(\|)
+returns 1 if it succeeded in obtaining another
+member of the network group, 0 if it has reached the
+end of the group.  
+.LP
+.B getnetgrent(\|)
+establishes the network group from which
+.B getnetgrent(\|)
+will obtain members, and also restarts calls to
+.B getnetgrent(\|)
+from the beginning of the list.
+If the previous
+.B setnetgrent(\|)
+call was to a different network group, a
+.B endnetgrent(\|)
+call is implied.
+.B endnetgrent(\|)
+frees the space allocated during the
+.B getnetgrent(\|)
+calls.
+.B innetgr
+returns 1 or 0, depending on whether
+.I netgroup
+contains the machine, user, domain triple as a member.
+Any of the three strings
+.IR machine ,
+.IR user ,
+or
+.I domain
+can be
+.SM NULL\s0,
+in which case it signifies a wild card.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/netgroup
+.\" .TP
+.\" .BI /var/yp/ domain /netgroup
+.\" .TP
+.\" .BI /var/yp/ domain /netgroup.byuser
+.\" .TP
+.\" .BI /var/yp/ domain /netgroup.byhost
+.PD
+.SH WARNINGS
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+must be running when using
+.B getnetgrent(\|), 
+since it
+only inspects the
+.SM NIS
+netgroup map, never the local files.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

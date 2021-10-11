@@ -1,0 +1,253 @@
+.\" @(#)bin-mail.1 1.1 92/07/30 SMI;
+.TH BIN-MAIL 1 "28 November 1988"
+.SH NAME
+bin-mail, binmail \- an early program for processing mail messages
+.SH SYNOPSIS
+.B /usr/bin/mail
+[
+.B \-ipq
+]
+[
+.B \-f 
+.I filename
+] 
+.I address
+.br
+.B /usr/bin/mail
+.\"[
+.\".B \-d
+.\"]
+.\"[
+.\".B \-i
+.\"]
+.\"[
+.\".B \-r
+.\".I name
+.\"]
+.I recipient
+\&.\|.\|.
+.SH DESCRIPTION
+.IX  binmail  ""  "\fLbinmail\fP \(em version 7 mail"
+.IX  "mail services"  "binmail command"  ""  "\fLbinmail\fP \(em version 7 mail"
+.LP
+Note: This is the old version 7
+.SM UNIX
+system mail program.  The default
+.B mail
+command,
+.B /usr/ucb/mail
+is described in
+.BR mail (1).
+.LP
+.B /usr/bin/mail
+with no
+.I address
+prints a user's mail, message-by-message
+in last-in, first-out order.
+.B /usr/bin/mail
+accepts commands from the standard input to direct
+disposition messages.
+.LP
+When
+.IR address es
+are named,
+.B /usr/bin/mail
+takes the standard input up to an
+.SM EOF
+(or a line with just
+.RB ` . ')
+and routes it through the mailer daemon to each
+.IR recipient .
+See
+.BR sendmail (8)
+for details.
+The message is preceded by
+the sender's name and a postmark.
+Lines that look like postmarks are prepended with 
+.RB ` > '.
+A
+.I recipient
+is a user name recognized by
+.BR login (1),
+a network address or local mail alias, or a filename
+(see
+.BR aliases (5)
+for details).
+.LP
+If there is any pending mail,
+.B login
+tells you there is mail when you log in.  It is also
+possible to have the C shell,
+or the daemon
+.B biff
+tell you about mail that arrives while you are logged in.
+.LP
+To forward mail automatically, add the addresses of additional 
+recipients to the 
+.B .forward
+file in your home directory.  Note: forwarding addresses
+must be valid, or the messages will bounce.  You cannot, for
+instance, reroute your mail to a new host by forwarding it to
+your new address if it is not yet listed in the 
+Network Information Service
+(\s-1NIS\s0) 
+aliases domain.
+.\".SH OPTIONS
+.\".LP
+.\".SS Printing Mail
+.\".TP "\w'm [ person ] . . . \ \ \ \ \ 'u"
+.\".B \-r
+.\"print in reverse order.
+.\".TP
+.\".BI \-h count\fR
+.\"print in reverse order.
+.SH OPTIONS
+.TP 15
+.B \-i
+Ignore interrupts.
+.TP
+.B \-p
+Print messages without prompting for commands.  Exit 
+immediately upon receiving an interrupt.
+.TP
+.B \-q
+Quit immediately upon interrupt.
+.TP
+.BI \-f " filename"
+Use
+.I filename
+as if it were the mail file.
+.\".TP
+.\".B \-d
+.\"deliver mail directly, don't route the message through
+.\".BR sendmail .
+.\"This option is often used by programs that send mail.
+.\".TP
+.\".B \-i
+.\"continue after interrupts \(em an interrupt normally terminates the
+.\".I /usr/bin/mail
+.\"command and leaves the mail file unchanged.
+.\".TP
+.\"\fB\-r \fIname\fR
+.\"specify a string to appear as the name of the sender.
+.SH USAGE
+.TP "\w'm [ person ] . . . \ \ \ \ \ 'u"
+.B ?
+Print a command summary.
+.TP
+.SM CTRL-D
+Put unexamined mail back in the mail file and quit.
+.TP
+.BI ! command
+Escape to the shell to do
+.IR command .
+.TP
+.B \-
+Go back to previous message.
+.TP
+.B +
+Go on to next message.
+.TP
+.SB RETURN
+Go on to next message.
+.TP
+.B d
+Delete message and go on to the next.
+.TP
+.B dq
+Delete message and quit.
+.TP
+.BI "m [" " recipient " ]
+\&.\|.\|.
+Mail the message to the named
+.IR recipient s
+(yourself is default).
+.TP
+.B n
+Go on to next message.
+.TP
+.B p
+Print message (again).
+.TP
+.B q
+Same as
+.SM EOT\s0 .
+.br
+.ne 8
+.TP
+.BI "s [" " filename" "] \fR\&.\|.\|."
+Save the message in the named
+.IR filename s
+.RB (` mbox '
+default).  If saved successfully, remove it from
+the list and go on to the next message.
+.TP
+.BI "w [" " filename " "] \fR.\|.\|.
+Save the message, without a header, in the named
+.IR filename s
+.RB (` mbox '
+default).  If saved successfully, remove it from
+the list and go on to the next message.
+.TP
+.B x
+Exit without changing the mail file.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+to identify sender and locate address
+.TP
+.B /var/spool/mail/*
+incoming mail for user *
+.TP
+.B /usr/ucb/mail
+routes input through daemon to 
+.IR recipient s
+.TP 
+.B mbox
+saved mail
+.TP
+.B /tmp/ma*
+temp file
+.TP
+.B /var/spool/mail/*.lock
+lock for mail directory
+.TP
+.B dead.letter
+unmailable text is saved here
+.TP
+.B $\s-1HOME\s0/.forward
+list of forwarding recipients
+.PD
+.SH "SEE ALSO"
+.LP
+.BR biff (1), 
+.BR csh (1),
+.BR des (1),
+.BR login (1),
+.BR mail (1),
+.BR uucp (1C),
+.BR uux (1C),
+.BR write (1),
+.BR xsend (1),
+.BR crypt (3),
+.BR aliases (5),
+.BR sendmail (8)
+.SH BUGS
+.LP
+Race conditions sometimes result in a failure to remove a lock file.
+.LP
+The super-user can read your mail, unless it is encrypted by
+.BR des (1),
+.BR xsend (1),  
+or
+.BR crypt (3).
+Even if you encrypt it, the super-user can delete it.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

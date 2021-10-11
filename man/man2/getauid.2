@@ -1,0 +1,84 @@
+.\" @(#)getauid.2 1.1 92/07/30 SMI;
+.TH GETAUID 2 "21 January 1990"
+.SH NAME
+getauid, setauid \- get and set user audit identity
+.SH SYNOPSIS
+.nf
+.ft B
+int getauid()
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setauid(auid)
+int auid;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "getauid function"  "" "\fLgetauid()\fP function"
+.IX "getauid function"  "" "\fLsetauid()\fP function"
+.LP
+The
+.B getauid(\|)
+system call returns the audit user
+.SM ID
+for the current process.
+This value is initially set at login time
+and inherited by all child processes.
+This value does not change when the real/effective user
+.SM ID\s0s
+change,
+so it can be used to identify the logged-in user, even when running
+a setuid program.
+The audit user
+.SM ID
+governs audit decisions for a process.
+.LP
+The
+.B setauid(\|)
+system call sets the audit user
+.SM ID
+for the current process.
+Only the super-user may successfully execute these calls.
+.SH RETURN VALUES
+.LP
+.B getauid(\|)
+returns
+the audit user
+.SM ID
+of the current process
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.LP
+.B setauid(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+The parameter
+.I auid
+is not a valid
+.SM UID\s0.
+.TP
+.SM EPERM
+The process's effective user
+.SM ID
+is not super-user.
+.SH "SEE ALSO"
+.BR getuid (2V),
+.BR setuseraudit (2),
+.BR audit (8)

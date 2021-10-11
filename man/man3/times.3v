@@ -1,0 +1,116 @@
+.\" @(#)times.3v 1.1 92/07/30 SMI; from UCB 4.2
+.TH TIMES 3V "21 January 1990"
+.SH NAME
+times \- get process times
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/times.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int times(buffer)
+struct tms *buffer;
+.ft
+.fi
+.IX  get "process times \(em \fLtimes()\fP"
+.IX  process "get times \(em \fLtimes()\fP"
+.IX  "times()"  ""  "\fLtimes()\fP \(em get process times"
+.SH SYSTEM V SYNOPSIS
+.LP
+.ft B
+.nf
+clock_t times(buffer)
+struct tms *buffer;
+.fi
+.ft
+.SH DESCRIPTION
+.LP
+This interface is obsoleted by
+.BR getrusage (2).
+.LP
+.B times(\|)
+returns time-accounting information for the
+current process and for the terminated child
+processes of the current process.  All times are in
+1/\s-1HZ\s0 seconds, where
+.SM HZ
+is 60.
+.LP
+.I buffer
+points to the following structure:
+.RS
+.ft B
+.nf
+struct tms {
+	clock_t	tms_utime;		/* user time */
+	clock_t	tms_stime;		/* system time */
+	clock_t	tms_cutime;		/* user time, children */
+	clock_t	tms_cstime;		/* system time, children */
+};
+.ft R
+.fi
+.RE
+.LP
+This information comes from the calling process
+and each of its terminated child processes
+for which it has executed a
+.BR wait (2V).
+.LP
+.B tms_utime
+is the
+.SM CPU
+time used while executing instructions
+in the user space of the calling process.
+.LP
+.B tms_stime
+is the
+.SM CPU
+time used by the system on behalf of the calling process.
+.LP
+.B tms_cutime
+is the sum of the
+.BR tms_utime s
+and
+.BR tms_cutime s
+of the child processes.
+.LP
+.B tms_cstime
+is the sum of the
+.BR tms_stime s
+and
+.BR tms_cstime s
+of the child processes.
+.SH RETURN VALUES
+.LP
+.B times(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.SH SYSTEM V RETURN VALUES
+.LP
+Upon successful completion,
+.B times(\|)
+returns the elapsed real time, in 60ths of a
+second, since an arbitrary point in the past.
+This point does not change from one invocation of
+.B times(\|)
+to another within the same process.
+On failure,
+.B times(\|)
+returns
+.B (clock_t)
+\-1.
+.SH SEE ALSO
+.BR time (1V),
+.BR getrusage (2),
+.BR wait (2V),
+.BR time (3V)

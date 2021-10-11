@@ -1,0 +1,248 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)lpc.8 1.1 92/07/30 SMI; from UCB 4.3 BSD 6.1
+.\"
+.TH LPC 8 "9 September 1987"
+.SH NAME
+lpc \- line printer control program
+.SH SYNOPSIS
+.B /usr/etc/lpc
+[
+.I command
+[
+.IR parameter .\|.\|.
+] ]
+.SH DESCRIPTION
+.IX  "lpc command"  ""  "\fLlpc\fP \(em line printer control"
+.IX  "control line printer"  ""  "control line printer \(em \fLlpc\fP" ""  PAGE START
+.IX  "line printer control"  ""  "line printer control \(em \fLlpc\fP" ""  PAGE START
+.IX  printer "control \(em \fLlpc\fP"
+.LP
+.B lpc
+controls the operation of the printer, or of multiple printers,
+as described in the
+.B /etc/printcap
+database.
+.B lpc
+commands can be used to start or stop a printer, disable or enable
+a printer's spooling queue, rearrange the order of jobs in a queue,
+or display the status of each printer\(em\&along with its
+spooling queue and printer daemon.
+.LP
+With no arguments,
+.B lpc
+runs interactively, prompting with
+.BR lpc> .
+If arguments are supplied,
+.BR lpc
+interprets the first as a
+.IR command
+to execute; each subsequent argument is taken as a
+.I parameter
+for that command.
+The standard input can be redirected so that
+.B lpc
+reads commands from a file.
+.SH USAGE
+.SS Commands
+Commands may be abbreviated to an unambiguous substring.  Note: the
+.I printer
+parameter is specified just by the name of the printer (as
+.BR  lw ),
+not as you would specify it to
+.BR lpr (1)
+or
+.BR lpq (1)
+(not as
+.BR  \-Plw ).
+.PD 0
+.HP
+.B ?
+.RI [ command ]\|.\|.\|.
+.br
+.HP
+.B help
+.RI [ command ]\|.\|.\|.
+.br
+Display a short description of each
+command specified in the argument list,
+or, if no arguments are given, a list of the recognized commands.
+.PD
+.HP
+.B abort
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  abort  ""  "abort \(em \fLlpc\fP"
+.IX  "abort printer"  ""  "abort printer \(em \fLlpc\fP"
+Terminate an active spooling daemon on the local host immediately and
+then disable printing (preventing new daemons from being started by
+.BR lpr (1))
+for the specified printers.  The
+.B abort
+command can only be used by the super-user.
+.HP
+.B clean
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  "clean queue"  ""  "clean queue \(em \fLlpc\fP"
+.IX  "clean print queue"  ""  "clean print queue \(em \fLlpc\fP"
+Remove all files with names beginning with
+.BR cf ,
+.BR tf ,
+or
+.B df
+from the specified printer queue(s) on the local machine.  The
+.B clean
+command can only be used by the super-user.
+.HP
+.B disable
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  "disable queue"  ""  "disable queue \(em \fLlpc\fP"
+.IX  "disable print queue"  ""  "disable print queue \(em \fLlpc\fP"
+Turn the specified printer queues off.  This prevents new
+printer jobs from being entered into the queue by
+.BR lpr (1).
+The
+.B disable
+command can only be used by the super-user.
+.HP
+.B down
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.RI [ message ]
+.br
+.IX  printer  "take printer down"  ""  "take printer down\(em \fLlpc\fP"
+.IX  "down, take printer"  ""  "down, take printer \(em \fLlpc\fP"
+Turn the specified printer queue off, disable printing and put
+.I message
+in the printer status file. The message doesn't need to be
+quoted, the
+remaining arguments are treated like
+.BR echo (1V).
+This is normally used to take a printer down and let others know why
+.RB ( lpq (1)
+indicates that the printer is down, as does the
+.B status
+command).
+.HP
+.B enable
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  "enable queue"  ""  "enable queue \(em \fLlpc\fP"
+.IX  "enable print queue"  ""  "enable print queue \(em \fLlpc\fP"
+Enable spooling on the local queue for the listed printers, so that
+.BR lpr (1)
+can put new jobs in the spool queue.  The
+.B enable
+command can only be used by the super-user.
+.TP
+.B exit
+.PD 0
+.TP
+.B quit
+Exit from
+.BR lpc .
+.PD
+.HP
+.B restart
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  restart  ""  "restart \(em \fLlpc\fP"
+.IX  "restart printer"  ""  "restart printer \(em \fLlpc\fP"
+Attempt to start a new printer daemon. This is useful when some abnormal
+condition causes the daemon to
+die unexpectedly leaving jobs in the queue.
+.BR lpq (1)
+reports that there is no daemon present when this condition occurs.
+This command can be run by any user.
+.HP
+.B start
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  start  ""  "start \(em \fLlpc\fP"
+.IX  "start printer"  ""  "start printer \(em \fLlpc\fP"
+Enable printing and start a spooling
+daemon for the listed printers.  The
+.B start
+command can only be used by the super-user.
+.HP
+.B status
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+.IX  printer  "status of"  ""  "status of \(em \fLlpc\fP"
+.IX  "status of printer"  ""  "status of printer \(em \fLlpc\fP"
+Display the status of daemons and queues on the local machine.
+This command can be run by any user.
+.IX  printer  stop  ""  "stop \(em \fLlpc\fP"
+.IX  "stop printer"  ""  "stop printer \(em \fLlpc\fP"
+.HP
+.B stop
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+.br
+Stop a spooling daemon after the current
+job completes and disable printing.  The
+.B stop
+command can only be used by the super-user.
+.HP
+.B topq
+.I printer
+.RI [\| job# \|.\|.\|.\|]
+.RI [\| user \|.\|.\|.\|]
+.br
+.IX  "move print jobs"  ""  "move print jobs \(em \fLlpc\fP"
+.IX  printer  "move jobs"  ""  "move jobs \(em \fLlpc\fP"
+Move the print job(s) specified by
+.I job#
+or those job(s) belonging to
+.I user
+to the top (head) of the printer queue.  The
+.B topq
+command can only be used by the super-user.
+.HP
+.B up
+.RB [\| all \||
+.RI [\| printer  \|.\|.\|.\|]\|]
+Enable everything and start a new printer daemon.  Undoes the
+effects of
+.BR down .
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/printcap
+printer description file
+.TP
+.B /var/spool/*
+spool directories
+.TP
+.B /var/spool/*/lock
+lock file for queue control
+.PD
+.SH "SEE ALSO"
+.BR lpq (1),
+.BR lpr (1),
+.BR lprm (1),
+.BR printcap (5),
+.BR lpd (8)
+.SH DIAGNOSTICS
+.TP
+.B ?Ambiguous command
+The abbreviation you typed matches more than one command.
+.TP
+.B ?Invalid command
+You typed a command or abbreviation that was not recognized.
+.TP
+.B ?Privileged command
+You used a command can be executed only by the super-user.
+.IX  "control line printer"  ""  "control line printer \(em \fLlpc\fP" ""  PAGE END
+.IX  "line printer control"  ""  "line printer control \(em \fLlpc\fP" ""  PAGE END

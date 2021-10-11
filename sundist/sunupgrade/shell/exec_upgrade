@@ -1,0 +1,772 @@
+#
+#       @(#)exec_upgrade	1.4 8/28/91 SMI
+#
+##################################################
+install_vmunix(){
+#
+# Copy and verify the kernel.
+# If vmunix.orig exists, do not save the existing version.
+# If copy operation fails, try one more time.
+#
+log_echo "Installing vmunix..."
+if [ ! -s $1 ]; then
+    log_echo "Can't find vmunix in $1!"
+elif $DUMMY ; then
+    return
+else
+    [ -f /vmunix ] && \
+	[ ! -s /vmunix.orig ] && \
+	    $BACKUP && \
+	        $MV /vmunix /vmunix.orig
+	    
+    sum1=`$SUM $1`
+    for i in 1 2; do
+	$CP -p $1 /vmunix
+	$SYNC; $SYNC
+	sum2=`$SUM /vmunix`
+	[ "$sum1" = "$sum2" ] && break
+	if [ "$i" = 2 ]; then
+            log_echo "Unable to install new kernel for $HOST!"
+            if [ ! -f /vmunix.orig ]; then
+		log_echo "Cannot restore original kernel..."
+		break
+	    fi
+            log_echo "Restoring original kernel..."
+            $MV /vmunix.orig /vmunix
+            $SYNC; $SYNC
+        fi
+    done
+fi
+}
+##################################################
+install_kadb(){
+log_echo "Installing kadb ..."
+    if [ ! -s $1/kadb ]; then
+        log_echo "Can't find kadb in $1!"
+    elif $DUMMY ; then
+	return
+    else
+        $CP -p $1/kadb /kadb
+        $SYNC; $SYNC
+    fi
+}
+##################################################
+install_boot_block(){
+#
+# Install boot block
+#
+    log_echo "Installing bootblock ..."
+    DISK=`$MOUNT | $GREP ' / ' |\
+	 $NAWK '{print $1}' |\
+	 $NAWK -F/ '{print $3}'`
+    DISKTYPE=`$ECHO $DISK | colrm 3`
+    if $DUMMY ; then
+	return
+    fi
+    $CP -p /usr/kvm/stand/boot.$KARCH /boot
+    if [ $? = 1 ]; then
+        log_echo "Unable to install new bootblock for $HOST!"
+	return
+    fi
+    $SYNC; $SYNC
+    cd /usr/mdec
+    ./installboot -v /boot boot"$DISKTYPE" /dev/r"$DISK"
+    $SYNC; $SYNC
+}
+##################################################
+fix_sbin(){
+#
+# Copy /sbin directory commands
+#
+    dest=$1
+    log_echo "Copying /sbin commands..."
+    here=`$PWD`
+    $GREP '^appl' /usr/etc/install/install.bin |\
+    $NAWK '{ print "'$CP' "$2 " '$dest'" $3}' > $TMP_PATH/com_$$
+    if $DUMMY ; then
+        cat_it $TMP_PATH/com_$$
+    else
+	here=`$PWD`
+	$CD /usr 
+        . $TMP_PATH/com_$$
+	$CD $here
+    fi
+    $RM  $TMP_PATH/com_$$
+}
+##################################################
+edit_etc_exports (){
+[ ! -f $1 ] && return
+    $MV $1 $TMP
+    $SED "/sun3/!s@sunos.4.1.*@sunos.$TO_RELEASE@" $TMP |\
+      while read line; do
+       file_line=`$ECHO $line | $NAWK '{print $1}'`
+       if [ -h $file_line ]; then
+          dir=`$LS -l $file_line | $NAWK '{print $NF}'`
+          $ECHO $dir
+       else
+	  $ECHO $line
+       fi
+      done | \
+ $NAWK '{x[NR] = $0} 
+       END { 
+       dup = 0
+       for (i=1; i<=NR; i++) { 
+         for (j=1; j<i; j++) 
+	    if (index(x[i], x[j])) dup = 1 
+	 if (dup == 0) print x[i] 
+         else dup = 0 
+       } 
+       }'  > $1
+    $RM $TMP
+log_echo Fixing $1
+}
+##################################################
+edit_arch_str (){
+[ ! -f $1 ] && return
+    $ED -s $1 << END > /dev/null
+/^arch_str/
+c
+arch_str=$2
+.
+w
+q
+END
+log_echo Fixing $1
+}
+##################################################
+edit_arch_file (){
+[ ! -f $1 ] && return
+$SED "/^sun4.sun4/s/sunos\.4\.1\.[123].*/sunos.$TO_RELEASE/" $1>$TMP
+$SORT -u $TMP > $1
+$RM $TMP
+log_echo Fixing $1
+}
+##################################################
+fix_sys_info (){
+[ ! -f $1 ] && return
+$SED "s/sunos\.4\.1\.[123].*/sunos.$TO_RELEASE/" $1>$TMP
+$MV $TMP $1
+log_echo Fixing $1
+}
+##################################################
+edit_media_file() {
+[ ! -f $1 ] && return
+[ ! -s $NAME_LIST ] && return
+for pck in `$CAT $NAME_LIST`; do
+    if [ $pck != Sys ]; then
+    $SED "/mf_name=$pck/,/mf_loaded/s/mf_loaded=no/mf_loaded=yes/" $1 \
+	> $TMP
+    $MV $TMP $1
+    fi
+done
+log_echo Fixing $1
+}
+#################################################
+add_sys() {
+[ ! -f $1 ] && return
+$SED "/mf_name=Sys/,/mf_loaded/s/mf_loaded=no/mf_loaded=yes/" $1 \
+	> $TMP
+$MV $TMP $1
+log_echo Adding Sys to $1
+} 
+##################################################
+fix_release(){
+    log_echo "Fixing release records ..."
+    if $DUMMY ; then
+	return
+    fi
+    if [  $TYPE != dataless -a -d /usr/sys/conf.common ]; then
+        $ECHO $TO_RELEASE > /usr/sys/conf.common/RELEASE
+    fi
+    release_string="$AARCH.$KARCH.sunos.$TO_RELEASE"
+    $ECHO $release_string > $INSDIR/release
+
+    edit_arch_file $INSDIR/arch_info 
+    edit_arch_file $INSDIR/arch_list 
+    fix_sys_info $INSDIR/sys_info
+
+# rename and edit soft_info.<aarch>.<karch>.sunos.<FROM_RELEASE> file
+ for karch in $KARCH1 $KARCH2 $KARCH3; do
+# for soft_info
+    SRENAMED=false
+    s_rel=""
+# for media_files
+    MRENAMED=false
+    m_rel=""
+    [ $karch = $KARCH1 ] && filename=$sun4_RELEASE_LST
+    [ $karch = $KARCH2 ] && filename=$sun4c_RELEASE_LST
+    [ $karch = $KARCH3 ] && filename=$sun4m_RELEASE_LST
+    new_release_str=$AARCH.$karch.sunos.$TO_RELEASE
+    if [ -f $INSDIR/soft_info.$AARCH.$karch.sunos.$FROM_RELEASE ]; then
+	$MV $INSDIR/soft_info.$AARCH.$karch.sunos.$FROM_RELEASE \
+	    $INSDIR/soft_info.$new_release_str
+	s_rel=$FROM_RELEASE
+	SRENAMED=true
+    fi
+    if [ -f $INSDIR/media_file.$AARCH.$karch.sunos.$FROM_RELEASE ]; then
+	$MV $INSDIR/media_file.$AARCH.$karch.sunos.$FROM_RELEASE \
+	    $INSDIR/media_file.$new_release_str
+	m_rel=$FROM_RELEASE
+	MRENAMED=true
+    fi 
+if [ -s $filename ]; then
+    for rel in `$CAT $filename`; do 
+    if [ $rel != $TO_RELEASE ]; then
+	old_release_str=$AARCH.$karch.sunos.$rel
+	if [ $SRENAMED = false ] && [ -f $INSDIR/soft_info.$old_release_str ]; then
+	    $MV $INSDIR/soft_info.$old_release_str \
+                $INSDIR/soft_info.$new_release_str
+	    s_rel=$rel
+	    SRENAMED=true
+	elif $SRENAMED && [ -f $INSDIR/soft_info.$old_release_str ] \
+	    && [ $rel != $s_rel ]; then
+	    $RM $INSDIR/soft_info.$old_release_str
+	fi
+# rename and edit media_files
+        if [ $MRENAMED = false ] && [ -f $INSDIR/media_file.$old_release_str ]; then
+            $MV $INSDIR/media_file.$old_release_str \
+	        $INSDIR/media_file.$new_release_str
+	    MRENAMED=true
+	    m_rel=$rel
+        elif $MRENAMED && [ -f $INSDIR/media_file.$old_release_str ] \
+	    && [ $rel != $m_rel ]; then
+            $RM $INSDIR/media_file.$old_release_str
+        fi
+    fi
+    done
+fi
+    fix_sys_info $INSDIR/soft_info.$new_release_str
+    edit_arch_str $INSDIR/media_file.$new_release_str \
+					 $new_release_str
+
+   edit_media_file $INSDIR/media_file.$new_release_str
+  done
+
+# rename and edit appl_media_file
+    RENAMED=false
+    r_rel=""
+    if [ -f $INSDIR/appl_media_file.$AARCH.sunos.$FROM_RELEASE ]; then
+	$MV $INSDIR/appl_media_file.$AARCH.sunos.$FROM_RELEASE \
+	    $INSDIR/appl_media_file.$AARCH.sunos.$TO_RELEASE
+	r_rel=$FROM_RELEASE
+	RENAMED=true
+    fi
+    if [ -s $RELEASE_LST ]; then
+    for rel in `$CAT $RELEASE_LST`; do
+    if [ $rel != $TO_RELEASE ]; then
+    if [ $RENAMED = false ] && [ -f $INSDIR/appl_media_file.$AARCH.sunos.$rel ]; then 
+        $MV $INSDIR/appl_media_file.$AARCH.sunos.$rel \
+            $INSDIR/appl_media_file.$AARCH.sunos.$TO_RELEASE
+        RENAMED=true
+        r_rel=$rel
+    elif [ $RENAMED ] && [ -f $INSDIR/appl_media_file.$AARCH.sunos.$rel ] \
+&& [ $rel != $r_rel ]; then
+        $RM $INSDIR/appl_media_file.$AARCH.sunos.$rel
+    fi
+    fi
+    done
+    fi
+        
+# rename and edit media_files
+    edit_arch_str  $INSDIR/appl_media_file.$AARCH.sunos.$TO_RELEASE  \
+						$release_string 
+
+}
+##################################################
+fix_links(){
+    log_echo "Fixing links in /export/exec, /export/exec/kvm,  /export/share ..."
+    if $DUMMY ; then
+	return
+    fi
+    here=`$PWD`
+    $CD /export/exec
+    if [ -d sunos.$TO_RELEASE ]; then
+	$RM -rf sunos.$TO_RELEASE
+    fi
+    if [ -h $AARCH.sunos.$FROM_RELEASE ]; then
+	$MV $AARCH.sunos.$FROM_RELEASE \
+	    $AARCH.sunos.$TO_RELEASE
+    else
+	$LN -s /usr $AARCH.sunos.$TO_RELEASE
+    fi
+    if [ -s $RELEASE_LST ]; then
+       for str in `$CAT $RELEASE_LST`; do
+           if [ -d $AARCH.sunos.$str ] && [ $str != $TO_RELEASE ]; then
+	      $RM -rf $AARCH.sunos.$str 2>/dev/null
+           fi
+       done
+    fi
+    if [ ! -h $AARCH ]; then
+       $LN -s /usr $AARCH 
+    fi
+    $CD /export/share
+    if [ -d sunos.$TO_RELEASE ]; then
+	$RM -rf sunos.$TO_RELEASE
+    fi
+    if [ -h sunos.$FROM_RELEASE ]; then
+	$MV sunos.$FROM_RELEASE \
+	    sunos.$TO_RELEASE
+    else
+	$LN -s /usr/share sunos.$TO_RELEASE
+    fi
+    if [ -s $RELEASE_LST ]; then
+       for str in `$CAT $RELEASE_LST`; do
+           if [ -d sunos.$str ] && [ $str != $TO_RELEASE ]; then
+	      $RM -rf sunos.$str 2>/dev/null
+           fi
+       done
+    fi
+    $CD $here
+    relink_kvm $KARCH1
+    relink_kvm $KARCH2
+    relink_kvm $KARCH3
+    edit_etc_exports /etc/exports
+}
+##################################################
+relink_kvm(){
+    karch=$1
+    here=`$PWD`
+    $CD /export/exec/kvm
+    r_str=""
+    RENAMED=false
+    if [ -d $karch.sunos.$TO_RELEASE ]; then
+	$RM -rf $karch.sunos.$TO_RELEASE
+    fi
+    if [ -h $karch.sunos.$FROM_RELEASE ]; then
+	kvm_dir=`$LS -l $karch.sunos.$FROM_RELEASE | \
+				$NAWK '{print $NF}'`
+	if [ $kvm_dir = /usr/kvm ]; then
+	    $MV $karch.sunos.$FROM_RELEASE \
+	        $karch.sunos.$TO_RELEASE
+	    RENAMED=true
+	else
+	    $RM $karch.sunos.$FROM_RELEASE
+	    new_kvm_dir=`$ECHO $kvm_dir | \
+		$SED "s@sunos.$FROM_RELEASE@sunos.$TO_RELEASE@"`
+	    [ -d $kvm_dir -o -h $kvm_dir ] && \
+	    $MV $kvm_dir $new_kvm_dir
+	    $LN -s $new_kvm_dir $karch.sunos.$TO_RELEASE
+	    RENAMED=true
+	fi
+        r_str=$FROM_RELEASE
+    elif [ -d $karch.sunos.$FROM_RELEASE ]; then
+	$MV $karch.sunos.$FROM_RELEASE \
+	    $karch.sunos.$TO_RELEASE
+	RENAMED=true
+	r_str=$FROM_RELEASE
+    fi
+    if [ -s $RELEASE_LST ]; then
+       for str in `$CAT $RELEASE_LST`; do
+	  if [ $str != $TO_RELEASE ]; then
+          if $RENAMED && [ -d $karch.sunos.$str ] && [ $str != $r_str ]; then
+	     $RM -rf $karch.sunos.$str 2>/dev/null
+          elif [ $RENAMED = false ] && [ -d $karch.sunos.$str ]; then
+	     $MV $karch.sunos.$str \
+                 $karch.sunos.$TO_RELEASE
+	  RENAMED=true
+	  r_str=$str
+          fi
+	  fi
+       done
+    fi
+## Make a link on the /export/exec/kvm/<karch>
+    if [ -h $karch ]; then
+	$RM -rf $karch
+    fi
+    if [ -d $karch.sunos.$TO_RELEASE ]; then
+       $LN -s $karch.sunos.$TO_RELEASE $karch 
+    fi
+    $CD $here
+}
+##################################################
+upgrade_package(){
+name=$1
+export_point=$2
+karch=$3
+release=$4
+    if [ x_$karch = "x_" ]; then
+	karch=$KARCH
+    fi
+    if [ x_$release = "x_" ]; then
+	release=$FROM_RELEASE
+    fi
+    suffix=".`echo $release | $SED "s/\.//g" | $TR '[A-Z]' '[a-z]'`"
+    log_echo "Upgrading software category $name ..."
+    name_p=`basename $name`
+    pack=`$ECHO $name_p | $NAWK -F. '{ print $1 } ' - `
+    roadmap	$pack\
+		$NEW_VERSION\
+		$AARCH $karch\
+		med_path\
+		os_path\
+		incl_file
+    os_path0=$os_path
+    if [ x_$export_point != "x_" ]; then
+	os_path0=$os_path
+	os_path=$export_point
+    fi
+
+    before_file=$SCRIPT_PATH/$pack.$BEFORE
+    after_file=$SCRIPT_PATH/$pack.$AFTER
+    tar_file=$SCRIPT_PATH/$pack.$UNTAR
+    delete_file=$SCRIPT_PATH/$pack.$DELETE
+
+# Special treatment for root pack yp stuff
+# If export_point/var/yp dir does not exist, 
+# rename it to export_point/var/yp.412 after untar,
+# and add to coalesce list
+    if [ $pack = root ] && [ ! -d $os_path/$NIS_DIR ]; then
+	NIS_NOT_INSTALLED=true
+    else
+	NIS_NOT_INSTALLED=false
+    fi
+    mk_nullfile $before_file
+    mk_nullfile $after_file
+    mk_nullfile $sos_file
+
+    rest_own_acc=$SCRIPT_PATH/$pack.restore
+
+    if [ -f $INCLD/$incl_file.include ]; then
+        fix_the_list  $INCLD/$incl_file.include $suffix
+        make_tar    $CD_MOUNT/$med_path $os_path\
+	 		$INCLD/$incl_file.include\
+			> $tar_file
+        if $DUMMY ; then
+	    cat_it $before_file
+	    cat_it $tar_file
+	    cat_it $after_file
+            log_echo "Software category $name pseudo upgraded."
+        else
+	    . $before_file
+# Move /usr/kvm/adb first if it's a file
+	    if [ $pack = kvm -a -f $os_path/adb ]; then
+		$MV $os_path/adb $os_path/adb$suffix
+		$ECHO $os_path/adb >> $COALESCE_LIST
+	    fi
+	    . $tar_file
+	    if [ $tar_rc -ne 0 ]; then
+	        . $sos_file
+	       cleanup 30
+	    else
+	    . $after_file
+            log_echo "Software category $name upgraded."
+	    fi
+        fi
+    else
+	log_echo "No replacement"
+    fi
+    if $DUMMY ; then
+	:
+    else
+# Special treatment for root pack /dev directory
+# MAKEDEV for all root exept proto
+	if [ $pack = root ] && \
+	[ x_$export_point != x_/export/exec/proto.root.sunos.$TO_RELEASE ] ; then
+	    log_echo "Making device nodes ..."
+	    here=`$PWD`
+	    $CD $os_path/dev
+	    $RM audio audioctl 2>/dev/null
+	    ./MAKEDEV sr2 sr3 sr4 sr5 sd16 sd17 sd18 sd19 sd20 gt audio 2>/dev/null
+	    [ $karch = sun4m ] && ./MAKEDEV bpp0 bpp1 bpp2 bpp3 bpp4 2>/dev/null
+	    $CD $here
+	fi
+	if $NIS_NOT_INSTALLED && \
+	    [ $pack = root -a -d $os_path/$NIS_DIR ]; then
+	    $MV $os_path$NIS_DIR $os_path$NIS_DIR$NEW_SUFFIX
+	    $ECHO $os_path/$NIS_DIR >> $COALESCE_LIST
+	fi
+    fi
+    if [ -f $INCLD/$incl_file.delete ]; then
+       log_echo "Some $release files from the software category $name unused in $TO_RELEASE   will be deleted"
+       make_delete  $INCLD/$incl_file.delete\
+		    >> $delete_file
+    fi
+    if $DUMMY ; then
+	:
+    elif [ x_$export_point = "x_" ]; then
+	$ECHO $pack >> $UPGRDT_PCK_LST
+    fi
+$SYNC; $SYNC
+log_echo
+}
+##################################################
+get_package(){
+name=$1
+export_point=$2
+karch=$3
+
+    if [ x_$karch = "x_" ]; then
+	karch=$KARCH
+    fi
+    log_echo "Extracting software category $name ..."
+    name_p=`basename $name`
+    pack=`$ECHO $name_p | $NAWK -F. '{ print $1 } ' - `
+    roadmap	$pack\
+		$NEW_VERSION\
+		$AARCH $karch\
+		med_path\
+		os_path\
+		incl_file
+    os_path0=$os_path
+    if [ x_$export_point != "x_" ]; then
+	os_path0=$os_path
+	os_path=$export_point
+    fi
+
+    tar_file=$SCRIPT_PATH/$pack.$UNTAR
+
+    mk_nullfile $sos_file
+
+    make_tar $CD_MOUNT/$med_path $os_path\
+			> $tar_file
+    if $DUMMY ; then
+       cat_it $tar_file
+            log_echo "Software category $name pseudo installed."
+    else
+       . $tar_file
+       if [ $tar_rc -ne 0 ]; then
+            . $sos_file
+	       cleanup 30
+       else
+            log_echo "Software category $name installed."
+       fi
+    fi
+$SYNC; $SYNC
+log_echo
+}
+#########################################
+upgrade_save(){
+name=$1
+export_point=$2
+karch=$3
+release=$4
+to_point=$5
+    if [ x_$karch = "x_" ]; then
+	karch=$KARCH
+    fi
+    if [ x_$release = "x_" ]; then
+	release=$FROM_RELEASE
+    fi
+    suffix=".`echo $release | $SED "s/\.//g" | $TR '[A-Z]' '[a-z]'`"
+    log_echo "Saving $name files for $release on $karch ..."
+    name_p=`basename $name`
+    pack=`$ECHO $name_p | $NAWK -F. '{ print $1 } ' - `
+    roadmap	$pack\
+		$NEW_VERSION\
+		$AARCH $karch\
+		med_path\
+		os_path\
+		incl_file
+    os_path0=$os_path
+    if [ x_$export_point != "x_" ]; then
+	os_path0=$os_path
+	os_path=$export_point
+    fi
+
+    before_file=$SCRIPT_PATH/$pack.$BEFORE
+    after_file=$SCRIPT_PATH/$pack.$AFTER
+    delete_file=$SCRIPT_PATH/$pack.$DELETE
+
+# Special treatment for root pack yp stuff
+# If export_point/var/yp dir does not exist, 
+# rename it to export_point/var/yp.412 after untar,
+# and add to coalesce list
+    if [ $pack = root ] && [ ! -d $os_path/$NIS_DIR ]; then
+	NIS_NOT_INSTALLED=true
+    else
+	NIS_NOT_INSTALLED=false
+    fi
+    mk_nullfile $before_file
+    mk_nullfile $after_file
+    mk_nullfile $sos_file
+
+    rest_own_acc=$SCRIPT_PATH/$pack.restore
+    if [ -f $INCLD/$incl_file.include ]; then
+        fix_the_list2  $INCLD/$incl_file.include $suffix $to_point 
+        if $DUMMY ; then
+	    cat_it $before_file
+	    cat_it $after_file
+            log_echo "$name files for $release on $karch saved."
+        else
+	    . $before_file
+        fi
+    else
+	log_echo "No files saved"
+    fi
+$SYNC; $SYNC
+log_echo
+}
+##################################################
+upgrade_openwin(){
+    name=$1
+    log_echo "Upgrading software category $name ..."
+    name_p=`basename $name`
+    pack=`$ECHO $name_p | $NAWK -F. '{ print $1 } ' - `
+    roadmap	$pack\
+		$NEW_VERSION\
+		$AARCH $karch\
+		med_path\
+		os_path\
+		incl_file
+    tar_file=$SCRIPT_PATH/$pack.$UNTAR
+
+    make_tar    $CD_MOUNT/$med_path $os_path\
+			> $tar_file
+    if $DUMMY ; then
+	    cat_it $tar_file
+            log_echo "Software category $name pseudo upgraded."
+    else
+	    . $tar_file
+	    if [ $tar_rc -ne 0 ]; then
+	       cleanup 30
+	    else
+               log_echo "Software category $name upgraded."
+	    fi
+    fi
+    if $DUMMY ; then
+	:
+    else 
+	$ECHO $pack >> $UPGRDT_PCK_LST
+    fi
+$SYNC; $SYNC
+log_echo
+}
+##################################################
+get_kvm_file(){
+    name=$1
+    source=$2
+    target=$3
+    $MKDIR /usr_tmp
+    $CD /usr_tmp
+    $TAR -xf $CD_KVM_DIR/$KARCH_VERSION/kvm $source
+    rc=$?
+    if [ $rc = 0 ]; then
+	$MV $source $target
+    else
+        log_echo "Unable to install new $name for $HOST!"
+    fi
+    $RM -rf /usr_tmp 
+    return $rc
+}
+##################################################
+upgrade_fstab(){
+    FSTAB=/etc/fstab
+    if $VERBOSE; then
+	log_tab; log_echo "$FSTAB saved to"
+	log_tab; log_echo "$FSTAB$OLD_SUFFIX"
+    fi
+    if $DUMMY ; then 
+	return
+    fi
+    if [ ! -s $FSTAB ]; then
+        log_echo "No $FSTAB ?"
+        return 1
+    fi
+    $ECHO $FSTAB >> $COALESCE_LIST
+    $MV $FSTAB $FSTAB$OLD_SUFFIX
+    $SED "s@sunos.$FROM_RELEASE@sunos.$TO_RELEASE@" \
+			$FSTAB$OLD_SUFFIX > $FSTAB
+}
+##################################################
+install_vmunix_at_dataless(){
+#
+# If vmunix.orig exists, do not save the existing version.
+# Untar the kernel to the just created/usr_tmp. 
+# Move it to the vmunix.
+#
+log_echo "Installing vmunix..."
+if $DUMMY ; then
+    return
+else 
+    [ -f /vmunix ] && \
+	[ ! -s /vmunix.orig ] && \
+	    $BACKUP && \
+	        $MV /vmunix /vmunix.orig
+
+    get_kvm_file kernel ./stand/$NEW_KERNEL /vmunix
+    if [ $? != 0 ]; then
+	[ ! -f /vmunix.orig ] && return
+        log_echo "Restoring original kernel..."
+        $MV /vmunix.orig /vmunix
+    fi
+    $SYNC; $SYNC
+fi
+}
+##################################################
+install_kadb_at_dataless(){
+log_echo "Installing kadb ..."
+    if $DUMMY ; then
+	return
+    else
+	get_kvm_file kadb ./stand/kadb /kadb
+        $SYNC; $SYNC
+    fi
+}
+##################################################
+install_boot_block_at_dataless(){
+#
+# Install boot block
+#
+    log_echo "Installing bootblock ..."
+    DISK=`$MOUNT | $GREP ' / ' |\
+	 $NAWK '{print $1}' |\
+	 $NAWK -F/ '{print $3}'`
+    DISKTYPE=`$ECHO $DISK | colrm 3`
+    if $DUMMY ; then
+	return
+    fi
+    get_kvm_file bootblock ./stand/boot.$KARCH /boot
+    [ $? = 1 ] && return
+    $SYNC; $SYNC
+    cd /usr/mdec
+    ./installboot -v /boot boot"$DISKTYPE" /dev/r"$DISK"
+    $SYNC; $SYNC
+}
+##################################################
+fix_sbin_at_dataless(){
+#
+# Copy /sbin directory commands
+#
+    log_echo "Copying /sbin commands..."
+    $DUMMY  && return
+
+# Let's take a new list
+    here=`$PWD`
+    $MKDIR /usr_tmp
+    $CD /usr_tmp
+    $TAR -xf $CD_EXEC/${AARCH}_$NEW_VERSION/install \
+			./etc/install/install.bin
+    if [ $? != 0 ]; then
+        log_echo "Unable to install new /sbin for $HOST!"
+	return
+    fi
+
+# Create the incl file and mv commands
+    $NAWK '/^appl/ {print "./"$2 > "'$TMP_PATH/inc'"; \
+		    print "'$CP' ./"$2" "$3> "'$TMP_PATH/com'"}'  \
+			/usr_tmp/etc/install/install.bin
+# Untar the commands
+    $TAR -xf $CD_EXEC/${AARCH}_$NEW_VERSION/usr -I $TMP_PATH/inc
+    if [ $? != 0 ]; then
+        log_echo "Unable to install new /sbin for $HOST!"
+	return
+    fi
+# Move all to the /sbin
+    . $TMP_PATH/com
+    $CD $here
+
+    $RM -rf $TMP_PATH/com $TMP_PATH/inc /usr_tmp
+}
+##################################################
+are_equal(){
+if [ -f $1 -a -f $2 ]; then
+    s1=`$SUM $1`
+    s2=`$SUM $2`
+    if [ "$s1" = "$s2" ]; then
+	echo true
+	return
+    fi
+fi
+    echo false
+}
+##################################################

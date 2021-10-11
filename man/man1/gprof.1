@@ -1,0 +1,277 @@
+.\" @(#)gprof.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH GPROF 1 "22 December 1987"
+.SH NAME
+gprof \- display call-graph profile data
+.SH SYNOPSIS
+.B gprof
+[
+.B \-abcsz
+]
+[
+.B \-e
+.I function-name
+]
+[
+.B \-E
+.I function-name
+]
+.if n .ti +0.5i
+[
+.B \-f
+.I function-name
+]
+[
+.B \-F
+.I function-name
+]
+.if t .ti +0.5i
+.if n .ti +0.5i
+[
+.I image-file
+[
+.I profile-file
+\&.\|.\|. ] ]
+.SH DESCRIPTION
+.IX "gprof command"  ""  "\fLgprof\fP \(em call-graph profile"
+.IX display  "call-graph profile data \(em \fLgprof\fR"
+.IX "call-graph, display profile data \(em \fLgprof\fR"
+.IX profile  "display call-graph \(em gprof\fR"
+.IX "programming tools"  "display call-graph profile data \(em \fLgprof\fR"
+.IX "performance monitoring"  "display call-graph profile data \(em \fLgprof\fR"
+.B gprof
+produces an execution profile of a program.
+The effect of called routines is incorporated in the profile
+of each caller.  The profile data is taken from the call graph profile file
+which is created by programs compiled with the
+.B \-pg
+option of
+.BR cc (1V)
+and other compilers.
+That option also links in versions of the library routines
+which are compiled for profiling.  The symbol table in the executable image
+file
+.I image-file
+.RB ( a.out
+by default) is read and correlated with the call graph profile file
+.I profile-file
+.RB ( gmon.out
+by default).  If more than one profile file is specified, the
+.B gprof
+output shows the sum of the profile
+information in the given profile files.
+.LP
+First, execution times for each routines are propagated along the
+edges of the call graph.
+Cycles are discovered, and calls into a cycle are made to share the
+time of the cycle.  The first listing shows the functions sorted
+according to the time they represent,
+including the time of their call
+graph descendants.  Below each function entry is shown its (direct)
+call-graph children, and how their times are propagated to this
+function.  A similar display above the function shows how this
+function's time and the time of its
+descendants is propagated to its
+(direct) call-graph parents.
+.LP
+Cycles are also shown, with an entry for the cycle as a whole and
+a listing of the members of the cycle and their contributions to the
+time and call counts of the cycle.
+.LP
+Next, a flat profile is given, similar to that provided by
+.BR prof (1).
+This listing gives the total execution times
+and call counts for each of
+the functions in the program, sorted by decreasing time.
+Finally, an index showing the correspondence between function
+names and call-graph profile index numbers.
+.LP
+A single function may be split into subfunctions for profiling
+by means of the 
+.SB MARK
+macro (see 
+.BR prof (3)).
+.LP
+Beware of quantization errors.  The granularity of the sampling is
+shown, but remains statistical at best.  It is assumed that the time
+for each execution of a function can be
+expressed by the total time for
+the function divided by the number of times
+the function is called.  Thus the time propagated along
+the call-graph arcs to parents of that
+function is directly proportional to the
+number of times that arc is traversed.
+.LP
+The profiled program must call
+.BR exit (2V)
+or return normally for the profiling information to be saved in the
+.B gmon.out
+file.
+.SH OPTIONS
+.TP
+.B \-a
+Suppress printing statically declared functions.  If this
+option is given, all relevant information
+about the static function (for
+instance, time samples, calls to other
+functions, calls from other functions)
+belongs to the function loaded just
+before the static function in the
+.B a.out
+file.
+.TP
+.B \-b
+Brief.  Suppress descriptions of each field in the profile.
+.TP
+.B \-c
+The static call-graph of the program is
+discovered by a heuristic which
+examines the text space of the object file.  Static-only parents or
+children are indicated with call counts of 0.
+.TP
+.B \-s
+Produce a profile file
+.B gmon.sum
+which represents the sum of the profile information in all
+the specified profile files.  This summary
+profile file may be given to
+subsequent executions of
+.B gprof
+(probably also with a
+.BR \-s )
+option to accumulate profile data across several runs of an
+.B a.out
+file.
+.TP
+.B \-z
+Display routines which have zero usage (as indicated by call counts
+and accumulated time).
+This is useful in conjunction with the
+.B \-c
+option for discovering which routines were never called.
+.TP
+.BI \-e " function-name"
+Suppress printing the graph profile entry for routine
+.I function-name
+and all its descendants (unless they have other ancestors that are not
+suppressed).  More than one
+.B \-e
+option may be given.  Only one
+.I function-name
+may be given with each
+.B \-e
+option.
+.br
+.ne 5
+.TP
+.BI \-E " function-name"
+Suppress printing the graph profile entry for routine
+.I function-name
+(and its descendants) as
+.BR \-e ,
+above, and also exclude the time spent in
+.I function-name
+(and its descendants) from the total and
+percentage time computations.
+More than one
+.B \-E
+option may be given.  For example:
+.sp .5
+.RS
+.RS
+.RB ` \-E
+.I mcount
+.B \-E
+.IR mcleanup '
+.RE
+.RE
+.IP
+is the default.
+.TP
+.BI \-f " function-name"
+Print the graph profile entry only for routine
+.I function-name
+and its descendants.  More than one
+.B \-f
+option may be given.  Only one
+.I function-name
+may be given with each
+.B \-f
+option.
+.ne 6
+.TP
+.BI \-F " function-name"
+Print the graph profile entry only for routine
+.I function-name
+and its descendants (as
+.BR \-f,
+above) and also use only the times of the printed routines in total
+time and percentage computations.  More than one
+.B \-F
+option may be given.  Only one
+.I function-name
+may be given with each
+.B \-F
+option.  The
+.B \-F
+option overrides the
+.B \-E
+option.
+.SH ENVIRONMENT
+.TP
+.SB PROFDIR
+If this environment variable contains a value, place profiling
+output within that directory, in a file named
+.IB pid . programname\fR.
+.I pid
+is the process
+.SM ID\s0,
+and
+.I programname
+is the name of the program being profiled, as determined by removing any path
+prefix from the
+.B argv[0]
+with which the program was called.
+If the variable contains a
+.SM NULL
+value, no profiling output is
+produced.  Otherwise, profiling output is placed in the file
+.BR gmon.out .
+.SH FILES
+.PD 0
+.TP 20
+.B a.out
+executable file containing namelist
+.TP
+.B gmon.out
+dynamic call-graph and profile
+.TP
+.B gmon.sum
+summarized dynamic call-graph and profile
+.TP
+.BI \s-1$PROFDIR\s0/ pid . programname
+.PD
+.SH "SEE ALSO"
+.BR cc (1V),
+.BR prof (1),
+.BR tcov (1),
+.BR exit (2V),
+.BR profil (2),
+.BR monitor (3),
+.BR prof (3)
+.LP
+Graham, S.L., Kessler, P.B., McKusick, M.K.,
+.RI ` "gprof: A Call Graph Execution Profiler" ',
+.IR "Proceedings of the \s-1SIGPLAN\s0 '82 Symposium on Compiler Construction" ,
+.SM SIGPLAN
+Notices, Vol. 17, No. 6, pp. 120-126, June 1982.
+.SH BUGS
+.LP
+Parents which are not themselves profiled will have the time of
+their profiled children propagated to them, but they will appear
+to be spontaneously invoked in the call-graph listing, and will
+not have their time propagated further.
+Similarly, signal catchers, even though profiled, will appear
+to be spontaneous (although for more obscure reasons).
+Any profiled children of signal catchers should have their times
+propagated properly, unless the signal catcher was invoked during
+the execution of the profiling routine, in which case all is lost.

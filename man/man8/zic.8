@@ -1,0 +1,350 @@
+.\" @(#)zic.8 1.1 92/07/30 SMI; from Arthur Olson
+.TH ZIC 8 "17 November 1987"
+.SH NAME
+zic \- time zone compiler
+.SH SYNOPSIS
+.B zic
+[
+.B \-v
+] [
+.B \-d
+.I directory
+] [
+.B \-l
+.I localtime
+] [
+.I filename
+\&.\|.\|. ]
+.SH DESCRIPTION
+.IX "zic command" "" "\fLzic\fP command"
+.B zic
+reads text from the file(s) named on the command line
+and creates the time conversion information
+files specified in this input.  If a
+.I filename
+is
+.RB ` \- ',
+the standard input is read.
+.LP
+Input lines are made up of fields.
+Fields are separated from one another by
+any number of white space characters.
+Leading and trailing white space on input lines is ignored.
+An
+.RB ` # '
+(unquoted sharp character) in the input introduces
+a comment which extends
+to the end of the line the sharp character appears on.
+White space characters and sharp characters
+may be enclosed in ` \fB"\fR'
+(double quotes) if they're to be used as part of a field.
+Any line that is blank (after comment stripping) is ignored.
+Non-blank lines are expected to be of one of three types:
+rule lines, zone lines, and link lines.
+.LP
+A rule line has the form
+.nf
+.ti +.5i
+.ta \w'Rule\0\0'u +\w'NAME\0\0'u +\w'FROM\0\0'u +\w'1973\0\0'u +\w'TYPE\0\0'u +\w'Apr\0\0'u +\w'lastSun\0\0'u +\w'2:00\0\0'u +\w'SAVE\0\0'u
+.sp
+.B
+Rule	\s-1NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S\s0
+.sp
+For example:
+.ti +.5i
+.sp
+.B
+Rule	\s-1USA\s0	1969	1973	\-	Apr	lastSun	2:00	1:00	D
+.sp
+.fi
+The fields that make up a rule line are:
+.TP "\w'LETTER/S'u"
+.SB NAME
+Gives the (arbitrary) name of the set of rules this rule is part of.
+.TP
+.SB FROM
+Gives the first year in which the rule applies.
+The word
+.B minimum
+(or an abbreviation) means the minimum
+year with a representable time value.
+The word
+.B maximum
+(or an abbreviation) means the maximum
+year with a representable time value.
+.TP
+.SB TO
+Gives the final year in which the rule applies.
+In addition to
+.B minimum
+and
+.B maximum
+(as above),
+the word
+.B only
+(or an abbreviation)
+may be used to repeat the value of the
+.SB FROM
+field.
+.TP
+.SB TYPE
+Gives the type of year in which the rule applies.
+If
+.SB TYPE
+is
+.RB ` \- '
+then the rule applies in all years between
+.SB FROM
+and
+.SB TO
+inclusive;
+if
+.SB TYPE
+is
+.BR uspres ,
+the rule applies in U.S. Presidential election years;
+if
+.SB TYPE
+is
+.BR nonpres ,
+the rule applies in years other than U.S. Presidential election years.
+If
+.SB TYPE
+is something else, then
+.B zic
+executes the command
+.RS
+.IP
+.B yearistype
+.I year
+.I type
+.RE
+.IP
+to check the type of a year:
+an exit status of zero is taken to mean
+that the year is of the given type;
+an exit status of one is taken to mean that
+the year is not of the given type.
+.TP
+.SB IN
+Names the month in which the rule takes effect.
+Month names may be abbreviated.
+.TP
+.SB ON
+Gives the day on which the rule takes effect.
+Recognized forms include:
+.RS
+.IP
+.nf
+.TP 10
+.B 5
+the fifth of the month
+.TP
+.B lastSun
+the last Sunday in the month
+.TP
+.B lastMon
+the last Monday in the month
+.TP
+.B Sun>=8
+first Sunday on or after the eighth
+.TP
+.B Sun<=25
+last Sunday on or before the 25th
+.fi
+.RE
+.br
+.ne 5
+.IP
+Names of days of the week may be abbreviated or spelled out in full.
+Note: there must be no spaces within the
+.SB ON
+field.
+.TP
+.SB AT
+Gives the time of day at which the rule takes effect.
+Recognized forms include:
+.RS
+.TP 15
+.B 2
+time in hours
+.TP
+.B 2:00
+time in hours and minutes
+.TP
+.B 15:00
+24-hour format time (for times after noon)
+.TP
+.B 1:28:14
+time in hours, minutes, and seconds
+.RE
+.LP
+Any of these forms may be followed by the letter
+.B w
+if the given time is local ``wall clock'' time or
+.B s
+if the given time is local ``standard'' time; in the absence of
+.B w
+or
+.BR s ,
+wall clock time is assumed.
+.TP
+.SB SAVE
+Gives the amount of time to be added to local standard time when the rule is in
+effect.
+This field has the same format as the
+.SB AT
+field
+(although, of course, the
+.B w
+and
+.B s
+suffixes are not used).
+.TP
+.SB LETTER/S
+Gives the ``variable part'' (for example, the ``S''
+or ``D'' in ``\s-1EST\s0''
+or ``\s-1EDT\s0'') of time zone abbreviations
+to be used when this rule is in effect.
+If this field is
+.RB  ` \- ',
+the variable part is null.
+.LP
+A zone line has the form
+.sp
+.nf
+.ti +.5i
+.ta \w'Zone\0\0'u +\w'Australia/South\-west\0\0'u +\w'GMTOFF\0\0'u +\w'RULES/SAVE\0\0'u +\w'FORMAT\0\0'u
+.B
+Zone	\s-1NAME	GMTOFF	RULES/SAVE	FORMAT	[UNTIL]\s0
+.sp
+For example:
+.sp
+.ti +.5i
+.B
+Zone	Australia/South\-west	9:30	Aus	\s-1CST\s0	1987 Mar 15 2:00
+.sp
+.fi
+The fields that make up a zone line are:
+.TP "\w'GMTOFF'u"
+.SB NAME
+The name of the time zone.
+This is the name used in creating the time conversion information file for the
+zone.
+.TP
+.SB GMTOFF
+The amount of time to add to GMT to get standard time in this zone.
+This field has the same format as the
+.SB AT
+and
+.SB SAVE
+fields of rule lines;
+begin the field with a minus sign if time must be subtracted from
+.SM GMT\s0.
+.TP
+.SB RULES/SAVE
+The name of the rule(s) that apply in the time zone or,
+alternately, an amount of time to add to local standard time.
+If this field is
+.RB  ` \- '
+then standard time always applies in the time zone.
+.TP
+.SB FORMAT
+The format for time zone abbreviations in this time zone.
+The pair of characters
+.B %s
+is used to show where the ``variable part'' of the time zone abbreviation goes.
+.SB UNTIL
+The time at which the
+.SM GMT
+offset or the rule(s) change for a location.
+It is specified as a year, a month, a day, and a time of day.
+If this is specified,
+the time zone information is generated from the given
+.SM GMT
+offset and rule change until the time specified.
+.IP
+The next line must be a
+``continuation'' line; this has the same
+form as a zone line except that the
+string ``Zone'' and the name are omitted, as the continuation line will
+place information starting at the time specified as the
+.SB UNTIL
+field in the previous line in the file used by the previous line.
+Continuation lines may contain an
+.SB UNTIL
+field, just as zone lines do, indicating
+that the next line is a further
+continuation.
+.LP
+A link line has the form
+.sp
+.nf
+.ti +.5i
+.if t .ta \w'Link\0\0'u +\w'LINK-FROM\0\0'u
+.if n .ta \w'Link\0\0'u +\w'US/Eastern\0\0'u
+.B Link	\s-1LINK-FROM	LINK-TO\s0
+.sp
+.br
+.ne 9
+For example:
+.sp
+.ti +.5i
+.B Link	\s-1US\s0/Eastern	\s-1EST5EDT\s0
+.sp
+.fi
+The
+.SB LINK-FROM
+field should appear as the
+.SB NAME
+field in some zone line;
+the
+.SB LINK-TO
+field is used as an alternate name for that zone.
+.LP
+Except for continuation lines,
+lines may appear in any order in the input.
+.SH OPTIONS
+.TP 15
+.B \-v
+Complain if a year that appears in a data
+file is outside the range
+of years representable by system time values
+(0:00:00 AM
+.SM GMT\s0,
+January 1, 1970, to 3:14:07 AM
+.SM GMT\s0,
+January 19, 2038).
+.TP
+.BI "\-d " directory
+Create time conversion information files in the directory
+.B directory
+rather than in the standard directory
+.BR /usr/share/lib/zoneinfo .
+.TP
+.BI "\-l " timezone
+Use the time zone
+.I timezone
+as local time.
+.B zic
+will act as if the file contained a link line of the form
+.sp
+.ti +.5i
+\fBLink\fP	\fItimezone\fP
+		\fBlocaltime\fP
+.SH FILES
+.TP 20
+.B /usr/share/lib/zoneinfo
+standard directory used for created files
+.SH "SEE ALSO"
+.BR time (1V),
+.BR ctime (3V),
+.BR tzfile (5),
+.BR zdump (8)
+.SH NOTES
+.LP
+For areas with more than two types of local time,
+you may need to use local standard time in the
+.SB AT
+field of the earliest transition time's rule to ensure that
+the earliest transition time recorded in the compiled file is correct.

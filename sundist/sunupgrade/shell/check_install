@@ -1,0 +1,191 @@
+#!/bin/sh
+#set -x
+#
+# NAME: check_install 
+#
+#
+# USAGE:
+#    check_install [-verbose]
+#
+#    1. The program looks at the current system.  For each cpu touched by this 
+#	system, it reports the stuff that has been loaded. 
+#        
+#PATH=/usr/ucb:/bin:/usr/bin:/etc:/usr/etc
+#export PATH
+PARAMS=$*
+HOST_KARCH=`arch -k`
+HOST_ARCH=`arch`
+HOST_NAME=`hostname`
+EXPR=/usr/bin/expr
+VERBOSE=""
+#VERBOSE="1"
+#FROM_RELEASE=4.1.1
+SUN4=sun4
+INSTALL_DIR=/etc/install
+
+
+CLIENT_UPGRADE_CANDIDATES=/usr/tmp/sunupgrade/client_upgrade_candidates
+
+USAGE="$0 [-verbose]"
+
+# general purpose utility subroutines
+
+
+########################################################################
+#
+# utility routines
+#
+########################################################################
+#
+# provide a single script exit point -- clean up and go away
+#
+cleanup () {
+    rm -f $TOCFILE
+    exit $1
+}
+
+#
+# verbose_log $1
+#
+
+verbose_log() {
+    if [ $VERBOSE ]
+    then
+        echo $1
+    fi
+}
+
+########################################################################
+#
+# Parse the arguments
+#
+########################################################################
+
+for param in $PARAMS ; do
+
+    case $param in
+
+    -v | -verbose) VERBOSE=1 ;;
+
+    *)  echo
+        echo USAGE : $USAGE
+        cleanup 1 ;;
+    esac
+done
+
+########################################################################
+#
+# what kind of machine/release are we
+#
+########################################################################
+
+if [ $HOST_ARCH != $SUN4 ] 
+then
+    echo "this is not a sun4 machine"
+    cleanup 1
+fi
+
+INSTALLED_RELEASE=`$CUT -d\. -f4- $INSTALL_DIR/release`
+
+case $INSTALLED_RELEASE in
+    ${FROM_RELEASE}* )
+        SERVER_CANDIDATE=yes ;;
+    *)
+        SERVER_CANDIDATE=no ;;
+esac
+
+
+########################################################################
+#
+# now, do we have clients?  What kind are they?
+#
+########################################################################
+
+ARCH_LIST=""
+KARCH_LIST=""
+RELEASE_LIST=""
+CLIENT_LIST=""
+#
+# place to put the candidates
+#
+rm -f $CLIENT_UPGRADE_CANDIDATES > /dev/null
+
+
+if [ -f $INSTALL_DIR/client_list ]
+then
+
+#
+# find all clients
+#
+    FULL_CLIENT_LIST=`sort -u $INSTALL_DIR/client_list.sun4.sun4*.sunos.* 2>/dev/null`
+#    verbose_log "FULL_CLIENT_LIST at $HOST_NAME :"
+#    verbose_log "$FULL_CLIENT_LIST"
+#    verbose_log
+
+#
+# winnow it to unique entries
+#
+#    FULL_CLIENT_LIST=`echo $FULL_CLIENT_LIST |\
+#awk -F' ' '{ for(i=1; i<NF; i++) printf("%s\n", $(NF-i));}' \
+#   | sort -u`
+
+#
+# for each client on the list
+#    find the architecture and release, log the candidates
+#
+
+    for CLIENT in $FULL_CLIENT_LIST; do
+        if [ -f $INSTALL_DIR/client.$CLIENT ]; then
+            ARCH_FILE=$INSTALL_DIR/client.$CLIENT
+            ARCH_STR0=`cat $ARCH_FILE | grep arch_str`
+            ARCH_STR=`$EXPR $ARCH_STR0 : 'arch_str=\(.*\)' '|' "1"`
+            ARCH=`echo $ARCH_STR | nawk -F. '{print $1}'`
+            KARCH=`echo $ARCH_STR | nawk -F. '{print $2}'`
+            RELEASE=`echo $ARCH_STR | \
+		nawk -F. '{rel=""; for (i=4; i<NF; i++) rel=rel $i"."; rel=rel $NF; print rel}'`
+
+            case $RELEASE in 
+            4.1.1* | 4.1.2* | 4.1.3*)
+                if [ $ARCH = $SUN4 ]; then
+                    ARCH_LIST="$ARCH_LIST $ARCH_STR"
+                    CLIENT_LIST="$CLIENT_LIST $CLIENT"
+                    echo $CLIENT:$ARCH:$KARCH:$RELEASE >> $CLIENT_UPGRADE_CANDIDATES
+                    verbose_log "$CLIENT	is at $RELEASE release and is an UPGRADE CANDIDATE "
+                else
+                    verbose_log "$CLIENT	is a $ARCH and CANNOT BE UPGRADED with this script"
+                fi
+                ;;
+            *)
+                verbose_log "$CLIENT	is at $RELEASE release and CANNOT BE UPGRADED with this script"
+                ;;
+            esac
+
+        else
+            echo $INSTALL_DIR/client.$CLIENT not found
+        fi
+    done
+else
+    verbose_log "$HOST_NAME has no clients"
+
+fi
+
+#
+#    does it have and avail_arches file
+#
+
+if [ ! -f /usr/etc/install/tar/avail_arches ]
+then
+    echo "No media available at /usr/etc/install/tar"
+    cleanup 1
+fi
+
+########################################################################
+
+#if [ -f  $CLIENT_UPGRADE_CANDIDATES ]; then
+#    echo List of client upgrade candidates is placed in the file
+#    echo $CLIENT_UPGRADE_CANDIDATES
+#    echo They are :
+#    cat $CLIENT_UPGRADE_CANDIDATES
+#fi
+cleanup 0
+

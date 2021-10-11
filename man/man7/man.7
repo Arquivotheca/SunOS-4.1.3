@@ -1,0 +1,286 @@
+.\" @(#)man.7 1.1 92/07/30 SMI; from UCB 4.2
+.TH MAN 7 "24 November 1987"
+.SH NAME
+man \- macros to format Reference Manual pages
+.SH SYNOPSIS
+.B nroff  \-man
+.IR filename .\|.\|.
+.LP
+.B troff  \-man
+.IR filename .\|.\|.
+.IX  "man file"  ""  "\fL\-man\fP \(em macros to format manual pages"
+.IX  "document production"  "man file"  ""  "\fL\-man\fP \(em macros to format manual pages"
+.SH DESCRIPTION
+.LP
+These macros are used to lay out the reference pages in this manual.
+Note: if
+.I filename
+contains format input for a preprocessor, the
+commands shown above must be piped through the
+appropriate preprocessor.
+This is handled automatically by
+.BR man (1).
+See
+.BR Conventions .
+.LP
+Any text argument
+.I t
+may be zero to six words.
+Quotes may be used to include
+.SM SPACE
+characters in a \*(lqword\*(rq.  If
+.I text
+is empty, the special treatment is applied to the next input line with
+text to be printed.
+In this way
+.B \&.I
+may be used to italicize a whole line, or
+.B \&.SB
+may be used to make small bold letters.
+.LP
+A prevailing indent distance is remembered between successive indented
+paragraphs, and is reset to default value upon reaching a non-indented
+paragraph.  Default units for indents
+.I i
+are ens.
+.LP
+Type font and size are reset to default values before each paragraph,
+and after processing font and size setting macros.
+.LP
+These strings are predefined by
+.BR \-man :
+.RS
+.TP
+\e*R
+.if t `\*R', `(Reg)' in
+.if t .B nroff.
+.if n `(Reg)', trademark symbol in
+.if n .I troff.
+.TP
+\e*S
+Change to default type size.
+.RE
+.SS Requests
+.LP
+.sp .5
+.DT
+.ta +12n; +8n; +10n; +10n
+\fIRequest	Cause	If no	Explanation
+     	Break	Argument\fR
+.sp .5
+.ta +8n; +10n; +10n
+.TP 12n
+.B \&.B \fIt\fR
+no	\fIt\fR=n.t.l.*	Text is in bold font.
+.PD 0
+.TP
+.B \&.BI \fIt\fR
+no	\fIt\fR=n.t.l.	Join words, alternating bold and italic.
+.TP
+.B \&.BR \fIt\fR
+no	\fIt\fR=n.t.l.	Join words, alternating bold and roman.
+.TP
+.B \&.DT
+no	.5i 1i...	Restore default tabs.
+.TP
+.B \&.HP \fIi\fR
+yes	\fIi\fR=p.i.*	Begin paragraph with hanging indent.  Set prevailing indent to \fIi\fR.
+.TP
+.B \&.I \fIt\fR
+no	\fIt\fR=n.t.l.	Text is italic.
+.TP
+.B \&.IB \fIt\fR
+no	\fIt\fR=n.t.l.	Join words, alternating italic and bold.
+.TP
+.B \&.IP \fIx i\fR
+yes	\fIx\fR=""	Same as \fB.TP\fR with tag \fIx\fR.
+.TP
+.B \&.IR \fIt\fR
+no	\fIt\fR=n.t.l.	Join words, alternating italic and roman.
+.TP
+.B \&.IX \fIt\fR
+no	-	Index macro, for Sun internal use.
+.TP
+.B \&.LP
+yes	-	Begin left-aligned paragraph.  Set prevailing indent to .5i.
+.TP
+.B \&.PD \fId\fR
+no	\fId\fR=.4v	Set vertical distance between paragraphs.
+.TP
+.B \&.PP
+yes	-	Same as \fB.LP\fR.
+.TP
+.B \&.RE
+yes	-	End of relative indent.  Restores prevailing indent.
+.TP
+.B \&.RB \fIt\fR
+no	\fIt\fR=n.t.l.	Join words, alternating roman and bold.
+.TP
+.B \&.RI \fIt\fR
+no	\fIt\fR=n.t.l.	Join words, alternating roman and italic.
+.TP
+.B \&.RS \fIi\fR
+yes	\fIi\fR=p.i.	Start relative indent, increase indent by \fIi\fR.  Sets prevailing indent to .5i
+		for nested indents.
+.TP
+.B \&.SB \fIt\fR
+no	-	Reduce size of text by 1 point, make text boldface.
+.TP
+.B \&.SH \fIt\fR
+yes	-	Section Heading.
+.TP
+.B \&.SM \fIt\fR
+no	\fIt\fR=n.t.l.	Reduce size of text by 1 point.
+.TP
+.B \&.SS \fIt\fR
+yes	\fIt\fR=n.t.l.	Section Subheading.
+.br
+.ne 12
+.TP
+.B \&.TH \fIn s d f m\fR
+yes	-	Begin reference page \fIn\fR, of section \fIs\fR; \fId\fR is the date of the most
+		recent change.  If present, \fIf\fR is the left page footer; \fIm\fR is the
+		main page (center) header.  Sets prevailing indent and tabs to .5i.
+.TP
+.B \&.TP \fIi\fR
+yes	\fIi\fR=p.i.	Begin indented paragraph, with the tag given on the next text
+		line.  Set prevailing indent to \fIi\fR.
+.sp .5
+.TP
+.B \&.TX \fIt \fIp\fR
+no	-	Resolve the title abbreviation \fIt\fR; join to punctuation mark (or text) \fIp.\fR
+* n.t.l. = next text line; p.i. = prevailing indent
+.\" End Requests
+.PD
+.br
+.ne 10
+.SS Conventions
+.LP
+.LP
+When formatting a manual page,
+.B man
+examines the first line to determine whether
+it requires special processing.
+For example a first line consisting of:
+.RS
+.sp .5v
+.ft B
+\&'\e" t
+.ft R
+.RE
+.LP
+indicates that the manual page must be run through the
+.BR tbl (1)
+preprocessor.
+.LP
+A typical manual page for a SunOS command or function is laid out as
+follows:
+.TP
+.BI \s-1\&.TH " TITLE\s0 \fR[1-8]"
+The name of the command or function in upper-case, which serves as
+the title of the manual page.
+This is followed by the number of
+the section in which it appears.
+.HP
+.SB \&.SH NAME
+The name, or list of names, by which the command is called,
+followed by a dash and then a one-line summary of the action performed.
+All in roman font, this section contains no
+.BR troff (1)
+commands or escapes, and no macro requests.
+It is used to generate the
+.BR whatis (1)
+database.
+.TP
+.SB \&.SH SYNOPSIS
+.RS
+.TP
+.B Commands:
+.IP
+The syntax of the command and its arguments, as typed on the command
+line.  When in boldface, a word must be typed exactly as printed.  When
+in italics, a word can be replaced with an argument that you supply.
+References to bold or italicized items are not capitalized
+in other sections, even when they begin a sentence.
+.IP
+Syntactic symbols appear in roman face:
+.RS
+.TP
+.B [ ]
+An argument, when surrounded by brackets
+is optional.
+.TP
+.B |
+Arguments separated by a vertical bar are exclusive.
+You can supply only one item from such a list.
+.TP
+.B \&.\|.\|.
+Arguments followed by an ellipsis can be repeated.
+When an ellipsis follows a bracketed set, the expression within the
+brackets can be repeated.
+.RE
+.TP
+.B Functions:
+.IP
+If required, the data declaration, or
+.B #include
+directive, is shown first, followed by the  function declaration.
+Otherwise, the function declaration is shown.
+.RE
+.TP
+.SB \&.SH DESCRIPTION
+A narrative overview of the command or function's external behavior.
+This includes how it interacts with files or data, and how it
+handles the standard input, standard output and standard error.
+Internals and implementation details are normally omitted.
+This section attempts to provide a succinct overview in answer to the
+question, \*(lqwhat does it do?\*(rq
+.IP
+Literal text from the synopsis appears in boldface, as do literal
+filenames and references to items that appear elsewhere in the 
+.TX REFMAN .
+Arguments are italicized.
+.IP
+If a command interprets either subcommands or an input grammar, its
+command interface or input grammar is normally described in a
+.SB USAGE
+section, which follows the
+.SB OPTIONS
+section.  The 
+.SB DESCRIPTION
+section only describes the behavior of the command itself, not
+that of subcommands.
+.TP
+.SB \&.SH OPTIONS
+The list of options along with a description of how each affects
+the command's operation.
+.TP
+.SB \&.SH FILES
+A list of files associated with the command or function.
+.br
+.ne 5
+.TP
+.SB \&.SH SEE ALSO
+A comma-separated list of related manual pages, followed by
+references to other published materials.
+.TP
+.SB \&.SH DIAGNOSTICS
+A list of diagnostic messages and an explanation of each.
+.br
+.ne 8
+.TP
+.SB \&.SH BUGS
+A description of limitations, known defects, and possible
+problems associated with the command or function.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/share/lib/tmac/tmac.an
+.PD
+.SH SEE ALSO
+.BR man (1),
+.BR nroff (1),
+.BR troff (1),
+.BR whatis (1)
+.LP
+.TX DOCS .

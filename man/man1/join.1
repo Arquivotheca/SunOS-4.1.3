@@ -1,0 +1,194 @@
+.\" @(#)join.1 1.1 92/07/30 SMI; from S5R2 6.3 83/09/02
+.TH JOIN 1 "16 February 1988"
+.SH NAME
+join \- relational database operator
+.SH SYNOPSIS
+.B join
+[
+.BI \-a n
+] [
+.BI \-e " string"
+] [
+.B \-j
+.RB [ 1 \(or 2 ]
+.I m
+] [
+.BI \-o " list"
+] [
+.BI \-t c
+]
+.if n .ti +0.5i
+.I filename1
+.I filename2
+.SH DESCRIPTION
+.IX  "join command"  ""  "\fLjoin\fP \(em relational database operator"
+.IX  "relational database operator \(em \fLjoin\fP"
+.IX  "database operator \(em \fLjoin\fP"
+.B join
+forms, on the standard output, a join of the two relations specified
+by the lines of
+.I filename1
+and
+.IR filename2 .
+If
+.I filename1
+is
+.RB ` \- ',
+the standard input is
+used.
+.LP
+.I filename1
+and
+.I filename2
+must be sorted in increasing
+.SM ASCII
+collating sequence on the fields
+on which they are to be joined \(em normally the first in each line.
+.LP
+There is one line in the output for each pair of lines in
+.I filename1
+and
+.I filename2
+that have identical join fields.  The output line normally consists of
+the common field, then the rest of the line from
+.IR filename1 ,
+then the rest of the line from
+.IR filename2 .
+.LP
+The default input field separators are
+.SM SPACE\s0,
+.SM TAB\s0,
+and
+.SM NEWLINE
+characters.
+If the default input field separators are used,
+multiple separators count as one field separator,
+and leading separators are ignored.
+The default output field separator is a blank.
+.SH OPTIONS
+.TP
+.BI \-a n
+The parameter
+.I n
+can be one of the values:
+.RS
+.PD 0
+.TP
+1
+Produce a line for each unpairable line in
+.IR filename1 .
+.TP
+2
+Produce a line for each unpairable line in
+.IR filename2 .
+.TP
+3
+Produce a line for each unpairable line in both
+.IR filename1 " and " filename2 .
+.PD
+.RE
+.IP
+The normal output is also produced.
+.TP
+.BI \-e " string"
+Replace empty output fields by
+.IR string .
+.TP
+.BI \-j\fP\^[\fB1\fR\||\|\fB2\fR]  m
+The
+.B j
+may be immediately followed by
+.IR n ,
+which is either a
+.B 1
+or a
+.BR 2 . 
+If
+.I n
+is missing, the join is on the
+\fIm\fR'th
+field of both files.  If
+.I n
+is present, the join is on the
+\fIm\fR'th
+field of file
+.IR n ,
+and
+the first field of the other.  Note:
+.B join
+counts fields from 1 instead of 0 as
+.BR sort (1V)
+does.
+.TP
+.BI \-o \ list
+Each output line comprises the fields specified in
+.IR list ,
+each element of which has the form
+.IB n . m ,
+where
+.I n
+is a file number and
+.I m
+is a field number.
+The common field is not printed unless specifically requested.
+Note:
+.B join
+counts fields from 1 instead of 0 like
+.B sort
+does.
+.LP
+.TP
+.BI \-t c
+Use character
+.I c
+as a separator (tab
+character).  Every appearance of
+.I c
+in a line is significant.
+The character
+.I c
+is used as the field separator for both
+input and output.
+.SH EXAMPLE
+The following command line will join
+the password file and the group file,
+matching on the numeric group
+.SM ID\s0,
+and outputting
+the login name, the group name and the login
+directory.
+It is assumed that the files have been sorted in
+.SM ASCII
+collating sequence on the group
+.SM ID
+fields.
+.LP
+.IP
+.B "join \-j1 4 \-j2 3 \-o 1.1 2.1 1.6 \-t: /etc/passwd /etc/group"
+.SH "SEE ALSO"
+.BR awk (1),
+.BR comm (1),
+.BR look (1),
+.BR sort (1V),
+.BR uniq (1)
+.SH BUGS
+With default field separation, the collating sequence is that of
+.BR "sort \-b" ;
+with
+.BR \-t ,
+the sequence is that of a plain sort.
+.LP
+The conventions of
+.BR join ,
+.BR sort ,
+.BR comm ,
+.BR uniq ,
+.BR look ,
+and
+.B awk
+are wildly incongruous.
+.PP
+Filenames that are numeric may cause conflict
+when the
+.B \-o
+option is used right before listing filenames.

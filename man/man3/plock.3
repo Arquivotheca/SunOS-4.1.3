@@ -1,0 +1,98 @@
+.\" @(#)plock.3 1.1 92/07/30 SMI; from SVr4 for 4.1
+.TH PLOCK 3 "21 January 1990"
+.SH NAME
+plock \- lock process, text, or data segment in memory
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/lock.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int plock(op)
+int op;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "plock()" "" "\fLplock()\fP \(em lock process, text, or data segment in memory"
+.IX "lock process, text, or data segment in memory" "" "lock process, text, or data segment in memory \(em \fLplock()\fP"
+.LP
+.B plock(\|)
+allows the calling process to lock its text segment (text lock),
+its data segment (data lock),
+or both its text and data segments (process lock)
+into memory.
+Locked segments are immune to all routine swapping.
+.B plock(\|)
+also allows these segments to be unlocked.
+The effective user
+.SM ID
+of the calling process must be super-user to
+use this call.
+.I op
+specifies the following:
+.RS 8
+.TP 14
+.SB PROCLOCK
+lock text and data segments into memory (process lock)
+.TP
+.SB TXTLOCK
+lock text segment into memory (text lock)
+.TP
+.SB DATLOCK
+lock data segment into memory (data lock)
+.TP
+.SB UNLOCK
+remove locks
+.RE
+.SH RETURN VALUES
+.LP
+.B plock(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+Not enough memory.
+.TP
+.SM EINVAL
+.I op
+is equal to
+.SB PROCLOCK
+and a process lock, a text lock, or a data lock already exists on the calling
+process.
+.IP
+.I op
+is equal to
+.SB TXTLOCK
+and a text lock, or a process lock already exists on the calling process.
+.IP
+.I op
+is equal to
+.SB DATLOCK
+and a data lock, or a process lock already exists on the calling
+process.
+.IP
+.I op
+is equal to
+.SB UNLOCK
+and no type of lock exists on the calling process.
+.TP
+.SM EPERM
+The effective user 
+.SM ID
+of the calling process is not super-user.
+.SH SEE ALSO
+.BR execve (2V),
+.BR exit (2V),
+.BR fork (2V)

@@ -1,0 +1,100 @@
+.\" @(#)time.3v 1.1 92/07/30 SMI; from UCB 4.2
+.TH TIME 3V "21 January 1990"
+.SH NAME
+time, ftime \- get date and time
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/time.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+time_t time(tloc)
+time_t *tloc;
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <sys/timeb.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int ftime(tp)
+struct timeb *tp;
+.ft
+.fi
+.IX  get "date and time \(em \fLtime()\fP"
+.IX  "date and time"  get  ""  "get \(em \fLtime()\fP"
+.IX  "time and date"  get  ""  "get \(em \fLtime()\fP"
+.IX  get "date and time \(em \fLftime()\fP"
+.IX  "date and time"  "get ftime()"  ""  "get \(em \fLftime()\fP"
+.IX  "time and date"  "get ftime()"  ""  "get \(em \fLftime()\fP"
+.IX  "time()"  ""  "\fLtime()\fP \(em get date and time"
+.IX  "ftime()"  ""  "\fLftime()\fP \(em get date and time"
+.SH DESCRIPTION
+.LP
+.B time(\|)
+returns the time since 00:00:00
+.SM GMT\s0,
+Jan. 1, 1970, measured in seconds.
+.LP
+If
+.I tloc
+is non-\s-1NULL\s0,
+the return value is also stored in the location to which
+.I tloc
+points.
+.LP
+.B ftime(\|)
+fills in a structure pointed to by
+.IR tp ,
+as defined in
+.BR <sys/timeb.h> :
+.RS
+.ta .5i +\w'unsigned 'u
+.nf
+.ft B
+struct timeb
+{
+	time_t	time;
+	unsigned short millitm;
+	short	timezone;
+	short	dstflag;
+};
+.ft R
+.fi
+.RE
+.LP
+The structure contains the time since the epoch in seconds,
+up to 1000 milliseconds of more-precise interval,
+the local time zone (measured in minutes of time westward from Greenwich),
+and a flag that, if nonzero, indicates that
+Daylight Saving time applies locally during the appropriate part of the year.
+.SH RETURN VALUES
+.LP
+.B time(\|)
+returns
+the value of time
+on success.
+On failure,
+it returns
+.B (time_t)
+\-1.
+.LP
+On success,
+.B ftime(\|)
+returns no useful value.
+On failure,
+it returns
+\-1.
+.SH SEE ALSO
+.BR date (1V),
+.BR gettimeofday (2),
+.BR ctime (3V)

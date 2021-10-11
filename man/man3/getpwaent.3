@@ -1,0 +1,119 @@
+.\" @(#)getpwaent.3 1.1 92/07/30 SMI;
+.TH GETPWAENT 3 "7 September 1988"
+.SH NAME
+getpwaent, getpwanam, setpwaent, endpwaent, fgetpwaent \- get password adjunct file entry
+.SH SYNOPSIS
+.nf
+.B #include <sys/types.h>
+.B #include <sys/label.h>
+.B #include <sys/audit.h>
+.B #include <pwdadj.h>
+.LP
+.B struct passwd_adjunct *getpwaent(\|)
+.LP
+.B struct passwd_adjunct *getpwanam(name)
+.B char *name;
+.LP
+.B struct passwd_adjunct *fgetpwaent(f)
+.B FILE *f;
+.LP
+.B void setpwaent(\|)
+.LP
+.B void endpwaent(\|)
+.fi
+.SH DESCRIPTION
+.IX "getpwaent()" "" "\fLgetpwaent()\fP function"
+.IX "getpwanam()" "" "\fLgetpwanam()\fP function"
+.IX "setpwaent()" "" "\fLsetpwaent()\fP function"
+.IX "endpwaent()" "" "\fLendpwaent()\fP function"
+.IX "fgetpwaent()" "" "\fLfgetpwaent()\fP function"
+.LP
+Both
+.B getpwaent(\|)
+and
+.B getpwanam(\|)
+return a pointer to an object with the following structure
+containing the broken-out fields of a line in the password adjunct file.
+Each line in the file contains a
+.B passwd_adjunct
+structure, declared in the
+.B <pwdadj.h>
+header file:
+.RS
+.LP
+.nf
+.ft B
+struct  passwd_adjunct {
+.ft
+.RS
+.ft B
+char            *pwa_name;
+char            *pwa_passwd;
+blabel_t        pwa_minimum;
+blabel_t        pwa_maximum;
+blabel_t        pwa_def;
+audit_state_t   pwa_au_always;
+audit_state_t   pwa_au_never;
+int             pwa_version;
+.ft
+.RE
+.ft B
+};
+.ft R
+.fi
+.RE
+.LP
+When first called,
+.B getpwaent(\|)
+returns a pointer to a
+.B passwd_adjunct
+structure describing data from the first line in the file.
+Thereafter, it returns a pointer to a
+.B passwd_adjunct
+structure describing data from the next line in the file.
+So successive calls can be used to search the entire file.
+.LP
+.B getpwanam(\|)
+searches from the beginning of the file
+until it finds a login name matching
+.IR name ,
+then returns a pointer to the particular structure
+in which it was found.
+.LP
+Calling
+.B setpwaent(\|)
+rewinds the password adjunct file to allow repeated searches.
+Calling
+.B endpwaent(\|)
+closes the password adjunct file when processing is complete.
+.LP
+Because read access is required on
+.B /etc/security/passwd.adjunct,
+.B getpwaent(\|)
+and
+.B getpwanam(\|)
+will fail unless the calling process has effective
+.SM UID
+of root.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/security/passwd.adjunct
+.TP
+.BI /var/yp/ domainname /passwd.adjunct.byname
+.PD
+.SH DIAGNOSTICS
+A
+.SM NULL
+pointer is returned on end-of-file or error.
+.SH "SEE ALSO"
+.BR getpwent (3V),
+.BR getgrent (3V),
+.BR passwd.adjunct (5),
+.BR ypserv (8)
+.br
+.ne 4
+.SH BUGS
+.LP
+All information is contained in a static area,
+so it must be copied if it is to be saved.

@@ -1,0 +1,190 @@
+.\" @(#)pack.1v 1.1 92/07/30 SMI; from S5R2 6.2
+.TH PACK 1V "17 September 1989"
+.SH NAME
+pack, pcat, unpack \- compress and expand files
+.SH SYNOPSIS
+.B pack
+[
+.B \-
+] [
+.B \-f
+]
+.IR filename .\|.\|.
+.LP
+.B pcat
+.IR filename .\|.\|.
+.LP
+.B unpack
+.IR filename .\|.\|.
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  pack  ""  "\fLpack\fP \(em pack files"
+.IX  unpack  ""  "\fLunpack\fP \(em unpack files"
+.IX  pcat  ""  "\fLpcat\fP \(em pack files"
+.IX  files  "pack command"  files  "\fLpack\fP \(em pack files"
+.IX  files  "unpack command"  files "\fLunpack\fP \(em unpack files"
+.IX  files  "pcat command"  files  "\fLpcat\fP \(em pack files"
+.B pack
+attempts to store the specified files in a packed form using Huffman
+(minimum redundancy) codes on a byte-by-byte basis.
+Wherever possible (and useful), each input file
+.I filename
+is replaced by a packed file
+.IB filename .z
+with the same access modes, access and modified
+dates, and owner as those of
+.IR filename .
+If
+.B pack
+is successful,
+.I filename
+will be removed.
+.LP
+Packed files can be restored to their original form using
+.B unpack
+or
+.BR pcat .
+.LP
+The amount of compression obtained depends on the size of the
+input file and the frequency distribution of its characters.
+.LP
+Because a decoding tree forms the first part of each
+.B .z
+file, it is usually not worthwhile
+to pack files smaller than three blocks unless the distribution
+of characters is very skewed.
+This may occur with printer plots or pictures.
+.LP
+Typically, large text-files are reduced
+to 60-75% of their original size.
+Load modules, which use a larger character set and have a more
+uniform distribution of characters, show little compression.  Their
+packed versions come in at about 90% of the original size.
+.LP
+No packing will occur if:
+.PD 0
+.IP
+the file appears to be already packed
+.IP
+the file name has more than 12 characters
+.IP
+the file has links
+.IP
+the file is a directory
+.IP
+the file cannot be opened
+.IP
+no disk storage blocks will be saved by packing
+.IP
+a file called
+.IB name .z
+already exists
+.IP
+the
+.B .z
+file cannot be created
+.IP
+an I/O error occurred during processing
+.PD
+.LP
+The last segment of the filename must contain no more than 12
+characters to allow space for the appended
+.B .z
+extension.
+Directories cannot be packed.
+.LP
+.B pcat
+does for packed files what
+.BR cat (1V)
+does for ordinary files,
+except that
+.B pcat
+cannot be used as a filter.
+The specified files are unpacked and written to the standard output.
+To view a packed file named
+.IB name .z
+use:
+.IP
+.BI pcat " filename" .z
+.LP
+or just:
+.IP
+.BI pcat " filename"
+.LP
+To make an unpacked copy without destroying the packed version, use
+.IP
+.BI  pcat " filename" > " newname"
+.br
+.ne 8
+.LP
+Failure may occur if:
+.PD 0
+.IP
+the filename (exclusive of the
+.BR .z )
+has more than 12 characters;
+.IP
+the file cannot be opened;
+.IP
+the file does not appear to be the output of
+.BR pack .
+.PD
+.LP
+.B unpack
+expands files created by
+.BR pack .
+For each file
+.I filename
+specified in the command, a search is made for a file called
+.IB filename .z
+(or just
+.IR filename ,
+if
+.I filename
+ends in
+.BR .z ).
+If this file appears to be a packed, it is replaced by
+its expanded version.  The new file has the
+.B .z
+suffix stripped from its name, and has the same access modes,
+access and modification dates, and owner as those of the packed file.
+Failure may occur for the same reasons that it may in
+.BR pcat ,
+as well as for the following:
+.TP 3
+\(bu
+a file with the \*(lqunpacked\*(rq name already exists
+.TP 3
+\(bu
+the unpacked file cannot be created.
+.LP
+.SH OPTIONS
+.TP
+.B \-
+Print compression statistics for the following
+filename or names on the standard output.
+Subsequent
+.RB ` \- 's
+between filenames toggle statistics off and on.
+.TP
+.B \-f
+Force packing of
+.IR filename .
+This is useful for causing an entire directory to be packed,
+even if some of the files will not benefit.
+.SH DIAGNOSTICS
+.B pack
+returns the number of files that it failed to compress.
+.LP
+.B pcat
+returns the number of files it was unable to unpack.
+.LP
+.B unpack
+returns the number of files it was unable to unpack.
+.SH "SEE ALSO"
+.BR cat (1V)

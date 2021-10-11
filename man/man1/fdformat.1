@@ -1,0 +1,165 @@
+.\" @(#)fdformat.1 1.1 92/07/30 SMI;
+.TH FDFORMAT 1 "7 October 1990"
+.SH NAME
+fdformat \- format diskettes for use with SunOS 
+.SH SYNOPSIS
+.SS Sun386i Systems
+.B fdformat
+[
+.B \-L
+]
+[
+.B \-2
+]
+.SS Sun-3/80 and Desktop SPARC Systems
+.B fdformat
+[
+.B \-deflv
+]
+[
+.B \-b
+.I label
+]
+[
+.I device
+]
+.SH AVAILABLITY
+.LP
+This command is available on
+Sun386i, Sun-3/80, and Desktop \s-1SPARC\s0 systems only.
+.SH DESCRIPTION
+.IX "fdformat command" "format floppy" "\fLfdformat\fP \(em floppy format" 
+.LP
+.B fdformat
+is a utility for formatting floppy diskettes.
+All new blank diskettes must be
+formatted before they can be used.
+.B fdformat
+formats and verifies each track on the diskette, and terminates if
+it finds any bad sectors. 
+All existing data on the diskette, if any, is destroyed by formatting.
+.LP
+By default, 
+.B fdformat 
+formats a high density diskette with a capacity of 1.44 megabytes.
+Use the
+.B \-L
+or
+.B \-l
+option to format low density diskettes (720K capacity).
+Note: it is not possible to put a low density 
+format onto a high density floppy diskette.
+High density diskettes can be recognized by the high density
+detect hole in the lower right corner of the diskette, opposite the write
+protect hole in the lower left corner.
+.LP
+Use the
+.B \-d
+option to put a
+.B MS-DOS
+file system on the diskette after format is done. Otherwise, the
+Sun-3/80 and Desktop \s-1SPARC\s0 systems version of
+.B fdformat
+writes a Sun\s-1OS\s0 label on the diskette
+in logical block 0 after it has been formatted.
+The label is required on Sun-3/80 and Desktop \s-1SPARC\s0 systems
+if you intend to put a
+.SM UNIX
+file system on the floppy diskette.
+.LP
+On Sun386i systems, use the
+.B \-2
+option to format diskettes in the optional external 5 1/4" floppy drive.
+To format diskettes for use under 
+.SM MS-DOS,
+use the 
+.SM MS-DOS FORMAT
+command in a 
+.SM DOS
+window.
+.SH OPTIONS
+.SS Sun386i Systems
+.TP
+.B \-L
+Format a low density diskette.
+.TP
+.B \-2
+Format a diskette in the optional external 5.25-inch floppy drive.
+.SS Sun-3/80 and Desktop SPARC Systems
+.TP
+.B \-b
+Put a
+.B MS-DOS
+.I label
+on the disk after formatting it. This option is only meaningful when 
+.B \-d
+is also set.
+.TP
+.B \-d
+Install a
+.B MS-DOS
+file system and boot sector on the disk after formatting. This is
+equivalent to the
+.SM MS-DOS FORMAT
+command.
+.TP
+.B \-e
+Eject the diskette when done.
+.TP
+.B \-f
+Force.
+Do not ask for confirmation before starting format.
+.TP
+.B \-l
+Format a low density (720K) diskette.
+.TP
+.B \-v
+Verify the floppy diskette after formatting.
+.SH NOTES
+.LP
+A diskette formatted using the
+.B \-d option for
+.B MS-DOS
+won't have the necessary system files, and is therefore not bootable.
+Trying to boot from it on a
+.B PC
+will result in the following message:
+.IP
+Non-System disk or disk error
+.br
+Replace and strike any key when ready
+
+.SH FILES
+.SS Sun386i Systems
+.PD 0
+.TP 20
+.B /dev/rfd0c
+1.44 megabyte 3.5-inch high density diskette drive
+.TP
+.B /dev/rfdl0c
+720 kilobyte 3.5-inch low density diskette drive
+.TP
+.B /dev/rfd2c
+High density 5.25-inch floppy drive
+.TP
+.B /dev/rfdl2c
+Low density 5.25-inch floppy drive
+.PD
+.SS Sun-3/80 and Desktop SPARC Systems
+.PD 0
+.TP 20
+.B /dev/rfd0c
+.PD
+.SH "SEE ALSO"
+.BR dos (1),
+.BR fd (4S),
+.BR pcfs (4S)
+.br
+.ne 5
+.SH BUGS
+.LP
+Currently bad sector mapping is not supported on 
+floppy diskettes.
+Therefore, a diskette is unusable if 
+.B fdformat
+finds an error (bad sector).

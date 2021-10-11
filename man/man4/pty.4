@@ -1,0 +1,316 @@
+.\" @(#)pty.4 1.1 92/07/30 SMI;
+.TH PTY 4 "26 February 1988"
+.SH NAME
+pty \- pseudo-terminal driver
+.SH CONFIG
+.B pseudo-device pty\fIn\fP
+.SH SYNOPSIS
+.ft B
+.nf
+#include <fcntl.h>
+#include <sys/termios.h>
+open("/dev/ttyp\fIn\fB", mode);
+open("/dev/ptyp\fIn\fB", mode);
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "pty device"  ""  "\fLpty\fP \(em pseudo-terminal driver"  ""  PAGE START
+.LP
+The
+.B pty
+driver provides support for a pair of devices collectively
+known as a
+.IR pseudo-terminal .
+The two devices comprising a pseudo-terminal
+are known as a
+.I controller
+and a
+.IR slave .
+The slave device distinguishes between the
+.B B0
+baud rate and other baud rates specified in the
+.B c_cflag
+word of the
+.B termios
+structure, and the
+.SB CLOCAL
+flag in that word.
+It does not support any of the other
+.BR termio (4)
+device control functions specified by flags in the
+.B c_cflag
+word of the
+.B termios
+structure and by the
+.SM
+.BR IGNBRK\*S ,
+.SM
+.BR IGNPAR\*S ,
+.SM
+.BR PARMRK\*S ,
+or
+.SB INPCK
+flags in the
+.B c_iflag
+word of the
+.B termios
+structure, as these functions apply only to asynchronous serial
+ports.  All other
+.BR termio (4)
+functions must be performed by
+.SM STREAMS
+modules pushed atop the driver; when a slave device is opened, the
+.BR ldterm (4M)
+and
+.BR ttcompat (4M)
+.SM STREAMS
+modules are automatically pushed on top of the stream, providing the
+standard
+.BR termio (4)
+interface.
+.LP
+Instead of having a hardware interface and associated hardware
+that supports the terminal functions, the functions
+are implemented by another process manipulating the controller device of
+the pseudo-terminal.
+.LP
+The controller and the slave devices of the pseudo-terminal are tightly
+connected.
+Any data written on the controller device is given to the slave device as
+input, as though it had been received from a hardware interface.
+Any data written on the slave terminal can be read from the controller
+device (rather than being transmitted from a
+.SM UART\s0).
+.LP
+In configuring, if no optional ``count'' is given in
+the specification, 16 pseudo-terminal pairs are configured.
+.SH IOCTLS
+The standard set of
+.B termio
+.BR ioctl s
+are supported by the slave device.  None of the bits in the
+.B c_cflag
+word have any effect on the pseudo-terminal, except that if the baud
+rate is set to
+.BR B0 ,
+it will appear to the process on the controller device as if the last
+process on the slave device had closed the line; thus, setting the baud
+rate to
+.B B0
+has the effect of ``hanging up'' the pseudo-terminal, just as it has
+the effect of ``hanging up'' a real terminal.
+.LP
+There is no notion of ``parity'' on a pseudo-terminal, so none of the
+flags in the
+.B c_iflag
+word that control the processing of parity errors have any effect.
+Similarly, there is no notion of a ``break'', so none of the flags
+that control the processing of breaks, and none of the
+.BR ioctl s
+that generate breaks, have any effect.
+.LP
+Input flow control is automatically performed; a process that
+attempts to write to the controller device will be blocked if too much
+unconsumed data is buffered on the slave device.  The input flow
+control provided by the
+.SB IXOFF
+flag in the
+.B c_iflag
+word is not supported.
+.LP
+The delays specified in the
+.B c_oflag
+word are not supported.
+.LP
+As there are no modems involved in a pseudo-terminal, the
+.BR ioctl s
+that return or alter the state of modem control lines are silently
+ignored.
+.LP
+On Sun systems, an additional
+.B ioctl
+is provided:
+.TP
+.SB TIOCCONS
+The argument is ignored.
+All output that would normally be sent to the console
+(either from programs writing to
+.B /dev/console
+or from kernel printouts) is redirected so that it is written
+to the pseudo-terminal instead.
+.LP
+A few special
+.BR ioctl s
+are provided on the controller devices of pseudo-terminals to provide
+the functionality needed by applications programs to emulate
+real hardware interfaces:
+.TP
+.SB TIOCSTOP
+.IX  "ioctls for terminals"  "TIOCSTOP"  "\fLioctl\fP's for terminals"  "\fLTIOCSTOP\fP \(em stop output (like control-S)"
+.IX  "TIOCSTOP stop output (like control-S)"  ""  "\fLTIOCSTOP\fP \(em stop output (like control-S)"
+.IX  "stop output (like control-S) ioctl"  ""  "stop output (like control-S) \fLioctl\fP \(em \fLTIOCSTOP\fP"
+The argument is ignored.
+Output to the pseudo-terminal is suspended, as if a
+.SB STOP
+character had been typed.
+.TP
+.SB TIOCSTART
+.IX  "ioctls for terminals"  "TIOCSTART"  "\fLioctl\fP's for terminals"  "\fLTIOCSTART\fP \(em start output (like control-Q)"
+.IX  "TIOCSTART start output (like control-Q)"  ""  "\fLTIOCSTART\fP \(em start output (like control-Q)"
+.IX  "start output (like control-Q) ioctl"  ""  "start output (like control-Q) \fLioctl\fP \(em \fLTIOCSTART\fP"
+The argument is ignored.
+Output to the pseudo-terminal is restarted, as if a
+.SB START
+character had been typed.
+.TP
+.SB TIOCPKT
+.IX  "ioctls for terminals"  "TIOCPKT"  "\fLioctl\fP's for terminals"  "\fLTIOCPKT\fP \(em set/clear packet mode (pty)"
+.IX  "TIOCPKT set/clear packet mode (pty)"  ""  "\fLTIOCPKT\fP \(em set/clear packet mode (pty)"
+.IX  set/clear "packet mode (pty) ioctl \(em \fLTIOCPKT\fP"
+The argument is a pointer to an
+.BR int .
+If the value of the
+.B int
+is non-zero,
+.I packet
+mode is enabled; if the value of the
+.B int
+is zero,
+packet mode is disabled.
+When a pseudo-terminal is in packet mode, each subsequent
+.BR read (2V)
+from the controller device will return data written on the slave device
+preceded by a zero byte (symbolically defined as
+.SM
+.BR TIOCPKT_DATA\*S ),
+or a single byte reflecting control
+status information.  In the latter case, the byte is an inclusive-or
+of zero or more of the bits:
+.RS
+.TP 20
+.SB TIOCPKT_FLUSHREAD
+whenever the read queue for the terminal is flushed.
+.TP
+.SB TIOCPKT_FLUSHWRITE
+whenever the write queue for the terminal is flushed.
+.TP
+.SB TIOCPKT_STOP
+whenever output to the terminal is stopped using ^S.
+.TP
+.SB TIOCPKT_START
+whenever output to the terminal is restarted.
+.TP
+.SB TIOCPKT_DOSTOP
+whenever
+.SM XON/XOFF
+flow control is enabled after being disabled; it is
+considered ``enabled'' when the
+.SB IXON
+flag in the
+.B c_iflag
+word is set, the
+.SB VSTOP
+member of the
+.B c_cc
+array is ^S and the
+.SB VSTART
+member of the
+.B c_cc
+array is ^Q.
+.TP
+.SB TIOCPKT_NOSTOP
+whenever
+.SM XON/XOFF
+flow control is disabled after being enabled.
+.RE
+.IP
+This mode is used by
+.BR rlogin (1C)
+and
+.BR rlogind (8C)
+to implement a remote-echoed, locally ^S/^Q flow-controlled
+remote login with proper back-flushing of output when interrupts
+occur; it can be
+used by other similar programs.
+.TP
+.SB TIOCREMOTE
+.IX  "ioctls for terminals"  "TIOCREMOTE"  "\fLioctl\fP's for terminals"  "\fLTIOCREMOTE\fP \(em remote input editing"
+.IX  "TIOCREMOTE remote input editing"  ""  "\fLTIOCREMOTE\fP \(em remote input editing"
+.IX  "remote input editing ioctl"  ""  "remote input editing \fLioctl\fP \(em \fLTIOCREMOTE\fP"
+The argument is a pointer to an
+.BR int .
+If the value of the
+.B int
+is non-zero,
+.I remote
+mode is enabled; if the value of the
+.B int
+is zero,
+remote mode is disabled.
+This mode can be enabled or disabled independently of packet mode.
+When a pseudo-terminal is in remote mode,
+input to the slave device of the pseudo-terminal is flow controlled and not
+input edited (regardless of the mode the slave side of the pseudo-terminal).
+Each write to the controller device produces
+a record boundary for the process reading the slave device.  In
+normal usage, a write of data is like the data typed as a line
+on the terminal; a write of 0 bytes is like typing an
+.SB EOF
+character.
+Note: this means that a process writing to a pseudo-terminal controller in
+.I remote
+mode must keep track of line boundaries, and write only one line at a time to
+the controller.  If, for example, it were to buffer up several
+.SB NEWLINE
+characters and write them to the controller with one
+.BR write(\|) ,
+it would appear to a process reading from the slave as if a single line
+containing several
+.SB NEWLINE
+characters had been typed (as if, for example, a user had typed the
+.SB LNEXT
+character before typing all but the last of those
+.SB NEWLINE
+characters).
+Remote mode can be used when doing remote line
+editing in a window manager, or whenever flow controlled input
+is required.
+.LP
+The
+.BR ioctl s
+.SM
+.BR TIOCGWINSZ\*S ,
+.SM
+.BR TIOCSWINSZ\*S ,
+and, on Sun systems,
+.SM
+.BR TIOCCONS\*S ,
+can be performed on the controller device of a pseudo-terminal; they have the
+same effect as when performed on the slave device.
+.br
+.ne 8
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/pty[p-s][0-9a-f]
+pseudo-terminal controller devices
+.TP
+.B /dev/tty[p-s][0-9a-f]
+pseudo-terminal slave devices
+.TP
+.B /dev/console
+.PD
+.SH "SEE ALSO"
+.BR rlogin (1C),
+.BR termio (4),
+.BR ldterm (4M),
+.BR ttcompat (4M),
+.BR rlogind (8C)
+.SH BUGS
+It is apparently not possible to send an
+.SB EOT
+by writing zero
+bytes in
+.SB TIOCREMOTE
+mode.
+.IX  "pty device"  ""  "\fLpty\fP \(em pseudo-terminal driver"  ""  PAGE END

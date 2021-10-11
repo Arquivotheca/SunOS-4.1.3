@@ -1,0 +1,317 @@
+.\" @(#)semctl.2 1.1 92/07/30 SMI; from S5R3
+.TH SEMCTL 2 "21 January 1990"
+.SH NAME
+semctl \- semaphore control operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int semctl(semid, semnum, cmd, arg)
+int semid, semnum, cmd;
+union semun {
+	val;
+	struct semid_ds *buf;
+	ushort *array;
+} arg;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  semctl()  "" "\fLsemctl()\fR \(em semaphore controls"
+.IX  semaphore "control \(em \fLsemctl()\fR"
+.B semctl(\|)
+provides a variety of semaphore control operations as specified by
+.IR cmd .
+.LP
+The following
+.IR cmd s
+are executed with respect to the semaphore specified by
+.IR semid " and " semnum:
+.TP 15
+.SB GETVAL
+Return the value of
+.I semval
+(see
+.BR intro (2)).
+.B [\s-1READ\s0]
+.TP
+.SB SETVAL
+Set the value of
+.I semval
+to
+.IR arg.val .
+.B [\s-1ALTER\s0]
+When this cmd is successfully executed, the
+.I semadj
+value corresponding to the
+specified semaphore in all processes is cleared.
+.TP
+.SB GETPID
+Return the value of
+.IR sempid .
+.B [\s-1READ\s0]
+.TP
+.SB GETNCNT
+Return the value of
+.IR semncnt .
+.B [\s-1READ\s0]
+.TP
+.SB GETZCNT
+Return the value of
+.IR semzcnt .
+.B [\s-1READ\s0]
+.LP
+The following
+.IR cmd s
+return and set, respectively, every
+.I semval
+in the set of semaphores.
+.TP 15
+.SB GETALL
+Place
+.I semvals
+into the array pointed to by
+.IR arg.array .
+.B [\s-1READ\s0]
+.TP
+.SB SETALL
+Set
+.I semvals
+according to the array pointed to by
+.IR arg.array .
+.B [\s-1ALTER\s0]
+When this cmd is successfully executed the
+.I semadj
+values corresponding to each
+specified semaphore in all processes are cleared.
+.LP
+The following
+.IR cmd s
+are also available:
+.TP 15
+.SB IPC_STAT
+Place the current value of each member of the data structure associated with
+.I semid
+into the structure pointed to by
+.IR arg.buf .
+The contents of this structure are defined in
+.BR intro (2).
+.B [\s-1READ\s0]
+.TP
+.SB IPC_SET
+Set the value of the following members of the data structure associated with
+.I semid
+to the corresponding value found in the structure pointed to by
+.IR arg.buf :
+.RS
+.IP
+.ft B
+sem_perm.uid
+.br
+sem_perm.gid
+.br
+sem_perm.mode /\(** only low 9 bits \(**/
+.ft
+.RE
+.IP
+This
+.I cmd
+can only be executed by a process that has an effective user
+.SM ID
+equal to either that of super-user, or to the value of
+.B sem_perm.cuid
+or
+.B sem_perm.uid
+in the data structure associated with
+.IR semid .
+.br
+.ne 5
+.TP 15
+.SB IPC_RMID
+Remove the semaphore identifier specified by
+.I semid
+from the system and destroy the set of semaphores and data structure
+associated with it.
+This cmd can only be executed by a process that has an effective user
+.SM ID
+equal to either that of super-user, or to the value of
+.B sem_perm.cuid
+or
+.B sem_perm.uid
+in the data structure associated with
+.IR semid .
+.br
+.ne 12
+.LP
+In the
+.BR semop (2)
+and 
+.BR semctl (2)
+system call descriptions, the permission required
+for an operation is given as "[token]", where \*(lqtoken\*(rq is the type
+of permission needed interpreted as follows:
+.LP
+.RS
+.PD 0
+.TP 28
+00400
+Read by user
+.TP
+00200
+Alter by user
+.TP
+00060
+Read, Alter by group
+.TP
+00006
+Read, Alter by others
+.RE
+.PD
+.LP
+Read and Alter permissions on a semid are
+granted to a process if one or more of the following are true:
+.IP
+The effective user
+.SM ID
+of the process is super-user.
+.IP
+The effective user
+.SM ID
+of the process matches
+.B sem_perm.[c]uid
+in the data structure associated with
+.I semid
+and the appropriate bit of the
+\*(lquser\*(rq portion (0600) of
+.B sem_perm.mode
+is set.
+.IP
+The effective user
+.SM ID
+of the process does not match
+.B sem_perm.[c]uid
+and the effective group
+.SM ID
+of the process matches
+.B sem_perm.[c]gid
+and the appropriate bit of the \*(lqgroup\*(rq portion
+(060) of
+.B sem_perm.mode
+is set.
+.IP
+The effective user
+.SM ID
+of the process does not match
+.B sem_perm.[c]uid
+and the effective group
+.SM ID
+of the process does not match
+.B sem_perm.[c]gid
+and the appropriate bit of the \*(lqother\*(rq portion (06) of
+.B sem_perm.mode
+is set.
+.LP
+Otherwise, the corresponding permissions are denied.
+.SH RETURN VALUES
+.LP
+On success,
+the value returned
+by
+.B semctl(\|)
+depends on
+.I cmd
+as follows:
+.TP 15
+.SM GETVAL
+The value of
+.IR semval .
+.TP
+.SM GETPID
+The value of
+.IR sempid .
+.TP
+.SM GETNCNT
+The value of
+.IR semncnt .
+.TP
+.SM GETZCNT
+The value of
+.IR semzcnt .
+.TP
+All others
+0.
+.LP
+On failure,
+.B semctl(\|)
+returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM EFAULT
+.I arg.buf
+points to an illegal address.
+.TP
+.SM EINVAL
+.I semid
+is not a valid semaphore identifier.
+.IP
+.I semnum
+is less than zero or greater than
+.BR sem_nsems .
+.IP
+.I cmd
+is not a valid command.
+.TP
+.SM EPERM
+.I cmd
+is
+.SB IPC_RMID
+or
+.SB IPC_SET
+and the effective user
+.SM ID
+of the calling process is not super-user.
+.IP
+.I cmd
+is
+.SB IPC_RMID
+or
+.SB IPC_SET
+and the effective user
+.SM ID
+of the calling process is not
+the value of
+.B sem_perm.cuid
+or
+.B sem_perm.uid
+in the data structure associated with
+.IR semid .
+.TP
+.SM ERANGE
+.I cmd
+is
+.SB SETVAL
+or
+.SB SETALL
+and the value to which
+.I semval
+is to be set is greater than the system imposed maximum.
+.SH "SEE ALSO"
+.BR intro (2),
+.BR semget (2),
+.BR semop (2),
+.BR ipcrm (1),
+.BR ipcs (1)

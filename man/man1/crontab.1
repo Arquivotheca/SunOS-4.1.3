@@ -1,0 +1,137 @@
+.\" @(#)crontab.1 1.1 92/07/30 SMI; from S5R3
+.TH CRONTAB 1 "9 September 1987"
+.SH NAME
+crontab \- install, edit, remove or list a user's crontab file
+.SH SYNOPSIS
+.B crontab
+[
+.I filename
+]
+.br
+.B crontab
+.B \-e
+[
+.I username
+]
+.br
+.B crontab
+.B \-l
+[
+.I username
+]
+.br
+.B crontab
+.B \-r
+[
+.I username
+]
+.SH DESCRIPTION
+.IX "crontab command" "" "\fLcrontab\fR command"
+.LP
+.B crontab
+copies the specified file,
+or the standard input if no file is specified,
+into a directory that holds all users'
+.B crontab
+files.  A user's
+.B crontab
+file lists commands that are to be executed on behalf of that user at
+specified times on specified dates; the format of these files is
+described in
+.BR crontab (5).
+.LP
+If the file
+.BR /var/spool/cron/cron.allow
+exists, only users whose username appears in it can use 
+.BR crontab .
+If that file does
+.I not
+exist, however, 
+.B crontab 
+checks the
+.B /var/spool/cron/cron.deny
+file to determine if the user
+should be denied the use of
+.BR crontab .
+If neither file exists, only the super-user is allowed to
+submit a
+.B crontab
+job.  If
+.B cron.allow
+does not exist and
+.B cron.deny
+exists and is empty, global usage is permitted.
+The allow/deny files consist of one user name
+per line.
+.SH OPTIONS
+.TP
+.B \-e
+Make a copy of the current user's
+.B crontab
+file, or create an empty file if it does not exist, and edit
+that file.  The
+.BR vi (1)
+editor will be used unless the environment variable
+.SB VISUAL
+or
+.SB EDITOR
+indicates an alternate editor.
+When editing is complete, install the file as the user's
+.B crontab
+file if it was modified.
+If a
+.I username
+is given, the specified user's
+.B crontab
+file is edited, rather than the current user's
+.B crontab
+file; this may only be done by the super-user.
+.TP
+.B \-l
+List the user's
+.B crontab
+file.
+.TP
+.B \-r
+Remove the current user's
+.B crontab
+file from the
+.B crontab
+directory.
+If a
+.I username
+is given, the specified user's
+.B crontab
+file is removed, rather than the current user's
+.B crontab
+file; this may only be done by the super-user.
+.SH FILES
+.PD 0
+.TP 25
+.B /var/spool/cron
+main cron directory
+.TP
+.B /var/spool/cron/crontabs
+spool area
+.TP
+.B /var/spool/cron/cron.allow
+list of allowed users
+.TP
+.B /var/spool/cron/cron.deny
+list of denied users
+.PD
+.SH SEE ALSO
+.BR sh (1),
+.BR crontab (5),
+.BR cron (8)
+.SH WARNINGS
+.LP
+If you inadvertently enter the
+.B crontab
+command with no argument, do not attempt to get out by typing
+\s-1CTRL-D\s0.
+This removes all entries in your
+.B crontab
+file.  Instead, exit by typing your interrupt character
+(normally 
+\s-1CTRL-C\s0).

@@ -1,0 +1,42 @@
+#! /bin/sh
+#
+#ident  "%Z%%M% %I% %E%"	/* from SVR3.2 uucp:uudemon.poll 2.3 */
+
+# This shell should be run out of crontab once an hour,
+#  a little before  uudemon.hour, since this one
+#  does not start the scheduler.
+
+PATH=/bin:/usr/bin:/etc
+SPOOL=/usr/spool/uucp
+
+POLLFILE=/etc/uucp/Poll
+# POLLFILE is a list of "system <tab> hour1 hour2 hour3 ..." for polling
+# For example 
+#	raven	2  6  10
+# without the # at the beginning.  Lines starting with # are ignored.
+
+umask 022
+set +e
+
+HOUR="`date '+%H'`"
+# HOUR="`date | sed -e 's/:.*//' -e 's/^.*\(..\)$/\1/'"
+
+while read site poll
+do
+	case $site in
+	\#*)	continue;;
+	esac
+	for i in $poll
+	do
+		if [ $i -eq $HOUR ]
+		then
+			if [ ! -d $SPOOL/$site ]
+			then
+				mkdir $SPOOL/$site
+			fi
+			j=`expr $site : '\(.\{1,7\}\)'`
+			touch $SPOOL/$site/C.${j}n0000
+			continue 2
+		fi
+	done
+done <$POLLFILE

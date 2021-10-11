@@ -1,0 +1,175 @@
+.\" @(#)cp.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH CP 1 "9 September 1987"
+.SH NAME
+cp \- copy files
+.SH SYNOPSIS
+.B cp
+[
+.B \-ip
+]
+.I filename1
+.I filename2
+.br
+.B cp
+.B \-rR
+[
+.B \-ip
+] 
+.I directory1 directory2
+.br
+.B cp
+[
+.B \-iprR
+]
+.I filename
+\&.\|.\|.
+.I directory
+.SH DESCRIPTION
+.IX  cp  ""  "\fLcp\fP \(em copy files"
+.IX  files  "cp command"  files  "\fLcp\fP \(em copy files"
+.IX  files  copy
+.IX  copy  files
+.LP
+.B cp
+copies the contents of
+.I filename1
+onto
+.IR filename2 .
+The mode and owner of
+.I filename2
+are preserved if it already existed;
+the mode of the source file is used otherwise.  If 
+.I filename1
+is a symbolic link, or a duplicate hard link,
+the contents of the file that the link refers to
+are copied; links are not preserved.
+.LP
+In the second form,
+.B cp
+recursively copies
+.IR directory1 ,
+along with its contents and subdirectories, to 
+.IR directory2 .
+If 
+.I directory2
+does 
+.I not
+exist,
+.B cp
+creates it and duplicates the files and subdirectories of 
+.I directory1
+within it.  If
+.I directory2
+does exist, 
+.B cp 
+makes a copy of the
+.I directory1
+directory within 
+.I directory2
+(as a subdirectory), along with its files and subdirectories.
+.LP
+In the third form, each
+.I filename
+is copied to the indicated
+.IR directory ;
+the basename of the copy corresponds to that of
+the original.  The destination
+.I directory
+must already exist for the copy to succeed.
+.LP
+.B cp
+refuses to copy a file onto itself.
+.SH OPTIONS
+.TP
+.B \-i
+Interactive.  Prompt for confirmation whenever
+the copy would overwrite an existing file.  A
+.B y
+in answer confirms that the copy should proceed.
+Any other answer prevents
+.B cp
+from overwriting the file.
+.TP
+.B \-p
+Preserve.  Duplicate not only the contents of the original file
+or directory, but also the modification time and permission modes.
+.TP
+.B \-r
+.PD 0
+.TP
+.B \-R
+Recursive.  If any of the source files are directories,
+copy the directory along with its files (including any
+subdirectories and their files); the destination
+must be a directory.
+.PD
+.SH EXAMPLES
+To copy a file:
+.RS
+.nf
+.ft B
+example% cp goodies goodies.old
+example% ls goodies*
+goodies goodies.old
+.ft R
+.fi
+.RE
+.br
+.ne 10
+.LP
+To copy a directory, first to a new, and then to an
+existing destination directory:
+.LP
+.RS
+.ft B
+.nf
+example% ls ~/bkup
+/usr/example/fred/bkup not found
+example% cp \-r ~/src ~/bkup
+example% ls \-R ~/bkup
+x.c y.c z.sh
+example% cp \-r ~/src ~/bkup
+example% ls \-R ~/bkup
+src x.c y.c z.sh
+.sp .5
+src:
+x.c y.c z.sh
+.fi
+.ft R
+.RE
+.LP
+To copy a list of files to a destination directory:
+.RS
+.ft B
+example% cp ~/src/* \ \ /tmp
+.ft R
+.RE
+.SH "SEE ALSO"
+.BR cat (1V),
+.BR ln (1V),
+.BR mv (1),
+.BR pr (1V),
+.BR rcp (1C),
+.BR tar (1)
+.SH WARNINGS
+.LP
+.I Beware
+of a recursive copy like this:
+.IP
+.B "example% cp \-r ~/src ~/src/bkup"
+.LP
+which keeps copying files until it fills the entire file system.
+.SH BUGS
+.B cp
+copies the contents of files pointed to by symbolic links.  It does 
+.I not
+copy the symbolic link itself.  This can lead to inconsistencies
+when directory hierarchies are replicated.  Filenames that were
+linked in the original hierarchy are no longer linked in the
+replica.  This is also true for files with multiple hard links.
+See
+.BR ln (1V)
+for details about symbolic links and hard links.  You can 
+preserve links in replicated hierarchies by using
+.BR tar (1)
+to copy them.

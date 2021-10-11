@@ -1,0 +1,169 @@
+.\" @(#)write.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH WRITE 1 "2 October 1989"
+.SH NAME
+write \- write a message to another user
+.SH SYNOPSIS
+.B write
+.I username
+[
+.I ttyname
+]
+.SH DESCRIPTION
+.IX  "write command"  ""  "\fLwrite\fP \(em write to another user"
+.IX  user  "write to another"  ""  "write to another \(em \fLwrite\fP"
+.IX  communications  write  ""  "\fLwrite\fP \(em write to another user"
+.LP
+.B write
+copies lines from your standard input to
+.IR username 's
+screen.
+.LP
+When you type a
+.B write
+command, the person you are writing to sees
+a message like this:
+.IP
+.BI "Message from " hostname ! yourname " on " yourttyname " at hh:mm .\|.\|."
+.LP
+After typing the
+.B write
+command, enter the text of your message.
+What you type appears line-by-line on the other user's screen.
+Conclude by typing an
+.SM EOF
+indication (\s-1CTRL-D\s0)
+or an interrupt.
+At this point
+.B write
+displays
+.SM EOF
+on your recipient's screen and exits.
+.LP
+To write to a user who is logged in more than once, use the
+.I ttyname
+argument to indicate the appropriate terminal name.
+.LP
+You can grant or deny other users permission
+to write to you by using the
+.B mesg
+command (default allows writing).
+Certain commands,
+.BR nroff (1)
+and
+.BR pr (1V)
+in particular, do not allow anyone to write to you while you are using
+them in order to prevent messy output.
+.LP
+If
+.B write
+finds the character
+.RB ` ! '
+at the beginning of a line, it
+calls the shell to execute the rest of the line as a command.
+.LP
+Two people can carry on a conversation by
+\*(lqwriting\*(rq to each other.
+When the other person receives the message
+indicating you are writing to him, he can then
+.B write
+back to you if he wishes.
+However, since you are now simultaneously typing and receiving
+messages, you end up with garbage on your screen unless you work out
+some sort of scheduling scheme with your partner.
+You might try the following conventional protocol:
+when you first write to another user, wait
+for him to write back before starting to send.
+Each person should end each message with a distinctive signal \(em
+.B -o-
+(for \*(lqover\*(rq) is standard \(em so that the other
+knows when to begin a reply.
+To end your conversation, type
+.B -oo-
+(for \*(lqover and out\*(rq) before
+finishing the conversation.
+.SH EXAMPLE
+.LP
+Here is an example of a short dialog between two people on different
+terminals.
+Two users called \*(lqHorace\*(rq and
+\*(lqEudora\*(rq are logged in on a system
+called \*(lqjones\*(rq.
+To illustrate the process, both users' screens are shown side-by-side:
+.nf
+.ta 10n +\w'\fBHow about the beach on Sunday? -o-'u+6n
+Eudora's Terminal	Horace's Terminal
+.ta \w'\fBThen how about the beach on Sunday? -o-'u+2n
+	\fIHorace is staring at his screen\fP
+.ft B
+jones% write  horace
+how about a squash game tonight? -o-
+	Message from jones!eudora on tty09 at 17:05 .\|.\|.
+	how about a squash game tonight? -o-
+	jones% write  eudora
+	I'm playing tiddlywinks with Carmeline -o-
+Message from jones!horace on tty03 at 17:06 .\|.\|.
+I'm playing tiddlywinks with Carmeline -o-
+How about the beach on Sunday? -o-
+	How about the beach on Sunday? -o-
+	Sorry, I'm washing my tent that day -o-
+Sorry, I'm washing my tent that day -o-
+See you when I get back from Peru -oo-
+	See you when I get back from Peru -oo-
+^D
+jones%	\s-1EOF\s0
+.ft B
+	I hear rack of llama is very tasty -oo-
+	^D
+I hear rack of llama is very tasty -oo-
+\s-1EOF\s0	\fBjones%
+.ft R
+.fi
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR write .
+On entry to
+.BR write ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+to find user
+.TP
+.B /usr/bin/sh
+to execute
+.B !
+.PD
+.SH "SEE ALSO"
+.BR mail (1),
+.BR mesg (1),
+.BR pr (1V),
+.BR talk (1),
+.BR troff (1),
+.BR who (1),
+.BR locale (5)

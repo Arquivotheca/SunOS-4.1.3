@@ -1,0 +1,110 @@
+.\" @(#)logger.1 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH LOGGER 1 "9 September 1987"
+.SH NAME
+logger \- add entries to the system log
+.SH SYNOPSIS
+.B logger
+[
+.B \-t
+.I tag
+] [
+.B \-p
+.I priority
+] [
+.B \-i
+] [
+.B \-f
+.I filename
+] [
+.I message
+] .\|.\|.
+.SH DESCRIPTION
+.IX  "logger command"  ""  "\fLlogger\fP \(em make system log entry"
+.IX  make "system log entry \(em \fLlogger\fP"
+.IX  create "system log entry \(em \fLlogger\fP"
+.B logger
+provides a method for adding one-line entries to the system log file
+from the command line.  One or more
+.I message
+arguments can be given on the command line, in which case each is
+logged immediately.  Otherwise, a
+.I filename
+can be specified, in which case each line in the file
+is logged.  If neither is specified,
+.B logger
+reads and logs messages on a line-by-line basis from the standard input.
+.SH OPTIONS
+.TP 12n
+.BI \-t \ tag
+Mark each line added to the log with the specified
+.IR tag .
+.TP
+.BI \-p \ priority
+Enter the message with the specified
+.IR priority .
+The message priority can be specified numerically, or as a
+.IB facility . level
+pair.  For example,
+.RB ` "\-p local3.info" '
+assigns the message priority to the
+.B info
+level in the
+.B local3
+facility.  The default priority is
+.BR user.notice .
+.TP
+.B \-i
+Log the process
+.SM ID
+of the
+.B logger
+process with each line.
+.TP
+.BI \-f \ filename
+Use the contents of
+.I filename
+as the message to log.
+.TP
+.I message
+If this is unspecified, either the file
+indicated with
+.B \-f
+or the standard input is added to the log.
+.SH EXAMPLES
+.RS
+.ft B
+logger System rebooted
+.ft R
+.RE
+.LP
+will log the message
+.RB ` "System rebooted" '
+to the facility at priority
+.B notice
+to be treated by
+.B syslogd
+as other messages to the facility
+.B notice
+are.
+.IP
+.B
+logger \-p local0.notice \-t \s-1HOSTIDM\s0 \-f /dev/idmc
+.LP
+will read from the file
+.B /dev/idmc
+and will log each line in that file as a message with the tag
+.RB ` \s-1HOSTIDM\s0 '
+at priority
+.B notice
+to be treated by
+.B syslogd
+as other messages to the facility
+.B local0
+are.
+.SH SEE ALSO
+.BR syslog (3),
+.BR syslogd (8)

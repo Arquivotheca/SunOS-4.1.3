@@ -1,0 +1,52 @@
+.\" @(#)tty.4 1.1 92/07/30 SMI; from S5R2
+.hw TIOCNOTTY
+.TH TTY 4 "16 February 1988"
+.SH NAME
+tty \- controlling terminal interface
+.SH DESCRIPTION
+.IX "tty device" "" "\fLtty\fP terminal interface"
+.LP
+The file
+.B /dev/tty
+is, in each process, a synonym for the controlling
+terminal of that process, if any. 
+It is useful for programs or shell sequences that wish to be sure of
+writing messages on the terminal no matter how output has been redirected.
+It can also be used for programs that demand the name of a file for output,
+when typed output is desired and it is tiresome to find out what terminal
+is currently in use.
+.SH IOCTLS
+.LP
+In addition to the
+.BR ioctl(\|)
+requests supported by the device that
+.B tty
+refers to, the following
+.B ioctl(\|)
+request
+is supported:
+.TP 18
+.SB TIOCNOTTY
+Detach the current process from its controlling terminal, and remove it
+from its current process group, without attaching it to a new process group
+(that is, set its process group
+.SM ID
+to zero).
+This
+.B ioctl(\|)
+call only works on file descriptors connected to
+.BR /dev/tty ;
+this is used by daemon processes when they are invoked by a user at
+a terminal.  The process attempts to open
+.BR /dev/tty ;
+if the open succeeds, it detaches itself from the terminal by using
+.BR \s-1TIOCNOTTY\s0 ,
+while if the open fails, it is obviously not attached to a terminal
+and does not need to detach itself.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/tty
+.PD
+.SH SEE ALSO
+.BR termio (4)

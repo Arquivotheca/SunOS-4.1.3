@@ -1,0 +1,241 @@
+.\" @(#)setkeys.1 1.1 92/07/30 SMI;
+.TH SETKEYS 1 "1 October 1987"
+.SH NAME
+setkeys \- modify interpretation of the keyboard
+.SH SYNOPSIS
+.B setkeys
+[
+\fBreset\fR |
+\fBnosunview\fR |
+[ [
+.B lefty
+] [
+.B noarrows
+] ] ] [
+\fBsun1\fR |
+\fBsun2\fR |
+.B sun3
+]
+.SH DESCRIPTION
+.IX setkeys "" "\fLsetkeys\fR \(em change keyboard layout"
+.LP
+.B setkeys
+has been superseded by the
+.B Input
+category in
+.BR defaultsedit (1),
+and by the program
+\fBinput_from_defaults\fR (1).
+It is retained for backwards compatibility.
+.LP
+.B setkeys
+changes the kernel's keyboard translation tables,
+converting a keyboard to one of a number of
+commonly desired configurations.
+It takes an indication of the modifications
+to be performed, and optionally,
+the kind of keyboard attached to the user's machine.
+It affects all keyboard input for the machine it is run on
+(in or out of the window system)
+until that effect is superseded by rebooting,
+or by running
+.RB ` "setkeys reset" '.
+.SH OPTIONS
+.TP
+.I modifications
+Empty, or one of
+.BR reset ,
+.BR nosunview ,
+or some combination of
+.B lefty
+and
+.BR noarrows .
+By default, the keyboard is set to produce
+the SunView function-key codes
+.RB ( Stop ,
+.BR Props ,
+.BR Front ,
+.BR Close ,
+.BR Find ,
+.BR Again ,
+.BR Undo ,
+.BR Copy ,
+.BR Paste
+and
+.BR Cut ;
+.TX SVBG .
+On Sun2 and Sun3 keyboards, this
+is meaningless; on the Sun1, those functions
+are assigned to two columns of
+the right numeric-function pad.
+.TP
+.B Lefty
+Indicate the SunView functions are to be produced from keys on
+the right side of the keyboard, convenient for using the mouse in the
+left hand.
+.IP
+On the Sun2 and Sun3 systems, the SunView functions are reflected to the
+outside columns of the right function pad; those right-side functions
+are distributed in a more complicated fashion dictated by keeping the
+arrow keys together; see below.  Also, the Line Feed key, immediately
+below Return, is converted to a second Control.
+.IP
+On the Sun1,
+.B Lefty
+is the same as the default, since there is no left
+function pad.
+.TP
+.B Noarrows
+Reassign the keys with cursor arrows on their caps to
+produce simple function codes (so they may be used with filters in the
+textsw, or mapped input in the ttysw).
+.TP
+.B Nosunview
+Valid only on a Sun2 or Sun3 keyboard,
+and incompatible with
+.BR Lefty ,
+.BR Noarrows ,
+or
+.BR Reset .
+This option assigns new codes to keys F1 and L2 - L10,
+codes that are not normally produced anywhere on the keyboard.
+These codes may be selected by a
+.I mapi
+or
+.I mapo
+operation defined in a user's
+.B .ttyswrc
+file.
+.IP
+This option supports a measure of backwards compatibility to
+programs that apply some other interpretation to the affected
+function keys.
+It allows them to access the new codes when the standard codes would
+be preempted by SunView functions (for instance, in a
+.BR tty (1)
+subwindow).
+.TP
+.B  Reset
+Incompatible with
+.BR Lefty ,
+.BR Noarrows ,
+or
+.BR Nosunview ;
+it causes the keyboard to be reset to its original interpretation.
+.TP
+.I "keyboard-type"
+One of
+.BR sun1 ,
+.BR sun2 ,
+or
+.BR sun3 .
+Normally, this option is omitted;
+the type of keyboard attached to the
+system is obtained from the kernel.
+If included, the option is believed in
+preference to the kernel's information.
+.B setkeys
+treats Sun2 and Sun3 keyboards
+identically except when the modification is
+.BR Reset .
+.IP
+Note: the keyboard type is not necessarily
+the same as the machine type.
+A Sun1 keyboard is the
+.SM VT\s0100-style
+keyboard shipped with Model 100Us,
+while Sun2 and Sun3 keyboards may be attached interchangeably
+to Sun-2 and Sun-3 machines.
+A Sun3 keyboard is distinguished by its aerodynamic housing,
+and the presence of Caps and Alternate keys.
+.LP
+Options may appear in any order, and case is not significant.  The
+accompanying diagrams show the exact distribution of codes for each
+combination of keyboard and arguments to setkeys.
+.SH EXAMPLES
+.LP
+The command
+.IP
+.B setkeys lefty noarrows
+.LP
+puts the SunView functions on the right pad of the keyboard,
+replacing arrow keys by the corresponding right-function codes, and
+displacing right-function codes to the left pad.
+.LP
+The command:
+.IP
+.B setkeys sun1 reset
+.LP
+restores a Sun1 keyboard to its original arrangement.
+.SH "SEE ALSO"
+.BR defaultsedit (1),
+.BR input_from_defaults (1),
+.BR kb (4M)
+.LP
+.TX SVBG
+.SH BUGS
+.B setkeys
+affects the kernel's key tables, which in turn affects all users
+logged in to the system.
+.SH DIAGRAMS
+.nf
+.ft B
+Sun1,	reset:
+		  ^    V    <    >
+	[	standard	 ]	TF1	TF2	TF3	TF4
+	[	 typing		 ]	 7	 8	 9	 -
+	[	  array		 ]	 4	 5	 6	 ,
+	[	   ....		 ]	 1	 2	 3	En-
+					     0		 .	ter
+	default / lefty:
+		  ^    V    <    >
+	[	standard	 ]	Again	RF1	Stop	RF2
+	[	 typing		 ]	Undo	RF3	Props	RF4
+	[	  array		 ]	Put	RF5	Front	RF6
+	[	   ....		 ]	Get	RF7	Close	RF8
+					  Delete	Find	
+	default / lefty, noarrow:
+		   TF1 TF2 TF3 TF4
+	[	standard	 ]	Again	RF1	Stop	RF2
+	[	 typing		 ]	Undo	RF3	Props	RF4
+	[	  array		 ]	Put	RF5	Front	RF6
+	[	   ....		 ]	Get	RF7	Close	RF8
+					  Delete	Find
+.ne 50
+Sun2 & Sun3,
+	reset / default:
+			TF1 TF2 ...	  ]
+	Stop	Again	[     standard	  ]	RF1	RF2	RF3
+	Props	Undo	[      typing	  ]	RF4	RF5	RF6
+	Front	Put	[       array	  ]	RF7	 ^	RF9
+	Close	Get	[		Retn	 <	RF11	 >
+	Find	Delete	[		 LF	RF13	 V	RF15
+	noarrows (only):
+			TF1 TF2 ...	  ]
+	Stop	Again	[     standard	  ]	RF1	RF2	RF3
+	Props	Undo	[      typing	  ]	RF4	RF5	RF6
+	Front	Put	[       array	  ]	RF7	RF8	RF9
+	Close	Get	[		Retn	RF10	RF11	RF12
+	Find	Delete	[		 LF	RF13	RF14	RF15
+	lefty:
+			TF1 TF2 ...	  ]
+	Stop	RF1	[     standard	  ]	Again	 <	Stop
+	RF6	RF4	[      typing	  ]	Undo	 >	Props
+	RF9	RF7	[       array	  ]	Put	 ^	Front
+	RF12	RF10	[		Retn	Get	RF11	Close
+	RF15	RF13	[		Ctrl	Delete	 V	Find
+	lefty, noarrows
+			TF1 TF2 ...	  ]
+	Stop	RF1	[     standard	  ]	Again	RF2	Stop
+	RF6	RF4	[      typing	  ]	Undo	RF5	Props
+	RF9	RF7	[       array	  ]	Put	RF8	Front
+	RF12	RF10	[		Ret	Get	RF11	Close
+	RF15	RF13	[		Ctrl	Delete	RF14	Find
+	nosunview:
+			LF11 TF2 ...	  ]
+	Stop	TF11	[     standard	  ]	RF1	RF2	RF3
+	LF12	TF12	[      typing	  ]	RF4	RF5	RF6
+	LF13	TF13	[       array	  ]	RF7	 ^	RF9
+	LF14	TF14	[		Ret	 <	RF11	 >
+	LF15	TF15	[		LF	RF13	 V	RF15
+.fi

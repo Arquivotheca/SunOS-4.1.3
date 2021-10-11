@@ -1,0 +1,130 @@
+.\" @(#)fmt.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH FMT 1 "28 December 1987"
+.SH NAME
+fmt, fmt_mail \- simple text and mail-message formatters
+.SH SYNOPSIS
+.B fmt
+[
+.B \-cs
+] 
+[
+.BI \- width
+] 
+[
+.IR inputfile  ".\|.\|."
+]
+.LP
+.B fmt_mail
+[
+.B \-cs
+] 
+[
+.BI \- width
+] 
+[
+.IR inputfile " .\|.\|."
+]
+.SH DESCRIPTION
+.IX "fmt command"  ""  "\fLfmt\fP \(em simple formatter"
+.IX "document production" fmt "" "\fLfmt\fR \(em simple formatter"
+.LP
+.B fmt 
+is a simple text formatter that fills and joins lines 
+to produce output lines of (up to) the number of characters
+specified in the
+.BI \- width
+option.  The default 
+.I width
+is 72.
+.B fmt
+concatenates the
+.IR inputfile s
+listed as arguments.  If none are given,
+.B fmt
+formats text from the standard input.
+.LP
+Blank lines are preserved in the output, as is the spacing between
+words.
+.B fmt
+does not fill lines beginning with `\fB.\fR', for compatibility with 
+.BR nroff (1).
+Nor does it fill lines starting with
+.BR ` From: ' 
+(but for full compatibility with
+.BR mail (1),
+use
+.BR fmt_mail ).
+.LP
+Indentation is preserved in the output, and input lines with differing
+indentation are not joined (unless
+.B \-c
+is used). 
+.LP
+.B fmt
+can also be used as an in-line text filter for
+.BR vi (1);
+the 
+.B vi
+command:
+.IP
+.B !}fmt
+.LP
+reformats the text between the cursor location and the end of
+the paragraph.
+.LP
+.B fmt_mail
+is a script that formats and sends mail messages.  It leaves mail
+header lines untouched, and runs the remainder of the message through
+.BR "fmt -s" .
+The resulting message is passed along to
+.BR sendmail (8),
+which routes it to the recipient.
+.SH OPTIONS
+.IP \fB\-c\fP
+Crown margin mode. Preserve the
+indentation of the first two lines within a paragraph, and align the left
+margin of each subsequent line with that of the second line.
+This is useful for tagged paragraphs.
+.TP
+.B \-s
+Split lines only.  Do not join short lines to form longer ones.  This
+prevents sample lines of code, and other such \*(lqformatted\*(rq text,
+from being unduly combined.
+.IP \fB\-\fIwidth\fR
+Fill output lines to up to 
+.IR width " columns."
+.SH ENVIRONMENT
+.LP 
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and 
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR fmt .
+On entry to
+.BR fmt ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and 
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH "SEE ALSO"
+.BR mail (1),
+.BR nroff (1),
+.BR vi (1)

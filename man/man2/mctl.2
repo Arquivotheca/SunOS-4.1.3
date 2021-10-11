@@ -1,0 +1,166 @@
+.\" @(#)mctl.2 1.1 92/07/30 SMI;
+.TH MCTL 2 "21 January 1990"
+.SH NAME
+mctl \- memory management control
+.SH SYNOPSIS
+.nf 
+.ft B
+#include <sys/types.h>
+#include <sys/mman.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int mctl(addr, len, function, arg)
+caddr_t addr;
+size_t len;
+int function;
+void *arg;
+.ft R
+.fi
+.IX mctl() "" \fLmctl()\fR
+.IX "memory management" mctl() "" \fLmctl()\fR
+.IX "memory management control \(em \fLmctl()\fR"
+.SH DESCRIPTION
+.LP
+.B mctl(\|)
+applies a variety of control functions over pages identified by the mappings
+established for the address range [\fIaddr, addr + len\fP\^).
+The function to be performed is identified by the argument
+.IR function .
+Legitimate functions are defined in 
+.B <sys/mman.h>
+as follows.
+.TP 20
+.SB MC_LOCK
+Lock the pages in the range in memory.
+This function is used to support
+.BR mlock (3).
+See the
+.BR mlock (3)
+description for semantics and usage.
+.I arg
+is ignored, but must have the value 0.
+.TP 
+.SB MC_LOCKAS
+Lock the pages in the address space in memory.
+This function is used to support
+.BR mlockall (3).
+See the 
+.BR mlockall (3)
+description for semantics and usage.
+.I addr
+and
+.I len
+are ignored but must be 0.
+.I arg
+is an integer built from the flags:
+.RS
+.RS
+.ta 25n 35n
+.nf
+.ft B
+#define \s-1MCL_CURRENT\s0	0x1	/* lock current mappings */
+#define \s-1MCL_FUTURE\s0	0x2	/* lock future mappings */
+.ft R
+.fi
+.RE
+.RE
+.TP
+.SB MC_SYNC
+Synchronize the pages in the range with their backing storage.
+Optionally
+invalidate cache copies.
+This function is used to support
+.BR msync (3).
+See the
+.BR msync (3)
+description for semantics and usage.  
+.I arg
+is used to represent the
+.I flags
+argument to 
+.BR msync (3).
+.TP
+.SB MC_UNLOCK
+Unlock the pages in the range.
+This function is used to support
+.BR mlock (3).
+See the 
+.BR mlock (3)
+description for semantics and usage.  
+.I arg
+is ignored and must have the
+value 0.
+.TP
+.SB MC_UNLOCKAS
+Remove address space memory lock, and locks on all current mappings.
+This function is used to support 
+.BR mlockall (3).
+.I addr
+and 
+.I len
+must have the value 0.  
+.I arg
+is ignored and
+must have the value 0.
+.SH RETURN VALUES
+.LP
+.B mctl(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EAGAIN
+.I function
+was
+.SB MC_LOCK
+or
+.SB MC_LOCKAS
+and some or all of the memory
+identified by the operation could not be locked due to insufficient system
+resources.
+.TP
+.SM EINVAL
+.I addr
+was not a multiple of the page size as returned by
+.BR getpagesize (2).
+.IP
+.I addr
+and/or
+.I len
+did not have the value 0 when
+.SB MC_LOCKAS
+or
+.SB MC_UNLOCKAS
+were specified.
+.IP
+.I arg
+was not valid for the function specified.
+.TP
+.SM ENOMEM
+Addresses in the range [\fIaddr, addr + len\fP\^) are invalid for the address
+space of a process, or specify one or more pages which are not mapped.
+.TP
+.SM EPERM
+The process's effective user ID was not super-user and one of
+.SB MC_LOCK,
+.SB MC_LOCKAS,
+.SB MC_UNLOCK,
+or
+.SB MC_UNLOCKAS
+was specified.
+.SH SEE ALSO
+.BR madvise (3),
+.BR mlock (3),
+.BR mlockall (3),
+.BR mmap (2),
+.BR msync (3)

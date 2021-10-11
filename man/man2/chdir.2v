@@ -1,0 +1,89 @@
+.\" @(#)chdir.2v 1.1 92/07/30 SMI; from 4.2 BSD
+.TH CHDIR 2V "21 January 1990"
+.SH NAME
+chdir \- change current working directory
+.SH SYNOPSIS
+.nf
+.ft B
+int chdir(path)
+char \(**path;
+.LP
+.ft B
+int fchdir(fd)
+int fd;
+.ft R
+.fi
+.IX  chdir()  ""  \fLchdir()\fP
+.IX  "file system"  chdir()  ""  \fLchdir()\fP
+.IX  change  "current working directory"
+.IX  "current directory"  change
+.IX  "working directory"  change
+.IX  directory  "change current"
+.SH DESCRIPTION
+.LP
+.B chdir(\|)
+and
+.B fchdir(\|)
+make the directory specified by
+.I path
+or
+.I fd
+the current working directory.
+Subsequent references to pathnames not starting with
+.RB ` / '
+are relative to the new current working directory.
+.LP
+In order for a directory to become the current directory,
+a process must have execute (search) access to the directory.
+.SH RETURN VALUES
+.LP
+.B chdir(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the pathname.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect (see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The named directory does not exist.
+.TP
+.SM ENOTDIR
+A component of the pathname is not a directory.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to an empty string.
+.SH WARNINGS
+.LP
+.B fchdir(\|)
+is provided as a performance enhancement and is guaranteed to fail
+under certain conditions.
+In particular, if auditing is active the call will never succeed, and
+.SM EINVAL
+will be returned.
+Applications which use this system call must be coded to detect this
+failure and switch to using
+.B chdir(\|)
+from that point on.

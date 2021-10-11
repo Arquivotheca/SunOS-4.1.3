@@ -1,0 +1,17 @@
+#! /bin/sh -
+#
+#       %Z%%M% %I% %E% SMI
+#
+# Executed once at boot time
+#
+PATH=/sbin:/single:/usr/bin:/usr/etc; export PATH
+HOME=/; export HOME
+
+# 
+# Repeat network configuration attempt until we get an answer.
+#
+while [ -z "`hostname`" ]; do
+	ifconfig -ad auto-revarp up
+	hostconfig -p bootparams
+	echo "re-trying host configuration..."
+done

@@ -1,0 +1,308 @@
+.\" @(#)zs.4s 1.1 92/07/30 SMI;
+.TH ZS 4S "17 April 1991"
+.SH NAME
+zs \- Zilog 8530 SCC serial communications driver
+.SH "CONFIG \(em SUN-3 SYSTEM"
+.ft B
+.nf
+device zs0 at obio ? csr 0x20000 flags 3 priority 3
+device zs1 at obio ? csr 0x00000 flags 0x103 priority 3
+.ft R
+.fi
+.SH "CONFIG \(em SUN-3x SYSTEM"
+.ft B
+.nf
+device zs0 at obio ? csr 0x62002000 flags 3 priority 3
+device zs1 at obio ? csr 0x62000000 flags 0x103 priority 3
+.ft R
+.fi
+.SH "CONFIG \(em SUN-4 SYSTEM"
+.ft B
+.nf
+device zs1 at obio ? csr 0xf0000000 flags 0x103 priority 3
+device zs2 at obio 3 csr 0xe0000000 flags 3 priority 3
+.ft R
+.fi
+.SH "CONFIG \(em Desktop SPARCsystems, SPARCsystem 600MP SERIES"
+.ft B
+.nf
+device-driver zs
+.fi
+.ft R
+.SH "CONFIG \(em Sun386i SYSTEM"
+.ft B
+.nf
+device zs0 at obmem ? csr 0xFC000000 flags 3 irq 9 priority 6
+.br
+device zs1 at obmem ? csr 0xA0000020 flags 0x103 irq 9 priority 6
+.ft R
+.fi
+.SH SYNOPSIS
+.ft B
+.nf
+#include <fcntl.h>
+#include <sys/termios.h>
+open("/dev/tty\fIn\fB", mode);
+open("/dev/ttyd\fIn\fB", mode);
+open("/dev/cua\fIn\fB", mode);
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "zs device"  ""  "\fLzs\fP \(em zilog 8530 SCC serial communications driver"  ""  PAGE START
+.IX  "8530 SCC serial communications driver"  ""  "8530 SCC serial communications driver \(em \fLzs\fP"  ""  PAGE START
+.IX  "serial communications driver \(em \fLzs\fP"  ""  "" "" PAGE START
+.LP
+The Zilog 8530 provides 2 serial communication ports with full modem control
+in asynchronous mode.
+Each port supports
+.BR termio (4)
+device control functions specified by flags in the
+.B c_cflag
+word of the
+.B termios
+structure, and the functions specified by the
+.BR \s-1IGNBRK\*S ,
+.BR \s-1IGNPAR\*S ,
+.BR \s-1PARMRK\*S ,
+and
+.SB INPCK
+flags of the
+.B c_ciflag
+word of the
+.B termios
+structure.
+These functions are performed directly by the
+.B zs
+driver.  All other
+.BR termio (4)
+functions must be performed by
+.SM STREAMS
+modules pushed atop the driver.
+When a device is opened, the
+.BR ldterm (4M)
+and
+.BR ttcompat (4M)
+.SM STREAMS
+modules are automatically pushed on top of the stream, providing the
+standard
+.BR termio (4)
+interface.
+.LP
+Of the synopsis lines above, the line for
+.B zs0
+specifies the serial I/O
+port(s) provided by the
+.SM CPU
+board, the line for
+.B zs1
+specifies the
+Video Board ports (which are used for keyboard and mouse),
+the lines for
+.B zs2
+and
+.B zs3
+specify the first and second ports on the first
+.SM SCSI
+board in a system, and those for
+.B zs4
+and
+.B zs5
+specify the first and
+second ports provided by the second
+.SM SCSI
+board in a system, respectively.
+.LP
+Bit
+.I i
+of
+.B flags
+may be specified to say that a line is not properly
+connected, and that the line
+.I i
+should be treated as hard-wired with carrier
+always present.  Thus specifying
+.B "flags 0x2"
+in the specification of
+.B zs0
+would treat line
+.B /dev/ttyb
+in this way.
+.LP
+Minor device numbers in the range 0 \- 11 correspond directly to the
+normal tty lines and are named
+.B /dev/ttya
+and
+.B /dev/ttyb
+for the two serial ports on the
+.SM CPU
+board and
+.BI /dev/ttys n
+for the ports on the
+.SM SCSI
+boards;
+.I n
+is 0 or 1 for the ports on the first
+.SM SCSI
+board, and 2 or 3 for the ports on the second
+.SM SCSI
+board.
+.LP
+To allow a single tty line to be connected to a modem and used for
+both incoming and outgoing calls, a special feature, controlled by
+the minor device number, has been added.
+Minor device numbers in the range 128 \- 139 correspond to the same physical
+lines as those above (that is,
+the same line as the minor device number minus 128).
+.LP
+A dial-in line has a minor device in the range 0 \- 11 and
+is conventionally renamed
+.BI /dev/ttyd n\fR,
+where
+.I n
+is a number indicating which dial-in line it is (so that
+.B /dev/ttyd0
+is the first dial-in line), and the dial-out line corresponding to that dial-in
+line has a minor device number 128 greater than the minor device number of the
+dial-in line and is conventionally named
+.BI /dev/cua n\fR,
+where
+.I n
+is the number of the dial-in line.
+.LP
+The
+.BI /dev/cua n
+lines are special in that they can be opened even when
+there is no carrier on the line.
+Once a
+.BI /dev/cua n
+line is opened, the corresponding tty line cannot be
+opened until the
+.BI /dev/cua n
+line is closed; a blocking open will wait until the
+.BI /dev/cua n
+line is closed (which will drop Data Terminal Ready, after which Carrier Detect
+will usually drop as well) and carrier is detected again, and a non-blocking
+open will return an error.
+Also, if the
+.BI /dev/ttyd n
+line has been opened successfully (usually only
+when carrier is recognized on the modem) the corresponding
+.BI /dev/cua n
+line can not be opened.
+This allows a modem to be attached, for example, to
+.B /dev/ttyd0
+(renamed from
+.BR /dev/ttya )
+and used for dial-in (by enabling the line for
+login in
+.BR /etc/ttytab )
+and also used for dial-out (by
+.BR tip (1C)
+or
+.BR uucp (1C))
+as
+.B /dev/cua0
+when no one is logged in on
+the line.
+Note: the bit in the
+.B flags
+word in the configuration file (see above) must be zero
+for this line,
+which enables hardware carrier detection.
+.SH IOCTLS
+.LP
+The standard set of
+.B termio
+.B ioctl(\|)
+calls are supported by
+.BR zs .
+.LP
+If the
+.SB CRTSCTS
+flag in the
+.B c_cflag
+is set, output will be generated only if
+.SM CTS
+is high; if
+.SM CTS
+is low,
+output will be frozen.   If the
+.SB CRTSCTS
+flag is clear, the state of
+.SM CTS
+has no effect.
+Breaks can be generated by the
+.BR \s-1TCSBRK\s0 ,
+.BR \s-1TIOCSBRK\s0 ,
+and
+.SB TIOCCBRK
+.B ioctl(\|)
+calls.
+The modem control lines
+.BR \s-1TIOCM_CAR\s0 ,
+.BR \s-1TIOCM_CTS\s0 ,
+.BR \s-1TIOCM_RTS\s0 ,
+and
+.SB TIOCM_DTR
+are provided.
+.LP
+The input and output line speeds may be set to any of the speeds
+supported by
+.BR termio .
+The speeds cannot be set independently; when the output speed is set,
+the input speed is set to the same speed.
+.SH ERRORS
+.LP
+An
+.B open(\|)
+will fail if:
+.TP 15
+.SM ENXIO
+The unit being opened does not exist.
+.TP 15
+.SM EBUSY
+The dial-out device is being opened and the dial-in device is already open, or
+the dial-in device is being opened with a no-delay open and the dial-out device
+is already open.
+.TP 15
+.SM EBUSY
+The unit has been marked as exclusive-use by another process with a
+.SB TIOCEXCL
+.B ioctl(\|)
+call.
+.TP 15
+.SM EINTR
+The open was interrupted by the delivery of a signal.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/tty{a,b,s[0-3]}
+hardwired tty lines
+.TP
+.B /dev/ttyd[0-9a-f]
+dial-in tty lines
+.TP
+.B /dev/cua[0-9a-f]
+dial-out tty lines
+.PD
+.SH "SEE ALSO"
+.BR tip (1C),
+.BR uucp (1C),
+.BR mcp (4S),
+.BR mti (4S),
+.BR termio (4),
+.BR ldterm (4M),
+.BR ttcompat (4M),
+.BR ttysoftcar (8)
+.SH DIAGNOSTICS
+.TP
+.B zs\fIn\|c\fP\|: silo overflow.
+The 8530 character input silo overflowed
+before it could be serviced.
+.TP
+.B zs\fIn\|c\fP\|: ring buffer overflow.
+The driver's character input ring buffer overflowed
+before it could be serviced.
+.IX  "zs device"  ""  "\fLzs\fP \(em zilog 8530 SCC serial communications driver"  ""  PAGE END
+.IX  "8530 SCC serial communications driver"  ""  "8530 SCC serial communications driver \(em \fLzs\fP"  ""  PAGE END
+.IX  "serial communications driver \(em \fLzs\fP"  ""  "" "" PAGE END

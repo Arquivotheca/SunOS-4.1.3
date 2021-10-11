@@ -1,0 +1,147 @@
+.\" @(#)t_rcvdis.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_RCVDIS 3N "21 January 1990"
+.SH NAME
+t_rcvdis \- retrieve information from disconnect
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+t_rcvdis(fd, discon)
+int fd;
+struct t_discon *discon;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_rcvdis()" "" "\fLt_rcvdis()\fR \(em retrieve information from disconnect"
+.IX transport "retrieve information from disconnect"
+.IX disconnect "retrieve information from"
+.LP
+.B t_rcvdis(\|)
+is used to identify the cause of a disconnect, and
+to retrieve any user data sent with the disconnect.
+.I fd
+identifies the local transport endpoint where the connection existed,
+and
+.I discon
+points to a
+.B t_discon
+structure defined in 
+.B <nettli/tiuser.>
+as:
+.LP
+.RS
+.ft B
+.nf
+struct t_discon {
+.ft
+.RS
+.ft B
+struct netbuf udata;		/* user data */
+int reason;			/* reason code */
+int sequence;			/* sequence number */
+.ft
+.RE
+.ft B
+};
+.ft
+.fi
+.RE
+.LP
+The
+.IR maxlen ,
+.IR len ,
+and
+.I buf
+members of the
+.I netbuf
+structure are described in
+.BR t_accept (3N).
+.I reason
+specifies the reason for the disconnect
+through a protocol-dependent reason code,
+.I udata
+identifies any user data that was sent with the disconnect, and
+.I sequence
+may identify an outstanding connect indication with which the disconnect is
+associated.
+.I sequence
+is only meaningful when
+.B t_rcvdis(\|)
+is issued by a passive transport user who has executed one or more
+.B t_listen(3N)
+functions and is processing the resulting connect indications.
+If a disconnect indication occurs,
+.I sequence
+can be used to identify which of the outstanding connect indications is
+associated with the disconnect.
+.LP
+If a user does not care if there is incoming data and does not need to
+know the value of
+.I reason
+or
+.IR sequence ,
+.I discon
+may be
+.SM NULL
+and any user data associated with the disconnect will be discarded.
+However, if a user has retrieved
+more than one outstanding connect indication (using
+.BR t_listen (3N))
+and
+.I discon
+is
+.SM NULL\s0,
+the user will be unable to identify with which connect indication the
+disconnect is associated.
+.SH RETURN VALUES
+.LP
+.B t_rcvdis(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBUFOVFLW
+The number of bytes allocated for incoming data is not
+sufficient to store the data.
+The provider's state, as seen by the user, will change to
+.SB T_IDLE
+and the disconnect indication information to be returned in
+.I discon
+will be discarded.
+.TP
+.SM TNODIS
+No disconnect indication currently exists on the specified
+transport endpoint.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR intro (3),
+.BR t_connect (3N),
+.BR t_listen (3N),
+.BR t_open (3N),
+.BR t_snddis (3N)
+.LP
+.TX NETP

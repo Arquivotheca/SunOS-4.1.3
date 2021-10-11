@@ -1,0 +1,794 @@
+
+;
+;      @(#)picking.hasm 1.1 92/07/30 17:41:45
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+
+; This file tests highlight filter and picking.
+;
+; Draw 16 spheres with the help of matrix pushes and pops.
+;
+; This version has perspective and clips the spheres on all four
+; sides and in front.  It also has fairly strong perspective.
+;
+; draw an area slightly bigger than pick box
+ 
+	set_attribute   hk_line_antialiasing
+	.word		FALSE
+        set_attribute   hk_line_geom_format
+        .word           HK_LINE_XYZ
+        set_attribute   hk_line_color
+        .rgb            <0.7, 0.7, 0.7>
+ 
+; draw an area slightly bigger than pick box
+
+        set_attribute   hk_line_color
+        .rgb            <0.7, 0.7, 0.7>
+
+        polyline        5
+        .xyz            <-0.11, 0.85, 0.99> 
+        .xyz            < 0.11, 0.85, 0.99>
+        .xyz            < 0.11,  0.95, 0.99>
+        .xyz            <-0.11,  0.95, 0.99> 
+        .xyz            <-0.11,  0.85, 0.99>
+
+
+        set_attribute hk_name_set
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;delete mask
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;delete mask
+        .word   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;add mask 
+	.word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;add mask
+
+        set_attribute hk_pick_filter
+        .word   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;inclusion mask
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;inclusion mask
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;exclusion mask
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;exclusion mask
+
+
+        set_attribute   hk_front_interior_style
+        .word           HK_POLYGON_SOLID
+        set_attribute   hk_back_interior_style
+        .word           HK_POLYGON_SOLID
+ 
+        set_attribute   hk_traversal_mode
+        .word           HK_RENDER
+  	jmpl            enter, r2
+
+        set_attribute   hk_traversal_mode
+        .word           HK_PICK_WITHOUT_RENDER
+
+	set_attribute   hk_pick_results_buffer
+	.word		pick_results_buffer
+	
+	set_attribute   hk_clear_pick_results
+
+  	jmpl            enter, r2
+  
+      	set_attribute   hk_echo_svn
+	.word		18
+        set_attribute   hk_echo_en
+	.word		5
+        set_attribute   hk_echo_upick_id
+        .word           300
+;	.word		100 	; to verify no echoing.
+  
+	set_attribute   hk_echo_type
+;	.word           HK_PICK_ECHO_EN
+;	.word		HK_PICK_ECHO_SVN
+	.word 		HK_PICK_ECHO_SVN_WITH_UPICK_ID
+	
+	set_attribute   hk_echo_color
+	.rgb            <1.0, 0.5, 0.0>
+  
+	set_attribute   hk_traversal_mode
+	.word           HK_PICK_ECHO
+
+	jmpl            enter, r2
+
+	jmpl            alldone, r2
+
+
+enter:
+	push		r2
+
+	set_attribute   hk_load_lmt, @identity
+
+        set_attribute   hk_hsvn
+        .word           1
+
+	set_attribute   hk_upick_id
+	.word		300
+
+        set_attribute   hk_pick_box
+        .xyz            <-0.1, 0.86, 1.0>
+        .xyz            <0.1, 0.94, -1.0>
+
+        set_attribute   hk_line_geom_format
+        .word           0
+        set_attribute   hk_line_color
+        .rgb            <0.7, 0.7, 0.7>
+
+	jps		begin, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	
+        pop             r2
+        jmpl            (r2+0), r2              ; Return
+
+identity:
+        .dword          1.0,  0.0,  0.0,  0.0
+        .dword          0.0,  1.0,  0.0,  0.0
+        .dword          0.0,  0.0,  1.0,  0.0
+        .dword          0.0,  0.0,  0.0,  1.0
+
+begin:
+
+	eps		r3
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+	set_attribute   	hk_cen
+	.word			1
+	
+        set_attribute   	hk_highlight_color
+        .rgb            	<1.0, 0.0, 0.0>
+
+        set_attribute   hk_front_lighting_degree
+        .word           HK_SPECULAR_LIGHTING
+        set_attribute   hk_back_lighting_degree
+        .word           HK_SPECULAR_LIGHTING
+        set_attribute   hk_view
+        .fword          0.0, 0.0, 1.0, 1.0
+        .matrix_pair \                          ; VT and IVT
+        <   < 1.0, 0.0, 0.0,  0.0 > , \
+            < 0.0, 1.0, 0.0,  0.0 > , \
+            < 0.0, 0.0, 0.3, -0.3 > , \
+            < 0.0, 0.0, 0.0,  1.0 > >
+
+        set_attribute   hk_load_lmt
+        .translate      < 0.0, 0.0, 1.54 >
+        set_attribute   hk_pre_concat_lmt
+        .scale          0.55
+;
+        set_attribute   hk_light_mask
+        .word           0xffffffff              ; Delete
+        .word           0x00000000              ; Add
+;
+        set_attribute   hk_light_source, @light0
+;
+        set_attribute   hk_light_source, @light1
+;
+        set_attribute   hk_light_source, @light2
+;
+        set_attribute   hk_light_mask
+        .word           0x00000000              ; Delete
+        .word           0x00000007              ; Add
+;
+        set_attribute   hk_use_back_props
+        .word           TRUE
+        set_attribute   hk_face_culling_mode
+        .word           HK_CULL_NONE
+;
+        set_attribute   hk_front_material_properties
+        .word           0.2                     ; Ambient
+        .word           0.8                     ; Diffuse
+        .word           1.0                     ; Specular
+        .word           20.0                    ; Specular exponent
+	set_attribute	hk_front_specular_color
+	.rgb		<1.0, 1.0, 1.0>
+	set_attribute	hk_front_transparency_degree
+	.word		1.0
+
+        set_attribute   hk_back_material_properties
+        .word           0.2                     ; Ambient
+        .word           0.8                     ; Diffuse
+        .word           1.0                     ; Specular
+        .word           20.0                    ; Specular exponent
+	set_attribute	hk_front_specular_color
+	.rgb		<1.0, 1.0, 1.0>
+	set_attribute	hk_front_transparency_degree
+	.word		1.0
+;
+        set_attribute   hk_front_surface_color
+        .rgb            < 0.1, 1.0, 0.1 >
+        set_attribute   hk_back_surface_color
+        .rgb            < 1.0, 0.3, 0.1 >
+
+;
+	jps 		start, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	rps					;return
+	
+;
+light0:
+        .word           0                       ; Light number 0
+        .word           HK_AMBIENT_LIGHT_SOURCE ; Light type
+        .rgb            < 0.3, 0.3, 0.3 >       ; Light color
+        .xyz            < 0.0, 0.0, 0.0 >       ; Light position
+        .xyz            < 0.0, 0.0, 1.0 >       ; Light direction
+        .word           1.0                     ; spotlight power
+        .word           1.0                     ; Attenuation 1
+        .word           1.0                     ; Attenuation 2
+        .word           0.0                     ; Spotlight angle
+ 
+light1:
+        .word           1                       ; Light number 1
+        .word           HK_DIRECTIONAL_LIGHT_SOURCE ; Light type
+        .rgb            < 1.0, 0.8, 1.0 >       ; Light color
+        .xyz            < 0.0, 0.0, 0.0 >       ; Light position
+        .xyz            < -0.25, 0.3, 0.15 >    ; Light direction
+        .word           1.0                     ; spotlight power
+        .word           1.0                     ; Attenuation 1
+        .word           1.0                     ; Attenuation 2
+        .word           0.0                     ; Spotlight angle
+ 
+light2:
+        .word           2                       ; Light number 2
+        .word           HK_DIRECTIONAL_LIGHT_SOURCE ; Light type
+        .rgb            < 1.0, 1.0, 0.8 >       ; Light color
+        .xyz            < 0.0, 0.0, 0.0 >       ; Light position
+        .xyz            < 0.5, 0.1, 0.10 >      ; Light direction
+        .word           1.0                     ; spotlight power
+        .word           1.0                     ; Attenuation 1
+        .word           1.0                     ; Attenuation 2
+        .word           0.0                     ; Spotlight angle
+ 
+;
+
+
+;
+; Make room for 16 spheres on the screen
+start:
+        eps             r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+
+        set_attribute hk_name_set
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;delete mask
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;delete mask
+        .word   1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;add mask
+        .word   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ;add mask
+
+	set_attribute	hk_pre_concat_lmt, @scale_one_fourth
+
+; Start at the top
+	set_attribute	hk_pre_concat_lmt, @up_two
+	jps 		four_spheres, r3
+	.word		0, 0, 0, 0, 0, 0, 0, 0
+;	set_attribute	hk_pre_concat_lmt, @down_one
+;	jps 		four_spheres, r3
+;	.word           0, 0, 0, 0, 0, 0, 0, 0
+;	set_attribute	hk_pre_concat_lmt, @down_one
+;	jps 		four_spheres, r3
+;	.word           0, 0, 0, 0, 0, 0, 0, 0
+;	set_attribute	hk_pre_concat_lmt, @down_one
+;	jps 		four_spheres, r3
+;	.word           0, 0, 0, 0, 0, 0, 0, 0
+;
+	rps					;return
+
+four_spheres:
+        eps             r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+
+	set_attribute   hk_cen
+	.word		1
+	set_attribute	hk_pre_concat_lmt, @left_two
+	jps 		sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+
+       set_attribute   hk_cen
+        .word           2
+	set_attribute	hk_pre_concat_lmt, @right_one
+	jps 		sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+
+       set_attribute   hk_cen
+        .word           3
+	set_attribute	hk_pre_concat_lmt, @right_one
+	jps 		sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+
+       set_attribute   hk_cen
+        .word           4
+	set_attribute	hk_pre_concat_lmt, @right_one
+	jps 		sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+
+	rps 					; Return
+
+
+
+scale_one_fourth:
+        .scale          0.25
+ 
+left_two:
+        .translate      < -3.0, 0.0, 0.0 >
+ 
+up_two:
+        .translate      < 0.0, 3.0, 0.0 >
+ 
+right_one:
+        .translate      < 2.0, 0.0, 0.0 >
+ 
+down_one:
+        .translate      < 0.0, -2.0, 0.0 >
+
+
+;
+; draw a sphere with 10 vertices per 90 degrees
+;
+sphere:
+
+        eps             r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+
+
+        set_attribute   hk_cen 
+        .word           1
+	jps 		half_sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+
+        set_attribute   hk_cen
+        .word           2
+	set_attribute	hk_pre_concat_lmt, @swap_180
+	jps 		half_sphere, r3
+	.word           0, 0, 0, 0, 0, 0, 0, 0
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+	.word           0x00000000
+	.word           0x00000000
+	.word           0x00000000
+	.word           0x00000000
+	.word           0x00000000
+	.word           0x00000000
+	.word           0x00000000
+	rps 			; Return
+
+swap_180:
+    .matrix \
+                < <-1.0, 0.0, 0.0, 0.0 > , \
+                  < 0.0, 1.0, 0.0, 0.0 > , \
+                  < 0.0, 0.0,-1.0, 0.0 > , \
+                  < 0.0, 0.0, 0.0, 1.0 > >
+
+half_sphere:
+        eps             r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	push_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+
+	jps 		eighth_sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	set_attribute	hk_pre_concat_lmt, @rot_90
+	jps 		eighth_sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	set_attribute	hk_pre_concat_lmt, @rot_90
+	jps 		eighth_sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	set_attribute	hk_pre_concat_lmt, @rot_90
+	jps 		eighth_sphere, r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+	pop_state
+	.word		HKST0_CMT|HKST0_LMT|HKST0_GMT
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+        .word           0x00000000
+
+	rps 					; Return
+
+rot_90:
+        .matrix \
+                < < 0.0,-1.0, 0.0, 0.0 > , \
+                  < 1.0, 0.0, 0.0, 0.0 > , \
+                  < 0.0, 0.0, 1.0, 0.0 > , \
+                  < 0.0, 0.0, 0.0, 1.0 > >
+
+
+eighth_sphere:
+        eps             r3
+        .word           0, 0, 0, 0, 0, 0, 0, 0
+        set_attribute   hk_cen  
+        .word           1
+ 
+        set_attribute   hk_tri_geom_format
+        .word           HK_TRI_XYZ_VNORMAL
+
+        set_attribute   hk_cen
+        .word           2
+	triangle_list	19
+;	.tri_start
+	.word		0x80000000	; Clockwise
+        .xyz            < 0, 0, 1 >
+        .norm           < 0, 0, 1 >
+        .tri_r1
+        .xyz            < .173648, 0, .984808 >
+        .norm           < .173648, 0, .984808 >
+        .tri_r1
+        .xyz            < 0, .173648, .984808 >
+        .norm           < 0, .173648, .984808 >
+        .tri_r1
+        .xyz            < .192126, .173648, .965885 >
+        .norm           < .192126, .173648, .965885 >
+        .tri_r1
+        .xyz            < 0, .34202, .939693 >
+        .norm           < 0, .34202, .939693 >
+        .tri_r1
+        .xyz            < .209101, .34202, .916133 >
+        .norm           < .209101, .34202, .916133 >
+        .tri_r1
+        .xyz            < 0, .5, .866025 >
+        .norm           < 0, .5, .866025 >
+        .tri_r1
+        .xyz            < .224144, .5, .836516 >
+        .norm           < .224144, .5, .836516 >
+        .tri_r1
+        .xyz            < 0, .642788, .766044 >
+        .norm           < 0, .642788, .766044 >
+        .tri_r1
+        .xyz            < .236721, .642788, .728552 >
+        .norm           < .236721, .642788, .728552 >
+        .tri_r1
+        .xyz            < 0, .766044, .642788 >
+        .norm           < 0, .766044, .642788 >
+        .tri_r1
+        .xyz            < .245984, .766044, .593858 >
+        .norm           < .245984, .766044, .593858 >
+        .tri_r1
+        .xyz            < 0, .866025, .5 >
+        .norm           < 0, .866025, .5 >
+        .tri_r1
+        .xyz            < .25, .866025, .433013 >
+        .norm           < .25, .866025, .433013 >
+        .tri_r1
+        .xyz            < 0, .939693, .34202 >
+        .norm           < 0, .939693, .34202 >
+        .tri_r1
+        .xyz            < .241845, .939693, .241845 >
+        .norm           < .241845, .939693, .241845 >
+        .tri_r1
+        .xyz            < 0, .984808, .173648 >
+        .norm           < 0, .984808, .173648 >
+        .tri_r1
+        .xyz            < .173648, .984808, 0 >
+        .norm           < .173648, .984808, 0 >
+        .tri_r1
+        .xyz            < 0, 1, 0 >
+        .norm           < 0, 1, 0 >
+
+        set_attribute   hk_cen
+        .word           3
+        triangle_list   17
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .173648, 0, .984808 >
+        .norm           < .173648, 0, .984808 >
+        .tri_r1
+        .xyz            < .34202, 0, .939693 >
+        .norm           < .34202, 0, .939693 >
+        .tri_r1
+        .xyz            < .192126, .173648, .965885 >
+        .norm           < .192126, .173648, .965885 >
+        .tri_r1
+        .xyz            < .37687, .173648, .909844 >
+        .norm           < .37687, .173648, .909844 >
+        .tri_r1
+        .xyz            < .209101, .34202, .916133 >
+        .norm           < .209101, .34202, .916133 >
+        .tri_r1
+        .xyz            < .407717, .34202, .846634 >
+        .norm           < .407717, .34202, .846634 >
+        .tri_r1
+        .xyz            < .224144, .5, .836516 >
+        .norm           < .224144, .5, .836516 >
+        .tri_r1
+        .xyz            < .433013, .5, .75 >
+        .norm           < .433013, .5, .75 >
+        .tri_r1
+        .xyz            < .236721, .642788, .728552 >
+        .norm           < .236721, .642788, .728552 >
+        .tri_r1
+        .xyz            < .45027, .642788, .619743 >
+        .norm           < .45027, .642788, .619743 >
+        .tri_r1
+        .xyz            < .245984, .766044, .593858 >
+        .norm           < .245984, .766044, .593858 >
+        .tri_r1
+        .xyz            < .45452, .766044, .45452 >
+        .norm           < .45452, .766044, .45452 >
+        .tri_r1
+        .xyz            < .25, .866025, .433013 >
+        .norm           < .25, .866025, .433013 >
+        .tri_r1
+        .xyz            < .433013, .866025, .25 >
+        .norm           < .433013, .866025, .25 >
+        .tri_r1
+        .xyz            < .241845, .939693, .241845 >
+        .norm           < .241845, .939693, .241845 >
+        .tri_r1
+        .xyz            < .34202, .939693, 0 >
+        .norm           < .34202, .939693, 0 >
+        .tri_r1
+        .xyz            < .173648, .984808, 0 >
+        .norm           < .173648, .984808, 0 >
+
+
+        set_attribute   hk_cen
+        .word           4
+        triangle_list   15
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .34202, 0, .939693 >
+        .norm           < .34202, 0, .939693 >
+        .tri_r1
+        .xyz            < .5, 0, .866025 >
+        .norm           < .5, 0, .866025 >
+        .tri_r1
+        .xyz            < .37687, .173648, .909844 >
+        .norm           < .37687, .173648, .909844 >
+        .tri_r1
+        .xyz            < .54713, .173648, .818838 >
+        .norm           < .54713, .173648, .818838 >
+        .tri_r1
+        .xyz            < .407717, .34202, .846634 >
+        .norm           < .407717, .34202, .846634 >
+        .tri_r1
+        .xyz            < .585889, .34202, .734681 >
+        .norm           < .585889, .34202, .734681 >
+        .tri_r1
+        .xyz            < .433013, .5, .75 >
+        .norm           < .433013, .5, .75 >
+        .tri_r1
+        .xyz            < .612372, .5, .612372 >
+        .norm           < .612372, .5, .612372 >
+        .tri_r1
+        .xyz            < .45027, .642788, .619743 >
+        .norm           < .45027, .642788, .619743 >
+        .tri_r1
+        .xyz            < .619743, .642788, .45027 >
+        .norm           < .619743, .642788, .45027 >
+        .tri_r1
+        .xyz            < .45452, .766044, .45452 >
+        .norm           < .45452, .766044, .45452 >
+        .tri_r1
+        .xyz            < .593858, .766044, .245984 >
+        .norm           < .593858, .766044, .245984 >
+        .tri_r1
+        .xyz            < .433013, .866025, .25 >
+        .norm           < .433013, .866025, .25 >
+        .tri_r1
+        .xyz            < .5, .866025, 0 >
+        .norm           < .5, .866025, 0 >
+        .tri_r1
+        .xyz            < .34202, .939693, 0 >
+        .norm           < .34202, .939693, 0 >
+
+
+        set_attribute   hk_cen
+        .word           5
+        triangle_list   13
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .5, 0, .866025 >
+        .norm           < .5, 0, .866025 >
+        .tri_r1
+        .xyz            < .642788, 0, .766044 >
+        .norm           < .642788, 0, .766044 >
+        .tri_r1
+        .xyz            < .54713, .173648, .818838 >
+        .norm           < .54713, .173648, .818838 >
+        .tri_r1
+        .xyz            < .696364, .173648, .696364 >
+        .norm           < .696364, .173648, .696364 >
+        .tri_r1
+        .xyz            < .585889, .34202, .734681 >
+        .norm           < .585889, .34202, .734681 >
+        .tri_r1
+        .xyz            < .734681, .34202, .585889 >
+        .norm           < .734681, .34202, .585889 >
+        .tri_r1
+        .xyz            < .612372, .5, .612372 >
+        .norm           < .612372, .5, .612372 >
+        .tri_r1
+        .xyz            < .75, .5, .433013 >
+        .norm           < .75, .5, .433013 >
+        .tri_r1
+        .xyz            < .619743, .642788, .45027 >
+        .norm           < .619743, .642788, .45027 >
+        .tri_r1
+        .xyz            < .728552, .642788, .236721 >
+        .norm           < .728552, .642788, .236721 >
+        .tri_r1
+        .xyz            < .593858, .766044, .245984 >
+        .norm           < .593858, .766044, .245984 >
+        .tri_r1
+        .xyz            < .642788, .766044, 0 >
+        .norm           < .642788, .766044, 0 >
+        .tri_r1
+        .xyz            < .5, .866025, 0 >
+        .norm           < .5, .866025, 0 >
+
+
+        set_attribute   hk_cen
+        .word           6
+        triangle_list   11
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .642788, 0, .766044 >
+        .norm           < .642788, 0, .766044 >
+        .tri_r1
+        .xyz            < .766044, 0, .642788 >
+        .norm           < .766044, 0, .642788 >
+        .tri_r1
+        .xyz            < .696364, .173648, .696364 >
+        .norm           < .696364, .173648, .696364 >
+        .tri_r1
+        .xyz            < .818838, .173648, .54713 >
+        .norm           < .818838, .173648, .54713 >
+        .tri_r1
+        .xyz            < .734681, .34202, .585889 >
+        .norm           < .734681, .34202, .585889 >
+        .tri_r1
+        .xyz            < .846634, .34202, .407717 >
+        .norm           < .846634, .34202, .407717 >
+        .tri_r1
+        .xyz            < .75, .5, .433013 >
+        .norm           < .75, .5, .433013 >
+        .tri_r1
+        .xyz            < .836516, .5, .224144 >
+        .norm           < .836516, .5, .224144 >
+        .tri_r1
+        .xyz            < .728552, .642788, .236721 >
+        .norm           < .728552, .642788, .236721 >
+        .tri_r1
+        .xyz            < .766044, .642788, 0 >
+        .norm           < .766044, .642788, 0 >
+        .tri_r1
+        .xyz            < .642788, .766044, 0 >
+        .norm           < .642788, .766044, 0 >
+
+
+        set_attribute   hk_cen
+        .word           7
+        triangle_list   9
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .766044, 0, .642788 >
+        .norm           < .766044, 0, .642788 >
+        .tri_r1
+        .xyz            < .866025, 0, .5 >
+        .norm           < .866025, 0, .5 >
+        .tri_r1
+        .xyz            < .818838, .173648, .54713 >
+        .norm           < .818838, .173648, .54713 >
+        .tri_r1
+        .xyz            < .909844, .173648, .37687 >
+        .norm           < .909844, .173648, .37687 >
+        .tri_r1
+        .xyz            < .846634, .34202, .407717 >
+        .norm           < .846634, .34202, .407717 >
+        .tri_r1
+        .xyz            < .916133, .34202, .209101 >
+        .norm           < .916133, .34202, .209101 >
+        .tri_r1
+        .xyz            < .836516, .5, .224144 >
+        .norm           < .836516, .5, .224144 >
+        .tri_r1
+        .xyz            < .866025, .5, 0 >
+        .norm           < .866025, .5, 0 >
+        .tri_r1
+        .xyz            < .766044, .642788, 0 >
+        .norm           < .766044, .642788, 0 >
+
+        set_attribute   hk_cen
+        .word           8
+        triangle_list   7
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .866025, 0, .5 >
+        .norm           < .866025, 0, .5 >
+        .tri_r1
+        .xyz            < .939693, 0, .34202 >
+        .norm           < .939693, 0, .34202 >
+        .tri_r1
+        .xyz            < .909844, .173648, .37687 >
+        .norm           < .909844, .173648, .37687 >
+        .tri_r1
+        .xyz            < .965885, .173648, .192126 >
+        .norm           < .965885, .173648, .192126 >
+        .tri_r1
+        .xyz            < .916133, .34202, .209101 >
+        .norm           < .916133, .34202, .209101 >
+        .tri_r1
+        .xyz            < .939693, .34202, 0 >
+        .norm           < .939693, .34202, 0 >
+        .tri_r1
+        .xyz            < .866025, .5, 0 >
+        .norm           < .866025, .5, 0 >
+
+        set_attribute   hk_cen
+        .word           9
+        triangle_list   5
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .939693, 0, .34202 >
+        .norm           < .939693, 0, .34202 >
+        .tri_r1
+        .xyz            < .984808, 0, .173648 >
+        .norm           < .984808, 0, .173648 >
+        .tri_r1
+        .xyz            < .965885, .173648, .192126 >
+        .norm           < .965885, .173648, .192126 >
+        .tri_r1
+        .xyz            < .984808, .173648, 0 >
+        .norm           < .984808, .173648, 0 >
+        .tri_r1
+        .xyz            < .939693, .34202, 0 >
+        .norm           < .939693, .34202, 0 >
+
+
+        set_attribute   hk_cen
+        .word           10
+        triangle_list   3
+;       .tri_start
+        .word           0x80000000      ; Clockwise
+        .xyz            < .984808, 0, .173648 >
+        .norm           < .984808, 0, .173648 >
+        .tri_r1
+        .xyz            < 1, 0, 0 >
+        .norm           < 1, 0, 0 >
+        .tri_r1
+        .xyz            < .984808, .173648, 0 >
+        .norm           < .984808, .173648, 0 >
+
+	rps			; Return
+
+pick_results_buffer:
+	.word	10	;max_num_pick_hits
+	.word	0	; No circular writes
+	.word   0	; pick_hits_detected
+	.word   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	.word   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	.word   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ; slack space
+
+alldone:
+        trap   0

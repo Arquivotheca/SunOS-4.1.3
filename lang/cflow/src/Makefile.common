@@ -1,0 +1,116 @@
+#
+# @(#)Makefile.common 1.1 92/07/30 SMI; from S5R2 1.7
+# Makefile for "cflow"
+#
+
+VERSION= 4.1
+
+LINT=	../../lint/src
+MIP=	../../pcc/mip
+SRC=	../src
+AWK=	/bin/awk
+
+##########################################################
+#  Note: $(LINT) MUST PRECEDE $(PCC) in the include path #
+#  because both directories have a version of machdep.h  #
+##########################################################
+
+COPTS=	-O
+INCS=	-I. -I$(LINT) -I$(MIP) -I$(PCC) -I$(SRC) 
+CPPFLAGS= -DFLEXNAMES -DLINT \
+	-DMC68000=1 -DSPARC=2 -DI386=3 -DTARGET=$(TARGET)
+CFLAGS=	${COPTS} ${CPPFLAGS}
+
+#
+# headers
+#
+MHDR=	$(MIP)/mip.h $(MIP)/pcc_types.h $(MIP)/pcc_ops.h $(MIP)/pcc_node.h 
+
+PHDR=	$(PCC)/align.h
+
+LHDR=	$(LINT)/machdep.h $(LINT)/lmanifest.h
+
+AWKHDR=	./types.h ./ops.h ./node.h
+
+HDRS=	${MHDR} ${LHDR} ${PHDR} ${AWKHDR}
+
+#
+# sources
+#
+SRCS=	$(SRC)/dag.c $(SRC)/lpfx.c $(SRC)/nmf.c $(SRC)/flip.c $(HDRS) \
+	Makefile
+
+MKPRIV=	$(MIP)/mkpriv.awk
+
+#
+# rules
+#
+all:	dag lpfx nmf flip
+
+
+.DEFAULT:
+	sccs get -G$@ $@
+
+dag:
+	${CC} ${CFLAGS} $(LDFLAGS) $(SRC)/dag.c -o dag
+
+lpfx:
+	${CC} ${CFLAGS} ${INCS} $(LDFLAGS) $(SRC)/lpfx.c -o lpfx
+
+nmf:
+	${CC} ${CFLAGS} $(LDFLAGS) $(SRC)/nmf.c -o nmf
+
+flip:
+	${CC} ${CFLAGS} $(LDFLAGS) $(SRC)/flip.c -o flip
+
+#
+# local headers -- these include the public headers and add local
+#	aliases for the public names -- a poor man's version of the
+#	modula-2 IMPORT facility.  Note: the "./" prefixes are
+#	significant because of 'make depend'.
+#
+./types.h: $(MIP)/pcc_types.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_types.h > $@
+
+./ops.h: $(MIP)/pcc_ops.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_ops.h > $@
+
+./node.h: $(MIP)/pcc_node.h $(MKPRIV)
+	$(AWK) -f $(MKPRIV) < $(MIP)/pcc_node.h > $@
+
+install:	all $(SRC)/cflow.sh
+	install -c $(SRC)/cflow.sh $(DESTDIR)/usr/5bin/cflow
+	install -s dag $(DESTDIR)/usr/lib
+	install -s lpfx $(DESTDIR)/usr/lib
+	install -s nmf $(DESTDIR)/usr/lib
+	install -s flip $(DESTDIR)/usr/lib
+
+shrink:
+	rm -f *.o
+
+clean: shrink
+	-rm -f a.out errs core dag lpfx nmf flip ${AWKHDR}
+
+depend:	$(SRC)/dag.c $(SRC)/nmf.c $(SRC)/flip.c $(SRC)/lpfx.c $(HDRS)
+	rm -f makedep
+	for i in $(SRC)/dag.c $(SRC)/nmf.c $(SRC)/flip.c; do \
+		${CC} -M ${CPPFLAGS} $$i | \
+		sed -e 's/\.o//'; \
+	done >>makedep
+	${CC} -M ${CPPFLAGS} ${INCS} $(SRC)/lpfx.c | \
+		sed -e 's/\.o//' >>makedep
+	sed -e '/sysmacros/d' \
+	    -e 's,$(MIP),$$(MIP),g' \
+	    -e 's,$(LINT),$$(LINT),g' \
+	    -e 's,$(PCC),$$(PCC),g' \
+	    makedep > makedep2
+	mv makedep2 makedep
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	cp Makefile Makefile.bak
+	ed - Makefile < eddep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Makefile
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Makefile
+	echo '# see make depend above' >> Makefile
+	rm -f eddep makedep

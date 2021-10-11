@@ -1,0 +1,162 @@
+.TH EXPR 1  "26 March 1984"
+.\" @(#)expr.1 1.1 92/07/30 SMI; from UCB 4.1
+.SH NAME
+expr \- evaluate arguments as an expression
+.SH SYNOPSIS
+.B expr
+arg .\|.\|.
+.SH DESCRIPTION
+.IX "expr command"  ""  "\fLexpr\fP \(em evaluate expressions"
+.IX "expression evaluation"
+.IX "evaluate expressions"
+.LP
+.I Expr
+evaluates expressions as specified by its arguments.
+Each token of the expression is a separate argument.
+After evaluation, the result is written on the standard output.
+.LP
+The operators and keywords are listed below.
+The list is in order of increasing precedence,
+with equal precedence operators grouped.
+.TP
+.I expr | expr
+yields the first
+.I expr
+if it is neither null nor `0', otherwise yields the second
+.I expr.
+.TP
+.I expr & expr
+yields the first
+.I expr
+if neither
+.I expr
+is null or `0', otherwise yields `0'.
+.TP
+.I expr relop expr
+yields `1' if the indicated comparison is true, `0' if false.  The
+comparison is numeric if both
+.I expr
+are integers, otherwise the comparison is lexicographic.
+.I relop
+is one of < (less than), <= (less than or equal to), = (equal to),
+!= (not equal to), >= (greater than or equal to), and > (greater than).
+.TP
+.IR expr " + " expr
+.br
+.ns
+.TP
+.IR expr " \- " expr
+.br
+addition or subtraction of the arguments.
+.TP
+.IR expr " * " expr
+.br
+.ns
+.TP
+.IR expr " / " expr
+.br
+.ns
+.TP
+.IR expr " % " expr
+.br
+multiplication, division, or remainder of the arguments.
+.TP
+.IR expr " : " expr
+.br
+.ns
+.TP
+match \fIstring regular-expression\fP
+.br
+The two forms of the matching operator above are synonymous.  The matching
+operator compares the string first argument with the regular expression
+second argument; regular expression syntax is the same as that of
+.IR ed (1).
+The \fB\\(\|.\|.\|.\|\\)\fP pattern symbols can be used to select a portion
+of the first argument.  Otherwise, the matching operator yields the number
+of characters matched (`0' on failure).
+.TP
+substr \fIstring integer-1 integer-2\fP
+extracts the subtring of 
+.I string
+starting at position
+.I integer-1
+and of length
+.I integer-2
+characters.  If
+.I integer-1 has a value greater than the length of
+.IR string ,
+.I expr
+returns a null string.  If 
+you try to extract more characters than there are in
+.IR string ,
+.I expr
+returns all the remaining characters from
+.IR string .
+Beware of using negative values for either
+.I integer-1
+or
+.I integer-2
+as 
+.I expr
+tends to run forever in these cases.
+.TP
+index \fIstring\fP \fIcharacter-list\fP
+reports the first position in
+.I string
+at which any one of the characters in
+.I character-list
+matches a character in 
+.IR string .
+.TP
+length \fIstring\fP
+returns the length (that is, the number of characters) of
+.IR string .
+.TP
+.RI ( " expr " )
+parentheses for grouping.
+.SH EXAMPLES
+.LP
+To add 1 to the Shell variable
+.IR a :
+.IP
+a=\`expr $a + 1\`
+.LP
+To find the filename part (least significant part)
+of the pathname stored in variable
+.IR a ,
+which may or may not contain `/':
+.IP
+expr $a : \'.*/\e(\^.*\e)\' \'\^|\' $a
+.LP
+Note the quoted Shell metacharacters.
+.SH "SEE ALSO"
+sh(1), test(1)
+.SH DIAGNOSTICS
+.I Expr
+returns the following exit codes:
+.LP
+	0	if the expression is neither null nor `0',
+.br
+	1	if the expression
+is null or `0',
+.br
+	2	for invalid expressions.
+.SH BUGS
+.LP
+Note that the
+.BR match ,
+.BR substr ,
+.BR length ,
+and
+.B index
+operators cannot themselves be used as ordinary strings.  That is, the
+expression:
+.RS
+.nf
+tutorial% \fBexpr index expurgatorious length\fP
+syntax error
+tutorial%
+.fi
+.RE
+generates the `syntax error' message as shown instead of the value 1 as
+you might expect.

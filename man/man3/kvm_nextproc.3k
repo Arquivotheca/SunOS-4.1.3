@@ -1,0 +1,121 @@
+.\" @(#)kvm_nextproc.3k 1.1 92/07/30 SMI;
+.TH KVM_NEXTPROC 3K "21 January 1990"
+.SH NAME
+kvm_getproc, kvm_nextproc, kvm_setproc \- read system process structures
+.SH SYNOPSIS
+.nf
+.ft B
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/time.h>
+#include <sys/proc.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct proc *kvm_getproc(kd, pid)
+kvm_t *kd;
+int pid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct proc *kvm_nextproc(kd)
+kvm_t *kd;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kvm_setproc(kd)
+kvm_t *kd;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "kvm_getproc()" "" "\fLkvm_getproc()\fP function"
+.IX "kvm_nextproc()" "" "\fLkvm_nextproc()\fP function"
+.IX "kvm_setproc()" "" "\fLkvm_setproc()\fP function"
+.LP
+.B kvm_nextproc(\|)
+may be used to sequentially read all of the system process structures
+from the kernel identified by
+.I kd
+(see
+.BR kvm_open (3K)).
+Each call to
+.B kvm_nextproc(\|)
+returns a pointer to the static memory area that contains a copy of
+the next valid process table entry.
+There is no guarantee that the data will remain valid
+across calls to
+.BR kvm_nextproc(\|) ,
+.BR kvm_setproc(\|) ,
+or
+.BR kvm_getproc(\|) .
+Therefore, if the process structure must be saved, it should be
+copied to non-volatile storage.
+.LP
+For performance reasons, many implementations will cache a set of
+system process structures.
+Since the system state is liable to change between calls to
+.BR kvm_nextproc(\|) ,
+and since the cache may contain obsolete information,
+there is no guarantee that
+.I every
+process structure returned refers to
+an active process, nor is it certain that
+.I all
+processes will be reported.
+.LP
+.B kvm_setproc(\|)
+rewinds the process list, enabling
+.B kvm_nextproc(\|)
+to rescan from the beginning of the system process table.
+.B kvm_setproc(\|)
+will always flush the process structure cache, allowing an application to
+re-scan the process table of a running system.
+.LP
+.B kvm_getproc(\|)
+locates the
+.B proc
+structure of the process specified by
+.I pid
+and returns a pointer to it.
+.B kvm_getproc(\|)
+does not interact with the process table pointer manipulated by
+.BR kvm_nextproc ,
+however, the restrictions regarding the validity of the data still apply.
+.SH RETURN VALUES
+.LP
+On success,
+.B kvm_nextproc(\|)
+returns a pointer to a copy of
+the next valid process table entry.
+On failure,
+it returns
+.SM NULL\s0.
+.LP
+On success,
+.B kvm_getproc(\|)
+returns a pointer to the
+.B proc
+structure of the process specified by
+.IR pid .
+On failure,
+it returns
+.SM NULL\s0.
+.LP
+.B kvm_setproc(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.SH SEE ALSO
+.BR kvm_getu (3K),
+.BR kvm_open (3K),
+.BR kvm_read (3K)

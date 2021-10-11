@@ -1,0 +1,913 @@
+.\" @(#)sccs.1 1.1 92/07/30 SMI;
+.TH SCCS 1 "2 August 1988"
+.SH NAME
+sccs \- front end for the Source Code Control System (SCCS)
+.SH SYNOPSIS
+.B sccs
+[
+.B \-r
+] [
+.BI \-d rootprefix
+] [
+.BI \-p subdir
+]
+.if n .ti +0.5i
+.I subcommand
+[
+.I option
+\&.\|.\|. ]
+[
+.I filename
+\&.\|.\|. ]
+.SH DESCRIPTION
+.IX  "sccs command"  ""  "\fLsccs\fP \(em source code control system"
+.IX  "source code control system"  ""  "source code control system \(em \fLsccs\fP"
+.IX  "programming tools"  sccs  ""  "\fLsccs\fP \(em source code control system"
+.LP
+The
+.B sccs
+command is a comprehensive, straightforward front end to the various
+utility programs of the Source Code Control System
+(\s-1SCCS\s+1).
+.LP
+.B sccs
+applies the indicated
+.I subcommand
+to the history file associated with each of the indicated files.
+.LP
+The name of an
+.SM SCCS
+history file is derived by prepending the
+.RB ` s. '
+prefix to the filename of a working copy.  The
+.B sccs
+command normally expects these
+.RB ` s. files'
+to reside in an
+.SM 
+.B SCCS
+subdirectory.  Thus, when you supply
+.B sccs
+with a
+.I filename
+argument, it normally applies the subcommand to a file named
+.BI s. filename
+in the
+.SB SCCS
+subdirectory.  If
+.I filename
+is a pathname,
+.B sccs
+looks for the history file in the
+.SB SCCS
+subdirectory of that file's parent directory.  If
+.I filename
+is a directory, however,
+.B sccs
+applies the subcommand to every
+.BR s. file
+file it contains.  Thus, the command:
+.IP
+.B sccs get program.c
+.LP
+would apply the
+.B get
+subcommand to a history file named:
+.IP
+.B SCCS/s.program.c
+.LP
+while the command:
+.IP
+.B sccs get \s-1SCCS\s0
+.LP
+would apply it to every
+.BR s. file
+in the
+.B
+.SM SCCS
+subdirectory.
+.LP
+Options for the
+.B sccs
+command itself must appear before the
+.I subcommand
+argument.  Options for a given subcommand must appear after the
+.I subcommand
+argument.  These options are specific to each subcommand,
+and are described along with the subcommands themselves (see
+.BR Subcommands ,
+below).
+.SS Running Setuid
+.LP
+The
+.B sccs
+command also includes the capability to run
+``setuid''
+to provide additional protection.  However this does not apply
+to subcommands such as
+.BR sccs-admin (1),
+since this would allow anyone to change the authorizations of the
+history file.  Commands that would do so always run as the real user.
+.SH OPTIONS
+.TP
+.B \-r
+Run
+.B sccs
+with the real user
+.SM ID\s0,
+rather than set to the effective user
+.SM ID\s0.
+.TP
+.BI \-d rootprefix
+Define the root portion of the pathname for
+.SM SCCS
+history files.  The default root portion is the current directory.
+Note:
+.I rootprefix
+is prepended to the entire 
+.I filename
+argument, even if
+.I filename
+is an absolute pathname.
+.B \-d
+overrides any directory specified by the
+.nh
+.SB PROJECTDIR
+.hy
+environment variable (see
+.SM ENVIRONMENT\s0,
+below).
+.TP
+.BI \-p subdir
+Define the (sub)directory within which a history file is
+expected to reside.
+.B \s-1SCCS\s0
+is the default. (See
+.SM EXAMPLES\s0,
+below).
+.SH USAGE
+.SS "Subcommands"
+.LP
+Many of the following
+.B sccs
+subcommands invoke programs that reside in
+.BR /usr/sccs .
+Many of these subcommands accept additional arguments that are
+documented in the reference page for the utility program the
+subcommand invokes.
+.TP
+.B admin
+Modify the flags or checksum of an
+.SM SCCS
+history file.
+Refer to
+.BR sccs-admin (1)
+for more information about the
+.B admin
+utility.  While
+.B admin
+can be used to initialize a history file, you may find that the
+.BR create
+subcommand is simpler to use for this purpose.
+.HP
+.B cdc
+.BI \-r sid
+[
+.B \-y\c
+.RI [ comment ]
+]
+.br
+Annotate (change) the delta commentary.
+Refer to
+.BR sccs-cdc (1).
+Note: the
+.B fix
+subcommand can be used to replace the delta, rather than merely
+annotating the existing commentary.
+.RS
+.RS
+.TP
+.BI \-r sid
+Specify the
+.SM SCCS
+delta
+.SM ID
+(\s-1SID\s0)
+to which the change notation is to be added.
+The
+.SM SID
+for a given delta is a number, in Dewey decimal format, composed
+of two or four fields: the
+.I release
+and
+.IR level
+fields, and for branch deltas, the
+.IR branch
+and
+.IR sequence
+fields.  For instance, the
+.SM SID
+for the initial delta is normally
+.BR 1.1 .
+.HP
+.B \-y\c
+.RI [ comment ]
+.br
+Specify the comment with which to annotate the delta commentary.  If
+.B \-y
+is omitted,
+.BR sccs
+prompts for a comment.  A
+null
+.I comment
+results in an empty annotation.
+.RE
+.RE
+.HP
+.B  check
+.RB [ \-b ]
+.RB [ \-u\c
+.RI [ username ]\|]
+.br
+Check for files currently being edited.  Like
+.BR info
+and
+.BR tell ,
+but returns an exit code, rather than producing a listing of files.
+.B check
+returns a non-zero exit status if anything is being edited.
+.RS
+.RS
+.TP
+.B \-b
+Ignore branches.
+.HP
+.B \-u\c
+.RI [ username ]
+.br
+Only check files being edited by you.  When
+.I username
+is specified, only check files being edited by that user.
+.RE
+.RE
+.br
+.ne 7
+.HP
+.B  clean
+.RB [ \-b ]
+.br
+Remove everything in the current directory that can be retrieved from
+an
+.SM SCCS
+history.  Does not remove files that are being edited.
+.RS
+.RS
+.TP
+.B \-b
+Do not check branches to see if they are being edited.
+.RB ` "clean\ \-b" '
+is dangerous when branch versions are kept in the same directory.
+.RE
+.RE
+.TP
+.B comb
+Generate scripts to combine deltas.
+Refer to
+.BR sccs-comb (1).
+.TP
+.B  create
+Create (initialize) history files.
+.BR create
+performs the following steps:
+.RS
+.IP \(bu 3
+Renames the original source file to
+.PD 0
+.B ,program.c
+in the current directory.
+.IP \(bu
+Create the history file called
+.B s.program.c
+in the
+.SB SCCS
+subdirectory.
+.IP \(bu
+Performs an
+.RB ` "sccs get" '
+on
+.B program.c
+to retrieve a read-only copy of the initial version.
+.PD
+.RE
+.HP
+.B deledit
+.RB [ \-s ]
+.RB [ \-y\c
+.RI [ comment ]\|] 
+.br
+Equivalent to an
+.RB ` "sccs delta" '
+and then an
+.RB ` "sccs edit" '.
+.B deledit
+checks in a delta, and checks the file back out again, but leaves
+the current working copy of the file intact.
+.RS
+.RS
+.TP
+.B \-s
+Silent.  Do not report delta numbers or statistics.
+.HP
+.B \-y\c
+.RI [ comment ]
+.br
+Supply a comment for the delta commentary.  If
+.B \-y
+is omitted,
+.BR delta
+prompts for a comment.  A
+.SM NULL
+.I comment 
+results in an empty comment field for the delta.
+.RE
+.RE
+.\"
+.HP
+.B delget
+.RB [ \-s ]
+.RB [ \-\y\c
+.RI [ comment ]\|]
+.br
+Perform an
+.RB ` "sccs delta" '
+and then an
+.RB ` "sccs get" '
+to check in a delta and retrieve read-only copies of the resulting new
+version.
+See the
+.B deledit
+subcommand for a description of
+.BR \-s
+and
+.BR \-y .
+.B sccs
+performs a
+.B delta
+on all the files specified in the argument list, and then a 
+.BR get
+on all the files.  If an error occurs during the
+.BR delta ,
+the
+.B get
+is not performed.
+.HP
+.B delta
+.RB [ \-s ]
+.BR [ \-y\c
+.RI [ comment ]\|]
+.br
+Check in pending changes.
+Records the line-by-line changes introduced while the file was
+checked out.
+The effective user
+.SM ID
+must be the same as the
+.SM ID
+of the person who has the file checked out.
+Refer to
+.BR sccs-delta (1).
+See the
+.B deledit
+subcommand for a description of
+.BR \-s
+and
+.BR \-y .
+.br
+.ne 10
+.HP
+.B  diffs
+.RB [ \-C ]
+.RB [ \-c\c
+.IR date-time ]
+.RB [ \-r\c
+.IR sid ]
+.I diff-options
+.br
+Compare (in
+.BR diff (1)
+format) the working copy of a file that is checked out for
+editing, with a version from the
+.SM SCCS
+history.  Use the most recent checked-in version by default.
+The
+.B diffs
+subcommand accepts the same options as
+.BR diff ,
+with the exception that the
+.B \-c
+option to
+.BR diff
+must be specified as
+.BR \-C .
+.RS
+.RS
+.TP
+.B \-C
+Pass the
+.B \-c
+option to
+.BR diff .
+.br
+.ne 5
+.TP
+.BI \-c date-time
+Use the most recent version checked in before the
+indicated date and time for comparison.
+.I date-time
+takes the form:
+.IR yy [ mm [ dd [\c
+.IR hh [ mm [ ss ]\|]\|]\|]\|].
+Omitted units default to their maximum possible values; that is
+.B \-c7502   
+is equivalent to
+.BR \-c750228235959 .
+.TP
+.BI \-r sid
+Use the version corresponding to the indicated delta for
+comparison.
+.RE
+.RE
+.TP
+.B edit
+Retrieve a version of the file for editing.
+.RB ` "sccs edit" '
+extracts a version of the file that is writable by you, and creates a
+.BR p. file
+in the
+.SM 
+.B SCCS
+subdirectory as lock on the history, so that no one else can check that
+version in or out.
+.SM ID
+keywords are retrieved in unexpanded form.
+.B edit
+accepts the same options as
+.BR get ,
+below.
+.TP
+.B enter
+Similar to
+.BR create ,
+but omits the final
+.RB ` "sccs get" '.
+This may be used if an
+.RB ` "sccs edit" '
+is to be performed immediately after the history file is initialized.
+.HP
+.B fix
+.BI \-r sid
+.br
+Revise a (leaf) delta.  Remove the indicated delta from the
+.SM SCCS
+history, but leave a working copy of the current version in the
+directory.  This is useful for incorporating trivial updates for
+which no audit record is needed, or for revising the delta
+commentary.
+.B fix
+must be followed by a
+.BI \-r
+option, to specify the
+.SM SID
+of the delta to remove.  The indicated delta
+must be the most recent (leaf) delta in its branch.
+Use
+.B fix
+with caution since it does not leave an audit trail of
+differences (although
+the previous commentary is retained within the history file).
+.br
+.ne 10
+.HP
+.B  get
+.RB [ \-ekmps ]
+.RB [ \-c\c
+.IR date-time ]
+.RB [ \-r\c
+.IR sid ]
+.br
+Retrieve a version from the
+.SM SCCS
+history.  By default, this is a read-only working copy of the most
+recent version;
+.SM ID
+keywords are in expanded form.
+Refer to
+.BR sccs-get (1).
+.RS
+.RS
+.TP
+.B \-e
+Retrieve a version for editing.   Same as
+.BR "sccs edit" .
+.TP
+.B \-k
+Retrieve a writable copy but do not check out the file.
+.SM ID
+keywords are unexpanded.
+.TP
+.B \-m
+Precede each line with the
+.SM SID
+of the delta in which it was added.
+.TP
+.B \-p
+Produce the retrieved version on the standard output.  Reports that
+would normally go to the standard output (delta
+.SM ID\s0's
+and statistics) are directed to the standard error.
+.TP 
+.B \-s
+Silent.  Do not report version numbers or statistics. 
+.TP
+.BI \-c date-time
+Retrieve the latest version checked in prior to the date and time
+indicated by the
+.I date-time 
+argument.  
+.I date-time
+takes the form:
+.IR yy [ mm [ dd [\c
+.IR hh [ mm [ ss ]\|]\|]\|]\|].
+.TP
+.BI \-r sid
+Retrieve the version corresponding to the indicated
+.SM SID\s0.
+.RE
+.RE
+.\"
+.HP
+.B help
+.IR message-code | sccs-command
+.PD 0
+.TP
+.B  help stuck
+.br
+.PD
+Supply more information about
+.SM SCCS
+diagnostics.
+.B help
+displays a brief explanation of the error when you supply the
+code displayed by an
+.SM SCCS
+diagnostic message.  If you supply the name of an
+.SM SCCS
+command, it prints a usage line.
+.B help
+also recognizes the keyword
+.BR stuck .
+Refer to
+.BR sccs-help (1).
+.br
+.ne 10
+.HP
+.B info
+.RB [ \-b ]
+.RB [ \-u [\c
+.IR username ]\|]
+.br
+Display a list of files being edited, including the version
+number checked out, the version to be checked in, the name of
+the user who holds the lock, and the date and time the file was
+checked out.
+.RS
+.RS
+.TP
+.B \-b
+Ignore branches.
+.HP
+.B \-u\c
+.RI [ username ]
+.br
+Only list files checked out by you.  When
+.I username
+is specified, only list files checked out by that user.
+.RE
+.RE
+.TP
+.B  print
+Print the entire history of each named file.
+Equivalent to an
+.RB ` "sccs prs \-e" '
+followed by an
+.RB ` "sccs get\ \-p\ \-m" '.
+.HP
+.B  prs
+.RB [ \-el ]
+.RB [ \-c\c
+.IR date-time ]
+.RB [ \-r\c
+.IR sid ]
+.br
+Peruse (display) the delta table, or other portion of an
+.BR s. file.
+Refer to
+.BR sccs-prs (1).
+.RS
+.RS
+.TP
+.B \-e
+Display delta table information for all deltas earlier than the one specified with
+.B \-r
+(or all deltas if none is specified).
+.TP
+.BI \-l
+Display information for all deltas later than, and including,
+that specified by
+.B \-c
+or
+.BR \-r .
+.TP
+.BI \-c date-time
+Specify the latest delta checked in before the indicated date
+and time.  The
+.I date-time
+argument takes the form:
+.IR yy [ mm [ dd [\c
+.IR hh [ mm [ ss ]\|]\|]\|]\|].
+.TP
+.BI \-r sid
+Specify a given delta by
+.SM SID\s0.
+.RE
+.RE
+.\"
+.HP
+.B  prt
+.RB [ \-y ]
+Display the delta table, but omit the
+.SM MR
+field (see
+.BR sccsfile (5)
+for more information on this field).
+Refer to
+.BR sccs-prt (1).
+.RS
+.RS
+.TP
+.B \-y
+Display the most recent delta table entry.  The
+format is a single output line for each filename argument, which
+is convenient for use in a pipeline with
+.BR awk (1)
+or
+.BR sed (1V).
+.RE
+.RE
+.TP
+.BI "rmdel \-r" sid
+Remove the indicated delta from the history file.  That delta
+must be the most recent (leaf) delta in its branch.
+Refer to
+.BR sccs-rmdel (1).
+.HP
+.BI "sccsdiff \-r" old-sid " \-r" new-sid
+.I diff-options
+.br
+Compare two versions corresponding to the indicated
+.SM SID\s0s
+(deltas) using
+.BR diff .
+Refer to
+.BR sccs-sccsdiff (1).
+.HP
+.B  tell
+.RB [ \-b ]
+.RB [ \-u\c
+.RI [ username ]\|]
+.br
+Display the list of files that are currently checked out, one filename per line.
+.RS
+.RS
+.TP
+.B \-b
+Ignore branches.
+.HP
+.B \-u\c
+.RI [ username ]
+.br
+Only list files checked out to you.  When
+.I username
+is specified, only list files check out to that user.
+.RE
+.RE
+.TP
+.B  unedit
+\*(lqUndo\*(rq the last
+.B edit
+or
+.RB ` "get \-e" ',
+and return the working copy to its previous condition.
+.B unedit
+backs out all pending changes made since the file was checked out.
+.TP
+.B  unget
+Same as
+.BR unedit .
+Refer to
+.BR sccs-unget (1).
+.TP
+.B  val
+Validate the history file.
+Refer to
+.BR sccs-val (1).
+.TP
+.B what
+Display any expanded
+.SM ID
+keyword strings contained in a binary (object) or text file.
+Refer to
+.BR what (1)
+for more information.
+.br
+.ne 12
+.SH ENVIRONMENT
+If the environment variable
+.SB PROJECTDIR
+is set to contain an absolute pathname (beginning with a slash),
+.B sccs
+searches for
+.SM SCCS
+history files in the directory given by that variable.
+If
+.SB PROJECTDIR
+does not begin with a slash, it is taken as the name of a user, and
+.B sccs
+searches the
+.B src
+or
+.BR source
+subdirectory of that user's home directory for history files.
+.SH EXAMPLES
+.LP
+.B sccs
+converts the command:
+.IP
+.B "sccs\ \ \-d/usr/src/include\ \ \ get\ \ \ stdio.h"
+.LP
+to:
+.IP
+.B /usr/sccs/get\ \ \ /usr/src/include/SCCS/s.stdio.h
+.LP
+.ta 15
+The command:
+.IP
+.B sccs\ \ \-pprivate\ \ \ get\ \ \ include/stdio.h
+.LP
+becomes:
+.IP
+.B /usr/sccs/get\ \ \ include/private/s.stdio.h
+.DT
+.LP
+To initialize the history file for a source file named
+.BR program.c :
+make the
+.SM SCCS
+subdirectory, and then use
+.RB ` "sccs create" ':
+.RS
+.sp .5
+.ft B
+.nf
+example% mkdir \s-1SCCS\s0
+example% sccs create program.c
+program.c:
+1.1
+14 lines
+.ft
+.fi
+.RE
+.LP
+After verifying the working copy, you can remove the backup file
+that starts with a comma:
+.RS
+.sp .5
+.B example% diff program.c ,program.c
+.br
+.B example% rm ,program.c
+.RE
+.LP
+To check out a copy of
+.B program.c
+for editing, edit it, and then check it back in:
+.RS
+.nf
+.sp .5
+.ft B
+example% sccs edit program.c
+1.1
+new delta 1.2
+14 lines
+example% vi program.c
+.I your editing session
+.ft B
+example% sccs delget program.c
+comments? clarified cryptic diagnostic
+1.2
+3 inserted
+2 deleted
+12 unchanged
+1.2
+15 lines
+.ft R
+.fi
+.RE
+.LP
+To retrieve a file from another directory into the current
+directory:
+.RS
+.sp .5
+.B example% sccs get /usr/src/sccs/cc.c
+.RE
+.LP
+or:
+.RS
+.sp .5
+.B example% sccs \-p/usr/src/sccs/  get cc.c
+.RE
+.LP
+To check out all files under
+.SM SCCS
+in the current directory:
+.RS
+.sp .5
+.B example% sccs edit \s-1SCCS\s0
+.RE
+.LP
+To check in all files currently checked out to you:
+.RS
+.sp .5
+.B example% sccs delta \`sccs tell \-u\`
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.SB SCCS
+.SM SCCS
+subdirectory
+.TP
+.BI \s-1SCCS\s0/d. file
+temporary file of differences
+.TP
+.BI \s-1SCCS\s0/p. file
+lock (permissions) file for checked-out versions
+.TP
+.BI \s-1SCCS\s0/q. file
+temporary file
+.TP
+.BI \s-1SCCS\s0/s. file
+.SM SCCS
+history file
+.TP
+.BI \s-1SCCS\s0/x. file
+temporary copy of the
+.BR s. file
+.TP
+.BI \s-1SCCS\s0/z. file
+temporary lock file
+.TP
+.B /usr/sccs/*
+.SM SCCS
+utility programs
+.PD
+.SH "SEE ALSO"
+.BR awk (1),
+.BR diff (1),
+.BR sccs-admin (1),
+.BR sccs-cdc (1),
+.BR sccs-comb (1),
+.BR sccs-delta (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR sccs-prs (1),
+.BR sccs-rmdel (1),
+.BR sccs-sact (1),
+.BR sccs-sccsdiff (1),
+.BR sccs-unget (1),
+.BR sccs-val (1),
+.BR sed (1V),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH BUGS
+.LP
+There is no
+.B sact
+subcommand to invoke
+.B /usr/sccs/sact
+(see
+.BR sccs-sact (1)).
+However, the
+.B info
+subcommand performs an equivalent function.

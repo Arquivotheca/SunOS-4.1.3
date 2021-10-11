@@ -1,0 +1,124 @@
+#
+# @(#)make-hasm 1.1 92/07/30 SMI
+#
+#	Make file to build FE based GT sundiag tests.
+#
+#	Usage: make -f make-hasm
+
+.SUFFIXES:
+
+C_SOURCES=	i_wcs_mem_test.c\
+		i_rp_shared_ram.c\
+		i_setloopback.c\
+		i_rendering_pipeline.c\
+		i_video_mem_i860_image_a.c\
+		i_video_mem_i860_image_b.c\
+		i_video_mem_i860_cursor.c\
+		i_video_mem_i860_depth.c\
+		i_video_mem_i860_wid.c\
+		i_video_mem_i860_fcs_a.c\
+		i_video_mem_i860_fcs_b.c\
+		i_fb_output_section.c\
+		i_clut.c\
+		i_wlut.c\
+		i_pp_poke.c\
+		i_save_fb_mode.c\
+		i_restore_fb_mode.c\
+		i_set_fb_stereo.c
+
+C_ASM=		$(C_SOURCES:.c=.s)
+
+I860_ASM=	$(C_ASM)\
+		i_D_cache.s
+
+I860_OBJECTS=	$(I860_ASM:.s=.o)
+
+I860_EXEC=	$(C_SOURCES:.c=.out)
+		
+DIAG_ESC_HASM_FILES=	$(I860_EXEC:.out=.hasm)
+
+TARGETS=	$(DIAG_ESC_HASM_FILES)
+
+VXCC= $(VXHOME)/bin/vxcc
+ASM860= $(VXHOME)/bin/asm860
+LNK860= $(VXHOME)/bin/lnk860
+CPP= /usr/lib/cpp
+RM= /bin/rm -f
+SED= /bin/sed
+TAR= /bin/tar cf
+CP= /bin/cp
+TMP_CPP= tmp.s
+
+OPTI=
+DEFINES= -DI860
+
+# used during development to include new or modified include files
+DEVEL_INCLPATH= -I/usr/shbam2/sim/release/src -I/usr/shbam2/sim/release/i860
+STDINCL=
+INCLUDES= -I. $(DEVEL_INCLPATH) $(STDINCL)
+
+# used during development to include new or modified include files
+DEVEL_LIBPATH=
+SDLIBS=
+LIBS=
+
+I860OPTI=
+CPP680FLAGS= $(DEFINES) $(INCLUDES) -P -B
+ASM860FLAGS= -be -x
+VXCCFLAGS= $(I860OPTI) -Hanno -fsingle
+LNK680FLAGS= -Mx>$@.map
+CFLAGS= $(OPTI) $(INCLUDES)
+
+.KEEP_STATE:
+
+all: $(TARGETS)
+
+clean:
+	$(RM) $(TARGETS) $(C_ASM) $(I860_OBJECTS) $(I860_EXEC) e2h core
+
+info:
+	sccs info
+
+install: FRC
+
+
+e2h:	e2h.c n10aouth.h scnhdr.h filehdr.h
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -o $@ e2h.c
+
+
+i_wcs_mem_test.out:	i_wcs_mem_test.o i_D_cache.o
+	$(LNK860) $(LDFLAGS) -e _ldm_mem -o $@ i_wcs_mem_test.o i_D_cache.o
+
+i_setloopback.hasm: i_setloopback.out e2h
+	e2h -n < i_setloopback.out > $@
+
+i_rendering_pipeline.hasm: i_rendering_pipeline.out e2h
+	e2h -n < i_rendering_pipeline.out > $@
+
+i_pp_poke.hasm: i_pp_poke.out e2h
+	e2h -n < i_pp_poke.out > $@
+
+i_save_fb_mode.hasm: i_save_fb_mode.out e2h
+	e2h -n < i_save_fb_mode.out > $@
+
+i_restore_fb_mode.hasm: i_restore_fb_mode.out e2h
+	e2h -n < i_restore_fb_mode.out > $@
+
+i_set_fb_stereo.hasm: i_set_fb_stereo.out e2h
+	e2h -n < i_set_fb_stereo.out > $@
+
+%.out:	%.o
+	$(LNK860) $(LDFLAGS) -e _$* -o $@ $<
+
+%.s:	%.c
+	$(VXCC) $(DEFINES) $(INCLUDES) $(VXCCFLAGS) -S $<
+
+%.o:	%.s
+	$(CPP) $(CPP680FLAGS) $< $(TMP_CPP)
+	$(ASM860) $(ASM860FLAGS) -l$*.lst -o $@ $(TMP_CPP)
+	$(RM) $(TMP_CPP)
+
+%.hasm:	%.out e2h
+	e2h < $< > $@
+
+$(C_ASM): hdwr_regs.h gtmcb.h

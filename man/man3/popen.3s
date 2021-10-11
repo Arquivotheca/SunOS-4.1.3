@@ -1,0 +1,114 @@
+.\" @(#)popen.3s 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH POPEN 3S "6 October 1987"
+.SH NAME
+popen, pclose \- open or close a pipe (for I/O) from or to a process
+.SH SYNOPSIS
+.nf
+.B #include <stdio.h>
+.LP
+.B \s-1FILE\s0 *popen(command, type)
+.B char *command, *type;
+.LP
+.B pclose(stream)
+.B \s-1FILE\s0 *stream;
+.fi
+.IX  process  "initiate I/O to or from"
+.IX  initiate "I/O to or from process \(em \fLpopen()\fR"
+.IX  "popen()"  ""  "\fLpopen()\fP \(em open stream to process"
+.IX  "pclose()"  ""  "\fLpclose()\fP \(em close stream to process"
+.SH DESCRIPTION
+The arguments to
+.B popen(\|)
+are pointers to
+null-terminated
+strings containing, respectively, a
+shell command line and an I/O mode, either
+.B r
+for reading or
+.B w
+for writing.
+.B popen(\|)
+creates a pipe between the calling process and
+the command to be executed.  The value
+returned is a stream pointer such that
+one can write to the standard input of the command,
+if the I/O mode is
+.BR w ,
+by writing to the file
+stream;
+and one can read from the standard output of the command,
+if the I/O mode is
+.BR  r ,
+by reading from the file
+stream.
+.LP
+A stream opened by
+.B popen(\|)
+should be closed by
+.BR pclose(\|) ,
+which waits for the associated process to terminate
+and returns the exit status of the command.
+.LP
+Because open files are shared, a type
+.B r
+command may be used as an input filter,
+reading its standard input
+(which is also the standard output of
+the process doing the
+.BR popen(\|) )
+and providing filtered input on the
+stream,
+and a type
+.B w
+command may be used as an output filter,
+reading a stream of output written to the
+stream
+process doing the
+.B popen(\|)
+and further filtering it and writing it
+to its standard output
+(which is also the standard input of the
+process doing the
+.BR popen(\|) ).
+.LP
+.B popen(\|)
+always calls
+.BR sh (1),
+never
+.BR csh (1).
+.SH "SEE ALSO"
+.BR csh (1),
+.BR sh (1),
+.BR pipe (2V),
+.BR wait (2V),
+.BR fclose (3V),
+.BR fopen (3V),
+.BR system (3)
+.SH DIAGNOSTICS
+.LP
+.B popen(\|)
+returns a
+.SM NULL
+pointer if the pipe or process cannot be created,
+or if it cannot allocate
+as much memory as it needs.
+.LP
+.B pclose(\|)
+returns \-1 if
+stream
+is not associated with a
+.RB ` popen ed'
+command.
+.SH BUGS
+.LP
+If the original and
+.RB ` popen ed'
+processes concurrently read or write a common file,
+neither should use buffered I/O,
+because the buffering gets all mixed up.
+Similar problems with an output filter may be
+forestalled by careful buffer flushing,
+for instance, with
+.BR fflush(\|) ;
+see
+.BR fclose (3V).

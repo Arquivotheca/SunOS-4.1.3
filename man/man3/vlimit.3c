@@ -1,0 +1,114 @@
+.\" @(#)vlimit.3c 1.1 92/07/30 SMI; from UCB 4.2
+.TH VLIMIT 3C "6 October 1987"
+.SH NAME
+vlimit \- control maximum system resource consumption
+.SH SYNOPSIS
+.B "#include <sys/vlimit.h>"
+.LP
+.B vlimit(resource, value)
+.B int resource, value;
+.IX  "control resource consumption"  ""  "control resource consumption \(em \fLvlimit()\fP"
+.IX  "system resource consumption"  control  "system resource consumption"  "control \(em \fLvlimit()\fP"
+.IX  "resource consumption, control \(em \fLvlimit()\fP"
+.IX  "vlimit()"  ""  "\fLvlimit()\fP \(em control consumption"
+.SH DESCRIPTION
+.LP
+.B
+This facility is superseded by getrlimit(2).
+.LP
+Limits the consumption by the current process
+and each process it creates to not individually exceed
+.I value
+on the specified
+.RI resource .
+If
+.I value
+is specified as \-1, then the current limit is
+returned and the limit is unchanged.
+The resources which are currently controllable are:
+.TP 20
+.SB LIM_NORAISE
+A pseudo-limit; if set non-zero then the limits may
+not be raised.  Only the super-user may remove the
+.I noraise
+restriction.
+.TP
+.SB LIM_CPU
+the maximum
+number of
+.SM CPU\s0-seconds
+to be used by each process
+.TP
+.SB LIM_FSIZE
+the largest single file which can be created
+.TP
+.SB LIM_DATA
+the maximum growth of the data+stack region using
+.B sbrk(\|)
+(see
+.BR brk (2))
+beyond the end of the program text
+.TP
+.SB LIM_STACK
+the maximum
+size of the automatically-extended stack region
+.TP
+.SB LIM_CORE
+the size of the largest core dump that will be created.
+.TP
+.SB LIM_MAXRSS
+a soft limit for the amount of physical memory
+(in bytes) to be given to the program.  If memory
+is tight, the system will prefer to take memory
+from processes which are exceeding their declared
+.SB LIM_MAXRSS\s0.
+.LP
+Because this information is stored in the
+per-process information this system call must
+be executed directly by the shell if it
+is to affect all future processes created by the shell;
+.I limit
+is thus a built-in command to
+.BR csh (1).
+.LP
+The system refuses to extend the data or stack
+space when the limits
+would be exceeded in the normal way; a
+.I break
+call fails if the data space limit is reached,
+or the process is killed when the stack limit
+is reached (since the stack cannot be
+extended, there is no way to send a signal!).
+.LP
+A file I/O operation which would create a
+file which is too large will cause a signal
+.SB SIGXFSZ
+to be generated, this normally terminates
+the process, but may be caught.
+When the cpu time limit is exceeded, a signal
+.SB SIGXCPU
+is sent to the offending process; to allow it
+time to process the signal it is
+given 5 seconds grace by raising the
+.SM CPU
+time limit.
+.SH SEE ALSO
+.BR csh (1),
+.BR sh (1),
+.BR brk (2)
+.SH BUGS
+.LP
+If
+.SB LIM_NORAISE
+is set, then no grace should be given when the
+.SM CPU
+time limit is exceeded.
+.LP
+There should be
+.I limit
+and
+.I unlimit
+commands in
+.BR sh (1)
+as well as in
+.BR csh (1).

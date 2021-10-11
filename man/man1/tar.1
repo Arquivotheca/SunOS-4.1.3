@@ -1,0 +1,612 @@
+.\" @(#)tar.1 1.1 92/07/30 SMI;
+.TH TAR 1 "16 February 1988"
+.SH NAME
+tar \- create tape archives, and add or extract files
+.SH SYNOPSIS
+.B tar
+[
+.B \-
+]
+.B c\||\|r\||\|t\||\|u\||\|x
+[
+.B bBefFhilmopvwX014578
+]
+[
+.I tarfile
+]
+.if n .ti +.5i
+[
+.I blocksize
+]
+[
+.I exclude-file
+]
+[
+.B \-I
+.I include-file
+]
+.if n .ti +.5i
+.if t .ti +0.5i
+.I filename1 filename2
+\&.\|.\|.
+.B \-C
+.I directory filenameN
+\&.\|.\|.
+.IX  "tar command"  ""  "\fLtar\fP \(em tape archiver"
+.IX  "tape archives"  ""  "tape archives \(em \fLtar\fP"
+.IX  "archive tapes" "" "archive tapes \(em \fLtar\fP"
+.SH DESCRIPTION
+.LP
+.B tar
+archives and extracts multiple files onto a single
+.BR tar ,
+file archive, called a
+.IR tarfile .
+A tarfile is usually a magnetic tape, but it can be any file.
+.BR tar 's
+actions are controlled by the first argument, the
+.IR key ,
+a string
+of characters containing exactly one function letter from the set
+.BR crtux ,
+and one or more of the optional function
+modifiers listed below.  Other
+arguments to
+.B tar
+are file or directory names that specify which
+files to archive or extract.  In all cases, the appearance of a
+directory name refers recursively to the files and subdirectories
+of that directory.
+.SH "FUNCTION LETTERS"
+.TP
+.B c
+Create a new
+.I tarfile
+and write the named files onto it.
+.TP
+.B r
+Write the named files on the end of the
+.IR tarfile .
+Note: this option
+.I "does not work"
+with quarter-inch archive tapes.
+.TP
+.B t
+List the table of contents of the
+.IR tarfile .
+.TP
+.B u
+Add the named files to the
+.I tarfile
+if they are not there or if they have been modified since they
+were last archived.  Note: this option
+.I "does not work"
+with quarter-inch archive tapes.
+.TP
+.B x
+Extract the named files from the
+.IR tarfile .
+If a named file
+matches a directory with contents written onto the tape, this
+directory is (recursively) extracted.
+The owner, modification time, and mode
+are restored (if possible).  If no
+.I filename
+arguments are given, all files in the archive are extracted.  Note:
+if multiple entries specifying the same file are on the tape, the
+last one overwrites all earlier versions.
+.SH "FUNCTION MODIFIERS"
+.TP
+.B b
+Use the next argument as the blocking factor for tape records.
+The default blocking factor is 20 blocks.  The block size is determined
+automatically when reading tapes (key letters
+.B x
+and
+.BR t ).
+This determination of the blocking factor
+may be fooled when reading from a
+pipe or a socket (see the
+.B B
+key letter below).  The maximum
+blocking factor is determined only by the amount of memory available to
+.B tar
+when it is run.  Larger blocking factors result in
+better throughput, longer blocks on nine-track
+tapes, and better media utilization.
+.TP
+.B B
+Force
+.B tar
+to perform multiple reads (if necessary) so as to read exactly enough
+bytes to fill a block.  This option exists so that
+.B tar
+can work across the Ethernet, since pipes and sockets return partial
+blocks even when more data is coming.
+.TP
+.B e
+If any unexpected errors occur
+.B tar
+will exit immediately with a
+positive exit status.
+.TP
+.B f
+Use the next argument as the name of the
+.IR tarfile .
+If
+.B f
+is omitted, use the device indicated by the 
+.SB TAPE
+environment variable, if set.  Otherwise, use
+.BR /dev/rmt8 
+by default.
+If 
+.I tarfile
+is given as
+.RB ` \- ',
+.B tar
+writes to the standard output or reads from
+the standard input, whichever is appropriate.  Thus,
+.B tar
+can be used as the head or tail of a filter chain.
+.B tar
+can also be used
+to copy hierarchies with the command:
+.RS
+.IP
+.B
+example% cd fromdir; tar cf \- . | (cd todir; tar xfBp \-)
+.RE
+.br
+.ne 4
+.TP
+.B F
+With one
+.B F
+argument specified, exclude
+all directories named
+.SM SCCS
+from
+.IR tarfile .
+With two arguments
+.BR FF ,
+exclude all directories named
+.SM SCCS\s0,
+all files with
+.B \&.o
+as their suffix,
+and all files named
+.BR errs ,
+.BR core ,
+and
+.BR a.out .
+.TP
+.B h
+Follow symbolic links as if they were
+normal files or directories.  Normally,
+.B tar
+does not follow symbolic links.
+.TP
+.B i
+Ignore directory checksum errors.
+.br
+.ne 3
+.TP
+.B l
+Display error messages if all links to
+archived files cannot be resolved.  If
+.B l
+is not used, no error messages are printed.
+.TP
+.B m
+Do not extract modification times of extracted files.
+The modification time
+will be the time of extraction.
+.TP
+.B o
+Suppress information specifying owner and modes of
+directories which
+.B tar
+normally places in the archive.
+Such information makes former versions of
+.B tar
+generate an error message like:
+.RS
+.IP
+.BI filename "/: cannot create"
+.RE
+.IP
+when they encounter it.
+.TP
+.B p
+Restore the named files to their original modes, ignoring the present
+.BR umask (2V).
+Set\s-1UID\s0
+and sticky information are also extracted if you are
+the super-user.  This option is only useful with the
+.B x
+key letter.
+.TP
+.B v
+Verbose.
+Normally
+.B tar
+does its work silently; this
+option displays the name of each file
+.B tar
+treats, preceded by the function
+letter.  When used with the
+.B t
+function,
+.B v
+displays the
+.I tarfile
+entries in a form similar to
+.RB ` "ls\ \-l" '.
+.TP
+.B w
+Wait for user confirmation before taking
+the specified action.  If you use
+.BR w ,
+.B tar
+displays the action to be taken followed by the
+file name, and then waits for a
+.B y
+response to proceed.  No action is
+taken on the named file if you type
+anything other than a line beginning with
+.BR y .
+.TP
+.B X
+Use the next argument as a file containing a list of named files
+(or directories) to be excluded from the
+.I tarfile
+when using the key letters
+.BR c ,
+.BR x ,
+or
+.BR t .
+Multiple
+.B X
+arguments may be used, with one
+.I exclude file
+per argument.
+.TP
+.B 014578
+Select an alternate drive on which the tape is mounted.  The numbers
+.BR 2 ,
+.BR 3 ,
+.BR 6 ,
+and
+.B 9
+do not specify valid drives.  The default is
+.BR /dev/rmt8 .
+.LP
+If a file name is preceded by
+.BR \-I
+then the filename is opened.
+A list filenames, one per line, is treated
+as if each appeared separately on the command line.
+Be careful of trailing white space in both include and exclude file lists.
+.LP
+In the case where excluded files (see
+.B X
+option)
+also exist, excluded files take
+precedence over all included files.
+So, if a file is specified in both the
+include and exclude files (or on the command line),
+it will be excluded.
+.br
+.ne 6
+.LP
+If a file name is preceded by
+.BR \-C
+in a
+.B c
+(create) or
+.B r
+(replace) operation,
+.B tar
+will perform a
+.B chdir
+(see
+.BR csh (1))
+to that file name.  This allows multiple directories not
+related by a close common parent to be archived using short
+relative path names. See
+.SM EXAMPLES
+below.
+.LP
+Note: the
+.B \-C
+option only applies to
+.I one
+following directory name and
+.I one
+following file name.
+.br
+.ne 5
+.SH EXAMPLES
+.LP
+To archive files from
+.B /usr/include
+and from
+.BR /etc ,
+one might use:
+.IP
+.B
+example% tar c \-C /usr  include \-C /etc  .
+.LP
+If you get a table of contents from the resulting
+.IR tarfile ,
+you will see something like:
+.RS
+.sp .5
+.nf
+.B include/
+.B include/a.out.h
+.IB "and all the other files in " "/usr/include \fR.\|.\|.\fP"
+.B /chown
+.IB "and all the other files in " /etc
+.fi
+.RE
+.br
+.ne 7
+.LP
+Here is a simple example using
+.B tar
+to create an archive of your
+home directory on a tape mounted on drive
+.BR /dev/rmt0 :
+.RS
+.sp .5
+.nf
+.B example% cd	
+.B example% tar cvf /dev/rmt0 .
+.IB "messages from " tar
+.fi
+.RE
+.LP
+The
+.B c
+option means create the archive; the
+.B v
+option makes
+.B tar
+tell you what it is doing as it works;  the
+.B f
+option
+means that you are specifically naming the file onto which the archive
+should be placed (\c
+.B /dev/rmt0
+in this example).
+.LP
+Now you can read the table of contents from the archive like this:
+.RS
+.sp .5
+.nf
+.ta \w'.B example%'u+2n  +\w'\fBtar  cvf  /dev/rmt0\fP'u+12n
+.BI "example% tar  tvf  /dev/rmt0	" "display table of contents of the archive"
+.ta 28n +8n +12
+(\fIaccess  user-id/group-id	size 	mod. date 	filename\fP)
+.B "rw-r--r-- 1677/40 	2123	Nov  7 18:15:1985	./archive/test.c"
+\&.\|.\|.
+.B example%
+.fi
+.RE
+.LP
+You can extract files from the archive like this:
+.RS
+.sp .5
+.nf
+.ta \w'.B example%'u+2n  +\w'\fBtar  xvf  /dev/rmt0\fP'u+12n
+.BI "example% tar  xvf  /dev/rmt0	" "extract files from the archive"
+.IB "messages from " tar
+.B example%
+.fi
+.RE
+.LP
+If there are multiple archive files on a tape, each is separated
+from the following one by an 
+.SM EOF
+marker.
+.B tar
+does not read the
+.SM EOF
+mark on the tape after it finishes reading an
+archive file because
+.B tar
+looks for a special header to decide
+when it has reached the end of the archive.  Now if you try to use
+.B tar
+to read the next archive file from the tape,
+.B tar
+does not know enough to skip over the
+.SM EOF
+mark and tries to read the
+.SM EOF
+mark as an archive instead.  The result of this is an
+error message from
+.B tar
+to the effect:
+.IP
+.B tar: blocksize=0
+.LP
+This means that to read another archive from the tape, you must
+skip over the
+.SM EOF
+marker before starting another
+.B tar
+command.  You can accomplish this using the
+.BR mt (1)
+command, as shown
+in the example below.  Assume that you are reading from
+.BR /dev/nrmt0 .
+.RS
+.sp .5
+.nf
+.BI "example% tar xvfp /dev/nrmt0" " 	read first archive from tape"
+.IB "messages from " tar
+.BI "example% mt fsf 1" "	skip over the end-of-file marker"
+.BI "example% tar xvfp /dev/nrmt0" " 	read second archive from tape"
+.IB "messages from " tar
+.B example%
+.fi
+.RE
+.br
+.ne 7
+.LP
+Finally, here is an example using
+.B tar
+to transfer files across the Ethernet.
+First, here is how to archive files
+from the local machine (\c
+.BR example )
+to a tape on a remote system (\c
+.BR host ):
+.RS
+.sp .5
+.nf
+.BI "example% tar cvfb  \-  20" " filenames " "| rsh " host " dd of=/dev/rmt0  obs=20b"
+.IB "messages from " tar
+.B example%
+.fi
+.RE
+.br
+.ne 6
+.LP
+In the example above, we are
+.I creating
+a
+.I tarfile
+with the
+.B c
+key letter, asking for
+.I verbose
+output from
+.B tar
+with the
+.B v
+option, specifying the name of the output
+.I tarfile
+using the
+.B f
+option (the standard output is where the
+.I tarfile
+appears, as indicated
+by the
+.RB ` \- '
+sign), and specifying the blocksize (20) with the
+.B b
+option.
+If you want to change the blocksize, you must change the blocksize
+arguments both on the
+.B tar
+command
+.I and
+on the
+.B dd
+command.
+.LP
+Now, here is how to use
+.B tar
+to get files from a tape on the remote system back to the
+local system:
+.RS
+.B example% rsh  \-n host  dd
+.B "if=/dev/rmt0  bs=20b | tar xvBfb  \- 20"
+.I filenames
+.br
+.IB "messages from " tar
+.br
+.B example%
+.RE
+.LP
+In the example above, we are
+.I extracting
+from the
+.I tarfile
+with the
+.B x
+key letter, asking for
+.I verbose output from
+.B tar
+with the
+.B v
+option, telling
+.B tar
+it is reading from a pipe with the
+.B B
+option, specifying the name of the input
+.I tarfile
+using the
+.B f
+option (the standard input is where the
+.I tarfile
+appears, as indicated
+by the
+.RB ` \- '
+sign), and specifying the blocksize (20) with the
+.B b
+option.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/rmt?
+half-inch magnetic tape interface
+.TP
+.B /dev/rst?
+.SM SCSI
+tape interface
+.TP
+.B /tmp/tar*
+.PD
+.SH ENVIRONMENT
+.TP 10
+.SB TAPE
+If specified, in the environment, the value of 
+.SB TAPE
+indicates the default tape device.
+.SH SEE ALSO
+.BR cpio (1),
+.BR csh (1),
+.BR mt (1),
+.BR umask (2V),
+.BR tar (5),
+.BR dump (8),
+.BR restore (8)
+.SH BUGS
+.LP
+Neither the
+.B r
+option nor the
+.B u
+option can be used with quarter-inch archive tapes, since these tape
+drives cannot backspace.
+.LP
+There is no way to ask for the
+.IR n th
+occurrence of a file.
+.LP
+Tape errors are handled ungracefully.
+.LP
+The
+.B u
+option can be slow.
+.LP
+There is no way selectively to follow symbolic links.
+.LP
+When extracting tapes created with the
+.B r
+or
+.B u
+options, directory modification times may not be set correctly.
+.LP
+Files with names longer than 100 characters cannot be processed.
+.LP
+Filename substitution wildcards do not work for extracting
+files from the archive.  To get around this, use a command of
+the form:
+.IP
+.BI "tar xvf.\|.\|. /dev/rst0 `tar tf.\|.\|. /dev/rst0 | grep '" pattern \|'`

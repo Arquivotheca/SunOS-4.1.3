@@ -1,0 +1,337 @@
+'\" t
+.\" @(#)kadb.8s 1.1 92/07/30 SMI;
+.TH KADB 8S "18 September 1991"
+.SH NAME
+kadb \- adb-like kernel and standalone-program debugger
+.SH SYNOPSIS
+.B > b kadb
+[
+.B \-d
+] [
+.I boot-flags
+]
+.SH DESCRIPTION
+.IX  kadb  ""  "\fLkadb\fP \(em kernel debugger"
+.IX  "debug tools"  "kadb command"  ""  "\fLkadb\fP \(em kernel debugger"
+.B kadb
+is an interactive debugger
+that is similar in operation to
+.BR adb (1),
+and runs as a standalone program under the
+.SM PROM
+monitor.  You can use
+.B kadb
+to debug the
+kernel, or to debug any standalone program.
+.LP
+Unlike
+.BR adb ,
+.B kadb
+runs in the same supervisor virtual address space as the program being
+debugged \(em although it maintains a separate context.
+The debugger runs as a
+.I coprocess
+that cannot be killed (no
+.RB ` :k ')
+or rerun (no
+.RB ` :r ').
+There is no signal control (no
+.RB ` :i ',
+.RB ` :t ',
+or
+.RB ` $i '),
+although the keyboard facilities
+(\s-1CTRL\-C\s0, 
+.SM CTRL\-S, 
+and
+.SM CTRL\-Q\s0) 
+are simulated.
+.LP
+While the kernel is running under
+.BR kadb ,
+the abort sequence
+.RB ( \s-1L1-A\s0 " or " \s-1BREAK\s0 )
+drops the system into
+.B kadb
+for debugging \(em as will a system panic.
+When running other standalone programs under
+.BR kadb ,
+the abort sequence will pass control to the
+.SM PROM
+monitor.
+.B kadb
+is then invoked from the monitor by jumping
+to the starting address for
+.B kadb
+found in
+.B /usr/include/debug/debug.h
+The following list gives the monitor commands to use
+for each system.
+.RS
+.TS
+;
+lB lB
+l lB .
+System	Monitor Command
+.sp .5
+Sun-2	g fd00000 
+Sun-3	g fd00000 
+Sun386i	g fe005000 
+Sun-4	g ffc00000
+Sun-4c	go ffc00000
+Sun-4m	go ffc00000
+.TE
+.RE
+.LP
+The
+.B kadb
+user interface is similar to that of
+.BR adb .
+Note:
+.B kadb
+prompts with
+.IP
+.B kadb>
+.LP
+Most
+.B adb
+commands function in
+.B kadb
+as expected.  Typing an abort sequence in response to
+the prompt (use 
+.B $q 
+on 
+.B Sun-4m
+) returns you to the
+.SM PROM
+monitor, from which you can examine control spaces that are not
+accessible within
+.B adb
+or
+.BR kadb .
+The
+.SM PROM
+monitor command
+.B c
+(or 
+.B go
+on Sun-4c/4m)
+will return control to
+.BR kadb .
+As with
+.RB ` "adb \-k" ',
+.B $p
+works when debugging
+kernels (by actually mapping in new user pages).
+The verbs
+.B ?
+and
+.B /
+are equivalent in
+.B kadb ,
+since there is only one address space in use.
+.SH OPTIONS
+.LP
+.B kadb
+is booted from the
+.SM PROM
+monitor as a standalone program.  If you omit the
+.B \-d
+flag,
+.B kadb
+automatically loads and runs
+.B vmunix
+from the filesystem
+.B kadb
+was loaded from.  The
+.B kadb
+.B vmunix
+variable can be patched to change the default program
+to be loaded.
+.TP
+.B \-d
+Interactive startup.  Prompts with
+.RS
+.RS
+.B kadb:
+.RE
+.RE
+.IP
+for a file to be loaded.
+From here, you can enter a boot sequence line to load a
+standalone program.  Boot flags entered in response to this prompt
+are included with those already set
+and passed to the program.
+If you type a 
+.SM RETURN
+only,
+.B kadb
+loads
+.B vmunix
+from the filesystem that
+.B kadb
+was loaded from.
+.TP
+.I boot-flags
+You can specify boot flags as arguments when invoking
+.B kadb.
+Note:
+.B kadb
+always sets the
+.B \-d
+(debug)
+boot flag, and passes it to the program being debugged.
+.SH USAGE
+Refer to
+.B adb
+in
+.TX DEBUG .
+.SS Kernel Macros
+.LP
+As with
+.BR adb ,
+kernel macros are supported.  With
+.BR kadb ,
+however, the macros are compiled into the debugger itself, rather
+than being read in from the filesystem.  The
+.B kadb
+command
+.B $M
+lists macros known to
+.B kadb.
+.SS "Setting Breakpoints"
+.LP
+.\" Sun386i
+Self-relocating programs such as the
+.\" the Sun-3 kernel
+SunOS kernel
+.\" Sun386i
+need to be relocated
+before breakpoints can be used.  To set the first breakpoint for such a
+program, start it with
+.RB ` :s ';
+.B kadb
+is then entered after the program is relocated (when
+the system initializes its interrupt vectors).  Thereafter,
+.RB ` :s '
+single-steps as with
+.BR adb .
+Otherwise, use
+.RB ` :c '
+to start up the program.
+.\" Sun386i
+.SS Sun386i System Commands
+.LP
+The Sun386i system version of 
+.B kadb
+has the following additional commands.
+Note, for the general syntax of 
+.B adb
+commands, see 
+.BR adb (1).
+.RS
+.TP 12
+.B :i
+Read a byte (with the 
+.SM INB 
+instruction) in from the port at 
+.IR address .
+.TP
+.BI :o
+Send a byte (with the 
+.SM OUTB
+instruction) containing 
+.I count
+out through the port at
+.IR address .
+.TP
+.BI :p
+Like 
+.B :b
+in 
+.BR adb (1),
+but sets a breakpoint using the hardware debug register
+instead of the breakpoint instruction.  The advantage of
+using 
+.B :p 
+is that when setting breakpoints with the debug
+register it is not necessary to have write access to
+the breakpoint location.  Four (4) breakpoints can be set with the hardware
+debug registers.
+.TP
+.BI $S
+Switch I/O from the console to the serial port or vice versa.
+.TP
+.BI [
+Like 
+.B :e 
+in
+.BR adb (1),
+but requires only one keystroke and no 
+.SM RETURN
+character.
+.TP
+.BI ]
+Like 
+.B :s
+in 
+.BR adb (1),
+but requires only one keystroke and no 
+.SM RETURN
+character.
+.RE
+.\" Sun386i
+.SS Automatic Rebooting with kadb
+.LP
+You can set up your workstation to automatically reboot
+.B kadb
+by patching the
+.I vmunix
+variable in
+.B /boot
+with the string
+.BR kadb .
+(Refer to
+.B adb
+in
+.TX DEBUG
+for details on how to patch executables.)
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+.TP
+.B /boot
+.TP
+.B /kadb
+.TP
+.B /usr/include/debug/debug.h
+.PD
+.SH SEE\ ALSO
+.BR adb (1),
+.BR boot (8S)
+.LP
+.TX DEBUG
+.br
+.TX DRIVER
+.SH BUGS
+.LP
+There is no floating-point
+.\" Sun386i
+support, except on Sun386i systems.
+.\" Sun386i
+.LP
+.B kadb
+cannot reliably single-step over instructions that change the
+status register.
+.LP
+When sharing the keyboard with the operating system
+the monitor's input routines can leave the keyboard in a confused
+state.  If this should happen, disconnect the keyboard
+momentarily and then reconnect it.  This forces the keyboard to
+reset as well as initiating an abort sequence.
+.LP
+Most of the bugs listed in
+.BR adb (1)
+also apply to
+.BR kadb .

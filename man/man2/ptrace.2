@@ -1,0 +1,551 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)ptrace.2 1.1 92/07/30 SMI; from UCB 6.4 5/23/86
+.TH PTRACE 2 "21 January 1990"
+.SH NAME
+ptrace \- process trace
+.SH SYNOPSIS
+.nf
+.ft B
+#include <signal.h>
+#include <sys/ptrace.h>
+#include <sys/wait.h>
+.ft
+.fi
+.LP
+.nf
+.BR "ptrace(request, pid, addr, data " [ " , addr2 " ] " )"
+.ft B
+enum ptracereq request;
+int pid;
+char *addr;
+int data;
+char *addr2;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  ptrace()  ""  \fLptrace()\fP 
+.IX  "processes and protection"  ptrace()  ""  \fLptrace()\fP
+.IX  process "tracing \(em \fLptrace()\fP"
+.IX  "trace process ptrace()"  ""  "trace process \(em \fLptrace()\fP"
+.LP
+.B ptrace(\|)
+provides a means by which a process may control the execution of
+another process, and examine and change its core image.  Its primary
+use is for the implementation of breakpoint debugging.  There are five
+arguments whose interpretation depends on the
+.I request
+argument.  Generally,
+.I pid
+is the process
+.SM ID
+of the traced process.  A process being traced
+behaves normally until it encounters some signal whether internally
+generated like \*(lqillegal instruction\*(rq or externally generated
+like \*(lqinterrupt\*(rq.  See
+.BR sigvec (2)
+for the list.  Then the traced process enters a stopped state and the
+tracing process is notified using
+.BR  wait (2V).
+When the traced process is in the stopped state, its core image can be
+examined and modified using
+.BR ptrace(\|) .
+If desired, another
+.B ptrace(\|)
+request can then cause the traced process either to terminate or to
+continue, possibly ignoring the signal.
+.LP
+Note: several different values of the
+.I request
+argument can make
+.B ptrace(\|)
+return data values \(em since \-1 is a possibly legitimate value, to
+differentiate between \-1 as a legitimate value and \-1 as an error
+code, you should clear the
+.B errno
+global error code before doing a
+.B ptrace(\|)
+call, and then check the value of
+.B errno
+afterwards.
+.LP
+The value of the
+.I request
+argument determines the precise action of the call:
+.TP
+.SB PTRACE_TRACEME
+This request is the only one used by the traced process;
+it declares that the process is to be traced by its parent.
+All the other arguments are ignored.
+Peculiar results will ensue if the parent does not expect to trace the child.
+.TP
+.SB PTRACE_PEEKTEXT
+.PD 0
+.TP
+.SB PTRACE_PEEKDATA
+.PD
+The word in the traced process's address space at
+.I addr
+is returned.  If the instruction and data spaces are separate
+(for example, historically on a
+.SM PDP\s0-11),
+request
+.SB PTRACE_PEEKTEXT
+indicates instruction space while
+.SB PTRACE_PEEKDATA
+indicates data space.
+Otherwise, either request may be used, with equal results;
+.I addr
+must be a multiple of 4 on a Sun-4 system.
+The child must be stopped.
+The input
+.I data
+and
+.I addr2
+are ignored.
+.TP
+.SB PTRACE_PEEKUSER
+The word of the system's per-process data area corresponding to
+.I addr
+is returned.
+.I addr
+must be a valid offset within the kernel's per-process data pages.
+This space contains the registers and other information about
+the process; its layout corresponds to the
+.I user
+structure in the system (see
+.BR <sys/user.h> ).
+.TP
+.SB PTRACE_POKETEXT
+.PD 0
+.TP
+.SB PTRACE_POKEDATA
+.PD
+The given
+.I data
+are written at the word in the process's address space corresponding to
+.IR addr .
+.I addr
+must be a multiple of 4 on a
+Sun-4 system.
+No useful value is returned.
+If the instruction and data spaces are separate,
+request
+.SB PTRACE_PEEKTEXT
+indicates instruction space while
+.SB PTRACE_PEEKDATA
+indicates data space.  The
+.SB PTRACE_POKETEXT
+request must be used to write into a process's text
+space even if the instruction and data spaces are not separate.
+.br
+.ne 4
+.TP
+.SB PTRACE_POKEUSER
+The process's system data are written, as it is read with request
+.BR \s-1PTRACE_PEEKUSER\s0 .
+Only a few locations can be written in this way:
+the general registers, the floating point and status registers,
+and certain bits of the processor status word.
+.TP
+.SB PTRACE_CONT
+The
+.I data
+argument is taken as a signal number
+and the child's execution continues at location
+.I addr
+as if it had incurred that signal.  Normally the signal number will be
+either 0 to indicate that the signal that caused the stop
+should be ignored, or that value fetched out of the
+process's image indicating which signal caused the stop.  If
+.I addr
+is (int *)1 then execution continues from where it stopped.
+.I addr
+must be a multiple of 4 on a Sun-4 system.
+.TP
+.SB PTRACE_KILL
+The traced process terminates, with the same consequences as
+.BR exit (2V).
+.TP
+.SB PTRACE_SINGLESTEP
+Execution continues as in request
+.SM
+.BR PTRACE_CONT ;
+however, as soon as possible after execution of at least one instruction,
+execution stops again.  The signal number from the stop is
+.SM
+.BR SIGTRAP .
+On Sun-3 and Sun386i systems, the status register
+T-bit is used and just one instruction is executed.
+This is part of the mechanism for implementing breakpoints.
+On a Sun-4 system this will return an error since there
+is no hardware assist for this feature.
+Instead, the user should insert breakpoint traps
+in the debugged program with
+.SM
+.BR PTRACE_POKETEXT .
+.TP
+.SB PTRACE_ATTACH
+Attach to the process identified by the
+.I pid
+argument and begin tracing it.
+.SB PTRACE_ATTACH
+causes a 
+.SB SIGSTOP
+to be sent to process
+.IR pid .
+Process
+.I pid
+does not have to be a child of the requestor, but
+the requestor must have permission to send process
+.I pid
+a signal and the effective user
+.SM ID\s0s
+of the requesting process and process
+.I pid
+must match.
+.TP
+.SB PTRACE_DETACH
+Detach the process being traced.
+Process
+.I pid
+is no longer being traced and continues its execution. 
+The
+.I data
+argument is taken as a signal number and the process continues at location
+.I addr
+as if it had incurred that signal.
+.TP
+.SB PTRACE_GETREGS
+The traced process's registers are returned in a
+structure pointed to by the
+.I addr
+argument.  The registers include the general purpose registers,
+the program counter and the program status word.
+The ``regs'' structure defined in
+.B <machine/reg.h>
+describes the data that are returned.
+.TP
+.SB PTRACE_SETREGS
+The traced process's registers are written from a
+structure pointed to by the
+.I addr
+argument.  The registers include the general purpose registers,
+the program counter and the program status word.
+The ``regs'' structure defined in
+.B reg.h
+describes the data that are set.
+.TP
+.SB PTRACE_GETFPREGS
+(Sun-3, Sun-4 and Sun386i systems only) The traced process's
+.SM FPP
+status is returned in a structure pointed to by the
+.I addr
+argument.  The status includes the
+68881 (80387 on Sun386i systems)
+floating point registers and
+the control, status, and instruction address registers.
+The ``fp_status'' structure defined in
+.BR reg .
+describes the data that are returned.
+The
+.B fp_state
+.\" Sun386i
+structure defined in 
+.B <machine/fp.h>
+describes the data that are returned on 
+a Sun386i system.
+.TP
+.SB PTRACE_SETFPREGS
+(Sun-3, Sun-4 and Sun386i systems only) The traced process's
+.SM FPP
+status is written from a structure pointed to by the
+.I addr
+argument.  The status includes the
+.SM FPP
+floating point registers and
+the control, status, and instruction address registers.
+The ``fp_status'' structure defined in
+.B reg.h
+describes the data that are set.
+The ``fp_state''
+.\" Sun386i
+structure defined in
+.B fp.h
+describes the data that are returned on
+a Sun386i system.
+.br
+.ne 6
+.TP
+.SB PTRACE_GETFPAREGS
+(a Sun-3 system with
+.SM FPA
+only) The traced process's
+.SM FPA
+registers are returned in a structure pointed to by the
+.I addr
+argument.  The ``fpa_regs'' structure defined in
+.B reg.h
+describes the data that are returned.
+.TP
+.SB PTRACE_SETFPAREGS
+(a Sun-3 system with
+.SM FPA
+only) The traced process's
+.SM FPA
+registers are written from a
+structure pointed to by the
+.I addr
+argument.  The \*(lqfpa_regs\*(rq structure defined in
+.B reg.h
+describes the data that are set.
+.br
+.ne 4
+.TP
+.SB PTRACE_READTEXT
+.PD 0
+.TP
+.SB PTRACE_READDATA
+.PD
+Read data from the address space of the traced process.
+If the instruction and data spaces are separate, request
+.SB PTRACE_READTEXT
+indicates instruction space while
+.SB PTRACE_READDATA
+indicates data space.  The
+.I addr
+argument is the address within the traced process from where the data are
+read, the
+.I data
+argument is the number of bytes to read, and the
+.I addr2
+argument is the address within the requesting process where the data
+are written.
+.TP
+.SB PTRACE_WRITETEXT
+.PD 0
+.TP
+.SB PTRACE_WRITEDATA
+.PD
+Write data into the address space of the traced process.
+If the instruction and data spaces are separate, request
+.SB PTRACE_READTEXT
+indicates instruction space while
+.SB PTRACE_READDATA
+indicates data space.  The
+.I addr
+argument is the address within the traced process where the data are
+written, the
+.I data
+argument is the number of bytes to write, and the
+.I addr2
+argument is the address within the requesting process from where the
+data are read.
+.TP
+.\" Sun386i systems
+.SB PTRACE_SETWRBKPT
+(Sun386i systems only) Set a write breakpoint at location
+.I addr
+in the process being traced.  Whenever a write is directed to this location
+a breakpoint will occur and a SIGTRAP signal will be sent to the process.  The
+.I data
+argument specifies which debug register should be used for the address of the
+breakpoint and must be in the range 0 through 3, inclusive. The
+.I addr2
+argument specifies the length of the operand in bytes, and must be one of 1, 2,
+or 4.
+.TP
+.SB PTRACE_SETACBKPT
+(Sun386i systems only) Set an access breakpoint at location
+.I addr
+in the process being traced.  When location
+.I addr
+is read or written a breakpoint will occur and the process will be sent a
+SIGTRAP signal.  The
+.I data
+argument specifies which debug register should be used for the address of the
+breakpoint and must be in the range 0 through 3, inclusive. The
+.I addr2
+argument specifies the length of the operand in bytes, and must be one of 1, 2,
+or 4.
+.TP
+.SB PTRACE_CLRBKPT
+(Sun386i systems only) Clears all break points set with
+.SB PTRACE_SETACBKPT
+or
+.BR \s-1PTRACE_SETWRBKPT\s0 .
+.TP
+.SB PTRACE_SYSCALL
+Execution continues as in request
+.SM
+.BR PTRACE_CONT ;
+until the process makes a system call.
+The process receives a
+.SB SIGTRAP
+signal and stops.
+At this point the arguments to the system call may be inspected
+in the process
+.I user
+structure using the
+.SB PTRACE_PEEKUSER
+request.
+The system call number is available in place of the 8th argument.
+Continuing with another
+.SB PTRACE_SYSCALL
+will stop the process again at the completion of the system call.
+At this point the result of the system call and error value
+may be inspected in the process
+.I user
+structure.
+.TP
+.SB PTRACE_DUMPCORE
+Dumps a core image of the traced process to a file.
+The name of the file is obtained from the
+.I addr
+argument.
+.br
+.ne 4
+.LP
+As indicated, these calls
+(except for requests
+.BR \s-1PTRACE_TRACEME\s0 ,
+.SB PTRACE_ATTACH
+and
+.B \s-1PTRACE_DETACH\fR\s0)
+can be used only when the subject process has stopped.  The
+.B wait(\|)
+call is used to determine when a process stops;
+in such a case the \*(lqtermination\*(rq status returned by
+.B wait(\|)
+has the value
+.SB WSTOPPED
+to indicate a stop rather than genuine termination.
+.LP
+To forestall possible fraud,
+.B ptrace(\|)
+inhibits the set\s-1UID\s0 and set\s-1GID\s0 facilities on subsequent
+.BR execve (2V)
+calls.  If a traced process calls
+.BR execve(\|) ,
+it will stop before executing the first instruction of the new image,
+showing signal
+.SM
+.BR SIGTRAP .
+.LP
+On the Sun, \*(lqword\*(rq also means a 32-bit integer.
+.SH RETURN VALUES
+.LP
+On success, the value returned by
+.B ptrace(\|)
+depends on
+.I request
+as follows:
+.RS
+.TP 25
+.SB PTRACE_PEEKTEXT
+.PD 0
+.TP
+.SB PTRACE_PEEKDATA
+.PD
+The word in the traced process's address space at
+.IR addr .
+.TP
+.SB PTRACE_PEEKUSER
+The word of the system's per-process data area corresponding to
+.IR addr .
+.RE
+.LP
+On failure,
+these requests return
+\-1
+and set
+.B errno
+to indicate the error.
+.LP
+For all other values of
+.IR request ,
+.B ptrace(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EIO
+The request code is invalid.
+.IP
+The given signal number is invalid.
+.IP
+The specified address is out of bounds.
+.TP
+.SM EPERM
+The specified process cannot be traced.
+.TP
+.SM ESRCH
+The specified process does not exist.
+.IP
+.I request
+requires process
+.I pid to be
+traced by the current process and stopped, and process
+.I pid
+is not being traced by the current process.
+.IP
+.I request
+requires process
+.I pid to be
+traced by the current process and stopped, and process
+.I pid
+is not stopped.
+.SH "SEE ALSO"
+.BR adb (1),
+.BR intro (2),
+.BR ioctl (2),
+.BR sigvec (2),
+.BR wait (2V)
+.SH BUGS
+.LP
+.B ptrace(\|)
+is unique and arcane; it should be replaced with a special file which
+can be opened and read and written.  The control functions could then
+be implemented with
+.BR ioctl (2)
+calls on this file.  This would be simpler to understand and have much
+higher performance.
+.LP
+The requests
+.SB PTRACE_TRACEME
+through
+.SB PTRACE_SINGLESTEP
+are standard
+.SM UNIX
+system
+.B ptrace(\|)
+requests.  The requests
+.SB PTRACE_ATTACH
+through
+.SB PTRACE_DUMPCORE
+and the fifth argument,
+.IR addr2 ,
+are unique to SunOS.
+.LP
+The request
+.SB PTRACE_TRACEME
+should be able to specify signals which are to be treated normally and
+not cause a stop.
+In this way, for example, programs with simulated floating point (which
+use \*(lqillegal instruction\*(rq signals at a very high rate)
+could be efficiently debugged.
+.LP
+The error indication, \-1, is a legitimate function value;
+.BR errno ,
+(see
+.BR intro (2)),
+can be used to clarify what it means.

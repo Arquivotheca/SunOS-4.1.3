@@ -1,0 +1,466 @@
+.\" @(#)string.3 1.1 92/07/30 SMI; from UCB 4.2 and S5
+.TH STRING 3  "6 October 1987"
+.SH NAME
+strcat, strncat, strdup, strcmp, strncmp, strcasecmp, strncasecmp, strcpy, strncpy, strlen, strchr, strrchr, strpbrk, strspn, strcspn, strstr, strtok, index, rindex \- string operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <string.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strcat(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strncat(s1, s2, n)
+char \(**s1, \(**s2;
+int n;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strdup(s1)
+char \(**s1;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int strcmp(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int strncmp(s1, s2, n)
+char \(**s1, \(**s2;
+int n;
+.ft
+.fi
+.LP
+.fn
+.ft B
+int strcasecmp(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int strncasecmp(s1, s2, n)
+char \(**s1, \(**s2;
+int n;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strcpy(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strncpy(s1, s2, n)
+char \(**s1, \(**s2;
+int n;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int strlen(s)
+char \(**s;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strchr(s, c)
+char \(**s;
+int c;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strrchr(s, c)
+char \(**s;
+int c;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strpbrk(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int strspn(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int strcspn(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *strstr(s1, s2)
+char *s1, *s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**strtok(s1, s2)
+char \(**s1, \(**s2;
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <strings.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**index(s, c)
+char \(**s, c;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char \(**rindex(s, c)
+char \(**s, c;
+.ft
+.fi
+.IX  "strcat()"  ""  "\fLstrcat()\fP \(em concatenate strings"
+.IX  "strncat()"  ""  "\fLstrncat()\fP \(em concatenate strings"
+.IX  "strdup()"  ""  "\fLstrcat()\fP \(em duplicate string"
+.IX  "strcmp()"  ""  "\fLstrcmp()\fP \(em compare strings"
+.IX  "strncmp()"  ""  "\fLstrncmp()\fP \(em compare strings"
+.IX  "strcasecmp()"  ""  "\fLstrcasecmp()\fP \(em compare strings ignoring case"
+.IX  "strncasecmp()"  ""  "\fLstrncasecmp()\fP \(em compare strings ignoring case"
+.IX  "strcpy()"  ""  "\fLstrcpy()\fP \(em copy strings"
+.IX  "strncpy()"  ""  "\fLstrncpy()\fP \(em copy strings"
+.IX  "strlen()"  ""  "\fLstrlen()\fP \(em get length of string"
+.IX  "strchr()"  ""  "\fLindex()\fP \(em find character in string"
+.IX  "strrchr()"  ""  "\fLrindex()\fP \(em find character in string"
+.IX  "index()"  ""  "\fLindex()\fP \(em find character in string"
+.IX  "rindex()"  ""  "\fLrindex()\fP \(em find character in string"
+.  \"
+.IX  "string operations"  "concatenate strcat()"  ""  "concatenate \(em \fLstrcat()\fP"
+.IX  "string operations"  "concatenate strncat()"  ""  "concatenate \(em \fLstrncat()\fP"
+.IX  "string operations"  copy()  ""  "copy \(em \fLstrcpy()\fP"
+.IX  "string operations"  copyn()  ""  "copy \(em \fLstrncpy()\fP"
+.IX  "string operations"  compare()  ""  "compare \(em \fLstrcmp()\fP"
+.IX  "string operations"  comparen()  ""  "compare \(em \fLstrncmp()\fP"
+.IX  "string operations"  index()  ""   "index \(em \fLnndex()\fP"
+.IX  "string operations"  rindex()  ""  "reverse index \(em \fLrindex()\fP"
+.IX  "string operations"  "reverse index"  ""  "reverse index \(em \fLrindex()\fP"
+.  \"
+.IX  "concatenate strings" strcat "" "\fLstrcat()\fP"
+.IX  "concatenate strings" strncat "" "\fLstrncat()\fP"
+.IX  "copy" "strings \(em \fLstrcpy()\fP"
+.IX  "copy" "strings \(em \fLstrncpy()\fP"
+.IX  "compare" "strings \(em \fLstrcmp()\fP"
+.IX  "compare" "strings \(em \fLstrncmp()\fP"
+.IX  "index strings index"  ""  "index strings \(em \fLindex()\fP"
+.IX  "index strings rindex"  ""  "index strings \(em \fLrindex()\fP"
+.IX  "reverse index strings"  ""  "reverse index strings \(em \fLrindex()\fP"
+.  \"
+.IX  "null-terminated strings"  "concatenate \(em \fLstrcat()\fP"
+.IX  "null-terminated strings"  "concatenate \(em \fLstrncat()\fP"
+.IX  "null-terminated strings"  "copy \(em \fLstrcpy()\fP"
+.IX  "null-terminated strings"  "copy \(em \fLstrncpy()\fP"
+.IX  "null-terminated strings"  "compare \(em \fLstrcmp()\fP"
+.IX  "null-terminated strings"  "compare \(em \fLstrncmp()\fP"
+.IX  "null-terminated strings"  "index \(em \fLindex()\fP"
+.IX  "null-terminated strings"  "index \(em \fLrindex()\fP"
+.IX  "null-terminated strings"  "reverse index"  ""  "reverse index \(em \fLrindex()\fP"
+.SH DESCRIPTION
+.LP
+These functions operate on
+null-terminated
+strings.  They do not check for overflow of
+any receiving string.
+.LP
+.B strcat(\|)
+appends a copy of string
+.I s2
+to the end of string
+.IR s1 .
+.B strncat(\|)
+appends at most
+.I n
+characters.  Each returns a pointer to the
+null-terminated
+result.
+.LP
+.B strcmp(\|)
+compares its arguments and returns an integer
+greater than, equal to, or less than 0, according as
+.I s1
+is lexicographically greater than, equal to, or less than
+.IR s2 .
+.B strncmp(\|)
+makes the same comparison but compares at most
+.I n
+characters.
+Two additional routines
+.B strcasecmp(\|)
+and 
+.B strncasecmp(\|)
+compare the strings and ignore differences in case. 
+These routines assume the ASCII character set when equating lower
+and upper case characters.
+.LP
+.B strdup(\|)
+returns a pointer to a new string which is a
+duplicate of the string pointed to by
+.IR s1 .
+The space for the new string is obtained using
+.BR malloc (3V).
+If the new string cannot be created, a
+.SM NULL
+pointer is returned.
+.LP
+.B strcpy(\|)
+copies string
+.I s2
+to
+.I s1
+until the
+null character has been copied.
+.B strncpy(\|)
+copies string
+.I s2
+to
+.I s1
+until either the null character has been copied or
+.I n
+characters have been copied.
+If the length of
+.I s2
+is less than
+.IR n ,
+.B strncpy(\|)
+pads
+.I s1
+with null characters.
+If the length of
+.I s2
+is
+.I n
+or greater,
+.I s1
+will not be null-terminated.
+Both functions return
+.IR s1 .
+.LP
+.B strlen(\|)
+returns the number of characters in
+.IR s ,
+not including the
+null-terminating
+character.
+.LP
+.B strchr(\|)
+.RB ( strrchar(\|) )
+returns a pointer to the first (last)
+occurrence of character
+.I c
+in string
+.IR s ,
+or a
+.SM NULL
+pointer if
+.I c
+does not occur in the string.  The
+null character terminating a string is considered to
+be part of the string.
+.LP
+.B index(\|)
+.RB ( rindex(\|) )
+returns a pointer to the first (last) occurrence of character
+.I c
+in string
+.IR s ,
+or a
+.SM NULL
+pointer if
+.I c
+does not occur in the string.
+These functions are identical to
+.B strchr(\|)
+.RB ( strchr(\|) )
+and merely have different names.
+.LP
+.B strpbrk(\|)
+returns a pointer to the first occurrence in string
+.I s1
+of any character from string
+.IR s2 ,
+or a
+.SM NULL
+pointer if no character from
+.I s2
+exists in
+.IR s1 .
+.LP
+.B strspn(\|)
+.RB ( strcspn(\|) )
+returns the length of the initial segment of string
+.I s1
+which consists entirely of characters from (not from) string
+.IR s2 .
+.LP
+.B strstr(\|)
+returns a pointer to the first occurrence of the pattern string
+.I s2
+in
+.IR s1 .
+For example, if
+.I s1
+is
+\fB"string thing"\fP
+and
+.I s2
+is
+\fB"ing"\fP,
+.B strstr(\|)
+returns
+\fB"ing thing"\fP.
+If
+.I s2
+does not occur in
+.IR s1 ,
+.B strstr(\|)
+returns
+.SM NULL\s0.
+.LP
+.B strtok(\|)
+considers the string
+.I s1
+to consist of a sequence of zero or more text tokens separated
+by spans of one or more characters from the separator string
+.IR s2 .
+The first call (with pointer
+.I s1
+specified) returns a pointer to the first character of the first
+token, and will have written a
+null character into
+.I s1
+immediately following the returned token. The function
+keeps track of its position in the string
+between separate calls, so that subsequent calls
+(which must be made with the first argument a
+.SM NULL
+pointer) will work through the string
+.I s1
+immediately following that token.
+In this way subsequent calls
+will work through the string
+.I s1
+until no tokens remain.  The separator string
+.I s2
+may be different from call to call.
+When no token remains in
+.IR s1 ,
+a
+.SM NULL
+pointer is returned.
+.br
+.ne 6
+.SH NOTES
+.LP
+For user convenience, all these functions, except for
+.B index(\|)
+and
+.BR rindex(\|) ,
+are declared in the optional
+.B <string.h>
+header file.  All these functions, including
+.B index(\|)
+and
+.B rindex(\|)
+but excluding
+.BR strchr(\|) ,
+.BR strrchr(\|) ,
+.BR strpbrk(\|) ,
+.BR strspn(\|) ,
+.BR strcspn(\|) ,
+and
+.B strtok(\|)
+are declared in the optional
+.B <strings.h>
+include file; these headers are set this way for backward compatibility.
+.SH SEE ALSO
+.BR malloc (3V),
+.BR bstring (3)
+.SH WARNINGS
+.LP
+.B strcmp(\|)
+and
+.B strncmp(\|)
+use native character comparison, which is signed on the Sun, but may be
+unsigned on other machines.  Thus the sign of the value returned when
+one of the characters has its high-order bit set
+is implementation-dependent.
+.LP
+.B strcasecmp(\|)
+and
+.B strncasecmp(\|)
+use native character comparison as above and assume the 
+.I ASCII
+character set. 
+.LP
+On the Sun processor, as well as on many other machines, you can
+.I not
+use a
+.SM NULL
+pointer to indicate a
+null string.  A
+.SM NULL
+pointer is an error and results in an abort
+of the program.  If you wish to indicate a
+null string, you must have a pointer that
+points to an explicit
+null string.  On some implementations of the C
+language on some machines, a
+.SM NULL
+pointer, if dereferenced, would yield a
+null string; this highly
+non-portable trick was used in some programs.
+Programmers using a
+.SM NULL
+pointer to represent an empty string should be
+aware of this portability issue; even on
+machines where dereferencing a
+.SM NULL
+pointer does not cause an abort of the
+program, it does not necessarily yield a
+null string.
+.LP
+Character movement is performed differently
+in different implementations.
+Thus overlapping moves may yield surprises.

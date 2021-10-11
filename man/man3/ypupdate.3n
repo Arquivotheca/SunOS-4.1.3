@@ -1,0 +1,82 @@
+.\" @(#)ypupdate.3n 1.1 92/07/30 SMI;
+.TH YPUPDATE 3N  "6 October 1987"
+.SH NAME
+yp_update \- changes NIS information
+.SH SYNOPSIS
+.nf
+.B #include <rpcsvc/ypclnt.h>
+.LP
+.ft B
+yp_update(domain, map, ypop, key, keylen, data, datalen)
+char *domain;
+char *map;
+unsigned ypop
+char *key;
+int keylen;
+char *data;
+int datalen;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "yp_update()" "" "\fLyp_update()\fP \(em change NIS information"
+.LP
+.B yp_update(\|)
+is used to make changes to the
+Network Information Service
+(\s-1NIS\s0)
+database.
+The syntax is the same as that of
+.B yp_match(\|)
+(see
+.BR ypclnt (3N))
+except for the extra parameter
+.I ypop
+which may take on one of four values.
+If it is
+.SB YPOP_CHANGE
+then the data associated with the key will
+be changed to the new value.
+If the key is not found in the database, then
+.B yp_update(\|)
+returns
+.BR \s-1YPERR_KEY\s0 .
+If
+.I ypop
+has the value
+.SB YPOP_INSERT
+then the key-value pair will be inserted
+into the database.
+The error
+.SB YPERR_KEY
+is returned if the key already exists in the database.
+To store an item into the database without
+concern for whether it exists already or not, pass
+.I ypop
+as
+.SB YPOP_STORE
+and no error will be returned if the key
+already or does not exist.
+To delete an entry, the value of
+.I ypop
+should be
+.BR \s-1YPOP_DELETE\s0 .
+.LP
+This routine depends upon secure
+.SM RPC\s0,
+and will not work unless the network is running secure
+.SM RPC\s0.
+.SH "SEE ALSO"
+.BR ypclnt (3N)
+.LP
+.TX ADMIN
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+The name Yellow Pages is a registered trademark in the United Kingdom
+of British Telecommunications plc,
+and may not be used without permission.

@@ -1,0 +1,88 @@
+.\" @(#)who.1 1.1 92/07/30 SMI;
+.TH WHO 1 "23 September 1987"
+.SH NAME
+who \- who is logged in on the system
+.SH SYNOPSIS
+.B who
+[
+.B who-file
+] [
+.B am i
+]
+.IX  "who command"  ""  "\fLwho\fP \(em who is logged in"
+.IX  users  who  ""  "\fLwho\fP \(em who is logged in"
+.IX  login  who  ""  "\fLwho\fP \(em who is logged in"
+.SH DESCRIPTION
+Used without arguments,
+.B who
+lists the login name, terminal name, and
+login time for each current user.
+.B who
+gets this information
+from the
+.B /etc/utmp
+file.
+.LP
+If a filename argument is given, the named
+file is examined instead of
+.BR /etc/utmp .
+Typically the named file is
+.BR /var/adm/wtmp ,
+which contains a record of all logins
+since it was created.  In this case,
+.B who
+lists logins, logouts, and crashes.  Each login is listed
+with user name, terminal name (with
+.B /dev/
+suppressed), and date and time.
+Logouts produce a similar line without a user name.
+Reboots produce a line
+with
+.RB ` \s+2~\s0 '
+in place of the device name, and a fossil time indicating when the
+system went down.  Finally, the adjacent pair of entries
+.RB ` |'
+and
+.RB ` } '
+indicate the system-maintained time just before and after a
+.B date
+command changed the system's idea of the time.
+.LP
+With two arguments, as in
+.RB ` "who am i" '
+(and also
+.RB ` "who is who" '),
+.B who
+tells who you are logged in as:  it displays your
+hostname,
+login name, terminal name, and login time.
+.SH EXAMPLES
+.LP
+.RS
+.nf
+.ft B
+example% who am i
+example!ralph	ttyp0	Apr 27 11:24
+example%
+.sp
+example% who
+mktg	  ttym0	Apr 27 11:11
+gwen	  ttyp0	Apr 27 11:25
+ralph	  ttyp1	Apr 27 11:30
+example%
+.ft R
+.fi
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp
+.TP
+.B /var/adm/wtmp
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR w (1),
+.BR whoami (1),
+.BR utmp (5V),
+.BR locale (5)

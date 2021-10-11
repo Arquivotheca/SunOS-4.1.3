@@ -1,0 +1,116 @@
+.\" @(#)intr.8 1.1 92/07/30 SMI;
+.TH INTR 8 "20 January 1990"
+.SH NAME
+intr \- allow a command to be interruptible
+.SH SYNOPSIS
+.B intr
+[
+.B \-anv
+]
+[
+.B \-t
+.I seconds
+]
+.I command
+[
+.I arguments
+]
+.SH DESCRIPTION
+.IX "intr" "" "\fLintr\fP\(em allow a command to be interruptible" ""
+.B intr
+executes
+.I command
+after altering the execution environment to make
+.I command
+to be interrutable.
+.LP
+Since interactive commands are by default interruptable, 
+.B intr
+is intended for use as a wrapper around commands started by the
+.B /etc/rc
+files;
+commands spawned from these files are not interruptable
+by default.
+It has no other intended use than as a wrapper around 
+.B /etc/rc 
+commands.
+.LP
+The following signals are ignored as a result of wrapping 
+.B intr
+around a command:
+.RS
+.TP 10
+.SB SIGTSTP
+terminal generated stop signal
+.TP
+.SB SIGTTIN
+background read
+.TP
+.SB SIGTTOU
+background write
+.RE
+.LP
+The following signals are reset to their default actions:
+.RS
+.TP 10
+.SB SIGINT
+interrupt signal
+.TP
+.SB SIGQUIT
+quit signal
+.RE
+.SH OPTIONS
+.TP 10
+.B \-v
+Echo the command in the form 
+.I ' command'
+(note leading 
+.SM SPACE\s0).
+.TP
+.B \-a 
+Echo the command and its arguments.
+.TP
+.B \-n
+Do not echo a 
+.SM NEWLINE
+after the command or arguments (for example
+.RB ` "echo \-n .\|.\|." ').
+.TP
+.BI \-t " secs"
+Arrange to have a
+.SB SIGALRM
+signal delivered to the command in 
+.I secs
+seconds.
+.SH EXAMPLES
+.LP
+All of these examples assume that they are in an
+.B /etc/rc
+file, that is, talking to the console, and not run interactively.
+The following example runs
+.BR fsck (8)
+but allow it to be killed from the console:
+.IP
+.B intr fsck \-p \-w / /usr
+.LP
+Echoing is provided so that
+.IP
+.B ypbind;\  echo \-n\  ' ypbind'
+.LP
+can be replaced with
+.IP
+.B intr \-vn ypbind
+.LP
+Timeouts are provided so that the machine will not hang at boot:
+.IP
+.B intr \-t 10 rdate \fIdate_host\fP
+.SH SEE ALSO
+.BR echo (1V),
+.BR login (1),
+.BR init (8),
+.BR rc (8)
+.SH BUGS
+.LP
+The
+.B \-v
+option is a kludge.

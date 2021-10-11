@@ -1,0 +1,155 @@
+.\" @(#)getty.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETTY 8 "18 February 1988"
+.SH NAME
+getty  \- set terminal mode
+.SH SYNOPSIS
+.B /usr/etc/getty
+[
+.I type
+[
+.I tty
+] ]
+.SH Sun386i SYSTEM SYNOPSIS
+.B /usr/etc/getty
+[
+.B \-n
+]
+[
+.I type
+[
+.I tty
+] ]
+.SH DESCRIPTION
+.IX  "getty command"  ""  "\fLgetty\fP \(em set terminal mode"
+.LP
+.BR getty ,
+which is invoked by
+.BR init (8),
+opens and initializes a tty line, reads a login name, and invokes
+.BR login (1).
+.LP
+The
+.I tty
+argument is the name of the character-special file in
+.B /dev
+that corresponds to the terminal.  If there is no
+.I tty
+argument, or the argument is
+.RB ` \- ',
+the tty line is assumed to be opened as file descriptor 
+.BR 0 .
+.LP
+The
+.I type
+argument, if supplied, is used as an index into the
+.BR gettytab (5)
+database\(em\&to determine the characteristics of the line.
+If this argument is absent, or if there is no such entry, the
+default entry is used.  If there is no
+.BR /etc/gettytab
+file, a set of system-supplied defaults is used.
+.LP
+When the indicated entry is located,
+.B getty
+clears the terminal screen, prints a banner heading, and prompts for a
+login name.  Usually, either the banner or the login prompt includes
+the system's hostname.
+.LP
+Next,
+.BR getty
+prompts for a login and reads the login name, one character at a time.
+When it receives a
+null
+character (which is assumed to be the result pressing the
+.SM BREAK\s0 ,
+or \*(lqinterrupt\*(rq key),
+.B getty
+switches to the entry
+.B gettytab
+entry named in the
+.B nx
+field.  It reinitializes the line to the new characteristics, and
+then prompts for a login once again.
+This mechanism typically is used to cycle through a set of line
+speeds (baud rates) for each terminal line.  For instance, a rotary
+dialup might have entries for the speeds: 300, 1200, 150, and 110
+baud, with each
+.B nx
+field pointing to the next one in succession.
+.LP
+The user terminates login input line with a
+.SM NEWLINE
+or
+.SM RETURN
+character.  The latter is preferable; it sets up the proper
+treatment of 
+.SM RETURN 
+characters (see
+.BR tty (4)).
+.B getty
+checks to see if the terminal has only upper-case alphabetical
+characters.  If all alphabetical characters in the login name are in
+upper case, the system maps them along with all subsequent upper-case
+input characters to lower-case internally; they are displayed in upper
+case for the benefit of the terminal.  To force recognition
+of an upper-case character, the shell allows them to be quoted
+(typically by preceding each with a backslash,
+.RB ` \e ').
+.LP
+Finally,
+.B getty
+calls
+.BR login (1)
+with the login name as an argument.
+.LP
+.B getty
+can be set to time out after a certain interval; this hangs up dial-up
+lines if the login name is not entered in time.
+.SH Sun386i SYSTEM DESCRIPTION
+For Sun386i system, the value of
+.I type
+is the constant
+.BR Sun ,
+for the console frame buffer.
+.SH Sun386i SYSTEM OPTIONS
+.TP 
+.B \-n
+invoke the full screen login program
+.BR logintool (8),
+and optionally the \*(lqNew User Accounts\*(rq feature.
+May only be used on a frame buffer.
+Unless removed from the console entry in
+.IR /etc/ttytab ,
+this option is in effect by default.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/gettytab
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR ioctl (2),
+.BR tty (4),
+.BR fbtab (5),
+.BR gettytab (5),
+.BR svdtab (5),
+.BR ttytab (5),
+.BR init (8),
+.BR logintool (8)
+.SH DIAGNOSTICS
+.TP
+.IB ttyxx ": No such device or address."
+.TP
+.IB ttyxx ": No such file or directory."
+A terminal which is turned on in the
+.B ttys
+file cannot be opened,
+likely because the requisite lines are either not configured into the
+system, the associated device was not attached during boot-time system
+configuration, or the special file in
+.B /dev
+does not exist.

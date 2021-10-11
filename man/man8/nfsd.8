@@ -1,0 +1,55 @@
+.\" @(#)nfsd.8 1.1 92/07/30 SMI;
+.TH NFSD 8 "8 September 1989"
+.SH NAME
+nfsd, biod \- NFS daemons
+.SH SYNOPSIS
+.B /usr/etc/nfsd
+.RI [ nservers ]
+.LP
+.B /usr/etc/biod
+.RI [ nservers ]
+.SH DESCRIPTION
+.IX  "network file system"  "nfsd daemon"  ""  "\fLnfsd\fP daemon"
+.IX  "network file system"  "biod daemon"  ""  "\fLbiod\fP daemon"
+.IX  "nfsd daemon"  ""  "\fLnfsd\fP daemon"
+.IX  "biod daemon"  ""  "\fLbiod\fP daemon"
+.IX  "daemons"  "nfsd daemon"  ""  "\fLnfsd\fP daemon"
+.IX  "daemons"  "biod daemon"  ""  "\fLbiod\fP daemon"
+.B nfsd
+starts the daemons that handle client filesystem requests.
+.I nservers
+is the number of file system request daemons to start.
+This number should be based on the load
+expected on this server.  Eight seems to be a good number.
+.LP
+.B biod
+starts
+.I nservers
+asynchronous block
+.SM I/O
+daemons.  This command is used on a
+.SM NFS
+client to buffer cache handle read-ahead
+and write-behind.  The magic number for
+.I nservers
+in here is also eight.
+.LP
+When a file that is opened by a client is unlinked (by the
+server), a file with a name of the form
+.BI  .nfs \s-1XXX\s0
+(where
+.I \s-1XXX\s0
+is a number) is created by the client.
+When the open file is closed, the
+.BI .nfs \s-1XXX\s0
+file is removed.  If the client crashes before the file can be closed,
+the
+.BI .nfs \s-1XXX\s0
+file is not removed.
+.SH FILES
+.TP 20
+.BI .nfs \s-1XXX\s0
+client machine pointer to an open-but-unlinked file
+.SH "SEE ALSO"
+.BR exports (5),
+.BR mountd (8C)

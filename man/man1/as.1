@@ -1,0 +1,268 @@
+.\" @(#)as.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH AS 1 "18 February 1988"
+.SH NAME
+as \- Sun-1, Sun-2 and Sun-3, Sun-4 and Sun386i assemblers
+.SH "SUN-1, SUN-2 and SUN-3 SYNOPSIS"
+.B as
+[
+.B \-L
+] [ 
+.B \-R
+] [ 
+.BI \-o " objfile"
+] [ 
+.B \-d2
+] 
+.\"[
+.\".B \-e
+.\"]
+[ 
+.B \-h
+] [ 
+.B \-j
+] [ 
+.B \-J
+] [
+.B \-O
+]
+[
+.B \-mc68010
+]
+.if n .ti +.5i
+[
+.B \-mc68020
+]
+.I filename
+.SH "SUN-4 SYNOPSIS"
+.\" The Sun-4 assembler also supports these flags, which are not intended for
+.\" appearance in user documentation:
+.\"	-d			turn on assembler/optimizer debugging output
+.\"	-da			turn on storage allocation statistics output
+.\"	-V			display version# and quit
+.\"	-F[O][if]\fIn\fP	select which fab of chips to generate code for
+.\"	-Os			report optimizer statistics
+.\"	-O[~][A-Z]		selectively turn on/off individual optimizations
+.\"	-S[~][lrs]		select inclusion of line#s, register live/dead/
+.\"					use info, and node-sequence#s in
+.\"					disassembly.
+.\" Some of the above may only be available when the assembler is compiled with
+.\" the -DDEBUG flag.
+.B as
+[
+.B \-L
+] [ 
+.B \-R
+] [ 
+.BI \-o " objfile"
+] [
+.BI \-O\fR[ n\fR]\|]
+[
+.B \-P
+[\|[
+.BI \-I path
+] [
+.BI \-D name
+] [
+.BI \-D name=def
+]
+.if n .ti +.5i
+[
+.BI \-U name
+]\|]\|.\|.\|.\|]
+.if t .ti +.5i
+[
+.BR \-S [ C ]\|]
+.\"[
+.\".B \-V
+.\"]  
+.I filename
+\&.\|.\|.
+.SH Sun386i SYNOPSIS
+.B as
+[
+.B \-k
+]
+[ 
+.B \-o
+.I objfile
+] 
+[ 
+.B \-R
+] 
+[
+.B \-V
+]
+[
+.B \-i386
+]
+.SH DESCRIPTION
+.IX  as  ""  "\fLas\fP \(em assembler"
+.IX  "programming languages"  "assembler"
+.LP
+.B as
+translates the assembly source file,
+.I filename  
+into an executable object file,
+.IR objfile .
+The Sun-4 assembler recognizes the filename argument
+.RB ` \- '
+as the standard input.
+.LP
+All undefined symbols in the assembly are treated as global.
+.LP
+The output of the assembly is left in the file
+.IR objfile .
+.SH OPTIONS
+.LP
+The following options are common to all Sun architectures.  Options
+for specific Sun architectures are listed below.
+.TP
+.B \-L
+Save defined labels beginning with an
+.BR L ,
+which are normally discarded
+to save space in the resultant symbol table.
+The compilers generate many such temporary labels.
+.TP
+.B \-R
+Make the initialized data segment read-only by concatenating 
+it to the text segment.
+This eliminates the need to run editor scripts on assembly
+code to make initialized data read-only and shared.
+.TP
+.BI \-o " objfile"
+The next argument is taken as the name of the object file to
+be produced.  If the 
+.B \-o
+flag is not used, the object file is named
+.BR a.out .
+.SS Sun-1, Sun-2 and Sun-3 Options
+.TP
+.B \-d2
+Instruction offsets that involve forward or external
+references, and with unspecified size, are two bytes long.
+(See also the 
+.B \-j
+option.)
+.\".TP
+.\".B \-e
+.\"Allow control sections to begin on any two-byte boundary,
+.\"rather than only on four-byte boundaries.
+.TP
+.B \-h
+Suppress span-dependent instruction calculations.  Restrict branches
+to medium length.  Force calls to take the most general form.  
+This option is used when the assembly must be minimized, even at
+the expense of program size and run-time performance.  It
+results in a smaller and faster program than one produced by the
+.B \-J
+option, but some very large programs may be unable to use it due
+to the limits of medium-length branches.
+.TP
+.B \-j
+Use short (pc-relative) branches to resolve jump and jump-to-subroutine
+instructions to external routines.  This is for compact programs for
+which the
+.B -d2
+option is inappropriate due to large-program relocation.
+.TP
+.B \-J
+Suppress span-dependent instruction calculations and force branches 
+and calls to take the most general form.  This is useful when assembly
+time must be minimized, even at the expense of program size and
+run-time performance.
+.TP
+.B \-O
+Perform span-dependent instruction resolution over entire files
+rather than just individual procedures.
+.SS Sun-4 Options
+.TP
+.BI \-O\fR[ n\fR]
+Enable peephole optimization corresponding to optimization level
+.I n
+(1 if
+.I n
+not specified)
+of the Sun high-level language compilers.
+This option can be used safely only when assembling code produced
+by a Sun compiler.
+.TP
+.B \-P
+Run
+.BR cpp (1),
+the C preprocessor, on the files being assembled.
+The preprocessor is run separately on each input file,
+not on their concatenation.
+The preprocessor output is passed to the assembler.
+.br
+.ne 8
+.PD 0
+.TP
+.BI \-I path
+.TP
+.BI \-D name
+.TP
+.BI \-D name=def
+.TP
+.BI \-U name
+.PD 
+When 
+.B \-P
+is in effect, these
+.BR cpp (1)
+options are passed to the C
+preprocessor, without interpretation by
+.BR as .
+Otherwise, they are ignored.
+.TP
+.BR \-S [ C ]
+Produce a disassembly of the emitted code to the standard output.
+This is most useful in combination with the
+.B \-O
+option, to review optimized code.  Adding the character C
+to the option prevents comment lines from appearing in the output.
+.\".TP
+.\".B \-V
+.\"Report assembler version information and exit without
+.\"assembling.
+.SS Sun386i Options
+.TP
+.B \-k
+Create position independent code. Called by
+.BR "cc \-pic" .
+.TP
+.B \-V
+Write the version number of the assembler being run
+on the standard error output.
+.TP
+.B \-i386
+Confirm that this output is intended for an 80386 processor.
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp/as\(**
+default temporary file
+.PD
+.SH "SEE ALSO"
+.BR adb (1),
+.BR cpp (1),
+.BR dbx (1),
+.BR ld (1),
+.BR a.out (5)
+.BR coff (5)
+.LP
+.TX 4ASSY
+.br
+.TX ASSY
+.SH BUGS
+.LP
+The Sun Pascal compiler qualifies a nested procedure name by
+chaining the names of the enclosing procedures.
+This sometimes results in
+names long enough to abort the assembler, which 
+currently limits identifiers to 512 characters
+(the Sun-4 assembler does not have this restriction).
+.SH Sun386i WARNINGS
+.LP
+There can be only one forward-reference to a symbol per arithmetic
+expression.

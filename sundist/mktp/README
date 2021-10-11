@@ -1,0 +1,270 @@
+# @(#)README 1.1 92/07/30 Copyr 1987 Sun Micro
+# 
+# This directory contains all the stuff for making the
+# utility program 'mktp', and its subprograms.
+# To make mktp, do 'make'.
+# To install mktp, do 'make install'. The default installation
+# place is in '..', but may be overridden by
+# 	make install DESTDIR=directory
+# where you pick the directory name.
+#
+# Below is a rough description of the prototype file.
+#
+# Other prototype sample input files also exist in this directory,
+# and are installed in DESTDIR by the make install step.
+#
+###################################################################
+#
+# This is an example of a distribution description prototype file.
+# This file is used to initially describe software distributions,
+# along with information that will be passed along to the installation
+# program (typically /usr/etc/install/suninstall), and also to
+# give enough information to mktp program to actually make the distribution.
+#
+# This file has a general form of
+#
+#	Distribution Information
+#	*==================
+#	Entry Information
+#	*==================
+#	Entry Information
+#		.
+#		.
+#		.
+#	      (etc.)
+#
+# Distribution Information consists of Title, Version, Date and Source
+# strings.
+#
+# Entry information describes a 'packaged' entry that will go into
+# the distribution. This entry information is split into two parts:
+# information intended to be passed ultimately to an installation
+# program (e.g., suninstall) that will unpack the distribution, and
+# the information to be used by mktp and its associated subprograms
+# in order to aid you in packaging up the entries and placing them
+# on the distribution media.
+#
+# First, a few nuts and bolts about the syntax of the prototype description
+# language.
+#
+# These are Comment Lines. All lines beginning with '#' will be ignored
+# by the parser.
+#
+# Lines begining with '*' are taken to be the beginning
+# of command tokens. Command tokens are followed by '='
+# chars, and then by zero or more user supplied strings,
+# numbers, etc. The user supplied strings may not spill over
+# to the next line.
+#
+# The following conventions will be observed in this example
+# (That is, the following upper case names are definitions whose
+# use in the rules below are declared here):
+# 
+#	STRING means any appropriate string. Leading and trailing white space
+#		to a string will be discarded. A STRING may NOT continue
+#		onto the next line.
+#
+#	STRING-LIST is a STRING which will then
+#		be parsed into a list of strings. The separator
+#		tokens are tabs and spaces. These will not be
+#		included within strings.
+#
+#	SIZE means a number which may qualified by the trailing
+#		chars of 'mb' or  'kb' meaning to mean, resp., megabytes
+#		or kilobytes. No qualifier will have SIZE mean bytes.
+#
+#	{A|B|C|...} means that ONE of A,B, C, etc,
+#		must be specified
+#
+#
+# Below is a generalized version of what the prototype file should look
+# like.
+#
+################################
+# 
+#	Now, the ordering in the prototype file is important.
+#	First you must have the overall distribution information.
+#
+# Distribution Information
+*Title=		STRING
+*Version=	STRING
+*Date=		STRING
+*Source=	STRING
+# Of the above STRINGs, only the Title is required to be supplied, but
+# all the Command tokens must be there..., e.g.,
+*Title=		SunOS Patch Tape for Joe
+*Version=
+*Date=
+*Source=
+#
+# Would be a valid set of Distribution Information.
+#
+##
+# Now starts the Entry Information.
+#
+# Note: all entries start with the '*=...'. Again, please note that
+# the order in which stuff is laid out is important. Items which
+# are optional must *still* have the command tokens in place
+# (e.g., if no Description is given, you must have *Description=
+# following *Name= anyway).
+#
+*=====
+# First, is the information that is intended to pass through to the
+# installation program. mktp itself cares not a whit as to the truth
+# or meaning of this information, although it does enforce the rules
+# to have some of it there.
+#
+# The first piece of information is the *name* of the entry.
+# 
+*Name=		STRING
+#
+# It also may have a LONG name, or a description.
+*Description=	STRING
+#
+# Each entry has a Type, which will imply what the encoding format
+# of the information within the entry is. Tar implies a tar file,
+# cpio implies a cpio file, and image says 'other' (i.e., byte for
+# byte image file- the extraction program will know).
+# Again, note that one of tar, cpio or image must be selected.
+#
+*File-Type=	{tar|cpio|image}
+#
+# Each entry is of a Kind. That is, the Kind implies the intended *use*
+# of the information in the entry. Amorphous means 'unknown', standalone
+# means a standalone executable of some kind, executable means an
+# executable, installable means software to install, and install-tool means
+# an installable set of tools that are intended to be used to install
+# an installable entry.
+#
+*File-Kind=	{ amorphous|standalone|executable|installable|install-tool }
+#
+# File-Type and File-Kind must be supplied
+#########
+# Based on File-Kind, different information is required.
+#
+# If amorphous, the following will be required:
+#
+Size=		SIZE
+#
+#	Size means the Size you say this amorphous file is. Remember, this
+# information is being passed to the installation program.
+#
+######
+#
+# If standalone or executable, the following will be required:
+#
+*Architectures= STRING-LIST
+*Size=		SIZE
+#
+#	Architectures may have a null list. They are intended to imply to
+# the installation tool what machines this entry is intended to run on.
+####
+#
+# If installable, the following will be required:
+#
+*Architectures= STRING-LIST
+*Depends-on=	STRING-LIST
+*Required=	{true|false}
+*Desirable=	{true|false}
+*Common=	{true|false}
+*Loadpoint=	STRING
+*Moveable=	{true|false}
+*Size=		SIZE
+*Pre-install=	STRING
+*Install=	STRING
+#
+#	Only size and the boolean values required.
+#
+# Depends-on can be used to refer to other installable entries in the same
+# distribution. This is so the installation tool can know what else to
+# extract if in the installation process this entry is selected to be
+# installed.
+#
+# Required/Desirable/Common are boolean values that indicate to the installation
+# tool whether this entry is indeed Required... etc..
+#
+# Loadpoint is the pathname where the unpacked software will load on.
+# Moveable sez whether or not 'Loadpoint' may be overridden.
+#
+# Size is the Size YOU are telling the installation tool what is.
+#
+# Pre-install may refer to an install-tool that is to be run prior to installing
+# this package.
+#
+# Install may refer to an install-tool that will aid in installing this
+# package.
+#
+####
+#
+# If install-tool, the following will be required:
+#
+*Belongs-to=	STRING-LIST
+*Loadpoint=	STRING
+*Moveable=	{true|false}
+*Size=		SIZE
+*Worksize=	SIZE
+#
+# Only  Size, Worksize and Moveable need values supplied
+#
+#	Size means SIZE of install tool.
+#	Worksize means workspace that the install tool will need.
+#
+####
+# The rest of the information here is used by mktp to actually
+# help make the distribution.
+#
+# How to create the entry itself. The commands
+# specified here will be fed to the Bourne Shell,
+# and their purpose is to take the desired source
+# data, format it into the desired format, and to
+# send the data to the standard output
+# 	*in the same form as if you were placing it on the distribution
+#		device yourself, by hand*!!
+#
+#
+*Command=	STRING
+#	The command string may be null, but that would be pretty stupid.
+#
+#	Generally, for a tar file going to 1/4" cartridge tape, the
+# 	command might be:
+#
+*Command=	cd dist_bin_dir; tar cfb - 200 filea fileb
+#
+# Next, for each entry, you have to state the *type* of the distribution
+# device:
+#
+*Device-Type=	{tape|disk}
+#
+#	N.B. 9/17/87 - disk not supported.
+#
+# Then, you specify the SIZE of each volume of the device.
+# Sorry, volumes must be of equal size.
+#
+*Device-Size=	SIZE
+#
+#	For example, a 12inch 1600 bpi 1/2" tape would be
+#
+*Device-Size=	35mb
+#
+# or, 35 megabytes.
+#
+# Finally, you specify the *root* name of the device you will use.
+#
+# That is, if you are putting stuff onto 1/2" tape at 1600 bpi,
+# you would specify:
+#
+*Device-Rname=	mt0
+#
+# or 1/4" cartridge tape at low (QIC-11) density:
+#
+*Device-Rname=	st0
+#
+#	mktp will supply the rest of the name, assuming
+#
+#	a) The devices are all in /dev
+#
+#	b) The raw interface is accessed by prefixing a 'r' to the root name.
+#
+#	c) The tape devices have the no-rewind option set by prefixing
+#		'nr' to the root name.
+#

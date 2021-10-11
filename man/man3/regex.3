@@ -1,0 +1,85 @@
+.\" @(#)regex.3 1.1 92/07/30 SMI; from UCB 4.2
+.TH REGEX 3 "6 October 1987"
+.SH NAME
+regex, re_comp, re_exec \- regular expression handler
+.SH SYNOPSIS
+.nf
+.B char *re_comp(s)
+.B char *s;
+.LP
+.BR re_exec (s)
+.B char *s;
+.fi
+.IX  "re_comp()"  ""  "\fLre_comp()\fP \(em compile regular expression"
+.IX  "re_exec()"  ""  "\fLre_exec()\fP \(em execute regular expression"
+.IX  "regular expressions"  compile  "regular expressions"  "compile \(em\fLre_comp()\fP"
+.IX  "regular expressions"  execute  "regular expressions"  "execute \(em \fLre_exec()\fP"
+.IX  "compile regular expression"  ""  "compile regular expression \(em \fLre_comp()\fP"
+.IX  "execute regular expression"  ""  "execute regular expression \(em \fLre_exec()\fP"
+.SH DESCRIPTION
+.LP
+.B re_comp(\|)
+compiles a string into an internal form suitable for
+pattern matching.
+.B re_exec(\|) 
+checks the argument string against the last string passed to
+.BR re_comp(\|) .
+.LP
+.B re_comp(\|)
+returns a
+.SM NULL
+pointer if the string
+.I s
+was compiled successfully; otherwise a string containing an
+error message is returned.  If
+.B re_comp(\|)
+is passed 0 or a
+null
+string, it returns without changing the currently
+compiled regular expression.
+.LP
+.B re_exec(\|)
+returns 1 if the string
+.I s
+matches the last compiled regular expression, 0 if the string
+.I s
+failed to match the last compiled regular
+expression, and \-1 if the compiled
+regular expression was invalid (indicating an internal error).
+.LP
+The strings passed to both
+.B re_comp(\|)
+and
+.B re_exec(\|)
+may have trailing or embedded
+.SM NEWLINE
+characters; they are terminated by
+null
+characters.  The regular expressions recognized
+are described in the manual entry for
+.BR ed (1),
+given the above difference.
+.SH "SEE ALSO"
+.BR ed (1),
+.BR ex (1),
+.BR grep (1V)
+.SH DIAGNOSTICS
+.LP
+.B re_exec(\|)
+returns \-1 for an internal error.
+.LP
+.B re_comp(\|)
+returns one of the following strings if an error
+occurs:
+.TP
+.B No previous regular expression
+.TP
+.B Regular expression too long
+.TP
+.B unmatched \e(
+.TP
+.B missing ]
+.TP
+.B too many \e(\e) pairs
+.TP
+.B unmatched \e)

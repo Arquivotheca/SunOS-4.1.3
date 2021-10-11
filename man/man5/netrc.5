@@ -1,0 +1,113 @@
+.\" @(#)netrc.5 1.1 92/07/30 SMI;
+.TH NETRC 5 "19 October 1988"
+.SH NAME
+netrc \- file for ftp remote login data
+.SH DESCRIPTION
+.IX  "ftp remote login data"  ""  "\fLftp\fR \(em remote login data \(em \fL.netrc\fR file"
+.IX  "netrc"  ""  "\fL.netrc\fP \(em \fLftp\fR remote login data file"
+.LP
+The
+.B \&.netrc
+file contains data for logging in to a
+remote host over the network for file transfers by
+.BR ftp (1C).
+This file resides in the user's home directory
+on the machine initiating the file transfer.
+Its permissions should be set to
+disallow read access by group and others (see
+.BR chmod (1V)).
+.LP
+The following tokens
+are recognized; they may be separated by
+.SM SPACE\s0,
+.SM TAB\s0,
+or
+.SM NEWLINE
+characters:
+.TP
+.BI machine\fP  name
+Identify a remote machine name.
+The auto-login process searches the
+.B .netrc
+file for a
+.B machine
+token that matches the remote machine specified on the
+.B ftp
+command line or as an
+.B open
+command argument.
+Once a match is made, the subsequent
+.B .netrc
+tokens are processed, stopping when the
+.SM EOF
+is reached or another
+.B machine
+token is encountered.
+.TP
+.BI login\fP " name"
+Identify a user on the remote machine.
+If this token is present, the auto-login
+process will initiate a login using the specified name.
+.TP
+.BI password\fP " string"
+Supply a password.  If this token is present,
+the auto-login process will supply the
+specified string if the remote server requires
+a password as part of the login process.
+Note: if this token is present in the
+.B .netrc
+file,
+.B ftp
+will abort the auto-login process if the
+.B .netrc
+is readable by anyone besides the user.
+.TP
+.BI account\fP " string"
+Supply an additional account password.
+If this token is present, the auto-login process
+will supply the specified string if the remote
+server requires an additional account password,
+or the auto-login process will initiate an
+.SB ACCT
+command if it does not.
+.TP
+.BI macdef\fP " name"
+Define a macro.
+This token functions as the
+.B ftp
+.B macdef
+command functions.  A macro is defined with the
+specified name; its contents begin with the next
+.B .netrc
+line and continue until a
+null line (consecutive
+.SM NEWLINE
+characters) is encountered.
+If a macro named
+.B init
+is defined, it is automatically executed
+as the last step in the
+auto-login process.
+.SH EXAMPLE
+.LP
+The command:
+.IP
+.ft B
+machine ray login demo password mypassword
+.ft R
+.LP
+allows an autologin to the machine 
+.B ray
+using the login name
+.B demo
+with password
+.BR mypassword .
+.SH FILES
+.PD 0
+.TP 20
+.B ~/.netrc
+.PD
+.SH SEE ALSO
+.BR chmod (1V),
+.BR ftp (1C),
+.BR ftpd (8C)

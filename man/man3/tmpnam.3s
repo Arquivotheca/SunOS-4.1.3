@@ -1,0 +1,141 @@
+.\" @(#)tmpnam.3s 1.1 92/07/30 SMI; from UCB 4.2 and S5
+.TH TMPNAM 3S  "1 February 1988"
+.SH NAME
+tmpnam, tempnam \- create a name for a temporary file
+.SH SYNOPSIS
+.nf
+.B #include <stdio.h>
+.LP
+.B char \(**tmpnam (s)
+.B char \(**s;
+.LP
+.B char \(**tempnam (dir, pfx)
+.B char \(**dir, \(**pfx;
+.fi
+.IX  create "" "name for temporary file \(em \fLtmpnam()\fP" ""
+.IX  "temporary file"  "create name for"  ""  "create name for \(em \fLtmpnam()\fP"
+.IX  file  "create temporary name"  file  "create temporary name \(em \fLtmpnam()\fP"
+.IX  tmpnam()  ""  "\fLtmpnam()\fP \(em make temporary file name" ""
+.SH DESCRIPTION
+.LP
+These functions generate file names that can
+safely be used for a temporary file.
+.LP
+.B tmpnam(\|)
+always generates a file name using the path-prefix
+defined as
+.B P_tmpdir
+in the
+.B <stdio.h>
+header file.  If
+.I s
+is
+.SM NULL\s0,
+.B tmpnam(\|)
+leaves its result in an internal static area
+and returns a pointer to that area.
+The next call to
+.B tmpnam(\|)
+will destroy the contents of the area.  If
+.I s
+is not
+.SM NULL\s0,
+it is assumed to be the address of an array of at least
+.B L_tmpnam
+bytes, where
+.B L_tmpnam
+is a constant defined in
+.BR <stdio.h> ;
+.B tmpnam(\|)
+places its result in that array and returns
+.IR s .
+.LP
+.B tempnam(\|)
+allows the user to control the choice of a directory.
+The argument
+.B dir
+points to the name of the directory in which
+the file is to be created.  If
+.B dir
+is
+.SM NULL
+or points to a string which is not a name
+for an appropriate directory, the path-prefix defined as
+.B P_tmpdir
+in the
+.B <stdio.h>
+header file is used.
+If that directory is not accessible,
+.B /tmp
+will be used as a last resort.
+This entire sequence can be up-staged by
+providing an environment variable
+.SB TMPDIR
+in the user's environment, whose value is the name of the
+desired temporary-file directory.
+.LP
+Many applications prefer their temporary
+files to have certain favorite initial letter
+sequences in their names.  Use the
+.I pfx
+argument for this.  This argument may be
+.SM NULL
+or point to a string of up to five characters to
+be used as the first few characters of the
+temporary-file name.
+.LP
+.B tempnam(\|)
+uses
+.BR malloc(\|)
+to get space for the constructed file name,
+and returns a pointer to this area.
+Thus, any pointer value returned from
+.B tempnam(\|)
+may serve as an argument to
+.I free
+(see
+.BR malloc (3V)).
+If
+.B tempnam(\|)
+cannot return the expected result for any reason,
+that is,
+.B malloc(\|)
+failed, or none of the above mentioned attempts to find
+an appropriate directory was successful, a
+.SM NULL
+pointer will be returned.
+.SH NOTES
+.LP
+These functions generate a different file name each time they are called.
+.LP
+Files created using these functions and either
+.B fopen(\|)
+or
+.B creat(\|)
+are temporary only in the sense that they
+reside in a directory
+intended for temporary use, and their names are unique.
+It is the user's responsibility to use
+.BR unlink (2V)
+to remove the file when its use is ended.
+.SH SEE ALSO
+.BR creat (2V),
+.BR unlink (2V),
+.BR fopen (3V),
+.BR malloc (3V),
+.BR mktemp (3),
+.BR tmpfile (3S)
+.SH BUGS
+.LP
+If called more than 17,576 times in a single process,
+these functions will start recycling
+previously used names.
+.LP
+Between the time a file name is created and
+the file is opened, it is possible for some other
+process to create a file with the same name.
+This can never happen if that other process is using
+these functions or
+.BR mktemp(\|) ,
+and the file names are chosen so as to render
+duplication by other means unlikely.

@@ -1,0 +1,49 @@
+.\" @(#)timezone.3c 1.1 92/07/30 SMI;
+.TH TIMEZONE 3C "6 October 1987"
+.SH NAME
+timezone \- get time zone name given offset from GMT
+.SH SYNOPSIS
+.B char *timezone(zone, dst)
+.SH DESCRIPTION
+.IX  "timezone()"  ""  "\fLtimezone()\fR \(em get time zone name"
+.IX  "get time zone name"  ""  "get time zone name \(em \fLtimezone()\fR"
+.LP
+.B timezone(\|)
+attempts to return the name of the time zone
+associated with its first argument, which is
+measured in minutes westward from Greenwich.
+If the second argument is 0, the standard name is used,
+otherwise the Daylight Savings Time version.
+If the required name does not appear in a table
+built into the routine, the difference from
+.SM GMT
+is produced; for instance, in Afghanistan
+.RB ` "timezone(\-(60*4+30), 0)" '
+is appropriate because it is 4:30 ahead of
+.SM GMT
+and the string
+.B \s-1GMT\s0+4:30
+is produced.
+.LP
+Note: the offset westward from Greenwich and an
+indication of whether Daylight Savings Time
+is in effect may not be
+sufficient to determine the name of the time zone,
+as the name may differ between different locations
+in the same time zone.  Instead of using
+.B timezone(\|)
+to determine the name of the time zone for
+a given time, that time
+should be converted to a
+.RB ` "struct tm" '
+using
+.B localtime(\|)
+(see
+.BR ctime (3V))
+and the
+.I tm_zone
+field of that structure should be used.
+.B timezone(\|)
+is retained for compatibility with existing programs.
+.SH SEE ALSO
+.BR ctime (3V)

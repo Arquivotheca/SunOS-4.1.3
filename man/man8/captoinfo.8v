@@ -1,0 +1,252 @@
+.\" @(#)captoinfo.8v 1.1 92/07/30 SMI; from S5
+.TH CAPTOINFO 8V "17 November 1987"
+.SH NAME
+captoinfo \- convert a termcap description into a terminfo description
+.SH SYNOPSIS
+.BR captoinfo
+.RB [ " \-v " .\|.\|.\|]
+.RB [ \-V ]
+.RB [ \-1 ]
+.RB [ \-w
+.IR width " ]"
+.IR filename .\|.\|.
+.SH SYNOPSIS
+.BR /usr/5bin/captoinfo
+.RB [ " \-v " .\|.\|.\|]
+.RB [ \-V ]
+.RB [ \-1 ]
+.RB [ \-w
+.IR width " ]"
+.IR filename .\|.\|.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "captoinfo command" "" "\fLcaptoinfo\fP command"
+.B captoinfo
+converts the
+.BR termcap (5)
+terminal description entries given in
+.I filename
+into
+.BR terminfo (5V)
+source entries, and writes them to the standard output along with any
+comments found in that file.
+A description that is expressed as relative to another description (as
+specified in the
+.B termcap
+.IR tc=
+capability) is reduced to the minimum superset before being written.
+.LP
+If no
+.I filename
+is given, then the environment variable
+.SB TERMCAP
+is used for the filename or entry.
+If
+.SB TERMCAP
+is a full pathname to a file, only the terminal-name is specified in
+the environment variable
+.SB TERM
+is extracted from that file.
+If that environment variable is not set, then the file
+.B /etc/termcap
+is read.
+.SH OPTIONS
+.TP
+.B \-v
+Verbose.  Print tracing information on the standard error as the
+program runs.  Additional
+.B \-v
+options increase the level of detail.
+.TP
+.B \-V
+Version.  Display the version of the program on the standard error and
+exit.
+.TP
+.B \-1
+Print fields one-per-line.
+Otherwise, fields are printed several to a line, to a maximum width
+of 60 characters.
+.TP
+.BI \-w " width"
+Change the output to
+.I width
+characters.
+.SH FILES
+.PD 0
+.TP 25
+.B /usr/share/lib/terminfo/?/*
+compiled terminal description database
+.TP
+.B /etc/termcap
+.PD
+.SH "SEE ALSO"
+.BR curses (3V),
+.BR termcap (5),
+.BR terminfo (5V),
+.BR infocmp (8V),
+.BR tic (8V)
+.SH DIAGNOSTICS
+.TP
+.B tgetent failed with return code n (reason).
+The termcap entry is not valid.
+In particular, check for an invalid
+.RB ` tc= '
+entry.
+.TP
+.B
+unknown type given for the termcap code \fIcc\f1.
+The termcap description had an entry for
+\fIcc\f1
+whose type was not boolean, numeric or string.
+.TP
+.B
+wrong type given for the boolean (numeric, string) termcap code \fIcc\f1.
+The boolean
+.B termcap
+entry
+\fIcc\f1
+was entered as a numeric or string capability.
+.TP
+.B
+the boolean (numeric, string) termcap code \fIcc\fB is not a valid name.
+An unknown
+.B termcap
+code was specified.
+.TP
+.B tgetent failed on \s-1TERM\s0=term.
+The terminal type specified could not be found in the
+\fBtermcap\f1
+file.
+.br
+.ne 5
+.TP
+.SB TERM\s0=term: cap \fIcc\fP (info \fIii\fP) is \s-1NULL: REMOVED\s0
+The
+\fBtermcap\fR
+code was specified as a null string.
+The correct way to cancel an entry is with an
+.RB ` @ ',
+as in
+.RB ` :bs@: '.
+Giving a null string could cause incorrect
+assumptions to be made by the software which uses
+.BR "termcap " or " terminfo" .
+.br
+.ne 5
+.TP
+.B
+a function key for \fIcc\fB was specified, but it already has the value
+\fIvv\f1.
+When parsing the
+\fBko\f1
+capability, the key
+\fIcc\f1
+was specified as having the
+same value as the capability
+\fIcc\f1,
+but the key
+\fIcc\f1
+already had a value
+assigned to it.
+.TP
+.B
+the unknown termcap name \fIcc\fB was specified in the \fBko\fB termcap capability.
+A key was specified in the
+\fBko\f1
+capability which could not be handled.
+.TP
+.B
+the \fIvi\fP character v (info \fIii\fP) has the value \fIxx\fB, but ma gives n.
+The
+\fBma\f1 capability specified a function key
+with a value different from
+that specified in another setting of the same key.
+.TP
+.B
+the unknown \fIvi\fB key v was specified in the ma termcap capability.
+A
+.BR vi (1)
+key unknown to
+\fBcaptoinfo\f1
+was specified in the
+\fBma\f1
+capability.
+.TP
+.B
+Warning: termcap sg (\fInn\fP) and termcap ug (\fInn\fP) had different values.
+\fBterminfo\f1 assumes that
+the
+\fBsg\f1
+(now
+\fBxmc\f1)
+and
+\fBug\f1
+values were the same.
+.TP
+.B
+Warning: the string produced for \fIii\fB may be inefficient.
+The parameterized string being created should be rewritten by hand.
+.TP
+.B
+Null termname given.
+The terminal type was null.
+This is given if
+the environment variable
+.SB TERM
+is not set or is null.
+.TP
+.B
+cannot open \fIfilename\fB for reading.
+The specified file could not be opened.
+.\".SH AUTHOR
+.\"Tony Hansen.
+.SH WARNINGS
+.LP
+Certain
+.B termcap
+defaults are assumed to be true.  The bell character
+.RB ( terminfo
+.BR bel )
+is assumed to be
+.BR ^G .
+The linefeed capability
+.RB ( termcap
+.BR nl )
+is assumed to be the same for both
+.B cursor_down
+and
+.B scroll_forward
+.RB ( terminfo
+.BR cud1
+and
+.BR ind ,
+respectively.)
+Padding information is assumed to belong at the end of the string.
+.LP
+The algorithm used to expand parameterized information for
+.B termcap
+fields such as
+.B cursor_position
+.RB ( termcap
+.BR cm ,
+.B terminfo
+.BR cup )
+can sometimes produce a string that may not be optimal.
+In particular, the rarely used
+.B termcap
+operation
+.BI % n
+produces strings that are especially long.
+Most occurrences of these non-optimal strings
+will be flagged with a warning
+message and may need to be recoded by hand.
+.LP
+The short two-letter name at the beginning of the list of names in a
+.B termcap
+entry, a hold-over from an earlier version of the
+system, has been removed.

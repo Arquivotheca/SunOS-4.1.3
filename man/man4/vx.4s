@@ -1,0 +1,115 @@
+.\" @(#)vx.4s 1.1 92/07/30 SMI/VPG;
+.TH VX 4S "22 April 1991"
+.SH NAME
+vx \- Sun Visualization Accelerator and Multiprocessor Visualization
+Accelerator
+.SH "CONFIG \- SUN-4 SYSTEMS"
+.ft B
+.nf
+device vx0 at vme32d32 3 csr 0x30000000 priority 4 
+					    vector vxintr 0xaa cgvxintr 0xab
+device vx0 at vme32d32 4 csr 0x30000000 priority 4
+					    vector vxintr 0xaa cgvxintr 0xab
+.ft R
+.fi
+.sp
+The first line should be used to generate a kernel for
+Sun-4/370 and Sun-4/330 systems.
+The second line should be used to generate a kernel for Sun-4/470
+systems.
+.fi
+.SH AVAILABILITY
+.LP
+.SM VX/MVX
+can only be used in Sun-4
+.SM VME\s0-bus
+packages with 3 or more full size (9U) slots.
+An MVX can only be used in combination with a VX.
+.sp
+.SH DESCRIPTION
+.IX "vx device" "" "\fLvx\fP device"
+.LP
+The 
+.B vx
+interface supports the optional
+.SM VX/MVX
+Visualization Accelerator.
+The VX and MVX are visualization accelerators that provide high-speed
+computing power for such techniques as image processing, volume rendering,
+3-D interactive graphics, and high quality rendering.
+Each of the devices, the VX and the MVX, is a full size (9U) VME board.
+.LP
+The
+.B VX
+is a single-board accelerator with a high-performance processing node,
+4Mbytes of program/data memory, and an additional 16 Mbytes of image/data
+memory.
+It contains two frame buffers;
+a low-end graphics accelerator designed to enhance vector and polygon
+drawing performance,
+and a full color frame buffer accelerated by the processing node.
+.LP
+The low-end graphics accelerator is nearly identical to the
+.B cgsix
+or 
+.B GX
+device.
+It has a 2 MByte 8-bit color frame buffer and provides
+the standard frame buffer interface as defined in
+.BR fbio (4S).
+As with the
+.B cgsix,
+this part of the
+.B VX
+has registers and memory that may be mapped with
+.BR mmap (2),
+using the offsets defined in
+.BR <sundev/vxreg.h> .
+.LP
+The full color frame buffer is 16 MBytes of 32-bit image memory.
+See the
+.I "VX/MVX Programming with the Graphics and Visualization Library"
+for detailed information on accessing the full color frame buffer and
+the processing node.
+.LP
+The
+.B MVX
+is a multiprocessor accelerator with four parallel processing nodes.
+Each node is identical to the processing node on the
+.BR VX
+board and each has 4 Mbytes of program/data memory.
+.LP
+Programs can be downloaded for execution on the 
+.SM VX/MVX
+directly, they can be executed by the host processor, or
+the host processor and the
+.SM VX/MVX
+engine can be used in combination.
+See the
+.I "VX/MVX Programming with the C Developer's Kit"
+for detailed information on accessing the
+.SM VX/MVX
+from the host.  This manual also describes the C compiler,
+the programming tools, and the support libraries for the
+.SM VX/MVX.
+.\".SH FILES
+.\".PD 0
+.\".TP
+.\".B /dev/vx0
+.\".TP
+.\".B /usr/include/vx1
+.\".TP
+.\".B /usr/lib/vx1
+.\".PD
+.SH SEE ALSO 
+.BR mmap(2),
+.BR fbio(4S),
+.BR cgsix(4)
+.LP
+.I "Software Installation for the VX and MVX Visualization Accelerators"
+.LP
+.I "Hardware Installation for the VX and MVX Visualization Accelerators"
+.LP
+.I "VX/MVX Programming with the C Developer's Kit"
+.LP
+.I "VX/MVX Programming with the Graphics and Visualization Library"

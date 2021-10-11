@@ -1,0 +1,658 @@
+/*	@(#)llib-lcurses 1.1 92/07/30 SMI; from S5R3 1.9.1.20	*/
+
+#include	<curses.h>
+#include	<term.h>
+#include	<varargs.h>
+
+static	char	*sp;
+static	chtype	cht;
+static	WINDOW	*wp;
+static	SCREEN	*scp;
+
+/***************	START SVR3 	********************/
+int	del_curterm(old) TERMINAL *old; { return 0; }
+
+	/*VARARGS*/
+int	mvprintw(y, x, fmt, args) int y, x; char *fmt; { return 0; }
+
+	/*VARARGS3*/
+int	mvscanw(y, x, fmt, args) int y, x; char *fmt; { return 0; }
+
+	/*VARARGS*/
+int	mvwprintw(win, y, x, fmt, args) WINDOW *win; int y, x; char *fmt; { return 0; }
+
+	/*VARARGS*/
+int	mvwscanw(win, y, x, fmt, args) WINDOW *win; int y, x; char *fmt; { return 0; }
+
+int	putp(str) char * str; { return 0; }
+
+	/*VARARGS1*/
+int	printw(fmt, args) char *fmt; { return 0; }
+
+	/*VARARGS1*/
+int	scanw(fmt, args) char *fmt; { return 0; }
+
+	/*VARARGS2*/
+int	vwscanw(win, fmt, ap) WINDOW *win; char *fmt; va_list ap; { return 0; }
+
+	/*VARARGS2*/
+int	vwprintw(win, fmt, ap) WINDOW *win; char *fmt; va_list ap; { return 0; }
+
+	/*VARARGS2*/
+int	wprintw(win, fmt, args) WINDOW *win; char *fmt; { return 0; }
+
+	/*VARARGS2*/
+int	wscanw(win, fmt, args) WINDOW *win; char *fmt; { return 0; }
+
+int	LINES, COLS;
+char	*UP, *BC, PC;
+short	ospeed;
+WINDOW	*stdscr, *curscr;
+
+TERMINAL	*cur_term;
+struct	_bool_struct	*cur_bools;
+struct	_num_struct	*cur_nums;
+struct	_str_struct	*cur_strs;
+
+TERMINAL		_first_term;
+struct	_bool_struct	_frst_bools;
+struct	_num_struct	_frst_nums;
+struct	_str_struct	_frst_strs;
+
+char	*boolnames[], *boolcodes[], *boolfnames[],
+	*numnames[], *numcodes[], *numfnames[],
+	*strnames[], *strcodes[], *strfnames[];
+
+/*
+ * Various tricks to shut up lint about things that are perfectly fine.
+ */
+
+char	*Def_term, ttytype[1];
+char	*_unctrl[];
+chtype	*acs_map;
+
+static
+_dummy_init()
+{
+	Def_term[0] = ttytype[0] = 0;
+	_unctrl[0] = "abc";
+	_dummy_init();
+	LINES = COLS = 1;
+	stdscr = curscr = NULL;
+}
+
+/* internal routines and variables that no one else should be using */
+int	outchcount;
+SCREEN	*SP;
+int	_use_slk;
+char	*curses_version;
+FILE	*outf;
+
+struct	term *cur_term;
+int	_called_before;
+/***************	END SVR3	********************/
+int	waddch(win, c) WINDOW *win; chtype c; { return 0; }
+
+int	waddnstr(win, str, i)
+		WINDOW *win; char *str; int i; { return 0; }
+
+int	baudrate() { return 0; }
+
+int	wbkgd(win, ch) WINDOW *win; chtype ch; { return 0; }
+
+int	wborder(win, ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8) 
+		WINDOW *win; chtype ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8;
+		{ return 0; }
+
+int	cbreak() { return 0; }
+
+int	copywin(Srcwin,Dstwin,minRowSrc,minColSrc,
+		minRowDst,minColDst,maxRowDst,maxColDst,overlay)
+		WINDOW *Srcwin,*Dstwin;
+		int minRowSrc,minColSrc,minRowDst,minColDst,maxRowDst,
+		maxColDst, overlay; { return 0; }
+
+int	curs_set(vis) int vis; { return 0; }
+
+int	def_prog_mode() { return 0; }
+
+void	delscreen(s) SCREEN *s; {}
+
+int	delterm(t) TERMINAL *t; { return 0; }
+
+int	delay_output(ms) int ms; { return 0; }
+
+int	m_addch(c) _ochtype c; { return 0; }
+
+WINDOW	*m_initscr() { return wp; }
+
+SCREEN	*m_newterm(type, outfptr, infptr) 
+		char *type; FILE *outfptr, infptr; { return scp; }
+
+int	m_addstr(str) char * str; { return 0; }
+
+int	m_clear() { return 0; }
+
+int	m_erase() { return 0; }
+
+int	m_move(y, x) int x, y; { return 0; }
+
+int	m_refresh() { return 0; }
+
+int	wdelch(win) WINDOW *win; { return 0; }
+
+int	delkey(cp,i) char *cp; int i; { return 0; }
+
+void	delkeymap(i) TERMINAL * i; {}
+
+int	delwin(win) WINDOW *win; { return 0; }
+
+WINDOW	*derwin(win, i1, i2, i3, i4) 
+		WINDOW *win; int i1, i2, i3, i4; { return wp; }
+
+int	doupdate() { return 0; }
+
+int	draino(ms) int ms; { return 0; }
+
+WINDOW	*dupwin(win) WINDOW *win; { return wp; }
+
+int	echo() { return 0; }
+
+int	endwin() { return 0; }
+
+int	isendwin() { return 0; }
+
+char	erasechar() { return 'a'; }
+
+int	flushinp() { return 0; }
+
+int	garbagedlines(win, beg, num)
+		WINDOW *win; int beg, num; { return 0; }
+
+int	garbagedwin(win) WINDOW *win; { return 0; }
+
+int	wredrawln(win, beg, num)
+		WINDOW *win; int beg, num; { return 0; }
+
+int	redrawwin(win) WINDOW *win; { return 0; }
+
+int	wgetstr(win, str) WINDOW *win; char *str; { return 0; }
+
+int	wgetnstr(win, str, n) WINDOW *win; char *str; int n; { return 0; }
+
+int	_getsyx(y,x) int *y, *x; { return 0; }
+
+WINDOW	*getwin(fp) FILE *fp; { return wp; }
+
+int	has_ic() { return 0; }
+
+int	has_il() { return 0; }
+
+int	idlok(win,bf) WINDOW *win; int bf; { return 0; }
+
+WINDOW	*initscr() { return wp; }
+
+int	winsch(win, c) WINDOW *win; chtype c; { return 0; }
+
+int	winsdelln(win,i) WINDOW *win; int i; { return 0; }
+
+int	winsnstr(win, c, i) WINDOW *win; char *c; int i; { return 0; }
+
+char	*keyname(key) int key; { return sp; }
+
+int	keypad(win,bf) WINDOW *win; int bf; { return 0; }
+
+char	killchar() { return 'a'; }
+
+char	*longname() { return sp; }
+
+int	meta(win,bf) WINDOW *win; int bf; { return 0; }
+
+int	wmove(win, y, x) WINDOW *win; int y, x; { return 0; }
+
+int	mvcur(ly, lx, y, x) int ly, lx, y, x; { return 0; }
+
+int	mvderwin(win, c, i) WINDOW *win; int c, i; { return 0; }
+
+int	mvwin(win, by, bx) WINDOW *win; int by, bx; { return 0; }
+
+int	napms(ms) int ms; { return 0; }
+
+int	newkey(c, i1, i2) char *c; int i1,i2; { return 0; }
+
+SCREEN	*newscreen(c, i1, i2, i3, f1, f2)
+		char *c; int i1, i2, i3; FILE *f1, *f2; { return 0; }
+
+WINDOW	*newwin(num_lines, num_cols, begy, begx)
+		int num_lines, num_cols, begy, begx; { return wp; }
+
+int	nl() { return 0; }
+
+int	nocbreak() { return 0; }
+
+int	nodelay(win,bf) WINDOW *win; int bf; { return 0; }
+
+int	noecho() { return 0; }
+
+int	nonl() { return 0; }
+
+int	noraw() { return 0; }
+
+int	pechochar(pad, ch) WINDOW *pad; chtype ch; { return 0; }
+
+int	pnoutrefresh(pad, pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol)
+		WINDOW *pad;
+		int pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol;
+		{ return 0; }
+
+int	prefresh(pad, pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol)
+		WINDOW *pad;
+		int pminrow, pmincol, sminrow, smincol, smaxrow, smaxcol;
+		{ return 0; }
+
+int	putwin(win,fp) WINDOW *win; FILE *fp; { return 0; }
+
+int	raw() { return 0; }
+
+int	wrefresh(win) WINDOW *win; { return 0; }
+
+int	reset_shell_mode() { return 0; }
+
+int	resetty() { return 0; }
+
+int	restartterm(term, file, err) char *term; int file, *err; { return 0; }
+
+int	ripoffline(line, init) int line, (*init)(); { return 0; }
+
+int	getcury(win) WINDOW *win; { return 0; }
+
+int	getcurx(win) WINDOW *win; { return 0; }
+
+int	getmaxy(win) WINDOW *win; { return 0; }
+
+int	getmaxx(win) WINDOW *win; { return 0; }
+
+int	getbegy(win) WINDOW *win; { return 0; }
+
+int	getbegx(win) WINDOW *win; { return 0; }
+
+int	getpary(win) WINDOW *win; { return 0; }
+
+int	getparx(win) WINDOW *win; { return 0; }
+
+chtype	getbkgd(win) WINDOW *win; { return cht; }
+
+chtype	getattrs(win) WINDOW *win; { return cht; }
+
+int	savetty() { return 0; }
+
+int	scr_dump(file) char *file; { return 0; }
+
+int	scr_init(file) char *file; { return 0; }
+
+int	scr_ll_dump(file) FILE *file; { return 0; }
+
+int	scr_reset(file,i) FILE *file; int i; { return 0; }
+
+int	scr_restore(file) char *file; { return 0; }
+
+int	scr_set(file) char *file; { return 0; }
+
+int	wscrl(win,i) WINDOW *win; int i; { return 0; }
+
+SCREEN	*setcurscreen(new) SCREEN *new; { return scp; }
+
+TERMINAL	*setcurterm(new) TERMINAL *new; { return (TERMINAL *)0; }
+
+int	setkeymap() { return 0; }
+
+int	wsetscrreg(win, i1, i2) WINDOW *win; int i1, i2; { return 0; }
+
+int	setsyx(y,x) int y, x; { return 0; }
+
+int	setupterm(term, file, err) char *term; int file, *err;
+		{ return 0; }
+
+int	reset_prog_mode() { return 0; }
+
+int	def_shell_mode() { return 0; }
+
+int	slk_clear() { return 0; }
+
+char	*slk_label(num) int num; { return sp; }
+
+int	slk_noutrefresh() { return 0; }
+
+int	slk_refresh() { return 0; }
+
+int	slk_restore() { return 0; }
+
+int	slk_set(num, lab, fmt) int num, fmt; char *lab; { return 0; }
+
+int	slk_start(i, ip) int i, *ip; { return 0; }
+
+int	slk_touch() { return 0; }
+
+void	wsyncdown(win) WINDOW *win; {}
+
+void	wsyncup(win) WINDOW *win; {}
+
+int	tgetent(bp, name) char *bp, *name; { return 0; }
+
+int	tgetflag(id) char *id; { return 0; }
+
+int	tgetnum(id) char *id; { return 0; }
+
+char	*tgetstr(id, area) char *id, **area; { return sp; }
+
+int	tgetch(i) int i; { return 0; }
+
+char	*tgoto(cap, col, row) char *cap; int col, row; { return sp; }
+
+int	tifgetflag(id) char *id; { return 0; }
+
+int	tifgetnum(id) char *id; { return 0; }
+
+char	*tifgetstr(id) char *id; { return sp; }
+
+int	tigetflag(id) char *id; { return 0; }
+
+int	tigetnum(id) char *id; { return 0; }
+
+char	*tigetstr(id) char *id; { return sp; }
+
+void	tinputfd(i) int i; {}
+
+char	*tparm(instring, parms) 
+		char *instring; long parms; { return sp; }
+
+int	tputs(cp, affcnt, outc) char *cp; int affcnt, (*outc)(); { return 0; }
+
+int	traceon() { return 0; }
+
+int	traceoff() { return 0; }
+
+int	ttimeout(i) int i; { return 0; }
+
+int	typeahead(fd) int fd; { return 0; }
+
+void	vidupdate(a, b, c) chtype a, b; int (*c)(); {}
+
+int	wclrtobot(win) WINDOW *win; { return 0; }
+
+int	wclrtoeol(win) WINDOW *win; { return 0; }
+
+int	wechochar(win, ch) WINDOW *win; chtype ch; { return 0; }
+
+int	wgetch(win) WINDOW *win; { return 0; }
+
+int	winnstr(win, b, c) WINDOW *win; char *b; int c; { return 0; }
+
+int	wnoutrefresh(win) WINDOW *win; { return 0; }
+
+int	whline(win, a, b) WINDOW *win; chtype a; int b; { return 0; }
+
+int	mvwhline(win, y,x,a, b) WINDOW *win; chtype a; int y,x,b; { return 0; }
+
+int	mvwvline(win, y,x,a, b) WINDOW *win; chtype a; int y,x,b; { return 0; }
+
+int	wvline(win, a, b) WINDOW *win; chtype a; int b; { return 0; }
+
+int	addch(ch) chtype ch; { return 0; }
+
+int	addnstr(s,n) char *s; int n; { return 0; }
+
+int	addstr(str) char *str; { return 0; }
+
+int	attroff(at) chtype at; { return 0; }
+
+int	attron(at) chtype at; { return 0; }
+
+int	attrset(at) chtype at; { return 0; }
+
+int	bkgd(c) chtype c; { return 0; }
+
+int	border(lc,rc,tc,bc) chtype lc, rc, tc, bc; { return 0; }
+
+int	clear() { return 0; }
+
+int	clrtobot() { return 0; }
+
+int	clrtoeol() { return 0; }
+
+int	delch() { return 0; }
+
+int	deleteln() { return 0; }
+
+int	echochar(ch) chtype ch; { return 0; }
+
+int	erase() { return 0; }
+
+int	getch() { return 0; }
+
+int	getstr(str) char *str; { return 0; }
+
+chtype	inch() { return  cht; }
+
+int	insch(c) chtype c; { return 0; }
+
+int	insdelln(id) int id; { return 0; }
+
+int	insertln() { return 0; }
+
+int	insnstr(s,n) char *s; int n; { return 0; }
+
+int	insstr(s) char *s; { return 0; }
+
+int	move(y, x) int y, x; { return 0; }
+
+int	refresh() { return 0; }
+
+int	scrl(n) int n; { return 0; }
+
+int	setscrreg(t,b) int t, b; { return 0; }
+
+int	standend() { return 0; }
+
+int	standout() { return 0; }
+
+void	timeout(tm) int tm; {}
+
+void	bkgdset(c) chtype c; {}
+
+chtype	termattrs()	{ return cht; }
+
+/* functions to define environment flags of a window */
+
+int	syncok(win,bf) WINDOW *win; int bf; { return 0; }
+
+void	immedok(win,bf) WINDOW *win; int bf; {}
+
+/* The following used to be functions in SVR3. */
+
+int	notimeout(win,bf) WINDOW *win; int bf; { return 0; }
+
+int	clearok(win,bf) WINDOW *win; int bf; { return 0; }
+
+int	leaveok(win,bf) WINDOW *win; int bf; { return 0; }
+
+int	scrollok(win,bf) WINDOW *win; int bf; { return 0; }
+
+/* functions for handling video attributes */
+
+int	wattroff(w,a) WINDOW *w; chtype a; { return 0; }
+
+int	wattron(w,a) WINDOW *w; chtype a; { return 0; }
+
+int	wattrset(w,a) WINDOW *w; chtype a; { return 0; }
+
+/* functions for move and update */
+int	mvaddch(y,x,ch) int y,x; chtype ch; { return 0; }
+
+int	mvaddchstr(y,x,ch) int y,x; chtype *ch; { return 0; }
+
+int	mvaddchnstr(y,x,ch,n)
+		int y,x,n; chtype *ch; { return 0; }
+
+int	mvinstr(y,x,s) int y,x;char *s; { return 0; }
+
+int	mvwinstr(win,y,x,s) WINDOW *win;int y,x;char *s; { return 0; }
+
+int	mvinnstr(y,x,s,n) int y,x,n;char *s; { return 0; }
+
+int	mvwinnstr(win,y,x,s,n) WINDOW *win;int y,x,n;char *s; { return 0; }
+
+int	mvinchstr(y,x,s) int y,x;chtype *s; { return 0; }
+
+int	mvwinchstr(win,y,x,s) WINDOW *win;int y,x;chtype *s; { return 0; }
+
+int	mvwinchnstr(win,y,x,s,n)
+		WINDOW *win;int y,x,n;chtype *s; { return 0; }
+
+int	mvwaddchnstr(win,y,x,ch,n)
+		WINDOW *win; int y,x,n; chtype *ch; { return 0; }
+
+int	mvwaddchstr(win,y,x,ch) WINDOW *win;int y,x; chtype *ch; { return 0; }
+
+int	mvaddnstr(y,x,s,n) char *s; int n, y, x; { return 0; }
+
+int	mvaddstr(y,x,str) int y, x; char *str; { return 0; }
+
+int	mvwaddstr(win,y,x,str) WINDOW *win;int y, x; char *str; { return 0; }
+
+int	mvdelch(y,x) int y, x; { return 0; }
+
+int	mvgetch(y,x) int y, x; { return 0; }
+
+int	mvgetstr(y,x,str) int y, x; char *str; { return 0; }
+
+chtype	mvinch(y,x) int y, x; { return cht; }
+
+int	mvinsch(y,x,c) int y, x; chtype c; { return 0; }
+
+int	mvinsnstr(y,x,s,n) int y, x, n; char *s; { return 0; }
+
+int	mvinsstr(y,x,s) int y, x; char *s; { return 0; }
+
+int	mvwaddch(win,y,x,ch)
+		WINDOW *win; int y,x; chtype ch; { return 0; }
+
+int	mvwaddnstr(win,y,x,s,n)
+		WINDOW *win; char *s; int n, y, x; { return 0; }
+
+int	mvwdelch(win,y,x) int y, x; WINDOW *win; { return 0; }
+
+int	mvwgetch(win,y,x) int y, x; WINDOW *win; { return 0; }
+
+int	mvwgetstr(win,y,x,str)
+		int y, x; WINDOW *win; char *str; { return 0; }
+
+chtype	mvwinch(win,y,x) WINDOW *win; int y, x; { return cht; }
+
+int	mvwinsch(win,y,x,c)
+		int y, x; WINDOW *win; chtype c; { return 0; }
+
+int	mvwinsnstr(win,y,x,s,n)
+		int y, x, n; WINDOW *win; char *s; { return 0; }
+
+int	mvwinsstr(win,y,x,s)
+		WINDOW *win; int y, x; char *s; { return 0; }
+
+int	overlay(Src, Dst) WINDOW *Src, *Dst; { return 0; }
+
+int	overwrite(Src, Dst) WINDOW *Src, *Dst; { return 0; }
+
+int	wdeleteln(win) WINDOW *win; { return 0; }
+
+int	winsertln(win) WINDOW *win; { return 0; }
+
+int	wstandend(win) WINDOW *win; { return 0; }
+
+int	wstandout(win) WINDOW *win; { return 0; }
+
+int	beep() { return 0; }
+
+int	flash() { return 0; }
+
+WINDOW	*newpad(nlines, ncols) int nlines, ncols; { return wp; }
+
+SCREEN	*set_term(new) SCREEN *new; { return scp; }
+
+int	scroll(win) WINDOW *win; { return 0; }
+
+int	slk_init(fmt) int fmt; { return 0; }
+
+WINDOW	*subpad(orig, nlines, ncols, by, bx)
+	WINDOW *orig; int nlines, ncols, by, bx; { return wp; }
+
+WINDOW	*subwin(orig, nlines, ncols, by, bx)
+		WINDOW *orig; int nlines, ncols, by, bx; { return wp; }
+
+int	box(win, vert, hor) WINDOW *win; chtype vert, hor; { return 0; }
+
+SCREEN	*newterm(type, ofd, ifd) 
+	char *type; FILE *ofd, *ifd; { return scp; }
+
+int	vidputs(nmode, outc) chtype nmode, (*outc)(); { return 0; }
+
+int	touchline(win, fline, num)
+		WINDOW *win; int fline, num; { return 0; }
+
+int	touchwin(win) WINDOW *win; { return 0; }
+
+chtype	winch(win) WINDOW *win; { return cht; }
+
+int	waddstr(win,str) WINDOW *win; char *str; { return 0; }
+
+int	werase(win) WINDOW *win; { return 0; }
+
+int	wclear(win) WINDOW *win; { return 0; }
+
+int	intrflush(win,bf) WINDOW *win; int bf; { return 0; }
+
+int	ungetch(key) int key; { return 0; }
+
+int	crmode() { return 0; }
+
+int	nocrmode() { return 0; }
+
+int	saveterm() { return 0; }
+
+int	fixterm() { return 0; }
+
+int	resetterm() { return 0; }
+
+int	setterm(type) char *type; { return 0; }
+
+int	gettmode() { return 0; }
+
+int	halfdelay(tenths) int tenths; { return 0; }
+
+int	winstr(win,str) WINDOW *win; char *str; { return 0; }
+
+int	waddchstr(win,str) WINDOW * win; char *str; { return 0; }
+
+int	winsstr(win,str) WINDOW *win; char *str; { return 0; }
+
+int	untouchwin(win) WINDOW *win; { return 0; }
+
+int	waddchnstr(win,s,n) WINDOW *win; chtype *s; int n; { return 0; }
+
+int	winchnstr(win,s,n) WINDOW *win; chtype *s; int n; { return 0; }
+
+/* functions for setting time-out length on inputs */
+void	wtimeout(win,tm) {}
+
+int	vidattr(newmode) chtype newmode; { return 0; }
+
+char	*unctrl(i)	int i; { return sp; }
+
+char	is_wintouched(win)	WINDOW *win; { return 'a'; }
+
+char	is_linetouched(win,line)	WINDOW *win; int line; { return 'a'; }
+
+void	wbkgdset(win, ch) WINDOW *win; chtype ch; {}
+
+char	*termname()	{ return sp; }
+
+void	idcok(win,bf) WINDOW *win; int bf; {}

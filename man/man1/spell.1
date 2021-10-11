@@ -1,0 +1,211 @@
+.\" @(#)spell.1 1.1 92/07/30 SMI;
+.TH SPELL 1 "8 June 1988"
+.SH NAME
+spell, hashmake, spellin, hashcheck \- report spelling errors
+.SH SYNOPSIS
+.B spell
+[
+.B \-blvx
+] [
+.B \-d
+.I hlist
+] [
+.B \-h
+.I spellhist
+] [
+.B \-s
+.I hstop
+] [
+.BI + local_file
+] [
+.I filename
+] .\|.\|.
+.LP
+.B /usr/lib/spell/hashmake
+.LP
+.B /usr/lib/spell/spellin
+.I n
+.LP
+.B /usr/lib/spell/hashcheck
+.I spelling_list
+.SH DESCRIPTION
+.IX  "spell command"  ""  "\fLspell\fP \(em check spelling"
+.IX  "hashmake command"  ""  "\fLhashmake\fP \(em check spelling"
+.IX  "spellin command"  ""  "\fLspellin\fP \(em check spelling"
+.IX  "hashcheck command"  ""  "\fLhashcheck\fP \(em check spelling"
+.IX  "check spelling"  ""  "check spelling \(em \fLspell\fP"
+.IX  "document production"  spell  ""  "\fLspell\fP \(em check spelling"
+.IX  "text processing utilities"  spell  ""  "\fLspell\fP \(em check spelling"
+.LP
+.B spell
+collects words from the named files, and looks them up in a hashed
+spelling list.
+Words that do not appear in the list, or cannot be
+derived from those that do appear
+by applying certain inflections, prefixes or suffixes, are displayed
+on the standard output.
+.LP
+If there are no
+.I filename
+arguments, words to check are collected from the standard input.
+.B spell
+ignores most
+.BR troff (1),
+.BR tbl (1),
+and
+.BR eqn (1)
+constructs.
+Copies of all output words are accumulated in the history file, and a
+.I stop
+list filters out misspellings (for example, their=thy\-y+ier) that
+would otherwise pass.
+.LP
+By default,
+.B spell
+(like
+.BR deroff (1))
+follows chains of included files
+.RB ( .so
+and
+.B .nx
+.BR troff (1)
+requests),
+.I unless
+the names of such included files begin with
+.BR /usr/lib .
+.LP
+If a
+.BI + local_file
+argument is specified, words found in
+.I local_file
+are removed from
+.BR spell 's
+output.
+.I local_file
+is the name of a user-provided file that contains a sorted list of words,
+one per line.
+With this option, the user can
+specify a set of words
+that are correct spellings (in addition to
+.BR spell 's
+own spelling list)
+for each job.
+.LP
+The standard spelling list is based on many sources,
+and while more haphazard than
+an ordinary dictionary, is also more
+effective in respect to proper names
+and popular technical words.
+Coverage of the specialized vocabularies of
+biology, medicine and chemistry is light.
+.LP
+Three programs help maintain and check the hash lists used by
+.IR spell :
+.TP 12
+.B hashmake
+Reads a list of words from the standard input and
+writes the corresponding nine-digit hash code on the standard output.
+.TP
+.B spellin
+Reads
+.I n
+hash codes from the standard input and writes a compressed spelling list on the
+standard output.
+.TP
+.B hashcheck
+Reads a compressed
+.I spelling_list
+and recreates the nine-digit hash codes for all the words in it;
+it writes these codes on the standard output.
+.SH OPTIONS
+.TP 12
+.B \-b
+Check British spelling.  Besides preferring
+\*(lqcentre\*(rq,
+\*(lqcolour\*(rq,
+\*(lqprogramme\*(rq,
+\*(lqspeciality\*(rq,
+\*(lqtravelled\*(rq,
+and so on, this option insists upon
+.I -ise
+in words like
+.IR standardize ,
+despite what Fowler and the
+.SM OED
+say.
+.TP
+.B \-l
+Follow the chains of
+.I all
+included files.
+.TP
+.B \-v
+Print all words not literally in the spelling list, as well as plausible
+derivations from spelling list words.
+.TP
+.B \-x
+Print every plausible stem with
+.RB ` = '
+for each word.
+.TP
+.BI  \-d " hlist"
+Use the file
+.I hlist
+as the hashed spelling list.
+.TP
+.BI \-h " spellhist"
+Place misspelled words with a user/date stamp in file
+.IR spellhist .
+.TP
+.BI  \-s " hstop"
+Use
+.I hstop
+as the hashed stop list.
+.br
+.ne 5
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/spell/hlist[ab]
+hashed spelling lists, American & British
+.TP
+.B /usr/lib/spell/hstop
+hashed stop list
+.TP
+.B /usr/lib/spell/spellhist
+history file
+.TP
+.B /usr/lib/spell/spellprog
+program called by the
+.B /usr/bin/spell
+shell script
+.PD
+.SH "SEE ALSO"
+.BR deroff (1),
+.BR sed (1V),
+.BR sort (1V),
+.BR tee (1)
+.br
+.ne 8
+.SH BUGS
+.LP
+The spelling list's coverage is uneven;
+new installations may wish to monitor the output for several months
+to gather local additions.
+.LP
+British spelling was done by an American.
+.SH NOTES
+.LP
+Misspelled words can be monitored by default by setting the
+.SB H_SPELL
+variable in
+.B /usr/bin/spell
+to the name of a file that has permission mode 666.
+'br
+.ne 10v
+.LP
+.B spell
+works only on English
+words defined in the
+.SM "US ASCII"
+codeset.

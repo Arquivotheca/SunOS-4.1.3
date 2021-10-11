@@ -1,0 +1,268 @@
+.\" @(#)setup_client.8 1.1 92/07/30 SMI
+.TH SETUP_CLIENT 8 "14 December 1987"
+.SH NAME
+setup_client \- create or remove an NFS client
+.SH SYNOPSIS
+.B /usr/etc/install/script/setup_client
+.if n .br
+.I op
+.I clientname
+.I yp_type
+.I swapsize
+.if n .ti +0.5i
+.I rootpath
+.I swappath
+.if t .ti +.5i
+.if n .ti +0.5i
+.I homepath
+.I execpath
+.I kvmpath
+.I arch
+.SH DESCRIPTION
+.IX "setup_client command" "" "\fLsetup_client\fP command"
+.LP
+.B setup_client
+adds an
+.SM NFS
+client to a server, or removes one.
+It can only be run by the super-user.
+It is also used by
+.BR suninstall (8).
+.LP
+The
+.I op
+argument indicates which operation to perform; it can be either
+.B add
+or
+.BR remove ,
+to indicate whether to add or remove a client.
+.I clientname
+is the hostname of the client.
+.I yp_type
+indicates the type of 
+.SM YP
+server or service to provide to the
+client, if any; it can be one of
+.BR master ,
+.BR slave ,
+.BR client
+or
+.BR none .
+.I swapsize
+is the number of bytes reserved for client's swap
+file.
+.I rootpath
+is the pathname of parent directory in which various client root
+directories reside; 
+.IB rootpath / clientname
+is the pathname of the client's root directory.
+.I swappath
+is the pathname of parent directory in which various client swap files
+reside;  
+.IB swappath / clientname
+is the pathname of the client's swap file.
+.I homepath
+is the pathname of the (parent) directory in which the various home 
+directories are to reside; it is the pathname of the directory
+that the client is to mount as
+.BR /home .
+.I execpath
+is the full pathname of the directory in which the
+executables for the architecture specified by the
+.I arch
+argument.
+This is the directory that the client mounts as
+.BR /usr .
+.I arch 
+specifies the client's architecture (for instance, 
+.BR sun4 ,
+.BR sun3 .\|.\|.).
+.B setup_client
+with no arguments displays a usage message that includes the proper 
+.I arch
+argument for each supported architecture.
+.SH USAGE
+.LP
+Before you add or remove a client, you must first make sure
+that the Internet and Ethernet addresses for
+.I clientname
+are listed in the 
+.SM YP
+hosts database (if the server is running the 
+\s-1YP\s0 name service), or
+in the server's
+.B /etc/hosts
+and
+.B /etc/ethers
+databases, respectively (otherwise).
+Then, run
+.B setup_client
+with the
+.B add
+or
+.B remove
+operation.
+When adding a client, you must then bootstrap that client machine.
+.LP
+You cannot add a client to a server that does not
+support the specified architecture.
+The executable directory for that client's architecture
+must be present on the server.
+If this file is absent, an error
+results.
+.LP
+.B setup_client
+updates the
+.B /etc/bootparams
+file.
+If the server is a 
+.SM YP 
+master, it updates local 
+.SM YP
+database.
+It
+.I does not
+propagate the local update to other 
+.SM YP 
+servers.
+To propagate the
+updates, use the following commands:
+.RS
+.nf
+.ft B
+example# cd /var/yp
+example# make
+.ft R
+.fi
+.RE
+.LP
+If the server is running the
+.SM YP 
+name service but is not a 
+.SM YP 
+master,
+.BR setup_client
+issues a warning to indicate that the database is out of date.
+.LP
+When
+.I arch
+is given as
+.BR sun2 ,
+.B suninstall
+issues a reminder to run the
+.B /usr/etc/ndbootd
+daemon for booting Sun-2 systems.
+.LP
+.B setup_client
+creates
+.IB swappath / clientname
+with the
+.IR size ,
+(number of bytes) you specify.
+You can append one of
+.B K
+or
+.B k
+to indicate kilobytes,
+.B M
+or
+.B m
+to indicate megabytes, or
+.B B
+or
+.B b
+to indicate 512-byte blocks,
+to
+.IR size .
+Otherwise,
+.I size
+is taken to indicate an exact byte count.
+.LP
+.B suninstall
+updates the
+.B /etc/exports
+file to allow root access to each client's root file system.
+It exports the client's swap and dump partitions only to the client.
+Note: the system administrator should verify that the
+.B /etc/exports
+file contains correct information, and that file systems
+are exported to the correct users and groups.
+Refer to
+.BR exportfs (8)
+for details on exporting file systems.
+.br
+.ne 10
+.SH EXAMPLES
+This example shows how to add a Sun-4 system
+.SM NFS
+client to a server.
+.RS
+.nf
+.sp .5v
+.B
+example# setup_client add frodo client 16M /exports/roots /exports/swaps /exports/dumps /home \e
+.B /exports/execs/sun4/4.0 sun4
+.fi
+.RE
+.LP
+To remove this client, you would merely substitute
+.B remove
+for
+.B add
+in the above example.
+.SH FILES
+.PD 0
+.B /etc/hosts
+.TP
+.B /etc/ethers
+.TP
+.B /usr/etc/ndbootd
+.TP
+.B /etc/bootparams
+.TP
+.B /etc/exports
+.PD
+.SH "SEE ALSO"
+.BR exportfs (8),
+.BR setup_exec (8)
+.BR suninstall (8)
+.LP
+.TX INSTALL
+.SH DIAGNOSTICS
+.TP
+.B "incorrect number of arguments"
+Check number and order of the arguments.
+.TP
+.B "must be run as root (super-user)."
+You must be root to use
+.BR setup_client .
+.TP
+.B "invalid operation type ``\fIxx\fP''."
+Valid operations are
+.B add
+and
+.BR remove .
+.TP
+.B "\s-1ATTENTION\s0: \fIxxxxxxxx\fP \-> boot.sun\fI?\fP not created."
+(Sun-3 systems only.)  A symbolic link can not be created
+because the boot file does not exist.
+.\" under
+.\" .BR /tftpboot .
+.TP
+.B "\s-1ATTENTION\s0: \fIxxxxxxxx\fP.SUN\fI?\fP \-> boot.sun\fI?\fP not created."
+(Other than Sun-3 systems.)  A symbolic link can not be created
+because the boot file does not exist.
+.ie n \{
+.PD 0
+.LP
+.B
+\s-1ATTENTION\s0: /usr/etc/ndbootd needs to be running on server before bringing up ``\fIclient\fP''.
+.IP
+\}
+.el \{
+.TP
+.B "\s-1ATTENTION\s0: /usr/etc/ndbootd needs to be running on server before bringing up ``\fIclient\fP''."
+\}
+The Sun-2 system boot daemon must be running in order to bootstrap a
+Sun-2 system.
+.PD

@@ -1,0 +1,93 @@
+.\" @(#)auditon.2 1.1 92/07/30 SMI;
+.TH AUDITON 2 "21 January 1990"
+.SH NAME
+auditon \- manipulate auditing
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/label.h>
+#include <sys/audit.h>
+.LP
+.ft B
+int auditon (condition)
+int condition;
+.fi
+.SH DESCRIPTION
+.IX "auditon function" "" "\fLauditon()\fP function"
+.LP
+The
+.B auditon(\|)
+system call sets system auditing to the requested
+.I condition
+if and only if the current state of auditing allows that transition.
+Legitimate values for
+.I condition
+are:
+.LP
+.RS
+.PD 0
+.TP 20
+.SB AUC_UNSET
+on/off has not been decided yet
+.TP
+.SB AUC_AUDITING
+auditing is to be done
+.TP
+.SB AUC_NOAUDIT
+auditing is not to be done
+.PD
+.RE
+.LP
+The permitted transitions are:
+.TP 3
+\(bu
+Any condition may be changed back to itself.
+.TP 3
+\(bu
+.SB AUC_UNSET
+may be changed to
+.SB AUC_AUDITING
+or
+.SB AUC_NOAUDIT\s0\fR.
+.TP 3
+\(bu
+.SB AUC_AUDITING
+may be changed to
+.SB AUC_NOAUDIT\s0\fR.
+.TP 3
+\(bu
+.SB AUC_NOAUDIT
+may be changed to
+.SB AUC_AUDITING\s0\fR.
+.LP
+Once changed, it is not possible to get back to
+.SB AUC_UNSET\s0\fR.
+.LP
+Only the super-user may successfully execute this call.
+.SH "RETURN VALUES"
+.B auditon(\|)
+returns
+the old audit condition value
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH "ERRORS"
+.TP 15
+.SM EINVAL
+The
+.I condition
+specified is outside the range of valid values.
+.IP
+The current condition precludes the requested change.
+.TP
+.SM EPERM
+Neither of the process's effective or real user
+.SM ID
+is super-user.
+.SH "SEE ALSO"
+.BR audit (2),
+.BR setuseraudit (2)

@@ -1,0 +1,397 @@
+.\" @(#)intro.mex 1.1 92/07/30 SMI;
+.PL RIGHT
+.H C "Introduction to Manual Pages"
+.IX "introduction to manual pages" "" "" "" PAGE START
+.H 2 "Overview"
+.IX overview
+.LP
+This chapter explains
+how to create and maintain man pages,
+then discusses man page style.
+Following chapters describe manual sections
+and the man page requirements for each section.
+.H 2 "Terms"
+.IX terms
+.BR Argument :
+Letters or keywords supplied to one or more options
+that affect the behavior of the option.
+.br
+.BR Option :
+Letters or keywords supplied to a command that
+affect the behavior of the command.
+.H 2 "Creating A New Man Page"
+.LP
+.IX "creating new manual pages"
+.IX "man pages" creating
+A sample template with the information necessary
+to create a new man page
+is in the current release machine:
+.LS
+/usr/src/man/policy/template/template
+.LE
+.TP
+A copy of the template is also in Appendix A.
+To create a man page, copy the template to your
+home directory and fill it in
+with the help of instructions and comments.
+The template contains information and headers that you
+won't need; delete the unnecessary data and comment lines
+(which begin with
+.L \&.\e"--- )
+as you create the page.
+To get a copy of this template with the commented instructions
+removed,
+simply execute the script:
+.LS
+template \fIfilename\fP
+.LE
+If you supply a
+.I filename
+argument,
+the stripped template will be put in a file of this name.
+Otherwise, the stripped template will be put in
+.L template.stripped .
+.LP
+When you have finished editing the page,
+forward it to the man page
+writers for final approval.
+They will add your page to the
+introductory list and makefiles.
+They will then mail their edits
+back to you before the page is checked in on the
+release machine.
+.H 2 "Updating A Man Page"
+.IX "updating man pages"
+.IX "man pages" updating
+.LP
+Updating an existing man page involves checking
+the page out from
+.SM SCCS
+(on the current
+release machine),
+making the necessary changes, checking it back in, and notifing
+the man page writers of the update.
+.bp
+.LP
+Man pages sources reside in
+.LS
+/usr/src/man/man\fR[\fP1-8\fR]\fP
+.LP
+For example, the source for the
+.BR lpr (1)
+man page is in the
+.L /usr/src/man/man1/lpr.1 file.
+.LE
+The material stored there is in the developmental stage and reflects
+the changes made since the last release.
+.SM SCCS
+allows these changes to be made in an orderly fashion
+by recording who made what changes and when.
+Once updates have been made, the page needs
+to be checked in, and you should send mail to notify
+the man page writers
+of your changes:
+.BS GRAY
+.LS 2
+release% \f(LBcd /usr.src/man/man1\fP
+release%  \f(LBsccs edit man.7\fP
+1.10
+new delta 1.11
+200 lines
+release% \f(LBvi man.7\fP
+ 
+                \fImake updates\fP
+ 
+release% \f(LBsccs delget man.7\fP
+comments? \fIexplain updates\fP
+1.11
+10 inserted
+2 deleted
+198 unchanged
+1.11
+208 lines
+ 
+release% \f(LBmail jah@caps\fP
+Subject: \f(LBupdates to man.7\fP
+ 
+        ...
+\f(LB^D\fP
+release%
+.LE
+.BE
+.LP
+When the man page writers receive your updated
+page, they will take care of cross-referencing
+it to other pages
+as needed.
+.H 2 Style
+.LP
+.IX style
+.IX "man pages" style
+Keep in mind that the man pages comprise a
+.I reference
+manual.
+Each man page is intended to answer concisely the
+question ``What does it do?''
+Do not write tutorials (as you would for a
+beginner), or detailed technical analyses of the internals.  Remember
+that the manual's audience is composed of
+users and programmers who need to
+find something
+.I "fast" .
+.LP
+The following are some style points to remember when writing or creating
+man pages.
+.IP \*(SQ 2
+.PD 0
+.I Always
+use the active voice,
+.I never
+passive.  Something is not
+.I caused
+to happen, the program or routine
+.I does
+it.
+.IP \*(SQ 2
+Use second or
+third person to describe an action;
+.I never
+personify machinery.
+.IP \*(SQ 2
+Avoid contractions.
+.IP \*(SQ 2
+Do not use Latin.
+.IP \*(SQ 2
+.PD 0
+The first reference to a man page must include the section number.
+Thereafter, the section number may be omitted,
+.I except
+in the
+.SM "SEE ALSO"
+section,
+where
+.I all
+references to man pages must include the section number.
+.IP \*(SQ 2
+Nested paragraphs are set off with
+`\(bu'
+(bullets), never numerals:
+.RS
+\&.TP 3
+\&\\&(bu
+This is text set off with a bullet as the ``tag''
+in a tagged paragraph (.TP).
+.RE
+.IP \*(SQ 2
+Section headers (declared with the
+.L "\&.SH"
+macro) and subsection headers (declared with the
+.L "\&.SS"
+macro) are followed by a new paragraph macro
+(\fL\&.LP\fP,
+.L \&.TP ,
+.L \&.IP ,
+or
+.L \&.HP ).
+.IP \*(SQ 2
+References to other man pages appear in Bold font, 
+with the numbers of the
+sections in which they appear in Roman.
+.PD
+.IP
+.RS
+.RS
+.B man (1)
+.RE
+.RE
+.IP \*(SQ 2
+``Warnings'' and ``notes'' to the reader appear in Roman font.
+Both must be printed as separate
+paragraphs using
+.L .LP ,
+followed by the word ``Warnings'' or ``Notes,''
+a colon, a space, and the text of the message:
+.IP
+.RS
+.RS
+Note: the
+.B \-x
+option is retained for compatibility with earilier
+releases.
+It's use is not recommended.
+.RE
+.RE
+Please use notes sparingly.
+.IP \*(SQ 2
+Use Italic font for emphasis.
+However, Bold font is acceptable for a severe warning
+about a drastic situation.
+.IP \*(SQ 2
+.PD 0
+Do not use
+`\fL<\fP\|\fL>\fP'
+(angle brackets)
+around variable placeholders.
+Use Italics instead.
+Angle brackets should only appear
+in C language program listings.
+.IP \*(SQ 2
+.PD 0
+When refering to the C language, `C' is in
+Roman font.
+.IP \*(SQ 2
+Single literal characters that could be confused
+with punctuation appear within `\|'
+(single quotes). There are three exceptions to this
+rule:
+.L . ' `
+(periods),
+.L \- ' `
+(dashes) and multi-word literal strings
+with embedded spaces.
+They
+.I always
+appear within single quotes:
+.PD
+.IP
+.RS
+.RS
+.RB ` textedit
+.IR newfile '
+.RE
+.RE
+.IP \*(SQ 2
+To use a descriptive term,
+place the character in quotes and follow
+it with the description in parentheses.
+.IP
+.RS
+.RS
+The `.' (dot) command.\|.\|.
+.RE
+.RE
+.IP \*(SQ 2
+.PD
+Empty grouping symbols (and other similar special
+characters) are separated by a
+.L \e|
+space
+.IP
+.RS
+.PD 0
+.TS
+tab(@) ;
+cL cL .
+to get:@use:
+[\|]@\fL[\e|]\fR
+(\|)@\fL(\e|)\fR
+|\||@\fL|\e||\fR
+.TE
+.RE
+.IP \*(SQ 2
+Escape dashes with a backslash
+in width declarations:
+\(lqThe
+.L \e-
+option...\(rq
+.br
+Enter hyphens unescaped:
+\(lqtime-honored tradition\(rq
+.IP
+.RS
+.RS
+.PD 0
+.TS
+tab(@) ;
+c l lw(30) .
+to get:@use:@description:
+`-'@\fL-\fP@hyphen
+`\-'@\fL\e-\fP@T{
+dash, range indicator,
+precedes some options, etc.
+T}
+`\(em'@\fL\e(em\fP@T{
+dash to show a break in sentence structure,
+filename argument
+T}
+.TE
+.PD
+.RE
+.RE
+.IP \*(SQ 2
+Terminal modes, such as
+.SM CBREAK ,
+.SM "NOECHO" ,
+etc., are printed using the
+.L .SM
+macro.
+.RE
+.PD
+.br
+.\".ne 30
+.\".H 2 ORDERING
+.\".RE
+.\".LP
+.\".IX ordering
+.\".IX "man pages" ordering
+.\"Here is a list of the of section
+.\"headings in their proper order.
+.\"All of the sections follow this order,
+.\"but where a heading is not needed,
+.\"it is not used.
+.\"For example,
+.\"if there are no bugs to report for a command,
+.\"there is no need for a
+.\".SM BUGS
+.\"Section.
+.\".RS
+.\".RS
+.\".IP
+.\".nf
+.\".SM NAME
+.\"\s-1CONFIGURATION\s+1 (\fISection 4 only\fP)
+.\".SM SYNOPSIS
+.\".SM "SYSTEM V SYNOPSIS"
+.\"\s-1PROTOCOL\s+1 (\fISection 3R only\fP)
+.\".SM AVAILABILITY
+.\".SM DESCRIPTION
+.\".SM "SYSTEM V DESCRIPTION"
+.\"\s-1IOCTLS\s+1 (\fISection 4 only\fP)
+.\".SM OPTIONS
+.\".SM "SYSTEM V OPTIONS"
+.\"\s-1RETURN VALUE\s+1 (\fISections 2 and 3 only\fP)
+.\"\s-1ERRORS\s+1 (\fISections 2, 3, and 4 only\fP)
+.\".SM USAGE
+.\".sp .5
+.\".RS
+.\".nf
+.\"Commands
+.\"Modifiers
+.\"Variables
+.\"Expressions
+.\"Input Grammar
+.\".RE
+.\".sp .5
+.\".nf
+.\".SM EXAMPLE(S)
+.\".SM ENVIRONMENT
+.\".SM FILES
+.\".SM "SEE ALSO"
+.\".SM DIAGNOSTICS
+.\".SM WARNINGS
+.\".SM NOTES
+.\".SM BUGS
+.\".fi
+.\".RE
+.\".RE
+.\".LP
+.\".I Note :
+.\"the
+.\".SM USAGE
+.\"heading frequently contains subsections (listed with
+.\".L \&.SS ).
+.\".LP
+.\".IX "introduction to manual pages" "" "" "" PAGE END
+.\"The specifications in these headings vary slightly from section
+.\"to section; the differences are
+.\"covered in the section descriptions below.

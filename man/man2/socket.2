@@ -1,0 +1,247 @@
+.\" @(#)socket.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SOCKET 2 "21 January 1990"
+.SH NAME
+socket \- create an endpoint for communication
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int socket(domain, type, protocol)
+int domain, type, protocol;
+.ft
+.fi
+.IX  socket()  ""  \fLsocket()\fP
+.IX  "socket operations"  socket()  ""  \fLsocket()\fP
+.IX  "interprocess communication"  socket()  ""  \fLsocket()\fP
+.IX  "create" "interprocess communication endpoint \(em \fLsocket()\fR"
+.SH DESCRIPTION
+.LP
+.B socket(\|)
+creates an endpoint for communication and returns a descriptor.
+.LP
+The
+.I domain
+parameter specifies a communications domain within which
+communication will take place; this selects the protocol family
+which should be used.
+The protocol family generally is the same as the address family
+for the addresses supplied in later operations on the socket.
+These families are defined in the include file
+.BR <sys/socket.h> .
+The currently understood formats are
+.LP
+.RS
+.TP 20
+.SB PF_UNIX
+(\s-1UNIX\s0 system internal protocols),
+.TP
+.SB PF_INET
+(\s-1ARPA\s0 Internet protocols), and
+.TP
+.SB PF_IMPLINK
+(\s-1IMP\s0 \*(lqhost at \s-1IMP\s0\*(rq link layer).
+.RE
+.LP
+The socket has the indicated
+.IR type ,
+which specifies the semantics of communication.  Currently
+defined types are:
+.LP
+.RS
+.nf
+.SB SOCK_STREAM
+.SB SOCK_DGRAM
+.SB SOCK_RAW
+.SB SOCK_SEQPACKET
+.SB SOCK_RDM
+.fi
+.RE
+.LP
+A
+.SB SOCK_STREAM
+type provides sequenced, reliable, two-way connection based byte streams.
+An out-of-band data transmission mechanism may be supported.  A
+.SB SOCK_DGRAM
+socket supports
+datagrams (connectionless, unreliable messages of
+a fixed (typically small) maximum length). A
+.SB SOCK_SEQPACKET
+socket may provide a sequenced, reliable,
+two-way connection-based data transmission path for datagrams
+of fixed maximum length; a consumer may be required to read
+an entire packet with each read system call.
+This facility is protocol specific, and presently not implemented
+for any protocol family.
+.SB SOCK_RAW
+sockets provide access to internal network interfaces.
+The types
+.SM
+.BR SOCK_RAW\s0 ,
+which is available only to the super-user, and
+.SM
+.BR SOCK_RDM\s0 ,
+for which no implementation currently exists,
+are not described here.
+.LP
+The
+.I protocol
+specifies a particular protocol to be used with the socket.
+Normally only a single protocol exists to support a particular
+socket type within a given protocol family.  However, it is possible
+that many protocols may exist, in which case a particular protocol
+must be specified in this manner.  The protocol number to use is
+particular to the \*(lqcommunication domain\*(rq in which communication
+is to take place; see
+.BR protocols (5).
+.LP
+Sockets of type
+.SB SOCK_STREAM
+are full-duplex byte streams, similar to pipes.
+A stream socket must be in a
+.I connected
+state before any data may be sent or received
+on it.  A connection to another socket is created with a
+.BR connect (2)
+call.  Once connected, data may be transferred using
+.BR read (2V)
+and
+.BR write (2V)
+calls or some variant of the
+.BR send (2)
+and
+.BR recv (2)
+calls.  When a session has been completed a
+.BR close (2V),
+may be performed.
+Out-of-band data may also be transmitted as described in
+.BR send (2)
+and received as described in
+.BR recv (2).
+.br
+.ne 9
+.LP
+The communications protocols used to implement a
+.SB SOCK_STREAM
+insure that data
+is not lost or duplicated.  If a piece of data for which the
+peer protocol has buffer space cannot be successfully transmitted
+within a reasonable length of time, then
+the connection is considered broken and calls
+will indicate an error with
+\-1 returns and with
+.SM ETIMEDOUT
+as the specific code
+in the global variable
+.BR errno .
+The protocols optionally keep sockets \*(lqwarm\*(rq by
+forcing transmissions
+roughly every minute in the absence of other activity.
+An error is then indicated if no response can be
+elicited on an otherwise
+idle connection for a extended period (for
+instance 5 minutes).  A
+.SB SIGPIPE
+signal is raised if a process sends
+on a broken stream; this causes naive processes,
+which do not handle the signal, to exit.
+.LP
+.SB SOCK_SEQPACKET
+sockets employ the same system calls as
+.SB SOCK_STREAM
+sockets.  The only difference is that 
+.BR read (2V)
+calls will return only the amount of data requested,
+and any remaining in the arriving packet will be discarded.
+.LP
+.SB SOCK_DGRAM
+and
+.SB SOCK_RAW
+sockets allow sending of datagrams to correspondents
+named in
+.BR send (2)
+calls.  Datagrams are generally received with
+.BR recv (2),
+which returns the next datagram with its return address.
+.LP
+An
+.BR fcntl (2V)
+call can be used to specify a process group to receive a
+.SB SIGURG
+signal when the out-of-band data arrives.
+It may also enable non-blocking I/O
+and asynchronous notification of I/O events with
+.SB SIGIO
+signals.
+.LP
+The operation of sockets is controlled by socket level
+.IR options .
+These options are defined in the file
+.BR socket.h .
+.BR getsockopt (2)
+and
+.B setsockopt(\|)
+are used to get and set options, respectively.
+.SH RETURN VALUES
+.LP
+.B socket(\|)
+returns
+a non-negative descriptor
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EACCES
+Permission to create a socket of the specified type and/or protocol
+is denied.
+.TP
+.SM EMFILE
+The per-process descriptor table is full.
+.TP
+.SM ENFILE
+The system file table is full.
+.TP
+.SM ENOBUFS
+Insufficient buffer space is available.
+The socket cannot be created until sufficient resources are freed.
+.TP
+.SM EPROTONOSUPPORT
+The protocol type or the specified protocol is not supported
+within this domain.
+.TP
+.SM EPROTOTYPE
+The protocol is the wrong type for the socket.
+.SH SEE ALSO
+.BR accept (2),
+.BR bind (2),
+.BR close (2V),
+.BR connect (2),
+.BR fcntl (2V),
+.BR getsockname (2),
+.BR getsockopt (2),
+.BR ioctl (2),
+.BR listen (2),
+.BR read (2V),
+.BR recv (2),
+.BR select (2),
+.BR send (2),
+.BR shutdown (2),
+.BR socketpair (2),
+.BR write (2V),
+.BR protocols (5)
+.LP
+.TX NETP

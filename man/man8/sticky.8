@@ -1,0 +1,54 @@
+.\" @(#)sticky.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH STICKY 8 "2 March 1989"
+.SH NAME
+sticky \- mark files for special treatment
+.SH DESCRIPTION
+.IX "sticky directory"
+.IX "NFS and sticky bits"
+.LP
+The
+.I "sticky bit"
+(file mode bit 01000, see
+.BR chmod (2V))
+is used to indicate special treatment
+of certain files and directories.
+A directory for which the sticky bit is set restricts deletion of
+files it contains.  A file in a sticky directory may only be removed or
+renamed by a user who has write permission on the directory,
+and either owns the file, owns the directory, or is the super-user.
+This is useful for directories such as
+.BR /tmp ,
+which must be publicly writable, but should deny users permission to
+arbitrarily delete or rename the files of others.
+.LP
+If the sticky bit is set on a regular file and no execute bits are set,
+the system's page cache will not be used to hold the file's data.
+This bit is normally set on swap files of diskless clients so that accesses
+to these files do not flush more valuable data from the system's cache.
+Moreover,
+by default such files are treated as swap files,
+whose inode modification times may not necessarily be correctly recorded
+on permanent storage.
+.LP
+Any user may create a sticky directory.
+See
+.BR chmod
+for details about modifying file modes.
+.SH BUGS
+.LP
+.BR mkdir (2V)
+will not create a file with the sticky bit set.
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp
+.PD
+.SH SEE ALSO
+.BR chmod (1V),
+.BR chmod (2V),
+.BR chown (2V),
+.BR mkdir (2V)

@@ -1,0 +1,68 @@
+.\" @(#)getauditflags.3 1.1 92/07/30 SMI;
+.TH GETAUDITFLAGS 3 "6 October 1987"
+.SH NAME
+getauditflagsbin, getauditflagschar \- convert audit flag specifications
+.SH SYNOPSIS
+.nf
+.B #include <sys/label.h>
+.B #include <sys/audit.h>
+.B #include <sys/auevents.h>
+.LP
+.B int getauditflagsbin(auditstring, masks)
+.B char *auditstring;
+.B audit_state_t *masks;
+.LP
+.B int getauditflagschar(auditstring, masks, verbose)
+.B char *auditstring;
+.B audit_state_t *masks;
+.B int verbose;
+.fi
+.SH DESCRIPTION
+.IX "getauditflagsbin()" "" "\fLgetauditflagsbin()\fP \(em convert audit flag specifications"
+.IX "getauditflagschar()" "" "\fLgetauditflagschar()\fP \(em convert audit flag specifications"
+.LP
+.B getauditflagsbin(\|)
+converts the character representation of audit values pointed to by
+.I auditstring
+into
+.B audit_state_t
+fields pointed to by
+.IR masks .
+These fields indicate which events are to be audited when they succeed
+and which are to be audited when they fail.
+The character string syntax is described in
+.BR audit_control (5).
+.LP
+.B getauditflagschar(\|)
+converts the
+.B audit_state_t
+fields pointed to by
+.I masks
+into a string pointed to by
+.IR auditstring .
+If
+.I verbose
+is zero, the short (2-character) flag names are used.
+If
+.I verbose
+is non-zero, the long flag names are used.
+.I auditstring
+should be large enough to contain the
+.SM ASCII
+representation of the events.
+.LP
+.I auditstring
+contains a series of event names, each one identifying a single audit
+class, separated by commas.  The
+.B audit_state_t
+fields pointed to by
+.I masks
+correspond to binary values defined in
+.IR audit.h .
+.SH DIAGNOSTICS
+\-1 is returned on error and 0 on success.
+.SH "SEE ALSO"
+.BR audit.log (5),
+.BR audit_control (5)
+.SH BUGS
+This is not a very extensible interface.

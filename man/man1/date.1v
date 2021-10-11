@@ -1,0 +1,237 @@
+.\" @(#)date.1v 1.1 92/07/30 SMI;
+.TH DATE 1V "23 November 1987"
+.SH NAME
+date \- display or set the date
+.SH SYNOPSIS
+.B date
+[ 
+.B \-u
+]
+[ 
+.B \-a
+[
+.B \-
+]
+.IB sss . \|fff
+]
+[
+.I yy\|mm\|dd\|hh\|mm
+[
+.BI . \|ss
+] ]
+.if n .ti +5n
+[
+.BI + format
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/date
+[ 
+.B \-u
+]
+[
+.B \-a
+[
+.B \-
+]
+.IB sss .fff
+]
+[
+.I mm\|dd\|hh\|mm
+.if n .ti +5n
+[
+.I yy
+] ]
+[
+.BI + format
+]
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLdate\fR"
+.IX "date command"  ""  "\fLdate\fP \(em date and time"
+.IX display  date
+.IX display  "date and time"
+.IX display  "time and date"
+.IX time  "display date and"
+.LP
+If no argument is given, or if the argument begins with 
+.BR + ,
+.B date
+displays the current date and time.
+Otherwise, the current date is set.
+Only the super-user may
+.B set
+the date.
+.LP
+.I yy
+is the last two digits of the year; the first
+.I mm
+is the month number;
+.I dd
+is the day number in the month;
+.I hh
+is the hour number (24 hour system);
+the second
+.I mm
+is the minute number;
+.BI . ss
+(optional) specifies seconds.
+The year, month and day may be omitted; the
+current values are supplied as defaults.
+.LP
+If the argument begins with
+.BR + ,
+the output of
+.B date
+is under the control of the user.
+The format for the output is similar to that of
+the first argument to
+.BR printf (3V).
+All output fields are of fixed size (zero padded
+if necessary).
+Each field descriptor is preceded by
+.B %
+and will be replaced in the output by
+its corresponding value.
+A single
+.B %
+is encoded by
+.BR %% .
+All other
+characters are copied to the output without change.
+The string is always terminated with a new-line character.
+.LP
+Field Descriptors:
+.RS
+.PD 0
+.TP 5
+.B  n
+insert a new-line character
+.TP 5
+.B  t
+insert a tab character
+.TP 5
+.B  m
+month of year \- 01 to 12
+.TP 5
+.B  d
+day of month \- 01 to 31
+.TP 5
+.B  y
+last 2 digits of year \- 00 to 99
+.TP 5
+.B D
+date as mm/dd/yy
+.TP 5
+.B  H
+hour \- 00 to 23
+.TP 5
+.B  M
+minute \- 00 to 59
+.TP 5
+.B  S
+second \- 00 to 59
+.TP 5
+.B T
+time as \s-1HH:MM:SS\s+1
+.TP 5
+.B  j
+day of year \- 001 to 366
+.TP 5
+.B  w
+day of week \- Sunday = 0
+.TP 5
+.B  a
+abbreviated weekday \- Sun to Sat
+.TP 5
+.B  h
+abbreviated month \- Jan to Dec
+.TP 5
+.B  r
+time in
+.SM AM/PM 
+notation
+.PD
+.RE
+.LP
+.SH SYSTEM V SYNOPSIS
+When setting the date, the first
+.I mm
+is the month number;
+.I dd
+is the day number in the month;
+.I hh
+is the hour number (24 hour system);
+the second
+.I mm
+is the minute number;
+.I yy
+is the last 2 digits of the year number and is optional.
+The current year is the default if no year is mentioned.
+.SH OPTIONS
+.nr xx (\w'\fB\-a\fR [\fB\-\fR]\fIsss\fB.\fIfff\fR'u+4n/1n
+.IP \fB\-u\fP \n(xx
+Display the date in \s-1GMT\s0 (universal time).
+The system operates in
+.SM GMT;
+.B date
+normally takes care of the
+conversion to and from local standard and daylight time. 
+.B \-u
+may also be used to set
+.SM GMT
+time.
+.IP "\fB\-a\fR [\fB\-\fR]\fIsss\fB.\fI\|fff\fR"
+Using the
+.BR adjtime (2)
+system call, tell the system to slowly adjust the time by
+.IB sss . \|f\|f\|f
+seconds
+.RI ( \|f\|f\|f
+represents fractions of a second).
+This adjustment can be positive or
+negative.  The system's clock will be sped
+up or slowed down until it has
+drifted by the number of seconds specified.
+.SH EXAMPLES
+.RS
+.B date\| 10080045
+.RE
+.LP
+Would set the date to Oct 8, 12:45 \s-1AM\s+1.
+.LP
+.ne 8
+If the year were 1986, and the date were so set,
+.RS
+.B date\| \(fm+\s-1DATE\s0: %m/%d/%y%n\s-1TIME\s0: %H:%M:%S\(fm
+.RE
+.LP
+would generate as output:
+.LP
+.RS
+.B DATE: 08/01/86
+.br
+.B TIME: 14:45:05
+.RE
+.SH FILES
+.TP 20
+.B /var/adm/wtmp
+to record time-setting
+.TP
+.B /usr/share/lib/zoneinfo
+timezone definitions
+.SH SEE ALSO
+.BR adjtime (2),
+.BR printf (3V),
+.BR utmp (5V)
+.SH DIAGNOSTICS
+.TP
+.B "date: Failed to set date: Not owner"
+If you try to change the date but are not the super-user.
+.TP
+.B "date: bad format character"
+If the field descriptor is not recognizable.

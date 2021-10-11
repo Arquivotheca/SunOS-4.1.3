@@ -1,0 +1,213 @@
+.\" @(#)getpgrp.2v 1.1 92/07/30 SMI; from UCB 4.2 and S5R2
+.\" Note:  This page has been renamed from setpgrp(2V)!
+.TH GETPGRP 2V "21 January 1990"
+.SH NAME
+getpgrp, setpgrp \- return or set the process group of a process
+.SH SYNOPSIS
+.nf
+.ft B
+int getpgrp(pid)
+int pid;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int setpgrp(pid, pgrp)
+int pgrp;
+int pid;
+.ft R
+.fi
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+int getpgrp(\|)
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int setpgrp(\|)
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "System V library, system call versions" "\fLsetpgrp()\fR"
+.IX  setpgrp()  ""  \fLsetpgrp()\fP
+.IX  "processes and protection"  setpgrp()  ""  \fLsetpgrp()\fP
+.IX  "process group"  "set \(em \fLsetpgrp()\fR"
+.IX "System V library, system call versions" "\fLgetpgrp()\fR"
+.IX  getpgrp()  ""  \fLgetpgrp()\fP
+.IX  "processes and protection"  getpgrp()  ""  \fLgetpgrp()\fP
+.IX  "process group"  "get \(em \fLgetpgrp()\fR"
+.LP
+.B getpgrp(\|)
+returns the process group of the process indicated by
+.IR pid .
+If
+.I pid
+is zero, then the call applies to the calling process.
+.LP
+Process groups are used for distribution of signals, and
+by terminals to arbitrate requests for their input.  Processes
+that have the same process group as the terminal run in the foreground
+and may read from the terminal, while others block with a signal when
+they attempt to read.
+.LP
+This call is thus used by programs such as
+.BR csh (1)
+to create process groups in implementing job control.
+The
+.SB TIOCGPGRP
+and
+.SB TIOCSPGRP
+calls described in
+.BR termio (4)
+are used to get/set the process group of the control terminal.
+.LP
+.B setpgrp(\|)
+sets the process group of the specified process,
+.RI ( pid )
+to the process group specified by
+.IR pgrp .
+If
+.I pid
+is zero, then the call applies to the current (calling) process.
+If
+.I pgrp
+is zero and
+.I pid
+refers to the calling process,
+.B setpgrp(\|)
+behaves identically to
+.BR setsid (2V).
+.LP
+If the effective user
+.SM ID
+of the calling process
+is not super-user, then the
+process to be affected must have the same effective user
+.SM ID
+as that of the calling process or be a member of the same session as
+the calling process.
+.SH SYSTEM V DESCRIPTION
+.LP
+.B getpgrp(\|)
+returns the process group of the calling process.
+.LP
+.B setpgrp(\|)
+behaves identically to
+.BR setsid(\|) .
+.SH RETURN VALUES
+.LP
+.B getpgrp(\|)
+returns the process group of the indicated process
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.LP
+.B setpgrp(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH SYSTEM V RETURN VALUES
+.LP
+.B getpgrp(\|)
+returns the process group of the calling process
+on success.
+.SH ERRORS
+.LP
+.B setpgrp(\|)
+fails, and the process group is not altered when
+one of the following occurs:
+.TP 15
+.SM EACCES
+The value of 
+.I pid 
+matches the process
+.SM ID
+of a child process of the calling process and the child
+process has successfully executed one of the
+.B exec(\|)
+functions.
+.TP
+.SM EINVAL
+The value of 
+.I pgrp 
+is less than zero or is greater than
+.SM MAXPID\s0,
+the maximum process
+.SM ID
+as defined in
+.BR <sys/param.h> .
+.br
+.ne 15
+.TP
+.SM EPERM
+The process indicated by 
+.I pid 
+is a session leader.
+.IP
+The value of 
+.I pid 
+is valid but matches the process
+.SM ID
+of a child process of the calling process and the child process is
+not in the same session as the calling process.
+.IP
+The value of 
+.I pgrp
+does not match the process
+.SM ID
+of the process indicated by 
+.I pid 
+and there is no process with a process group
+.SM ID
+that matches the value of 
+.I pgrp 
+in the same session as the
+calling process.
+.IP
+The requested process has a different effective user
+.SM ID
+from that of the calling process and is not a descendent
+of the calling process.
+.IP
+The calling process is already a process group leader
+.IP
+The process
+.SM ID
+of the calling process equals
+the process group
+.SM ID
+of a different process.
+.TP
+.SM ESRCH
+The value of
+.I pid 
+does not match the process
+.SM ID
+of the calling process or of a child process of the calling
+process.
+.IP
+The requested process does not exist.
+.SH "SEE ALSO"
+.BR csh (1),
+.BR intro (2),
+.BR execve (2V),
+.BR fork (2V),
+.BR getpid (2V),
+.BR getuid (2V),
+.BR kill (2V),
+.BR setpgid (2V),
+.BR signal (3V),
+.BR termio (4)

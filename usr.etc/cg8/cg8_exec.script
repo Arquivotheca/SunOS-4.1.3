@@ -1,0 +1,18 @@
+#!/bin/csh -f
+#
+# %Z%%M% %I% %E% SMI
+#
+if $3 != "0" then
+	(echo "/dev/cgeight0 block major number is $3") > /dev/console
+	(echo "the cgeight driver isn't supposed to have any block devices") > /dev/console
+endif
+
+if $4 != "0" then
+	if ( -r /dev/cgeight0 ) then
+		rm /dev/cgeight0
+	endif
+		
+	/etc/mknod /dev/cgeight0 c $4 0
+	chmod 666 /dev/cgeight0
+	cat /dev/cgeight0 >& /dev/null
+endif

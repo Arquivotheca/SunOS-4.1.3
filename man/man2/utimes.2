@@ -1,0 +1,115 @@
+.\" @(#)utimes.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH UTIMES 2 "21 January 1990"
+.SH NAME
+utimes \- set file times
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int utimes(file, tvp)
+char *file;
+struct timeval *tvp;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  utimes()  ""  "\fLutimes()\fP \(em set file times"
+.IX  "file system"  utimes()  ""  "\fLutimes()\fP \(em set file times"
+.IX  "change" "file access times \(em \fLutimes()\fR"
+.IX  "access times of file, change" "utimes" "" "\fLutimes()\fR"
+.LP
+.B utimes(\|)
+sets the access and modification times of the file named by
+.IR file .
+.LP
+If
+.I tvp
+is
+.SM NULL\s0,
+the access and modification times are set to the current time.  A
+process must be the owner of the file or have write permission for
+the file to use
+.B utimes(\|)
+in this manner.
+.LP
+If
+.I tvp
+is not
+.SM NULL\s0,
+it is assumed to point to an array of two
+.B timeval
+structures.  The access time is set to the value of the first member,
+and the modification time is set to the value of the second member.
+Only the owner of the file or the super-user may use
+.B utimes(\|)
+in this manner.
+.LP
+In either case, the
+.I inode-changed
+time of the file is set to the current time.
+.SH RETURN VALUES
+.LP
+.B utimes(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR file .
+.TP
+.SM EACCES
+The effective user
+.SM ID
+of the process is not super-user and not the owner of the file, write
+permission is denied for the file, and
+.I tvp
+is
+.SM NULL\s0.
+.TP
+.SM EFAULT
+.I file
+or
+.I tvp
+points outside the process's allocated address space.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR file .
+.TP
+.SM ENOENT
+The file referred to by
+.I file
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I file
+is not a directory.
+.TP
+.SM EPERM
+The effective user
+.SM ID
+of the process is not super-user and not the owner of the file, and
+.I tvp
+is not
+.SM NULL\s0.
+.TP
+.SM EROFS
+The file system containing the file is mounted read-only.
+.SH SEE ALSO
+.BR stat (2V)

@@ -1,0 +1,216 @@
+.\" @(#)graph.1g 1.1 92/07/30 SMI;
+.TH GRAPH 1G "9 September 1987"
+.SH NAME
+graph \- draw a graph
+.SH SYNOPSIS
+.B graph
+[
+.B \-a
+.I spacing
+[
+.I start
+]\|]\ \ [
+.B \-b
+]\ \ [
+.B \-c
+.I string
+]
+.if n .ti +0.5i
+[
+.B \-g
+.I gridstyle 
+]\ \ [
+.B \-l
+.I label 
+]
+.if t .ti +0.5i
+[
+.B \-m
+.I connectmode
+]
+.if n .ti +0.5i
+[
+.B \-s
+]\ \ [
+\fB\-x
+[
+.B l
+]
+.I lower
+[
+.I upper
+[
+.I spacing
+]\|]\|]
+.if n .ti +0.5i
+.if t .ti +0.5i
+[
+.B \-y
+[
+.B l
+]
+.I lower
+[
+.I upper
+[
+.I spacing
+]\|]\|]
+.if n .ti +0.5i
+[
+.B \-h
+.I fraction 
+]\ \ [
+.B \-w
+.I fraction
+]\ \ [
+.B \-r
+.I fraction
+]
+.if n .ti +0.5i
+.if t .ti +0.5i
+[
+.B \-u
+.I fraction 
+]\ \ [
+.B \-t
+] .\|.\|.
+.SH DESCRIPTION
+.IX "graph command"  ""  "\fLgraph\fP \(em draw graph"
+.IX "draw graph"
+.B graph
+with no options takes pairs of numbers from the standard input
+as abscissaes and ordinates of a graph. 
+Successive points are connected by straight lines. 
+The standard output from 
+.B graph
+contains plotting instructions (see
+.BR plot (5))
+suitable for input to 
+.BR plot (1G)
+or to the command
+.B "lpr \-g"
+(see 
+.BR lpr (1)).
+.LP
+If the coordinates of a point are followed by a nonnumeric string, that
+string is printed as a label beginning on the point.
+Labels may be surrounded with quotes
+\fB".\|.\|."\fR,
+in which case they may be empty or contain blanks
+and numbers; labels never contain
+.SM NEWLINE
+characters.
+.LP
+A legend indicating grid range is produced with a grid unless the
+.B \-s
+option is present.
+.SH OPTIONS
+.LP
+Each option is recognized as a separate argument.
+If a specified lower limit exceeds the
+upper limit, the axis is reversed.
+.TP 18
+.BI  \-a \ spacing [ " start " ]
+Supply abscissaes automatically (they are missing from
+the input);
+.I spacing
+is the spacing (default 1). 
+.I start
+is the starting point for automatic abscissaes
+(default 0 or lower limit given by
+.BR \-x ).
+.TP
+.B  \-b
+Break (disconnect) the graph after each label in the input.
+.TP
+.BI  \-c " string"
+.I String
+is the default label for each point.
+.TP
+.BI  \-g " gridstyle"
+.I Gridstyle
+is the grid style: 0 no grid, 1 frame with ticks, 2
+full grid (default).
+.TP
+.B  \-l
+.I label
+is label for graph.
+.TP
+.BI  \-m " connectmode"
+Mode (style) of connecting lines: 0 disconnected, 1
+connected (default).  Some devices give distinguishable line styles
+for other small integers.
+.TP
+.B  \-s
+Save screen, do not erase before plotting.
+.HP
+.BI "\-x [ l ] " lower " [ " upper 
+.BI [ " spacing " "] ]"
+.br
+If
+.B l
+is present,
+.I x
+axis is logarithmic.
+.IR lower " and " upper
+are lower (and upper)
+.IR x ""
+limits. 
+.IR spacing ,
+if present, is grid spacing on
+.I x
+axis.  Normally these quantities are determined automatically.
+.HP
+.BI "\-y [ l ] " lower " [ " upper 
+.BI [ " spacing " "] ]"
+.br
+If
+.B l
+is present,
+.I y
+axis is logarithmic.
+.IR lower " and " upper
+are lower (and upper)
+.IR y ""
+limits. 
+.IR spacing ,
+if present, is grid spacing on
+.I y
+axis.  Normally these quantities are determined automatically.
+.TP
+.BI  \-h " fraction"
+.I fraction
+of space for height.
+.TP
+.BI  \-w " fraction"
+.I fraction
+of space for width.
+.TP
+.BI  \-r " fraction"
+.I fraction
+of space to move right before plotting.
+.TP
+.BI  \-u " fraction"
+.I fraction
+of space to move up before plotting.
+.TP
+.B  \-t
+Transpose horizontal and vertical axes.
+Option
+.B \-x
+now applies to the vertical axis.
+.SH "SEE ALSO"
+.BR lpr (1),
+.BR plot (1G),
+.BR spline (1G)
+.br
+.ne 6
+.SH BUGS
+.LP
+.B graph
+stores all points internally and drops those for which there
+is no room.
+.LP
+Segments that run out of bounds are dropped, not windowed.
+.LP
+Logarithmic axes may not be reversed.

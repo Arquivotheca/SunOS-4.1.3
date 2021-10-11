@@ -1,0 +1,142 @@
+.\" @(#)acct.2v 1.1 92/07/30 SMI; from UCB 4.2 and S5
+.TH ACCT 2V "21 January 1990"
+.SH NAME
+acct \- turn accounting on or off
+.SH SYNOPSIS
+.nf
+.ft B
+int acct (path)
+char \(**path;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  acct() "" "\fLacct()\fP \(em process accounting on or off"
+.IX  "system operation support"  "process accounting \(em \fLacct()\fR"
+.IX  accounting  "process accounting, turn on or off \(em \fLacct()\fR"
+.LP
+.B acct(\|)
+is used to enable or disable the process accounting.
+If process accounting is enabled, an accounting record will be written on an
+accounting file for each process that terminates.
+Termination can be caused by one of two things: an
+.B exit(\|)
+call or a signal; see
+.B exit (2V)
+and
+.BR sigvec (2).
+The effective user
+.SM ID
+of the calling process must be super-user to use this call.
+.LP
+.I path
+points to a path name naming the accounting file.
+The accounting file format is given in
+.BR acct (5).
+.LP
+The accounting routine is enabled if
+.I path
+is not a
+.SM NULL
+pointer and no errors occur during the system call.
+It is disabled if
+.I path
+is a
+.SM NULL
+pointer and no errors occur during the system call.
+.LP
+If accounting is already turned on, and a successful
+.B acct(\|)
+call is made with a non-\s-1NULL\s0
+.IR path ,
+all subsequent accounting records will be written to the new accounting file.
+.SH SYSTEM V DESCRIPTION
+.LP
+If accounting is already turned on, 
+it is an error to call
+.B acct(\|)
+with a non-\s-1NULL\s0 path.
+.SH RETURN VALUES
+.LP
+acct(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.IP
+The file referred to by
+.I path
+is not a regular file.
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EINVAL
+Support for accounting was not configured into the system.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating the path name.
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The named file does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM EPERM
+The caller is not the super-user.
+.TP
+.SM EROFS
+The named file resides on a read-only file system.
+.SH SYSTEM V ERRORS
+.TP 20
+.SM EBUSY
+.I path
+is non-\s-1NULL\s0, and accounting is already turned on.
+.TP
+.SM ENOENT
+.I path
+points to an empty string.
+.SH "SEE ALSO"
+.BR exit (2V),
+.BR sigvec (2),
+.BR acct (5),
+.BR sa (8)
+.SH BUGS
+.LP
+No accounting records are produced for programs running when a crash occurs.
+In particular non-terminating programs are never accounted for.
+.SH NOTES
+.LP
+Accounting is automatically disabled when free space on the file system the
+accounting file resides on drops below 2 percent; it is enabled when
+free space rises above 4 percent.

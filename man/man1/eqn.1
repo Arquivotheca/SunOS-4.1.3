@@ -1,0 +1,370 @@
+'\" e
+.\" @(#)eqn.1 1.1 92/07/30 SMI; 
+.EQ
+delim $$
+.EN
+.TH EQN 1 "20 January 1988"
+.SH NAME
+eqn, neqn, checkeq \- typeset mathematics
+.SH SYNOPSIS
+.B eqn
+[
+.BI \-d xy
+] 
+[
+.BI \-f n
+] 
+[
+.BI \-p n
+] 
+[
+.BI \-s n
+] 
+[
+.I filename
+] .\|.\|.
+.LP
+.B neqn
+[
+.I filename
+] .\|.\|.
+.LP
+.B checkeq
+[
+.I filename
+] .\|.\|.
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "eqn command"  ""  "\fLeqn\fP \(em mathematical typesetting"
+.IX "neqn command"  ""  "\fLneqn\fP \(em mathematical typesetting"
+.IX "checkeq command"  ""  "\fLcheckeq\fP \(em check \fLeqn\fP constructs"
+.IX "document production" eqn "" "\fLeqn\fR \(em set mathematical equations"
+.LP
+.B eqn
+(and
+.BR neqn )
+are language processors to assist in
+describing equations.
+.B eqn
+is a preprocessor for
+.BR troff (1)
+and is intended for devices that can print 
+.BR troff 's
+output.
+.B neqn
+is a preprocessor for
+.BR nroff (1)
+and is intended for use with terminals.  Usage is almost always:
+.RS
+.sp .5
+.nf
+.ft B
+example% eqn \fIfilename\fP .\|.\|. | troff
+example% neqn \fIfilename\fP .\|.\|. | nroff
+.RE
+.ft R
+.fi
+.LP
+If no
+.IR filename s
+are specified, 
+.B eqn
+and
+.B neqn
+read from the standard input.
+A line beginning with
+.SB \&.EQ
+marks the start of an equation;
+the end of an equation is marked by a line beginning with
+.BR \&.\s-1EN\s0 .
+Neither of these lines is altered, so they may be defined in macro packages
+to get centering, numbering, etc.  It is also possible to set two characters
+as ``delimiters''; subsequent text between delimiters is also treated as
+.B eqn
+input.
+.LP
+.B checkeq
+reports missing or unbalanced delimiters and
+.SB \&.EQ/.EN
+pairs.
+.SH OPTIONS
+.TP
+.BI \-d "xy"
+Set equation delimiters set to characters
+.I x
+and
+.I y
+with the command-line argument.  The more common way to do this is with
+.BI delim xy
+between
+.SB \&.EQ
+and
+.BR \&.\s-1EN\s0 .
+The left and right delimiters may be identical.
+Delimiters are turned off by
+.B delim off
+appearing in the text.  All text
+that is neither between delimiters nor between
+.SB \&.EQ
+and
+.SB \&.EN
+is passed through untouched.
+.TP
+.BI \-f "n"
+Change font to
+.I n
+globally in the document.
+The font can also be changed globally in the body of the document
+by using the
+.B gfont
+directive.
+.TP
+.BI \-p "n"
+Reduce subscripts and superscripts by
+.I n
+point sizes from the
+previous size.  In the absence of the
+.B \-p
+option, subscripts and
+superscripts are reduced by 3 point sizes from the previous size.
+.TP
+.BI \-s "n"
+Change point size to
+.I n
+globally in the document.
+The point size can also be changed globally in the body of the document
+by using the
+.B gsize
+directive.
+.SH "EQN LANGUAGE"
+.LP
+Tokens within
+.B eqn
+are separated by
+braces, double quotes, tildes, circumflexes,
+.SM SPACE\s0,
+.SM TAB\s0,
+or
+.SM NEWLINE\s0
+characters.  Braces {\|} are used for grouping;
+generally speaking, anywhere a single character like
+.I x
+could appear, a
+complicated construction enclosed in braces may be used instead. 
+Tilde (\s+2\^~\^\s0) represents a full
+.SM SPACE
+in the output, circumflex (\s+2\^^\^\s0) half as much.
+.LP
+Subscripts and superscripts are produced with the keywords
+.B sub
+and
+.BR sup .
+Thus
+.RB ` "x sub i" '
+makes  $x sub i$ ,
+.RB ` "a sub i sup 2" '
+produces
+$a sub i sup 2$,
+and
+.RB ` "e sup {x sup 2 + y sup 2}" '
+gives
+$e sup {x sup 2 + y sup 2}$.
+.LP
+Fractions are made with
+.BR over :
+.RB ` "a over b" '
+yields
+$a over b$.
+.LP
+.B sqrt
+makes square roots:
+.RB ` "1 over sqrt {ax sup 2 +bx+c}" '
+results in
+$1 over sqrt {ax sup 2 +bx+c}$ .
+.LP
+The keywords
+.B from
+and
+.B to
+introduce lower and upper
+limits on arbitrary things:
+$lim from {n-> inf} sum from 0 to n x sub i$
+is made with
+.RB ` "lim from {n\-> inf } sum from 0 to n x sub i" '.
+.br
+.ne 5
+.LP
+Left and right brackets, braces, etc., of the right height are made with
+.B left
+and
+.BR right :
+.RB ` "left [ x sup 2 + y sup 2 over alpha right ] ~=~1" '
+produces
+$left [ x sup 2 + y sup 2 over alpha right ] ~=~1$.
+The
+.B right
+clause is optional.  Legal characters after
+.B left
+and
+.B right
+are braces, brackets, bars,
+.B c
+and
+.B f
+for ceiling and floor,
+and \fB""\fR for nothing at all (useful for a right-side-only bracket).
+.br
+.ne 4
+.LP
+Vertical piles of things are made with 
+.BR pile ,
+.BR lpile ,
+.BR cpile ,
+and
+.BR rpile :
+.RB ` "pile {a above b above c}" '
+produces
+$pile {a above b above c}$.
+There can be an arbitrary number of elements in a pile. 
+.B lpile
+left-justifies,
+.B pile
+and
+.B cpile
+center, with different vertical spacing, and
+.B rpile
+right justifies.
+.LP
+Matrices are made with
+.BR matrix :
+.RB ` "matrix { lcol { x sub i above y sub 2 } ccol { 1 above 2 } }" '
+produces
+$matrix { lcol { x sub i above y sub 2 } ccol { 1 above 2 } }$.
+In addition, there is
+.B rcol
+for a right-justified column.
+.LP
+Diacritical marks are made with
+.BR dot ,
+.BR dotdot ,
+.BR hat ,
+.BR tilde ,
+.BR bar ,
+.BR vec ,
+.BR dyad ,
+and
+.BR under :
+.RB ` "x dot = f(t) bar" '
+is
+$x dot = f(t) bar$,
+.RB ` "y dotdot bar ~=~ n under" '
+is
+$y dotdot bar ~=~ n under$,
+and
+.RB ` "x vec ~=~ y dyad" '
+is
+$x vec ~=~ y dyad$.
+.LP
+Sizes and font can be changed with
+.B size
+.I n
+or
+.B size
+.BI \(+- n,
+.BR roman ,
+.BR italic ,
+.BR bold ,
+and
+.BR font
+.IR n .
+Size and fonts can be changed globally in a document by
+.B gsize
+.I n
+and
+.B gfont
+.IR n ,
+or by the command-line arguments
+.BI \-s n
+and
+.BI \-f n\fR.
+.LP
+Successive display arguments can be lined up.  Place
+.B mark
+before the desired lineup point in the first equation; place
+.B lineup
+at the place that is to line up vertically in subsequent equations.
+.LP
+Shorthands may be defined or existing keywords redefined with
+.BI define :
+.IP
+.BI define " thing " % " replacement " %
+.LP
+defines a new token called
+.I thing
+which will be replaced by
+.I replacement
+whenever it appears thereafter.
+The
+.B %
+may be any character that does not occur in
+.IR replacement .
+.LP
+Keywords like
+.B sum
+.EQ
+( sum ),
+.EN
+.B int
+.EQ
+( int ),
+.EN
+.B inf
+.EQ
+( inf ),
+.EN
+and shorthands like
+.B >=
+.EQ
+(>=),
+.EN
+.B \->
+.EQ
+(->),
+.EN
+and
+.B !=
+.EQ
+( != )
+.EN
+are recognized.
+Greek letters are spelled out in the desired case, as in
+.B alpha
+or
+.BR \s-1GAMMA\s0 .
+Mathematical words like sin, cos,
+and log are made Roman automatically.
+.BR troff (1)
+four-character escapes like \e(bu (\^\(bu\^) can be used anywhere.
+Strings enclosed in double quotes
+\fB"\fP.\|.\|.\fB"\fP
+are passed through untouched;
+this permits keywords to be entered as text, and can be used to communicate
+with
+.B troff
+when all else fails.
+.SH "SEE ALSO"
+.BR tbl (1),
+.BR troff (1),
+.BR eqnchar (7),
+.BR ms (7)
+.LP
+.TX DOCS
+.SH BUGS
+To embolden digits, parens, etc., it is necessary to quote them,
+as in `\fBbold "12.3"\fP'.

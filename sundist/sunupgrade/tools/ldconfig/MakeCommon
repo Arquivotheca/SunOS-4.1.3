@@ -1,0 +1,90 @@
+#
+# @(#)MakeCommon 1.25 89/11/08 SMI
+#
+LDSO = ld.so
+# BINS = ldconfig ld.so
+BINS = ldconfig 
+MID = .
+# LD_DIR 	= ../../ld
+HDRS = ${RTLDHDRS} ${LDHDRS}
+# ./assym.h
+
+# LDSO_OBJS = rtldlib.o rtld.o rtsubrs.o cache_rtld.o cache_common.o verscmp.o\
+# errors.o
+
+LDCONFIG_OBJS = ldconfig.o cache_common.o verscmp.o
+LDCONFIG_C = ldconfig.c cache_common.c 
+LD_C=verscmp.c
+RTLDHDRS=rtld.h cache.h
+LDHDRS=dynamic.h reloc_info.h
+
+CHECK_OBJS = check_stack.o
+m-mc68010 = sun
+m-mc68020 = sun
+m-sparc = sparc
+MD = $(m$(TARGET_MACH))
+d-mc68020 = m68k
+d-mc68010 = m68k
+d-sparc = sparc
+MACH = $(d$(TARGET_MACH))
+arch-sun2=SUN2
+arch-sun3=SUN3
+arch-sun3x=SUN3
+arch-sun4=SUN4
+arch-sun4c=SUN4
+TARGET = $(arch$(TARGET_ARCH))
+
+INCLUDE	= -I.. -I../../ld
+CPPFLAGS += -DPIC -I.. $(INCLUDE)
+LINTFLAGS += -bx $(INCLUDE)
+CCFLAGS += -O3 -D$(MD) -DSUN2=0 -DSUN3=1 -DSUN4=2\
+			 -DTARGET=$(TARGET) $(INCLUDE) 
+CFLAGS	+= -pic $(CCFLAGS)
+ASFLAGS += -k
+CPP = /lib/cpp
+ 
+check_stack.o ldconfig.o rtldlib.o rtld.o rtsubrs.o cache_rtld.o \
+	cache_common.o errors.o := \
+	DIR = $(MID)
+
+verscmp.o := DIR = $(LD_DIR)
+
+# errors.o := CFLAGS += -R
+
+ldconfig := LDFLAGS += -n -Bstatic
+
+ldconfig:	$(HDRS) $(LDCONFIG_OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(LDCONFIG_OBJS) 
+	
+${RTLDHDRS}: 
+	cp ../../../../lang/rtld/$@ .
+
+${LDHDRS}: 
+	cp ../../../../lang/ld/$@ .
+
+${LDCONFIG_C}:
+	cp ../../../../lang/rtld/$@ .
+
+${LD_C}:
+	cp ../../../../lang/ld/$@ .
+
+
+%.o: $$(DIR)/%.c
+	${CC} ${CFLAGS} -c $<
+
+%.o: %.s
+	${CPP} ${CPPFLAGS}  $< > tmp.s
+	${AS} ${ASFLAGS}  tmp.s
+	mv -f a.out $*.o
+	rm -f tmp.s
+
+# assym.h : ./genassym.c
+#	${CC} ${CFLAGS} $(MID)/genassym.c
+#	a.out >$@
+#	rm a.out
+
+masterclean:	
+	-rm -f ld.so ldconfig core *.o assym.h
+
+masterlint :
+	lint $(LINTFLAGS) $(CCFLAGS) $(RTLD_SRCS) $(LD_SRCS)

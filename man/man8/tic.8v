@@ -1,0 +1,257 @@
+.\" @(#)tic.8v 1.1 92/07/30 SMI; from S5R3
+.TH TIC 8V "17 November 1987"
+.SH NAME
+tic \- terminfo compiler
+.SH SYNOPSIS
+.BR tic
+.RB "[ " \-v\c
+.RI [ n "] ]"
+.RB [ \-c ]
+.I filename
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "tic command" "" "\fLtic\fP command"
+.LP
+.B tic
+compiles a
+.BR terminfo (5V)
+source file into the compiled format.
+The results are placed in the directory
+.BR /usr/share/lib/terminfo .
+The compiled format is used by the
+.BR curses (3V)
+library.
+.LP
+Each entry in the file describes the
+capabilities of a particular terminal.  When a
+.BI use= entry
+field is given in a terminal entry,
+.B tic
+reads in the binary (compiled)
+description of the indicated
+.I entry
+from
+.BR /usr/share/lib/terminfo
+to duplicate the contents of that entry within the one being
+compiled.  However, if an
+.I entry
+by that name is specified in
+.IR filename ,
+the entry in that source file is used first.
+Also, if a capability is defined in both entries, the definition
+in the current entry's source file is used.
+.LP
+If the environment variable
+.SB TERMINFO
+is set, that directory is searched and written to instead of
+.BR /usr/share/lib/terminfo .
+.SH OPTIONS
+.HP
+.BR \-v [\c
+.IR n ]
+.br
+Verbose.
+Display trace information on the standard error.
+The optional integer argument is a number from 1 to 10,
+inclusive, indicating the desired level of detail.  If
+\fIn\f1
+is omitted, the default is 1.
+.TP
+.B \-c
+Only check
+.I filename
+for errors.  Errors in
+.B use=
+links are not detected.
+.SH FILES
+.TP 25
+.B /usr/share/lib/terminfo/?/\(**
+compiled terminal description data base
+.SH "SEE ALSO"
+.BR fork (2V),
+.BR curses (3V),
+.BR curses (3V),
+.BR malloc (3V),
+.BR term (5),
+.BR terminfo (5V)
+.LP
+.SH BUGS
+Total compiled entries cannot exceed 4096 bytes.
+The name field cannot exceed 1024 bytes.
+.LP
+When the
+.B \-c
+option is used,
+duplicate terminal names will not be diagnosed; however, when
+.B \-c
+is not used, they will be.
+.LP
+For backward compatibility, cancelled capabilities will not be marked
+as such within the terminfo binary unless the entry name has a
+.RB ` + '
+within it.  Such terminal names are only used for inclusion with a
+.B use=
+field, and typically aren't used for actual terminal names.
+.SH DIAGNOSTICS
+Most diagnostic messages produced by
+.B tic
+are preceded with the approximate line number and the name of
+the entry being processed.
+.TP
+.BI mkdir " name " "returned bad status"
+The named directory could not be created.
+.TP
+.B "File does not start with terminal names in column one"
+The first thing seen in the file, after comments, must be
+the list of terminal names.
+.br
+.ne 3
+.TP
+.B Token after a seek(2) not \s-1NAMES\s0
+Somehow the file being compiled changed during the compilation.
+.br
+.ne 4
+.TP
+.B Not enough memory for use_list element
+.PD 0
+.TP
+.B Out of memory
+Not enough free memory was available
+.RB ( malloc (3V)
+failed).
+.PD
+.br
+.ne 3
+.TP
+.BI "Can't open " filename
+The named file could not be opened or created.
+.TP
+.BI "Error in writing " filename
+The named file could not be written to.
+.TP
+.BI Can't link " filename " to " filename"
+A link failed.
+.TP
+.BI "Error in re-reading compiled " filename
+The compiled file could not be read back in.
+.TP
+.B Premature \s-1EOF\s0
+The current entry ended prematurely.
+.TP
+.B Backspaced off beginning of line
+This error indicates something wrong happened within
+.BR tic .
+.TP
+.BI "Unknown Capability \- " filename
+The named invalid capability was found within the file.
+.TP
+.B Wrong type used for capability .\|.\|.
+For example, a string capability was given a numeric value.
+.TP
+.B Unknown token type
+Tokens must be followed by
+.RB ` @ '
+to cancel,
+.RB ` , '
+for booleans,
+.RB ` # '
+for numbers, or
+.RB ` = '
+for strings.
+.PD 0
+.TP
+.IB name ": bad term name"
+.TP
+.BI Line " n" ": Illegal terminal name \- " name
+.TP
+.B "Terminal names must start with a letter or digit"
+The given name was invalid. Names must
+not contain white space or slashes,
+and must begin with a letter or digit.
+.PD
+.TP
+.IB name ": terminal name too long."
+An extremely long terminal name was found.
+.TP
+.IB name ": terminal name too short."
+A one-letter name was found.
+.TP
+.IB name " defined in more than one entry. Entry being used is " name" .
+An entry was found more than once.
+.TP
+.BI "Terminal name " name " synonym for itself"
+A name was listed twice in the list of synonyms.
+.TP
+.B At least one synonym should begin with a letter.
+At least one of the names of the terminal should begin with a letter.
+.TP
+.IB "Illegal character \- " c
+The given invalid character was found in the input file.
+.TP
+.B Newline in middle of terminal name
+The trailing comma was probably left off of the list of names.
+.TP
+.B Missing comma
+A comma was missing.
+.TP
+.B Missing numeric value
+The number was missing after a numeric capability.
+.TP
+.B \s-1NULL\s0 string value
+The proper way to say that a string capability does not exist is
+to cancel it.
+.TP
+.B Very long string found.  Missing comma?
+Self-explanatory.
+.br
+.ne 8
+.TP
+.B Unknown option. Usage is:
+An invalid option was entered.
+.TP
+.B Too many file names.  Usage is:
+Self-explanatory.
+.TP
+.IB name " non-existent or permission denied"
+The given directory could not be written into.
+.TP
+.IB name " is not a directory"
+Self-explanatory.
+.TP
+.IB name ": Permission denied"
+Access denied.
+.TP
+.IB name ": Not a directory"
+.B tic
+wanted to use the given name as a directory, but it already
+exists as a file
+.TP
+.B \s-1SYSTEM ERROR\s0!! Fork failed!!!
+A
+.BR fork (2V)
+failed.
+.TP
+.B Error in following up use-links.
+Either there is
+a loop in the links or they reference non-existent
+terminals.  The following is a list of the entries
+involved:
+.br
+.RS
+A
+.BR terminfo (5V)
+entry with a
+.BI use= name
+capability either referenced a
+non-existent terminal called
+.I filename
+or
+.I filename
+somehow referred back to the given entry.
+.RE

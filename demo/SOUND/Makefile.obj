@@ -1,0 +1,113 @@
+#
+# @(#)Makefile.obj	1.1	92/07/30 SMI
+#
+
+.KEEP_STATE:
+
+OPENWINHOME:sh = echo ${OPENWINHOME:-/usr/openwin}
+
+# source files in this directory
+XTOOLSRC = soundtool.c gaintool.c gaintool_ui.c
+PROGSRC = play.c record.c raw2audio.c
+
+HDRS = libaudio.h audio_device.h audio_errno.h audio_filehdr.h audio_hdr.h \
+	archdep.h ulaw2linear.h
+
+#XTOOLS = $(XTOOLSRC:%.c=%)
+XTOOLS = soundtool gaintool
+PROGS = $(PROGSRC:%.c=%) $(XTOOLS)
+
+LIBAUDIO = libaudio.a
+LINTS = llib-llibaudio.ln
+MAN3 = audio_intro.3 audio_hdr.3 audio_device.3 audio_filehdr.3 \
+	audio_misc.3 audio_convert.3 audio_ulaw2linear.3
+
+
+# compile options
+INCLUDE =
+CPPFLAGS = -I. $(INCLUDE)
+CFLAGS = -g -I$(OPENWINHOME)/share/include -I. -DMAIN
+LDFLAGS =
+LDLIBS = -L. $(LIBAUDIO) -L$(OPENWINHOME)/lib -lxview -lolgx -lX -lm
+
+# default rule builds the programs in this directory
+all default: soundtool gaintool play record raw2audio
+
+soundtool: soundtool.c
+	cc $(CFLAGS)  soundtool.c $(LDLIBS) -o soundtool
+	
+gaintool: gaintool.o gaintool_ui.o
+	cc $(CFLAGS)  gaintool.o gaintool_ui.o $(LDLIBS) -o gaintool
+	
+play: play.c
+	cc $(CFLAGS)  play.c -L. libaudio.a -lm -o play
+
+record: record.c
+	cc $(CFLAGS)  record.c -lm -L. libaudio.a -o record
+
+raw2audio: raw2audio.c
+	cc $(CFLAGS)  raw2audio.c -lm -L. libaudio.a -o raw2audio
+
+#gaintool.o: gaintool.c gaintool_ui.h
+#gaintool_ui.o: gaintool_ui.c 
+
+# install directories and targets
+DESTDIR =
+DESTBIN = $(DESTDIR)/usr/bin
+DESTLIB = $(DESTDIR)/usr/lib
+DESTLINT = $(DESTDIR)/usr/lib/lint
+DESTHDR = $(DESTDIR)/usr/include/multimedia
+DESTMAN = $(DESTDIR)/usr/share/man
+DESTMAN3 = $(DESTMAN)/man3
+WHATIS = $(DESTMAN)/whatis
+
+INSPROGS = $(DESTBIN) $(PROGS:%=$(DESTBIN)/%)
+INSLIBS = $(DESTLIB) $(LIBAUDIO:%=$(DESTLIB)/%)
+INSLINTS = $(DESTLINT) $(LINTS:%=$(DESTLINT)/%)
+INSHDRS = $(DESTHDR) $(HDRS:%=$(DESTHDR)/%)
+INSMANS = $(DESTMAN3) $(MAN3:%=$(DESTMAN3)/%)
+
+OWNER = bin
+INSTALL = install -o $(OWNER)
+
+install: install_progs install_libs install_h install_man
+install_progs: $(INSPROGS)
+install_libs: $(INSLIBS) $(INSLINTS)
+install_h: $(INSHDRS)
+install_man: $(INSMANS) $(WHATIS)
+
+# install rules
+$(DESTBIN)/%: %
+	$(INSTALL) -m 755 $< $(DESTBIN)
+
+$(DESTLIB)/%: %
+	$(INSTALL) -m 644 $< $(DESTLIB)
+	ranlib $@
+
+$(DESTLINT)/%: %
+	$(INSTALL) -m 644 $< $(DESTLINT)
+
+$(DESTHDR)/%: multimedia/%
+	$(INSTALL) -m 644 $< $(DESTHDR)
+
+$(DESTMAN3)/%: man3/%
+	$(INSTALL) -m 644 $< $(DESTMAN3)
+
+# if any man pages were installed, remake the whatis file
+$(WHATIS): $(INSMANS)
+	@if test ! -z "$?"; then				\
+		echo "Making $@";				\
+		$(RM) $@;					\
+		catman -w -M $(DESTMAN);			\
+		chmod 644 $@;					\
+	fi
+
+
+# Rule to ensure that target directories exist
+$(DESTBIN) $(DESTLIB) $(DESTLINT) $(DESTHDR) $(DESTMAN3):
+	?install -d $(IFLAGS) -m 775 $@
+
+
+clean:
+	$(RM) $(PROGS) *.o a.out core
+

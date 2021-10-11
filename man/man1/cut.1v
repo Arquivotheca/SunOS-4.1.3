@@ -1,0 +1,173 @@
+.\" @(#)cut.1v 1.1 92/07/30 SMI; from S5R3
+.TH CUT 1V "16 September 1989"
+.SH NAME
+cut \- remove selected fields from each line of a file
+.SH SYNOPSIS
+.B cut 
+.BI \-c \|list 
+[
+.I filename
+\&.\|.\|.
+]
+.LP
+.B cut 
+.BI \-f \|list 
+[
+.BI \-d c
+] 
+[
+.B \-s
+] 
+[
+.I filename
+\&.\|.\|.
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  cut  ""  "\fLcut\fP \(em remove columns from file"
+.IX  files  "cut command"  files  "\fLcut\fP \(em remove columns from"
+.IX  columns  "remove from file"
+.IX  remove  "columns from file"
+.IX  delete  "columns from file"
+.LP
+Use
+.B cut
+to cut out columns from a table or 
+fields from each line of a file; in data base parlance, it implements
+the projection of a relation.
+The fields as specified by
+.I list
+can be of fixed length,
+(such as on a punched card),
+or of variable length between lines.  They can
+be marked with a field delimiter character, such as
+.SM TAB
+(as specified with the
+.B \-d
+option).
+.B cut
+can be used as a filter;
+if no files are given, the standard input is used.
+In addition,
+a file name of
+.RB ` \- '
+explicitly refers to the standard input.
+.SH OPTIONS
+.TP 
+.BI \-c \|list
+By character position.
+.I list
+is a comma-separated list of integer field numbers (in increasing order),
+with an optional
+.RB ` \- '
+to indicate ranges:
+.RS
+.TP
+.PD 0
+.B 1,4,7 
+characters 1, 4 and 7
+.TP
+.BR 1\-3,8 
+characters 1 through 3, and 8
+.TP
+.B \-5,10
+characters (1) through 5, and 10
+.TP
+.B 3\-
+characters 3 through (last)
+.PD
+.RE
+.TP
+.BI \-f \|list
+By field position.
+Instead of character positions,
+.I list 
+specifies fields that are separated a delimiter (normally a
+.SM TAB\s0):
+.RS
+.TP
+.B 1,4,7 
+fields 1, 4 and 7
+.RE
+.IP
+Lines with no field delimiters are normally passed through intact (to
+allow for subheadings).
+.TP
+.BI \-d c
+Set the field delimiter to
+.IR c  .
+The default is a
+.SM TAB\s0.
+Characters with special meaning to the shell such as a
+.SM TAB
+or
+.SM SPACE
+characters,
+must be quoted.
+.TP
+.B \-s
+Suppress lines with no delimiter characters.
+.SH EXAMPLES
+.TP 12
+.B " cut \-d: \-f1,5 /etc/passwd"
+Mapping of user
+.SM ID\s0s
+to names.
+.TP
+\fBname=\*`who am i | cut \-f1 \-d" "\*`\fP
+Set 
+.B name
+to the current login name.
+.SH SEE ALSO
+.BR grep (1V),
+.BR paste (1V)
+.SH DIAGNOSTICS
+.PD 0
+.TP 12
+.B "\s-1ERROR\s0:  line too long"
+A line can have no more than 1023 characters or fields.
+.TP
+.B "\s-1ERROR\s0:  bad list for c\|/\|f option"
+Missing 
+.B \-c
+or 
+.B \-f
+option or incorrectly specified
+.IR list .
+No error occurs if a line has fewer fields than the
+.I list
+calls for.
+.TP
+.B "\s-1ERROR\s0:  no fields"
+The
+.I list
+is empty.
+.TP
+.B "\s-1ERROR\s0:  no delimiter"
+Missing
+.I char
+on
+.B \-d
+option.
+.TP
+.B "\s-1ERROR\s0:  cannot handle multiple adjacent backspaces"
+Adjacent backspaces cannot be processed correctly.
+.br
+.ne 3
+.TP
+.BI "\s-1WARNING\s0:  cannot open " filename ": " reason
+Either
+.I filename
+cannot be read or does not exist.
+If multiple filenames are present, processing continues.
+.TP
+.BI "\s-1WARNING\s0:  I/O error reading " filename ": " reason
+An I/O error occurred when reading
+.IR filename .
+If multiple filenames are present, processing continues.

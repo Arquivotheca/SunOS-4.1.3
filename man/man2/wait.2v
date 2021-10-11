@@ -1,0 +1,660 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)wait.2v 1.1 92/07/30 SMI; from UCB 4.3
+.\" TODO
+.\" Rearrange the s5 info.  This may become a 2V page.
+.TH WAIT 2V "21 January 1990"
+.SH NAME
+wait, wait3, wait4, waitpid, WIFSTOPPED, WIFSIGNALED, WIFEXITED, WEXITSTATUS, WTERMSIG, WSTOPSIG \- wait for process to terminate or stop, examine returned status
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/wait.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int wait(statusp)
+int *statusp;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int waitpid(pid, statusp, options)
+int pid;
+int *statusp;
+int options;
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <sys/time.h>
+#include <sys/resource.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int wait3(statusp, options, rusage)
+int *statusp;
+int options;
+struct rusage *rusage;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int wait4(pid, statusp, options, rusage)
+int pid;
+int *statusp;
+int options;
+struct rusage *rusage;
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1WIFSTOPPED\s0(status)
+int status;
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1WIFSIGNALED\s0(status)
+int status;
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1WIFEXITED\s0(status)
+int status
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1WEXITSTATUS\s0(status)
+int status
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1WTERMSIG\s0(status)
+int status
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1WSTOPSIG\s0(status)
+int status
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/wait.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+pid_t wait(statusp)
+int *statusp;
+.ft
+.fi
+.LP
+.nf
+.ft B
+pid_t waitpid(pid, statusp, options)
+pid_t pid;
+int *statusp;
+int options;
+.ft
+.fi
+.br
+.ne 8
+.SH DESCRIPTION
+.IX  wait()  ""  \fLwait()\fP
+.IX  "processes and protection"  wait()  ""  \fLwait()\fP
+.IX  wait3()  ""  \fLwait3\fP
+.IX  "processes and protection"  wait3()  ""  \fLwait3()\fP
+.IX  wait4()  ""  \fLwait4()\fP
+.IX  "processes and protection"  wait4()  ""  \fLwait4()\fP
+.LP
+.B wait(\|)
+delays its caller until a signal is received or
+one of its child
+processes terminates or stops due to tracing.
+If any child has died or stopped due to tracing and this has not been
+reported using
+.BR wait(\|) ,
+return is immediate, returning the process
+.SM ID
+and exit status of one of those children.
+If that child had died, it is discarded.
+If there are no children, return is immediate with
+the value \-1 returned.
+If there are only running or stopped but reported children,
+the calling process is blocked.
+.LP
+If
+.I statusp
+is not a
+.SM NULL
+pointer, then on return from a successful
+.B wait(\|)
+call the status of the child process whose process
+.SM ID
+is the return value of
+.B wait(\|)
+is stored in the location
+pointed to by
+.IR statusp .
+It indicates the cause of termination and other information about the
+terminated process in the following manner:
+.RS
+.TP 3
+\(bu
+If the first byte (the low-order 8 bits)
+are equal to 0177, the child process has stopped.
+The next byte
+contains the number of the signal that caused the process to stop.
+See
+.BR ptrace (2)
+and
+.BR sigvec (2).
+.TP
+\(bu
+If the first byte (the low-order 8 bits)
+are non-zero and are not equal to 0177, the child process terminated
+due to a signal.
+The low-order 7 bits
+contain the number of the signal that terminated the process.
+In addition, if the low-order seventh bit
+(that is, bit 0200) is set, a ``core image'' of the process was produced
+(see
+.BR sigvec (2)).
+.TP
+\(bu
+Otherwise, the child process terminated due to a call to
+.BR exit (2V).
+The next byte
+contains the low-order 8 bits of the argument that the child process
+passed to
+.BR exit(\|) .
+.RE
+.br
+.ne 5
+.LP
+.B waitpid(\|)
+behaves identically to 
+.B wait(\|)
+if 
+.I pid 
+has a value of \-1 and 
+.I options 
+has a value of zero.
+Otherwise, 
+the behavior of
+.B waitpid(\|)
+is modified by the values
+of 
+.I pid
+and
+.I options
+as follows:
+.LP
+.I pid 
+specifies a set of child processes for which status is
+requested.
+.B waitpid(\|) 
+only returns the status of a child process from this set.
+.LP
+.RS
+.TP 3
+\(bu
+If
+.I pid
+is equal to \-1,
+status is requested for any child process. 
+In this repect,
+.B waitpid(\|)
+is then equivalent to
+.BR wait(\|) .
+.TP
+\(bu
+If
+.I pid
+is greater than zero,
+it specifies the process
+.SM ID
+of a single child process for which status is requested.
+.TP
+\(bu
+If
+.I pid
+is equal to zero,
+status is requested for any child process
+whose process group
+.SM ID
+is equal to that of the calling process.
+.TP
+\(bu
+If
+.I pid
+is less than \-1,
+status is requested for any child process 
+whose process group
+.SM ID
+is equal to the absolute value of
+.IR pid .
+.RE
+.LP
+.I options
+is constructed from the bitwise inclusive
+.SM OR
+of zero or more of the following flags,
+defined in the header
+.BR <sys/wait.h> :
+.LP
+.RS
+.TP
+.SB WNOHANG
+.B waitpid(\|)
+does not suspend execution of the 
+calling process if status is not immediately available for one 
+of the child processes specified by
+.IR pid .
+.TP
+.SB WUNTRACED
+The status of any 
+child processes specified by
+.I pid
+that are stopped, and whose 
+status has not yet been reported since they stopped,
+are also reported to the requesting process.
+.RE
+.LP
+.B wait3(\|)
+is an alternate interface that
+allows both non-blocking status collection and
+the collection of the status of children stopped by any means.
+The
+.I status
+parameter is defined as above.  The
+.I options
+parameter is used to indicate the call should not block if
+there are no processes that have status to report
+.RB ( \s-1\fBWNOHANG\s0 ),
+and/or that children of the current process that are stopped
+due to a
+.SM
+.BR SIGTTIN \s0,
+.SM
+.BR SIGTTOU \s0,
+.SM
+.BR SIGTSTP \s0,
+or
+.SB SIGSTOP
+signal are eligible to have
+their status reported as well
+.RB ( \s-1\fBWUNTRACED\s0 ).
+A terminated child is discarded after it reports status, and a stopped
+process will not report its status more than once.
+If
+.I rusage
+is not a
+.SM NULL
+pointer, a summary of the resources used by the terminated
+process and all its
+children is returned.  (This information is currently not available
+for stopped processes.)
+.LP
+When the
+.SB WNOHANG
+option is specified and no processes
+have status to report,
+.B wait3(\|)
+returns 0.  The
+.SB WNOHANG
+and
+.SB WUNTRACED
+options may be combined by
+.SM OR\s0ing
+the two values.
+.LP
+.B wait4(\|)
+is another alternate interface.  With a
+.I pid
+argument of 0, it is equivalent to
+.BR wait3(\|) .
+If
+.I pid
+has a nonzero value, then
+.B wait4(\|)
+returns status only for the indicated process
+.SM ID\s0,
+but not for any other child processes.
+.LP
+.SM
+.BR WIFSTOPPED \s0,
+.SM
+.BR WIFSIGNALED \s0,
+.SM
+.BR WIFEXITED \s0,
+.SM
+.BR WEXITSTATUS \s0,
+.SM
+.BR WTERMSIG \s0,
+and
+.SB WSTOPSIG
+are macros that take an argument
+.IR status ,
+of type
+.RB ` "int" ',
+as returned by
+.BR wait(\|) ,
+.BR wait3(\|) ,
+or
+.BR wait4(\|) .
+.SB WIFSTOPPED
+evaluates to true (1) when the process for which the
+.B wait(\|)
+call was made is stopped, or to false (0) otherwise.
+If
+\fB\s-1WIFSTOPPED\s0\fP(\fIstatus\fP)
+is non-zero,
+.SB WSTOPSIG
+evaluates to the number of the signal that caused the child process
+to stop.
+.SB WIFSIGNALED
+evaluates to true when the process was terminated with a signal.
+If
+\fB\s-1WIFSIGNALED\s0\fP(\fIstatus\fP)
+is non-zero,
+.SB WTERMSIG
+evaluates to the number of the signal that caused the termination
+of the child process.
+.SB WIFEXITED
+evaluates to true when the process exited by using an
+.BR exit (2V)
+call.
+If
+\fB\s-1WIFEXITED\s0\fP(\fIstatus\fP)
+is non-zero,
+.SB WEXITSTATUS
+evaluates to the low-order byte of the argument that the
+child process passed to
+.B _exit(\|)
+(see
+.BR exit (2V))
+or
+.BR exit (3),
+or the value the child process returned from
+.B main(\|)
+(see
+.BR execve (2V)).
+.LP
+If the information stored at the location pointed to by
+.I statusp
+was stored there by a call to 
+.B waitpid(\|) 
+that specified the
+.SB WUNTRACED
+flag, exactly one of the macros
+.BI \s-1WIFEXITED\s0(* statusp ),
+.BI \s-1WIFSIGNALED\s0(* statusp ),
+and
+.BI \s-1WIFSTOPPED\s0(* statusp )
+will evaluate to a non-zero value.
+If the information stored at the location pointed to
+by
+.I statusp
+was stored there by a call to 
+.B waitpid(\|)
+that did
+.I not
+specify the
+.SB WUNTRACED
+flag or by a call to 
+.BR wait(\|) ,
+exactly one of the macros
+.BI \s-1WIFEXITED\s0(* statusp )
+and
+.BI \s-1WIFSIGNALED\s0(* statusp )
+will evaluate to a non-zero value.
+.\" The following is raw POSIX.  SunOS systems currently do not define
+.\" any such "additional circumstances".
+.\"
+.\".LP
+.\"An implementation may define additional circumstances under which
+.\".B wait(\|)
+.\"or
+.\".B waitpid(\|)
+.\"reports status.
+.\"This does not occur unless the
+.\"calling process or one of its child processes explicitly makes use of a
+.\"nonstandard extension.
+.\"In these cases the interpretation of the
+.\"reported status is implementation-defined.
+.LP
+If a parent process terminates witout waiting for all of its child
+processes to terminate, the remaining child processes are assigned
+the parent process
+.SM ID
+of 1,
+corresponding to
+.BR init (8).
+.SH "RETURN VALUES"
+If
+.B wait(\|)
+or
+.B waitpid(\|)
+returns due to a stopped
+or terminated child process, the process ID of the child
+is returned to the calling process.  Otherwise, a value of \-1
+is returned and
+.B errno
+is set to indicate the error.
+.LP
+If 
+.B wait(\|)
+or
+.B waitpid(\|) 
+return due to the delivery of a signal to the calling process,
+a value of \-1 is
+returned and
+.B errno
+is set to 
+.SM EINTR\s0.
+If 
+.B waitpid(\|)
+function was invoked with
+.SB WNOHANG
+set in
+.IR options ,
+it has at least one child
+process specified by
+.I pid
+for which status is not available, and status
+is not available for any process specified by
+.IR pid ,
+a value of zero is returned.
+Otherwise, a value of \-1 is returned, and
+.B errno
+is set to indicate the error.
+.LP
+.B wait3(\|)
+and
+.B wait4(\|)
+return 0 if
+.SB WNOHANG
+is specified and there are
+no stopped or exited children, and return the process
+.SM ID
+of the
+child process if they return due to a stopped or terminated child
+process.  Otherwise, they return a value of \-1
+and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.BR wait(\|) ,
+.BR wait3(\|) ,
+or
+.BR wait4(\|)
+will fail and return immediately if one or more of the following
+are true:
+.TP 15
+.SM ECHILD
+The calling process has no existing unwaited-for
+child processes.
+.TP
+.SM EFAULT
+.I statusp
+or
+.I rusage
+points to an illegal address.
+.TP
+.SM EINTR
+The function was interrupted by a signal.
+The value of the location pointed to by
+.I statusp
+is undefined.
+.LP
+.B waitpid(\|) 
+may set
+.B errno
+to:
+.TP 15
+.SM ECHILD
+The process or process group specified by
+.I pid
+does not exist or is not a child of the calling process.
+.TP
+.SM EINTR
+The function was interrupted by a signal.
+The value of the location pointed to by
+.I statusp
+is undefined.
+.TP
+.SM EINVAL
+The value of 
+.I options 
+is not valid.
+.LP
+.BR wait(\|) ,
+.BR wait3(\|) ,
+and
+.BR wait4(\|)
+will terminate prematurely, return \-1, and set
+.B errno
+to:
+.SM EINTR
+upon the arrival of a signal whose
+.SB SV_INTERRUPT
+bit in its flags field is set (see
+.BR sigvec (2)
+and
+.BR siginterrupt (3V)).
+.BR signal (3V),
+in the System V compatibility library,
+sets this bit for any signal it catches.
+.SH SEE ALSO
+.BR exit (2V),
+.BR fork (2V),
+.BR getrusage (2),
+.BR ptrace (2),
+.BR sigvec (2),
+.BR pause (3V),
+.BR siginterrupt (3V),
+.BR signal (3V),
+.BR times (3V)
+.SH NOTES
+.LP
+If a parent process terminates without
+waiting on its children,
+the initialization process
+(process
+.SM ID
+= 1)
+inherits the children.
+.LP
+.BR wait(\|) ,
+.BR wait3(\|) ,
+and
+.B wait4(\|)
+are automatically restarted when a process receives a
+signal while awaiting termination of a child process, unless the
+.SB SV_INTERRUPT
+bit is set in the flags for that signal.
+.LP
+Previous SunOS releases used
+.B union wait *statusp
+and
+.B union wait status
+in place of
+.B int *statusp
+and
+.BR int status .
+The union contained a member
+.B w_status
+that could be treated in the same way as
+.IR status .
+.LP
+Other members of the
+.B wait
+union could be used to extract this information more conveniently:
+.RS
+.TP 3
+\(bu
+If the
+.B w_stopval
+member had the value
+.SM
+.BR WSTOPPED \s0,
+the child process had stopped; the
+value of the
+.B w_stopsig
+member was the signal that stopped the process.
+.TP
+\(bu
+If the
+.B w_termsig
+member was non-zero, the child process terminated due to a signal; the
+value of the
+.B w_termsig
+member was the number of the signal that terminated the process.  If the
+.B w_coredump
+member was non-zero, a core dump was produced.
+.TP
+\(bu
+Otherwise, the child process terminated due to a call to
+.BR exit(\|) .
+The value of the
+.B w_retcode
+member was the low-order 8 bits of the argument that the child process
+passed to
+.BR exit(\|) .
+.RE
+.LP
+.B union wait
+is obsolete in light of the new specifications provided by
+.I "IEEE Std 1003.1-1988"
+and endorsed by
+.I SVID89
+and
+.IR XPG3 .
+SunOS Release 4.1 supports
+.B union wait
+for backward compatibility, but it will disappear in a future release.

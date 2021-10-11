@@ -1,0 +1,264 @@
+.\" @(#)passwd.5 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH PASSWD 5 "14 December 1987"
+.SH NAME
+passwd \- password file
+.SH SYNOPSIS
+.B /etc/passwd
+.SH DESCRIPTION
+.IX  "passwd file"  ""  "\fLpasswd\fP \(em password file"
+.LP
+The
+.B passwd
+file contains basic information about each
+user's account.  This file contains a one-line
+entry for each authorized user, of the form:
+.IP
+.nh
+.IB username : password : uid :\c
+.IB gid : gcos-field : home-dir :\c
+.I login-shell
+.hy
+.LP
+where
+.TP 15
+.I username
+is the user's login name.  This field contains
+no uppercase characters, and must not be more
+than eight characters in length.
+.TP
+.I password
+is the user's encrypted password,
+or a string of the form:
+.BI ## name
+if the encrypted password is in the
+.B /etc/security/passwd.adjunct
+file (see
+.BR passwd.adjunct (5)).
+If this field is empty,
+.BR login (1)
+does not request a password before logging the user in.
+.TP
+.I "uid"
+is the user's numerical
+.SM ID
+for the system, which must be unique.
+.I uid
+is generally a value between 0 and 32767.
+.TP
+.I gid
+is the numerical
+.SM ID
+of the group that the user belongs to.
+.I gid
+is generally a value between 0 an 32767.
+.TP
+.I "gcos-field"
+is the user's real name, along with
+information to pass along in
+a mail-message heading.  It is called the
+gcos-field for historical reasons.  A
+.B &
+in this field stands for the login
+name (in cases where the
+login name appears in a user's real name).
+.TP
+.I "home-dir"
+is the pathname to the directory in
+which the user is initially
+positioned upon logging in.
+.TP
+.I login-shell
+is the user's initial shell program.
+If this field is empty, the
+default shell is
+.BR /usr/bin/sh .
+.LP
+The
+.B passwd
+file can also have lines beginning with a
+.RB ` + '
+(plus sign)
+which means to incorporate entries from the 
+Network Information Service
+(\s-1NIS\s0).
+There are three styles of
+.B +
+entries in this file: by itself,
+.B +
+means to insert the entire contents
+of the 
+.SM NIS
+password file at that point;
+.BI + name
+means to insert the entry (if any) for
+.I name
+from the 
+.SM NIS
+service at that point;
+.BI +@ netgroup
+means to insert the entries for all members of the network group
+.B netgroup
+at that point.
+If a
+.BI + name
+entry has a non-null
+.IR password ,
+.SM
+.IR gcos ,
+.IR home-dir ,
+or
+.I login-shell
+field,
+the value of that field overrides what is
+contained in the 
+.SM NIS
+service.
+The
+.I uid
+and
+.I gid
+fields cannot be overridden.
+.LP
+The
+.B passwd
+file can also have lines beginning with a
+.RB ` \- '
+(minus sign)
+which means to disallow entries from the 
+.SM NIS
+service.
+There are two styles of
+.RB ` \- '
+entries in this file:
+.BI \- name
+means to disallow any subsequent entries (if any) for
+.IR name
+(in this file or in the 
+.SM NIS
+service);
+.BI \-@ netgroup
+means to disallow any subsequent entries
+for all members of the network group
+.IR netgroup .
+.LP
+The password file is an
+.SM ASCII
+file that resides in the
+.B /etc
+directory.  Because the encrypted
+passwords on a secure system are kept in the
+.B passwd.adjunct
+file,
+.B /etc/passwd
+has general read permission on all systems,
+and can be used by
+routines that map numerical user
+.SM ID\s0s
+to names.
+.LP
+Appropriate precautions must be taken to lock the
+.B /etc/passwd
+file against simultaneous changes if it
+is to be edited with a text editor;
+.BR vipw (8)
+does the necessary locking.
+.br
+.ne 8
+.SH EXAMPLE
+.LP
+Here is a sample
+.B passwd
+file when
+.B passwd.adjunct
+does not exist:
+.RS
+.LP
+.ft B
+.nf
+root:q.mJzTnu8icF.:0:10:God:/:/bin/csh
+fred:6k/7KCFRPNVXg:508:10:% Fredericks:/usr2/fred:/bin/csh
++john:
++@documentation:no-login:
++::::Guest
+.fi
+.ft R
+.LP
+.RE
+Here is a sample
+.B passwd
+file when
+.B passwd.adjunct
+does exist:
+.RS
+.LP
+.ft B
+.nf
+root:##root:0:10:God:/:/bin/csh
+fred:##fred:508:10:& Fredericks:/usr2/fred:/bin/csh
++john:
++@documentation:no-login:
++::::Guest
+.fi
+.ft R
+.LP
+.RE
+In this example, there are specific entries for users
+.B root
+and
+.BR fred ,
+to assure that they can log in even when
+the system is running standalone.  The user
+.B john
+will have his password entry in the 
+.SM NIS
+service incorporated without change; anyone in the netgroup
+.B documentation
+will have their password field disabled,
+and anyone else will be able to log in with
+their usual password,
+shell, and home directory, but with a
+gcos-field of
+.BR Guest .
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.TP
+.B /etc/security/passwd.adjunct
+.PD
+.SH "SEE ALSO"
+.BR login (1),
+.BR mail (1),
+.BR passwd (1),
+.BR crypt (3),
+.BR getpwent (3V),
+.BR group (5),
+.BR passwd.adjunct (5),
+.BR adduser (8),
+.BR sendmail (8),
+.BR vipw (8)
+.SH BUGS
+.LP
+.BR mail (1)
+and
+.BR sendmail (8)
+use the
+gcos-field to compose the
+.B From:
+line for addressing mail messages, but these programs get
+confused by nested parentheses when composing replies.
+This problem can be avoided by using different
+types of brackets within the
+gcos-field; for example:
+.RS
+.B
+(& Fredricks [Podunk U <\s-1EE/CIS\s0>] {818}-555-5555)
+.RE
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

@@ -1,0 +1,1256 @@
+'\" t
+.\" @(#)kb.4s 1.1 92/07/30 SMI;
+.\"
+.\" Unconditional section Head
+.\" Print, and remember the page number
+.\"
+.de UH
+.SH "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.nr %p \\n%
+..
+.\"
+.\" Conditional section Head
+.\" Print only if it's on a different page from the last one
+.\"
+.de CH
+.if !\\n%==\\n(%p .SH "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6" "\\$7" "\\$8" "\\$9"
+.nr %p \\n%
+..
+.TH KB 4S "25 June 1986"
+.SH NAME
+kb, kbd \- Sun keyboard
+.SH SYNOPSIS
+.B "pseudo-device kb\fInumber\fP"
+.SH DESCRIPTION
+.IX  "kbd device"  ""  "\fLkbd\fP \(em Sun keyboard"  ""  PAGE START
+.I kb
+provides access to the Sun workstation keyboard and its translation 
+tables.  Definitions for altering keyboard translation, and reading events
+from the keyboard, are in
+.B <sundev/kbio.h>
+and
+.BR <sundev/kbd.h> .
+\fInumber\fP specifies the maximum number of keyboards
+supported by the system.
+In addition, the kernel recognizes the special keyboard device
+.BR /dev/kbd ;
+it is a synonym for the system keyboard,
+which is physically attached to the system console.  This keyboard's
+keystrokes are normally treated as input to the
+.B /dev/console
+device.
+.LP
+The 
+.SM UNIX
+kernel recognizes which keys have been typed using a set of
+tables for each known type of keyboard.  Each translation table is
+an array of 128 bytes (unsigned characters).  
+If a character value is less than 0x80, it is treated as an
+.SM ASCII
+character (perhaps with the 
+.SM META
+bit included).  Higher values indicate special characters that invoke
+more complicated actions.
+.SS Keyboard Translation State
+The call KIOCTRANS controls the presence of keyboard translation,
+for which the following values are defined:
+.IX  "ioctls for keyboards"  "KIOCTRANS"  "\fLioctl\fP's for keyboards"  "\fLKIOCTRANS\fP \(em set keyboard translation"
+.IX  "KIOCTRANS set keyboard translation"  ""  "\fLKIOCTRANS\fP \(em set keyboard translation"
+.IX  "set keyboard translation ioctl"  ""  "set keyboard translation \fLioctl\fP \(em \fLKIOCTRANS\fP"
+.IX  "ioctls for keyboards"  "KIOCGTRANS"  "\fLioctl\fP's for keyboards"  "\fLKIOCGTRANS\fP \(em get keyboard translation"
+.IX  "KIOCGTRANS get keyboard translation"  ""  "\fLKIOCGTRANS\fP \(em get keyboard translation"
+.IX  "get keyboard translation ioctl"  ""  "get keyboard translation \fLioctl\fP \(em \fLKIOCGTRANS\fP"
+.LP
+.RS
+.ta \w'#define TR_UNTRANS_EVENT'u+2n
+.nf
+#define TR_NONE	0
+#define TR_ASCII	1
+#define TR_EVENT	2
+#define TR_UNTRANS_EVENT	3
+
+int x;
+err = ioctl(fd, KIOCTRANS, &x);
+.fi
+.DT
+.RE
+.LP
+When \fIx\fP is TR_NONE, keyboard translation is turned off and
+up/down key codes are reported.  Specifying \fIx\fP as TR_ASCII causes
+ASCII to be reported.  Specifying \fIx\fP as TR_EVENT causes
+\fIFirm_events\fP to be reported (see below).
+Specifying \fIx\fR as TR_UNTRANS_EVENT gives unencoded keyboard
+values for all input events within the window system.
+.SS Keyboard Translation-Table Entries
+.LP
+The call KIOCSETKEY changes a keyboard translation table entry,
+using the 
+.IR kiockey
+struct:
+.IX  "ioctls for keyboards"  "KIOCSETKEY"  "\fLioctl\fP's for keyboards"  "\fLKIOCSETKEY\fP \(em change translation table entry"
+.IX  "KIOCSETKEY change translation table entry"  ""  "\fLKIOCSETKEY\fP \(em change translation table entry"
+.IX  "change translation table entry ioctl"  ""  "change translation table entry \fLioctl\fP \(em \fLKIOCSETKEY\fP"
+.LP
+.RS
+.nf
+struct	kiockey {
+	int	kio_tablemask;	/* Translation table (one of: 0, CAPSMASK,
+				   SHIFTMASK, CTRLMASK, UPMASK) */
+#define KIOCABORT1	-1	/* Special "mask": abort1 keystation */
+#define KIOCABORT2	-2	/* Special "mask": abort2 keystation */
+	u_char	kio_station;	/* Physical keyboard key station (0-127) */
+	u_char	kio_entry;	/* Translation table station's entry */
+	char	kio_string[10];	/* Value for STRING entries (null terminated) */
+};
+
+struct kiockey key;
+err = ioctl(fd, KIOCSETKEY, &key);
+.fi
+.RE
+.LP
+To alter a keyboard translation-table entry,
+set \fIkio_tablemask\fP table's \fIkio_station\fP to \fIkio_entry\fP.
+Copy \fIkio_string\fP to the string table if \fIkio_entry\fP is between
+STRING and STRING+15.
+This call may return \%EINVAL if there are invalid arguments.
+.LP
+There are a couple special values of \fIkio_tablemask\fP that affect
+the two step ``break to the prom monitor'' sequence.
+The usual sequence is \fBSETUP\fR\-\fBa\fR or \fBL1\fR\-\fBa\fR.
+If \fIkio_tablemask\fP is KIOCABORT1 then the value of \fIkio_station\fP
+is set to be the first keystation in the sequence.
+If \fIkio_tablemask\fP is KIOCABORT2 then the value of \fIkio_station\fP
+is set to be the second keystation in the sequence.
+.LP
+The call KIOCGETKEY determines the current value of
+a keyboard translation table entry:
+.IX  "ioctls for keyboards"  "KIOCGETKEY"  "\fLioctl\fP's for keyboards"  "\fLKIOCGETKEY\fP \(em get translation table entry"
+.IX  "KIOCGETKEY get translation table entry"  ""  "\fLKIOCGETKEY\fP \(em get translation table entry"
+.IX  "get translation table entry ioctl"  ""  "get translation table entry \fLioctl\fP \(em \fLKIOCGETKEY\fP"
+.LP
+.RS
+.nf
+struct kiockey key;
+err = ioctl(fd, KIOCGETKEY, &key);
+.fi
+.RE
+.LP
+Get \fIkio_tablemask\fP table's \fIkio_station\fP to \fIkio_entry\fP.
+Get \fIkio_string\fP from string table if \fIkio_entry\fP is between
+STRING and STRING+15.
+This call may return EINVAL if there are invalid arguments.
+.SS Keyboard Type
+The call KIOCTYPE returns the type of the keyboard:
+.IX  "ioctls for keyboards"  "KIOCTYPE"  "\fLioctl\fP's for keyboards"  "\fLKIOCTYPE\fP \(em get keyboard type"
+.IX  "KIOCTYPE get keyboard type"  ""  "\fLKIOCTYPE\fP \(em get keyboard type"
+.IX  "get keyboard type ioctl"  ""  "get keyboard type \fLioctl\fP \(em \fLKIOCTYPE\fP"
+.LP
+.RS
+.nf
+#define	KB_KLUNK	0x00		/* Micro Switch 103SD32-2 */
+#define	KB_VT100	0x01		/* Keytronics VT100 compatible */
+#define	KB_SUN2	0x02		/* Sun-2 custom keyboard */
+#define	KB_SUN3	0x03		/* Sun-3 custom keyboard */
+#define	KB_ASCII	0x0F		/* ASCII terminal masquerading as kbd */
+
+int x;
+err = ioctl(fd, KIOCTYPE, &x);
+.fi
+.RE
+.LP
+When \fIx\fP is \-1, the keyboard type is unknown.
+.SS Reading From The Keyboard
+Normally, keystrokes are discarded, except for those typed at the system
+keyboard; those are translated and treated as input on the system
+console device
+.BR /dev/console .
+In order to read keystrokes directly, the call KIOCSDIRECT must be used to
+set the keyboard to ``direct input'' mode.  In this mode, keystrokes are
+translated and queued to be read by a process that has opened a keyboard
+device:
+.LP
+.RS
+.nf
+int on = 1;
+err = ioctl(fd, KIOCSDIRECT, &on);
+.fi
+.RE
+.LP
+The KIOCSDIRECT call turns ``direct input'' mode on or off, depending on
+whether the variable pointed to by its argument has the value 1 or 0.  The
+call KIOCGDIRECT sets the variable pointed to by its argument to the current
+state of this mode:
+.LP
+.RS
+.nf
+int direct_state;
+err = ioctl(fd, KIOCGDIRECT, &direct_state);
+.fi
+.RE
+.LP
+When the keyboard device is closed, ``direct mode'' is turned off.
+.IX  "ioctls for keyboards"  "KIOCSDIRECT"  "\fLioctl\fP's for keyboards"  "\fLKIOCSDIRECT\fP \(em set keyboard ``direct input'' state"
+.IX  "KIOCSDIRECT set keyboard ``direct input'' state"  ""  "\fLKIOCSDIRECT\fP \(em set keyboard ``direct input'' state"
+.IX  "set keyboard ``direct input'' state"  ""  "set keyboard ``direct input'' state \fLioctl\fP \(em \fLKIOCSDIRECT\fP"
+.IX  "ioctls for keyboards"  "KIOCGDIRECT"  "\fLioctl\fP's for keyboards"  "\fLKIOCGDIRECT\fP \(em get keyboard ``direct input'' state"
+.IX  "KIOCGDIRECT get keyboard ``direct input'' state"  ""  "\fLKIOCGDIRECT\fP \(em get keyboard ``direct input'' state"
+.IX  "get keyboard ``direct input'' state"  ""  "get keyboard ``direct input'' state \fLioctl\fP \(em \fLKIOCGDIRECT\fP"
+.SS Keyboard Commands
+The call KIOCCMD sends a command to the keyboard:
+.IX  "ioctls for keyboards"  "KIOCCMD"  "\fLioctl\fP's for keyboards"  "\fLKIOCCMD\fP \(em send a keyboard command"
+.IX  "KIOCCMD send a keyboard command"  ""  "\fLKIOCCMD\fP \(em send a keyboard command"
+.IX  "send a keyboard command ioctl"  ""  "send a keyboard command \fLioctl\fP \(em \fLKIOCCMD\fP"
+.RS
+.nf
+/*
+ * Commands to the Sun-2 keyboard.
+ */
+#define KBD_CMD_RESET 	0x01		/* Reset keyboard as if power-up */
+#define KBD_CMD_BELL  	0x02		/* Turn on the bell */
+#define KBD_CMD_NOBELL	0x03		/* Turn off the bell */
+
+/*
+ * Commands to the Sun-3 keyboard.  KBD_CMD_BELL & KBD_CMD_NOBELL work
+ * as well.
+ */
+#define KBD_CMD_CLICK  	0x0A		/* Turn on the click annunciator */
+#define KBD_CMD_NOCLICK	0x0B		/* Turn off the click annunciator */
+
+int x;
+err = ioctl(fd, KIOCCMD, &x);
+.fi
+.RE
+.LP
+Inappropriate commands for particular keyboard types are ignored.
+Since there is no reliable way to get the state of the bell or click
+(because we can't query the keyboard, and also because a process could
+do writes to the appropriate serial driver \(em thus going around this
+.IR ioctl )
+we don't provide an equivalent
+.I ioctl
+to query its state.
+.SS "Shift Masks"
+.LP
+When shift keys are pressed or locked, a different translation
+table is used to translate keyboard actions.  The shift
+mask indicates which translation table to use.  Since there may be 
+more than one bit in in the shift mask at any given time, they
+are prioritized as follows:
+.nr xx (\w'(No shift keys pressed or locked)'u+2n)/1n
+.TP \n(xx
+UPMASK 0x0080
+``Key Up'' translation table.
+.TP
+CTRLMASK 0x0030
+``Controlled'' translation table.
+.TP
+SHIFTMASK 0x000E
+``Shifted'' translation table.
+.TP
+CAPSMASK 0x0001
+``Caps Lock'' translation table.
+.TP
+(No shift keys pressed or locked)
+``Unshifted'' translation table.
+.LP
+That is:  if the event corresponds to a key-up, use the ``Key Up''
+table.  If the 
+.SM CTRL
+is down, use the ``Controlled'' table, and so on.
+.SS "Special-Entry Values"
+Special-entry values are classified according to the value of
+the high-order bits (with the exception of 
+.SM ALT,
+which is defined as 0x6).  The high-order value for each class is
+defined as a constant, as shown in the list below.  The value of
+the low-order bits, when added to this constant,  distinguishes 
+between keys within each class:
+.TP 20n
+SHIFTKEYS 0x80 
+A shift key.  The value of the particular shift
+key is added to determine which shift mask to apply:
+.RS
+.TP 20n
+CAPSLOCK 0
+"Caps Lock" key.
+.TP
+SHIFTLOCK 1
+"Shift Lock" key.
+.TP
+LEFTSHIFT 2
+Left-hand "Shift" key.
+.TP
+RIGHTSHIFT 3
+Right-hand "Shift" key.
+.TP
+LEFTCTRL 4
+Left-hand (or only) "Control" key.
+.TP
+RIGHTCTRL 5
+Right-hand "Control" key.
+.RE
+.TP
+BUCKYBITS 0x90
+Used to toggle mode-key-up/down status without altering the value of 
+an accompanying
+.SM ASCII
+character.  (The actual bit-position value, minus 7, is added.)
+.RS
+.TP 20n
+METABIT 0
+The "Meta" key was pressed along with the key.  This is the only
+user-accessible bucky bit.
+.TP
+SYSTEMBIT 1
+The "System" key was pressed.  This is a place holder to indicate
+which key is the system-abort key.
+.RE
+.TP
+FUNNY 0xA0
+Performs various functions depending on the value of the low 4
+bits:
+.RS
+.TP 20n
+NOP 0xA0
+Does nothing.
+.TP
+OOPS 0xA1
+Exists, but is undefined.
+.TP
+HOLE 0xA2
+There is no key in this position on the keyboard, and
+the position-code should not be used.
+.TP
+NOSCROLL 0xA3
+Alternately sends ^S and ^Q.
+.TP
+CTRLS 0xA4
+Sends ^S and toggles NOSCROLL key.
+.TP
+CTRLQ 0xA5
+Sends ^Q and toggles NOSCROLL key.
+.TP
+RESET 0xA6
+Keyboard reset.
+.TP
+ERROR 0xA7
+The keyboard driver detected an internal error.
+.TP
+IDLE 0xA8
+The keyboard is idle (no keys down).
+.TP
+0xA9 \(em 0xAF
+Reserved for nonparameterized functions.
+.RE
+.TP
+STRING 0xB0 \(em 0xBF
+The low-order bits index a table of strings.  Each null-terminated
+string is returned character by character.  The maximum length
+is defined as:
+.RS
+.IP
+KTAB_STRLEN 10
+.LP
+Individual string numbers are defined as:
+.nf
+HOMEARROW 0x00
+UPARROW 0x01
+DOWNARROW 0x02
+LEFTARROW 0x03
+RIGHTARROW 0x04
+.fi
+String numbers 5 \(em F are available for custom entries.
+.RE
+.SS Function Key Groups
+In the following groups, the low-order bits indicate the
+function key number within the group:
+.PP
+.ta \w'BOTTOMFUNC'u+2n
+.RS
+.nf
+LEFTFUNC	0xC0
+RIGHTFUNC	0xD0
+TOPFUNC	0xE0
+BOTTOMFUNC	0xF0
+.RI LF( n ")	(LEFTFUNC+(" n ")-1)"
+.RI RF( n ")	(RIGHTFUNC+(" n ")-1)"
+.RI TF( n ")	(TOPFUNC+(" n ")-1)"
+.RI BF( n ")	(BOTTOMFUNC+(" n ")-1)"
+.fi
+.RE
+.DT
+.PP
+There are 64 keys reserved for function keys.
+The actual positions may not be on left/right/top/bottom of the
+keyboard, although they usually are.
+.LP
+Normally, when a function key is pressed, the following escape
+sequence is sent:
+.RS
+<ESC>[0\|.\|.\|.\.\|9z
+.RE
+where <ESC> is a single escape character and "0\|.\|.\.\|9"
+indicates the decimal representation of the function-key value.
+.SH INDEX STRUCTURES
+There is a hierarchy of structures for accessing keyboard
+translation data.  The array
+.I keytables
+contains pointers to the translation data for each of the known
+keyboard types:
+.RS
+.nf
+struct keyboard *keytables[\|] = {
+	&keyindex_ms,
+	&keyindex_vt,
+	&keyindex_s2,
+	&keyindex_s3,
+};
+.fi
+.RE
+Each keyboard type is described by a
+.B "struct keyboard"
+that contains pointers to the five translation-tables 
+("Unshifted", "Shifted", "Caps Locked" "Controlled", and "Key Up") 
+associated with that type, plus bit-masks that indicate what
+state can persist with no keys pressed, and the key-pair used as
+the abort sequence for the system.
+.LP
+An array
+.I keystringtab
+contains the strings sent by various keys, and can be accessed
+by any translation:
+.LP
+.ne 7
+.ta 8n +\w'CAPSMASK+CTLSMASK,'u+2n
+.RS
+.nf
+#define kstescinit(c)   {'\e033', '[', 'c', '\e0'}
+char keystringtab[16][KTAB_STRLEN] = {
+	kstescinit(H),	/* home */
+	kstescinit(A),	/* up */
+	kstescinit(B),	/* down */
+	kstescinit(D),	/* left */
+	kstescinit(C),	/* right */
+};
+.fi
+.RE
+.ne 13
+.SS "Index Structure for the Sun-3 Keyboard"
+.ta 8n +\w'CAPSMASK+CTLSMASK,'u+2n
+.RS
+.nf
+static struct keyboard keyindex_s3 = {
+	&keytab_s3_lc,
+	&keytab_s3_uc,
+	&keytab_s3_cl,
+	&keytab_s3_ct,
+	&keytab_s3_up,
+	0x0000, 	/* Shift bits that stay on with idle keyboard */
+	0x0000, 	/* Bucky bits that stay on with idle keyboard */
+	0x01, 0x4d, 	/* Abort sequence  L1-A */
+	CAPSMASK,	/* Shift bits that toggle on down event */
+};
+.fi
+.RE
+.DT
+.ne 13
+.SS "Index Structure for the Sun-2 Keyboard"
+.ta 8n +\w'CAPSMASK+CTLSMASK,'u+2n
+.RS
+.nf
+static struct keyboard keyindex_s2 = {
+	&keytab_s2_lc,
+	&keytab_s2_uc,
+	&keytab_s2_cl,
+	&keytab_s2_ct,
+	&keytab_s2_up,
+	CAPSMASK,	/* Shift bits that stay on with idle keyboard */
+	0x0000, 	/* Bucky bits that stay on with idle keyboard */
+	0x01, 0x4d, 	/* Abort sequence L1-A */
+	0x0000, 	/* Shift bits that toggle on down event */
+};
+.fi
+.RE
+.DT
+.ne 13
+.SS "Index Structure for the Micro Switch 103SD32-2 Keyboard"
+.ta 8n +\w'CAPSMASK+CTLSMASK,'u+2n
+.RS
+.nf
+static struct keyboard keyindex_ms = {
+	&keytab_ms_lc,
+	&keytab_ms_uc,
+	&keytab_ms_cl,
+	&keytab_ms_ct,
+	&keytab_ms_up,
+	CTLSMASK,	/* Shift bits that stay on with idle keyboard */
+	0x0000, 	/* Bucky bits that stay on with idle keyboard */
+	0x01, 0x4d, 	/* Abort sequence L1-A */
+	0x0000, 	/* Shift bits that toggle on down event */
+};
+.fi
+.RE
+.DT
+.ne 13
+.SS Index Structure for the VT100-Style Keyboard
+.ta 8n +\w'CAPSMASK+CTLSMASK,'u+2n
+.RS
+.nf
+static struct keyboard keyindex_vt = {
+	&keytab_vt_lc,
+	&keytab_vt_uc,
+	&keytab_vt_cl,
+	&keytab_vt_ct,
+	&keytab_vt_up,
+	CAPSMASK+CTLSMASK,	/* Shift keys that stay on with idle keyboard */
+	0x0000, 	/* Bucky bits that stay on with idle keyboard */
+	0x01, 0x3b, 	/* Abort sequence SETUP-A */
+	0x0000, 	/* Shift bits that toggle on down event */
+};
+.fi
+.RE
+.DT
+.if t .ne 32
+.SH DEFAULT TRANSLATION TABLES
+.UH Sun-3 Keyboard
+.SS Unshifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	HOLE
+			SYSTEMBIT
+08	TF(3)	09	HOLE	0A	TF(4)	0B	HOLE	0C	TF(5)	0D	HOLE	0E	TF(6)	0F	HOLE
+10	TF(7)	11	TF(8)	12	TF(9)	13	ALT	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE	19	LF(3)	1A	LF(4)	1B	HOLE	1C	HOLE	1D	c('[')	1E	'1'	1F	'2'
+20	'3'	21	'4'	22	'5'	23	'6'	24	'7'	25	'8'	26	'9'	27	'0'
+28	'\-'	29	'='	2A	'`'	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	HOLE	33	LF(6)	34	HOLE	35	'\et'	36	'q'	37	'w'
+38	'e'	39	'r'	3A	't'	3B	'y'	3C	'u'	3D	'i'	3E	'o'	3F	'p'
+40	'['	41	']'	42	0x7F	43	HOLE	45	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	LF(40)	4B	HOLE	4C	SHIFTKEYS+	4D	'a'	4E	's'	4F	'd'
+									LEFTCTRL
+50	'f'	51	'g'	52	'h'	53	'j'	54	'k'	55	'l'	56	';'	57	'\e\''
+58	'\e'	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	'z'	65	'x'	66	'c'	67	'v'
+							LEFTSHIFT
+68	'b'	69	'n'	6A	'm'	6B	','	6C	'.'	6D	'/'	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	SHIFTKEYS+
+			DOWNARROW												CAPSLOCK
+78	BUCKYBITS+	79	'\ '	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT  				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-3 Keyboard
+.SS Shifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	HOLE
+			SYSTEMBIT
+08	TF(3)	09	HOLE	0A	TF(4)	0B	HOLE	0C	TF(5)	0D	HOLE	0E	TF(6)	0F	HOLE
+10	TF(7)	11	TF(8)	12	TF(9)	13	ALT	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE	19	LF(3)	1A	LF(4)	1B	HOLE	1C	HOLE	1D	c('[')	1E	'!'	1F	'@'
+20	'#'	21	'$'	22	'%'	23	'^'	24	'&'	25	'*'	26	'('	27	')'
+28	'_'	29	'+'	2A	'~'	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	HOLE	33	LF(6)	34	HOLE	35	'\et'	36	'Q'	37	'W'
+38	'E'	39	'R'	3A	'T'	3B	'Y'	3C	'U'	3D	'I'	3E	'O'	3F	'P'
+40	'{'	41	'}'	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	HOLE	4B	HOLE	4C	SHIFTKEYS+	4D	'A'	4E	'S'	4F	'D'
+									LEFTCTRL
+50	'F'	51	'G'	52	'H'	53	'J'	54	'K'	55	'L'	56	':'	57	'"'
+58	'|'	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	'Z'	65	'X'	66	'C'	67	'V'
+							LEFTSHIFT
+68	'B'	69	'N'	6A	'M'	6B	'<'	6C	'>'	6D	'?'	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	SHIFTKEYS+
+			DOWNARROW												CAPSLOCK
+78	BUCKYBITS+	79	'\ '	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT 				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-3 Keyboard
+.SS "Caps Locked"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	HOLE
+			SYSTEMBIT
+08	TF(3)	09	HOLE	0A	TF(4)	0B	HOLE	0C	TF(5)	0D	HOLE	0E	TF(6)	0F	HOLE
+10	TF(7)	11	TF(8)	12	TF(9)	13	ALT	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE	19	LF(3)	1A	LF(4)	1B	HOLE	1C	HOLE	1D	c('[')	1E	'1'	1F	'2'
+20	'3'	21	'4'	22	'5'	23	'6'	24	'7'	25	'8'	26	'9'	27	'0'
+28	'\-'	29	'='	2A	'`'	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	HOLE	33	LF(6)	34	HOLE	35	'\et'	36	'Q'	37	'W'
+38	'E'	39	'R'	3A	'T'	3B	'Y'	3C	'U'	3D	'I'	3E	'O'	3F	'P'
+40	'['	41	']'	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	HOLE	4B	HOLE	4C	SHIFTKEYS+	4D	'A'	4E	'S'	4F	'D'
+									LEFTCTRL
+50	'F'	51	'G'	52	'H'	53	'J'	54	'K'	55	'L'	56	';'	57	'\e\''
+58	'\e'	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	'Z'	65	'X'	66	'C'	67	'V'
+							LEFTSHIFT
+68	'B'	69	'N'	6A	'M'	6B	','	6C	'.'	6D	'/'	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	SHIFTKEYS+
+			DOWNARROW												CAPSLOCK
+78	BUCKYBITS+	79	'\ '	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-3 Keyboard
+.SS Controlled
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	HOLE
+			SYSTEMBIT
+08	TF(3)	09	HOLE	0A	TF(4)	0B	HOLE	0C	TF(5)	0D	HOLE	0E	TF(6)	0F	HOLE
+10	TF(7)	11	TF(8)	12	TF(9)	13	ALT	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE	19	LF(3)	1A	LF(4)	1B	HOLE	1C	HOLE	1D	c('[')	1E	'1'	1F	c('@')
+20	'3'	21	'4'	22	'5'	23	c('^')	24	'7'	25	'8'	26	'9'	27	'0'
+28	c('_')	29	'='	2A	c('^')	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	HOLE	33	LF(6)	34	HOLE	35	'\et'	36	c('q')	37	c('w')
+38	c('e')	39	c('r')	3A	c('t')	3B	c('y')	3C	c('u')	3D	c('i')	3E	c('o')	3F	c('p')
+40	c('[')	41	c(']')	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	HOLE	4B	HOLE	4C	SHIFTKEYS+	4D	c('a')	4E	c('s')	4F	c('d')
+									LEFTCTRL
+50	c('f')	51	c('g')	52	c('h')	53	c('j')	54	c('k')	55	c('l')	56	';'	57	'\e\''
+58	c('\e')	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	c('z')	65	c('x')	66	c('c')	67	c('v')
+							LEFTSHIFT
+68	c('b')	69	c('n')	6A	c('m')	6B	','	6C	'.'	6D	c('_')	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	SHIFTKEYS+
+			DOWNARROW												CAPSLOCK
+78	BUCKYBITS+	79	c('\ ')	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-3 Keyboard
+.SS "Key Up"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	OOPS	04	HOLE	05	OOPS	06	OOPS	07	HOLE
+			SYSTEMBIT
+08	OOPS	09	HOLE	0A	OOPS	0B	HOLE	0C	OOPS	0D	HOLE	0E	OOPS	0F	HOLE
+10	OOPS	11	OOPS	12	OOPS	13	OOPS	14	HOLE	15	OOPS	16	OOPS	17	NOP
+18	HOLE	19	OOPS	1A	OOPS	1B	HOLE	1C	HOLE	1D	NOP	1E	NOP	1F	NOP
+20	NOP	21	NOP	22	NOP	23	NOP	24	NOP	25	NOP	26	NOP	27	NOP
+28	NOP	29	NOP	2A	NOP	2B	NOP	2C	HOLE	2D	OOPS	2E	OOPS	2F	NOP
+30	HOLE	31	OOPS	32	HOLE	33	OOPS	34	HOLE	35	NOP	36	NOP	37	NOP
+38	NOP	39	NOP	3A	NOP	3B	NOP	3C	NOP	3D	NOP	3E	NOP	3F	NOP
+40	NOP	41	NOP	42	NOP	43	HOLE	44	OOPS	45	OOPS	46	NOP	47	HOLE
+48	OOPS	49	OOPS	4A	HOLE	4B	HOLE	4C	SHIFTKEYS+	4D	NOP	4E	NOP	4F	NOP
+									LEFTCTRL
+50	NOP	51	NOP	52	NOP	53	NOP	54	NOP	55	NOP	56	NOP	57	NOP
+58	NOP	59	NOP	5A	HOLE	5B	OOPS	5C	OOPS	5D	NOP	5E	HOLE	5F	OOPS
+60	OOPS	61	OOPS	62	HOLE	63	SHIFTKEYS+	64	NOP	65	NOP	66	NOP	67	NOP
+							LEFTSHIFT
+68	NOP	69	NOP	6A	NOP	6B	NOP	6C	NOP	6D	NOP	6E	SHIFTKEYS+	6F	NOP
+													RIGHTSHIFT
+70	OOPS	71	OOPS	72	NOP	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	NOP
+78	BUCKYBITS+	79	NOP	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	RESET
+	METABIT				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.UH Sun-2 Keyboard
+.SS Unshifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(11)	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(11)
+			SYSTEMBIT
+08	TF(3) 	09	TF(12)	0A	TF(4)	0B	TF(13)	0C	TF(5)	0D	TF(14)	0E	TF(6)	0F	TF(15)
+10	TF(7)	11	TF(8)	12	TF(9)	13	TF(10)	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE 	19	LF(3) 	1A	LF(4)	1B	LF(12)	1C	HOLE	1D	c('[')	1E	'1'	1F	'2'
+20	'3'	21	'4'	22	'5'	23	'6'	24	'7'	25	'8'	26	'9'	27	'0'
+28	'\-'	29	'='	2A	'`'	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	LF(13)	33	LF(6)	34	HOLE	35	'\et'	36	'q'	37	'w'
+38	'e'	39	'r'	3A	't'	3B	'y'	3C	'u'	3D	'i'	3E	'o'	3F	'p'
+40	'['	41	']'	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	LF(14)	4B	HOLE	4C	SHIFTKEYS+	4D	'a' 	4E	's'	4F	'd'
+									LEFTCTRL
+50	'f'	51	'g'	52	'h'	53	'j'	54	'k'	55	'l'	56	';'	57	'\e\''
+58	'\e'	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	'z'	65	'x'	66	'c'	67	'v'
+							LEFTSHIFT
+68	'b'	69	'n'	6A	'm'	6B	','	6C	'.'	6D	'/'	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+			DOWNARROW
+70	BUCKYBITS+	71	'\ '	72	BUCKYBITS+	73	HOLE	74	HOLE	75	HOLE	76	ERROR	77	IDLE
+	METABIT				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-2 Keyboard
+.SS Shifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(11)	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(11)
+			SYSTEMBIT
+08	TF(3) 	00	TF(12)	0A	TF(4)	0B	TF(13)	0C	TF(5)	0D	TF(14)	0E	TF(6)	0F	TF(15)
+10	TF(7)	11	TF(8)	12	TF(9)	13	TF(10)	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE 	19	LF(3) 	1A	LF(4)	1B	LF(12)	1C	HOLE	1D	c('[')	1E	'!'	1F	'@'
+20	'#'	21	'$'	22	'%'	23	'^'	24	'&'	25	'*'	26	'('	27	')'
+28	'_'	29	'+'	2A	'~'	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	LF(13)	33	LF(6)	34	HOLE	35	'\et'	36	'Q'	37	'W'
+38	'E'	39	'R'	3A	'T'	3B	'Y'	3C	'U'	3D	'I'	3E	'O'	3F	'P'
+40	'{'	41	'}'	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	LF(14)	4B	HOLE	4C	SHIFTKEYS+	4D	'A' 	4E	'S'	4F	'D'
+									LEFTCTRL
+50	'F'	51	'G'	52	'H'	53	'J'	54	'K'	55	'L'	56	':'	57	'"'
+58	'|'	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	'Z'	65	'X'	66	'C'	67	'V'
+							LEFTSHIFT
+68	'B'	69	'N'	6A	'M'	6B	'<'	6C	'>'	6D	'?'	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+			DOWNARROW
+78	BUCKYBITS+	79	'\ '	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT  				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-2 Keyboard
+.SS "Caps Locked"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(11)	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(11)
+			SYSTEMBIT
+08	TF(3)	09 	TF(12)	0A	TF(4)	0B	TF(13)	0C	TF(5)	0D	TF(14)	0E	TF(6)	0F	TF(15)
+10	TF(7)	11	TF(8)	12	TF(9)	13	TF(10)	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE	19 	LF(3)	1A 	LF(4)	1B	LF(12)	1C	HOLE	1D	c('[')	1E	'1'	1F	'2'
+20	'3'	21	'4'	22	'5'	23	'6'	24	'7'	25	'8'	26	'9'	27	'0'
+28	'\-'	29	'='	2A	'`'	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	LF(13)	33	LF(6)	34	HOLE	35	'\et'	36	'Q'	37	'W'
+38	'E'	39	'R'	3A	'T'	3B	'Y'	3C	'U'	3D	'I'	3E	'O'	3F	'P'
+40	'['	41	']'	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	LF(14)	4B	HOLE	4C	SHIFTKEYS+	4D	'A'	4E	'S'	4F	'D'
+									LEFTCTRL
+50	'F'	51	'G'	52	'H'	53	'J'	54	'K'	55	'L'	56	';'	57	'\e''
+58	'\e'	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+							LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	'Z'	65	'X'	66	'C'	67	'V'
+							LEFTSHIFT
+68	'B'	69	'N'	6A	'M'	6B	','	6C	'.'	6D	'/'	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+			DOWNARROW
+78	BUCKYBITS+	79	'\ '	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT				METABIT
+.TE
+.ps +3
+.vs +3
+.ne 25
+.CH Sun-2 Keyboard
+.SS Controlled
+.ps -3
+.vs -3
+.TS
+expand;
+c l c l c l c l c l c l c l c l .
+
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value 	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(11)	03	LF(2)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(11)
+08	TF(3)	09	TF(12)	0A	TF(4)	0B	TF(13)	0C	TF(5)	0D	TF(14)	0E	TF(6)	0F	TF(15)
+10	TF(7)	11	TF(8)	12	TF(9)	13	TF(10)	14	HOLE	15	RF(1)	16	RF(2)	17	RF(3)
+18	HOLE	19 	LF(3)	1A 	LF(4)	1B	LF(12)	1C	HOLE	1D	c('[')	1E	'1'	1F	c('@')
+20	'3'	21	'4'	22	'5'	23	c('^')	24	'7'	25	'8'	26	'9'	27	'0'
+28	c('_')	29	'='	2A	c('^')	2B	'\eb'	2C	HOLE	2D	RF(4)	2E	RF(5)	2F	RF(6)
+30	HOLE	31	LF(5)	32	LF(13)	33	LF(6)	34	HOLE	35	'\et'	36	c('q')	37	c('w')
+38	c('e')	39	c('r')	3A	c('t')	3B	c('y')	3C	c('u')	3D	c('i')	3E	c('o')	3F	c('p')
+40	c('[')	41	c(']')	42	0x7F	43	HOLE	44	RF(7)	45	STRING+	46	RF(9)	47	HOLE
+											UPARROW
+48	LF(7)	49	LF(8)	4A	LF(14)	4B	HOLE	4C	SHIFTKEYS+	4D	c('a')	4E	c('s')	4F	c('d')
+									LEFTCTRL
+50	c('f')	51	c('g')	52	c('h')	53	c('j')	54	c('k')	55	c('l')	56	';'	57	'\e\''
+58	c('\e')	59	'\er'	5A	HOLE	5B	STRING+	5C	RF(11)	5D	STRING+	5E	HOLE	5F	LF(9)
+								LEFTARROW				RIGHTARROW
+60	LF(15)	61	LF(10)	62	HOLE	63	SHIFTKEYS+	64	c('z')	65	c('x')	66	c('c')	67	c('v')
+							LEFTSHIFT
+68	c('b')	69	c('n')	6A	c('m')	6B	','	6C	'.'	6D	c('_')	6E	SHIFTKEYS+	6F	'\en'
+													RIGHTSHIFT
+70	RF(13)	71	STRING+	72	RF(15)	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+			DOWNARROW
+78	BUCKYBITS+	79	c('\ ')	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	ERROR	7F	IDLE
+	METABIT  				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Sun-2 Keyboard
+.SS "Key Up"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	OOPS	03	OOPS	04	HOLE	05	OOPS	06	OOPS	07	OOPS
+			SYSTEMBIT
+08	OOPS	09 	OOPS	0A 	OOPS	0B	OOPS	0C	OOPS	0D	OOPS	0E	OOPS	0F	OOPS
+10	OOPS	11 	OOPS	12 	OOPS	13	OOPS	14	HOLE	15	OOPS	16	OOPS	17	NOP
+18	HOLE	19 	OOPS	1A 	OOPS	1B	OOPS	1C	HOLE	1D	NOP	1E	NOP	1F	NOP
+20	NOP	21	NOP	22	NOP	23	NOP	24	NOP	25	NOP	26	NOP	27	NOP
+28	NOP	29	NOP	2A	NOP	2B	NOP	2C	HOLE	2D	OOPS	2E	OOPS	2F	NOP
+30	HOLE	31	OOPS	32	OOPS	33	OOPS	34	HOLE	35	NOP	36	NOP	37	NOP
+38	NOP	39	NOP	3A	NOP	3B	NOP	3C	NOP	3D	NOP	3E	NOP	3F	NOP
+40	NOP	41	NOP	42	NOP	43	HOLE	44	OOPS	45	OOPS	46	NOP	47	HOLE
+48	OOPS	49	OOPS	4A	OOPS	4B	HOLE	4C	SHIFTKEYS+	4D	NOP	4e 	NOP	4F	NOP
+									LEFTCTRL
+50	NOP	51	NOP	52	NOP	53	NOP	54	NOP	55	NOP	56	NOP	57	NOP
+58	NOP	59	NOP	5A	HOLE	5B	OOPS	5C	OOPS	5D	NOP	5E	HOLE	5F	OOPS
+60	OOPS	61	OOPS	62	HOLE	63	SHIFTKEYS+	64	NOP	65	NOP	66	NOP	67	NOP
+							LEFTSHIFT
+68	NOP	69	NOP	6A	NOP	6B	NOP	6C	NOP	6D	NOP	6E	SHIFTKEYS+	6F	NOP
+													RIGHTSHIFT
+70	OOPS	71	OOPS	72	NOP	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+78	BUCKYBITS+	79	NOP	7A	BUCKYBITS+	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	RESET
+	METABIT  				METABIT
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.UH Micro Switch 103SD32-2 Keyboard
+.SS Unshifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(2)	03	LF(3)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(3)
+			SYSTEMBIT
+08	TF(4)	09	TF(5)	0A	TF(6)	0B	TF(7)	0C	TF(8)	0D	TF(9)	0E	TF(10)	0F	TF(11)
+10	TF(12)	11	TF(13)	12	TF(14)	13	c('[')	14	HOLE	15	RF(1)	16	'+'	17	'\-'
+18	HOLE	19	LF(4)	1A	'\ef'	1B	LF(6)	1C	HOLE	1D	SHIFTKEYS+	1E	'1'	1F	'2'
+											CAPSLOCK
+20	'3'	21	'4'	22	'5'	23	'6'	24	'7'	25	'8'	26	'9'	27	'0'
+28	'\-'	29	'~'	2A	'`'	2B	'\eb'	2C	HOLE	2D	'7'	2E	'8'	2F	'9'
+30	HOLE	31	LF(7)	32	STRING+	33	LF(9)	34	HOLE	35	'\et'	36	'q'	37	'w'
+					UPARROW
+38	'e'	39	'r'	3A	't'	3B	'y'	3C	'u'	3D	'i'	3E	'o'	3F	'p'
+40	'{'	41	'}'	42	'_'	43	HOLE	44	'4'	45	'5'	46	'6'	47	HOLE
+48	STRING+	49	STRING+	4A	STRING+	4B	HOLE	4C	SHIFTKEYS+	4D	'a' 	4E	's'	4F	'd'
+	LEFTARROW		HOMEARROW		RIGHTARROW				SHIFTLOCK
+50	'f'	51	'g'	52	'h'	53	'j'	54	'k'	55	'l'	56	';'	57	':'
+58	'|'	59	'\er'	5A	HOLE	5B	'1'	5C	'2'	5D	'3'	5E	HOLE	5F	NOSCROLL
+60	STRING+	61	LF(15)	62	HOLE	63	HOLE	64	SHIFTKEYS+	65	'z'	66	'x'	67	'c'
+	DOWNARROW								LEFTSHIFT
+68	'v'	69	'b'	6A	'n'	6B	'm'	6C	','	6D	'.'	6E	'/'	6F	SHIFTKEYS+
+															RIGHTSHIFT
+70	NOP	71	0x7F	72	'0'	73	NOP	74	'.'	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	SHIFTKEYS+	7B	'\ '	7C	SHIFTKEYS+	7D	HOLE	7E	HOLE	7F	IDLE
+					LEFTCTRL				RIGHTCTRL
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Micro Switch 103SD32-2 Keyboard
+.SS Shifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS	02	LF(2)	03	LF(3)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(3)
+			SYSTEMBIT
+08	TF(4)	09	TF(5)	0A	TF(6)	0B	TF(7)	0C	TF(8)	0D	TF(9)	0E	TF(10)	0F	TF(11)
+10	TF(12)	11	TF(13)	12	TF(14)	13	c('[')	14	HOLE	15	RF(1)	16	'+'	17	'\-'
+18	HOLE	19	LF(4)	1A	'\ef'	1B	LF(6)	1C	HOLE	1D	SHIFTKEYS+	1E	'!'	1F	'"'
+											CAPSLOCK
+20	'#'	21	'$'	22	'%'	23	'&'	24	'\e\''	25	'('	26	')'	27	'0'
+28	'='	29	'^'	2A	'@'	2B	'\eb'	2C	HOLE	2D	'7'	2E	'8'	2F	'9'
+30	HOLE	31	LF(7)	32	STRING+	33	LF(9)	34	HOLE	35	'\et'	36	'Q'	37	'W'
+					UPARROW
+38	'E'	39	'R'	3A	'T'	3B	'Y'	3C	'U'	3D	'I'	3E	'O'	3F	'P'
+40	'['	41	']'	42	'_'	43	HOLE	44	'4'	45	'5'	46	'6'	47	HOLE
+48	STRING+	49	STRING+	4A	STRING+	4B	HOLE	4C	SHIFTKEYS+	4D	'A'	4E	'S'	4F	'D'
+	LEFTARROW 		HOMEARROW		RIGHTARROW				SHIFTLOCK
+50	'F'	51	'G'	52	'H'	53	'J'	54	'K'	55	'L'	56	'+'	57	'*'
+58	'\e'	59	'\er'	5A	HOLE	5B	'1'	5C	'2'	5D	'3'	5E	HOLE	5F	NOSCROLL
+60	STRING+	61	LF(15)	62	HOLE	63	HOLE	64	SHIFTKEYS+	65	'Z'	66	'X'	67	'C'
+	DOWNARROW								LEFTSHIFT
+68	'V'	69	'B'	6A	'N'	6B	'M'	6C	'<'	6D	'>'	6E	'?'	6F	SHIFTKEYS+
+															RIGHTSHIFT
+70	NOP	71	0x7F	72	'0'	73	NOP	74	'.'	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	SHIFTKEYS+	7B	'\ '	7C	SHIFTKEYS+	7D	HOLE	7E	HOLE	7F	IDLE
+					RIGHTSHIFT 				LEFTCTRL
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Micro Switch 103SD32-2 Keyboard
+.SS "Caps Locked"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(2)	03	LF(3)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(3)
+			SYSTEMBIT
+08	TF(4)	09	TF(5) 	0A	TF(6)	0B	TF(7)	0C	TF(8)	0D	TF(9)	0E	TF(10)	0F	TF(11)
+10	TF(12)	11	TF(13)	12	TF(14)	13	c('[')	14	HOLE	15	RF(1)	16	'+'	17	'\-'
+18	HOLE 	19	LF(4) 	1A	'\ef'	1B	LF(6)	1C	HOLE	1D	SHIFTKEYS+	1E	'1'	1F	'2'
+											CAPSLOCK
+20	'3'	21	'4'	22	'5'	23	'6'	24	'7'	25	'8'	26	'9'	27	'0'
+28	'\-'	29	'~'	2A	'`'	2B	'\eb'	2C	HOLE	2D	'7'	2E	'8'	2F	'9'
+30	HOLE	31	LF(7)	32	STRING+	33	LF(9)	34	HOLE	35	'\et'	36	'Q'	37	'W'
+					UPARROW
+38	'E'	39	'R'	3A	'T'	3B	'Y'	3C	'U'	3D	'I'	3E	'O'	3F	'P'
+40	'{'	41	'}'	42	'_'	43	HOLE	44	'4'	45	'5'	46	'6'	47	HOLE
+48	STRING+	49	STRING+	4A	STRING+ 	4B	HOLE	4C	SHIFTKEYS+	4D	'A' 	4E	'S'	4F	'D'
+	LEFTARROW		HOMEARROW		RIGHTARROW				SHIFTLOCK
+50	'F'	51	'G'	52	'H'	53	'J'	54	'K'	55	'L'	56	';'	57	':'
+58	'|'	59	'\er'	5A	HOLE	5B	'1'	5C	'2'	5D	'3'	5E	HOLE	5F	NOSCROLL
+60	STRING+	61	LF(15)	62	HOLE	63	HOLE	64	SHIFTKEYS+	65	'Z'	66	'X'	67	'C'
+	DOWNARROW								LEFTSHIFT
+68	'V'	69	'B'	6A	'N'	6B	'M'	6C	','	6D	'.'	6E	'/'	6F	SHIFTKEYS+
+															RIGHTSHIFT
+70	NOP	71	0x7F	72	'0'	73	NOP	74	'.'	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	SHIFTKEYS+	7B	'\ '	7C	SHIFTKEYS	7D	HOLE	7E	HOLE	7F	IDLE
+					LEFTCTRL				RIGHTCTRL
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Micro Switch 103SD32-2 Keyboard
+.SS Controlled
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	LF(2)	03	LF(3)	04	HOLE	05	TF(1)	06	TF(2)	07	TF(3)
+			SYSTEMBIT
+08	TF(4) 	09	TF(5) 	0A	TF(6)	0B	TF(7)	0C	TF(8)	0D	TF(9)	0E	TF(10)	0F	TF(11)
+10	TF(02)	11	TF(03)	12	TF(04)	13	c('[')	14	HOLE	15	RF(0)	16	OOPS	17	OOPS
+18	HOLE	19	LF(4)	1A	'\ef'	1B	LF(6)	1C	HOLE	1D	SHIFTKEYS+	1E	OOPS	1F	OOPS
+											CAPSLOCK
+20	OOPS	21	OOPS	22	OOPS	23	OOPS	24	OOPS	25	OOPS	26	OOPS	27	OOPS
+28	OOPS	29	c('^')	2A	c('@')	2B	'\eb'	2C	HOLE	2D	OOPS	2E	OOPS	2F	OOPS
+30	HOLE	31	LF(7)	32	STRING+	33	F(9)	34	HOLE	35	'\et'	36	CTRLQ	37	c('W')
+					UPARROW
+38	c('E')	39	c('R')	3A	c('T')	3B	c('Y')	3C	c('U')	3D	c('I')	3E	c('O')	3F	c('P')
+40	c('[')	41	c(']')	42	c('_')	43	HOLE	44	OOPS	45	OOPS	46	OOPS	47	HOLE
+48	STRING+  	49	STRING+ 	4A	STRING+   	4B	HOLE	4C	SHIFTKEYS+	4D	c('A')	4E	CTRLS	4F	c('D')
+	LEFTARROW		HOMEARROW		RIGHTARROW				SHIFTLOCK
+50	c('F')	51	c('G')	52	c('H')	53	c('J')	54	c('K')	55	c('L')	56	OOPS	57	OOPS
+58	c('\e')	59	'\er'	5A	HOLE	5B	OOPS	5C	OOPS	5D	OOPS	5E	HOLE	5F	NOSCROLL
+60	STRING+ 	61	LF(15)	62	HOLE	63	HOLE	64	SHIFTKEYS+	65	c('Z')	66	c('X')	67	c('C')
+	DOWNARROW								LEFTSHIFT
+68	c('V')	69	c('B')	6A	c('N')	6B	c('M')	6C	OOPS	6D	OOPS	6E	OOPS	6F	SHIFTKEYS+
+															RIGHTSHIFT
+70	NOP	71	0x7F	72	OOPS	73	NOP	74	OOPS	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	SHIFTKEYS+	7B	'\e0'	7C	SHIFTKEYS+	7D	HOLE	7E	HOLE	7F	IDLE
+					LEFTCTRL				RIGHTCTRL
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH Micro Switch 103SD32-2 Keyboard
+.SS "Key Up"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	OOPS	03	OOPS	04	HOLE	05	OOPS	06	OOPS	07	OOPS
+			SYSTEMBIT
+08	OOPS 	09	OOPS 	0A	OOPS	0B	OOPS	0C	OOPS	0D	OOPS	0E	OOPS	0F	OOPS
+10	OOPS 	11	OOPS 	12	OOPS	13	NOP	14	HOLE	15	OOPS	16	NOP	17	NOP
+18	HOLE 	19	OOPS 	1A	NOP	1B	OOPS	1C	HOLE	1D	SHIFTKEYS+	1E	NOP	1F	NOP
+											CAPSLOCK
+20	NOP	21	NOP	22	NOP	23	NOP	24	NOP	25	NOP	26	NOP	27	NOP
+28	NOP	29	NOP	2A	NOP	2B	NOP	2C	HOLE	2D	NOP	2E	NOP	2F	NOP
+30	HOLE	31	OOPS	32	NOP	33	OOPS	34	HOLE	35	NOP	36	NOP	37	NOP
+38	NOP	39	NOP	3A	NOP	3B	NOP	3C	NOP	3D	NOP	3E	NOP	3F	NOP
+40	NOP	41	NOP	42	NOP	43	HOLE	44	NOP	45	NOP	46	NOP	47	HOLE
+48	NOP	49	NOP	4A	NOP	4B	HOLE	4C	SHIFTKEYS+	4D	NOP 	4E	NOP	4F	NOP
+									SHIFTLOCK
+50	NOP	51	NOP	52	NOP	53	NOP	54	NOP	55	NOP	56	NOP	57	NOP
+58	NOP	59	NOP	5A	HOLE	5B	NOP	5C	NOP	5D	NOP	5E	HOLE	5F	NOP
+60	NOP	61	OOPS	62	HOLE	63	HOLE	64	SHIFTKEYS+	65	NOP	66	NOP	67	NOP
+									LEFTSHIFT
+68	NOP	69	NOP	6A	NOP	6B	NOP	6C	NOP	6D	NOP	6E	NOP	6F	SHIFTKEYS+
+															RIGHTSHIFT
+70	NOP	71	NOP	72	NOP	73	NOP	74	NOP	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	SHIFTKEYS+	7B	NOP	7C	SHIFTKEYS+	7D	HOLE	7E	HOLE	7F	RESET
+					LEFTCTRL				RIGHTCTRL
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.UH VT100-Style Keyboard
+.SS Unshifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	HOLE	04	HOLE	05	HOLE	06	HOLE	07	HOLE
+			SYSTEMBIT
+08	HOLE	09 	HOLE	0A 	STRING+	0B	STRING+	0C	STRING+	0D	STRING+	0E	HOLE	0F	TF(1)
+					UPARROW		DOWNARROW		LEFTARROW		RIGHTARROW
+10	TF(2)	11	TF(3)	12	TF(4)	13	c('[')	14	'1'	15	'2'	16	'3'	17	'4'
+18	'5'	19 	'6'	1A 	'7'	1B	'8'	1C	'9'	1D	'0'	1E	'\-'	1F	'='
+20	'`'	21	c('H')	22	BUCKYBITS+	23	'7'	24	'8'	25	'9'	26	'\-'	27	'\et'
+					METABIT
+28	'q'	29	'w'	2A	'e'	2B	'r'	2C	't'	2D	'y'	2E	'u'	2F	'i'
+30	'o'	31	'p'	32	'['	33	']'	34	0x7F	35	'4'	36	'5'	37	'6'
+38	','	39	SHIFTKEYS+	3A	SHIFTKEYS+	3B	'a'	3C	's'	3D	'd'	3E	'f'	3F	'g'
+			LEFTCTRL		CAPSLOCK
+40	'h'	41	'j'	42	'k'	43	'l'	44	';'	45	'\e\''	46	'\er'	47	'\e'
+48	'1'	49	'2'	4A	'3'	4B	NOP	4C	NOSCROLL	4D	SHIFTKEYS+	4E	'z'	4F	'x'
+											LEFTSHIFT
+50	'c'	51	'v'	52	'b'	53	'n'	54	'm'	55	','	56	'.'	57	'/'
+58	SHIFTKEYS+	59	'\en'	5A	'0'	5B	HOLE	5C	'.'	5D	'\er'	5E	HOLE	5F	HOLE
+	RIGHTSHIFT
+60	HOLE	61	HOLE	62	'\ '	63	HOLE	64	HOLE	65	HOLE	66	HOLE	67	HOLE
+68	HOLE	69	HOLE	6A	HOLE	6B	HOLE	6C	HOLE	6D	HOLE	6E	HOLE	6F	HOLE
+70	HOLE	71	HOLE	72	HOLE	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	HOLE	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	IDLE
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH VT100-Style Keyboard
+.SS Shifted
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	HOLE	04	HOLE	05	HOLE	06	HOLE	07	HOLE
+			SYSTEMBIT
+08	HOLE	09 	HOLE	0A 	STRING+	0B	STRING+	0C	STRING+	0D	STRING+	0E	HOLE	0F	TF(1)
+					UPARROW		DOWNARROW		LEFTARROW		RIGHTARROW
+10	TF(2)	11	TF(3)	12	TF(4)	13	c('[')	14	'!'	15	'@'	16	'#'	17	'$'
+18	'%'	19 	'^'	1A 	'&'	1B	'*'	1C	'('	1D	')'	1E	'_'	1F	'+'
+20	'~'	21	c('H')	22	BUCKYBITS+	23	'7'	24	'8'	25	'9'	26	'\-'	27	'\et'
+					METABIT
+28	'Q'	29	'W'	2A	'E'	2B	'R'	2C	'T'	2D	'Y'	2E	'U'	2F	'I'
+30	'O'	31	'P'	32	'{'	33	'}'	34	0x7F	35	'4'	36	'5'	37	'6'
+38	','	39	SHIFTKEYS+	3A	SHIFTKEYS+	3B	'A'	3C	'S'	3D	'D'	3E	'F'	3F	'G'
+			LEFTCTRL		CAPSLOCK
+40	'H'	41	'J'	42	'K'	43	'L'	44	':'	45	'"'	46	'\er'	47	'|'
+48	'1'	49	'2'	4A	'3'	4B	NOP	4C	NOSCROLL	4D	SHIFTKEYS+	4E	'Z'	4F	'X'
+											LEFTSHIFT
+50	'C'	51	'V'	52	'B'	53	'N'	54	'M'	55	'<'	56	'>'	57	'?'
+58	SHIFTKEYS+	59	'\en'	5A	'0'	5B	HOLE	5C	'.'	5D	'\er'	5E	HOLE	5F	HOLE
+	RIGHTSHIFT
+60	HOLE	61	HOLE	62	'\ '	63	HOLE	64	HOLE	65	HOLE	66	HOLE	67	HOLE
+68	HOLE	69	HOLE	6A	HOLE	6B	HOLE	6C	HOLE	6D	HOLE	6E	HOLE	6F	HOLE
+70	HOLE	71	HOLE	72	HOLE	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	HOLE	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	IDLE
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH VT100-Style Keyboard
+.SS "Caps Locked"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp 
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	HOLE	04	HOLE	05	HOLE	06	HOLE	07	HOLE
+			SYSTEMBIT
+08	HOLE	09 	HOLE	0A 	STRING+	0B	STRING+	0C	STRING+	0D	STRING+	0E	HOLE	0F	TF(1)
+					UPARROW		DOWNARROW		LEFTARROW		RIGHTARROW
+10	TF(2)	11	TF(3)	12	TF(4)	13	c('[')	14	'1'	15	'2'	16	'3'	17	'4'
+18	'5'	19 	'6'	1A 	'7'	1B	'8'	1C	'9'	1D	'0'	1E	'\-'	1F	'='
+20	'`'	21	c('H')	22	BUCKYBITS+	23	'7'	24	'8'	25	'9'	26	'\-'	27	'\et'
+					METABIT
+28	'Q'	29	'W'	2A	'E'	2B	'R'	2C	'T'	2D	'Y'	2E	'U'	2F	'I'
+30	'O'	31	'P'	32	'['	33	']'	34	0x7F	35	'4'	36	'5'	37	'6'
+38	','	39	SHIFTKEYS+	3A	SHIFTKEYS+	3B	'A'	3C	'S'	3D	'D'	3E	'F'	3F	'G'
+			LEFTCTRL		CAPSLOCK
+40	'H'	41	'J'	42	'K'	43	'L'	44	';'	45	'\e\''	46	'\er'	47	'\e'
+48	'1'	49	'2'	4A	'3'	4B	NOP	4C	NOSCROLL	4D	SHIFTKEYS+	4E	'Z'	4F	'X'
+											LEFTSHIFT
+50	'C'	51	'V'	52	'B'	53	'N'	54	'M'	55	','	56	'.'	57	'/'
+58	SHIFTKEYS+	59	'\en'	5A	'0'	5B	HOLE	5C	'.'	5D	'\er'	5E	HOLE	5F	HOLE
+	RIGHTSHIFT
+60	HOLE	61	HOLE	62	'\ '	63	HOLE	64	HOLE	65	HOLE	66	HOLE	67	HOLE
+68	HOLE	69	HOLE	6A	HOLE	6B	HOLE	6C	HOLE	6D	HOLE	6E	HOLE	6F	HOLE
+70	HOLE	71	HOLE	72	HOLE	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	HOLE	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	IDLE
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH VT100-Style Keyboard
+.SS Controlled
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	HOLE	04	HOLE	05	HOLE	06	HOLE	07	HOLE
+			SYSTEMBIT
+08	HOLE	09 	HOLE	0A 	STRING+	0B	STRING+	0C	STRING+	0D	STRING+	0E	HOLE	0F	TF(1)
+					UPARROW		DOWNARROW		LEFTARROW		RIGHTARROW
+10	TF(2)	11	TF(3)	12	TF(4)	13	c('[')	14	'1'	15	c('@')	16	'3'	17	'4'
+18	'5'	19	c('^')	1A	'7'	1B	'8'	1C	'9'	1D	'0'	1E	c('_')	1F	'='
+20	c('^')	21	c('H')	22	BUCKYBITS+	23	'7'	24	'8'	25	'9'	26	'\-'	27	'\et'
+					METABIT
+28	CTRLQ	29	c('W')	2A	c('E')	2B	c('R')	2C	c('T')	2D	c('Y')	2E	c('U')	2F	c('I')
+30	c('O')	31	c('P')	32	c('[')	33	c(']')	34	0x7F	35	'4'	36	'5'	37	'6'
+38	','	39	SHIFTKEYS+	3A	SHIFTKEYS+	3B	c('A')	3C	CTRLS	3D	c('D')	3E	c('F')	3F	c('G')
+			LEFTCTRL		CAPSLOCK
+40	c('H')	41	c('J')	42	c('K')	43	c('L')	44	':'	45	'"'	46	'\er'	47	c('\e')
+48	'1'	49	'2'	4A	'3'	4B	NOP	4C	NOSCROLL	4D	SHIFTKEYS+	4E	c('Z')	4F	c('X')
+											LEFTSHIFT
+50	c('C')	51	c('V')	52	c('B')	53	c('N')	54	c('M')	55	','	56	'.'	57	c('_')
+58	SHIFTKEYS+	59	'\en'	5A	'0'	5B	HOLE	5C	'.'	5D	HOLE	5E	HOLE	5F	HOLE
+	RIGHTSHIFT
+60	HOLE	61	HOLE	62	c('\ ')	63	HOLE	64	HOLE	65	HOLE	66	HOLE	67	HOLE
+68	HOLE	69	HOLE	6A	HOLE	6B	HOLE	6C	HOLE	6D	HOLE	6E	HOLE	6F	HOLE
+70	HOLE	71	HOLE	72	HOLE	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	HOLE	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	IDLE
+.TE
+.ps  +3
+.vs  +3
+.ne 25
+.CH VT100-Style Keyboard
+.SS "Key Up"
+.ps  -3
+.vs  -3
+.TS
+expand ;
+c l c l c l c l c l c l c l c l .
+ 
+\fIKey	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value	Key	Value\fR
+.sp
+00	HOLE	01	BUCKYBITS+	02	HOLE	03	HOLE	04	HOLE	05	HOLE	06	HOLE	07	HOLE
+			SYSTEMBIT
+08	HOLE	09 	HOLE	0A 	NOP	0B	NOP	0C	NOP	0D	NOP	0E	HOLE	0F	OOPS
+10	OOPS	11	OOPS	12	OOPS	13	NOP	14	NOP	15	NOP	16	NOP	17	NOP
+18	NOP	19 	NOP	1A 	NOP	1B	NOP	1C	NOP	1D	NOP	1E	NOP	1F	NOP
+20	NOP	21	NOP	22	BUCKYBITS+	23	NOP	24	NOP	25	NOP	26	NOP	27	NOP
+					METABIT
+28	NOP	29	NOP	2A	NOP	2B	NOP	2C	NOP	2D	NOP	2E	NOP	2F	NOP
+30	NOP	31	NOP	32	NOP	33	NOP	34	NOP	35	NOP	36	NOP	37	NOP
+38	NOP	39	SHIFTKEYS+	3A	SHIFTKEYS+	3B	NOP	3C	NOP	3D	NOP	3E	NOP	3F	NOP
+			LEFTCTRL		CAPSLOCK
+40	NOP	41	NOP	42	NOP	43	NOP	44	NOP	45	NOP	46	NOP	47	NOP
+48	NOP	49	NOP	4A	NOP	4B	NOP	4C	NOP	4D	SHIFTKEYS+	4E	NOP	4F	NOP
+											LEFTSHIFT
+50	NOP	51	NOP	52	NOP	53	NOP	54	NOP	55	NOP	56	NOP	57	NOP
+58	SHIFTKEYS+	59	NOP	5A	NOP	5B	HOLE	5C	NOP	5D	NOP	5E	HOLE	5F	HOLE
+	RIGHTSHIFT
+60	HOLE	61	HOLE	62	NOP	63	HOLE	64	HOLE	65	HOLE	66	HOLE	67	HOLE
+68	HOLE	69	HOLE	6A	HOLE	6B	HOLE	6C	HOLE	6D	HOLE	6E	HOLE	6F	HOLE
+70	HOLE	71	HOLE	72	HOLE	73	HOLE	74	HOLE	75	HOLE	76	HOLE	77	HOLE
+78	HOLE	79	HOLE	7A	HOLE	7B	HOLE	7C	HOLE	7D	HOLE	7E	HOLE	7F	RESET
+.TE
+.ps  +3
+.vs  +3
+.SH FILES
+/dev/kbd
+.SH "SEE ALSO"
+setkeys(1), click(1)
+.LP
+\fIThe SunView System Programmer's Guide\fR - \fIAppendix: Writing a Virtual User Input Device Driver\fR (describes \fIFirm_event\fR format)
+.IX  "kb device"  ""  "\fLkb\fP \(em Sun keyboard"  ""  PAGE END

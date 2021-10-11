@@ -1,0 +1,188 @@
+.\" @(#)getopts.1 1.1 92/07/30 SMI; from S5R3
+.TH GETOPTS 1 "7 September 1989"
+.SH NAME
+getopts, getoptcvt \- parse command options in shell scripts
+.SH SYNOPSIS
+.B getopts
+.I optstring
+.I name
+[
+.IR argument .\|.\|.
+]
+.LP
+.B getoptcvt
+[
+.B \-b
+]
+.I filename
+.SH DESCRIPTION
+.IX "getopts command" "" "\fLgetopts\fR command" 
+.LP
+.B getopts
+is used by shell procedures to parse positional parameters 
+and to check for legal options.
+It should be used in place of the
+.BR getopt (1V)
+command.
+It supports the following command syntax rules:
+.LP
+.RS
+.TP 5
+\(bu
+Option names must be one character long.
+.TP
+\(bu
+All options must be preceded by
+.RB ` \- '.
+.TP
+\(bu
+Options with no arguments may be grouped after a single
+.RB ` \- '.
+.TP
+\(bu
+Option-arguments cannot be optional.
+.TP
+\(bu
+All options must precede operands on the command line.
+.TP
+\(bu
+.RB ` \-\|\- '
+may be used to indicate the end of the options.
+.RE
+.LP
+.I optstring
+must contain the option letters the command using
+.B getopts
+will recognize;
+if a letter is followed by a colon, the option
+is expected to have an argument, or group of arguments,
+which must be separated from it by white space.
+.LP
+Each time it is invoked,
+.B getopts
+will place the next option in the shell variable
+.I name
+and the index of the next argument to be processed
+in the shell variable
+.SM
+.BR OPTIND \s0.
+Whenever the shell or a shell
+procedure is invoked,
+.SB OPTIND
+is initialized to
+.BR 1 .
+.LP
+When an option requires an option-argument,
+.B getopts
+places it in the
+shell variable
+.BR \s-1OPTARG\s0 .
+.LP
+If
+an illegal option is encountered,
+.B ?
+will be placed in
+.IR name .
+.LP
+When the end of options is encountered,
+.B getopts
+exits with a non-zero
+exit status.  The special option
+.RB ` \-\|\- '
+may be used to delimit the end of the
+options.
+.LP
+By default,
+.B getopts
+parses the positional parameters.  If extra arguments
+.RI ( argument
+\&.\|.\|.)
+are given on the
+.B getopts
+command line,
+.B getopts
+will parse them instead.
+.LP
+.B getoptcvt
+reads the shell script in
+.IR filename ,
+converts it to use
+.B getopts
+instead of
+.BR getopt ,
+and writes the results on the standard output.
+.SH OPTIONS
+.SS getoptcvt
+.TP
+.B \-b
+Generate a script that
+will be portable to earlier releases of the UNIX system.
+The script will determine at run time whether to invoke
+.B getopts
+or
+.BR getopt .
+.br
+.ne 16
+.SH EXAMPLE
+.LP
+The following fragment of a shell program shows how one might process the arguments
+for a command that can take the options
+.B a
+or
+.BR b ,
+as well as the option
+.BR o ,
+which requires an option-argument:
+.RS
+.sp .5
+.nf
+.ft B
+.ss 18
+.ta +.5i +1i
+while getopts abo: c
+do
+	case $c in
+	a \(bv b)	\s-1FLAG\s0=$c;;
+	o)	\s-1OARG\s0=$\s-1OPTARG\s0;;
+	\\?)	echo $\s-1USAGE\s0
+		exit 2;;
+	esac
+done
+shift `expr $\s-1OPTIND\s0 \- 1`
+.fi
+.ta
+.ss 12
+.ft R
+.RE
+.LP
+This code will accept any of the following as equivalent:
+.LP
+.RS
+.nf
+.ft B
+.ss 18
+cmd \-a \-b \-o "xxx z yy" \fIfilename\fP
+cmd \-a \-b \-o "xxx z yy" \-\- \fIfilename\fP
+cmd \-ab \-o xxx,z,yy \fIfilename\fP
+cmd \-ab \-o "xxx z yy" \fIfilename\fP
+cmd \-o xxx,z,yy \-b \-a \fIfilename\fP
+.fi
+.ss 12
+.ft R
+.RE
+.SH SEE ALSO
+.BR getopt (1V),
+.BR sh (1),
+.BR getopt (3)
+.SH WARNING
+.LP
+Changing the value of the shell variable
+.SB OPTIND
+or parsing different sets of arguments may lead to unexpected results.
+.SH DIAGNOSTICS
+.LP
+.B getopts
+prints an error message on
+the standard error
+when it encounters an option letter not included in
+.IR optstring .

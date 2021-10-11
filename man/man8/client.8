@@ -1,0 +1,141 @@
+.\" @(#)client.8 1.1 92/07/30 SMI; 
+.TH CLIENT 8 "%20 December 1988%"
+.SH NAME
+client \- add or remove diskless Sun386i systems
+.SH SYNOPSIS 
+.B client 
+[
+.B \-a
+.I arch
+] [
+.B \-h
+.I hostid
+] [ 
+.B \-o
+.I os
+] [
+.B \-q
+] [
+.B \-t
+.I minutes
+]
+.B add 
+.I bootserver
+.I client 
+.I etheraddress
+.I ipaddress
+.LP
+.B client remove
+.I client
+.LP
+.B client modify
+.I client
+[
+.B diskful
+|
+.B diskless
+|
+.B slave
+]
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "client command" "" "\fLclient\fP command"
+.LP
+.B client
+can be used to manually add and remove diskless clients of a PNP
+boot server.
+After successful completion of the command, the diskless client
+can boot.
+Only users in the
+.I networks
+group (group 12) on the boot server
+are allowed to change configurations using this utility. 
+.B client
+can be invoked from any system on the network.
+.LP
+The boot server
+of a system is the only machine truly required for that system to boot to
+the point of allowing user logins; it must accordingly provide
+name, booting, and time services.
+Diskless clients can provide none of these services themselves.
+Diskful clients, however can provide most of their own boot services.
+Network clients only need name and time services from the network,
+and can use any boot server.
+.LP
+To add a diskless client, use the 
+.B add
+operation.  To remove a
+diskless, diskful, or network client, use the
+.B remove 
+operation.  To change a system's network role, use the
+.B modify
+operation.
+.LP
+A server can reject a configuration request if it is disallowed by the
+contents of the 
+.B bootservers
+map (e.g., too many clients would
+be configured, or too little free space would be left on the server),
+or if no system software for the client is available.
+.SH OPTIONS
+.TP 12
+.BI \-a " arch
+Specifies the architecture code of the client; it defaults to
+.BR s386 .
+(Note: architecture codes are different from architecture
+names.  Architecture codes are used in diskless booting, and are
+at most five characters in length, while architecture names can be
+longer.)
+.TP
+.BI \-h " hostid
+Specifies the host ID of the client; if supplied, it is used
+as the root password for the system.  It defaults to the null
+string.
+.TP
+.BI \-o " os
+Specifies the operating system; defaults to 'unix'.  This
+is currently used only to construct the system's 
+.I publickey
+data,
+where applicable; this is never done if the system has no 
+.I hostid
+specified.
+.TP
+.B \-q
+Quiet.  Displays only error messages.
+.TP
+.BI \-t " minutes
+Sets the 
+.SM RPC 
+timeout to the number of minutes indicated; this
+defaults to 15 minutes.  If the bootserver takes more time than this 
+to complete, 
+.B client
+will exit.  Unless the server has
+already completed setup, but not yet sent status to 
+.BR client ,
+this will cause the bootserver to back out of the setup, deallocating
+all assigned resources.
+.SH "SEE ALSO"
+.BR publickey (5)
+.BR netconfig (8C),
+.BR pnpd (8C), 
+.SH BUGS
+.\".LP
+.\"The concept of a default architecture should go away.
+.LP
+Unless the 
+.I hostid
+is assigned, the root filesystem for the diskless
+client is not set up beyond copying the 
+.B proto 
+and 
+.B boot
+files
+into it.
+This means that 
+.B netconfig
+will often handle other parts of the setup.

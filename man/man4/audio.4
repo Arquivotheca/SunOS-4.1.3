@@ -1,0 +1,904 @@
+.\" @(#) audio.4 1.1@(#) SMI
+.TH AUDIO 4  "2 June 1992"
+.SH NAME
+audio \- audio device interface
+.SH CONFIG
+.nf
+.B pseudo-device audioclone
+.B device-driver audioamd
+.B device-driver dbri
+.fi
+.IX "audio" "" "\fLaudio\fP \(em audio device interface"
+.SH OVERVIEW
+An audio device is used to play and/or record a stream of audio data.
+Currently,
+there are two audio hardware options developed for the
+.SM SPARC\s0system
+platforms:
+.B audioamd
+for
+.SM SPARC\s0station
+1 and 2 and the
+.B dbri
+audio device on
+.SM SPARC\s0station
+10 desktops.
+Refer to the
+.BR audioamd (4)
+and
+.BR dbri (4)
+manual pages for a complete description of each hardware device.
+.LP
+.B audioclone
+is a pseudo-device driver that routes
+.B /dev/audio
+i/o requests to the appropriate underlying audio device driver.
+An application can use the
+.SB AUDIO_GETDEV
+.BR ioctl (2V)
+to determine the current audio hardware associated with
+.BR /dev/audio .
+.SH AUDIO FORMATS
+.LP
+Digital audio data represents a quantized approximation of an analog audio
+signal waveform. In the simplest case, these quantized numbers represent
+the amplitude of the input waveform at particular sampling intervals. 
+In order to achieve the best approximation of an input signal, the highest
+possible sampling frequency and precision should be used.
+However, increased accuracy comes at a cost of increased
+data storage requirements.  For instance, one minute of
+monaural audio recorded in \(*m-law format at 8 KHz requires
+nearly 0.5 megabytes of storage, while the standard Compact Disc
+audio format (stereo 16-bit linear
+.SM PCM
+data sampled at 44.1 KHz)
+requires approximately 10 megabytes per minute.
+.LP
+Audio data may be represented in several different formats. An
+audio device's current audio data format can be determined by
+using the
+.SB AUDIO_GETINFO
+.B ioctl
+described below.
+.LP
+An audio data format is characterized in the audio driver by four parameters:
+Sample Rate, Encoding, Precision, and Channels. Refer to the device-specific
+manual pages for a list of the audio formats that each device supports.
+In addition to the formats that the audio device supports directly,
+other formats provide higher data compression. Applications may convert
+audio data to and from these formats when recording or playing.
+.SS Sample Rate
+.LP
+Sample rate is a number that represents the sampling frequency 
+(in samples per second) of the audio data.
+.SS Encodings
+.LP
+An encoding parameter specifies the audio data representation.
+\(*m-law encoding (pronounced mew-law) corresponds to
+.SM CCITT G.711\s0,
+and is the standard for voice data used by telephone
+companies in the United States, Canada, and Japan. A-law encoding is
+also part of
+.SM G.711\s0,
+and is the standard encoding for telephony elsewhere in the world.
+A-law and \(*m-law audio data are sampled at a rate of 8000 samples per second
+with 12-bit precision, with the data compressed
+to 8-bit samples.  The resulting audio data quality is
+equivalent to that of standard analog telephone service.
+.LP
+Linear Pulse Code Modulation (\s-1PCM\s0) is an uncompressed audio
+format in which sample values are directly proportional to
+audio signal voltages.
+Each sample is a 2's complement number that represents
+a positive or negative amplitude.
+.SS Precision
+.LP
+Precision indicates the number of bits used to store each
+audio sample.  For instance, \(*m-law and A-law data are
+stored with 8-bit precision.
+.SM PCM
+data may be stored at
+various precisions, though 16-bit
+.SM PCM
+is most common.
+.SS Channels
+.LP
+Multiple channels of audio may be interleaved at sample
+boundaries.  A sample frame consists of a single sample
+from each active channel.  For example, a sample frame of
+stereo 16-bit
+.SM PCM
+data consists of 2 16-bit samples,
+corresponding to the left and right channel data.
+.SH DESCRIPTION
+.LP
+The device
+.B /dev/audio
+is a pseudo-device driver that dispatches audio requests
+to the appropriate underlying audio device driver.
+The audio driver is implemented as a
+.SM STREAMS
+driver.
+In order to record audio input, applications
+.BR open (2V)
+the
+.B /dev/audio
+device and read data from it using the
+.BR read(2V)
+system call.
+Similarly, sound data is queued to the audio output port by using the
+.BR write (2V)
+system call.
+Device configuration is performed using the
+.BR ioctl (2V)
+interface.
+.SS Opening the Audio Device
+.LP
+The audio device is treated as an exclusive resource - only one process
+can open the device at a time. However, two processes may simultaneously
+access the device: if one opens it read-only, then another may open
+it write-only.
+.LP
+When a process cannot open 
+.B /dev/audio
+because the requested access mode is busy:
+.RS
+.PD 0
+.TP 3
+\(bu
+if the
+.SB O_NDELAY
+flag is set in the
+.B open(\|)
+.I flags
+argument, then
+\-1 is immediately returned, with
+.I errno
+set to
+.SM EBUSY\s0.
+.TP
+\(bu
+if
+.SB O_NDELAY
+is not set, then
+.B open(\|)
+hangs until the device is available
+or a signal is delivered to the process, in which case
+a \-1 is returned with
+.I errno
+set to
+.SM EINTR\s0.
+This allows a process to block in the
+.B open
+call, while waiting for the
+audio device to become available.
+.PD
+.RE
+.LP
+Upon the initial
+.B open(\|)
+of the audio device, the
+data format of the audio device is reset to the default state of 
+8-bit, 8Khz, mono \(*m-law data.
+Audio applications should explicitly set the encoding
+characteristics to match the audio data requirements,
+rather than depend on the default configuration.
+.LP
+Since the audio device grants exclusive read or write access to a
+single process at a time, long-lived audio applications may choose to
+close the device when they enter an idle state and reopen it when required.
+The
+.I play.waiting
+and
+.I record.waiting
+flags in the audio information structure (see below) provide an indication
+that another process has requested access to the device.
+For instance, a background audio output process may
+choose to relinquish the audio device whenever another
+process requests write access.
+.SS Recording Audio Data
+.LP
+The
+.B read(\|)
+system call copies data from the system buffers to the application.
+Ordinarily,
+.B read(\|)
+blocks until the user buffer is filled.
+The
+.SB FIONREAD
+.B ioctl
+(see
+.BR filio (4))
+may be used to determine the amount of data that may be read without blocking.
+The device may alternatively be set to a non-blocking mode, in which case
+.B read(\|)
+completes immediately, but may return fewer bytes than requested.
+Refer to the
+.BR read (2V)
+manual page for a complete description of this behavior.
+.LP
+When the audio device is opened with read access,
+the device driver immediately starts
+buffering audio input data.
+Since this consumes system resources,
+processes that do not record audio data should open the device write-only
+(\s-1\fBO_WRONLY\fP\s0).
+.LP
+The transfer of input data to
+.SM STREAMS
+buffers may be paused (or resumed) by using the
+.SB AUDIO_SETINFO
+.B ioctl
+to set (or clear) the
+.I record.pause
+flag in the audio information structure (see below).
+All unread input data in the
+.SM STREAMS
+queue may be discarded by using the
+.SB I_FLUSH
+.SM STREAMS
+.B ioctl
+(see
+.BR streamio (4)).
+.LP
+Input data can accumulate in
+.SM STREAMS
+buffers very quickly. At a minimum, it will accumulate at 8000 bytes
+per second for 8-bit, 8 KHz, mono, \(*m-law data. If the device is
+configured for 16-bit linear or higher sample rates, it will
+accumulate even faster.  If the application that
+consumes the data cannot keep up with this data rate, the
+.SM STREAMS
+queue may become full.
+When this occurs, the
+.I record.error
+flag is set in the audio information structure
+and input sampling ceases until there is room in the input
+queue for additional data.
+In such cases, the input data stream contains a discontinuity.
+For this reason, audio recording applications should open the audio device
+when they are prepared to begin reading data,
+rather than at the start of extensive initialization.
+.SS Playing Audio Data
+.LP
+The
+.B write(\|)
+system call copies data from an applications buffer to the
+.SM STREAMS
+output queue.
+Ordinarily,
+.B write(\|)
+blocks until the entire user buffer is transferred.
+The device may alternatively be set to a non-blocking mode, in which case
+.B write(\|)
+completes immediately,
+but may have transferred fewer bytes than requested
+(see
+.BR write (2V) ).
+.LP
+Although
+.B write(\|)
+returns when the data is successfully queued,
+the actual completion of audio output may take considerably longer.
+The
+.SB AUDIO_DRAIN
+.B ioctl
+may be issued to allow an application to block until all of the queued
+output data has been played.
+Alternatively, a process may request asynchronous notification of output
+completion by writing a zero-length buffer (end-of-file record)
+to the output stream.  When such a buffer has been processed, the
+.I play.eof
+flag in the audio information structure (see below) is incremented.
+.LP
+The final
+.BR close (2V)
+of the file descriptor hangs until audio output has drained.
+If a signal interrupts the
+.B close(\|),
+or if the process exits without closing the device,
+any remaining data queued for audio output is flushed
+and the device is closed immediately.
+.LP
+The conversion of output data may be paused (or resumed) by using the
+.SB AUDIO_SETINFO
+.B ioctl
+to set (or clear) the
+.I play.pause
+flag in the audio information structure.
+Queued output data may be discarded by using the
+.SB I_FLUSH
+.SM STREAMS
+.BR ioctl .
+.LP
+Output data will be played from the
+.SM STREAMS
+buffers at a rate of at least 8000 bytes per second for \(*m-law
+or A-law data (faster for 16-bit linear data or higher sampling
+rates).
+If the output queue becomes empty, the
+.I play.error
+flag is set in the audio information structure
+and output is stopped until additional data is written.
+.SS Asynchronous I/O
+.LP
+The
+.SB I_SETSIG
+.SM STREAMS
+.B ioctl
+enables asynchronous notification, through the
+.SB SIGPOLL
+signal, of input and output ready conditions.
+The
+.SB O_NONBLOCK
+flag may be set using the
+.SB F_SETFL
+.BR fcntl (2V)
+to enable non-blocking
+.B read(\|)
+and
+.B write(\|)
+requests.
+This is normally sufficient for applications to maintain
+an audio stream in the background.
+.SS Audio Control Pseudo-Device
+.LP
+It is sometimes convenient to have an application, such as a volume control
+panel, modify certain characteristics of the audio device while it is
+being used by an unrelated process.  The
+.B /dev/audioctl
+pseudo-device is provided for this purpose.  Any number of processes
+may open
+.B /dev/audioctl
+simultaneously.  However,
+.B read(\|)
+and
+.B write(\|)
+system calls are ignored by
+.BR /dev/audioctl .
+The
+.SB AUDIO_GETINFO
+and
+.SB AUDIO_SETINFO
+.B ioctl
+commands may be issued to
+.B /dev/audioctl
+to determine the status or alter the behavior of
+.BR /dev/audio .
+.SS Audio Status Change Notification
+.LP
+Applications that open the audio control pseudo-device may request
+asynchronous notification of changes in the state of the audio device
+by setting the
+.SB S_MSG
+flag in an
+.SB I_SETSIG
+.SM STREAMS
+.BR ioctl .
+Such processes receive a
+.SB SIGPOLL
+signal when any of the following events occur:
+.RS
+.PD 0
+.TP
+\(bu
+An
+.SB AUDIO_SETINFO
+.B ioctl
+has altered the device state.
+.TP
+\(bu
+An input overflow or output underflow has occurred.
+.TP
+\(bu
+An end-of-file record (zero-length buffer) has been processed on output.
+.TP
+\(bu
+An
+.B open(\|)
+or
+.B close(\|)
+of
+.B /dev/audio
+has altered the device state.
+.TP
+\(bu
+An external event (such as speakerbox volume control)
+has altered the device state.
+.PD
+.RE
+.SH IOCTLS
+.SS Audio Information Structure
+.LP
+The state of the audio device may be polled or modified using the
+.SB AUDIO_GETINFO
+and
+.SB AUDIO_SETINFO
+.B ioctl
+commands.
+These commands operate on the
+.B audio_info
+structure as defined, in
+.BR "<sun/audioio.h>" ,
+as follows:
+.LP
+.RS
+.nf
+.ft B
+.ps -1
+.vs -2
+/* Audio I/O channel status, used below in the audio_info structure */
+struct audio_prinfo {
+	/* The following values describe the audio data encoding */
+	unsigned			sample_rate;	/* samples per second */
+	unsigned			channels;	/* number of interleaved channels */
+	unsigned			precision;	/* number of bits per sample */
+	unsigned		  	encoding;	/* data encoding method */
+
+	/* The following values control audio device configuration */
+	unsigned			gain;		/* volume level */
+	unsigned			port;		/* selected I/O port */
+
+	/* The following values describe the current device state */
+	unsigned			samples;		/* number of samples converted */
+	unsigned			eof;		/* End Of File counter (play only) */
+	unsigned char		pause;		/* non-zero if paused, zero to resume */
+	unsigned char		error;		/* non-zero if overflow/underflow */
+	unsigned char		waiting;		/* non-zero if a process wants access */
+	unsigned char		balance;		/* stereo balance */
+
+	/* The following values are read-only device state flags */
+	unsigned char		open;		/* non-zero if open access granted */
+	unsigned char		active;		/* non-zero if I/O active */
+	unsigned			avail_ports;	/* available I/O ports */
+} audio_prinfo_t;
+
+/* This structure is used in AUDIO_GETINFO and AUDIO_SETINFO ioctl commands */
+typedef struct audio_info {
+	audio_prinfo_t		record;		/* input status information */
+	audio_prinfo_t		play;		/* output status information */
+	unsigned			monitor_gain;	/* input to output mix */
+	unsigned char		output_muted;	/* non-zero if output muted */
+}  audio_info_t;
+
+/* Audio encoding types */
+#define AUDIO_ENCODING_ULAW	(1)	/* u-law encoding */
+#define AUDIO_ENCODING_ALAW	(2)	/* A-law encoding  */
+#define AUDIO_ENCODING_LINEAR	(3)	/* Linear PCM encoding */
+
+/* These ranges apply to record, play, and monitor gain values */
+#define AUDIO_MIN_GAIN		(0)	/* minimum gain value */
+#define AUDIO_MAX_GAIN		(255)	/* maximum gain value */
+
+/* These values apply to the balance field to adjust channel gain values */
+#define AUDIO_LEFT_BALANCE		(0)	/* left channel only */
+#define AUDIO_MID_BALANCE		(32)	/* equal left/right balance */
+#define AUDIO_RIGHT_BALANCE		(64)	/* right channel only */
+
+/* Define some convenient audio port names (for port and avail_ports) */
+	/* output ports (several might be enabled at once) */
+#define AUDIO_SPEAKER			(0x01)	/* output to built-in speaker */
+#define AUDIO_HEADPHONE 		(0x02)	/* output to headphone jack */
+#define AUDIO_LINE_OUT		(0x04)	/* output to line out */
+	/* input ports (usually only one may be enabled at a time) */
+#define AUDIO_MICROPHONE 		(0x01)	/* input from microphone */
+#define AUDIO_LINE_IN			(0x02)	/* input from line in */
+
+/* Define possible audio hardware configurations for AUDIO_GETDEV ioctl */
+#define AUDIO_DEV_AMD		(1)	/* audioamd device */
+#define AUDIO_DEV_SPEAKERBOX	(2)	/* dbri device with speakerbox */
+.ps +1
+.vs +2
+.ft R
+.fi
+.RE
+.LP
+The
+.I play.gain
+and
+.I record.gain
+fields specify the output and input volume levels.  A value of
+.SB AUDIO_MAX_GAIN
+indicates maximum volume.
+Audio output may also be temporarily muted by setting a non-zero
+value in the
+.I output_muted
+field.  Clearing this field restores
+audio output to the normal state.
+Most audio devices allow input data to be monitored by mixing audio
+input onto the output channel.  The
+.I monitor_gain
+field controls the level of this feedback path.
+.LP
+The
+.I play.port
+field controls the output path for the audio device.  It can be set to either
+.SB AUDIO_SPEAKER 
+(built-in speaker), 
+.SB AUDIO_HEADPHONE 
+(headphone jack), or 
+.SB AUDIO_LINE_OUT 
+(line-out port).
+For some devices, it may be set to a combination of these ports.
+The
+.I play.avail_ports
+field returns the set of output ports that are currently accessible.
+The input ports can be either
+.SB AUDIO_MICROPHONE
+or
+\s-1\fBAUDIO_LINE_IN\fP\s0.
+The
+.I record.avail_ports
+field returns the set of input ports that are currently accessible.
+.LP
+The
+.I play.balance
+and
+.I record.balance
+fields are used to control the volume between the left and right channels
+when manipulating stereo data. When the value is set between
+.SB AUDIO_LEFT_BALANCE
+and
+\s-1\fBAUDIO_MID_BALANCE\fP\s0,
+the right channel volume will be reduced in proportion to the
+.I balance
+value.
+Conversely, when
+.I balance
+is set between
+.SB AUDIO_MID_BALANCE
+and
+\s-1\fBAUDIO_RIGHT_BALANCE\fP\s0,
+the left channel will be proportionally reduced.
+.\" XXX - The following is redundant and makes the page a bit too long:
+.\" A
+.\" .I play.balance
+.\" of
+.\" .SB AUDIO_LEFT_BALANCE
+.\" effectively enables output on only the left channel, while
+.\" .SB AUDIO_RIGHT_BALANCE
+.\" enables only the right channel.
+.LP
+The
+.I play.pause
+and
+.I record.pause
+flags may be used to pause and resume the transfer of data between the
+audio device and the
+.SM STREAMS
+buffers.
+The
+.I play.error
+and
+.I record.error
+flags indicate that data underflow or overflow has occurred.
+The
+.I play.active
+and
+.I record.active
+flags indicate that data transfer is currently active
+in the corresponding direction.
+.LP
+The
+.I play.open
+and
+.I record.open
+flags indicate that the device is currently open with the
+corresponding access permission.  The
+.I play.waiting
+and
+.I record.waiting
+flags provide an indication that a process may be waiting to access the device.
+These flags are set automatically when a process blocks on
+.BR open(\|) ,
+though they may also be set using the
+.SB AUDIO_SETINFO
+.B ioctl
+command.
+They are cleared only when a process relinquishes access by closing the device.
+.LP
+The
+.I play.samples
+and
+.I record.samples
+fields are initialized, at
+.BR open(\|) ,
+to zero and increment each time a data sample is copied
+to or from the associated
+.SM STREAMS
+queue.
+Some audio drivers may be limited to counting buffers of
+samples, instead of single samples for the
+.I samples
+accounting.
+For this reason, applications should not assume that the
+.I samples
+fields contain a perfectly accurate count.
+The
+.I play.eof
+field increments whenever a zero-length output buffer is synchronously
+processed.  Applications may use this field to detect the completion of
+particular segments of audio output.
+.LP
+The audio data format is indicated by the
+.IR sample_rate ,
+.IR channels ,
+.IR precision ,
+and
+.I encoding
+fields.  The values of these fields
+correspond to the descriptions in the
+.SB AUDIO FORMATS
+section above.
+Refer to the audio device-specific manual pages for a list of
+supported data format combinations.
+.LP
+The data format fields may be modified only on the
+.B /dev/audio
+device.
+The audio hardware will often
+constrain the input and output data formats to be identical.
+If this is the case, then the data format may not be changed
+if multiple processes have opened the audio device.
+.LP
+If the parameter changes requested by an
+.SB AUDIO_SETINFO
+.B ioctl
+cannot all be accommodated,
+.B ioctl(\|)
+will return with
+.I errno
+set to
+.SM EINVAL
+and no changes will be made to the device state.
+.SS Filio and Streamio IOCTLS
+.LP
+All of the
+.BR filio (4)
+and
+.BR streamio (4)
+.B ioctl
+commands may be issued for the
+.B /dev/audio
+device.
+Because the
+.B /dev/audioctl
+device has its own
+.SM STREAMS
+queues, most of these commands neither modify nor report the state of
+.B /dev/audio
+if issued for the
+.B /dev/audioctl
+device.  The
+.SB I_SETSIG
+.B ioctl
+may be issued for
+.B /dev/audioctl
+to enable the notification of audio status changes, as described above.
+.SS Audio IOCTLS
+.LP
+The
+audio device additionally supports the following
+.B ioctl
+commands:
+.TP
+.SB AUDIO_DRAIN
+The argument is ignored.
+This command suspends the calling process until the output
+.SM STREAMS
+queue is empty, or until a signal is delivered to the calling process.
+It may not be issued for the
+.B /dev/audioctl
+device.
+An implicit
+.SB AUDIO_DRAIN
+is performed on the final
+.B close(\|)
+of
+.BR /dev/audio .
+.TP
+.SB AUDIO_GETDEV
+The argument is a pointer to an integer. The returned value will be
+an integer that will identify the current
+.BR /dev/audio
+hardware device. The driver will return either
+\s-1\fBAUDIO_DEV_AMD\fP\s0
+or
+\s-1\fBAUDIO_DEV_SPEAKERBOX\fP\s0.
+Applications may use this value, in conjunction with the
+.I play.avail_ports
+and
+.I record.avail_ports
+fields, to determine
+the audio device capabilities.
+.TP
+.SB AUDIO_GETINFO
+The argument is a pointer to an
+.B audio_info
+structure.
+This command may be issued for either
+.B /dev/audio
+or
+.BR /dev/audioctl .
+The current state of the 
+.B /dev/audio
+device is returned in the structure.
+.\" XXX - temporary page break to keep the paragraph with the ioctl command
+.if n .ig IG
+.bp
+.IG
+.TP
+.SB AUDIO_SETINFO
+The argument is a pointer to an
+.B audio_info
+structure.
+This command may be issued for either the
+.B /dev/audio
+or the
+.BR /dev/audioctl
+device with some restrictions.
+This command configures the audio device according to the structure supplied
+and overwrites the structure with the new state of the device.
+[Note: The
+.IR play.samples ,
+.IR record.samples ,
+.IR play.error ,
+.IR record.error ,
+and
+.I play.eof
+fields are modified to reflect the state of the device when the
+.SB AUDIO_SETINFO
+was issued.  This allows programs to automatically modify these fields
+while retrieving the previous value.]
+.IP
+Certain fields in the information structure, such as the
+.I pause
+flags are treated as read-only when
+.B /dev/audio
+is not open with the corresponding access permission.
+Other fields, such as the gain levels and encoding information,
+may have a restricted set of acceptable values.
+Applications that attempt to modify such fields should check the
+returned values to be sure that the corresponding change took effect.
+The
+.IR sample_rate ,
+.IR channels ,
+.IR precision ,
+and
+.I encoding
+fields treated as read-only for
+.BR /dev/audioctl ,
+so that applications can be guaranteed
+that the existing audio format will stay in place until they relinquish
+the audio device.
+.SB AUDIO_SETINFO
+will return
+.SM EINVAL
+when the desired configuration is not possible, or
+.SM EBUSY
+when another process has control of the audio device.
+.IP
+Once set, the following values persist through subsequent
+.B open(\|)
+and
+.B close(\|)
+calls of the device:
+.IR play.gain ,
+.IR record.gain ,
+.IR play.balance ,
+.IR record.balance,
+.IR output_muted ,
+.IR monitor_gain ,
+.IR play.port ,
+and
+.IR record.port .
+All other state is reset when the corresponding I/O stream of
+.B /dev/audio
+is closed.
+.IP
+The
+.B audio_info
+structure may be initialized through the use of the
+.SB AUDIO_INITINFO
+macro.
+This macro sets all fields in the structure to values that are
+ignored by the
+.SB AUDIO_SETINFO
+command.  For instance, the following code switches the output port
+from the built-in speaker to the headphone jack without modifying any
+other audio parameters:
+.LP
+.RS
+.RS
+.nf
+.ft B
+.ps -1
+.vs -2
+audio_info_t	info;
+
+AUDIO_INITINFO(&info);
+info.play.port = AUDIO_HEADPHONE;
+err = ioctl(audio_fd, AUDIO_SETINFO, &info);
+.fi
+.ps +1
+.vs +2
+.ft R
+.RE
+.RE
+.IP
+This technique is preferred over using a sequence of
+.SB AUDIO_GETINFO
+followed by
+\s-1\fBAUDIO_SETINFO\fP\s0.
+.SH ERRORS
+An
+.B open(\|)
+will fail if:
+.TP 15
+.SM EBUSY
+The requested play or record access is busy and the
+.SB O_NDELAY
+flag was set in the
+.B open(\|)
+request.
+.TP 15
+.SM EINTR
+The requested play or record access is busy and a signal interrupted the
+.B open(\|)
+request.
+.LP
+An
+.B ioctl(\|)
+will fail if:
+.TP 15
+.SM EINVAL
+The parameter changes requested in the
+.SB AUDIO_SETINFO
+.B ioctl
+are invalid or are not supported by the device.
+.TP 15
+.SM EBUSY
+The parameter changes requested in the
+.SB AUDIO_SETINFO
+.B ioctl
+could not be made because another process has opened the device.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/audio
+.TP
+.B /dev/audioctl
+.TP
+.B /usr/demo/SOUND
+.PD
+.SH SEE ALSO
+.BR audioamd (4),
+.BR dbri (4),
+.BR open (2V),
+.BR close (2V),
+.BR read (2V),
+.BR write (2V),
+.BR ioctl (2),
+.BR fcntl (2V),
+.BR poll (2),
+.BR filio (4),
+.BR streamio (4)
+.SH BUGS
+.LP
+Due to a
+.I feature
+of the
+.SM STREAMS
+implementation, programs that are terminated or exit without closing the
+.B audio
+device may hang for a short period while audio output drains.
+In general, programs that produce audio output should catch the
+.SB SIGINT
+signal and flush the output stream before exiting.
+.SH FUTURE DIRECTIONS
+.LP
+Workstation audio resources should be managed by a networked audio server,
+in the same way that the video monitor is manipulated by a window system server.
+For the time being, we encourage you to write your programs in a modular
+fashion, isolating the audio device-specific functions,
+so that they may be easily ported to such an environment.

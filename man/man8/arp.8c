@@ -1,0 +1,116 @@
+.\" @(#)arp.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH ARP 8C "17 November 1987"
+.SH NAME
+arp \- address resolution display and control
+.SH SYNOPSIS
+.B arp
+.I hostname
+.LP
+.B arp \-a
+[
+.I vmunix
+[
+.I kmem
+] ]
+.LP
+.B arp \-d
+.I hostname
+.LP
+.B arp \-s
+.I hostname ether_address
+[
+.B temp
+] [
+.B pub
+] [
+.B trail
+]
+.LP
+.B arp \-f
+.I filename
+.SH DESCRIPTION
+.IX  "arp command"  ""  "\fLarp\fP \(em address resolution display and control"
+.IX  "address resolution display and control"  ""  "address resolution display and control \(em \fLarp\fP"
+The
+.B arp
+program displays and modifies the
+Internet-to-Ethernet address translation
+tables used by the address resolution protocol
+.RB ( arp (4P)).
+.LP
+With no flags, the program displays the current
+.SM ARP
+entry for
+.IR hostname .
+The host may be specified by name or by number,
+using Internet dot notation.
+.SH OPTIONS
+.TP
+.B \-a
+Display all of the current
+.SM ARP
+entries by reading the table
+from the file
+.I kmem
+(default
+.BR /dev/kmem )
+based on the kernel file
+.I vmunix
+(default
+.BR /vmunix ).
+.TP
+.B \-d
+Delete an entry for the host called
+.IR hostname .
+This option may only be used by the super-user.
+.TP
+.B \-s
+Create an
+.SM ARP
+entry for the host called
+.I hostname
+with the Ethernet address
+.IR ether_address .
+The Ethernet address is given as six hex bytes separated by colons.
+The entry will be permanent unless the word
+.B temp
+is given in the command.
+If the word
+.B pub
+is given, the entry will be published, for instance,
+this system will respond to
+.SM ARP
+requests for
+.I hostname
+even though the hostname is not its own.
+The word
+.B trail
+indicates that trailer encapsulations may be sent to this host.
+.TP
+.B \-f
+Read the file named
+.I filename
+and set multiple entries in the
+.SM ARP
+tables.  Entries
+in the file should be of the form
+.RS
+.IP
+.I hostname ether_address
+[
+.B temp
+] [
+.B pub
+] [
+.B trail
+]
+.RE
+.IP
+with argument meanings as given above.
+.SH "SEE ALSO"
+.BR arp (4P),
+.BR ifconfig (8C)

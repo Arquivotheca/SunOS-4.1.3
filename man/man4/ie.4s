@@ -1,0 +1,139 @@
+.\" @(#)ie.4s 1.1 92/07/30 SMI;
+.TH IE 4S "7 October 1990"
+.SH NAME
+ie \- Intel 10 Mb/s Ethernet interface
+.SH "CONFIG \(em SUN-4 SYSTEM"
+.ft B
+.nf
+device ie0 at obio ? csr 0xf6000000 priority 3
+device ie1 at vme24d16 ? csr 0xe88000 priority 3 vector ieintr 0x75
+device ie2 at vme24d16 ? csr 0x31ff02 priority 3 vector ieintr 0x76
+device ie3 at vme24d16 ? csr 0x35ff02 priority 3 vector ieintr 0x77
+device ie4 at vme24d16 ? csr 0x2dff02 priority 3 vector ieintr 0x7c
+.ft R
+.fi
+.LP
+.B ie4
+is supported on the SPARCsystems 300 and 400 only.
+.SH "CONFIG \(em SUN-3x SYSTEM"
+.ft B
+.nf
+device ie0 at obio ? csr 0x65000000 priority 3
+device ie1 at vme24d16 ? csr 0xe88000 priority 3 vector ieintr 0x75
+device ie2 at vme24d32 ? csr 0x31ff02 priority 3 vector ieintr 0x76
+device ie3 at vme24d32 ? csr 0x35ff02 priority 3 vector ieintr 0x77
+.fi
+.ft R
+.SH "CONFIG \(em SUN-3 SYSTEM"
+.ft B
+.nf
+device ie0 at obio ? csr 0xc0000 priority 3
+device ie1 at vme24d16 ? csr 0xe88000 priority 3 vector ieintr 0x75
+device ie2 at vme24d32 ? csr 0x31ff02 priority 3 vector ieintr 0x76
+device ie3 at vme24d32 ? csr 0x35ff02 priority 3 vector ieintr 0x77
+.fi
+.ft R
+.SH "CONFIG \(em SUN-3E SYSTEM"
+.ft B
+.nf
+device ie0 at vme24d16 ? csr 0x31ff02 priority 3 vector ieintr 0x74
+.ft R
+.fi
+.SH "CONFIG \(em SUN386i SYSTEM"
+.ft B
+.nf
+device ie0 at obmem ? csr 0xD0000000 irq 21 priority 3
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "ie device"  ""  "\fLie\fP \(em Sun 10 Mb/s Ethernet interface"  ""  PAGE START
+.IX  "Sun 10 Mb/s Ethernet interface"  ""  "Sun 10 Mb/s Ethernet interface \(em \fLie\fP"  ""  PAGE START
+.IX  "10 Mb/s Sun Ethernet interface"  ""  "10 Mb/s Sun Ethernet interface \(em \fLie\fP"  ""  PAGE START
+.IX  "Ethernet controller"  "ie"  ""  "\fLie\fP \(em Sun Ethernet interface"  PAGE START
+.LP
+The
+.B ie
+interface provides access to a 10 Mb/s Ethernet network
+through a controller using the Intel 82586 
+.SM LAN
+Coprocessor chip.
+For a general description of network interfaces see
+.BR if (4N).
+.LP
+.B ie0
+specifies a
+.SM CPU\s0-board-resident
+interface, except on a Sun-3E where
+.B ie0
+is the Sun-3/E Ethernet expansion board.
+.B ie1
+specifies a
+Multibus Intel Ethernet interface for use with a
+.SM VME
+adapter.
+.B ie2
+and
+.B ie3
+specify
+SunNet Ethernet/VME Controllers,
+also known as a 
+Sun-3/E Ethernet expansion boards.
+.SH SEE ALSO
+.BR if (4N),
+.BR le (4S)
+.SH "DIAGNOSTICS"
+.LP
+There are too many driver messages to list them all individually here.
+Some of the more common messages and their meanings follow.
+.TP
+.B ie%d: Ethernet jammed
+Network activity has become so intense that sixteen
+successive transmission attempts failed,
+and the 82586 gave up on the current packet.
+Another possible cause of this message is a noise source
+somewhere in the network,
+such as a loose transceiver connection.
+.TP
+.B ie%d: no carrier
+The 82586 has lost input to its carrier detect pin
+while trying to transmit a packet,
+causing the packet to be dropped.
+Possible causes include an open circuit somewhere in the network
+and noise on the carrier detect line from the transceiver.
+.TP
+.B ie%d: lost interrupt: resetting
+The driver and 82586 chip have lost synchronization with each other.
+The driver recovers by resetting itself and the chip.
+.TP
+.B ie%d: iebark reset
+The 82586 failed to complete
+a watchdog timeout command in the allotted time.
+The driver recovers by resetting itself and the chip.
+.br
+.ne 4
+.TP
+.B ie%d: \s-1WARNING\s0: requeuing
+The driver has run out of resources while getting a packet
+ready to transmit.
+The packet is put back on the output queue for retransmission
+after more resources become available.
+.br
+.ne 5
+.TP
+.B ie%d: panic: scb overwritten
+The driver has discovered that memory that should remain
+unchanged after initialization has become corrupted.
+This error usually is a symptom of a bad 82586 chip.
+.TP
+.B ie%d: giant packet
+Provided that all stations on the Ethernet are operating
+according to the Ethernet specification, this error \*(lqshould
+never happen,\*(rq since the driver allocates its receive buffers
+to be large enough to hold packets of the largest permitted size.
+The most likely cause of this message is that some other station
+on the net is transmitting packets whose lengths exceed the maximum
+permitted for Ethernet.
+.IX  "ie device"  ""  "\fLie\fP \(em Sun 10 Mb/s Ethernet interface"  ""  PAGE END
+.IX  "Sun 10 Mb/s Ethernet interface"  ""  "Sun 10 Mb/s Ethernet interface \(em \fLie\fP"  ""  PAGE END
+.IX  "10 Mb/s Sun Ethernet interface"  ""  "10 Mb/s Sun Ethernet interface \(em \fLie\fP"  ""  PAGE END
+.IX  "Ethernet controller"  "ie"  ""  "\fLie\fP \(em Sun Ethernet interface"  PAGE END

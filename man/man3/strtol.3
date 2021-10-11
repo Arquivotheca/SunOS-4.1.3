@@ -1,0 +1,86 @@
+.\" @(#)strtol.3 1.1 92/07/30 SMI; from S5
+.TH STRTOL 3 "6 October 1987"
+.SH NAME
+strtol, atol, atoi \- convert string to integer
+.SH SYNOPSIS
+.nf
+.B long strtol(str, ptr, base)
+.B char \(**str, \(**\(**ptr;
+.B int base;
+.LP
+.B long atol(str)
+.B char \(**str;
+.LP
+.B int atoi(str)
+.B char \(**str;
+.fi
+.SH DESCRIPTION
+.IX  "strtol()"  ""  "\fLstrtol()\fP \(em ASCII string to long integer"
+.IX  "convert strings to numbers"  strtol()  ""  \fLstrtol()\fP
+.IX  "ASCII" "string to long integer \(em \fLstrtol()\fP"
+.IX  "atoi()"  ""  "\fLatoi()\fP \(em ASCII to integer"
+.IX  "convert strings to numbers"  atoi()  ""  \fLatoi()\fP
+.IX  "ASCII" "to integer \(em \fLatoi()\fP"
+.IX  "atol()"  ""  "\fLatol()\fP \(em ASCII to long"
+.IX  "convert strings to numbers"  atol()  ""  \fLatol()\fP
+.IX  "ASCII" "to long \(em \fLatol()\fP"
+.LP
+.B strtol(\|)
+returns as a long integer the value represented by the character string
+pointed to by
+.IR str .
+The string is scanned up to the first
+character inconsistent with the base.
+Leading ``white-space'' characters
+(as defined by
+.B isspace(\|)
+in
+.BR ctype (3V))
+are ignored.
+.LP
+If the value of
+.I ptr
+is not (char \(**\(**)\s-1NULL\s+1,
+a pointer to the character terminating the scan
+is returned in the location pointed to by
+.IR ptr .
+If no integer can be formed,
+that location is set to
+.IR str ,
+and zero is returned.
+.LP
+If
+.I base
+is positive (and not greater than 36), it is used as
+the base for conversion.  After an optional
+leading sign, leading zeros are ignored,
+and ``0x'' or ``0X'' is ignored if
+.I base
+is 16.
+.LP
+If
+.I base
+is zero, the string itself determines the base
+thusly: after an optional leading sign a
+leading zero indicates octal conversion,
+and a leading ``0x'' or ``0X'' hexadecimal conversion.
+Otherwise, decimal conversion is used.
+.LP
+Truncation from long to int can, of course, take
+place upon assignment or by an explicit cast.
+.LP
+.BI atol( str )
+is equivalent to
+.BI strtol( str ", (" char " \(**\(**)\s-1NULL\s+1, 10)"\fR.
+.LP
+.BI atoi( str )
+is equivalent to
+.BR ( int ") strtol(" str ", (" char
+.BR "\(**\(**)\s-1NULL\s+1, 10)" .
+.SH SEE ALSO
+.BR ctype (3V),
+.BR scanf (3V),
+.BR strtod (3)
+.SH BUGS
+.LP
+Overflow conditions are ignored.

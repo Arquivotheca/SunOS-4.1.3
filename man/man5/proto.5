@@ -1,0 +1,108 @@
+.TH PROTO 5 "19 December 1988"
+.SH NAME
+proto \- prototype job file for at
+.SH SYNOPSIS
+.LP
+.B /var/spool/cron/.proto
+.LP
+.BI /var/spool/cron/.proto. queue
+.SH DESCRIPTION
+.IX "proto file" "" "\fL.proto\fP file"
+.LP
+When a job is submitted to
+.B at
+or
+.BR batch ,
+(see 
+.BR at (1)) 
+the job is constructed as a shell script.  First, a prologue is
+constructed, consisting of:
+.IP \(bu 3
+A header specifying the owner, job name, and shell
+that should be used to run the job, and a flag indicating whether mail
+should be sent when the job completes;
+.IP \(bu
+A set of Bourne shell commands to make the environment (see
+.BR environ (5V))
+for the
+.B at
+job the same as the current environment;
+.IP \(bu
+A command to run the user's shell (as specified by the
+.SB SHELL
+environment variable) with the rest of the job file as input.
+.LP
+.B at
+then reads a \*(lqprototype file,\*(rq and constructs the rest of the
+job file from it.
+.LP
+Text from the prototype file is copied to the job file, except for
+special \*(lqvariables\*(rq that are replaced by other text:
+.RS
+.TP
+.B $d
+is replaced by the current working directory
+.PD 0
+.TP
+.B $l
+is replaced by the current file size limit (see
+.BR ulimit (3C))
+.TP
+.B $m
+is replaced by the current umask (see
+.BR umask (2V))
+.TP
+.B $t
+is replaced by the time at which the job should be run, expressed as seconds
+since January 1, 1970, 00:00 Greenwich Mean Time, preceded by a colon
+.TP
+.B $<
+is replaced by text read by
+.B at
+from the standard input (that is, the commands provided to
+.B at
+to be run in the job)
+.PD
+.RE
+.LP
+If the job is submitted in queue
+.IR queue ,
+.B at
+uses the file
+.BI /var/spool/cron/.proto. queue
+as the prototype file if it exists, otherwise it will use the file
+.BR /var/spool/cron/.proto .
+.SH EXAMPLES
+The standard
+.B .proto
+file supplied with SunOS is:
+.LP
+.RS
+.nf
+.ft B
+#
+# @(#)proto.5 1.1 92/07/30 SMI; from S5R3 1.1
+#
+cd $d
+umask $m
+$<
+.ft R
+.fi
+.RE
+.LP
+which causes commands to change the current directory in the job to the
+current directory at the time
+.B at
+was run, and to change the umask in the job to the umask at the time
+.B at
+was run, to be inserted before the commands in the job.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/spool/cron/.proto
+.LP
+.BI /var/spool/cron/.proto. queue
+.PD 
+.SH "SEE ALSO"
+.BR at (1)
+

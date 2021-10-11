@@ -1,0 +1,123 @@
+#
+# @(#)makelibm 1.1 92/07/30 SMI;
+#
+
+#	libm inner Makefile
+
+#	The following are expected to be defined outside this makefile:
+
+#	FP=		floating-point option
+#	OBJDIR=		name of subdirectory to build libraries
+#
+
+#	The targets for this version:
+
+IL=	$(OBJDIR)/libm.il
+LIB = 	$(OBJDIR)/libm.a
+LIBP = 	$(OBJDIR)/libm_p.a
+LIBS=	$(LIBP) $(LIB)
+
+#	The sources are in:
+
+SOURCEDIRS= 	C F D R libF77
+
+#	Directory for machine-independent .o files:
+
+MIDIR=	$(OBJDIR)/midir
+
+#	Directory for lorder/tsort
+
+TSORTDIR = $(OBJDIR)/lordertsort
+
+CHOWN=	/etc/chown
+OLDLS=	/usr/ucb/ls
+OLDCC=	/usr/ucb/cc
+
+.PRECIOUS:	$(LIBS) 
+
+all:	$(LIB)
+
+$(LIB):	FORCEMAKE
+	if test ! -d $(MIDIR) ; then mkdir $(MIDIR) ; fi
+	if test ! -d $(MIDIR)/profiled ; then mkdir $(MIDIR)/profiled ; fi
+	if test -x $(OLDCC) ; then \
+		cd $(OBJDIR) ; $(MAKE) -$(MAKEFLAGS) CC=$(OLDCC) ASFLAGS='$(ASFLAGS) -D$(FP)' libm.il ; else \
+		cd $(OBJDIR) ; $(MAKE) -$(MAKEFLAGS) CC='$(CC)' ASFLAGS='$(ASFLAGS) -D$(FP)' libm.il ; fi
+	for i in $(SOURCEDIRS) ; do \
+		(cd $$i; \
+		(if test -x $(OLDCC) ; then \
+			$(MAKE) -$(MAKEFLAGS) CC='$(OLDCC)' CFLAGS='$(CFLAGS) -D$(FP)' FP=$(FP) WD=`pwd` OBJDIR=$(OBJDIR) IL=../$(IL) ; else \
+			$(MAKE) -$(MAKEFLAGS) CC='$(CC)' CFLAGS='$(CFLAGS) -D$(FP)' FP=$(FP) WD=`pwd` OBJDIR=$(OBJDIR) IL=../$(IL) ; fi ) ; \
+		); \
+	done ;
+	if test -x $(OLDCC) ; then \
+	cd $(OBJDIR) ; $(MAKE) -$(MAKEFLAGS) CC=$(OLDCC) CFLAGS='$(CFLAGS) -D$(FP)' ASFLAGS='$(ASFLAGS) -D$(FP)' FP=$(FP) ; else \
+	cd $(OBJDIR) ; $(MAKE) -$(MAKEFLAGS) CC='$(CC)' CFLAGS='$(CFLAGS) -D$(FP)' ASFLAGS='$(ASFLAGS) -D$(FP)' FP=$(FP) ; fi
+	if test -x $(OLDLS) ; then $(OLDLS) -ilgsLF $(LIBS) > $(OBJDIR)/new.stamp ; \
+	else ls -ilgsLF $(LIBS) > $(OBJDIR)/new.stamp ; fi
+	if cmp -s $(OBJDIR)/good.stamp $(OBJDIR)/new.stamp ; then \
+		echo $(LIB) has not changed: skip lorder/tsort/ranlib ; \
+	else \
+	if test $(MACH) = i386; then \
+		(echo $(LIB) has changed - do profiled ar; \
+		rm -rf $(TSORTDIR) ; \
+		mkdir $(TSORTDIR) ; \
+		(cd $(TSORTDIR) ; \
+		cp ../midir/profiled/*.o . ; \
+		ar cr lib.a *.o ; \
+		mv lib.a ../libm_p.a ; \
+		rm -f *.o ; \
+		echo $(LIB) has changed - do regular ar; \
+		cp ../midir/*.o . ; \
+		cp ../*.o . ; \
+		ar cr lib.a *.o ; \
+		mv lib.a ../libm.a ; \
+		) ; \
+		rm -rf $(TSORTDIR) ; \
+		(if test -x $(OLDLS) ; then $(OLDLS) -ilgsLF $(LIBS) > $(OBJDIR)/good.stamp ; else ls -ilgsLF $(LIBS) > $(OBJDIR)/good.stamp ; fi) ; \
+		echo $(LIB) done ) ; \
+	else \
+		(echo $(LIB) has changed - do profiled lorder/tsort/ar/ranlib;\
+		rm -rf $(TSORTDIR) ; \
+		mkdir $(TSORTDIR) ; \
+		(cd $(TSORTDIR) ; \
+		cp ../midir/profiled/*.o . ; \
+		ar cr lib.a `lorder *.o | tsort` ; \
+		ranlib lib.a ; \
+		mv lib.a ../libm_p.a ; \
+		rm -f *.o ; \
+		echo $(LIB) has changed - do regular lorder/tsort/ar/ranlib; \
+		cp ../midir/*.o . ; \
+		cp ../*.o . ; \
+		ar cr lib.a `lorder *.o | tsort` ; \
+		ranlib lib.a ; \
+		mv lib.a ../libm.a ; \
+		) ; \
+		rm -rf $(TSORTDIR) ; \
+		(if test -x $(OLDLS) ; then $(OLDLS) -ilgsLF $(LIBS) > $(OBJDIR)/good.stamp ; else ls -ilgsLF $(LIBS) > $(OBJDIR)/good.stamp ; fi) ; \
+		echo $(LIB) done with lorder/tsort/ranlib ) ; \
+	fi ; \
+	fi
+
+install: $(LIB)
+	install -d -o bin -m 755 $(INSTALLDIR)
+	install -c -m 644 $(IL) $(INSTALLDIR)/libm.il ;
+	install -c -m 644 $(LIBP) $(INSTALLDIR)/libm_p.a
+	ranlib $(INSTALLDIR)/libm_p.a
+	install -c -m 644 $(LIB) $(INSTALLDIR)/libm.a
+	ranlib $(INSTALLDIR)/libm.a
+# the following install the unsafed trig.il on RR
+	if test `mach` = i386 ; then \
+		install -c -m 644 $(OBJDIR)/trig.il $(INSTALLDIR)/trig.il ; \
+	fi
+# the following install the unsafed sqrt.il on RR
+	if test $(FP) = f3167 ; then \
+		install -c -m 644 $(OBJDIR)/sqrt.il $(INSTALLDIR)/sqrt.il ; \
+	fi
+
+
+clean:
+	rm -f a.out core errs *.o i386/*.o m68k/*.o $(OBJDIR)/*.stamp $(TSORTDIR)
+	cd $(OBJDIR) ; $(MAKE) -$(MAKEFLAGS) clean
+
+FORCEMAKE:

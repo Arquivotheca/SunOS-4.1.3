@@ -1,0 +1,463 @@
+.\" @(#)bpp.4s 1.1 92/07/30 SMI;
+.TH BPP 4S "6 July 1992"
+.SH NAME
+bpp \- bidirectional parallel port driver for "SUN4M_50" Sun-4m/SPARCstation 10.
+.SH CONFIGURATION
+.nf
+.ft B
+device-driver bpp
+.ft R
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/types.h>
+.br
+#include <fcntl.h>
+.br
+#include <sbusdev/bpp_io.h>
+.br
+fd = open("/dev/bpp\fIn\fB", flags);
+.ft R
+.fi
+.LP
+.SH AVAILABILITY
+.LP
+Sun-4m/50 - SPARCstation 10.
+.SH DESCRIPTION
+.IX "bpp SBus device" "" "\fLbpp\fP \(em bidirectional parallel port"
+.IX "parallel port" "bpp" "" "\fLbpp\fP \(em bidirectional parallel port"
+.LP
+The
+.B bpp
+driver provides a general-purpose
+bidirectional interface to parallel device,
+on Sun-4m/SPARCstation 10 systems.
+It supports a variety of output (printer)
+and input (scanner) devices,
+using 
+programmable timing
+relationships between the various handshake signals.
+The
+.BR bpp
+driver is an exclusive use device.
+If the device has already been opened,
+subsequent opens will fail with EBUSY.
+.SS Default Operation
+Each time the 
+.BR bpp 
+device is opened,
+the default configuration
+is BPP_ACK_BUSY_HS for read handshake, BPP_ACK_HS for write handshake,
+1 microsecond for all setup times and strobe widths,
+and 60 seconds for both timeouts.
+This configuration (in the write mode) will drive
+many common personal computer parallel printers
+with Centronics-type interfaces.
+The application should use the 
+BPPIOC_SETPARMS
+ioctl to configure the
+.BR bpp
+for the particular device which is attached,
+if necessary.
+.SS Write Operation
+If a failure or error condition occurs during a
+.BR write() ,
+the number of bytes successfully written
+will be returned (short write).
+Note that errno will not be set.
+The contents of certain status bits will be
+captured at the time of the error,
+and can be retrieved by the application program,
+using the BPPIOC_GETERR ioctl call.
+Subsequent
+.BR write()
+calls may fail with the system error ENXIO
+if the error condition is not rectified.
+The captured status information will be overwritten
+each time an attempted transfer or a BPPIOC_TESTIO ioctl occurs.
+.SS Read/Write Operation
+When the driver is opened for reading and writing, it is
+assumed that scanning will take place, as scanners
+are the only devices supported by this mode.
+Most scanners require that the SLCT_IN or AFX pin be
+set to tell the scanner the direction of the transfer.
+The AFX line is set when the 
+.BR read_handshake
+element of the
+.BR bpp_transfer_parms
+structure is set
+to BPP_HSCAN_HS, otherwise the SLCT_IN pin is set.
+Normally, scanning starts by writing a command to the
+scanner, at which time the pin will be set. When the
+scan data is read back, the pin will be reset.
+.LP
+If a failure or error condition occurs during a
+.BR read() ,
+the number of bytes successfully read
+will be returned (short read).
+Note that errno will not be set.
+The contents of certain status bits will be
+captured at the time of the error,
+and can be retrieved by the application,
+using the BPPIOC_GETERR ioctl call.
+Subsequent
+.BR read()
+calls may fail with ENXIO
+if the error condition is not rectified.
+The captured register information will be overwritten
+each time an attempted transfer or a BPPIOC_TESTIO ioctl occurs.
+.SS Read Operation
+If a failure or error condition occurs during a
+.BR read() ,
+the number of bytes successfully read
+will be returned (short read).
+Note that errno will not be set.
+If 
+.BR read_handshake
+is set to BPP_CLEAR_MEM or BPP_SET_MEM, zeroes
+or ones, respectively, will be written into the user buffer.
+.SH IOCTLS
+The following 
+.BR ioctl(2) 
+calls are supported:
+.TP 20
+.SB BPPIOC_SETPARMS
+Set transfer parameters.
+.br
+The argument is a pointer to a 
+.ft B
+struct bpp_transfer_parms.
+.ft R
+See below for a description of the elements of this structure.
+If a parameter is out of range, EINVAL is returned.
+.TP 20
+.SB BPPIOC_GETPARMS
+Get current transfer parameters.
+.br
+The argument is a pointer to a 
+.ft B
+struct bpp_transfer_parms.
+.ft R
+See below for a description of the elements of this structure.
+If no parameters have been configured since the device was opened,
+the contents of the struct will be the default conditions
+of the parameters (see Default Operation above).
+.TP 20
+.SB Transfer Parameters Structure
+.LP
+This structure is defined in 
+.BR<sbusdev/bpp_io.h>.
+.nf
+.sp
+.ft B
+struct bpp_transfer_parms {
+	enum	handshake_t
+		read_handshake;	/* parallel port read handshake mode */
+	int	read_setup_time;	/* DSS register - in nanoseconds */
+	int	read_strobe_width;	/* DSW register - in nanoseconds */
+	int	read_timeout;		/*
+					 * wait this many seconds
+					 * before aborting a transfer
+					 */
+	enum	handshake_t	
+		write_handshake;	/* parallel port write handshake mode */
+	int	write_setup_time;	/* DSS register - in nanoseconds */
+	int	write_strobe_width;	/* DSW register - in nanoseconds */
+	int	write_timeout;		/*
+					 * wait this many seconds
+					 * before aborting a transfer
+					 */
+
+};
+
+/* Values for read_handshake and write_handshake fields */
+enum	handshake_t {
+	BPP_NO_HS,		/* no handshake pins */
+	BPP_ACK_HS,		/* handshake controlled by ACK line */
+	BPP_BUSY_HS,		/* handshake controlled by BSY line */
+	BPP_ACK_BUSY_HS,	/*
+				 * handshake controlled by ACK and BSY lines
+				 * read_handshake only!
+				 */
+	BPP_XSCAN_HS,	/* xerox scanner mode, read_handshake only! */
+	BPP_HSCAN_HS,	/*
+				 * HP scanjet scanner mode
+				 * read_handshake only!
+				 */
+	BPP_CLEAR_MEM,	/* write 0's to memory, read_handshake only! */
+	BPP_SET_MEM,	/* write 1's to memory, read_handshake only! */
+	/* The following handshakes are RESERVED. Do not use. */
+	BPP_VPRINT_HS,	/* valid only in read/write mode */
+	BPP_VPLOT_HS	/* valid only in read/write mode */
+};
+.fi
+.ft R
+.LP
+The 
+.BR read_setup_time
+field controls the time between
+dstrb falling edge to bsy rising edge if the 
+.BR read_handshake
+field is set to BPP_NO_HS or BPP_ACK_HS.
+It controls the time between
+dstrb falling edge to ack rising edge if the
+.BR read_handshake
+field is set to BPP_ACK_HS or BPP_ACK_BUSY_HS.
+It controls the time between
+ack falling edge to dstrb rising edge if the
+.BR read_handshake
+field is set to BPP_XSCAN_HS.
+.LP
+The 
+.BR read_strobe_width
+field controls the time between
+ack rising edge and ack falling edge if the
+.BR read_handshake
+field is set to BPP_NO_HS or BPP_ACK_BUSY_HS.
+It controls the time between
+dstrb rising edge to dstrb falling edge if the
+.BR read_handshake
+field is set to BPP_XSCAN_HS.
+.LP
+The values allowed for the
+.BR write_handshake
+field
+are duplicates of the definitions for the
+.BR read_handshake
+field. Note that some of these handshake definitions
+are only valid in one mode or the other.
+.LP
+The 
+.BR write_setup_time
+field controls the time between
+data valid to dstrb rising edge for all values of the 
+.BR write_handshake
+field.
+.LP
+The 
+.BR write_strobe_width
+field controls the time between
+dstrb rising edge and dstrb falling edge if the
+.BR write_handshake
+field is not set to BPP_VPRINT_HS or BPP_VPLOT_HS.
+It controls the minimum time between
+dstrb rising edge to dstrb falling edge if the
+.BR write_handshake
+field is set to BPP_VPRINT_HS or BPP_VPLOT_HS.
+.TP
+.SB BPPIOC_SETOUTPINS
+Set output pin values.
+.br
+The argument is a pointer to a 
+.ft B
+struct bpp_pins.
+.ft R
+See below for a description of the elements of this structure.
+If a parameter is out of range, EINVAL is returned.
+.TP
+.SB BPPIOC_GETOUTPINS
+Read output pin values.
+.br
+The argument is a pointer to a 
+.ft B
+struct bpp_pins.
+.ft R
+See below for a description of the elements of this structure.
+.br
+.TP 20
+.SB Transfer Pins Structure
+.LP
+This structure is defined in
+.BR<sbusdev/bpp_io.h>.
+.nf
+.sp
+.ft B
+struct	bpp_pins {
+	u_char	output_reg_pins;	/* pins in P_OR register */
+	u_char	input_reg_pins;		/* pins in P_IR register */
+};
+
+/* Values for output_reg_pins field */
+#define BPP_SLCTIN_PIN	0x01	/* Select in pin		*/
+#define BPP_AFX_PIN		0x02	/* Auto feed pin		*/
+#define BPP_INIT_PIN		0x04	/* Initialize pin		*/
+#define BPP_V1_PIN		0x08	/* reserved pin 1		*/
+#define BPP_V2_PIN		0x10	/* reserved pin 2		*/
+#define BPP_V3_PIN		0x20	/* reserved pin 3		*/
+
+#define BPP_ERR_PIN		0x01	/* Error pin		*/
+#define BPP_SLCT_PIN		0x02	/* Select pin		*/
+#define BPP_PE_PIN		0x04	/* Paper empty pin	*/
+.fi
+.ft R
+.TP
+.SB BPPIOC_GETERR
+Get last error status.
+.br
+The argument is a pointer to a
+.ft B
+struct bpp_error_status.
+.ft R
+See below for a description of the elements of this structure.
+This structure
+indicates the status of all the appropriate 
+status bits
+at the time of the most recent error condition during
+a
+.BR read()
+or
+.BR write()
+call,
+or the status of the bits at the most recent BPPIOC_TESTIO 
+.BR ioctl()
+call.
+Note that the bits in the pin_status element
+indicate whether the associated pin is active,
+not the actual polarity.
+The application can check transfer readiness without
+attempting another transfer using the BPPIOC_TESTIO ioctl.
+Note that the
+.BR timeout_occurred
+and
+.BR bus_error
+fields will never be set by the BPPIOC_TESTIO ioctl,
+only by an actual failed transfer.
+.TP 20
+.SB Error Pins Structure
+.LP
+This structure is defined in the include file
+.BR<sbusdev/bpp_io.h>.
+.nf
+.sp
+.ft B
+
+struct	bpp_error_status {
+	char	timeout_occurred;	/* 1 if a timeout occurred */
+	char	bus_error;		/* 1 if an SBus bus error	*/
+	u_char	pin_status;		/*
+					 * status of pins which could
+					 * cause an error
+					 */
+};
+
+/* Values for pin_status field */
+#define	BPP_ERR_ERR		0x01	/* Error pin active		*/
+#define	BPP_SLCT_ERR	0x02	/* Select pin active		*/
+#define	BPP_PE_ERR		0x04	/* Paper empty pin active	*/
+#define	BPP_SLCTIN_ERR	0x10	/* Select in pin active		*/
+#define	BPP_BUSY_ERR	0x40	/* Busy pin active		*/
+.fi
+.ft R
+.TP
+.SB BPPIOC_TESTIO
+Test transfer readiness.
+.br
+This command checks to see if a read or write transfer would succeed
+based on pin status, opened mode, and handshake selected.
+If a transfer would succeed, zero is returned.
+If a transfer would fail, -1 is returned,
+and
+.BR errno
+is set to EIO,
+and the error status information is captured.
+The captured status can be retrieved using the
+BPPIOC_GETERR ioctl call.
+Note that the
+.BR timeout_occurred
+and
+.BR bus_error
+fields will never be set by this ioctl.
+.SH ERRORS
+.TP 15
+.SM EBADF
+The device is opened for write-only access and a read is attempted,
+or
+the device is opened for read-only access and a write is attempted.
+.TP 15
+.SM EBUSY
+The device has been opened and another open is attempted.
+.br
+An attempt has been made to unload the driver while one of the units
+is open.
+.TP
+.SM EINVAL
+A BPPIOC_SETPARMS ioctl is attempted with an out of range value in
+the
+.BR bpp_transfer_parms
+structure.
+.br
+A BPPIOC_SETOUTPINS ioctl is attempted with an invalid
+value in the pins structure.
+.br
+An ioctl is attempted with an invalid value in the command argument.
+.br
+An invalid command argument is received from the vd driver
+(during
+.ft B
+modload, modunload
+.ft R
+or 
+.BR modstat ).
+.TP
+.SM EIO
+The driver encountered an SBus bus error when attempting
+an access.
+.br
+A read or write does not complete properly,
+due to a peripheral error
+or a transfer timeout.
+.br
+A BPPIOC_TESTIO
+.BR ioctl()
+call is attempted while a condition exists which would
+prevent a transfer (such as a peripheral error).
+\.".br
+\."In read-only mode,
+\."with the read_handshake set to
+\."VPRINT or VPLOT,
+\."an INIT signal has been received,
+\."and another transfer has been attempted.
+.TP
+.SM ENXIO
+The driver has received an open request for a 
+unit for which the attach failed.
+.br
+The driver has received a read or write request for a unit
+number greater than the number of units available.
+.br
+The driver has received a write request for a unit
+which has an active peripheral error.
+.\".SH ENVIRONMENT
+.SH FILES
+.PD 0
+.TP 25n
+.B /dev/bpp?
+bidirectional parallel port device(s)
+.PD
+.SH "SEE ALSO"
+.BR read (2V) ,
+.BR write (2V) ,
+.BR ioctl (2)
+.LP
+.I "Writing Device Drivers for \s-1SB\s0us Systems; (in) SBus Developer's Kit"
+.\".LP
+.\".I "$Title_of_Section, $Sun_Doc_Title"
+.\".LP
+.\".I "$Outside_Doc_Title,"
+.\"$Author, $Year by $Holder, $Publisher.
+.\".SH DIAGNOSTICS
+.\".TP 20n
+.\"$message
+.\"$description
+.\".SH WARNINGS
+.\".SH NOTES
+.SH BUGS
+The message 
+.ft B
+remintr: driver not installed on level 2 
+.ft R
+is normal when
+unloading a loaded driver in a system with more than one SPARCprinter
+card installed.
+.LP
+.\"$description-of-bug

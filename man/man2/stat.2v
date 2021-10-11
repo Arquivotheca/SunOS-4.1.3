@@ -1,0 +1,365 @@
+.\" @(#)stat.2v 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH STAT 2V "21 January 1990"
+.SH NAME
+stat, lstat, fstat \- get file status
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/stat.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int stat(path, buf)
+char *path;
+struct stat *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lstat(path, buf)
+char *path;
+struct stat *buf;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int fstat(fd, buf)
+int fd;
+struct stat *buf;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  "stat()"  ""  "\fLstat()\fP \(em obtain file attributes"
+.IX  "file attributes"  \fLstat()\fP
+.IX  "attributes of file stat()"  ""  "attributes of file \fLstat()\fP"
+.LP
+.B stat(\|)
+obtains information about the file named by
+.IR path .
+Read, write or execute permission of the named file is not required,
+but all directories listed in the path name leading to the file must be searchable.
+.LP
+.IX  "lstat()"  ""  "\fLlstat()\fP \(em obtain file attributes"
+.IX  "file attributes"  \fLlstat()\fP
+.IX  "attributes of file lstat()"  ""  "attributes of file \fLlstat()\fP"
+.B lstat(\|)
+is like
+.B stat(\|)
+except in the case where the named file is a
+symbolic link, in which case
+.B lstat(\|)
+returns information about the link, while
+.B stat(\|)
+returns information about the file the link references.
+.LP
+.IX  "fstat()"  ""  "\fLfstat()\fP \(em obtain file attributes"
+.IX  "file attributes"  \fLfstat()\fP
+.IX  "attributes of file fstat()"  ""  "attributes of file \fLfstat()\fP"
+.BR fstat (\|)
+obtains the same information about an open file referenced by the
+argument descriptor, such as would be obtained by an
+.BR open (2V)
+call.
+.LP
+.I buf
+is a pointer to a
+.B stat
+structure into which information is placed concerning the file.
+A
+.B stat
+structure includes the following members:
+.LP
+.RS
+.nf
+.ft B
+.ta 1i 1.7i 2.5i
+dev_t	st_dev;	/* device file resides on */
+ino_t	st_ino;	/* the file serial number */
+mode_t	st_mode;	/* file mode */
+nlink_t	st_nlink;	/* number of hard links to the file */
+uid_t	st_uid;	/* user \s-1ID\s0 of owner */
+gid_t	st_gid;	/* group \s-1ID\s0 of owner */
+dev_t	st_rdev;	/* the device identifier (special files only)*/
+off_t	st_size;	/* total size of file, in bytes */
+time_t	st_atime;	/* file last access time */
+time_t	st_mtime;	/* file last modify time */
+time_t	st_ctime;	/* file last status change time */
+long	st_blksize;	/* preferred blocksize for file system I/O*/
+long	st_blocks;	/* actual number of blocks allocated */
+.ft R
+.fi
+.DT
+.RE
+.LP
+.TP 12
+.B st_atime
+Time when file data was last accessed.
+This can also be set explicitly by
+.BR utimes (2).
+.B st_atime
+is not updated for directories
+searched during pathname resolution.
+.TP
+.B st_mtime
+Time when file data was last modified.
+This can also be set explicitly by
+.BR utimes (2).
+It is not set by changes of owner,
+group, link count, or mode.
+.TP 12
+.B st_ctime
+Time when file status was last changed. 
+It is set both both by writing
+and changing the file status information, such as
+changes of owner, group, link count, or mode.
+.LP
+The following macros test whether a file is of the specified type.
+The value
+.I m
+is the value of
+.BR st_mode .
+Each macro evaluates to a non-zero value if the test is true
+or to zero if the test is false.
+.TP 15
+.B \s-1S_ISDIR\s0(\fIm\fP)
+Test for directory file.
+.TP
+.B \s-1S_ISCHR\s0(\fIm\fP)
+Test for character special file.
+.TP
+.B \s-1S_ISBLK\s0(\fIm\fP)
+Test for block special file.
+.TP
+.B \s-1S_ISREG\s0(\fIm\fP)
+Test for regular file.
+.TP
+.B \s-1S_ISLNK\s0(\fIm\fP)
+Test for a symbolic link.
+.TP
+.B \s-1S_ISSOCK\s0(\fIm\fP)
+Test for a socket.
+.TP
+.B \s-1S_ISFIFO\s0(\fIm\fP)
+Test for pipe or
+.SM FIFO
+special file.
+.LP
+The status information word
+.B st_mode
+is bit-encoded using the following masks and bits:
+.TP 15
+.SB S_IRWXU
+Read, write, search (if a directory), or execute (otherwise)
+permissions mask for the owner of the file.
+.RS
+.TP 15
+.SB S_IRUSR
+Read permission bit for the owner of the file.
+.TP
+.SB S_IWUSR
+Write permission bit for the owner of the file.
+.TP
+.SB S_IXUSR
+Search (if a directory) or execute (otherwise) permission bit for the
+owner of the file.
+.RE
+.TP 15
+.SB S_IRWXG
+Read, write, search (if directory), or execute (otherwise) permissions
+mask for the file group class.
+.RS
+.TP 15
+.SB S_IRGRP
+Read permission bit for the file group class.
+.TP
+.SB S_IWGRP
+Write permission bit for the file group class.
+.TP
+.SB S_IXGRP
+Search (if a directory) or execute (otherwise) permission bit for the file
+group class.
+.RE
+.TP 15
+.SB S_IRWXO
+Read, write, search (if a directory), or execute (otherwise) permissions
+mask for the file other class.
+.RS
+.TP 15
+.SB S_IROTH
+Read permission bit for the file other class.
+.TP
+.SB S_IWOTH
+Write permission bit for the file other class.
+.TP
+.SB S_IXOTH
+Search (if a directory) or execute (otherwise)
+permission bit for the file other class.
+.RE
+.TP 15
+.SB S_ISUID
+Set user
+.SM ID
+on execution.  The process's effective user
+.SM ID
+is set to that of the owner of the file when the file is run
+as a program
+(see
+.BR execve (2V)).
+On a regular file, this bit should be cleared on any write.
+.TP
+.SB S_ISGID
+Set group
+.SM ID
+on execution.  The process's effective group
+.SM ID
+is set to that of the file when the file is run
+as a program
+(see
+.BR execve (2V)).
+On a regular file, this bit should be cleared on any write.
+.LP
+In addition, the following bits and masks are made available for
+backward compatibility:
+.RS
+.nf
+.ta 1i 2.6i 3.5i 4i
+.ft B
+#define\ \ \ \ \s-1S_IFMT\s0	0170000	/* type of file */
+#define\ \ \ \ \s-1S_IFIFO\s0	0010000	/* \s-1FIFO\s0 special */
+#define\ \ \ \ \s-1S_IFCHR\s0	0020000	/* character special */
+#define\ \ \ \ \s-1S_IFDIR\s0	0040000	/* directory */
+#define\ \ \ \ \s-1S_IFBLK\s0	0060000	/* block special */
+#define\ \ \ \ \s-1S_IFREG\s0	0100000	/* regular file */
+#define\ \ \ \ \s-1S_IFLNK\s0	0120000	/* symbolic link */
+#define\ \ \ \ \s-1S_IFSOCK\s0	0140000	/* socket */
+#define\ \ \ \ \s-1S_ISVTX\s0	0001000	/* save swapped text even after use */
+#define\ \ \ \ \s-1S_IREAD\s0	0000400	/* read permission, owner */
+#define\ \ \ \ \s-1S_IWRITE\s0	0000200	/* write permission, owner */
+#define\ \ \ \ \s-1S_IEXEC\s0	0000100	/* execute/search permission, owner */
+.ft R
+.fi
+.in -5n
+.RE
+.LP
+For more information on
+.B st_mode
+bits see
+.BR chmod (2V).
+.SH RETURN VALUES
+.LP
+.BR stat(\|) ,
+.B lstat(\|)
+and
+.B fstat(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B stat(\|)
+and
+.B lstat(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.SM EFAULT
+.I buf
+or
+.I path
+points to an invalid address.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.n
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.LP
+.B fstat(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM EBADF
+.I fd
+is not a valid open file descriptor.
+.TP
+.SM EFAULT
+.I buf
+points to an invalid address.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to an empty string.
+.SH WARNINGS
+.LP
+The
+.B st_atime
+and
+.B st_mtime
+fields of the
+.B stat(\|)
+are
+.I not
+contiguous.
+Programs that depend on them being contiguous (in calls to
+.BR utimes (2)
+or
+.BR utime (3V))
+will not work.
+.SH "SEE ALSO"
+.BR chmod (2V),
+.BR chown (2V),
+.BR link (2V),
+.BR open (2V),
+.BR read (2V),
+.BR readlink (2),
+.BR rename (2V),
+.BR truncate (2),
+.BR unlink (2V),
+.BR utimes (2),
+.BR write (2V)

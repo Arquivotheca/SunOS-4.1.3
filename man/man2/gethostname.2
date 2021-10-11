@@ -1,0 +1,85 @@
+.\" @(#)gethostname.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH GETHOSTNAME 2 "21 January 1990"
+.SH NAME
+gethostname, sethostname \- get/set name of current host
+.SH SYNOPSIS
+.nf
+.ft B
+int gethostname(name, namelen)
+char \(**name;
+int namelen;
+.LP
+.ft B
+int sethostname(name, namelen)
+char \(**name;
+int namelen;
+.fi
+.IX  gethostname()  ""  \fLgethostname()\fP
+.IX  "processes and protection"  gethostname()  ""  \fLgethostname()\fP
+.IX  sethostname()  ""  \fLsethostname()\fP
+.IX  "processes and protection"  sethostname()  ""  \fLsethostname()\fP
+.IX  host "get/set name \(em \fLgethostname()\fR"
+.SH DESCRIPTION
+.LP
+.B gethostname(\|)
+returns the standard host name for the current processor, as previously set by
+.BR sethostname(\|) .
+The parameter
+.I namelen
+specifies the size of the array pointed to by
+.IR name .
+The returned name is null-terminated unless insufficient
+space is provided.
+.LP
+.B sethostname(\|)
+sets the name of the host machine to be
+.IR name ,
+which has length
+.IR namelen .
+This call is restricted to the super-user and
+is normally used only when the system is bootstrapped.
+.SH RETURN VALUES
+.LP
+.B gethostname(\|)
+and
+.B sethostname(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+The
+.I name
+or
+.I namelen
+parameter gave an
+invalid address.
+.LP
+In addition to the above,
+.B sethostname(\|)
+may set
+.B errno
+to:
+.TP 15
+.SM EPERM
+The caller was not the super-user.
+.SH SEE ALSO
+.BR gethostid (2)
+.SH NOTES
+.LP
+Host names are limited to
+.SB MAXHOSTNAMELEN
+(from
+.BR <sys/param.h> )
+characters, currently 64.

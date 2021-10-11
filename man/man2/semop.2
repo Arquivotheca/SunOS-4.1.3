@@ -1,0 +1,331 @@
+.\" @(#)semop.2 1.1 92/07/30 SMI; from S5R3
+.TH SEMOP 2 "21 January 1990"
+.SH NAME
+semop \- semaphore operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int semop(semid, sops, nsops)
+int semid;
+struct sembuf *sops;
+int nsops;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  semop()  ""  "\fLsemop()\fR  \(em semaphore operations"
+.IX  semaphore "operations \(em \fLsemop()\fR"
+.LP
+.B semop(\|)
+is used to perform atomically an array of semaphore operations on the
+set of semaphores associated with the semaphore identifier specified by
+.IR semid .
+.I sops
+is a pointer to the array of semaphore-operation structures.
+.I nsops
+is the number of such structures in the array.
+The contents of each structure includes the following members:
+.LP
+.RS
+.ta 8n 20n
+.ft B
+.nf
+short	sem_num;	/\(** semaphore number \(**/
+short	sem_op;	/\(** semaphore operation \(**/
+short	sem_flg;	/\(** operation flags \(**/
+.fi
+.ft R
+.RE
+.LP
+Each semaphore operation specified by
+.B sem_op
+is performed on the corresponding semaphore specified by
+.I semid
+and
+.IR sem_num .
+.LP
+.B sem_op
+specifies one of three semaphore operations as follows:
+.LP
+.RS 8
+If
+.B sem_op
+is a negative integer, one of the following will occur:
+.B \%[\s-1ALTER\s0]
+(see 
+.BR semctl (2))
+.TP 3
+\(bu
+If
+.I semval
+(see
+.BR intro (2))
+is greater than or equal to the absolute value of
+.BR sem_op(\|) ,
+the absolute value of
+.B sem_op(\|)
+is subtracted from
+.IR semval .
+Also, if
+.RB ( sem_flg " &"
+.SM
+.BR SEM_UNDO\*S )
+is ``true'', the absolute value of
+.B sem_op(\|)
+is added to the calling process's
+.I semadj
+value (see
+.BR exit (2V))
+for the specified semaphore.
+.TP
+\(bu
+If
+.I semval
+is less than the absolute value of
+.B sem_op(\|)
+and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``true'',
+.B semop(\|)
+will return immediately.
+.TP
+\(bu
+If
+.I semval
+is less than the absolute value of
+.B sem_op(\|)
+and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``false'',
+.B semop(\|)
+will increment the
+.I semncnt
+associated with the specified semaphore
+and suspend execution of the calling process
+until one of the following conditions occur.
+.RS 12
+.LP
+.I semval
+becomes greater than or equal to the absolute value of
+.BR sem_op(\|) .
+When this occurs, the value of
+.I semncnt
+associated with the specified
+semaphore is decremented, the absolute value of
+.B sem_op(\|)
+is subtracted from
+.I semval
+and, if
+.RB ( sem_flg " &"
+.SM
+.BR SEM_UNDO\*S )
+is ``true'', the absolute value of
+.B sem_op(\|)
+is added to the calling process's
+.I semadj
+value for the specified semaphore.
+.LP
+The
+.I semid
+for which the calling process is awaiting action
+is removed from the system (see
+.BR semctl (2)).
+When this occurs,
+.B errno
+is set equal to
+.SM EIDRM\*S,
+and a value of \-1 is returned.
+.LP
+The calling process receives a signal that is to be caught.
+When this occurs, the value of
+.I semncnt
+associated with the specified
+semaphore is decremented,
+and the calling process resumes execution in the manner prescribed in
+.BR signal (3V).
+.RE
+.LP
+If
+.B sem_op(\|)
+is a positive integer, the value of
+.B sem_op(\|)
+is added to
+.I semval
+and, if
+.RB ( sem_flg " &"
+.SM
+.BR SEM_UNDO\*S )
+is ``true'', the value of
+.B sem_op(\|)
+is subtracted from the calling process's
+.I semadj
+value for the specified
+semaphore.
+.B \%[\s-1ALTER\s0]
+.if t .bp
+.LP
+If
+.B sem_op(\|)
+is zero,
+one of the following will occur:
+.B \%[\s-1READ\s0]
+.TP 3
+\(bu
+If
+.I semval
+is zero,
+.B semop(\|)
+will return immediately.
+.TP
+\(bu
+If
+.I semval
+is not equal to zero and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``true'',
+.B semop(\|)
+will return immediately.
+.TP
+\(bu
+If
+.I semval
+is not equal to zero and
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``false'',
+.B semop(\|)
+will increment the
+.I semzcnt
+associated with the specified semaphore
+and suspend execution of the calling process until
+one of the following occurs:
+.RS 15
+.TP 3
+\(bu
+.I semval
+becomes zero, at which time the value of
+.I semzcnt
+associated with the
+specified semaphore is decremented.
+.TP 3
+\(bu
+The
+.I semid
+for which the calling process is awaiting action
+is removed from the system.
+When this occurs,
+.B errno
+is set equal to
+.SM EIDRM\*S,
+and a value of \-1 is returned.
+.TP 3
+\(bu
+The calling process receives a signal that is to be caught.
+When this occurs, the value of
+.I semzcnt
+associated with the specified semaphore is decremented,
+and the calling process resumes execution in the manner prescribed in
+.BR signal (3V).
+.RE
+.RE
+.LP
+Upon successful completion, the value of
+.I sempid
+for each semaphore specified in the array pointed to by
+.I sops
+is set equal to the process
+.SM ID
+of the calling process.
+.SH RETURN VALUES
+.LP
+.B semop(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM E2BIG
+.I nsops
+is greater than the system-imposed maximum.
+.TP
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM EAGAIN
+The operation would result in suspension of the calling process but
+.RB ( sem_flg " &"
+.SM
+.BR IPC_NOWAIT\*S )
+is ``true''.
+.TP
+.SM EFAULT
+.I sops
+points to an illegal address.
+.TP
+.SM EFBIG
+.B sem_num
+is less than zero or greater than or equal to the number of semaphores
+in the set associated with
+.IR semid .
+.TP
+.SM EIDRM
+The set of semaphores referred to by
+.I msqid
+was removed from the system.
+.TP
+.SM EINTR
+The call was interrupted by the delivery of a signal.
+.TP
+.SM EINVAL
+.I semid
+is not a valid semaphore identifier.
+.IP
+The number of individual semaphores for which the calling process
+requests a
+.SM
+.B SEM_UNDO
+would exceed the limit.
+.TP
+.SM ENOSPC
+The limit on the number of individual  processes requesting an
+.SM
+.B SEM_UNDO
+would be exceeded.
+.TP
+.SM ERANGE
+An operation would cause a
+.I semval
+or
+.I semadj
+value to overflow the system-imposed limit.
+.SH SEE ALSO
+.BR ipcrm (1),
+.BR ipcs (1),
+.BR intro (2),
+.BR execve (2V),
+.BR exit (2V),
+.BR fork (2V),
+.BR semctl (2),
+.BR semget (2),
+.BR signal (3V)

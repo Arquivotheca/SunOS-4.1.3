@@ -1,0 +1,56 @@
+.\" @(#)clri.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH CLRI 8 "9 September 1987"
+.SH NAME
+clri \- clear inode
+.SH SYNOPSIS
+.B /usr/etc/clri
+.I filesystem
+.IR i-number .\|.\|.
+.SH DESCRIPTION
+.IX  "clri command"  ""  "\fLclri\fP \(em clear inode"
+.IX  "clear inode"  ""  "clear inode \(em \fLclri\fP"
+.IX  "inode, clear \(em \fLclri\fP"
+.LP
+Note:
+.B clri
+has been superseded for normal file system repair work by
+.BR fsck (8).
+.LP
+.B clri
+writes zeros on the inodes
+with the decimal
+.I i-numbers
+on the
+.IR filesystem .
+After
+.B clri,
+any blocks
+in the affected file
+will show up as ``missing'' in an
+.BR icheck (8)
+of the
+.I filesystem.
+.LP
+Read and write permission is required on the specified
+file system device.
+The inode becomes allocatable.
+.LP
+The primary purpose of this routine
+is to remove a file which
+for some reason appears in no
+directory.
+If it is used to zap an inode
+which does appear in a directory, care should be taken to track down
+the entry and remove it.
+Otherwise, when the inode is reallocated to some new file,
+the old entry will still point to that file.
+At that point removing the old entry will destroy the new file.
+The new entry will again point to an unallocated inode,
+so the whole cycle is likely to be repeated again and again.
+.SH "SEE ALSO"
+.BR icheck (8)
+.BR fsck (8)
+.SH BUGS
+If the file is open,
+.B clri
+is likely to be ineffective.

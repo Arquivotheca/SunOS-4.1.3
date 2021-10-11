@@ -1,0 +1,142 @@
+.\" @(#)bind.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH BIND 2 "21 January 1990"
+.SH NAME
+bind \- bind a name to a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.LP
+.ft B
+int bind(s, name, namelen)
+int s;
+struct sockaddr *name;
+int namelen;
+.fi
+.IX  bind()  ""  \fLbind()\fP
+.IX  "socket operations"  bind()  ""  \fLbind()\fP
+.IX  "interprocess communication"  bind()  ""  \fLbind()\fP
+.SH DESCRIPTION
+.LP
+.B bind(\|)
+assigns a name to an unnamed socket.
+When a socket is created with
+.BR socket (2)
+it exists in a name space (address family)
+but has no name assigned.
+.B bind(\|)
+requests that the name pointed to by
+.I name
+be assigned to the socket.
+.SH RETURN VALUES
+.LP
+.B bind(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EACCES
+The requested address is protected, and the current user
+has inadequate permission to access it.
+.TP
+.SM EADDRINUSE
+The specified address is already in use.
+.TP
+.SM EADDRNOTAVAIL
+The specified address is not available from the local machine.
+.TP
+.SM EBADF
+.I s
+is not a valid descriptor.
+.TP
+.SM EFAULT
+The
+.I name
+parameter is not in a valid part of the user
+address space.
+.TP
+.SM EINVAL
+.I namelen
+is not the size of a valid address for the specified address family.
+.IP
+The socket is already bound to an address.
+.TP
+.SM ENOTSOCK
+.I s
+is a descriptor for a file, not a socket.
+.LP
+The following errors are specific to
+binding names in the
+.SM UNIX
+domain:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of the
+path name in
+.IR name .
+.TP
+.SM EIO
+An I/O error occurred while making the directory entry or allocating the inode.
+.TP
+.SM EISDIR
+A null path name was specified.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating the path name in
+.IR name .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+A component of the path prefix of the path name in
+.I name
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of the path name in
+.I name
+is not a directory.
+.TP
+.SM EROFS
+The inode would reside on a read-only file system.
+.SH SEE ALSO
+.BR connect (2),
+.BR getsockname (2),
+.BR listen (2),
+.BR socket (2),
+.BR unlink (2V)
+.SH NOTES
+.LP
+Binding a name in the
+.SM UNIX
+domain creates a socket in the file
+system that must be deleted by the caller when it is no longer
+needed (using
+.BR unlink (2V),
+.LP
+The rules used in name binding vary between communication domains.
+Consult the manual entries in section 4 for detailed information.

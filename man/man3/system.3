@@ -1,0 +1,40 @@
+.\" @(#)system.3 1.1 92/07/30 SMI; from UCB 4.2
+.TH SYSTEM 3 "22 January 1988"
+.SH NAME
+system \- issue a shell command
+.SH SYNOPSIS
+.nf
+.B system(string)
+.B char *string;
+.fi
+.IX  "system()"  ""  "\fLsystem()\fP \(em issue shell command"
+.IX  "issue shell command"  ""  "issue shell command \(em \fLsystem()\fP"
+.IX  "shell command issuing"  ""  "shell command, issuing \(em \fLsystem()\fP"
+.SH DESCRIPTION
+.LP
+.B system(\|)
+gives the
+.I string
+to
+.BR sh (1)
+as input, just as if the string had been
+typed as a command from a terminal.
+The current process performs a
+.BR wait (2V)
+system call, and waits until the shell terminates.
+.B system(\|)
+then returns the exit status returned by
+.BR wait (2V).
+Unless the shell was interrupted by a
+signal, its termination status is contained in the 8 bits higher up from
+the low-order 8 bits of the value returned by
+.BR wait(\|) .
+.SH "SEE ALSO"
+.BR sh (1),
+.BR execve (2V),
+.BR wait (2V),
+.BR popen (3S)
+.SH DIAGNOSTICS
+.LP
+Exit status 127 (may be displayed as "32512") indicates the shell
+could not be executed.

@@ -1,0 +1,105 @@
+.\" @(#)ioctl.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH IOCTL 2 "21 January 1990"
+.SH NAME
+ioctl \- control device
+.SH SYNOPSIS
+.nf
+.ft B
+int ioctl(fd, request, arg)
+int fd, request;
+caddr_t arg;
+.ft R
+.fi
+.IX  ioctl()  ""  \fLioctl()\fR
+.IX  "generic operations"  ioctl()  ""  \fLioctl()\fR
+.IX  "control devices \(em \fLioctl()\fR"
+.IX  "device controls \(em \fLioctl()\fR"
+.SH DESCRIPTION
+.LP
+.B ioctl(\|)
+performs a special function on the object referred to by the open descriptor
+.IR fd .
+The set of functions that may be performed depends on the object that
+.I fd
+refers to.  For example, many operating
+characteristics of character special files (for
+instance, terminals)
+may be controlled with
+.B ioctl(\|)
+requests.
+The writeups in section 4 discuss how
+.B ioctl(\|)
+applies to various objects.
+.LP
+The
+.I request
+codes for particular functions
+are specified in include files specific to objects or to families of
+objects; the writeups in section 4 indicate which include files specify
+which
+.IR request s.
+.LP
+For most
+.B ioctl(\|)
+functions,
+.I arg
+is a pointer to data to be used by the function or to
+be filled in by the function.
+Other functions may ignore
+.I arg
+or may treat it directly as a data item; they may, for example, be passed an
+.B int
+value.
+.SH RETURN VALUES
+.B ioctl(\|)
+returns
+0
+on success for most requests.
+Some specialized requests may return non-zero values on success; see
+the description of the request in the man page for the object.
+On failure,
+.B ioctl(\|)
+returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+.I fd
+is not a valid
+descriptor.
+.TP
+.SM EFAULT
+.I request
+requires a data transfer to or from
+a buffer pointed to by
+.IR arg ,
+but some part of the buffer is outside
+the process's allocated space.
+.TP
+.SM EINVAL
+.I request
+or
+.I arg
+is not valid.
+.TP
+.SM ENOTTY
+The specified request does not apply to the kind
+of object to which the descriptor
+.I fd
+refers.
+.LP
+.B ioctl(\|)
+will also fail if the object on which the function is being
+performed detects an error. In this case, an error code specific to
+the object and the function will be returned.
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR fcntl (2V),
+.BR filio (4),
+.BR mtio (4),
+.BR sockio (4),
+.BR streamio (4),
+.BR termio (4)

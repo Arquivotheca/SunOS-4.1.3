@@ -1,0 +1,164 @@
+.\" @(#)extract_files.8 1.1 92/07/30 SMI 
+.TH EXTRACT_FILES 8 "7 October 1990"
+.SH NAME
+extract_files, list_files \- extract/list files from a release media
+.SH SYNOPSIS
+.B /usr/etc/install/extract_files
+.I devname
+.I category
+[
+.BI \-a " arch"
+]
+[
+.BI \-r " release"
+]
+[
+.BI \-f " file \|.\|.\|."
+]
+.LP
+.B /usr/etc/install/list_files
+.I devname 
+.I category
+[
+.BI \-a " arch"
+]
+[
+.BI \-r " release"
+]
+.SH DESCRIPTION
+Given the name of a 
+.IR category ,
+and optionally, a file (or a list of files) and/or a kernel architecture type,
+.B extract_files
+extracts all files contained in 
+.I category
+from 
+.IR devname ,
+or optionally extracts selected file(s) from 
+.I files
+in 
+.I category
+from 
+.IR devname .
+Note: 
+.B extract_files
+does not pre-compute the disk size that needs to hold the
+extracted data.
+.LP
+.B list_files
+performs the same function as
+.B extract_files
+except that files are not extracted, instead, they are listed
+as contents of a given
+.IR category .
+.LP
+The
+.B \-a
+and
+.B \-r
+options are provided for
+.SM CD
+devices, which can contain multiple releases for multiple architecture types.
+Users normally do not need to specify these values, they
+default to the current running system.
+.LP
+.I devname
+is the media name on which files are kept. 
+Examples are
+.BR st ,
+.BR sr ,
+.BR mt \|.\|.\|.
+etc.
+.LP
+.I category
+is a suninstall category name which can be found by running
+.BR /usr/etc/install/toc_xlat .
+.SH OPTIONS
+.TP 12
+.BI \-a " arch"
+Specify the kernel architecture type such as
+.BR sun4 ,
+.BR sun4c ,
+\&.\|.\|. etc.
+Defaults to the current system's kernel architecture.
+.TP
+.BI \-r " release"
+Specify a software release such as
+.BR 4_1 ,
+.BR 4_1_1 ,
+\&.\|.\|.. etc.
+Defaults to the current system's software release.
+.TP
+.BI \-f " file"
+Specify a file or a list of file to extract.
+.SH EXAMPLES
+.LP
+The following examples show some common uses of 
+.B extract_files
+and
+.BR list_files.
+.IP
+.ft B
+.nf
+example# cd /usr
+example# /usr/etc/install/extract_files st0 Text \-f ./bin/addbib ./bin/eqn
+.fi
+.LP
+Extracts from tape device   
+.B st0
+the files
+.B ./bin/addbib
+and
+.B ./bin/eqn
+from the category
+.BR Text .
+.IP
+.ft B
+.nf
+example# cd /usr
+example# /usr/etc/install/extract_files st0 Text \-f ./bin/checkeq
+.fi
+.LP
+Extracts from tape device
+.B st0
+the file
+.B ./bin/checkeq
+from the category 
+.BR Text .
+.IP
+.ft B
+.nf
+example# /usr/etc/install/list_files sr0 Text \-a sun4c
+.fi
+.LP
+Lists all files in category
+.B Text 
+of 
+.B sun4c
+kernel architecture type from
+.SM CD
+device 
+.BR sr0 .
+.IP
+.ft B
+.nf
+example# /usr/etc/install/list_files sr0 TLI \-a sun4c \-r 4_1_1
+.fi
+.LP
+Lists all files in category
+.SB TLI
+of
+.B sun4c
+kernel architecture type from
+.SM CD
+device
+.BR sr0 ,
+under the
+.B 4_1_1
+software release.
+.LP
+.SH BUGS
+.B extract_files
+and
+.B list_files
+do not support floppy disc device.

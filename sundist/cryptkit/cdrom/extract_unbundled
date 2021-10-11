@@ -1,0 +1,617 @@
+#!/bin/sh
+#set -x
+#
+# @(#)extract_unbundled.sh	2.4  7/20/90
+#       Copyright (c) 1988, Sun Microsystems, Inc.  All Rights Reserved.
+#       Sun considers its source code as an unpublished, proprietary
+#       trade secret, and it is available only under strict license
+#       provisions.  This copyright notice is placed here only to protect
+#       Sun in the event the source is deemed a published work.  Dissassembly,
+#       decompilation, or other means of reducing the object code to human
+#       readable form is prohibited by the license agreement under which
+#       this code is provided to the user or company in possession of this
+#       copy.
+#
+#       RESTRICTED RIGHTS LEGEND: Use, duplication, or disclosure by the
+#       Government is subject to restrictions as set forth in subparagraph
+#       (c)(1)(ii) of the Rights in Technical Data and Computer Software
+#       clause at DFARS 52.227-7013 and in similar clauses in the FAR and
+#       NASA FAR Supplement.
+#
+# NAME: extract_unbundled 
+#
+# DESCRIPTION:
+# 	Front end to unbundled installations.  This will skip the copyright on
+#	an unbundled release tape and execute the installation script which
+#	follows.
+#	Update: 10/10/88  added extentions for floppy media.  --SMAR
+#	        Expects install scripts and copyright.d in a subdir
+#               called "+install".
+#
+# USAGE:
+#	extract_unbundled [-dDEVICE] | [-rREMOTE_HOST] | [-mMOUNT_POINT] | [-pPRODUCT] | [-DEFAULT]
+#       
+#    DEVICE = tape device (st0,mt0,ar0)
+#    REMOTE_HOST = host of remote tape drive
+#    DEFAULT = use all default values
+#
+# DATE: 01/21/87
+PATH=/usr/ucb:/bin:/usr/bin:/etc:/usr/etc:
+export PATH
+WORK_PATH=/usr/tmp/unbundled
+INSTALL_SCRIPT=install_unbundled
+PARAMS=""
+CD="cd"
+DD="dd"
+MT="mt"
+TAR="tar"
+BAR="bar"
+MV="mv -f"
+EXPR="/usr/bin/expr"
+TAPE_LOC=""
+REMOTE_HOST=""
+REMOTE=0
+DEFAULT=0
+DEV_SPEC=0
+ANS=""
+DISK=0
+# CD-ROM related parameters
+CD_UNB_INST="cd_unbundled"
+MOUNT_POINT=""
+DEVICEISMOUNTED=0
+CDROM=0
+DEV_MP=0
+PRODUCT_NAME=""
+PRODUCT=0
+CDINSTALLDIR=${INSTALLAPPDIR:-""}
+PROGMOUNTEDDEVICE=0
+PAGECMD="more"
+
+USAGE="$0 [-dDEVICE] | [-rREMOTE_HOST] | [-mMOUNT_POINT] | [-pPRODUCT] | [-DEFAULT]" 
+
+# Parse the arguments
+for param in $*;
+do
+	PARAMS="$PARAMS $param"
+        case "$param" in
+        -d*)
+	    DEVROOT=`$EXPR $param : '-d\(.*\)' '|' "1"` 
+	    if [ $DEVROOT -eq 1 ]
+	    then
+		echo
+		echo "$0 : Invalid device name"
+            	echo "            USAGE : $USAGE"
+		exit 1
+	    fi
+	    if [ "$DEVROOT" = "mounted" ]
+	    then
+# jdk assume that if mounted is specified as device, then we are using CDROM,
+# and the installation is local
+		DEVICEISMOUNTED=1
+	        OPTIONS="xvfp"
+		TAPE_LOC="local"
+	    fi
+	    DEV_SPEC=1 ;;
+        -r*)
+	    REMOTE_HOST=`$EXPR $param : '-r\(.*\)' '|' "1"` 
+	    if [ $REMOTE_HOST -eq 1 ]
+	    then
+		echo
+		echo "$0 : Invalid Host name"
+            	echo "            USAGE : $USAGE"
+		exit 1
+	    fi
+            REMOTE=1;;
+	-m*)
+	    MOUNT_POINT=`$EXPR $param : '-m\(.*\)' '|' "1"` 
+	    if [ $MOUNT_POINT -eq 1 ]
+	    then
+		echo
+		echo "$0 : Invalid mount point"
+            	echo "            USAGE : $USAGE"
+		exit 1
+	    fi
+# jdk assume that if a mount point is specified, then we are using CDROM, and
+# the installation is local
+	    TAPE_LOC="local"
+	    DEV_MP=1
+	    DEVROOT="mounted"
+	    DEVICEISMOUNTED=1
+	    OPTIONS="xvfp"
+	    DEV_SPEC=1;;
+       -p*)
+           PRODUCT_NAME=`$EXPR $param : '-p\(.*\)' '|' "1"`
+           if [ $PRODUCT_NAME -eq 1 ]
+           then
+               echo
+               echo "$0 : Invalid product name"
+               echo "            USAGE : $USAGE"
+               exit 1
+           fi
+	   PRODUCT=1;;
+        -DEFAULT)
+	    ANS="y"
+            DEFAULT=1;;
+        *)
+	    echo
+            echo USAGE : $USAGE
+	    exit 1;;
+        esac
+done
+# Check if we know we're doing cd unbundled installation and haven't specified
+# mount point. In this case, choose environment variable or current directory
+if [ $DEV_MP -eq 0 -a "`basename $0`" = $CD_UNB_INST ]
+then
+	if [ -n "$CDINSTALLDIR" ]
+	then
+		MOUNT_POINT=$CDINSTALLDIR
+	else
+		MOUNT_POINT=`pwd`
+	fi
+	DEVICEISMOUNTED=1
+	DEVROOT="mounted"
+	TAPE_LOC="local"
+	DEV_SPEC=1
+	DEV_MP=1
+fi
+	
+if [ $DEVICEISMOUNTED -eq 1 ]
+then
+	if [ ! -d "$MOUNT_POINT" ]
+	then
+		echo "Non-existent mount point specified - $MOUNT_POINT"
+		DEVICEISMOUNTED=0
+		MOUNT_POINT=""
+		DEVROOT=""
+		TAPE_LOC=""
+		DEV_MP=0
+		DEV_SPEC=0
+	fi
+fi
+# Prompt user for device location
+
+while [ "$ TAPE_LOC" =  "" ]
+do
+    if [ $REMOTE -eq 0 ]
+    then
+	if [ $DEFAULT -eq 0 ]
+	then
+		echo
+		echo -n "Enter media drive location [local | remote]: "
+		read TAPE_LOC
+	else
+		TAPE_LOC="local"
+	fi
+    else
+	TAPE_LOC="remote"
+    fi
+    case "$TAPE_LOC" in 
+	r*) if [ "$REMOTE_HOST" = "" ]
+		then
+			echo -n "Enter hostname of remote drive: "
+			read REMOTE_HOST
+			echo ""
+			REMOTE=1
+		fi
+		PARAMS="$PARAMS -r$REMOTE_HOST"
+	  	rsh -n  $REMOTE_HOST "echo 0 > /dev/null"
+		if [ "$?" -ne 0 ]
+		then
+ 			echo "$0 : Problem with reaching remote host $REMOTE_HOST"
+ 			exit 1
+		fi;;
+	l*) ;;
+	*) 
+ 	   echo "$0 : Incorrect response, use \"local\" or \"remote\""
+	   TAPE_LOC="" ;;
+    esac
+done
+
+# prompt user for device if it hasn't been specified in the command line.
+
+if [ $DEV_SPEC -eq 0 ]
+then
+#   This one will loop until a correct device is chosen.
+    DEVROOT=""
+    while [ "$DEVROOT" = "" ] 
+    do
+   	echo ""
+	echo -n "Enter Device Name (e.g. sr0, st0, mt0, fd0c, mounted) : "
+	read DEVROOT
+        case  "$DEVROOT" in
+	    mounted) if [ $REMOTE -eq 1 ]
+		  then
+		      echo "$0 : Remote option invalid for CD-ROM installation."
+		      echo "Please mount device locally"
+		      exit 1
+		  fi
+		  OPTIONS="xvfp"
+		  DEVICEISMOUNTED=1;;
+            sr*) if [ $REMOTE -eq 1 ]
+		  then
+		      echo "$0 : Remote option invalid for CD-ROM installation."
+		      echo "Please mount device locally"
+		      exit 1
+		  fi
+		  OPTIONS="xvfp"
+		  CDROM=1;;
+            st*) OPTIONS="xvfbp"
+                  BS=126;;
+            mt*) OPTIONS="xvfbp"
+                  BS=20;;
+            fd*) if [ $REMOTE -eq 1 ]
+		  then
+		      echo "$0 : Remote option cannot be used with diskette installation"
+		      exit 1
+		  fi
+ 	  	  OPTIONS="xvfbpZT"
+                  BS="18"
+		  DISK=1;;
+            ar*) OPTIONS="xvfbp"
+                  BS=126;;
+            *)    echo "$0 : Invalid device name $DEVROOT"
+                  DEVROOT="";;
+        esac
+    done
+else 
+#   This one will exit if an incorrect device is chosen. (default exec)
+    case  "$DEVROOT" in
+        mounted) if [ $REMOTE -eq 1 ]
+	      then
+		  echo "$0 : Remote option invalid for CD-ROM installation."
+		  echo "Please mount device locally"
+	          exit 1
+	      fi
+	      DEVICEISMOUNTED=1
+	      TAPE_LOC="local"
+	      OPTIONS="xvfp";;
+        sr*) if [ $REMOTE -eq 1 ]
+	      then
+		  echo "$0 : Remote option invalid for CD-ROM installation."
+		  echo "Please mount device locally"
+	          exit 1
+	      fi
+	      OPTIONS="xvfp"
+	      CDROM=1;;
+        st*) OPTIONS="xvfbp"
+              BS=126;;
+        mt*) OPTIONS="xvfbp"
+              BS=20;;
+        fd*) if [ $REMOTE -eq 1 ]
+	      then
+		  echo "$0 : Remote option cannot be used with diskette installation"
+	          exit 1
+	      fi
+	      OPTIONS="xvfbpT"
+              BS="18"
+	      DISK=1;;
+        ar*) OPTIONS="xvfbp"
+              BS=126;;
+        *)    echo "$0 : Invalid device name $DEVROOT"
+              exit;;
+    esac
+fi
+if [ $DEVICEISMOUNTED -eq 0 ]
+then
+	if [ $CDROM -eq 1 ]
+	then
+		DEVPATH="/dev/${DEVROOT}"
+	elif [ $DISK -eq 1 ]
+	then
+        	DEVPATH="/dev/r${DEVROOT}"
+	else
+        	DEVPATH="/dev/nr${DEVROOT}"
+	fi
+	echo
+	echo "**Please load the release media if you haven't done so already.**"
+# Wait for tape to mount, just in case.
+	if [ $DEFAULT -eq 0 ]
+	then
+		echo
+		echo -n "Press return when ready:"
+		read ans
+	fi
+fi
+sleep 8
+#########################################################################
+     
+if [ $DEV_MP -eq 0 ]
+then
+   if [ \( $DEVICEISMOUNTED -eq 1 \) -o \( $CDROM -eq 1 \) ]
+   then
+###Check if user wants to use default mount point
+
+	if [ -n "$CDINSTALLDIR" ]
+      	then
+		ans=""
+		echo
+		echo -n "OK to use default mount point - $CDINSTALLDIR [y|n]? "
+			read ans
+			if [ $ans = "y" ]
+			then
+				MOUNT_POINT=$CDINSTALLDIR
+			else
+				CDINSTALLDIR=""
+			fi
+       	fi
+       	if [ -z "$CDINSTALLDIR" ]
+       	then
+####### Ask the user for the CD-ROM mount point.
+
+		echo
+		echo -n "Please enter mount point [e.g. /cdrom]: " 
+		read MOUNT_POINT
+       	fi
+####### Check existence of mount point.
+
+        if [ ! -d "$MOUNT_POINT" ]
+        then
+
+### if mount point doesn't exist but user says device is mounted, there
+### is definitely a problem - exit
+
+		if [ $DEVICEISMOUNTED -eq 1 ]
+		then
+			echo
+			echo "$0: Device specified as mounted, but mount point is nonexistent, exiting"
+			exit 1
+		fi
+
+### If the mount point doesn't exist, no need to ask if device is
+### mounted later on
+
+		askmount=0
+		mkdir $MOUNT_POINT
+		if [ $? -ne 0 ]
+		then
+			echo
+			echo "$0 : Error making mount point, exiting"
+			exit 1
+		fi
+	else
+		askmount=1
+	fi
+####### Mount CD-ROM if needed. 
+	if [ $DEVICEISMOUNTED -eq 0 ]
+	then
+		if [ $askmount -eq 1 ]
+		then
+			ans=""
+			echo
+			echo -n "Is CD-ROM already mounted [y|n]? "
+			read ans
+		else
+			ans="n"
+		fi
+		if [ $ans = "n" ]
+		then
+			PROGMOUNTEDDEVICE=1
+			/etc/mount -rt hsfs $DEVPATH $MOUNT_POINT 2> /dev/null
+			if [ $? -ne 0 ]
+			then
+				echo
+				echo "$0 : Error mounting CD-ROM, exiting"
+				exit 1
+			fi
+		fi
+	fi
+	DEV_MP=1
+	DEVICEISMOUNTED=1
+   fi
+fi
+
+#Do I need to set DEVROOT in all cases, or only in the non-CD cases
+
+if [ $DEV_MP -eq 1 ]
+then
+	PARAMS="$PARAMS -m$MOUNT_POINT"
+else
+	PARAMS="$PARAMS -d$DEVROOT"
+fi
+
+
+#########################################################################
+# For tape devices only since tape can only use remote
+# Rewind tape, just to be sure
+if [ \( $DEV_MP -eq 0 \) -a \( $REMOTE -eq 1 \) ]
+then
+    stat=""
+    stat=`rsh -n ${REMOTE_HOST} "$MT -f ${DEVPATH} rew; echo \\$status"`
+    case $stat in
+	[1-9]* | 1[0-9]* )
+	     echo
+    	     echo "$0 : Problem with accessing tape drive, exiting"
+             exit 1;;
+	*)   ;;
+    esac
+else
+    if [ \( $DISK -eq 0 \) -a \( $DEV_MP -eq 0 \) ]
+    then
+    	$MT -f ${DEVPATH} rew
+    	if [ $? -ne 0 ]
+    	then
+		echo
+    		echo "$0 : Problem with accessing tape drive, exiting"
+       		exit 1
+	fi
+    fi
+fi
+
+# Print copyright to the screen for further verification
+# Remote install sometimes inter-mixes the stderr and stdout
+if [ $DEV_MP -eq 1 ]
+then
+       while [ $PRODUCT -eq 0 ]
+       do
+               echo "Choose the product to be installed"
+               ls -d $MOUNT_POINT/*
+               read product
+               if [ -d $MOUNT_POINT/$product ]
+	       then
+                       PRODUCT_NAME=$product
+                       PRODUCT=1
+               fi
+       done
+ fi
+clear
+echo "The following product will be installed:"
+# What form is copyright file on this CD? May need to use tar.
+if [ $DEV_MP -eq 1 ]
+then
+	$PAGECMD $MOUNT_POINT/$PRODUCT_NAME/_install/copyright.r
+	if [ $? -ne 0 ]
+	then
+		echo
+		echo "$0 : Problem accessing media, exiting"
+		if [ $PROGMOUNTEDDEVICE=1 ]
+		then
+			/etc/umount $MOUNT_POINT 2>/dev/null
+			if [ $? -ne 0 ]
+			then
+				echo
+				echo $0: Problem unmounting device
+			fi
+		fi
+		exit 1
+	fi
+
+
+else
+	if [ $REMOTE -eq 1 ]
+	then
+		rsh -n ${REMOTE_HOST} "$DD if=${DEVPATH}" > /tmp/cp.tmp
+		if [ "$?" -ne 0 ]
+		then
+			echo
+			echo $0 : Problem with reading copyright file on release tape. 
+			exit 1
+		fi
+		$PAGECMD /tmp/cp.tmp
+	else
+		if [ $DISK -eq 0 ]
+		then
+	    		$DD if=${DEVPATH} > /tmp/cp.tmp
+	    		if [ "$?" -ne 0 ]
+	    		then
+			echo $0 : Problem with reading copyright file on release tape.
+			exit 1
+	    		fi
+            		$PAGECMD /tmp/cp.tmp
+		else
+	    		$BAR ${OPTIONS} ${DEVPATH} ${BS} +install/copyright.d > /dev/null
+ 	    		if [ "$?" -ne 0 ]
+            		then
+                		echo $0 : Problem with reading copyright file on release tape.
+                		exit 1
+            		fi
+	    		$PAGECMD +install/copyright.d
+	    		\cp +install/copyright.d /tmp/cp.tmp
+	    		\rm -rf +install
+		fi
+	fi
+fi
+while [ \( "$ANS" = "" \) ]
+do
+	echo
+	echo -n "Do you want to continue [y|n]? "
+	read ANS
+        case $ANS in
+            y* )  continue;;
+            n* )  echo $0 : Terminating installation...
+                  exit 0;;
+            * )
+                  echo
+                  echo "Enter \"y\" or \"n\""
+                  ANS="";;
+        esac
+done
+# tar off install script to /usr/tmp/unbundled and execute it
+
+if [ ! -d $WORK_PATH ]
+then
+	mkdir $WORK_PATH
+	chmod 777 $WORK_PATH
+fi
+echo
+echo $0 : "Extracting Installation Scripts"
+stat=""
+if [ $REMOTE -eq 1 ]
+then
+	$CD $WORK_PATH
+	stat=""
+	rsh -n  $REMOTE_HOST $MT -f $DEVPATH rew
+	rsh -n  $REMOTE_HOST $MT -f $DEVPATH fsf 1
+	rsh -n  $REMOTE_HOST $DD if=$DEVPATH bs=${BS}b | $TAR xBvfb - ${BS}
+	if [ "$?" -ne 0 ]
+	then
+	     	echo $0 : This tape is missing installation script.
+	     	exit 1
+	fi
+	rsh -n  $REMOTE_HOST $MT -f $DEVPATH rew
+else
+	$CD $WORK_PATH
+	if [ $DEV_MP -eq 1 ]
+	then
+		 cp $MOUNT_POINT/$PRODUCT_NAME/_install/* .
+		if [ "$?" -ne 0 ]
+		then
+			echo
+			echo $0 : CD_ROM is missing an installation script.
+			exit 1
+		fi
+		/bin/chmod +x $WORK_PATH/$INSTALL_SCRIPT
+		if [ "$?" -ne 0 ]
+		then
+			echo
+			echo $0 : Error accessing installation script.
+			exit 1
+		fi
+	elif [ $DISK -eq 0 ]
+	then
+		$MT -f $DEVPATH rew
+		$MT -f $DEVPATH fsf 1
+		$TAR $OPTIONS $DEVPATH $BS
+		if [ "$?" -ne 0 ]
+		then
+			echo
+			echo $0 : This tape is missing an installation script.
+			exit 1
+		fi
+		$MT -f $DEVPATH rew
+	else
+		$BAR ${OPTIONS} ${DEVPATH} ${BS} +install
+		${MV} +install/* ${WORK_PATH}
+		rmdir $WORK_PATH/+install
+		if [ "$?" -ne 0 ] 
+		then
+			echo
+			echo $0 : This media is missing an installation script.
+			exit 1
+		fi
+	fi
+fi
+echo
+echo "$0 : Begin Install Script Execution"
+# Note: the -f tells the install script that is was called 
+#       from extract_unbundled
+# Use a different call here to make parameters simpler for the CD-ROM situation.
+# filter out the input parameters that are no longer needed, since DEVROOT isn't
+# needed if MOUNT_POINT has been set
+if [ $DEV_MP -eq 1 ]
+then
+	PARAMS="-m$MOUNT_POINT -p$PRODUCT_NAME"
+	if [ $DEFAULT -eq 1 ]
+	then
+		PARAMS="$PARAMS -DEFAULT"
+	fi
+fi
+$WORK_PATH/$INSTALL_SCRIPT $PARAMS -f
+if [ $PROGMOUNTEDDEVICE -eq 1 ]
+then
+	/etc/umount $MOUNT_POINT 2>/dev/null
+	if [ $? -ne 0 ]
+	then
+		echo
+		echo $0: Problem unmounting device
+	fi
+fi

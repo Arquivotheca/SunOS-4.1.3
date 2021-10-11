@@ -1,0 +1,117 @@
+.\" @(#)sccs-val.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH SCCS-VAL 1 "30 June 1988"
+.SH NAME
+sccs-val, val \- validate an SCCS file
+.SH SYNOPSIS
+.B /usr/sccs/val \-
+.LP
+.B /usr/sccs/val
+[
+.B \-s
+]
+[
+.B \-m 
+.I name
+]
+[
+.BI \-r sid
+]
+[
+.B \-y
+.I type
+]
+.I s.filename .\|.\|.
+.IX  "val command"  ""  "\fLval\fP \(em validate SCCS file"
+.IX  "validate SCCS file"  ""  "validate SCCS file \(em \fLval\fP"
+.IX  "SCCS commands"  val  ""  "\fLval\fP \(em validate SCCS file"
+.SH DESCRIPTION
+.B val
+determines if the specified
+.BR s. files
+files meet the characteristics specified by the indicated
+arguments.
+.B val
+can process up to 50 files on a single command line.
+.LP
+.B val
+has a special argument,
+.RB ` \- ',
+which reads the standard input until the end-of-file condition
+is detected.
+Each line read is independently processed
+as if it were a command line argument list.
+.LP
+.B val
+generates diagnostic messages on the
+standard output for each command line
+and file processed and also returns a single 8\-bit
+code upon exit as described below.
+.LP
+The 8-bit code returned by
+.B val
+is a disjunction of the possible errors,
+that is, it can be interpreted as a bit
+string where (moving from left to right)
+the bits set are interpreted as follows:
+.RS
+.sp .5
+.nf
+bit 0 = missing file argument
+bit 1 = unknown or duplicate option
+bit 2 = corrupted \fBs.\fRfile
+bit 3 = can not open file or file not in \fBs.\fRfile format
+bit 4 = the \s-1SCCS\s0 delta \s-1ID\s0 (\s-1SID\s0) is invalid or ambiguous
+bit 5 = the \s-1SID\s0 does not exist
+bit 6 = mismatch between \fB%\&Y%\fR and \fB\-y\fR argument
+bit 7 = mismatch between \fB%\&M%\fR \fB\-m\fR argument
+.fi
+.RE
+.LP
+.B val
+can process two or more files on a given command line, and in turn can
+process multiple command lines (when reading the standard input).
+In these cases, an aggregate code is returned which is the logical
+.SB OR
+of the codes generated for each command line and file processed.
+.SH OPTIONS
+.TP 8
+.B \-s
+Silent.  Suppress the normal error or warning messages.
+.TP
+.BI \-m  name
+Compare
+.I name
+with the
+.B %\&M%
+ID keyword in the
+.BR s. file.
+.TP
+.BI \-r sid
+Check to see if the indicated
+.SM SID
+is ambiguous, invalid, or absent from the
+.BR s. file.
+.TP
+.BI \-y " type"
+Compare
+.I type
+with the
+.B %\&Y%
+ID keyword.
+.SH SEE ALSO
+.BR sccs (1),
+.BR sccs-admin (1),
+.BR sccs-delta (1),
+.BR sccs-get (1),
+.BR sccs-help (1),
+.BR what (1),
+.BR sccsfile (5)
+.LP
+.TX PUL
+.SH DIAGNOSTICS
+.LP
+Use the
+.SM SCCS
+.B help
+command for explanations (see
+.BR sccs-help (1)).

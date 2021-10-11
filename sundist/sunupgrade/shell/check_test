@@ -1,0 +1,461 @@
+#
+#       @(#)check_test	1.5 8/28/91 SMI
+#
+##################################################
+volatile_test(){
+log_echo "Checking volatile list $VOLATILE_LIST"
+$NAWK ' 
+BEGIN{
+ne=0
+}
+function usage(ne) {
+    print ne " error(s) found"
+    print "VOLATILE_LIST FORMAT :"
+    print "symbol full_path"
+    print "Where symbol is '$COMMENT' or '$SAVE_OLD' or '$MAKE_NEW' or '$REPLACE'"
+    exit 1
+}
+{
+    if (substr($1, 1, 1) != "'$COMMENT'" &&  NF != 0){
+        if ( NF != 2 ){
+	    print "Wrong number of fields in the line number : " NR
+	    prinr $0
+	    ne=ne+1
+        } 
+	if ( $1 != "'$SAVE_OLD'" && $1 != "'$MAKE_NEW'" && $1 != "'$REPLACE'"){
+	    print "Wrong first symbol : " $1 "in the line number : " NR
+	    prinr $0
+	    ne=ne+1
+        }
+	if ( ne > 20 )
+	    exit 1
+    }
+}
+END{
+    if ( ne > 0 )
+	usage(ne)
+    else
+	exit 0
+} ' $VOLATILE_LIST > $TMP
+if [ $? != 0 ]; then
+    log_echo "Error(s) in the VOLATILE_LIST " $VOLATILE_LIST
+    log_cat  $TMP
+    cleanup 13
+fi
+n1=`$GREP -v "^#" $VOLATILE_LIST | $NAWK 'END {print NR}'`
+n2=`$GREP -v "^#" $VOLATILE_LIST | $CUT -d' ' -f2- | $SORT -u |  $NAWK 'END {print NR}'`
+if [ $n1 -ne $n2 ]; then
+    log_echo "Error(s) in the VOLATILE_LIST " $VOLATILE_LIST
+    log_echo "Duplicated filenames"
+    cleanup 13
+fi
+$ECHO $rc
+}
+##################################################
+check_before(){
+#
+# Is it single-user mode?
+#
+mode=""
+mode=`ps ax | $NAWK '{if ($5 == "portmap" || $5 == "update" || $5 == "cron") printf "multiuser"}'`
+if [ $mode ]; then
+    log_echo "You appear to be running in multi-user mode."
+    log_echo "Execute the command \"/etc/shutdown now\" to bring"
+    log_echo "$HOST down to single-user mode."
+    cleanup 14
+fi
+mount -at 4.2
+#
+# Make sure /usr is mounted read-write
+#
+if [ $TYPE != dataless ]; then
+    log_echo "Checking for writability of /usr partition..."
+    mount | fgrep ' /usr ' | fgrep -s rw
+    if [ $? -ne 0 ]; then
+        log_echo "Remounting /usr read-write..."
+        mount -o rw,remount /usr
+        if [ $? -ne 0 ]; then
+            log_echo "$CMD:  Unable to do remount!"
+            cleanup 15
+        fi
+    fi
+fi
+#
+# AARCH must be set
+#
+    if [ "X_$AARCH" = "X_" ]; then
+	log_echo "$CMD: arch not set! missing arch command?"
+	cleanup 16
+    fi
+#
+# make sure the it's not already upgraded
+if [ $FROM_RELEASE = $TO_RELEASE ]; then
+	log_echo "$CMD: You are already running $TO_RELEASE."
+	cleanup 17
+fi
+}
+##################################################
+extract_toc() {
+# extract toc from the cdrom
+    if [ ! -f $CD_TOC ]; then
+	log_echo "Table of contents not found"
+ 	log_echo $CD_TOC
+	cleanup 18
+    fi
+    log_echo ""
+    log_echo "Examining table of contents on release media..."
+    $XDRTOC $CD_TOC | \
+    $NAWK ' $1==1 {print $3 } '| \
+    $TR '[A-Z]' '[a-z]' | $SORT > $TOCFILE
+}
+##################################################
+roadmap(){
+# Gives the media path($5) and sunos path($6)
+#Sample :
+#roadmap root sunos_4_1_2 sun4 sun4c mp op 
+
+    pack=$1; version=$2; arch=$3; karch=$4
+
+    case $pack
+    in
+	"root")
+		eval $5=export/exec/proto_root_$version
+		eval $6=/
+		eval $7=proto_root_$version ;;
+	"kvm")
+		eval $5=export/exec/kvm/${karch}_$version/kvm
+		eval $6=/usr/kvm 
+		eval $7=${karch}_$version.kvm ;;
+	"sys")
+		eval $5=export/exec/kvm/${karch}_$version/sys
+		eval $6=/usr/kvm
+		eval $7=${karch}_$version.sys ;;
+	"manual")
+		eval $5=export/share/$version/manual
+		eval $6=/usr
+		eval $7=manual ;;
+        "install" | \
+        "networking" | \
+        "system_v" | \
+        "sunview_users" | \
+        "sunview_demo" | \
+        "text" | \
+        "demo" | \
+        "user_diag" | \
+        "tli" | \
+        "rfs" | \
+        "debugging" | \
+        "sunview_programmers" | \
+        "shlib_custom" | \
+        "graphics" | \
+        "uucp" | \
+	"usr" | \
+        "games" | \
+        "versatec" | \
+        "security")	
+		eval $5=export/exec/${arch}_$version/$pack
+		eval $6=/usr
+		eval $7=$pack ;;
+
+        "openwindows_users" | \
+        "openwindows_demo" | \
+        "openwindows_fonts" | \
+        "openwindows_programmers")	
+		eval $5=export/exec/${arch}_$version/$pack
+		eval $6=$OPENWINHOME/..
+		eval $7=$pack ;;
+	*)
+		log_echo "roadmap : Unrecognized software category name - " $pack
+		log_echo "Internal error of $CMD"
+		cleanup 19 ;;
+    esac
+}
+##################################################
+openwin_vers(){
+    initps=$OPENWINHOME/etc/NeWS/init.ps
+    if [ ! -f $initps ]; then
+	initps=""
+    fi
+    basicsps=$OPENWINHOME/etc/NeWS/basics.ps
+    if [ ! -f $basicsps ]; then
+	basicsps=""
+    fi
+    if [ z_$initps$basicsps != z_ ]; then
+# At least one exists
+	vers=`$SED -n\
+	    's,.*/openwinversion *(\([0-9.]*.*\)) *def.*,\1,p'\
+                                   $initps $basicsps`
+    else
+	vers="not_found"
+    fi
+    $ECHO $vers
+}
+###########################
+get_usr_size()
+{
+USRSIZE=0
+case $FROM_RELEASE in
+  4.1.1*)
+    for name in `$CAT $1`; do
+        case $name in
+        usr)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_usr_szdiff`;;
+        kvm)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_kvm_szdiff`;;
+        sys)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_sys_szdiff`;;
+        user_diag)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_user_diag_szdiff`;;
+        manual)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_manual_szdiff`;;
+        debugging)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_debugging_szdiff`;;
+        *) ;;
+       esac
+    done;;
+  4.1.2)
+    for name in `$CAT $1`; do
+        case $name in
+        usr)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_412usr_szdiff`;;
+        kvm)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_412kvm_szdiff`;;
+        sys)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_412sys_szdiff`;;
+        user_diag)
+	   USRSIZE=`$EXPR $USRSIZE + $USR_412user_diag_szdiff`;;
+        *) ;;
+       esac
+    done;;
+  *)
+       USRSIZE=1000;;
+esac
+echo $USRSIZE
+}
+###########################
+check_space()
+{
+   space_needed=$1
+   space_avail=`df $2 | tail -1 | $NAWK '{n=NF-2; print $n}'`
+   if [ $space_needed -gt $space_avail ]; then
+	log_echo "Space available in $2 is $space_avail. It's less than the required $space_needed."
+	if $DUMMY ; then
+	    log_echo "WARNING - You do not appear to have enough disk space to upgrade your system."
+	    log_echo "Continuing dummy upgrade."
+	else
+	    cleanup 10
+	fi
+   fi
+}
+
+###########################
+get_OW3_size()
+{
+OW3SIZE=0
+for name in `$CAT $1`; do
+   case $name in
+   openwindows_users)
+	OW3SIZE=`$EXPR $OW3SIZE + $OW_user_sz`;;
+   openwindows_programmers)
+	OW3SIZE=`$EXPR $OW3SIZE + $OW_prog_sz`;;
+   openwindows_fonts)
+	OW3SIZE=`$EXPR $OW3SIZE + $OW_fonts_sz`;;
+   openwindows_demo)
+	OW3SIZE=`$EXPR $OW3SIZE + $OW_demo_sz`;;
+   *) ;;
+   esac
+done
+echo $OW3SIZE
+}
+###########################
+check_space_ow()
+{
+   OWPATH=`df $1 | tail -1 | $NAWK '{print $NF}'`
+   ow_space=`du -s $1 | $NAWK '{ print $1}'`
+   space_needed=`$EXPR $2 - $ow_space`
+   space_avail=`df $OWPATH | tail -1 | $NAWK '{n=NF-2; print $n}'`
+   if [ $OWPATH = "/usr" ]; then
+       usr_space_needed=$USR_SPACE
+       space_needed=`$EXPR $space_needed + $usr_space_needed`
+ 
+       if [ $space_needed -gt $space_avail ]; then
+ 
+          echo Space available in /usr is $space_avail. It\'s less than the required $space_needed.
+          if $DUMMY ; then
+              echo "WARNING - You do not appear to have enough disk space to upgrade your system."
+              echo "Continuing dummy upgrade."
+          else
+              exit
+          fi
+       fi
+   elif [ $space_needed -gt $space_avail ]; then
+       echo Space available in $OWPATH is $space_avail.
+       echo It\'s less than the required $space_needed for OpenWindows Version 3.
+       exit
+   else
+      check_space $USR_SPACE /usr
+   fi
+}
+##################################################
+get_media_list(){
+media_files=$1
+for one_media in `$LS $media_files`; do
+cat $one_media
+done > $MEDIA_FILE
+if [ ! -s $MEDIA_FILE ]; then
+        log_echo "$CMD:   $media_files file not found ."
+        cleanup 10
+fi
+$CAT $MEDIA_FILE | $EGREP 'mf_name=|mf_loaded=' | $TR '=' ' ' | \
+    while read nkey name
+    do
+        read lkey loaded
+        if [ $loaded = "yes" ]; then
+            $ECHO $name
+        fi
+    done | \
+    $SORT -u > $2
+}
+##################################################
+make_upgrade_list(){
+extract_toc
+if [ $TYPE != server ]; then
+    get_media_list "/etc/install/media_file.$AARCH.$KARCH.sunos.4.1.*" $NAME_LIST 
+else
+    get_media_list "/etc/install/media_file.$AARCH.sun4*.sunos.4.1.*" $NAME_LIST
+    get_media_list "/etc/install/media_file.$AARCH.sun4*.sunos.$FROM_RELEASE" $SERVER_PCK_LIST
+    get_media_list "/etc/install/media_file.$AARCH.$KARCH.sunos.4.1.*" $SERVER_ARCH_LIST
+fi
+    $CAT $NAME_LIST | $TR '[A-Z]' '[a-z]' | $SORT > $INST_PCK_LST
+    show_list \
+    "The following software categories are currently installed"\
+    $INST_PCK_LST
+    $COMM -23 $TOCFILE $INST_PCK_LST > \
+			$NOT_INST_PCK_LST
+if [ -s $NOT_INST_PCK_LST ]; then
+    show_list \
+    "The following software categories are NOT currently installed" \
+    $NOT_INST_PCK_LST
+fi
+$GREP $OPENWINDOWS $INST_PCK_LST > /dev/null
+rc=$?
+if [ $rc = 0 ]; then
+    owv=`openwin_vers`
+    if [ "$owv" = "not_found" ]; then
+	log_echo "OpenWindows marked as currently installed, but not found in $OPENWINHOME."
+	log_echo "Use \"sunupgrade -wOPENWINHOME\", where OPENWINHOME is the full path name where"
+	log_echo "OpenWindows is installed (default /usr/openwin)"
+	cleanup 11
+    fi
+    if [ "$owv" = $OPENWINDOW_VERSION ]; then
+	log_echo ""
+	log_echo "The current version of OPENWINDOWS is $owv."
+	log_echo "Skipping the OPENWINDOWS upgrade."
+	log_echo ""
+    else
+	$GREP $OPENWINDOWS $INST_PCK_LST > $OPENWIN_PCK_LST
+    fi
+    $GREP -v $OPENWINDOWS $INST_PCK_LST > $WORK_PCK_LST
+else
+	$CP $INST_PCK_LST  $WORK_PCK_LST
+fi
+
+if [ -s $UPGRDT_PCK_LST ]; then
+    show_list "The following software categories are upgraded already" \
+		$UPGRDT_PCK_LST
+else 
+    mk_nullfile $UPGRDT_PCK_LST
+fi
+$RM -f $FOR_UPGR_PCK_LST
+
+$COMM -13 $UPGRDT_PCK_LST $WORK_PCK_LST > \
+			$FOR_UPGR_PCK_LST0
+
+#Check if they need to be upgraded
+for name in `$CAT  $FOR_UPGR_PCK_LST0`; do
+    name_p=`basename $name`
+    pack=`$ECHO $name_p | $NAWK -F. '{ print $1 } ' - `
+    roadmap	$pack\
+		$NEW_VERSION\
+		$AARCH $KARCH\
+		med_path\
+		os_path\
+		incl_file
+    if [ -f $INCLD/$incl_file.include -o\
+         -f $INCLD/$incl_file.delete ]; then
+        if [ $name = usr ]; then
+	    usr=usr
+	else
+	    $ECHO $name >> $FOR_UPGR_PCK_LST
+	fi
+    fi
+done
+$ECHO $usr >> $FOR_UPGR_PCK_LST
+
+$CP $FOR_UPGR_PCK_LST $FOR_UPGR_PCK_LST_ALL
+#$ECHO $usr >> $FOR_UPGR_PCK_LST_ALL
+
+OW_space_check=false
+if [ -f $OPENWIN_PCK_LST ]; then
+if $INTERACTIVE ; then
+   log_echo
+   get_yesno answer "Install OpenWindows Version 3 (OWV2 will be removed)"
+   log_echo $answer
+   if [ $answer != "yes" ]; then
+       log_echo "OpenWindows Version 2 will not be overwritten."
+   else 
+       $CAT $OPENWIN_PCK_LST >> $FOR_UPGR_PCK_LST_ALL
+       OW_space_check=true
+       OW3_SZ=`get_OW3_size $OPENWIN_PCK_LST`
+   fi
+else
+       $CAT $OPENWIN_PCK_LST >> $FOR_UPGR_PCK_LST_ALL
+       OW_space_check=true
+       OW3_SZ=`get_OW3_size $OPENWIN_PCK_LST`
+fi
+fi
+USR_SPACE=`get_usr_size $FOR_UPGR_PCK_LST_ALL`
+if $OW_space_check ; then
+   check_space_ow $OPENWINHOME $OW3_SZ 
+else
+   check_space $USR_SPACE /usr
+fi
+show_list "The following software categories will be upgraded"\
+		 $FOR_UPGR_PCK_LST_ALL
+}
+##################################################
+test_release(){
+INSTALLED_RELEASE=`$CUT -d\. -f4- $INSDIR/release`
+
+case $INSTALLED_RELEASE in
+    4.1.1* | 4.1.2* )
+         ;;
+
+    4.1.3* )
+	log_echo
+	log_echo "WARNING: You are upgrading from $INSTALLED_RELEASE"
+ 	log_echo ;;
+    *)
+	log_echo
+        log_echo "You cannot upgrade $INSTALLED_RELEASE to $TO_RELEASE" 
+	cleanup 12
+        ;;
+esac
+}
+##################################################
+is_sys_loaded(){
+[ ! -f $1 ] && return 1
+$EGREP 'mf_name=|mf_loaded=' $1 | \
+while read pack ; do
+    if [ $pack = "mf_name=Sys" ]; then
+	read loaded
+	case "$loaded" in
+	    "mf_loaded=yes") return 0 ;;
+	    "mf_loaded=no")  return 1 ;;
+	    *) log_echo "ERROR IN $1"; return 1 ;;
+	esac
+    fi
+done
+}
+##################################################
+

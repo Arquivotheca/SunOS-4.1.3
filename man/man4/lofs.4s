@@ -1,0 +1,125 @@
+.\" @(#)lofs.4s 1.1 92/07/30 SMI;
+.TH LOFS 4S "18 May 1989"
+.SH NAME
+lofs \- loopback virtual file system
+.SH CONFIG
+.B options \s-1LOFS\s0
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/mount.h>
+mount(\s-1MOUNT_LOFS\s0, virtual, flags, dir);
+.fi
+.ft
+.SH DESCRIPTION
+.IX  "loopback file system"
+.LP
+The loopback file system device allows new, virtual file systems
+to be created, which provide access to existing files using
+alternate pathnames.
+Once the virtual file system is created,
+other file systems can be mounted within it without affecting the
+original file system.
+File systems that are subsequently mounted onto
+the original file system, however,
+.I are
+visible to the virtual file system, unless or until the corresponding
+mount point in the virtual file system is covered by a file
+system mounted there.
+.LP
+.I virtual
+is the mount point for the virtual file system.
+.I dir
+is the pathname of the existing file system.
+.I flags
+is either 0 or
+.BR \s-1M_RDONLY\s0 .
+The
+.SB M_RDONLY
+flag forces all accesses in the new name space to be read-only;
+without it, accesses are the same as for the
+underlying file system.  All other
+.BR mount (2V)
+flags are preserved from the underlying file systems.
+.LP
+A loopback mount of
+.RB ` / '
+onto
+.B /tmp/newroot
+allows the entire file system hierarchy to appear as if it
+were duplicated under
+.BR /tmp/newroot ,
+including any file systems mounted from remote
+.SM NFS
+servers.
+All files would then be accessible
+either from a pathname relative to
+.RB ` / ',
+or from a pathname relative to
+.B /tmp/newroot
+until such time as a file system is mounted in
+.BR /tmp/newroot ,
+or any of its subdirectories.
+.LP
+Loopback mounts of
+.RB ` / '
+can be performed in conjunction with the
+.BR chroot (2)
+system call, to provide a complete virtual file system to a process
+or family of processes.
+.LP
+Recursive traversal of loopback mount points is not allowed;
+after the loopback mount of
+.BR /tmp/newroot ,
+the file
+.B /tmp/newroot/tmp/newroot
+does not contain yet another file system hierarchy;
+rather, it appears just as
+.B /tmp/newroot
+did before the loopback mount was performed (say,
+as an empty directory).
+.LP
+The standard
+.SM RC
+files perform first
+.B 4.2
+mounts, then
+.B nfs
+mounts, during booting.
+On Sun386i systems,
+.B lo
+(loopback) mounts are performed just after
+.B 4.2
+mounts.
+.B /etc/fstab
+files depending on alternate mount orders at
+boot time will
+fail to work as expected.  Manual
+modification of
+.B /etc/rc.local
+will be needed to make such
+mount orders work.
+.SH WARNINGS
+.LP
+Loopback mounts must be used with care;
+the potential for confusing users and applications
+is enormous.
+A loopback mount entry in
+.BR /etc/fstab
+must be placed after the mount points of both
+directories it depends on.  This is most easily accomplished by 
+making the loopback mount entry the last in 
+.BR /etc/fstab ,
+though see
+.BR mount (8)
+for further warnings.
+.SH SEE ALSO
+.BR chroot (2),
+.BR mount (2V),
+.BR fstab (5),
+.BR mount (8)
+.SH BUGS
+.LP
+Because only directories can be mounted or mounted on,
+the structure of a virtual file system can only
+be modified at directories.

@@ -1,0 +1,123 @@
+.\" @(#)setregid.2 1.1 92/07/30 SMI; from UCB 4.2 and S5R3
+.TH SETREGID 2 "21 January 1990"
+.SH NAME
+setregid \- set real and effective group IDs
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int setregid(rgid, egid)
+int rgid, egid;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  setregid()  ""  "\fLsetregid()\fP \(em set real and effective group ID"
+.IX  "processes and protection"  setregid()  ""  \fLsetregid()\fP
+.IX  "group ID"  "set real and effective" "" "set real and effective \(em \fLsetregid()\fP"
+.IX  "real group ID"  set "" "set \(em \fLsetregid()\fP"
+.IX  "effective group ID"  set "" "set \(em \fLsetregid()\fP"
+.LP
+.B setregid(\|)
+is used to set the real and effective group
+.SM ID\s0s
+of the calling process.  If
+.I rgid
+is \-1, the real
+.SM GID
+is not changed; if
+.I egid
+is \-1, the effective
+.SM GID
+is not changed.  The real and effective
+.SM GID\s0s
+may be set to different values in the same call.
+.LP
+If the effective user
+.SM ID
+of the calling process is super-user,
+the real
+.SM GID
+and the effective
+.SM GID
+can be set to any legal value.
+.LP
+If the effective user
+.SM ID
+of the calling process is not super-user,
+either the real
+.SM GID
+can be set to the saved set\s-1GID\s0
+from
+.BR execve (2V),
+or the effective
+.SM GID
+can either be set to the saved set\s-1GID\s0
+or the real 
+.SM GID\s0.
+Note: if a set\s-1GID\s0 process sets its effective 
+.SM GID
+to its real
+.SM GID\s0,
+it can still set its effective
+.SM GID
+back to the saved set\s-1GID\s0.
+.LP
+In either case, if the real
+.SM GID
+is being changed (that is, if
+.I rgid
+is not \-1), or the effective
+.SM GID
+is being changed to a value not equal to the real 
+.SM GID\s0,
+the saved set\s-1GID\s0
+is set equal to the new effective
+.SM GID\s0.
+.SH RETURN VALUES
+.LP
+.B setregid(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B setregid(\|)
+will fail and neither of the group
+.SM ID\s0s
+will be changed if:
+.TP 15
+.SM EINVAL
+The value of
+.I rgid
+or
+.I egid
+is less than 0 or greater than
+.SB USHRT_MAX
+(defined in
+.BR <sys/limits.h> ).
+.TP
+.SM EPERM
+The calling process' effective
+.SM UID
+is not the super-user and a change
+other than changing the real 
+.SM GID
+to the saved set\s-1GID\s0,
+or changing the effective 
+.SM GID
+to the real
+.SM GID
+or the saved
+.SM GID\s0,
+was specified.
+.SH "SEE ALSO"
+.BR execve (2V),
+.BR getgid (2V),
+.BR setreuid (2),
+.BR setuid (3V)

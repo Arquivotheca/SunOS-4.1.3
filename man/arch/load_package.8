@@ -1,0 +1,165 @@
+.\" @(#)load_package.8 1.1 92/07/30 SMI; new for SPARCstation 1
+.TH LOAD_PACKAGE 8 "23 May 1989"
+.SH NAME
+load_package \- install additional packages from a release tape or floppy
+.SH AVAILABILITY
+.LP
+This command is available on \s-1SPARC\s0station 1
+systems only.
+.SH SYNOPSIS
+.B /usr/etc/install/script/load_package
+[
+.BI \-a " kernel_arch"
+] [
+.BI \-e " execpath"
+] [
+.BI \-k " kvmpath"
+]
+.SH DESCRIPTION
+.IX "load_package install" "" "\fLload_package\fP \(em install packages from tape or floppy" ""
+.IX install "additional packages from tape or floppy"
+.IX tape "install additional packages from"
+.IX floppy "install additional packages from"
+.IX release "install packages from tape or floppy"
+.IX add "install packages from tape or floppy"
+.LP
+.B load_package
+is normally used on systems that come with
+a release preloaded on disk.
+It allows you to load additional packages onto your system.
+.LP
+You must be the super-user to run
+.BR load_package .
+.LP
+Currently,
+.B load_package
+is a front end to
+.BR setup_exec (8),
+and makes assumptions about the architecture,
+the kernel, and application executables paths
+based on the system it's running on.  
+However,
+.B load_package
+undoes the modifications to
+.B /etc/exports
+that
+.BR setup_exec (8)
+makes.
+.LP
+When support for a
+\s-1SPARC\s0station 1
+client is added to a server,
+.B load_package
+is automatically installed in the
+Sun-4 system's
+.B .\|.\|./suninstall/script
+directory.
+.LP
+If you are running 
+.B load_package
+on the same system that the
+additional packages will be used on and the standard
+.I execpath
+.RB ( /export/exec/kernel_arch )
+and
+.I kvmpath
+.RB ( /export/exec/kvm/kernel_arch )
+are used, no 
+.B load_package
+options need to be specified.
+.LP
+If you are running 
+.B load_package
+on a server to add packages for
+a client and the standard
+.I execpath
+.RB ( /export/exec/kernel_arch )
+and
+.I kvmpath
+.RB ( /export/exec/kvm/kernel_arch )
+are used, you need to
+specify only the client's kernel architecture.
+.LP
+If neither of the above cases apply to you, you may completely
+specify the application architecture executable path name, the
+kernel architecture executable path name and the kernel
+architecture of the system the additional packages will run on.
+.SH OPTIONS
+.TP 12
+.BI \-a " kernel_arch"
+Specify the kernel architecture of the system whose
+executables are being installed.
+See
+.BR arch (1)
+for more information on kernel and application architectures.
+Defaults to the value returned by
+.RB ` "arch \-k" ',
+if not specified.
+.TP
+.BI \-e " execpath"
+Specify the full path name of the application architecture executables
+directory.
+This is usually
+.BR /export/exec/appl_arch .
+Defaults to
+.BR /export/exec/\s-1KERNEL_ARCH\s0 ,
+if not specified.
+.TP
+.BI \-k " kvmpath"
+Specify the full path name of the kernel architecture executables
+directory. 
+This is usually
+.BR /export/exec/kvm/kernel_arch .
+Defaults to
+.BR /export/exec/kvm/\s-1KERNEL_ARCH\s0 ,
+if not specified.
+.SH EXAMPLE
+.LP
+To load packages onto a
+\s-1SPARC\s0station 1
+in the \*(lqnormal\*(rq places:
+.RS
+.ft B
+example% load_package
+.ft R
+.RE
+.LP
+To load packages for a \s-1SPARC\s0station 1 client on a Sun-3 server,
+in the \*(lqnormal\*(rq places:
+.RS
+.ft B
+example% load_package \-a sun4c
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 25
+.B /etc/exports.load-package
+used to keep a copy of the exports file
+.TP
+.B /etc/xtab.load-package	
+used to re-export all files when done
+.PD
+.br
+.ne 5
+.SH SEE ALSO
+.BR arch (1)
+.BR setup_exec (8)
+.LP
+.TX INSTALL
+.SH DIAGNOSTICS
+.HP 12
+.B \s-1USAGE\s0: load_package [\-a kernel_arch] 
+.B [\-e full exec pathname]
+.B [\-k full kvm pathname]
+.br
+Printed when
+.B load_package
+is invoked incorrectly.
+.TP
+.B "Too many options and/or option arguments."
+More options and/or option arguments than allowed were used.
+.TP
+.B "echo 'Extraneous arguments on the command line.'"
+An option had more option arguments than allowed.
+Each option can have only one option argument.

@@ -1,0 +1,144 @@
+.\" @(#)unlink.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH UNLINK 2V "21 January 1990"
+.SH NAME
+unlink \- remove directory entry
+.SH SYNOPSIS
+.nf
+.ft B
+int unlink(path)
+char *path;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  unlink()  ""  "\fLunlink()\fP \(em remove directory entry"
+.IX  "file system"  "remove directory entry unlink()"  ""  "remove directory entry \(em \fLunlink()\fP"
+.IX  "file system"  "delete directory entry unlink()"  ""  "delete directory entry \(em \fLunlink()\fP"
+.IX  "file system"  "erase directory entry unlink()"  ""  "erase directory entry \(em \fLunlink()\fP"
+.IX  remove "directory entry \(em \fLunlink()\fP"
+.IX  delete "directory entry \(em \fLunlink()\fP"
+.IX  erase "directory entry \(em \fLunlink()\fP"
+.LP
+.B unlink(\|)
+removes the directory entry named by the pathname pointed to by
+.I path
+and decrements the link count of the file referred to by that entry.
+If this entry was the last link to the file,
+and no process has the file open, then
+all resources associated with the file are reclaimed.
+If, however, the file was open in any process, the actual
+resource reclamation is delayed until it is closed,
+even though the directory entry has disappeared.
+.LP
+If
+.I path
+refers to a directory,
+the effective
+user-\s-1ID\s0
+of the calling process must be super-user.
+.LP
+Upon successful completion,
+.B unlink(\|)
+marks for update the 
+.B st_ctime
+and
+.B st_mtime
+fields of the parent directory.
+Also, if the file's link count is not zero, the
+.B st_ctime
+field of the file is marked for update.
+.SH RETURN VALUES
+.LP
+.B unlink(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.IP
+Write permission is denied for the directory containing the link to be removed.
+.TP
+.SM EBUSY
+The entry to be unlinked is the mount point for a mounted file system.
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EINVAL
+The file referred to by
+.I path
+is the current directory,
+.RB ` . '.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM EPERM
+The file referred to by
+.I path
+is a directory and the effective user
+.SM ID
+of the process is not the super-user.
+.TP
+.SM EROFS
+The file referred to by
+.I path
+resides on a read-only file system.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to an empty string.
+.SH "SEE ALSO"
+.BR close (2V),
+.BR link (2V),
+.BR rmdir (2V)
+.SH NOTES
+.LP
+Applications should use
+.BR rmdir (2V)
+to remove directories.
+Although
+.B root
+may use
+.B unlink(\|)
+on directories,
+all users may use
+.BR rmdir(\|) .

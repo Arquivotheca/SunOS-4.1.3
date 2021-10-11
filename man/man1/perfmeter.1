@@ -1,0 +1,181 @@
+.\" @(#)perfmeter.1 1.1 92/07/30 SMI;
+.TH PERFMETER 1 "21 January 1988"
+.SH NAME
+perfmeter \- display system performance values in a meter or strip chart
+.SH SYNOPSIS
+.B perfmeter
+[
+.B \-s
+.I sample-time
+] [
+.B \-h
+.I h-hand-int
+]
+.if n .ti +0.5i
+[
+.B \-m
+.I m-hand-int
+]
+[
+.B \-M
+.I smax minmax maxmax
+]
+.if n .ti +0.5i
+.if t .ti +0.5i
+[
+.B \-v
+.I value
+] [
+.I hostname
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I SunView User's
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "perfmeter command"  ""  "\fLperfmeter\fP \(em display performance statistics"
+.IX  "performance monitoring"  ""  "performance monitoring \(em \fLperfmeter\fP"
+.B perfmeter
+is a SunView utility that displays performance values (statistics) for
+a given
+.IR hostname .
+If no host is specified, statistics on the current host are metered.
+The
+.BR rstatd (8C)
+daemon must be running on the machine being metered.
+.LP
+When open,
+.BR perfmeter
+displays a performance value in the form of a strip chart.  When
+closed, it displays a meter dial.
+By default, the display is updated with a
+.I sample-time
+of 2 seconds.
+The hour hand of the meter represents the average over a
+20-second interval;
+the minute hand, the average over 2 seconds. The default
+value displayed is the percent of
+.SM CPU
+being utilized.
+.LP
+The maximum scale value for the strip chart will automatically double
+or halve to accommodate increasing or decreasing values for the
+host machine.  This scale can be restricted to a certain range
+with the
+.B \-M
+option.
+.SH OPTIONS
+.TP
+.BI \-s " sample-time"
+Set the sample time to
+.I sample-time
+seconds.
+.TP
+.BI \-h  " h-hand-int"
+Set the hour-hand interval to
+.I h-hand-int
+seconds.
+.TP
+.BI \-m  " m-hand-int"
+Set the minute hand interval to
+.I m-hand-int
+seconds.
+.TP
+.BI \-M  " smax minmax maxmax"
+Set a range of maximum values for the strip chart.  Values for
+each of the arguments should be powers of 2.
+.I smax
+sets the starting maximum-value.
+.I minmax
+sets the lowest allowed maximum-value for the scale.
+.I maxmax
+sets the highest allowed maximum-value.
+.TP
+.BI \-v " value"
+Set the performance value to be monitored to one of:
+.RS
+.TP 8n
+.B cpu
+Percent of
+.SM CPU
+being utilized.
+.TP
+.B pkts
+Ethernet packets per second.
+.TP
+.B page
+Paging activity in pages per second.
+.TP
+.B swap
+Jobs swapped per second.
+.TP
+.B intr
+Number of device interrupts per second.
+.TP
+.B disk
+Disk traffic in transfers per second.
+.TP
+.B cntxt
+Number of context switches per second.
+.TP
+.B load
+Average number of runnable processes over the last minute.
+.TP
+.B colls
+Collisions per second detected on the ethernet.
+.TP
+.B errs
+Errors per second on receiving packets.
+.RE
+.br
+.ne 5
+.SH USAGE
+.SS Commands
+.LP
+You can change the statistic being displayed by clicking
+the
+.SM RIGHT
+mouse button, and then choosing the desired menu item.
+The other meter parameters can be modified by moving the pointer
+onto the tool (either open or closed), and typing:
+.RS
+.TP
+.B m
+Decrease
+.I minutehandintv
+by one
+.TP
+.B M
+Increase
+.I minutehandintv
+by one
+.TP
+.B h
+Decrease
+.I hourhandintv
+by one
+.TP
+.B H
+Increase
+.I hourhandintv
+by one
+.TP
+.B 1\-9
+Set
+.I sampletime
+to a range from 1 to 9 seconds.
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/inetd.conf
+starts statistics server
+.PD
+.SH SEE ALSO
+.BR sunview (1),
+.BR netstat (8C),
+.BR rstatd (8C),
+.BR vmstat (8)

@@ -1,0 +1,118 @@
+.\" @(#)t_free.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_FREE 3N "21 January 1990"
+.SH NAME
+t_free \- free a library structure
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_free(ptr, struct_type)
+char *ptr;
+int struct_type;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_free()" "" "\fLt_free()\fR \(em free a library structure" ""
+.IX transport "free a library structure"
+.IX free "transport library structure"
+.LP
+.B t_free(\|)
+frees memory previously allocated by
+.BR t_alloc (3N) .
+This function will free memory for the specified structure, and
+will also free memory for buffers referenced by the structure.
+.LP
+.I ptr
+points to one of the six structure types described for
+.BR t_alloc (3N),
+and
+.I struct_type
+identifies the type of that structure which can be one
+of the following:
+.RS
+.nf
+.ft B
+\s-1T_BIND\s0		 struct t_bind
+\s-1T_CALL\s0		 struct t_call
+\s-1T_OPTMGMT\s0	 struct t_optmgmt
+\s-1T_DIS\s0		 struct t_discon
+\s-1T_UNITDATA\s0	 struct t_unitdata
+\s-1T_UDERROR\s0	 struct t_uderr
+\s-1T_INFO\s0		 struct t_info
+.fi
+.ft R
+.RE
+.LP
+where each of these structures is used as an argument to one or
+more transport functions.
+.LP
+.B t_free(\|)
+checks the
+.IR addr ,
+.IR opt ,
+and
+.I udata
+fields of the given structure (as appropriate), and frees the
+buffers pointed to by the
+.I buf
+field of the
+.I netbuf
+(see
+.BR intro (3))
+structure.
+The
+.IR maxlen , 
+.IR len , 
+and 
+.I buf
+members of the 
+.I netbuf 
+structure are described in 
+.BR t_accept (3N).
+If
+.I buf
+is
+.SM NULL\s0,
+.B t_free(\|)
+will not attempt to free memory.
+After all buffers are freed,
+.B t_free(\|)
+will free the memory associated with the structure pointed to by
+.IR ptr .
+.LP
+Undefined results will occur if
+.I ptr
+or any of the
+.I buf
+pointers points to a block of memory that was not previously
+allocated by
+.BR t_alloc (3N).
+.SH RETURN VALUES
+.LP
+.B t_free(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR intro (3),
+.BR t_alloc (3N)
+.LP
+.TX NETP

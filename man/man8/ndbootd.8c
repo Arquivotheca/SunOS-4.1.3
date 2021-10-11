@@ -1,0 +1,70 @@
+.\" @(#)ndbootd.8c 1.1 92/07/30 SMI;
+.TH NDBOOTD 8C  "10 September 1986"
+.SH NAME
+ndbootd \- ND boot block server
+.SH SYNOPSIS
+.B ndbootd
+[
+.B \-dv
+] 
+.SH DESCRIPTION
+.IX "ndbootd daemon" "" "\fLndbootd\fP daemon"
+.LP
+.B ndbootd
+sends boot blocks to diskless Sun-2 system clients that
+request them using the (now obsolete)
+.SM ND
+protocol.  This server
+uses the boot block contained in the file
+.BR /tftpboot/sun2.bb .
+A client must appear in the
+.BR ethers (5)
+and
+.BR hosts (5)
+databases, in order for the request to be served.
+In determining whether to serve the client,
+.B ndbootd
+checks the
+.B /tftpboot
+directory for a file whose
+name is the client's
+.SM IP
+address in hexadecimal notation.
+For example, if the file
+.B /tftpboot/C00901\s-1AD\s0
+exists, the machine at
+.SM IP
+address 192.9.1.173 can be served.  This file
+normally contains the boot program that is sent to the client by
+.BR tftpd (8C).
+.LP
+Only root can invoke
+.BR ndbootd .
+.SH OPTIONS
+.TP
+.B \-d
+Debug.  Display information about ignored packets, retransmissions,
+and address translation.
+.TP
+.B \-v
+Verbose.  Show a detailed listing of packets sent and received, etc.
+.LP
+If either option is used, all output is sent to the invoking
+terminal.  Otherwise, error output (if any) appears on the console.
+.SH FILES
+.PD 0
+.TP 20
+.B /tftpboot
+bootfiles directory
+.TP
+.B /tftpboot/sun2.bb
+boot blocks
+.TP
+.B /tftpboot/????????
+boot programs for clients
+.PD
+.SH "SEE ALSO"
+.BR ethers (5),
+.BR hosts (5),
+.BR boot (8S),
+.BR tftpd (8C)

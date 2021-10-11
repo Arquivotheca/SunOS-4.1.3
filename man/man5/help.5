@@ -1,0 +1,115 @@
+.\" @(#)help.5	1.1 92/07/30 SMI;
+.TH HELP 5 "19 February 1988"
+.SH NAME
+help \- help file format
+.SH SYNOPSIS
+.B /usr/lib/help/*
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "help datafile"  ""  "\fLhelp\fP \(em get help"
+.IX "datafile"  "help datafile"  ""  "\fLhelp\fP \(em get help"
+Each SunView application using the 
+.B help
+feature has a simple
+.SM ASCII
+file in
+.B /usr/lib/help
+with the name
+.IB application-name .info .
+.LP
+This file contains the text of help messages for each SunView object
+within that program. Each help message is separated in the file by a line
+beginning with a colon and identified by a keyword
+which matches the
+.SM HELP_DATA
+attribute of the SunView object.
+.LP
+The first character of each line in the file may be:
+.sp
+	#			comment line
+.br
+	:			keyword line
+.br
+	any other		1-32 help text lines
+.sp
+If the line is a keyword line, it has the following structure\(em
+.sp
+	:keyword[s]:datastring [pagenumber]\s-1NEWLINE\s0
+.sp
+.nf
+\fIkeyword\fP			is a 1-65 character keyword 
+.br
+				--any displayable characters may be used
+.br
+				--several keywords may be present
+.br
+				--keywords are separated by 1-or-more blanks
+.sp
+\fIdatastring\fP		is 1-256 \s-1ASCII\s0 bytes, and describes the path of the data files for 
+.br
+			help_viewer, relative to /usr/lib/help.
+.sp
+\fIpagenumber\fP		is an optional page number within the help_viewer data file.
+
+.fi
+.LP
+The help text which follows the :keyword line will be displayed in
+an Alert Box when help is requested for one of the keywords by pressing
+the help key.
+.sp
+The datastring will be sent (by
+.SM RPC\s0)
+to the
+.B help_viewer
+procedure when the user selects the More Help box in the Alert Box window.
+.SH EXAMPLE
+Here is part of a typical help file, called
+.BR mailtool.info .
+.LP
+.nf
+.ft B
+:abort
+   Abort button
+
+o  Quits the Mail application (click 
+   left on button). Tentative message
+   deletions do not become permanent.
+
+o  Provides a menu of Abort options
+   (click right on button).
+
+:cancel:mailtool/Writing_and_Sending_Mail 1
+   Cancel button
+
+o  Closes the message composition 
+   window without sending message
+   (click left on button).
+
+o  Provides a menu of Cancel options
+   (click right on button).
+.fi
+.ft
+.LP
+Pressing the help key while in the cancel or abort buttons triggers 
+the display of the corresponding text. The words 
+.I cancel
+and
+.I abort
+in this file are the keywords. In the case of abort, there is no
+More Help available. For cancel, More Help is available and it is stored in
+the first page of the
+.B Writing_and_Sending_Mail
+file in the mailtool directory.
+.SH FILES
+.LP
+.TP 20
+.B /usr/lib/help/*
+files for the pop-up help facility
+.SH SEE ALSO
+.BR help_viewer (1),
+.BR help_viewer (5)
+.LP
+\fISun386i Developer's Guide\fP

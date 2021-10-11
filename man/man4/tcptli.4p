@@ -1,0 +1,201 @@
+.\" @(#)tcptli.4p 1.1 92/07/30 SMI; 
+.\"
+.TH TCPTLI 4P "2 December 1989"
+.SH NAME
+tcptli \- TLI-Conforming TCP Stream-Head
+.SH CONFIG
+.B pseudo-device clone
+.LP
+.B pseudo-device tcptli32
+.SH SYNOPSIS
+.nf
+.B #include <fcntl.h>
+.B #include <nettli/tiuser.h>
+.LP
+.B tfd = t_open("/dev/tcp", O_RDWR, tinfo);
+.B struct t_info *tinfo;
+
+.fi
+.SH DESCRIPTION
+.IX "tcptli" "" "\fLtcptli\fP \(em TLI-Conforming TCP Stream-Head" ""
+.IX "TCPTLI" "" "TLI-Conforming TCP Stream-Head \(em \fLtcptli\fP" ""
+.LP
+.SM TCPTLI
+provides access to TCP service via the Transport Library
+Interface (TLI). Prior to this release, TCP access was only
+possible via the socket programming interface. Programmers
+have the choice of using either the socket or TLI programming
+interface for their application.
+.LP
+.SM
+TCPTLI
+is implemented in STREAMS conforming to the Transport
+Provider Interface (TPI) specification as
+a TCP Transport Provider to a TLI
+application. It utilizes the existing underlying
+socket and TCP support in the SunOS kernel to communicate
+over the network.
+It is also a clone driver, see
+.BR clone(4)
+for more characteristics pertaining to a clone STREAMS driver.
+.LP
+The notion of an address is the same as the socket address
+(struct sockaddr_in) defined in <netinet/in.h>.
+.SM
+TCPTLI
+maintains transport state information for
+each outstanding connection 
+and the current state of the provider
+may be retrieved via the 
+.BR t_getstate(3N)
+call. See 
+.BR t_getstate(3N) 
+for a list of possible states.
+.LP
+A server usually starts up with the 
+.BR t_open(3N)
+call followed by 
+.BR t_bind(3N)
+to bind an address that it
+listens for incoming connection. It may call
+.BR t_listen(3N)
+to retrieve an indication of a connect
+request from another transport user, and then calls
+.BR t_accept(3N)
+if it is willing to provide its service. TLI allows
+a server to accept connection on the same file descriptor
+it is listening on, or a different file descriptor (as
+in the sense of socket's 
+.BR accept(2)
+).
+.LP
+A client usually calls 
+.BR t_open(3N) 
+and followed by
+a call to 
+.BR t_bind(3N). 
+Then it calls 
+.BR t_connect(3N)
+to the address of a server advertized for providing
+service. Once the connection is established, it may
+use 
+.BR t_rcv(3N)
+and 
+.BR t_snd(3N) 
+to receive and send data.
+The routine 
+.BR t_close(3N) 
+is used to terminate the
+connection.
+.SH TLI ERRORS
+An TLI operation may fail if one of the
+following error conditions is encountered. They
+are returned by the TLI user level library. 
+.TP 20
+.SM TBADADDR
+Incorrect/invalid address format supplied by the user.
+.TP
+.SM TBADOPT
+Incorrect option.
+.TP
+.SM TACCESS
+No permission.
+.TP
+.SM TBADF
+Illegal transport file descriptor.
+.TP
+.SM TNOADDR
+Could not allocate address
+.TP
+.SM TOUTSTATE
+The transport is in an incorrect state.
+.TP
+.SM TBADSEQ
+Incorrect sequence number.
+.TP
+.SM TSYSERR
+A system error, i.e. below the transport level (see list below) is encountered.
+.TP
+.SM TLOOK
+An event requires attention.
+.TP
+.SM TBADDATA
+Illegal amount of data
+.TP
+.SM TBUFOVFLW
+Buffer not large enough.
+.TP
+.SM TFLOW
+Flow control problem.
+.TP
+.SM TNODATA
+No data.
+.TP
+.SM TNODIS
+No discon_ind is found on the queue.
+.TP
+.SM TNOUDERR
+Unit data not found.
+.TP
+.SM TBADFLAG
+Bad flags.
+.TP
+.SM TNOREL
+No orderly release request found on queue.
+.TP
+.SM TNOTSUPPORT
+Protocol/primitive is not supported.
+.TP
+.SM TSTATECHNG
+State is in the process of changing.
+.SH SYSTEM ERRORS
+The following errors are returned by TCPTLI. However
+they may be translated to the above TLI errors
+by the user level library (
+.BR libnsl
+).
+.TP 20
+.SM ENXIO
+Invalid device or address, out of range.
+.TP
+.SM EBUSY
+Request device is busy or not ready.
+.TP
+.SM ENOMEM
+Not enough memory for transmitting data, non fatal.
+.TP
+.SM EPROTO
+The operation encountered an underlying protocol.
+error (TCP).
+.TP
+.SM EWOULDBLOCK
+The operation would block as normally the file descriptors
+are set with non-blocking flag.
+.TP 
+.SM EACCES
+Permission denied.
+.TP
+.SM ENOBUFS
+The system ran out of memory for internal (network) data structures.
+.SH SEE ALSO
+.BR accept (2),
+.BR t_open (3N),
+.BR t_close (3N),
+.BR t_accept (3N),
+.BR t_getstate (3N),
+.BR t_bind (3N),
+.BR t_connect (3N),
+.BR t_rcv (3N),
+.BR t_snd (3N),
+.BR t_alloc (3N),
+.BR t_unbind (3N),
+.BR t_getinfo (3N)
+.SH BUGS
+Only TCP (i.e. connection oriented) protocol is supported, no
+UDP. The maximum network connection is 32 by default. A
+new kernel has to be configured if an increase of such limit
+is desired: by changing the entry 
+.BR pseudo-device 
+.BR tcptli32
+in the kernel config file to
+.BR tcptli64.

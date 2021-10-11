@@ -1,0 +1,88 @@
+.\" @(#)old-compact.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH OLD-COMPACT 1 "24 September 1987"
+.SH NAME
+old-compact, old-uncompact, old-ccat \- compress and uncompress files, and cat them
+.SH SYNOPSIS
+.B /usr/old/compact
+[
+.IR filename .\|.\|.
+]
+.LP
+.B uncompact
+[
+.IR filename .\|.\|.
+]
+.LP
+.B ccat
+[
+.IR filename .\|.\|.
+]
+.SH DESCRIPTION
+.IX  compact  ""  "\fLcompact\fP \(em compress files"
+.IX  uncompact  ""  "\fLuncompact\fP \(em uncompress files"
+.IX  ccat  ""  "\fLccat\fP \(em extract files compressed with \fLcompact\fR"
+.IX  files  "compact command"  files  "\fLcompact\fP \(em compress files"
+.IX  files  "uncompact command"  files  "\fLuncompact\fP \(em uncompress files"
+.IX  files  "ccat command"  files  "\fLccat\fP \(em extract files compressed with \fLcompact\fR"
+.LP
+.B Note:
+This program is considered to be obsolete, and will not be
+distributed or supported in future Sun releases.
+.LP
+.B compact
+compresses the named files using an
+adaptive Huffman code.  If no file
+names are given, the standard input is
+compacted to the standard output.
+.B compact
+operates as an on-line algorithm.  Each time a byte is read,
+it is encoded immediately according to the current prefix code.
+This code is an optimal Huffman code for the set of frequencies seen so far.
+It is unnecessary to prepend a decoding tree to the compressed file
+since the encoder and the decoder start in the same state and stay
+synchronized.  Furthermore,
+.B compact
+and
+.B uncompact
+can operate as filters.  In particular:
+.IP
+.RB \&.\|.\|.\| " | compact | uncompact | " .\|.\|.
+.LP
+operates as a (very slow) no-op.
+.LP
+When an argument
+.B file
+is given, it is compacted and the resulting file is placed in
+.BR file.C ;
+.B file
+is removed.  The first two bytes of the compacted file code the
+fact that the file is compacted.  This code is used to prohibit recompaction.
+.LP
+The amount of compression to be expected depends on the type of file being
+compressed.  Typical values of compression are:
+Text (38%), Pascal Source (43%), C Source (36%) and Binary (19%).
+These values are the percentages of file bytes reduced.
+.LP
+.B uncompact
+restores the original file from a file called
+.IB file .C
+which was compressed by
+.B compact.
+If no file names are given, the standard input is uncompacted to
+the standard output.
+.LP
+.B ccat
+cats the original file from a file compressed by
+.B compact,
+without uncompressing the file.
+.SH FILES
+.PD 0
+.TP 20
+.B *.C
+compacted file created by compact, removed by uncompact
+.PD
+.SH "SEE ALSO"
+Gallager, Robert G.,
+.IR "Variations on a Theme of Huffman" ,
+.I "I.E.E.E.  Transactions on Information Theory,"
+vol. IT-24, no. 6, November 1978, pp. 668 - 674.

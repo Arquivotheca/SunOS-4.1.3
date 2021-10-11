@@ -1,0 +1,2213 @@
+.\" @(#)termio.4 1.1 92/07/30 SMI;
+.hw CLOCAL
+.hw DISCARD
+.if t .ds ' \h@.05m@\s+4\v@.333m@\'\v@-.333m@\s-4\h@.05m@
+.if n .ds ' '
+.if t .ds ` \h@.05m@\s+4\v@.333m@\`\v@-.333m@\s-4\h@.05m@
+.if n .ds ` `
+.TH TERMIO 4 "15 January 1990"
+.SH NAME
+termio \- general terminal interface
+.SH SYNOPSIS
+.B "#include <sys/termios.h>
+.SH DESCRIPTION
+.IX "terminal" "I/O, see \fLtermio\fP(4)"
+.IX "tty I/O, see \fLtermio\fP(4)"
+.IX I/O "terminals, see \fLtermio\fP(4)"
+.IX I/O "tty, see \fLtermio\fP(4)"
+.LP
+Asynchronous communications ports, pseudo-terminals, and the special
+interface accessed by
+.B /dev/tty
+all use the same general interface, no matter what hardware (if any) is
+involved.  The remainder of this section discusses the common features of
+this interface.
+.SS "Opening a Terminal Device File"
+.LP
+When a terminal file is opened, the process normally
+waits until a connection is established.
+In practice, users' programs seldom open these
+files; they are opened by
+.BR getty (8)
+and become a user's
+standard input, output, and error files.
+The state of the software carrier flag will effect
+the ability to open a line.
+.SS "Sessions"
+.LP
+Processes are now grouped by session, then process group, then process id.
+Each session is associated with one \*(lqlogin\*(rq session (windows
+count as logins). A process creates a session by calling 
+.BR setsid (2V),
+which will put the process in a new session as its only member
+and as the session leader of that session.
+.SS "Process Groups"
+.LP
+A terminal may have a distinguished process group associated with it.
+This distinguished process group plays a special role in handling
+signal-generating input characters, as discussed below in the
+.B "Special Characters"
+section below.  The terminal's process group can can be set only to
+process groups that are members of the terminal's session.
+.LP
+A command interpreter, such as
+.BR csh (1),
+that supports \*(lqjob control\*(rq can allocate the terminal to different
+.IR jobs ,
+or process groups,
+by placing related processes in a single process group and associating this
+process group with the terminal.  A terminal's associated process group
+may be set or examined by a process with sufficient privileges.
+The terminal interface aids in this allocation by restricting access
+to the terminal by processes that are not in the current process group;
+see
+.B "Job Access Control"
+below.
+.SS "Orphaned Process Groups"
+.LP
+An orphaned process group is a process group that has no parent, in a 
+different process group, and in the same session.  In other words, there
+is no process that can handle job control signals for the process group.
+.SS "The Controlling Terminal"
+.LP
+A terminal may belong to a process as its
+.IR "controlling terminal" .
+If a process that is a session leader, and that does not
+have a controlling terminal, opens a terminal file not already associated
+with a session, the terminal associated with that terminal file becomes
+the controlling terminal for that process, and the terminal's distinguished
+process group is set to the process group of that process.
+(Currently, this also happens if a process that does not have a
+controlling terminal and is not a member of a process group opens a
+terminal.  In this case, if the terminal is not associated with a session,
+a new session is created with a process group
+.SM ID
+equal to the process
+.SM ID
+of the process in question, and the terminal is
+assigned to that session.
+The process is made a member of the
+terminal's process group.)
+.LP
+If a process does not wish to acquire the terminal as a controlling terminal
+(as is the case with many daemons that open
+.BR /dev/console ),
+the process should or 
+.SB O_NOCTTY
+into the second argument to
+.BR open (2V).
+.LP
+The controlling terminal is inherited by a child process during a
+.BR fork (2V).
+A process relinquishes its control terminal when it changes its process
+group using
+.BR setsid (2V),
+when it trys to change back to process group 0 via a 
+.BR setpgrp (2V)
+with arguments
+.BI "(mypid, 0)",
+or when it issues a
+.SB TIOCNOTTY
+.BR ioctl (2)
+call on a file descriptor created by opening the file
+.BR /dev/tty .
+Both of the last two cases cause a 
+.BR setsid (2V)
+to be called on the process' behalf.  This is an attempt to allow 
+old binaries (that couldn't have known about 
+.BR setsid (2V)) 
+to still acquire controlling terminals.  It doesn't always work, see
+.BR setsid (8V)
+for a workaround for those cases.
+.LP
+When a session leader that has a controlling terminal
+terminates, the distinguished process group of the controlling terminal
+is set to zero (indicating no distinguished process group).
+This allows the terminal to be acquired as a controlling terminal
+by a new session leader.
+.SS "Closing a Terminal Device File"
+.LP
+When a terminal device file is closed, the process closing the file waits
+until all output is drained; all pending input is then flushed,
+and finally a disconnect is performed.  If
+.SB HUPCL
+is set, the existing connection is severed (by hanging up the phone line,
+if appropriate).
+.br
+.ne 10
+.SS "Job Access Control"
+.LP
+If a process is in the (non-zero) distinguished process group of its
+controlling terminal
+(if this is true, the process is said to be a
+.IR "foreground process" ),
+then
+.BR read (2V)
+operations are allowed as described below in
+.BR "Input Processing and Reading Characters" .
+If a process is not in the (non-zero) distinguished process group of its
+controlling terminal (if this is true, the process is said to be a
+.IR "background process" ),
+then any attempts to read from that terminal
+will typically send that process' process group a
+.SB SIGTTIN
+signal.
+If the process is ignoring
+.SM
+.BR SIGTTIN\s0 ,
+has
+.SB SIGTTIN
+blocked, is a member of an orphaned process group,
+or is in the middle of process creation using
+.BR vfork (2),
+the read will return \-1 and set
+.B errno
+to
+.BR \s-1EIO\s0 ,
+and the
+.SB SIGTTIN
+signal will not be sent.  The
+.SB SIGTTIN
+signal will normally stop the members of that process group.
+.LP
+When the
+.SB TOSTOP
+bit is set in the
+.B c_lflag
+field, attempts by a background process to write to its controlling terminal
+will typically send that process' process group a
+.SB SIGTTOU
+signal.
+If the process is ignoring
+.SM
+.BR SIGTTOU\s0 ,
+has
+.SB SIGTTOU
+blocked, or is in the middle of process creation using
+.BR vfork(\|) ,
+the process will be allowed to write to the terminal and the
+.SB SIGTTOU
+signal will not be sent. 
+If the process is orphaned, the write will return \-1 and set
+.B errno
+to
+.BR \s-1EIO\s0 ,
+and the
+.SB SIGTTOU
+signal will not be sent.  
+.SB SIGTTOU
+signal will normally stop the members of that process group.  Certain
+.B ioctl(\)
+calls that set terminal parameters are treated in this same fashion, except
+that
+.SB TOSTOP
+is not checked; the effect is identical to that of terminal writes when
+.SB TOSTOP
+is set.  See
+.SM
+.BR IOCTLS\s0 .
+.SS "Input Processing and Reading Characters"
+A terminal associated with one of these files ordinarily
+operates in full-duplex mode.
+Characters may be typed at any time,
+even while output is occurring, and are only lost when the
+system's character input buffers become completely
+full, which is rare,
+or when the user has accumulated the maximum allowed number of
+input characters that have not yet been read by some program.
+This limit is available is 
+.SM {MAX_CANON} 
+characters (see
+.BR pathconf (2V)).
+If the
+.SB IMAXBEL
+mode has not been selected, all the
+saved characters are thrown away without notice
+when the input limit is reached; if the
+.SB IMAXBEL
+mode has been selected, the driver refuses to accept any further
+input, and echoes a bell (\s-1ASCII\s+1
+.SM BEL\s0).
+.LP
+Two general kinds of input processing are available, determined by whether
+the terminal device file is in canonical mode or non-canonical mode (see
+.SB ICANON
+in the
+.B Local Modes
+section).
+.LP
+The style of input processing can also be very different when
+the terminal is put in non-blocking I/O mode; see
+.BR read (2V).
+In this case, reads from the terminal will never block.
+.LP
+It is possible to simulate terminal input using the
+.SB TIOCSTI
+.B ioctl(\|)
+call, which takes, as its third argument,
+the address of a character.  The system pretends that this character
+was typed on the argument terminal, which must be the process' controlling
+terminal unless the process' effective user
+.SM ID
+is super-user.
+.SS "Canonical Mode Input Processing"
+.LP
+In canonical mode input processing, terminal input is processed in units of
+lines.  A line is delimited by a 
+.SM NEWLINE
+(\s-1ASCII\s+1
+.SM LF\s0)
+character, an 
+.SM EOF
+(by default, an 
+.SM ASCII EOT\s0)
+character, or one of two user-specified end-of-line characters,
+.SB EOL
+and
+.SM
+.BR EOL2\s0 .
+This means that a
+.B read(\|)
+will not complete until an entire line has been typed or a signal has been
+received.  Also, no matter how many characters are requested
+in the read call, at most one line will be returned.
+It is not, however, necessary to read a whole line at
+once; any number of characters may be
+requested in a read, even one, without losing information.
+.LP
+Erase and kill processing occurs during input.  The
+.SB ERASE
+character (by default, the character
+.SM DEL\s0)
+erases the
+last character typed in the current input line.  The
+.SB WERASE
+character (by default, the character
+.SM CTRL\s0-W)
+erases the last \*(lqword\*(rq
+typed in the current input line (but not any preceding
+.SM SPACE
+or
+.SM TAB
+characters).
+A \*(lqword\*(rq is defined as a
+sequence of non-blank characters, with
+.SM TAB
+characters counted as blanks.  Neither
+.SB ERASE
+nor
+.SB WERASE
+will erase beyond the beginning of the line.  The
+.SB KILL
+character (by default, the character 
+.SM CTRL\s0-U)
+kills (deletes) the entire
+current input line, and optionally outputs a 
+.SM NEWLINE
+character.  All these
+characters operate on a key-stroke basis, independently
+of any backspacing or tabbing that may have been done.
+.LP
+The
+.SB REPRINT
+character (the character 
+.SM CTRL\s0-R)
+prints a 
+.SM NEWLINE
+followed by all
+characters that have not been read.  Reprinting also occurs automatically
+if characters that would normally be erased from the screen are fouled by
+program output.  The characters are reprinted as if they were being echoed;
+as a consequence, if
+.SB ECHO
+is not set, they are not printed.
+.LP
+The
+.SB ERASE
+and
+.SB KILL
+characters may be entered literally by preceding them with
+the escape character
+.RB ( \e ).
+In this case the escape character is not read.  The
+.SB ERASE
+and
+.SB KILL
+characters may be changed.
+.SS "Non-Canonical Mode Input Processing"
+.LP
+In non-canonical mode input processing,
+input characters are not assembled into lines, and erase and kill processing
+does not occur.
+The
+.SB MIN
+and
+.SB TIME
+values are used to determine how to process the characters received.
+.LP
+.SB MIN
+represents the minimum number of characters that should be received 
+when the read is satisfied (when the characters are returned to the
+user).
+.SB TIME
+is a timer of 0.10 second granularity that is used to timeout
+bursty and short term data transmissions.
+The four possible values for
+.SB MIN
+and
+.SB TIME
+and their interactions are described below.
+.SS "Case A: \s-1MIN\s0 > 0, \s-1TIME\s0 > 0"
+.LP
+In this case
+.SB TIME
+serves as an intercharacter timer and is activated after
+the first character is received. Since it is an intercharacter timer, it
+is reset after a character is received.
+The interaction between
+.SB MIN
+and
+.SB TIME
+is as follows:
+as soon as one character is received, the intercharacter timer is started.
+If
+.SB MIN
+characters are received before the intercharacter timer
+expires (remember that the timer is reset upon receipt
+of each character),
+the read is satisfied.
+If the timer expires before
+.SB MIN
+characters are received, 
+the characters received to that point
+are returned to the user.
+Note: if
+.SB MIN
+expires at least one character will be returned because 
+the timer would not have been enabled unless a character was received.
+In this case
+.RB ( \s-1MIN\s0
+> 0,
+.SB TIME
+> 0)
+the read will sleep until the
+.SB MIN
+and
+.SB TIME
+mechanisms are activated by the receipt of the first character.
+.SS "Case B: \s-1MIN\s0 > 0, \s-1TIME\s0 = 0"
+.LP
+In this case, since the value of
+.SB TIME
+is zero, the timer plays no role and only
+.SB MIN
+is significant.
+A pending read is not satisfied until
+.SB MIN
+characters are received (the pending read will sleep until
+.SB MIN
+characters are received).
+A program that uses this case to read record-based terminal I/O may block
+indefinitely in the read operation.
+.SS "Case C: \s-1MIN\s0 = 0, \s-1TIME\s0 > 0"
+.LP
+In this case, since
+.SB MIN
+= 0,
+.SB TIME
+no longer represents an intercharacter timer.
+It now serves as a read timer that is activated as soon as a
+.B read(\|)
+is done.
+A read is satisfied as soon as a single
+character is received or the read timer expires.
+Note: in this case if the timer expires,
+no character will be returned.
+If the timer does not expire, the only way the read can be satisfied is if a 
+character is received.
+In this case the read will not block indefinitely
+waiting for a character \- if no character is received within
+.BR \s-1TIME\s0 *.10
+seconds after the
+read is initiated, the read will return with zero characters.
+.SS "Case D: \s-1MIN\s0 = 0, \s-1TIME\s0 = 0"
+.LP
+In this case return is immediate.
+The minimum of either the number of characters requested or the number of
+characters currently available will be returned without waiting for more
+characters to be input.
+.SS "Comparison of the Different Cases of \s-1MIN\s0, \s-1TIME\s0 Interaction"
+.LP
+Some points to note about
+.SB MIN
+and
+.SM
+.BR TIME :
+.IP \(bu
+In the following explanations one may notice that the interactions of
+.SB MIN
+and
+.SB TIME
+are not symmetric.
+For example, when
+.SB MIN
+> 0 and
+.SB TIME
+= 0,
+.SB TIME
+has no effect.
+However, in the opposite case where
+.SB MIN
+= 0 and
+.SB TIME
+> 0, both
+.SB MIN
+and
+.SB TIME
+play a role in that
+.SB MIN
+is satisfied with the receipt of a single character.
+.IP \(bu
+Also note that in case A
+.RB ( \s-1MIN\s0
+> 0,
+.SB TIME
+> 0),
+.SB TIME
+represents an intercharacter timer while in case C
+.RB ( \s-1TIME\s0
+= 0,
+.SB TIME
+> 0)
+.SB TIME
+represents a read timer.
+.LP
+These two points highlight the dual purpose of the
+.SB MIN/TIME
+feature.
+Cases A and B, where
+.SB MIN
+> 0, exist to handle burst mode activity
+(for example, file transfer programs) where a program would like to
+process at least
+.SB MIN
+characters at a time.
+In case A, the intercharacter timer is activated by a user as a safety
+measure; while in case B, it is turned off.
+.LP
+Cases C and D exist to handle single character timed transfers.
+These cases are readily adaptable to screen-based applications that
+need to know if a character is present in the input queue
+before refreshing the screen. In case C the read is timed; while in case D,
+it is not.
+.LP
+Another important note is that
+.SB MIN
+is always just a minimum. 
+It does not denote a record length.
+That is, if a program does a read of 20 bytes,
+.SB MIN
+is 10, and 25 characters are present, 20 characters will be returned
+to the user.
+.SS "Writing Characters"
+.LP
+When one or more
+characters are written, they are transmitted
+to the terminal as soon as previously-written characters
+have finished typing.
+Input characters are echoed as they are typed if echoing has been enabled.
+If a process produces characters more rapidly than they can be typed,
+it will be suspended when its output queue exceeds some limit.
+When the queue has drained down to some threshold,
+the program is resumed.
+.SS "Special Characters"
+.LP
+Certain characters have special functions on input and/or output.
+These functions and their default character values
+are summarized as follows:
+.TP "\w'MMMMMMM\ \ \ 'u"
+.SB INTR
+(\s-1CTRL\s0-C
+or
+.SM ASCII
+.SM ETX\s0)
+generates a
+.SB SIGINT
+signal, which is sent to all processes in the distinguished process group
+associated with the terminal.
+Normally, each such process is forced to terminate,
+but arrangements may be made either to
+ignore the signal or to receive a
+trap to an agreed-upon location; see
+.BR sigvec (2).
+.TP
+.SB QUIT
+(\s-1CTRL\s0-\(bv
+or
+.SM ASCII
+.SM FS\s0)
+generates a
+.SB SIGQUIT
+signal, which is sent to all processes in the distinguished process group
+associated with the terminal.
+Its treatment is identical to the interrupt signal
+except that, unless a receiving process has
+made other arrangements, it will not only be terminated
+but a core image file
+(called
+.BR core )
+will be created in the current working directory.
+.TP
+.SB ERASE
+(Rubout or
+.SM ASCII
+.SM DEL\s0)
+erases the preceding character.
+It will not erase beyond the start of a line,
+as delimited by a
+.SM
+.BR NL\s0 ,
+.SM
+.BR EOF\s0 ,
+.SM
+.BR EOL\s0 ,
+or
+.SB EOL2
+character.
+.TP
+.SB WERASE
+(\s-1CTRL\s0-W
+or
+.SM ASCII
+.SM ETB\s0)
+erases the preceding \*(lqword\*(rq.
+It will not erase beyond the start of a line,
+as delimited by a
+.SM
+.BR NL\s0 ,
+.SM
+.BR EOF\s0 ,
+.SM
+.BR EOL\s0 ,
+or
+.SM
+.BR EOL2
+character.
+.TP
+.SB KILL
+(\s-1CTRL\s0-U
+or
+.SM ASCII
+.SM NAK\s0)
+deletes the entire line,
+as delimited by a
+.SM
+.BR NL\s0 ,
+.SM
+.BR EOF\s0,
+.SM
+.BR EOL\s0,
+or
+.SB EOL2
+character.
+.TP
+.SB REPRINT
+(\s-1CTRL\s0-R
+or
+.SM ASCII
+.SM DC2\s0)
+reprints all characters that have not been read,
+preceded by a
+.SM NEWLINE\s0.
+.TP
+.SB EOF
+(\s-1CTRL\s0-D
+or
+.SM ASCII
+.SM EOT\s0)
+may be used to generate an end-of-file
+from a terminal.
+When received, all the characters
+waiting to be read are immediately passed to
+the program, without waiting for a 
+.SM NEWLINE\s0,
+and the
+.SB EOF
+is discarded.
+Thus, if there are no characters waiting, which
+is to say the
+.SB EOF
+occurred at the beginning of a line,
+zero characters will be passed back,
+which is the standard end-of-file indication.
+.TP
+.SB NL
+(\s-1ASCII\s+1
+.SM LF\s0)
+is the normal line delimiter.
+It can not be changed; it can, however, be escaped by the
+.SB LNEXT
+character.
+.TP
+.SB EOL
+.PD 0
+.TP
+.SB EOL2
+(\s-1ASCII\s+1
+.SM NUL\s0)
+are additional line delimiters, like
+.SM
+.BR NL\s0 .
+They are not normally used.
+.PD
+.br
+.ne 4
+.TP
+.SB SUSP
+(\s-1CTRL\s0-Z
+or
+.SM ASCII
+.SM EM\s0)
+is used by the job control facility to change the current job to
+return to the controlling job.
+It generates a
+.SB SIGTSTP
+signal, which stops all processes in the terminal's process group.
+.TP
+.SB STOP
+(\s-1CTRL\s0-S
+or
+.SM ASCII
+.SM DC3\s0)
+can be used to temporarily suspend output.
+It is useful with
+.SM CRT
+terminals to prevent output from
+disappearing before it can be read.
+While output is suspended,
+.SB STOP
+characters are ignored and not read.
+.TP
+.SB START
+(\s-1CTRL\s0-Q
+or
+.SM ASCII
+.SM DC1\s0)
+is used to resume output that has been suspended by a
+.SB STOP
+character.
+While output is not suspended,
+.SB START
+characters are ignored and not read.
+.TP
+.SB DISCARD
+(\s-1CTRL\s0-O
+or
+.SM ASCII
+.SM SI\s0)
+causes subsequent output to be discarded until another
+.SB DISCARD
+character is typed, more input arrives, or the condition is cleared
+by a program.
+.TP
+.SB LNEXT
+(\s-1CTRL\s0-V
+or
+.SM ASCII
+.SM SYN\s0)
+causes the special meaning of the next character to be ignored; this works
+for all the special characters mentioned above.
+This allows characters to be input that would otherwise get
+interpreted by the system (for example,
+.BR \s-1KILL\s0 ,
+.BR \s-1QUIT\s0 .)
+.LP
+The character values for
+.SM
+.BR INTR\s0 ,
+.SM
+.BR QUIT\s0 ,
+.SM
+.BR ERASE\s0 ,
+.SM
+.BR WERASE\s0 ,
+.SM
+.BR KILL\s0 ,
+.SM
+.BR REPRINT\s0 ,
+.SM
+.BR EOF\s0 ,
+.SM
+.BR EOL\s0 ,
+.SM
+.BR EOL2\s0 ,
+.SM
+.BR SUSP\s0 ,
+.SM
+.BR STOP\s0 ,
+.SM
+.BR START\s0 ,
+.SM
+.BR DISCARD\s0 ,
+and
+.SB LNEXT
+may be changed to suit individual tastes.  If the value of a
+special control character is 0, the function of that special control
+character will be disabled.
+The
+.SM
+.BR ERASE\s0 ,
+.SM
+.BR KILL\s0 ,
+and
+.SB EOF
+characters may be escaped
+by a preceding
+.B \e
+character,
+in which case no special function is done.
+Any of the special characters may be preceded by the
+.SB LNEXT
+character, in which case no special function is done.
+.LP
+If
+.SB IEXTEN 
+is added to the local modes (this is the
+default), then all of the special characters
+are in effect.  If 
+.SB IEXTEN
+is cleared from the local modes, then only the following
+.SM POSIX.1
+compatible specials are seen as specials:
+.SM
+.BR INTR\s0 ,
+.SM
+.BR QUIT\s0 ,
+.SM
+.BR ERASE\s0 ,
+.SM
+.BR KILL\s0 ,
+.SM
+.BR EOF\s0 ,
+.SM
+.BR NL\s0 ,
+.SM
+.BR EOL\s0 ,
+.SM
+.BR SUSP\s0 ,
+.SM
+.BR STOP\s0 ,
+.SM
+.BR START\s0 ,
+and
+.SM
+.BR CR\s0 .
+.SS "Software Carrier Mode"
+.LP
+The software carrier mode can be enabled or disabled using the
+.SB TIOCSSOFTCAR
+.BR ioctl(\|) .
+If the software carrier flag for a line is off, the
+line pays attention to the hardware carrier detect (\s-1DCD\s0)
+signal.
+The
+.B tty
+device associated with the line can not be opened until
+.SM DCD
+is asserted.
+.\"and
+.\".SB SIGHUP
+.\"will be sent if
+.\".SM DCD
+.\"drops.
+If the software carrier flag is on, the line behaves as if
+.SM DCD
+is always asserted.
+.LP
+The software carrier flag is usually turned on for locally
+connected terminals or other devices, and is off for
+lines with modems.
+.LP
+To be able to issue the
+.SB TIOCGSOFTCAR
+and
+.SB TIOCSSOFTCAR
+.B ioctl(\|)
+calls, the
+.B tty
+line should be opened with
+.SB O_NDELAY
+so that the
+.BR open (2V)
+will not wait for the carrier.
+.SS "Modem Disconnect"
+.LP
+If a modem disconnect is detected, and the
+.SB CLOCAL
+flag is not set in the
+.B c_cflag
+field, a
+.SB SIGHUP
+signal is sent to all processes
+in the distinguished process group associated with this terminal.
+Unless other arrangements have been made,
+this signal terminates the processes.  If
+.SB SIGHUP
+is ignored or caught, any subsequent
+.B read(\|)
+returns with an end-of-file indication until the terminal is closed.
+Thus, programs that read a terminal and test for
+end-of-file can terminate appropriately after a disconnect.
+Any subsequent
+.B write(\|)
+will return \-1 and set
+.B errno
+to
+.SB EIO
+until the terminal is closed.
+.LP
+A 
+.SB SIGHUP
+signal is sent to the
+.B tty
+if the software carrier flag is off and the
+hardware carrier detect drops.
+.SS "Terminal Parameters"
+.LP
+The parameters that control the behavior of devices and modules
+providing the
+.B termios
+interface are specified by the
+.B termios
+structure, defined by
+.BR <sys/termios.h> .
+Several
+.B ioctl(\|)
+system calls that fetch or change these parameters use this
+structure:
+.LP
+.ta .6i 1.3i 1.8i 2.6i
+.RS
+.nf
+.ft B
+#define	\s-1NCCS\s+1	17
+struct	termios {
+	unsigned	long	c_iflag;	/\(** input modes \(**/
+	unsigned	long	c_oflag;	/\(** output modes \(**/
+	unsigned	long	c_cflag;	/\(** control modes \(**/
+	unsigned	long	c_lflag;	/\(** local modes \(**/
+	unsigned	char	c_line;		/\(** line discipline \(**/
+	unsigned	char	c_cc[\s-1NCCS\s+1];	/\(** control chars \(**/
+};
+.ft R
+.fi
+.RE
+.LP
+The special control characters are defined by the array
+.BR c_cc .
+The relative positions and initial values
+for each function are as follows:
+.RS
+.ne 22
+.ta 4n +\w'VWERASE\ \ 'u
+.nf
+0	\s-1VINTR\s+1	\s-1ETX\s+1
+1	\s-1VQUIT\s+1	\s-1FS\s+1
+2	\s-1VERASE\s+1	\s-1DEL\s+1
+3	\s-1VKILL\s+1	\s-1NAK\s+1
+4	\s-1VEOF\s+1	\s-1EOT\s+1
+5	\s-1VEOL\s+1	\s-1NUL\s+1
+6	\s-1VEOL2\s+1	\s-1NUL\s+1
+7	\s-1VSWTCH\s+1	\s-1NUL\s+1
+8	\s-1VSTART\s+1	\s-1DC1\s+1
+9	\s-1VSTOP\s+1	\s-1DC3\s+1
+10	\s-1VSUSP\s+1	\s-1EM\s+1
+12	\s-1VREPRINT\s+1	\s-1DC2\s+1
+13	\s-1VDISCARD\s+1	\s-1SI\s+1
+14	\s-1VWERASE\s+1	\s-1ETB\s+1
+15	\s-1VLNEXT\s+1	\s-1SYN\s+1
+.fi
+.RE
+.LP
+The
+.SB MIN
+value is stored in the
+.SB VMIN
+element of the
+.B c_cc
+array, and the
+.SB TIME
+value is stored in the
+.SB VTIME
+element of the
+.B c_cc
+array.  The
+.SB VMIN
+element is the same element as the
+.SB VEOF
+element, and the
+.SB VTIME
+element is the same element as the
+.SB VEOL
+element.
+.SS "Input Modes"
+.LP
+The
+.B c_iflag
+field describes the basic terminal input control:
+.LP
+.ta \w'MAXMAX\ \ 'u +\w'0100000\ \ 'u
+.RS
+.nf
+\fB\s-1IGNBRK\s0\fP	0000001	Ignore break condition.
+\fB\s-1BRKINT\s0\fP	0000002	Signal interrupt on break.
+\fB\s-1IGNPAR\s0\fP	0000004	Ignore characters with parity errors.
+\fB\s-1PARMRK\s0\fP	0000010	Mark parity errors.
+\fB\s-1INPCK\s0\fP	0000020	Enable input parity check.
+\fB\s-1ISTRIP\s0\fP	0000040	Strip character.
+\fB\s-1INLCR\s0\fP	0000100	Map \s-1NL\s+1 to \s-1CR\s+1 on input.
+\fB\s-1IGNCR\s0\fP	0000200	Ignore \s-1CR\s+1.
+\fB\s-1ICRNL\s0\fP	0000400	Map \s-1CR\s+1 to \s-1NL\s+1 on input.
+\fB\s-1IUCLC\s0\fP	0001000	Map upper-case to lower-case on input.
+\fB\s-1IXON\s0\fP	0002000	Enable start/stop output control.
+\fB\s-1IXANY\s0\fP	0004000	Enable any character to restart output.
+\fB\s-1IXOFF\s0\fP	0010000	Enable start/stop input control.
+\fB\s-1IMAXBEL\s0\fP	0020000	Echo \s-1BEL\s+1 on input line too long.
+.fi
+.RE
+.LP
+If
+.SB IGNBRK
+is set, a break condition
+(a character framing error with data all zeros)
+detected on input is ignored, that is, not put on the input queue
+and therefore not read by any process.
+Otherwise, if
+.SB BRKINT
+is set, a break condition will generate a
+.SB SIGINT
+and flush both the input and output queues.
+If neither
+.SB IGNBRK
+nor
+.SB BRKINT
+is set, a break condition
+is read as a single 
+.SM ASCII NUL
+character (\(aa\e0\(aa).
+.LP
+If
+.SB IGNPAR
+is set,
+characters with framing or parity errors (other than break) are ignored.
+Otherwise, if
+.SB PARMRK
+is set,
+a character with
+a framing or parity error that is not ignored
+is read as the three-character sequence:
+\(aa\e377\(aa, \(aa\e0\(aa,
+.IR X ,
+where
+.I X
+is the data of the character received in error. 
+To avoid ambiguity in this case, if
+.SB ISTRIP
+is not set,
+a valid character of \(aa\e377\(aa is read as \(aa\e377\(aa, \(aa\e377\(aa.
+If neither
+.SB IGNPAR
+nor
+.SB PARMRK
+is set, a framing or parity error (other than break)
+is read as a single
+.SM ASCII NUL
+character (\(aa\e0\(aa).
+.LP
+If
+.SB INPCK
+is set,
+input parity checking is enabled.
+If
+.SB INPCK
+is not set,
+input parity checking is disabled.
+This allows output parity generation without
+input parity errors.
+.LP
+If
+.SB ISTRIP
+is set,
+valid input characters are first stripped to
+7 bits,
+otherwise all 8 bits are processed.
+.LP
+If
+.SB INLCR
+is set,
+a received
+.SM NL
+character is translated into a
+.SM CR
+character.
+If
+.SB IGNCR
+is set,
+a received
+.SM CR
+character is ignored (not read).
+Otherwise if
+.SB ICRNL
+is set,
+a received
+.SM CR
+character is translated into a
+.SM NL
+character.
+.LP
+If
+.SB IUCLC
+is set,
+a received upper-case alphabetic character is translated
+into the corresponding lower-case character.
+.LP
+If
+.SB IXON
+is set,
+start/stop output control is enabled.
+A received
+.SB STOP
+character will suspend output
+and a received
+.SB START
+character will restart output.
+The
+.SB STOP
+and
+.SB START
+characters will not be read, but will merely perform flow control
+functions.
+If
+.SB IXANY
+is set, any input character will restart output that has been suspended.
+.LP
+If
+.SB IXOFF
+is set,
+the system will transmit a
+.SB STOP
+character when the input queue is nearly full, and a
+.SB START
+character when enough input has been read that the input queue is nearly
+empty again.
+.LP
+If
+.SB IMAXBEL
+is set, the
+.SM ASCII
+.SM BEL
+character is echoed if the input stream overflows.  Further input
+will not be stored, but any input already present in the input
+stream will not be disturbed.
+If
+.SB IMAXBEL
+is not set, no
+.SM BEL
+character is echoed, and all input present in the input queue is
+discarded if the input stream overflows.
+.LP
+The initial input control value is
+.SM
+.BR BRKINT\s0 ,
+.SM
+.BR ICRNL\s0 ,
+.SM
+.BR IXON\s0 ,
+.SM
+.BR ISTRIP\s0 .
+.SS "Output modes"
+The
+.B c_oflag
+field specifies the system treatment of output:
+.LP
+.ta \w'MAXMAX\ \ 'u +\w'0100000\ \ 'u
+.RS
+.nf
+\fB\s-1OPOST\s0\fP	0000001	Postprocess output.
+\fB\s-1OLCUC\s0\fP	0000002	Map lower case to upper on output.
+\fB\s-1ONLCR\s0\fP	0000004	Map \s-1NL\s+1 to \s-1CR-NL\s+1 on output.
+\fB\s-1OCRNL\s0\fP	0000010	Map \s-1CR\s+1 to \s-1NL\s+1 on output.
+\fB\s-1ONOCR\s0\fP	0000020	No \s-1CR\s+1 output at column 0.
+\fB\s-1ONLRET\s0\fP	0000040	\s-1NL\s+1 performs \s-1CR\s+1 function.
+\fB\s-1OFILL\s0\fP	0000100	Use fill characters for delay.
+\fB\s-1OFDEL\s0\fP	0000200	Fill is \s-1DEL\s+1, else \s-1NUL\s+1.
+\fB\s-1NLDLY\s0\fP	0000400	Select new-line delays:
+\0\0\fB\s-1NL0\s0\fP	0
+\0\0\fB\s-1NL1\s0\fP	0000400
+\fB\s-1CRDLY\s0\fP	0003000	Select carriage-return delays:
+\0\0\fB\s-1CR0\s0\fP	0
+\0\0\fB\s-1CR1\s0\fP	0001000
+\0\0\fB\s-1CR2\s0\fP	0002000
+\0\0\fB\s-1CR3\s0\fP	0003000
+\fB\s-1TABDLY\s0\fP	0014000	Select horizontal-tab delays:
+\0\0\fB\s-1TAB0\s0\fP	0\0\0\0\0\0\0\0\0\0or tab expansion:
+\0\0\fB\s-1TAB1\s0\fP	0004000
+\0\0\fB\s-1TAB2\s0\fP	0010000
+\0\0\fB\s-1XTABS\s0\fP	0014000	Expand tabs to spaces.
+\fB\s-1BSDLY\s0\fP	0020000	Select backspace delays:
+\0\0\fB\s-1BS0\s0\fP	0
+\0\0\fB\s-1BS1\s0\fP	0020000
+\fB\s-1VTDLY\s0\fP	0040000	Select vertical-tab delays:
+\0\0\fB\s-1VT0\s0\fP	0
+\0\0\fB\s-1VT1\s0\fP	0040000
+.br
+.ne 4
+\fB\s-1FFDLY\s0\fP	0100000	Select form-feed delays:
+\0\0\fB\s-1FF0\s0\fP	0
+\0\0\fB\s-1FF1\s0\fP	0100000
+.DT
+.fi
+.RE
+.LP
+If
+.SB OPOST
+is set,
+output characters are post-processed
+as indicated by the remaining flags,
+otherwise characters are transmitted without change.
+.LP
+If
+.SB OLCUC
+is set,
+a lower-case alphabetic character is transmitted as
+the corresponding upper-case character.
+This function is often used in conjunction with
+.SM
+.BR IUCLC\s0 .
+.LP
+If
+.SB ONLCR
+is set,
+the
+.SM NL
+character is transmitted as the
+.SM CR-NL
+character pair.
+If
+.SB OCRNL
+is set,
+the
+.SM CR
+character is transmitted as the
+.SM NL
+character.
+If
+.SB ONOCR
+is set,
+no
+.SM CR
+character is transmitted when at column 0 (first position).
+If
+.SB ONLRET
+is set,
+the
+.SM NL
+character is assumed to do the carriage-return function;
+the column pointer will be set to 0 and the delays specified
+for
+.SM CR
+will be used.
+Otherwise the
+.SM NL
+character is assumed
+to do just the line-feed function;
+the column pointer will remain unchanged.
+The column pointer is also set to 0 if the
+.SM CR
+character is actually transmitted.
+.LP
+The delay bits specify how long
+transmission stops to allow for mechanical or other movement
+when certain characters are sent to the terminal.
+In all cases a value of 0 indicates no delay.
+If
+.SB OFILL
+is set, fill characters will be transmitted
+for delay instead of a timed delay.
+This is useful for high baud rate terminals
+that need only a minimal delay.
+If
+.SB OFDEL
+is set,
+the fill character is
+.SM DEL\s0,
+otherwise
+.SM NUL\s0.
+.LP
+If a form-feed or vertical-tab delay is specified,
+it lasts for about 2 seconds.
+.LP
+New-line delay lasts about 0.10 seconds.
+If
+.SB ONLRET
+is set, the
+.SM RETURN
+delays are used instead of the 
+.SM NEWLINE
+delays.
+If
+.SB OFILL
+is set,
+two fill characters will be transmitted.
+.LP
+Carriage-return delay type 1 is dependent on the current column
+position,
+type 2 is about 0.10 seconds,
+and type 3 is about 0.15 seconds.
+If
+.SB OFILL
+is set,
+delay type 1 transmits two fill characters,
+and type 2, four fill characters.
+.LP
+Horizontal-tab delay type 1 is dependent on the current
+column position.
+Type 2 is about 0.10 seconds.
+Type 3, specified by
+.SB TAB3
+or
+.SM
+.BR XTABS\s0 ,
+specifies that
+.SM TAB
+characters are to be expanded into
+.SM SPACE
+characters.
+If
+.SB OFILL
+is set,
+two fill characters will be transmitted for any delay.
+.LP
+Backspace delay lasts about 0.05 seconds.
+If
+.SB OFILL
+is set, one fill character will be transmitted.
+.LP
+The actual delays depend on line speed and system load.
+.LP
+The initial output control value is
+.SM
+.BR OPOST\s0 ,
+.SM
+.BR ONLCR\s0 ,
+.SM
+.BR XTABS\s0 .
+.LP
+The
+.B c_cflag
+field describes the hardware control of the terminal:
+.LP
+.ta \w'MAXMAX\ \ 'u +\w'020000000000\ \ 'u
+.RS
+.nf
+\fB\s-1CBAUD\s0\fP	0000017		Baud rate:
+\0\0\fBB0\fP	0		Hang up
+\0\0\fBB50\fP	0000001		50 baud
+\0\0\fBB75\fP	0000002		75 baud
+\0\0\fBB110\fP	0000003		110 baud
+\0\0\fBB134\fP	0000004		134.5 baud
+\0\0\fBB150\fP	0000005		150 baud
+\0\0\fBB200\fP	0000006		200 baud
+\0\0\fBB300\fP	0000007		300 baud
+\0\0\fBB600\fP	0000010		600 baud
+\0\0\fBB1200\fP	0000011		1200 baud
+\0\0\fBB1800\fP	0000012		1800 baud
+\0\0\fBB2400\fP	0000013		2400 baud
+\0\0\fBB4800\fP	0000014		4800 baud
+\0\0\fBB9600\fP	0000015		9600 baud
+\0\0\fBB19200\fP	0000016		19200 baud
+\0\0\fBB38400\fP	0000017		38400 baud
+.br
+.ne 5
+\fB\s-1CSIZE\s0\fP	0000060		Character size:
+\0\0\fBCS5\fP	0		5 bits
+\0\0\fBCS6\fP	0000020		6 bits
+\0\0\fBCS7\fP	0000040		7 bits
+\0\0\fBCS8\fP	0000060		8 bits
+\fB\s-1CSTOPB\s0\fP	0000100		Send two stop bits, else one.
+\fB\s-1CREAD\s0\fP	0000200		Enable receiver.
+\fB\s-1PARENB\s0\fP	0000400		Parity enable.
+\fB\s-1PARODD\s0\fP	0001000		Odd parity, else even.
+\fB\s-1HUPCL\s0\fP	0002000		Hang up on last close.
+\fB\s-1CLOCAL\s0\fP	0004000		Local line, else dial-up.
+\fB\s-1CIBAUD\s0\fP	03600000		Input baud rate, if different from output rate.
+\fB\s-1CRTSCTS\s0\fP	020000000000		Enable RTS/CTS flow control.
+.fi
+.RE
+.LP
+The
+.SB CBAUD
+bits specify the baud rate.
+The zero baud rate,
+.B B0,
+is used to hang up the connection.  If
+.B B0
+is specified, the modem control lines will cease to be asserted.
+Normally, this will disconnect the line.
+If the
+.SB CIBAUD
+bits are not zero, they specify the input baud rate, with the
+.SB CBAUD
+bits specifying the output baud rate;
+otherwise, the output and input baud rates are both specified by the
+.SB CBAUD
+bits.
+The values for the
+.SB CIBAUD
+bits are the same as the values for the
+.SB CBAUD
+bits, shifted left
+.SB IBSHIFT
+bits.
+For any particular hardware, impossible speed changes are ignored.
+.LP
+The
+.SB CSIZE
+bits specify the character size in bits
+for both transmission and reception.
+This size does not include the parity bit, if any.
+If
+.SB CSTOPB
+is set, two stop bits are used,
+otherwise one stop bit.
+For example, at 110 baud, two stop bits are required.
+.LP
+If
+.SB PARENB
+is set, parity generation and detection is enabled
+and a parity bit is added to each character.
+If parity is enabled,
+the
+.SB PARODD
+flag specifies odd parity if set,
+otherwise even parity is used.
+.LP
+If
+.SB CREAD
+is set, the receiver is enabled.
+Otherwise no characters will be received.
+.LP
+If
+.SB HUPCL
+is set, the modem control lines for the port will be disconnected
+when the last process with the line open closes it or terminates.
+.LP
+If
+.SB CLOCAL
+is set,
+a connection does not depend on the state of the modem status lines.
+Otherwise modem control is assumed.
+.LP
+If
+.SB CRTSCTS
+is set, and the terminal has modem control lines associated with it,
+the Request To Send (\s-1RTS\s0) modem control line will be raised, and
+output will occur only if the Clear To Send (\s-1CTS\s0) modem status line is
+raised.  If the
+.SM CTS
+modem status line is lowered, output is suspended until
+.SM CTS
+is raised.  Some hardware may not support this function,
+and other hardware may not permit it to be disabled; in either of
+these cases, the state of the
+.SB CRTSCTS
+flag is ignored.
+.LP
+The initial hardware control value after open is
+.BR B9600 ,
+.BR CS7 ,
+.SM
+.BR CREAD\s0 ,
+.SM
+.BR PARENB\s0 .
+.SS "Local Modes"
+The
+.B c_lflag
+field of the argument structure
+is used by the line discipline to control terminal functions.
+The basic line discipline provides the following:
+.LP
+.ta \w'MAXMAX\ \ 'u +\w'01000000\ \ 'u
+.RS
+.nf
+\fB\s-1ISIG\s0\fP	0000001	Enable signals.
+\fB\s-1ICANON\s0\fP	0000002	Canonical input (erase and kill processing).
+\fB\s-1XCASE\s0\fP	0000004	Canonical upper/lower presentation.
+\fB\s-1ECHO\s0\fP	0000010	Enable echo.
+\fB\s-1ECHOE\s0\fP	0000020	Echo erase character as \s-1BS-SP-BS\s+1.
+\fB\s-1ECHOK\s0\fP	0000040	Echo \s-1NL\s+1 after kill character.
+\fB\s-1ECHONL\s0\fP	0000100	Echo \s-1NL\s+1.
+\fB\s-1NOFLSH\s0\fP	0000200	Disable flush after interrupt or quit.
+\fB\s-1TOSTOP\s0\fP	0000400	Send \fB\s-1SIGTTOU\s0\fP for background output.
+\fB\s-1ECHOCTL\s0\fP	0001000	Echo control characters as ^\fIchar\fP, delete as ^?.
+\fB\s-1ECHOPRT\s0\fP	0002000	Echo erase character as character erased.
+\fB\s-1ECHOKE\s0\fP	0004000	\s-1BS-SP-BS\s+1 erase entire line on line kill.
+.\" \fB\s-1DEFECHO\s0\fP	0010000	Apparently, unused.
+\fB\s-1FLUSHO\s0\fP	0020000	Output is being flushed.
+\fB\s-1PENDIN\s0\fP	0040000	Retype pending input at next read or input character.
+\fB\s-1IEXTEN\s0\fP	0100000	Recognize all specials (if clear, POSIX only).
+.DT
+.fi
+.RE
+.LP
+If
+.SB ISIG
+is set,
+each input character is checked against the special
+control characters
+.SM
+.BR INTR\s0 ,
+.SM
+.BR QUIT\s0 ,
+and
+.SM
+.BR SUSP\s0 .
+If an input character matches one of these control characters,
+the function associated with that character is performed.
+If
+.SB ISIG
+is not set, no checking is done.
+Thus these special input functions
+are possible only if
+.SB ISIG
+is set.
+.LP
+If
+.SB ICANON
+is set, canonical processing is enabled.
+This is affected by the
+.SB IEXTEN
+bit (see 
+.B "Special Characters"
+above).
+This enables the erase, word erase, kill, and reprint edit functions,
+and the assembly of input characters into lines delimited by
+.SM NL\s0,
+.SM
+.BR EOF\s0 ,
+.SM
+.BR EOL\s0 ,
+and
+.SM
+.BR EOL2\s0 .
+If
+.SB ICANON
+is not set, read requests are satisfied directly
+from the input queue.
+A read will not be satisfied until at least
+.SB MIN
+characters have been received or the timeout value
+.SB TIME
+has expired between characters.
+This allows fast bursts of input to be read
+efficiently while still allowing single character input.
+The time value represents tenths of seconds.  See the
+.I "Non-canonical Mode Input Processing"
+section for more details.
+.LP
+If
+.SB XCASE
+is set, and if
+.SB ICANON
+is set, an upper-case letter is accepted on input by preceding
+it with a
+.B \e
+character,
+and is output preceded by a
+.B \e
+character.
+In this mode, the following escape sequences are generated
+on output and accepted on input:
+.br
+.ne 7
+.LP
+.PD 0
+.RS
+.TP
+.IR for :
+.IR use :
+.TP
+.B \*`
+.B \e\*'
+.TP
+.B \(bv
+.B \e!
+.TP
+.B ~
+.B \e^
+.TP
+.B {
+.B \e(
+.TP
+.B }
+.B \e)
+.TP
+.B \e
+.B \e\e
+.RE
+.PD
+.LP
+For example,
+.B A
+is input as
+.BR \ea ,
+.B \en
+as
+.BR \e\en ,
+and
+.B \eN
+as
+.BR \e\e\en .
+.LP
+If
+.SB ECHO
+is set,
+characters are echoed as received.
+If
+.SB ECHO
+is not set, input characters are not echoed.
+.LP
+If
+.SB ECHOCTL
+is not set, all control characters (characters with codes between 0
+and 37 octal) are echoed as themselves.
+If
+.SB ECHOCTL
+is set, all control characters other than
+.SM ASCII
+.SM TAB\s0,
+.SM ASCII
+.SM NL\s0,
+the
+.SB START
+character, and the
+.SB STOP
+character,
+are echoed as
+\fB^\fIX\fR,
+where
+.I X
+is the character given by adding 100 octal to the control character's code
+(so that the character with octal code 1 is echoed as
+.RB ` ^A '),
+and the
+.SM ASCII
+.SM DEL
+character, with code 177 octal, is echoed as
+.RB ` ^? '.
+.LP
+When
+.SB ICANON
+is set,
+the following echo functions are possible:
+.IP \(bu
+If
+.SB ECHO
+and
+.SB ECHOE
+are set, and
+.SB ECHOPRT
+is not set,
+the
+.SB ERASE
+and
+.SB WERASE
+characters are echoed as one or more
+.SM ASCII
+.SM BS SP BS\s0,
+which will clear the last character(s) from a
+.SM CRT
+screen.
+.IP \(bu
+If
+.SB ECHO
+and
+.SB ECHOPRT
+are set, the first
+.SB ERASE
+and
+.SB WERASE
+character in a sequence echoes as a backslash (\fB\e\fP) followed by the
+characters being erased.  Subsequent
+.SB ERASE
+and
+.SB WERASE
+characters echo the characters being erased, in reverse order.
+The next non-erase character types a slash (\fB/\fP) before
+it is echoed.
+.IP \(bu
+If
+.SB ECHOKE
+is set, the kill character is echoed by erasing each character on the line
+from the screen (using the mechanism selected by
+.SB ECHOE
+and
+.SM
+.BR ECHOPRT\s0 ).
+.IP \(bu
+If
+.SB ECHOK
+is set,
+and
+.SB ECHOKE
+is not set,
+the
+.SM NL
+character will be echoed after the
+kill character to emphasize that the line
+will be deleted.
+Note: an escape character
+.RB ( \e )
+or an
+.SB LNEXT
+character preceding
+the erase or kill character removes any special function.
+.IP \(bu
+If
+.SB ECHONL
+is set,
+the
+.SM NL
+character will be echoed even if
+.SB ECHO
+is not set.
+This is useful for terminals
+set to local echo (so-called half duplex).
+.br
+.ne 6
+.IP \(bu
+If
+.SB ECHOCTL
+is not set, the
+.SB EOF
+character is not echoed, unless it is escaped.
+Because
+.SM EOT
+is the default
+.SB EOF
+character, this prevents terminals that respond to
+.SM EOT
+from hanging up.
+If
+.SB ECHOCTL
+is set, the
+.SB EOF
+character is echoed; if it is not escaped,
+after it is echoed, one backspace character is output if
+it is echoed as itself, and two backspace characters are echoed if it is echoed
+as
+\fB^\fIX\fR.
+.LP
+If
+.SB NOFLSH
+is set, the normal flush of the input and output queues
+associated with the
+.SM
+.BR INTR\s0 ,
+.SM
+.BR QUIT\s0 ,
+and
+.SB SUSP
+characters will not be done.
+.LP
+If
+.SB TOSTOP
+is set, the signal
+.SB SIGTTOU
+is sent to a process that tries to write to its controlling terminal if it
+is not in the distinguished process group for that terminal.  This
+signal normally stops the process.  Otherwise, the output generated
+by that process is output to the current output stream.  Processes that are
+blocking or ignoring
+.SB SIGTTOU
+signals are excepted and allowed to produce output.
+.LP
+If
+.SB FLUSHO
+is set, data written to the terminal will be discarded.  This bit is
+set when the
+.SB FLUSH
+character is typed.  A program can cancel the effect of typing the
+.SB FLUSH
+character by clearing
+.SM
+.BR FLUSHO\s0 .
+.LP
+If
+.SB PENDIN
+is set, any input that has not yet been read will be reprinted when
+the next character arrives as input.
+.LP
+The initial line-discipline control value is
+.SM
+.BR ISIG\s0 ,
+.SM
+.BR ICANON\s0 ,
+.SM
+.BR ECHO\s0 .
+.SS "Minimum and Timeout"
+.LP
+The
+.SB MIN
+and
+.SB TIME
+values are described above under
+\fBNon-canonical Mode Input Processing\fP.
+The initial value of
+.SB MIN
+is 1, and the initial value of
+.SB TIME
+is 0.
+.SS "Termio Structure"
+.LP
+The System V
+.B termio
+structure is used by other
+.B ioctl(\|)
+calls; it is defined by
+.B <sys/termio.h>
+as:
+.LP
+.ta .6i 1.3i 1.8i 2.6i
+.RS
+.nf
+.ne 9
+.ft B
+#define	\s-1NCC\s+1	8
+struct	termio {
+	unsigned	short	c_iflag;	/\(** input modes \(**/
+	unsigned	short	c_oflag;	/\(** output modes \(**/
+	unsigned	short	c_cflag;	/\(** control modes \(**/
+	unsigned	short	c_lflag;	/\(** local modes \(**/
+	char		c_line;		/\(** line discipline \(**/
+	unsigned	char	c_cc[\s-1NCC\s+1];	/\(** control chars \(**/
+};
+.ft R
+.fi
+.RE
+.LP
+The special control characters are defined by the array
+.BR c_cc .
+The relative positions for each function are as follows:
+.RS
+.ta 4n 13n
+.nf
+0	\fB\s-1VINTR\s0\fP
+1	\fB\s-1VQUIT\s0\fP
+2	\fB\s-1VERASE\s0\fP
+3	\fB\s-1VKILL\s0\fP
+4	\fB\s-1VEOF\s0\fP
+5	\fB\s-1VEOL\s0\fP
+6	\fB\s-1VEOL2\s0\fP
+7	reserved
+.fi
+.RE
+.LP
+The calls that use the
+.B termio
+structure only affect the flags and control characters that can be
+stored in the
+.B termio
+structure; all other flags and control characters are unaffected.
+.SS "Terminal Size"
+.LP
+The number of lines and columns on the terminal's display (or page,
+in the case of printing terminals) is specified in the
+.B winsize
+structure, defined by
+.BR <sys/termios.h> .
+Several
+.B ioctl(\|)
+system calls that fetch or change these parameters use this
+structure:
+.LP
+.ta .6i 1.3i 1.8i 2.6i
+.RS
+.nf
+.ft B
+struct winsize {
+	unsigned short	ws_row;		/\(** rows, in characters \(**/
+	unsigned short	ws_col;		/\(** columns, in characters \(**/
+	unsigned short	ws_xpixel;	/\(** horizontal size, pixels - not used \(**/
+	unsigned short	ws_ypixel;	/\(** vertical size, pixels - not used \(**/
+};
+.ft R
+.fi
+.RE
+.SS "Modem Lines"
+.LP
+On special files representing serial ports, the modem control lines
+supported by the hardware can be read and the modem status lines
+supported by the hardware can be changed.  The following modem control
+and status lines may be supported by a device; they are defined by
+.BR <sys/termios.h> :
+.LP
+.ta \w'MAXMA_XXX\ \ 'u +\w'MAXMA_XXX\ \ 'u
+.RS
+.nf
+\fB\s-1TIOCM_LE\s0\fP	0001	line enable
+\fB\s-1TIOCM_DTR\s0\fP	0002	data terminal ready
+\fB\s-1TIOCM_RTS\s0\fP	0004	request to send
+\fB\s-1TIOCM_ST\s0\fP	0010	secondary transmit
+\fB\s-1TIOCM_SR\s0\fP	0020	secondary receive
+\fB\s-1TIOCM_CTS\s0\fP	0040	clear to send
+\fB\s-1TIOCM_CAR\s0\fP	0100	carrier detect
+\fB\s-1TIOCM_RNG\s0\fP	0200	ring
+\fB\s-1TIOCM_DSR\s0\fP	0400	data set ready
+.DT
+.fi
+.RE
+.LP
+.SB TIOCM_CD
+is a synonym for
+.SM
+.BR TIOCM_CAR\s0 ,
+and
+.SB TIOCM_RI
+is a synonym for
+.SM
+.BR TIOCM_RNG\s0 .
+.LP
+Not all of these will necessarily be supported by any particular device; check
+the manual page for the device in question.
+.SH IOCTLS
+.LP
+The
+.B ioctl(\|)
+calls supported by devices and
+.SM STREAMS
+modules providing the
+.B termios
+interface are listed below.  Some calls may not be supported by all
+devices or modules.
+.LP
+Unless otherwise noted for a specific
+.B ioctl(\|)
+call, these functions are restricted from use by background processes.
+Attempts to perform these calls will cause the process group of the process
+performing the call to be sent a
+.SB SIGTTOU
+signal.  If the process is ignoring
+.SM
+.BR SIGTTOU\s0 ,
+has
+.SB SIGTTOU
+blocked, or is in the middle of process creation using
+.BR vfork(\|) ,
+the process will be allowed to perform the call and the
+.SB SIGTTOU
+signal will not be sent.
+.TP 18
+.SB TCGETS
+The argument is a pointer to a
+.B termios
+structure.  The current terminal parameters are fetched and stored into
+that structure.  This call is allowed from a background process; however, the
+information may subsequently be changed by a foreground process.
+.TP
+.SB TCSETS
+The argument is a pointer to a
+.B termios
+structure.  The current terminal parameters are set from the values stored
+in that structure.  The change is immediate.
+.TP
+.SB TCSETSW
+The argument is a pointer to a
+.B termios
+structure.  The current terminal parameters are set from the values stored
+in that structure.  The change occurs after all characters queued for
+output have been transmitted.
+This form should be used when changing parameters
+that will affect output.
+.TP
+.SB TCSETSF
+The argument is a pointer to a
+.B termios
+structure.  The current terminal parameters are set from the values stored
+in that structure.  The change occurs after all characters queued for
+output have been transmitted; all characters queued for input are
+discarded and then the change occurs.
+.TP
+.SB TCGETA
+The argument is a pointer to a
+.B termio
+structure.  The current terminal parameters are fetched, and those
+parameters that can be stored in a
+.B termio
+structure are stored into that structure.  This call is allowed from a
+background process; however, the information may subsequently be changed
+by a foreground process.
+.TP
+.SB TCSETA
+The argument is a pointer to a
+.B termio
+structure.  Those terminal parameters that can be stored in a
+.B termio
+structure are set from the values stored
+in that structure.  The change is immediate.
+.br
+.ne 5
+.TP
+.SB TCSETAW
+The argument is a pointer to a
+.B termio
+structure.  Those terminal parameters that can be stored in a
+.B termio
+structure are set from the values stored
+in that structure.  The change occurs after all characters queued for
+output have been transmitted.
+This form should be used when changing parameters
+that will affect output.
+.TP
+.SB TCSETAF
+The argument is a pointer to a
+.B termio
+structure.  Those terminal parameters that can be stored in a
+.B termio
+structure are set from the values stored
+in that structure.  The change occurs after all characters queued for
+output have been transmitted; all characters queued for input are
+discarded and then the change occurs.
+.TP
+.SB TCSBRK
+The argument is an
+.B int
+value.
+Wait for the output to drain.
+If the argument is 0,
+then send a break (zero-valued bits for 0.25 seconds). This define is available
+by 
+.B "#include <sys/termio.h>
+.TP
+.SB TCXONC
+Start/stop control.
+The argument is an
+.B int
+value.
+If the argument
+is 
+.SB TCOOFF
+(0), suspend output;
+if 
+.SB TCOON
+(1), restart suspended output;
+if 
+.SB TCIOFF
+(2), suspend input;
+if 
+.SB TCION
+(3), restart suspended input.
+.TP
+.SB TCFLSH
+The argument is an
+.B int
+value.
+If the argument
+is 
+.SB TCIFLUSH
+(0), flush the input queue;
+if 
+.SB TCOFLUSH
+(1), flush the output queue;
+if 
+.SB TCIOFLUSH
+(2), flush both the input and output queues.
+.TP
+.SB TIOCEXCL
+The argument is ignored.
+Exclusive-use mode is turned on;
+no further opens are permitted until the file has been closed, or a
+.SB TIOCNXCL
+is issued.
+The default on open of a terminal
+file is that exclusive use mode is off.
+This 
+.B ioctl(\|)
+is only available by
+.B "#include <sys/ttold.h>" .
+.TP
+.SB TIOCNXCL
+The argument is ignored.
+Exclusive-use mode is turned off.
+This 
+.B ioctl(\|)
+is only available by
+.BR "#include <sys/ttold.h>" .
+.TP
+.SB TIOCSCTTY
+The argument is an 
+.BR int .
+The system will attempt to assign the terminal as the caller's controlling 
+terminal (see 
+.B The Controlling Terminal 
+above).  If the caller is not the 
+super-user and/or the argument is not 1, all of the normal permission checks
+apply.
+If the caller is the super-user and the argument is 1 the terminal will be
+assigned as the controlling terminal even if the terminal was currently in use
+as a controlling terminal by another session.  
+.BR getty (8)
+uses this method
+to acquire controlling terminals for
+.BR login (1)
+because there exists a possibility that a daemon process
+may obtain the console before
+.BR getty (8).
+.TP
+.SB TIOCGPGRP
+The argument is a pointer to an
+.BR int .
+Set the value of that
+.B int
+to the process group
+.SM ID
+of the distinguished process group associated with the terminal.  This call
+is allowed from a background process; however, the information may
+subsequently be changed by a foreground process.
+This 
+.B ioctl(\|)
+exists only for backward compatibility, use
+.BR tcgetpgrp (3V).
+.TP
+.SB TIOCSPGRP
+The argument is a pointer to an
+.BR int .
+Associate the process group whose process group
+.SM ID
+is specified by the value of that
+.B int
+with the terminal.  The new process group value must be in the range of
+valid process group
+.SM ID
+values, or it must be zero (\*(lqno process group\*(rq).
+Otherwise, the error
+.SB EINVAL
+is returned.  If any processes exist with a process
+.SM ID
+or process group
+.SM ID
+that is the same as the new process group value, then those processes must
+have the same real or saved user
+.SM ID
+as the real or effective user
+.SM ID
+of the calling process or be descendants of the calling process,
+or the effective user
+.SM ID
+of the current process must be super-user.  Otherwise, the error
+.SB EPERM
+is returned.
+This 
+.B ioctl(\|)
+exists only for backward compatibility, use
+.BR tcsetpgrp (\|),
+see
+.BR tcgetpgrp (3V).
+.TP
+.SB TIOCOUTQ
+The argument is a pointer to an
+.BR int .
+Set the value of that
+.B int
+to the number of characters in the output stream that have not yet
+been sent to the terminal.  This call is allowed from a
+background process.
+.TP
+.SB TIOCSTI
+The argument is a pointer to a
+.BR char .
+Pretend that character had been received as input.
+.br
+.ne 4
+.TP
+.SB TIOCGWINSZ
+The argument is a pointer to a
+.B winsize
+structure.
+The terminal driver's notion of the terminal size is stored into that
+structure.  This call is allowed from a background process.
+.br
+.ne 5
+.TP
+.SB TIOCSWINSZ
+The argument is a pointer to a
+.B winsize
+structure.
+The terminal driver's notion of the terminal size is set
+from the values specified in that structure.  If the new sizes are different
+from the old sizes, a
+.SB SIGWINCH
+signal is sent to the process group of the terminal.
+.br
+.ne 4
+.TP
+.SB TIOCMGET
+The argument is a pointer to an
+.BR int .
+The current state of the modem status lines is fetched and stored in the
+.B int
+pointed to by the argument.  This call is allowed from a background process.
+.br
+.ne 4
+.TP
+.SB TIOCMBIS
+The argument is a pointer to an
+.B int
+whose value is a mask containing modem control lines to be turned on.
+The control lines whose bits are set in the argument are turned on; no other
+control lines are affected.
+.TP
+.SB TIOCMBIC
+The argument is a pointer to an
+.B int
+whose value is a mask containing modem control lines to be turned off.
+The control lines whose bits are set in the argument are turned off; no other
+control lines are affected.
+.TP
+.SB TIOCMSET
+The argument is a pointer to an
+.B int
+containing a new set of modem control lines.
+The modem control lines are turned on or off, depending on whether the bit for
+that mode is set or clear.
+.TP
+.SB TIOCGSOFTCAR
+The argument is a pointer to an
+.B int
+whose value is 1 or 0,
+depending on whether the software carrier detect
+is turned on or off.
+.TP
+.SB TIOCSSOFTCAR
+The argument is a pointer to an
+.B int
+whose value is 1 or 0.
+The value of the integer should be 0 to turn off
+software carrier, or 1 to turn it on.
+.SH SEE ALSO
+.BR csh (1),
+.BR login (1),
+.BR stty (1V),
+.BR fork (2V),
+.BR getpgrp (2V),
+.BR ioctl (2),
+.BR open (2V),
+.BR read (2V),
+.BR sigvec (2),
+.BR vfork (2),
+.BR tcgetpgrp (3V),
+.BR tty (4),
+.BR ttytab (5),
+.BR getty (8),
+.BR init (8),
+.BR ttysoftcar (8)

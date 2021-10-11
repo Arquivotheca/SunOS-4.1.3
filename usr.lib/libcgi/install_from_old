@@ -1,0 +1,132 @@
+#!/bin/sh
+#
+# %Z%%M% %I% %E% SMI
+#
+#  Copyright (c) 1989 by Sun Microsystems, Inc.
+#
+#	install_from_old - installs things where they belong (out of /usr/old)
+#
+# USAGE:	install_from_old  SunCGI | SunCORE
+#		(Must be super-user ("root") to install.)
+#
+#	To install CGI/CORE, execute the shell this script. The default 
+#	places for the libraries to go is in /usr/lib, include files go
+#	in /usr/include, and lint libraries go in /usr/lib/lint. These
+#	can be changed by setting OLDLIBDIR and OLDINCDIR. OLDLIBDIR is the
+#	place to put the library, $OLDLIBDIR/lint is the place to put the
+#	lint libraries, and $OLDINCDIR is the place to put the include files.
+#	The CGI/CORE files are MOVED from the specified OLDFROMDIR.  This is
+#	intended to be /usr/old, where SunCGI/CORE is now distributed as it
+#	becomes unsupported.  (The MOVE is actually done by copy/delete-old.)
+
+case $1 in
+    cgi|CGI|suncgi|sunCGI|SunCGI|SUNCGI)
+	OLDPROD="SunCGI"
+	OLDINCFILES="cgidefs.h cgiconstants.h cgicbind.h cgipw.h cgi_gp1_pwpr.h"
+	OLDINC77FILES="cgidefs77.h"
+	OLDLIBFILES="libcgi.a libcgi77.a"
+	OLDLINTFILES="llib-lcgi llib-lcgi.ln"
+	;;
+    core|CORE|suncore|sunCORE|SunCORE|SUNCORE)
+	OLDPROD="SunCORE"
+	OLDINCFILES="usercore.h"
+	OLDINC77FILES="usercore77.h"
+	OLDLIBFILES="libcore*.a libcore*.s[oa].*"
+	OLDLINTFILES="llib-lcore llib-lcore.ln"
+	;;
+    *)
+	echo "USAGE:	install_from_old  SunCGI | SunCORE"
+	echo "      	(Must be super-user ("root") to install.)"
+	exit
+	;;
+esac
+
+if [ `whoami` != root ]; then
+	echo "You must be super-user ("root") to install."
+	exit
+fi
+
+#	These may be overridden by the user (mostly for testing)
+OLDFROMDIR=${OLDFROMDIR:-/usr/old}
+OLDLIBDIR=${OLDLIBDIR:-/usr/lib}
+OLDINCDIR=${OLDINCDIR:-/usr/include}
+
+#	Unix utilities used
+COPY="cp -p"
+DEL="rm -f"
+CHOWN="chown bin"
+CHMOD="chmod 644"
+RANLIB="ranlib"
+SYNC="sync"
+
+echo "This procedure will move the $OLDPROD libraries from $OLDFROMDIR to $OLDLIBDIR,"
+echo "and its include files to $OLDINCDIR."
+echo ""
+echo -n "Is this really what you want to do? (y/n): "
+read ANSWER
+case $ANSWER in
+    y*|Y*)
+	;;
+    *)
+	exit
+	;;
+esac
+echo ""
+
+echo  "Copying the $OLDPROD include files to $OLDINCDIR..."
+for i in $OLDINCFILES
+do
+	${COPY} $i $OLDINCDIR/$i
+	${CHOWN} $OLDINCDIR/$i
+	${CHMOD} $OLDINCDIR/$i
+done
+# make the f77 directory if it doesn't already exist
+if [ ! -d $OLDINCDIR/f77 ]; then
+	echo "$OLDINCDIR/f77 does not exist.  Making it..."
+	${MKDIR} $OLDINCDIR/f77
+	${CHOWN} $OLDINCDIR/f77
+	${CHMOD} $OLDINCDIR/f77
+fi
+for i in $OLDINC77FILES
+do
+	${COPY} $i $OLDINCDIR/f77
+	${CHOWN} $OLDINCDIR/f77/$i
+	${CHMOD} $OLDINCDIR/f77/$i
+done
+
+echo "Copying the $OLDPROD library archive files to $OLDLIBDIR..."
+for i in $OLDLIBFILES
+do
+	${COPY} $i $OLDLIBDIR/$i
+	${CHOWN} $OLDLIBDIR/$i
+	${CHMOD} $OLDLIBDIR/$i
+done
+ldconfig
+
+echo "Copying the $OLDPROD lint libraries to $OLDLIBDIR/lint..."
+# make the lint directory if it doesn't already exist
+if [ ! -d $OLDLIBDIR/lint ]; then
+	echo "$OLDLIBDIR/lint does not exist.  Making it..."
+	${MKDIR} $OLDLIBDIR/lint
+	${CHOWN} $OLDLIBDIR/lint
+	${CHMOD} $OLDLIBDIR/lint
+fi
+for i in $OLDLINTFILES
+do
+	${COPY} $i $OLDLIBDIR/lint
+	${CHOWN} $OLDLIBDIR/lint/$i
+	${CHMOD} $OLDLIBDIR/lint/$i
+done
+
+# sync disks for safety
+sync; sync
+
+echo "Removing original files from $OLDFROMDIR..."
+for i in $OLDINCFILES $OLDLIBFILES $OLDLINTFILES
+do
+	${DEL} $OLDFROMDIR/$i
+done
+
+echo "Finished with the installation of $OLDPROD from $OLDFROMDIR."
+echo ""
+exit

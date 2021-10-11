@@ -1,0 +1,79 @@
+.\" @(#)lgamma.3m 1.1 92/07/30 SMI; from UCB 4.3
+.TH LGAMMA 3M  "22 November 1987"
+.SH NAME
+lgamma \- log gamma function
+.SH SYNOPSIS
+.LP
+.B #include <math.h>
+.LP
+.B extern int signgam;
+.LP
+.nf
+.ft B
+double lgamma(x)
+double x;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "gamma()"  ""  "\fLgamma()\fP \(em log gamma"
+.IX  "mathematical functions"  gamma()  ""  \fLgamma()\fP
+.IX  "log gamma function"  ""  "log gamma function \(em \fLgamma()\fP"
+.LP
+.B lgamma(\|)
+returns
+.nf
+.ta \w'Lgamma returns ln\||\(*G(x)| where'u+1n +1.7i
+.if t \{\
+.BR	ln\||\(*G (x)|
+where
+.BR 	\(*G (x)\ =\ \(is\d\s8\z0\s10\u\u\s8\(if\s10\d t\u\s8x\-1\s10\d e\u\s8\-t\s10\d dt
+for x > 0 and
+.BR 	\(*G (x)\ =\ \(*p/(\(*G(1\-x)\|sin(\(*px))
+for x < 1.
+\}
+.if n \
+.B lgamma returns ln\||\(*G(x)|.
+.ta
+.fi
+.LP
+The external integer
+.B signgam
+returns the sign of
+.BR \(*G (x) .
+.SH IDIOSYNCRASIES
+.LP
+Do
+.I not
+use the expression
+.B signgam\(**exp(lgamma(x))
+to compute
+.RB ` "g := \(*G(x)" '.
+Instead compute 
+.B lgamma(\|) 
+first:
+.RS
+.B
+lg = lgamma(x); g = signgam\(**exp(lg);
+.RE
+.LP
+only after
+.B lgamma(\|)
+has returned can
+.B signgam
+be correct.
+Note: \(*G(x) must overflow when
+.I x
+is large enough, underflow when
+.I \-x
+is large enough, and generate a division by zero exception
+at the singularities
+.I x
+a nonpositive integer.
+In addition,
+.B lgamma(\|)
+may also set
+.B errno
+and call
+.BR matherr (3M).
+.SH SEE ALSO
+.BR matherr (3M)

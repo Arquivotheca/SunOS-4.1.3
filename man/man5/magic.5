@@ -1,0 +1,152 @@
+.\" @(#)magic.5 1.1 92/07/30 SMI;
+.TH MAGIC 5 "19 October 1987"
+.SH NAME
+magic \- file command's magic number file
+.SH DESCRIPTION
+.IX "magic file" "" "\fLmagic\fR file \(em \fLfile\fR command's magic numbers table"
+.LP
+The
+.BR file (1)
+command identifies the type of a file using,
+among other tests,
+a test for whether the file begins with a certain
+.IR "magic number" .
+The file
+.B /etc/magic
+specifies what magic numbers are to be tested for,
+what message to print if a particular magic
+number is found,
+and additional information to extract from the file.
+.LP
+Each line of the file specifies a test to be performed.
+A test compares the data starting at a particular offset
+in the file with a 1-byte, 2-byte, or 4-byte
+numeric value or a string.  If the test succeeds,
+a message is printed.
+The line consists of the following fields:
+.IP
+.I offset	type	value	message
+.TP 10
+.I offset
+A number specifying the offset, in bytes,
+into the file of the data which is to be tested.
+.TP
+.I type
+The type of the data to be tested.
+The possible values are:
+.RS
+.TP
+.B byte
+A one-byte value.
+.TP
+.B short
+A two-byte value.
+.TP
+.B long
+A four-byte value.
+.TP
+.B string
+A string of bytes.
+.RE
+.IP
+The types
+.BR byte ,
+.BR short ,
+and
+.B long
+may optionally be followed by a mask
+specifier of the form
+.BI & number\fR.
+If a mask specifier is given, the value is
+.SM AND\s0'ed
+with the
+.I number
+before any comparisons are done.  The
+.I number
+is specified in C form.
+For instance,
+.B 13
+is decimal,
+.B 013
+is octal, and
+.B 0x13
+is hexadecimal.
+.TP
+.I value
+The value to be compared with the value from
+the file.  If the type is numeric, this value
+is specified in
+.B C
+form.
+If it is a string, it is specified as a
+.B C
+string with the usual escapes permitted
+(for instance, \en for
+.SM NEWLINE\s0).
+.IP
+.I Numeric values
+may be preceded by a character indicating
+the operation to be performed.  It may be
+.RB ` = ',
+to specify that the value from the file
+must equal the specified value,
+.RB  ` < ',
+to specify that the value from the file
+must be less than the specified value,
+.RB ` > ',
+to specify that the value from the file
+must be greater than the specified value,
+.RB ` & ',
+to specify that all the bits in the specified
+value must be set in the value from the file,
+.RB ` ^ ',
+to specify that at least one of the bits in
+the specified value must not be set in the
+value from the file, or
+.B x
+to specify that any value will match.
+If the character is omitted, it is assumed to be
+.RB ` = '.
+.IP
+For string values, the byte string from the
+file must match the specified byte string.
+The byte string from the file which is matched
+is the same length as the specified byte string.
+.TP
+.I message
+The message to be printed if the comparison
+succeeds.  If the string contains a
+.BR printf (3V)
+format specification, the value from the
+file (with any specified masking performed) is
+printed using the message as the format string.
+.LP
+Some file formats contain additional information
+which is to be printed along with the file type.
+A line which begins with the character
+.RB ` > '
+indicates additional tests and messages to be
+printed.  If the test on the line preceding the
+first line with a
+.RB ` > '
+succeeds, the tests specified in all the subsequent
+lines beginning with
+.RB ` > '
+are performed, and the messages printed if the
+tests succeed.  The next line which does not
+begin with a
+.RB ` > '
+terminates this.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/magic
+.PD
+.SH SEE ALSO
+.BR file (1),
+.BR printf (3V)
+.SH BUGS
+There should be more than one level of subtests,
+with the level indicated by the number of
+.RB ` > '
+at the beginning of the line.

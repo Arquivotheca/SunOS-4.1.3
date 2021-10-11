@@ -1,0 +1,95 @@
+#
+# @(#)README	1.1 8/6/90 SMI
+#
+
+Last updated: 8/6/90
+Location: ~mce/sun4m/sas_support/README
+Author: Mark Elgood (mce@East)
+
+	./
+	 fakeprom		fakeprom code
+	 sunergy		sunergy tree
+	 galaxy			galaxy tree
+    	 campus2		campus-2 tree
+   	 test			fakeprom standalone tests
+	 eeprom			MPSAS eeprom generator
+	 file			MPSAS file stubs
+
+1. Introduction
+---------------
+
+  This directory hierarchy contains a number of MPSAS support
+programs that provide a more realistic environment in which to test
+kernels & other standalone programs under MPSAS. Also included are a
+number of test programs that exercise the fakeprom functionality.
+
+
+2. eeprom
+---------
+
+This directory contains the program that will built an EEPROM image 
+suitable to load into MPSAS. The EEPROM differs for each machine since
+it contains IDPROM information.
+
+3. fakeprom
+-----------
+
+This is consists of two a.out images that are loaded into MPSAS before
+the simulation is started. The first image 'fakeprom' contains:
+
+	i) a sunromvec structure
+
+	ii) OBP routines
+		config_ops - next, child, getproplen, getprop
+
+	iii) support of:
+		v_putchar, v_printf
+		v_open, v_read, v_seek, v_write to simdisk
+
+	iv) data structures (these go away with real OBP??)
+		*mem
+
+The second image 'fakepte' contains a set of page tables that will
+correctly map 'fakeprom' from it's kernel virtual address.
+
+
+Fakeprom is linked at an address of 0xFFD00000 (these will be the
+virtual addresses used when the MMU is enabled). Fakeprom is loaded
+into ram at address 0x700000 (see fakeprom.file below).
+
+Fakepte is loaded into ram at address 0x780000. It uses 2 level-2 PTEs
+to map virtual address range 0xFFD00000-0xFFD7FFFF to physical
+addresses 0x700000-0x77FFFF. This is all consistent with the way the
+kernel takes over the PROMs level-2 page tables using routine
+is_vaddr_taken().
+
+The data structures pointed to by the romvec are correctly setup to
+show the memory taken by the fakeprom. These are physmem, virtmem &
+availmem. 
+
+Note also the registers setup in fakeprom.file. The seting of %o0 is
+messy I need to come up with a way of either making this absolute
+(unchanging) or have a short piece of code run and call the kernel first.
+
+This is all setup assuming MPSAS has 8MB of RAM and steals the top 1MB
+for fakeprom/pte usage
+
+4. test
+-------
+
+  treetest
+
+  disktest
+
+
+
+5. files
+--------
+
+  vmunix.file
+
+  boot.file
+
+
+
+

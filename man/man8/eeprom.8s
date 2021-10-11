@@ -1,0 +1,701 @@
+.\" @(#)eeprom.8s 1.1 92/07/30 SMI;
+.TH EEPROM 8S "22 June 1992"
+.SH NAME
+eeprom \- EEPROM display and load utility
+.SH SYNOPSIS
+.SS "SUN-3, SUN-4 SYSTEMS"
+.B eeprom
+.RB [\| \- \|]
+.RB [\| \-c \|]
+.RB [\| \-i \|]
+.RB [\| \-f
+.I device
+]
+[\|\fIfield\fP[=\fIvalue\fP] .\|.\|.]
+.LP
+.SS "Desktop SPARCsystems, SPARCsystem 600MP SERIES"
+.B eeprom
+.RB [\| \- \|]
+.RB [\| \-f
+.I device
+]
+[\|\fIfield\fP[=\fIvalue\fP] .\|.\|.]
+.SH DESCRIPTION
+.IX  "PROM monitor program, display and load program \(em \fLeeprom\fR"
+.IX  "EEPROM display and load program \(em \fLeeprom\fR"
+.IX  "system EEPROM display and load program"
+.LP
+.B eeprom
+displays or changes the values of fields in the
+.SM EEPROM\s0.
+It processes fields in the order given.
+When processing a
+.I field
+accompanied by a
+.IR value ,
+.B eeprom
+makes the indicated alteration to the
+.SM EEPROM\s0;
+otherwise it displays the
+.IR field 's
+value.
+When given no field specifiers,
+.B eeprom
+displays the values of all
+.SM EEPROM
+fields.
+A
+.RB ` \- '
+flag specifies that fields and values are
+to be read from the standard input (one
+.I field
+or
+.IB field = value
+per line).
+.LP
+Only the super-user may alter the 
+.SM EEPROM
+contents.
+.LP
+.B eeprom
+verifies the
+.SM EEPROM
+checksums and complains if they are incorrect; if the
+.B \-i
+flag is specified, erroneous checksums are ignored.
+If the
+.B \-c
+flag is specified, all incorrect
+checksums are recomputed and corrected in the
+.SM EEPROM\s0.
+.SH OPTIONS
+.TP 12
+.B \-c
+Correct bad checksums.
+(Ignored on Desktop
+.SM SPARC\s0systems and
+.SM SPARC\s0system 600MP series.)
+.TP
+.B \-i
+Ignore bad checksums.
+(Ignored on Desktop
+.SM SPARC\s0systems and
+.SM SPARC\s0system 600MP series.)
+.TP
+.BI \-f " device"
+Use
+.I device
+as the
+.SM EEPROM
+device.
+.LP
+.SH FIELDS and VALUES
+.SS "SUN-3, SUN-4 SYSTEMS"
+.PD 0
+.TP 20
+.B hwupdate
+a valid date (including 
+.B today
+and 
+.BR now )
+.TP
+.B memsize
+8 bit integer (megabytes of memory on machine)
+.TP
+.B memtest
+8 bit integer (megabytes of memory to test)
+.TP
+.B scrsize
+.BR 1024x1024 , 
+.BR 1152x900 , 
+.BR 1600x1280 ,
+or 
+.B 1440x1440 
+.TP
+.B watchdog_reboot
+.B true
+or
+.B false
+.TP
+.B default_boot
+.B true
+or 
+.B false
+.TP
+.B bootdev
+.IB char\^char ( hex-int ,\c
+.IB hex-int , hex-int )
+(with
+.I char
+a character, and
+.I hex-int
+a hexadecimal integer.)
+.TP
+.B kbdtype
+8 bit integer (0 for all Sun keyboards)
+.TP
+.B keyclick
+.B true
+or 
+.B false
+.TP
+.B console
+.B b&w
+or 
+.B ttya
+or 
+.B ttyb
+or 
+.B color
+.TP
+.B custom_logo
+.B true
+or 
+.B false
+.TP
+.B banner
+banner string
+.TP
+.B diagdev
+%c%c (%x,%x,%x) \(em diagnostic boot device
+.TP
+.B diagpath
+diagnostic boot path
+.TP
+.B ttya_no_rtsdtr
+.B true
+or 
+.B false
+.TP
+.B ttyb_no_rtsdtr
+.B true
+or 
+.B false
+.TP
+.B ttya_use_baud
+.B true
+or 
+.B false
+.TP
+.B ttyb_use_baud
+.B true
+or 
+.B false
+.TP
+.B ttya_baud
+baud rate (16-bit decimal integer)
+.TP
+.B ttyb_baud
+baud rate (16-bit decimal integer)
+.TP
+.B columns
+number of columns on screen (8-bit integer)
+.TP
+.B rows
+number of rows on screen (8-bit integer)
+.TP
+.B secure
+.BR none , 
+.BR command ,
+or 
+.BR full .
+If
+.B secure=none 
+the 
+.SM PROM 
+monitor runs in the non-secure mode.
+In this mode all 
+.SM PROM
+monitor commands are allowed with no password required.  
+If
+.B secure=command
+the 
+.SM PROM 
+monitor is in the command secure mode.
+In this mode, only the 
+.B b
+(boot) command with no parameters and the 
+.B c
+(continue) command
+with no parameters may be entered without a password being required.  
+Any other command requires that the 
+.SM PROM 
+monitor password be entered.
+If
+.B secure=full
+the 
+.SM PROM 
+monitor is in the fully secure mode.
+In this mode, only the
+.B c
+(continue) command with no parameters may be entered without a password
+being required.
+Entry of any other command requires that the 
+.SM PROM
+monitor password be entered.
+Note: the system will not auto-reboot in
+fully secure mode.
+The 
+.SM PROM 
+monitor password must be entered before the
+boot process will take place.
+When changing the security mode from non-secure to either command secure
+or fully secure,
+.B eeprom
+prompts for the entry and re-entry of a new 
+.SM PROM 
+password as in the
+.BR passwd (1)
+command.
+Changing from one secure mode to the other secure mode, or to the
+non-secure mode does not prompt for a password.
+Changing to non-secure mode erases the password.
+.TP
+.B bad_login
+number of bad login tries (16-bit unsigned integer, 0 if
+.BR reset ).
+The field 
+.B bad_login
+maintains the count of bad login tries.
+It may be reset to zero (0) by 
+specifying
+.BR bad_login=reset .
+.TP
+.B password
+.SM PROM
+monitor password (8-bytes).
+The content of the
+.B password
+field is never displayed to any user.
+If the security mode is not
+.BR none ,
+the super-user may change the 
+.SM PROM 
+monitor password by entering:
+.TP
+.RS
+\fBexample# eeprom password=
+.ft R
+.RE
+.IP
+.B eeprom
+prompts for a new password to be entered and re-entered.
+.PD
+.LP
+.SS "Desktop SPARCsystems, SPARCsystem 600MP SERIES"
+.PD 0
+.TP 20
+.B hardware-revision
+7 chars (for example,
+.BR 30Mar88 )
+.TP
+.B selftest-#megs
+32 bit decimal integer (megabytes of memory to test)
+.TP
+.B watchdog-reboot?
+.B true
+or
+.BR false ;
+.B true
+to reboot after watchdog reset
+.TP
+.B boot-from
+A string specifying boot string (for example,
+.BR le(\|)vmunix );
+defaults to 
+.BR vmunix .
+(\s-1SPARC\s0station 1 systems only)
+.TP
+.B keyboard-click?
+.B true
+or
+.BR false ;
+.B true
+to enable clicking of keys on each keystroke
+.TP
+.B input-device
+A string specifying one of
+.BR keyboard ,
+.BR ttya ,
+or
+.BR ttyb ;
+if the specified device is unavailable,
+.B ttya
+is used for both input and output
+.I only
+if input-device specified the keyboard
+.I and
+output-device specified the screen.
+.TP
+.B output-device
+A string specifying one of
+.BR screen ,
+.BR ttya ,
+or
+.BR ttyb ;
+if the specified device is unavailable,
+.B ttya
+is used for
+.I both
+input and output
+.I only
+if input-device specified the keyboard
+.I and
+output-device specified the screen.
+.TP
+.B oem-banner?
+.B true
+or
+.BR false ;
+.B true
+to use custom banner string instead of Sun banner
+.TP
+.B oem-banner
+80 chars for custom banner string
+.TP
+.B oem-logo?
+.B true
+or
+.BR false ;
+.B true
+to display custom logo instead of Sun logo
+.TP
+.B oem-logo
+Name of file (in
+.B iconedit
+format) containing custom logo.
+.TP
+.B boot-from-diag
+80 chars specifying diag boot string (for example,
+.BR sd(\|)dexec );
+defaults to 
+.BR le(\|)vmunix . 
+(\s-1SPARC\s0station 1 systems only)
+.TP
+.B ttya-mode
+16 chars to specify 5 comma-separated fields of configuration information
+(for example,
+.BR 1200,8,1,n,\- );
+defaults to
+.BR 9600,8,1,n,\- .
+.IP
+Fields, in left-to-right order, are:
+.RS
+.RS
+.TP 10
+baud rate:
+110, 300, 1200, 4800, 9600\|.\|.\|.
+.TP
+data bits:
+5, 6, 7, 8
+.TP
+parity:
+n(none), e(even), o(odd), m(mark), s(space)
+.TP
+stop bits: 
+1, 1.5, 2
+.TP
+handshake:
+\-(none), h(hardware:rts/cts), s(software:xon/xoff)
+.RE
+.RE
+.TP
+.B ttyb-mode
+16 chars to specify 5 comma-separated fields of configuration information
+(for example,
+.BR 1200,7,1,n,s );
+defaults to
+.BR 9600,8,1,n,\- .
+.br
+.ne 10
+.IP
+Fields, in left-to-right order, are:
+.RS
+.RS
+.TP 10
+baud rate:
+110, 300, 1200, 4800, 9600\|.\|.\|.
+.TP
+data bits:
+5, 6, 7, 8
+.TP
+stop bits:
+1, 1.5, 2
+.TP
+parity:
+n(none), e(even), o(odd), m(mark), s(space)
+.TP
+handshake: 
+\-(none), h(hardware:rts/cts), s(software:xon/xoff)
+.RE
+.RE
+.TP
+.B ttyb-rts-dtr-off
+.B true
+or
+.BR false .
+Defaults to
+.BR false .
+.TP
+.B ttya-rts-dtr-off
+.B true
+or
+.BR false .
+Defaults to
+.BR false .
+.TP
+.B ttya-ignore-cd
+.B true
+or
+.BR false .
+Defaults to
+.BR true .
+.TP
+.B ttyb-ignore-cd
+.B true
+or
+.BR false ;
+.B true
+to ignore the 
+.SB CARRIER DETECT
+line.
+Defaults to
+.BR true .
+.TP
+.B screen-#rows
+number of rows on output device; defaults to 34
+(for some devices actual values used may be less)
+.TP
+.B screen-#columns
+number of columns on output device; defaults to 80
+(for some devices actual values used may be less)
+.TP
+.B auto-boot?
+.B true
+or
+.BR false ;
+.B true
+to boot on power-on
+.TP
+.B scsi-initiator-id
+An integer between 0 and 7 that specifies the
+.SM SCSI
+initiator
+.SM ID
+of the onboard
+.SM SCSI
+host adapter.
+.TP
+.B sd-targets
+An array of 8 integers that map 
+.SM SCSI
+disk unit numbers to 
+.SM SCSI
+target numbers.
+The unit number is used to index into this string.
+The default settings are
+.BR 31204567 ,
+which means that unit 0 maps to target 3, unit 1
+maps to target 1, and so on.
+(\s-1SPARC\s0station 1 systems only)
+.TP
+.B st-targets
+An array of 8 integers that map 
+.SM SCSI
+tape unit numbers to 
+.SM SCSI
+target numbers.
+The unit number is used to index into this string.
+The default settings are
+.BR 45670123 ,
+which means that unit 0 maps to target 4, unit 1
+maps to target 5, and so on.
+(\s-1SPARC\s0station 1 systems only)
+.TP
+.B sunmon-compat?
+.B true
+or
+.BR false .
+Defaults to
+.BR true .
+.TP
+.B security-mode
+.BR none ,
+.BR command ,
+or
+.BR full .
+See above, the
+.B secure
+field.
+.TP
+.B security-password
+password associated with
+.BR security-mode .
+The content of the
+.B security-password
+field is never displayed to any user.
+If the security mode is not
+.BR none ,
+the super-user may change the 
+.SM PROM 
+monitor password by entering:
+.TP
+.RS
+\fBexample# eeprom security-password=
+.ft R
+.RE
+.IP
+.B eeprom
+prompts for a new password to be entered and re-entered.
+.TP
+.B security-#badlogins
+number of bad login tries (16-bit unsigned integer, 0 if
+.BR reset ).
+The field 
+.B security-#badlogins
+maintains the count of bad login tries.
+It may be reset to zero (0) by 
+specifying
+.BR security-#badlogins=reset .
+.TP
+.B sbus-probe-list
+Defaults to 0123.
+.TP
+.B fcode-debug?
+.B true
+or
+.BR false .
+Defaults to
+.BR false .
+.TP
+.B last-hardware-update
+Date the 
+.SM CPU
+board was manufactured or upgraded to the
+latest hardware revision.
+The format is a human-readable date string,
+such as
+.BR 23May89 .
+.TP
+.B testarea
+Defaults to 0.
+.TP
+.B mfg-switch?
+.B true
+or
+.BR false .
+Defaults to
+.BR false .
+.TP
+.B diag-switch?
+.B true
+or
+.BR false .
+Defaults to
+.BR true .
+.TP
+.B boot-file
+Default boot file and arguments when
+.B diag-switch?
+is
+.BR false ;
+defaults to
+.BR vmunix .
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B boot-device
+Default boot device specifier when
+.B diag-switch?
+is
+.BR false ;
+defaults to
+.BR disk .
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B diag-file
+Default boot file and arguments when
+.B diag-switch?
+is
+.BR true ;
+defaults to
+.BR vmunix
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B diag-device
+Default boot device specifier when
+.B diag-switch?
+is
+.BR true ;
+defaults to
+.BR net .
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B local-mac-address?
+.B true
+or
+.BR false .
+Defaults to
+.BR false .
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B nvramrc
+Contents of
+.SM NVRAMRC.
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B use-nvramrc?
+.B true
+or
+.BR false ;
+.B true
+to execute commands in
+.SM NVRAMRC
+during
+.SM PROM
+start-up; defaults to
+.BR false .
+(\s-1SPARC\s0station 2, \s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B vme-ipi-probe-list
+Defaults to 0123.
+(\s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B skip-vme-loopback?
+.B true
+or
+.BR false .
+.B true
+to skip some of the VME loopback tests on
+.SM POST.
+Defaults to
+.BR false .
+(\s-1SPARC\s0system 600\s-1MP\s0 series only)
+.TP
+.B tpe-link-test?
+.B true
+or
+.BR false .
+.B true
+to enable TPE (Twisted-Pair Ethernet) link integrity test.
+Defaults to
+.BR true .
+(\s-1SPARC\s0station 10 system only)
+.PD
+.SH FILES
+.SS "SUN-3, SUN-4 SYSTEMS"
+.PD 0
+.TP 20
+.B /dev/eeprom
+.PD
+.SS "Desktop SPARCsystems, SPARCsystem 600MP SERIES"
+.PD 0
+.TP 20
+.B /dev/openprom
+.PD
+.SH "SEE ALSO"
+.BR passwd (1)
+.LP
+.TX PROM
+.br
+.I Open Boot PROM 2.0 Toolkit
+.I User's Guide

@@ -1,0 +1,2984 @@
+|*		Trig Approximations
+|*  enter with:
+|*	x in recovery register
+|*	loop counter set to no. of constants
+|*	pointer 5 pointing at last constant (they are in reverse order)
+|*
+|*  exit with:
+|*	z in A register of multiplier
+|*	z*(c1 + z*(c2 + ( ...+ z*cn) in output of multiplier
+|*	   (multiply has just started)
+sexpansion:
+|*	square x
+	;		;			;		recoe;	;
+	;		las cslm;		reg;		recoe;	;
+	;		lbsf smul cslm;		reg;		recoe;	;
+|*  enter here if z has just begun multiplying
+sexpansion2:
+	;		;			;		;	;	lpreg-
+	;		;			;		;	;
+	;		;			;		;	;
+	jloop stlp;	las cslm csuxm usp;	;		;	rcssp ptr5;
+	rtn;		lbsf smul cslm;		reg;		;	;	ptr5-
+stlp:
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las csla csuxm usp;	reg;		;	;
+	;		;			;		;	;	ptr5-
+	;		lbsf sadd csla woem;	;		;	;
+|*   enter here if addition has just begun
+sexpansion3:
+	;		;			;		;	;	lpreg-
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	jloop stlp;	;			;		;	;
+	rtn;		lbsf smul cslm woea;;		;	;
+|*  the following line needed to pass assembler restriction
+	;		;			;		;	;
+
+|*  Enter with:
+|*	X in location pointed to by ptr1 (location will be overwritten
+|*	   or restored later).
+|*	Loop counter set to no. of constants.
+|*	Pointer 5 pointing at last constant (they are in reverse order).
+|*
+|*  Exit with:
+|*	z in A register of multiplier
+|*	z*(c1 + z*(c2 + ( ...+ z*cn) in output of multiplier
+|*	   (multiply has just started)
+#ifdef OLD
+dexpansion:
+	;		;			;		;	rcsmsw ptr1;
+	;		lam cslm;		reg;		;	rcsmsw ptr1;
+	;		lbm cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	rcslsw ptr1;
+	;		lal cslm;		reg;		;	rcslsw ptr1;
+	;		lblf dmul cslm;		reg;		;	;
+|*  enter here if z has just begun multiplying
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+#endif
+dexpansion2:
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lbl cslm;		reg;		;	;	lpreg-
+	;		lam cslm csuxm umsw;	;		;	;	ptr5-
+	jloop dtlp;	lal cslm csuxm ulsw;	;		;	;
+	rtn;		lf dmul cslm;		;		;	;
+dtlp:
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla;		reg;		;	;
+	;		csuxm umsw;		;		;	;	ptr5-
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf dadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	lpreg-
+	;		;			;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		csuxa umsw;		;		;	;
+	jloop dtlp;	lbl cslm woea;		;		;	;
+	rtn;		lbmf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+
+sreturnx:
+|*   this routine is called to return x with inexact status returned if
+|*   x is not 0
+	call wait3;	lf scmp0 csla;		reg;		;	;
+	;		csuxa usp;		;		;	ptr1;
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	jeq sreturnzerostat;woea;		;		recoe;	ramwe ptr1;
+sreturninexact:
+	;		;			;		;	;	ptr5!c_sinexact
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	jwerr restor.r1 cstat restore;;		;		;	;
+	call idle1;	;			;		;	;
+
+|* this is used for sincos in which case we must restore reg4 in case of error
+sreturninexact.4:
+	;		;			;		;	;	ptr5!c_sinexact
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	jwerr restor.r41 cstat restore;;	;		;	;
+	call idle1;	;			;		;	;
+
+#ifdef SQRT
+sreturnx0:
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	;		;			;		recoe;	ramwe ptr1;
+#endif
+
+sreturnzerostat:
+	;		;			;		;	;	ptr5!c_szerostat
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	call idle1 cstat restore;;		;		;	;
+
+|		*assumes that x is in ptr1
+dreturnx:
+	call wait3;	lf dcmp0 csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jeq dreturnx0;	woea;			;		;	;
+dreturninexact:
+	;		;			;		;	;	ptr5!c_sinexact
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	jwerr drestor.r1 cstat restore;;	;		;	;
+	call idle1;	;			;		;	;
+
+|		this is used just to conserve lines
+drtn.inx.soon:
+	;		;			;		;	;
+dwrt1:
+	call wait1;	;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call dreturninexact;;			dtor;		;	ramwe ptr1;
+
+|* This is used for sincos since we must restore ptr4
+dreturninexact.4:
+	;		;			;		;	;	ptr5!c_sinexact
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	jwerr drestor.r41 cstat restore;;	;		;	;
+	call idle1;	;			;		;	;
+
+oberr:
+	;		;			;		;	;	ptr5!c_soberr
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	call werr cstat restore;;		;		;	;
+
+soberr:
+	;		;			;		;	;	ptr5!c_soberr
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	call restor.r1 cstat restore;;		;		;	;
+
+doberr:
+	;		;			;		;	;	ptr5!c_soberr
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	call drestor.r1 cstat restore;;		;		;	;
+
+dreturnx0:
+|		assumes ptr1 already contains proper data
+dreturnzerostat:
+	;		;			;		;	;	ptr5!c_szerostat
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	call idle1 cstat restore;;		;		;	;
+
+sreturnx1:
+	;		;			;		recclk;	rcssp ptr5;
+	;		;			;		recclk;	ptr1;
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	;		;			;		recoe;	ramwe ptr1;
+sreturnexact:
+dreturnexact:
+	;		;			;		;	;	ptr5!c_sexact
+	call wait1;	;			;		recclk;	rcssp ptr5;
+	call idle1 cstat restore;;		;		;	;
+
+dreturnx1:
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;
+	;		;			;		;	ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	call dreturnexact;;			;		recoe;	ramwe ptr1;
+	
+#ifdef OLD
+|*	Inverse Tangent approximation
+sitanapprox:
+	;		;			;		;	;	lpreg!7
+	call sexpansion;;			;		;	;
+	call wait2;	;			;		;	;
+	;		las cslm csuxm usp;	;		recoe;	;
+	;		lbsf smul cslm;		reg;		recoe;	;
+	;		las csla;		reg;		recoe;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	call wait2;	lbsf sadd csla woem;	;		;	;
+	;		;			;		;	;	ptr5!smone
+|#				(Note: 12 will cause a delay of 26)
+	;		lbs csla csuxa usp;	;		;	rcssp ptr5;	lpreg!12
+	;		lasf sdiv csla;		reg;		;	;
+	call wait;	;			;		;	;
+	call salu.inx4;	;			;		;	;
+#endif
+
+
+|*
+|*		Single Precision Arctangent Instruction
+|*
+routine xs.atan w01000000110 las ssub
+	call stran.start;;			;		;	;
+	;		;			;		;	;	ptr5!s39o16
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		csuxa usp;		;		;	;	ptr5!s7o16
+|*  if the operand was a NaN, branch
+	jwerr soberr;	woea;			;		;	;
+|*  if abs(operand) > 39/16 then branch
+	jgt xsa.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_satan_big
+
+|*   abs(operand) <= 39/16
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!c_satan_small
+	jgt xsa.e2;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!s19o16
+
+|*   abs(operand) <= 7/16
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jlt sreturnx;	woea;			;		;	;
+
+|*   small < abs(operand) <= 7/16
+|		put ptr2 into "t"
+	;		;			;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		recoe;	ramwe ptr5;	ptr5!c_satan_00
+|		jump to compute atan with hi = 0, lo = 0
+	call xsa.getz;	;			;		;	;
+
+xsa.e2:
+|*   7/16 < abs(operand) <= 39/16
+	;		;			;		;	rcssp ptr5;	ptr5!s11o16
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.e3;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+|*   7/16 < abs(operand) <= 19/16
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.e4;	woea;			;		;	;
+|*   7/16 < abs(operand) <= 11/16
+	;		;			;		;	;	ptr5!stwo
+	;		;			;		;	rcssp ptr5;
+|		start y+2
+	call wait3;	lbsf saddm csla;	reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		write y+2 to temp
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcssp ptr2;	ptr5!sone
+	call wait3;	lbsf saddm csla;	reg;		;	;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;	ptr5!c_dSCRATCH_5
+	call wait3;	lbsf ssub csla;		reg;		;	;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;	lpreg!13
+	call wait;	lbsf sdiv csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcssp ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.getz;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_satan_hhilo
+	call wait3;	lasf sneg csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		pass -"t" and -hi, -lo
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_satan_mhhilo
+	call xsa.getz;	;			;		;	;
+
+xsa.e4:
+|*   11/16 < abs(operand) <= 19/16
+	;		;			;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+|		start y+1
+	call wait3;	lbsf saddm csla;	reg;		;	;
+	;		lf ssubm csla csuxa usp;;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		write y+1 to temp
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;	lpreg!13
+	call wait;	lbsf sdiv csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcssp ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.getz;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_satan_40
+	call wait3;	lasf sneg csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		pass -"t" and -hi, -lo
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_satan_m40
+	call xsa.getz;	;			;		;	;
+
+xsa.e3:
+|*   19/16 < abs(operand) <= 39/16
+	;		;			;		;	rcssp ptr2;	ptr5!stwo
+	call wait3;	lbsf saddm csla;	reg;		;	;
+	call wait3;	lbsf saddm csla csuxa usp;;		;	;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;
+|		start (y+y+y) + 2
+	call wait3;	lbsf sadd csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		write (y+y+y) + 2 to temp
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcssp ptr2;	ptr5!sone
+	;		las csla;		reg;		;	rcssp ptr5;
+|		start y - 1
+	call wait3;	lbsf ssubm csla;	reg;		;	;
+	;		las csla csuxa usp;	;		;	;	ptr5!sone
+|		start z+z
+	call wait3;	lbsf sadd csla csuxa usp;;		;	;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;	ptr5!c_dSCRATCH_5
+	call wait3;	lbsf ssub csla;		reg;		;	;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;	lpreg!13
+	call wait;	lbsf sdiv csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcssp ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.getz;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_satan_lhilo
+	call wait3;	lasf sneg csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		pass -"t" and -hi, -lo
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_satan_mlhilo
+	call xsa.getz;	;			;		;	;
+
+xsa.e1:
+|*   abs(operand) > 39/16
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.e5;	woea;			;		;	;
+|*   39/16 < abs(operand) <= big
+	;		;			;		;	rcssp ptr2;	ptr5!smone
+	;		lbs csla;		reg;		;	rcssp ptr5;	lpreg!13
+	call wait;	lasf sdiv csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+|		pass "t" and pi/2, 0
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+xsa.e6:
+	;		;			;		;	rcssp ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsa.getz;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_satan_20
+	;		;			;		;	;	ptr5!c_satan_m20
+	call xsa.getz;	;			;		;	;
+
+xsa.e5:
+|*   abs(operand) > big
+|		(we already checked for NaN's)
+	;		;			;		;	;	ptr5!szero
+	;		;			;		recclk;	rcssp ptr5;	ptr5!c_dSCRATCH_5
+	;		;			;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		recoe;	ramwe ptr5;	ptr5!c_satan_20
+	call xsa.e6;	;			;		;	;
+
+|*   finished with argument reduction;  compute z now
+xsa.getz:
+|		We need to copy hi and low to 2 and 3 first!
+	;		;			;		recclk;	rcssp ptr5;	ptr5-
+	;		;			;		recclk;	rcssp ptr5;	ptr5!c_dSCRATCH_2
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		recoe;	ramwe ptr5;	ptr5!c_dSCRATCH_3
+	;		;			;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		recoe;	ramwe ptr5;	ptr5!c_dSCRATCH_5
+	;		;			;		;	rcssp ptr5;	lpreg!9
+	;		las cslm;		reg;		;	rcssp ptr5;	ptr5!c_satan_c9
+	call sexpansion2;lbsf smul cslm;	reg;		;	;
+	call wait1;	;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_5
+	;		las cslm csuxm usp;	;		;	rcssp ptr5;	ptr5!c_dSCRATCH_3
+	call wait3;	lbsf smul cslm;		reg;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_dSCRATCH_5
+	;		las csla csuxm usp;	reg;		;	;
+	;		;			;		;	;
+|		start z = lo - z
+	call wait3;	lbsf ssub csla woem;	;		;	;
+	;		las csla csuxa usp;	;		;	rcssp ptr5;	ptr5!c_dSCRATCH_2
+|		start z = z + t
+	call wait3;	lbsf sadd csla;		reg;		;	;
+	;		lbs csla csuxa usp;	;		;	rcssp ptr5;
+|		start z = hi + z
+	call salu.inx1;	lasf sadd csla;		reg;		;	;
+
+|*
+|*		Double Precision Arctangent Instruction
+|*
+routine xd.atan w01000000111 lnop ssub
+	call dtran.start;;			;		;	;
+	;		;			;		;	rcsmsw ptr1;	ptr5!s39o16
+	;		lam csla;		reg;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	rcslsw ptr1;
+|		*save ptr2 for later comparison
+	;		lalf dcmpm csla;	reg;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;	ptr5!c_dSCRATCH_6
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcsmsw ptr5;
+	;		csuxa umsw;		;		recoe recclk;ramwe ptr5;
+	;		csuxa ulsw;		;		recoe;	ramwe rcslsw ptr5;	ptr5!s7o16
+	jwerr doberr;	woea;			;		recoe;	ramwe ptr5;
+	jgt xda.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_sdatan_big
+|		abs(x) < 39/16
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmpm csla;		;		;	;
+	;		csuxa umsw;		;		;	;
+	;		;			;		;	;	ptr5!c_sdatan_small
+	jgt xda.e2;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!s19o16
+
+|*   abs(operand) <= 7/16
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmpm csla;		;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jlt dreturnx;	woea;			;		;	;
+
+|*   small < abs(operand) <= 7/16
+|		put ptr2 into "t"
+	;		;			;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcsmsw ptr5;
+	;		;			;		recoe recclk;ramwe ptr5;
+	;		;			;		recoe;	ramwe rcslsw ptr5;
+	;		;			;		recoe;	ramwe ptr5;	ptr5!c_datan_00
+|		jump to compute atan with hi = 0, lo = 0
+	call xda.getz;	;			;		;	;
+
+xda.e2:
+|*   7/16 < abs(operand) <= 39/16
+	;		;			;		;	rcssp ptr5;	ptr5!s11o16
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmpm csla;		;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jgt xda.e3;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!stwo
+|*   7/16 < abs(operand) <= 19/16
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmpm csla;		;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jgt xda.e4;	woea;			;		;	;
+|*   7/16 < abs(operand) <= 11/16
+	;		;			;		;	rcssp ptr5;
+|		start y+2
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf daddm csla;		;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		write y+2 to temp
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcsmsw ptr2;
+	;		lbm csla;		reg;		;	rcslsw ptr2;	ptr5!sone
+	call wait3;	lblf daddm csla;	reg;		;	;
+	;		lam csla csuxa umsw;	;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+|		start (y+y) - 1
+	call wait3;	lalf dsub csla csuxa ulsw;;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_5
+	;		lal csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	lpreg!28
+	call wait;	lblf ddiv csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+|		note: we check the msw as a sp!
+	;		;			;		;	rcsmsw ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xda.getz;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_datan_hhilo
+	;		;			;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dneg csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of -"t" and -hi, -lo
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_datan_mhhilo
+	call xda.getz;	;			;		;	;
+
+xda.e4:
+|*   11/16 < abs(operand) <= 19/16
+	;		;			;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+|		start y+1
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf daddm csla;		;		;	;
+	;		lf dsubm csla csuxa umsw;;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		write y+1 to temp
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		lam csla csuxa umsw;	dtor;		;	ramwe ptr5;
+	;		lal csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	lpreg!28
+	call wait;	lblf ddiv csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+|		note: we check the msw as a sp!
+	;		;			;		;	rcsmsw ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xda.getz;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_datan_40
+	;		;			;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dneg csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of -"t" and -hi, -lo
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_datan_m40
+	call xda.getz;	;			;		;	;
+
+xda.e3:
+|*   19/16 < abs(operand) <= 39/16
+	;		;			;		;	rcsmsw ptr2;
+	;		lbm csla;		reg;		;	rcslsw ptr2;	ptr5!stwo
+	call wait3;	lblf daddm csla;	reg;		;	;
+	;		lbm csla csuxa umsw;	;		;	;
+	call wait3;	lblf daddm csla csuxa ulsw;;		;	;
+	;		lam csla csuxa umsw;	;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+|		start (y+y+y) + 2
+	call wait3;	lalf dadd csla csuxa ulsw;;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		write (y+y+y) + 2 to temp
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	rcsmsw ptr2;	ptr5!sone
+	;		lam csla;		reg;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	rcslsw ptr2;
+|		start y - 1
+	call wait3;	lalf dsubm csla;	reg;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	;		lal csla csuxa ulsw;	;		;	;
+	;		lbm csla csuxa umsw;	;		;	;	ptr5!sone
+|		start z+z
+	call wait3;	lblf dadd csla csuxa ulsw;;		;	;
+	;		lam csla csuxa umsw;	;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lalf dsub csla csuxa ulsw;;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_5
+	;		lal csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	lpreg!28
+	call wait;	lblf ddiv csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+|		note: we check the msw as a sp!
+	;		;			;		;	rcsmsw ptr2;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xda.getz;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_datan_lhilo
+	;		;			;		;	;	ptr5!c_dSCRATCH_5
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dneg csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of -"t" and -hi, -lo
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_datan_mlhilo
+	call xda.getz;	;			;		;	;
+
+xda.e1:
+|*   abs(operand) > 39/16
+	;		;			;		;	rcssp ptr5;	ptr5!dzero
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmpm csla;		;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jgt xda.e5;	woea;			;		;	;
+|*   39/16 < abs(operand) <= big
+	;		;			;		;	;
+	;		;			;		;	rcsmsw ptr2;	ptr5!smone
+	;		lbm csla;		reg;		;	rcssp ptr5;
+	;		las csla;		reg;		;	rcslsw ptr2;	lpreg!28
+	call wait;	lblf ddiv csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_5
+	;		csuxa ulsw;		;		;	ptr5;
+|		pass value of "t"
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+xda.e6:
+	;		;			;		;	rcsmsw ptr2;
+	;		lam csla;		reg;		;	rcslsw ptr2;
+	call wait3;	lalf dcmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xda.getz;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_datan_20
+	;		;			;		;	;	ptr5!c_datan_m20
+	call xda.getz;	;			;		;	;
+
+xda.e5:
+|*   abs(operand) > big
+|		(we already checked for NaN's)
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;	ptr5!c_dSCRATCH_5
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcsmsw ptr5;
+	;		;			;		recoe recclk;ramwe ptr5;
+	;		;			;		recoe;	ramwe rcslsw ptr5;
+	call xda.e6;	;			;		recoe;	ramwe ptr5;
+
+|*   finished with argument reduction;  compute z now
+xda.getz:
+|		We need to get at (ptr5) and (ptr5-) so we copy (ptr5)
+|		to ptr1, and (ptr5-) to 3
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;	ptr5-
+	;		;			;		;	ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	;		;			;		recoe;	ramwe ptr1;
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;	ptr5!c_dSCRATCH_3
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcsmsw ptr5;
+	;		;			;		recoe recclk;ramwe ptr5;
+	;		;			;		recoe;	ramwe rcslsw ptr5;
+	;		;			;		recoe;	ramwe ptr5;	ptr5!c_dSCRATCH_5
+	;		;			;		;	rcsmsw ptr5;
+	;		lam cslm;		reg;		;	rcslsw ptr5;
+	;		lal cslm;		reg;		;	rcslsw ptr5;	lpreg!11
+	;		lbl cslm;		reg;		;	rcsmsw ptr5;	ptr5!c_datan_c11
+	call wait4;	lbmf dmul cslm;		reg;		;	;
+	call dexpansion2;;			;		;	;
+	call wait4;	;			;		;	;
+	;		lam cslm csuxm umsw;	;		;	;	ptr5!c_dSCRATCH_5
+	;		lal cslm csuxm ulsw;	;		;	rcslsw ptr5;
+	;		lbl cslm;		reg;		;	rcsmsw ptr5;	ptr5!c_dSCRATCH_3
+|		start t*z
+	call wait3;	lbmf dmul cslm;		reg;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		start z = lo - z
+	call wait3;	lblf dsub csla woem;	;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_5
+	;		lal csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+|		start z = z + t
+	call wait3;	lblf dadd csla;		reg;		;	;
+	;		lbm csla csuxa umsw;	;		;	;
+	;		lbl csla csuxa ulsw;	;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;
+|		start z = hi + z
+	call drtn.inx.soon;lalf dadd csla;	reg;		;	;
+
+|*
+|*		Single Precision e**x-1 Instruction
+|*
+routine xs.ex1 w01000001000 las ssub
+	call stran.start;;			;		;	;
+	;		;			;		;	;	ptr5!c_s87
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	;		csuxa usp;		;		;	;	lpreg!9
+	;		csuxa usp;		;		;	;	ptr5!c_stwopm26
+|*  if the operand was a NaN, then branch
+	jwerr soberr;	woea;			;		;	;
+|*  if abs(operand) > 87 then branch
+	jgt soberr;	woea;			;		;	;
+
+|*   abs(operand) <= 87
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsx1.e1;	woea;			;		;	;
+	call sreturnx;	;			;		;	;
+
+xsx1.e1:
+|		* 2**-26 < abs(x) < 87
+|		if the mode register is not set up with the correct data
+|		then punt
+	;		;			;		;	;	ptr5!c_dmode
+	;		;			;		;	rcssp ptr5;	ptr5!c_dmode_cor
+	;		las csla;		reg;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne soberr;	woea;			;		;	;
+|		proceed with expansion
+	call sexpn;	;			;		;	;
+	call sexps;	;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!c_dSCRATCH_1
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne xsx1.e2;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+|*   n == 0, return real(e)
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	call salu.inx1;	lalf dcvts csla;	reg;		;	;
+
+xsx1.e2:
+	call stwoton;	;			;		;	;
+|stwoton leaves ptr5 at c_dSCRATCH_1 (e)
+	;		;			;		;	rcsmsw ptr5;
+	;		lam cslm;		reg;		;	rcslsw ptr5;
+	;		lal cslm;		reg;		;	;	ptr5!sone
+|		*start dble(p)
+	;		lasf scvtd csla csuxa ulsw;;		;	rcssp ptr5;
+	call wait2;	lbs csla;		reg;		;	;
+|		*start dble(p) - 1(double)
+	;		lf dsub csla csuxa ulsw;;		;	;
+	;		csuxa umsw;		;		;	;
+|		*start dble(p) * e
+	;		lblf dmul cslm woea;	;		;	;
+	;		lbm cslm woea;		;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	call wait2;	lal csla csuxa ulsw;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	call wait3;	lblf dadd csla woem;	;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	call salu.inx1;	lalf dcvts csla csuxa ulsw;;		;	;
+
+|*
+|*	subroutine twoton
+|* Enter with:
+|*	n in c_dSCRATCH_0
+|*
+|* Exit with:
+|*	twoton starting calculation in ALU (MUST unload with ulsw!)
+|*	ptr5 pointing at c_dSCRATCH_1
+|*
+stwoton:
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!c_s127
+	;		las csla;		reg;		;	rcssp ptr5;
+|		*start (n + 127)
+	;		lbsf sadd csla;		reg;		;	;
+	;		;			;		;	;	ptr5!c_stwop23
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+|		*start ((2**23) * (n + 127))
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_1
+	rtn;		lasf scvtint csla woem;	;		;	;
+
+|*
+|*	subroutine expn
+|* Enter with:
+|*	x in recovery register
+|*
+|* Exit with:
+|*	expn in c_dSCRATCH_0
+|*
+sexpn:
+|		*round to nearest int
+	;		lmode3.0 0x0 cslmac;	;		recoe;	;	ptr5!slog2e
+	;		las cslm;		reg;		recoe;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbsf smul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtint csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lalf sfloat csla csuxa ulsw;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+|		*reset the default rounding mode (to 0 for fix operations)
+	rtn;		lmode3.0 0x2 cslmac;	dtor;		;	ramwe ptr5;
+
+|*
+|*	subroutine exps
+|* Enter with:
+|*	x in recovery register
+|*	expn in c_dSCRATCH_0
+|*
+|* Exit with:
+|*	exps in c_dSCRATCH_1
+|*
+sexps:
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!c_dloge2a
+|		*start dble(n)
+	;		lasf scvtd csla;	reg;		;	rcsmsw ptr5;
+	;		lam cslm;		reg;		;	rcslsw ptr5;
+	;		lal cslm;		reg;		;	;
+	;		;			;		recoe;	;
+|		*start dble(x)
+	;		lasf scvtd csla;	reg;		recoe;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start dble(n) * loge2a
+	;		lblf dmul cslm woea;	;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	;		lal csla csuxa ulsw;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start dble(x) - (dble(n) * loge2a)
+	;		lblf dsub csla woem;	;		;	;	ptr5!c_dloge2b
+	;		;			;		;	rcslsw ptr5;
+	;		lal cslm;		reg;		;	rcsmsw ptr5;
+	;		lam cslm;		reg;		;	;
+	;		lf dmul cslm;		;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	;		lal csla csuxa ulsw;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf dsub csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_15
+|		*start y = read(dy)
+	;		lalf dcvts csla csuxa ulsw;;		;	ptr5;
+|		*save dy for later use
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		lbs csla csuxa usp;	;		;	;	ptr5!c_dSCRATCH_14
+	;		;			;		;	ptr5;
+|		*save y for later use
+	;		las cslm woea;		dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_sexpt3
+	;		;			;		;	rcssp ptr5;
+|		*start t(3) + y
+	;		lasf sadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;	ptr5!c_sexpt2
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf sadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;	ptr5!c_sexpt1
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf sadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_13
+	;		;			;		;	ptr5;
+|		*save denominator for later use
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_sexps2
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;	ptr5!c_dSCRATCH_14
+	;		;			;		;	rcssp ptr5;
+	;		lbsf ssub csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;	ptr5!c_sexps1
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf sadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_13
+	;		las csla csuxa usp;	;		;	rcssp ptr5;
+	;		lbsf sdiv csla;		reg;		;	;	lpreg!13
+sexps.e1:
+	jloop sexps.e1;	;			;		;	;
+	;		;			;		;	;	lpreg-
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm csuxm usp;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtd csla woem;	;		;	;	ptr5!c_dSCRATCH_15
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	;		lbl csla;		reg;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	;		lalf dadd csla csuxa ulsw;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_1
+	;		csuxa ulsw;		;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	rtn;		;			dtor;		;	ramwe ptr5;
+
+|*
+|*		Double Precision e**x-1 Instruction
+|*
+routine xd.ex1 w01000001001 lnop ssub
+	call dtran.start;;			;		;	;
+|*		calculate e**x - 1 of ptr1
+	;		;			;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;	ptr5!c_d708
+	;		lal csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmpm csla;	reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;	ptr5!c_dtwopm54
+|*   if the operand was a NaN, branch
+	jwerr doberr;	woea;		;		;	;
+|*   if abs(operand) > 708 then branch
+	jgt doberr;	woea;		;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmpm csla;	reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jle dreturnx;	woea;			;		;	;
+
+|*   2**-54 < abs(x) < 708
+	call dexpapprox;;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_8
+	jeq xde1.zero;	woea;			;		;	;
+	jgt xde1.npos;	woea;			;		;	;
+xde1.nneg:
+|		*y = y + yc
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;	ptr5!c_dSCRATCH_7
+	;		lal csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dadd csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!smone
+	;		las csla;		reg;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_7
+	jne xde1.nnm1;	woea;			;		;	;
+|*  n == -1
+	;		;			;		;	rcsmsw ptr5;
+	;		lam cslma;		reg;		;	rcslsw ptr5;	ptr5!shalf
+	;		lal cslma;		reg;		;	rcssp ptr5;
+	call wait5;	lbsf dmul cslm;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	;		lal csla woem;		;		;	;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call drtn.inx.soon;lf dsub csla;	;		;	;
+
+|*   n != -1
+xde1.nnm1:
+	call dtwoton;	;			;		;	;
+	call wait2;	;			;		;	;
+	call wait1;	csuxa ulsw;		;		;	;
+	;		lam cslm woea;		;		;	;	ptr5!dzero
+	;		;			;		;	rcslsw ptr5;	ptr5!sone
+	;		lal cslm;		reg;		;	rcssp ptr5;	ptr5!c_dSCRATCH_7
+	;		las csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dadd csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	call wait5;	lblf dmul cslm woea;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	;		lal csla woem;		;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call drtn.inx.soon;lf dsub csla;	;		;	;
+
+xde1.npos:
+|*   n > 0
+	;		;			;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;	ptr5!c_dSCRATCH_7
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne xde1.nn1;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;	ptr5!shalf
+	;		lam csla;		reg;		;	rcssp ptr5;	ptr5!c_dSCRATCH_7
+	;		lbs csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dadd csla;		reg;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_8
+	;		lal csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	ptr5!stwo
+|		*start (.5+y) + yc
+	call wait2;	lblf dadd csla;		reg;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las cslm csuxa umsw;	reg;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	;		lblf dmul cslm woea;	;		;	;
+dwrite1m:
+	call wait4;	;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+	call dreturninexact;;			dtor;		;	ramwe ptr1;
+
+xde1.nn1:
+|		*y = y + yc
+	;		;			;		;	;	ptr5!c_dSCRATCH_8
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;	ptr5!c_dSCRATCH_7
+	;		lal csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dadd csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_dSCRATCH_0
+	call dtwoton;	;			;		;	;
+	call wait2;	;			;		;	;
+	;		csuxa ulsw;		;		;	;	ptr5!c_dSCRATCH_9
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!c_s53
+	;		las csla;		reg;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_9
+	jgt xde1.ng53;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;	ptr5!dzero
+|*   n <= 53
+|		*Note that we load both ALU, MUL
+	;		lam cslma;		reg;		;	rcslsw ptr5;	ptr5!c_dSCRATCH_7
+	;		lal cslma;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;	ptr5!sone
+|		*start p * y
+	;		lblf dmul cslm;		reg;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+|		*start p - 1
+	call wait3;	lf dsub csla;		;		;	;
+	;		lam csla csuxma umsw;	;		;	;
+	;		lal csla csuxma ulsw;	;		;	;
+	;		lbm csla woem;		;		;	;
+	call drtn.inx.soon;lblf dadd csla woem;	;		;	;
+
+|*  n == 0
+xde1.zero:
+|		*y = y + yc
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;	ptr5!c_dSCRATCH_7
+	;		lal csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call drtn.inx.soon;lblf dadd csla;	reg;		;	;
+
+|*  n > 53
+xde1.ng53:
+	;		lam cslm;		reg;		;	rcslsw ptr5;	ptr5!c_dSCRATCH_7
+	;		lal cslm;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;	ptr5!sone
+	call wait4;	lblf dmul cslm;		reg;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	call wait3;	lalf dsub csla woem;	;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_9
+	;		lal csla csuxa ulsw;	;		;	rcsmsw ptr5;	ptr5!dzero
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call drtn.inx.soon;lblf dadd csla;	reg;		;	;
+
+|*
+|*	double precision expapprox
+|*  enter with:
+|*	x pointed to by ptr1
+|*  exit with:
+|*	n in c_dSCRATCH_0
+|*	y in c_dSCRATCH_7
+|*	yc in c_dSCRATCH_8
+|*
+dexpapprox:
+|*	first calculate n
+	;		;			;		;	rcsmsw ptr1;
+	;		lam cslm;		reg;		;	rcslsw ptr1;	ptr5!dlog2e
+	;		lal cslm;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+|		*round to nearest int
+	;		lmode3.0 0x0 csla;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	;		lalf dcvtint csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lalf sfloat csla csuxa ulsw;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+|		*reset the default rounding mode (to 0 for fix operations)
+	;		lmode3.0 0x2 csla;	;		;	ptr5;
+	;		las cslm woea;		dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_dloge2a
+|*	next calculate y1
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;
+	;		lal csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf dsub csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lam csla csuxa umsw;	;		;	;	ptr5!c_dSCRATCH_7
+	;		lal csla csuxa ulsw;	;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_dSCRATCH_0
+|*	next calculate y
+	;		;			;		;	rcssp ptr5;	ptr5!c_dloge2b
+	;		las cslm;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;	ptr5!c_dSCRATCH_8
+	;		csuxm ulsw;		;		;	ptr5;
+	;		lbm csla woem;		dtor;		;	ramwe rcsmsw ptr5;
+	;		lblf dsub csla woem;	dtor;		;	ramwe rcslsw ptr5;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbm csla csuxa umsw;	dtor;		;	ramwe ptr5;
+	;		lbl csla csuxa ulsw;	;		;	;
+	;		lam cslm woea;		;		;	;
+	;		lal cslm woea;		;		;	;	ptr5!c_dexpt5
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lalf dadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (t5+y)
+	;		lblf dmul cslm woea;	;		;	;	ptr5!c_dexps4
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+|		*start s4 - y
+	;		lalf dsub csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	;		lal csla woem;		;		;	;	ptr5!c_dexpt4
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+|		*start t4 + y*(t5+y)
+	;		lblf dadd csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (s4-y)
+	;		lblf dmul cslm woea;	;		;	;	ptr5!c_dexps3
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (t4+y*(t5+y))
+	;		lblf dmul cslm woea;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start s3 + y*(s4-y)
+	;		lblf dadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	;		lal csla woem;		;		;	;	ptr5!c_dexpt3
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+|		*start t3 + y*(...)
+	;		lblf dadd csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (s3+(y*...))
+	;		lblf dmul cslm woea;	;		;	;	ptr5!c_dexps2
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (t3+...)
+	;		lblf dmul cslm woea;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start s2 + y*(...)
+	;		lblf dadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_dexpt2
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start t2 + y*(...)
+	;		lblf dadd csla woem;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (s2+...)
+	;		lblf dmul cslm woea;	;		;	;	ptr5!c_dexps1
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (t2+...)
+	;		lblf dmul cslm woea;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start s1 + y*(...)
+	;		lblf dadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_dexpt1
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start t1 + y*(...)
+	;		lblf dadd csla woem;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+|		*start y * (s1+...)
+	;		lblf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		lbm csla csuxa umsw;	;		;	;
+	;		lbl csla csuxa ulsw;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	;		lam csla woem;		;		;	;
+|		*start y * (s1 + ...)/(t1 + ...)
+	;		lalf ddiv csla woem;	;		;	;	lpreg!28
+dexp.div:
+	jloop dexp.div;	;			;		;	;
+	;		;			;		;	;	lpreg-
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	;		lblf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_8
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	;		lbl csla;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	;		lalf dsub csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woea;			dtor;		;	ramwe rcslsw ptr5;
+	rtn;		;			dtor;		;	ramwe ptr5;
+
+|*
+|*	double precision twoton
+|*  enter with:
+|*	n in c_dSCRATCH_0 (single precision)
+|*  exit with:
+|*	ALU starting
+|*
+dtwoton:
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!c_s1023
+	;		las csla;		reg;		;	rcssp ptr5;
+	;		lbsf sadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_stwop20
+	;		;			;		;	rcssp ptr5;
+	;		las cslm csuxa usp;	reg;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	rtn;		lasf scvtint csla woem;	;		;	;
+
+|*
+|*		Single Precision ln(1+x) Instruction
+|*
+routine xs.ln1 w01000001010 lnop ssub
+	call stran.start;;			;		;	;
+	;		;			;		;	;	ptr5!c_stwopm25
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	;		csuxa usp;		;		;	;	lpreg!9
+	;		csuxa usp;		;		;	;	ptr5!c_ssqrthalfm1
+|*  if the operand was a NaN, then branch
+	jwerr soberr;	woea;			;		;	;
+|*  if abs(operand) >= 2**-25 then branch
+	jge xsln1.e1;	woea;			;		;	;
+	call sreturnx;	;			;		;	rcssp ptr5;
+
+|*   abs(operand) >= 2**-25
+xsln1.e1:
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!c_ssqrt2m1
+	jle xsln1.e2	;woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsln1.e2	;woea;			;		;	;
+	call slogapprox;;			;		;	;
+	call salu.inx2;	;			;		;	;
+
+|*
+|*		Double Precision ln(1+x) Instruction
+|*
+routine xd.ln1 w01000001011 lnop ssub
+	call dtran.start;;			;		;	;
+	;		;			;		;	rcsmsw ptr1;
+	;		lam cslma;		reg;		;	rcslsw ptr1;	ptr5!c_dtwopm54
+	;		lal cslma;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+|		*save ptr2 for later comparison
+	;		lblf dcmp csla;		reg;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;	ptr5!c_dSCRATCH_6
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcsmsw ptr5;
+	;		csuxa umsw;		;		recoe recclk;ramwe ptr5;
+	;		;			;		recoe;	ramwe rcslsw ptr5;
+	jle xdln1.e1;	woea;			;		recoe;	ramwe ptr5;
+	;		;			;		;	;	ptr5!c_dsqrt2m1
+	;		;			;		;	rcsmsw ptr5;
+|		*x > 2**-54
+	;		lbm csla;		reg;		;	rcslsw ptr5;	ptr5!c_dsqrt8m1
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jlt xdln1.br2;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;	ptr5!sone
+	jlt xdln1.br31;	woea;			;		;	;
+	jwerr doberr;	woea;			;		;	;
+xdln1.br4:
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dadd csla;		;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call dlog.entry;;			dtor;		;	ramwe ptr1;
+
+xdln1.br2:
+	call dlogapprox;;			;		;	;
+	call wait2;	;			;		;	;
+	;		;			;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;
+	;		lal csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	call drtn.inx.soon;lblf dadd csla woem;	;		;	;
+
+xdln1.e1:
+	;		;			;		;	;	ptr5!c_dmtwopm54
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	ptr5!c_dsqrthalfm1
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jge xdln1.br1;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	ptr5!c_dsqrteighthm1
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jge xdln1.br2;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jle xdln1.br4;	woea;			;		;	;
+	;		;			;		;	;	ptr5!sone
+
+xdln1.br32:
+	;		;			;		;	;	ptr5!stwo
+	;		;			;		;	rcssp ptr5;	ptr5!sone
+	call wait4;	lbsf dmul cslm;		reg;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	call wait3;	lblf dadd csla woem;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call dlogapprox;;			dtor;		;	ramwe ptr1;
+	call wait1;	;			;		;	;
+	;		;			;		;	;	ptr5!c_dloge2b
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	;		lbl csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;	ptr5!stwo
+	;		lalf dsub csla woem;	;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_dSCRATCH_6
+	;		las cslm;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		lbm csla csuxa umsw;	;		;	;	ptr5!c_dloge2afrom1
+	;		lbl csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dadd csla;		reg;		;	;
+	;		lbm csla csuxma umsw;	;		;	;
+	;		lbl csla csuxma ulsw;	;		;	;
+	;		lam csla woem;		;		;	;
+	call drtn.inx.soon;lalf dadd csla woem;	;		;	;
+
+xdln1.br1:
+	call wait3;	lf dcmp0 csla;		;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jeq dreturnzerostat;woea;		;		;	;
+	call dreturninexact;;			;		;	;
+
+xdln1.br31:
+	;		;			;		;	;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;	ptr5!smhalf
+	call wait4;	lbsf dmul cslm;		reg;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	call wait3;	lalf dadd csla woem;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call dlogapprox;;			dtor;		;	ramwe ptr1;
+	call wait1;	;			;		;	;
+	;		;			;		;	;	ptr5!c_dloge2b
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	;		lbl csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;	ptr5!shalf
+	;		lalf dadd csla woem;	;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_dSCRATCH_6
+	;		las cslm;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		lbm csla csuxa umsw;	;		;	;	ptr5!c_dloge2amhalf
+	;		lbl csla csuxa ulsw;	;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dadd csla;		reg;		;	;
+	;		lbm csla csuxma umsw;	;		;	;
+	;		lbl csla csuxma ulsw;	;		;	;
+	;		lam csla woem;		;		;	;
+	call drtn.inx.soon;lalf dadd csla woem;	;		;	;
+
+|*
+|*		Single Precision e**x Instruction
+|*
+routine xs.ex w01000001100 lnop ssub
+	call stran.start;;			;		;	;
+	;		;			;		;	;	ptr5!c_s87
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	;		csuxa usp;		;		;	;	lpreg!9
+	;		csuxa usp;		;		;	;	ptr5!c_stwopm13
+|*  if the operand was a NaN, then branch
+	jwerr soberr;	woea;			;		;	;
+|*  if abs(operand) > 87 then branch
+	jgt xsx.t1;	woea;			;		;	;
+
+|*   abs(operand) <= 87
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmpm csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsx.e1;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_dmode
+|*   abs(operand) < 2**-13 : return 1 + x
+	call wait3;	lf scmp0 csla;		;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!sone
+	jeq sreturnx1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	call salu.inx1;	lbsf sadd csla;		reg;		;	;
+
+xsx.t1:
+|		* abs(x) > 87
+|		if x < -87 and if mode == fast then return zero; else punt
+	call wait3;	lf scmp0 csla;		;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dmode
+	;		;			;		;	;
+	jgt soberr;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_dmode_fast
+	;		las csla;		reg;		;	rcssp ptr5;	ptr5!szero
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne soberr;	woea;			;		;	;
+	;		;			;		recclk;	rcssp ptr5;
+	;		;			;		recclk;	ptr1;
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	call sreturnexact;;			;		recoe;	ramwe ptr1;
+
+xsx.e1:
+|		* 2**-13 < abs(x) < 87
+|		if the mode register is not set up with the correct data
+|		then punt
+	;		;			;		;	rcssp ptr5;	ptr5!c_dmode_cor
+	;		las csla;		reg;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne soberr;	woea;			;		;	;
+|		proceed with expansion
+	call sexpn;	;			;		;	;
+	call sexps;	;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne xsx.e2;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_1
+|*   n == 0, return real(e) + 1
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lalf dcvts csla;	reg;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	;		;			;		;	;
+	;		lasf sadd csla csuxa usp;;		;	;
+salu.inx1:
+	;		;			;		;	;
+salu.inx2:
+	call wait1;	;			;		;	;
+salu.inx4:
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcssp ptr1;
+	call sreturninexact;;			dtor;		;	ramwe ptr1;
+
+xsx.e2:
+	call stwoton;	;			;		;	;
+|stwoton leaves ptr5 at c_dSCRATCH_1 (e)
+	call wait2;	;			;		;	;
+	call wait1;	csuxa ulsw;		;		;	;
+	;		las cslm woea;		;		;	;	ptr5!c_dSCRATCH_1
+	;		;			;		;	rcsmsw ptr5;	ptr5!sone
+	;		lam csla;		reg;		;	rcssp ptr5;	ptr5!c_dSCRATCH_1
+	;		lbs csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dadd csla;		reg;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	call wait3;	lalf dcvts csla csuxa ulsw;;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	call wait3;	lbsf smul cslm woea;	;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcssp ptr1;
+	call sreturninexact;;			dtor;		;	ramwe ptr1;
+
+|*   call slog with x + 1
+xsln1.e2:
+	;		;			;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf sadd csla;		reg;		;	;
+	call wait1;	las csla csuxa usp;	;		;	;
+	;		woea;			dtor;		recclk;	;
+	call slog.entry;;			dtor;		recclk;	;
+
+|*
+|*		Double Precision e**x Instruction
+|*
+routine xd.ex w01000001101 lnop ssub
+	call dtran.start;;			;		;	;
+|*		calculate e**x of ptr1
+	;		;			;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;
+	;		lal csla;		reg;		;	;
+	;		;			;		;	;	ptr5!c_d708
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmpm csla;	reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;	ptr5!c_dtwopm27
+|*   if the operand was a NaN, branch
+	jwerr doberr;	woea;			;		;	;
+|*   if abs(operand) > 708 then branch
+	jgt xdx.t1;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmpm csla;	reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jle dreturnxp1;	woea;			;		;	;
+
+	call dexpapprox;;			;		;	;
+|		*put 1 + (y + yc) intot ptr1
+	;		;			;		;	;	ptr5!c_dSCRATCH_8
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;	ptr5!c_dSCRATCH_7
+	;		lal csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;	ptr5!sone
+	call wait3;	lblf dadd csla;		reg;		;	;
+	;		lam csla csuxa umsw;	;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lalf dadd csla csuxa ulsw;;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	;		;			dtor;		;	ramwe ptr1;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lasf scmp0 csla;	reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jeq dreturninexact;woea;		;		;	;
+	call dtwoton;	;			;		;	;
+	;		;			;		;	rcsmsw ptr1;
+	;		lam cslm;		reg;		;	rcslsw ptr1;	ptr5!dzero
+	;		lal cslm;		reg;		;	rcslsw ptr5;
+	;		lbl cslm csuxa ulsw;	reg;		;	;
+	;		;			;		;	;
+	call dwrite1m;	lbmf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+
+xdx.t1:
+|		* abs(x) > 708
+|		if x <= -708 and if mode == fast then return zero; else punt
+	call wait3;	lf dcmp0 csla;		;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dmode
+	;		;			;		;	;
+	jgt doberr;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!c_dmode_fast
+	;		las csla;		reg;		;	rcssp ptr5;	ptr5!dzero
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jne doberr;	woea;			;		;	;
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;
+	;		;			;		;	ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	call dreturnzerostat;;			;		recoe;	ramwe ptr1;
+
+
+dreturnxp1:
+	;		;			;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dadd csla;		;		;	;
+	;		csuxa umsw;		;		;	;
+	;		lf dcmp0 csla csuxa ulsw;;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	;		;			dtor;		;	ramwe ptr1;
+	;		csuxa ulsw;		;		;	;
+	;		;			;		;	;
+	jne dreturninexact;woea;		;		;	;
+	call dreturnexact;;			;		;	;
+
+
+|*
+|*		Single Precision ln(x) Instruction
+|*
+routine xd.ln w01000001110 lnop ssub
+	call stran.start;;			;		;	;
+slog.entry:
+	;		;			;		;	;	ptr5!ssqrthalf
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		csuxa usp;		;		;	;	ptr5!ssqrt2
+|*  if the operand was a NaN, then branch
+	jwerr soberr;	woea;			;		;	;
+|*  if abs(operand) < sqrt(1/2) then branch
+	jle xsln.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5!sone
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt xsln.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf ssub csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	;		woea;			dtor;		recclk;	;
+	call slogapprox;;			dtor;		recclk;	;
+	call wait2;	;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+
+xsln.e1:
+	;		;			;		;	;	ptr5!sminnorm
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_smaxln
+	jwerr soberr;	woea;			;		;	;
+	jlt soberr;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	jgt soberr;	woea;			;		;	;
+	call sgetmexp;	;			;		;	;
+	call stwoton;	;			;		;	;
+	;		;			;		;	;
+	;		;			;		recoe;	;
+	;		las cslm;		reg;		recoe;	;
+	call wait1;	csuxa ulsw;		;		;	;
+|		*start x * twoton(-n)
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;	ptr5!ssqrt2
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	;		las cslm csuxm usp;	;		;	;	ptr5!c_dSCRATCH_10
+	;		;			;		;	ptr5;
+	;		lasf scmp csla woem;	dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+	;		;			;		;	;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;
+	;		lbsf smul cslm csuxa usp;reg;		;	;
+	;		;			;		;	;
+	jle xsln.e2;	woea;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;	ptr5!c_dSCRATCH_10
+	;		;			;		;	ptr5;
+	;		woem;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;
+|		*start m = m - 1 (m is -n)
+	call wait3;	lasf ssub csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;
+
+xsln.e2:
+	;		;			;		;	;	ptr5!c_dSCRATCH_10
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;	ptr5!sone
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf ssub csla;		reg;		;	;
+	call wait1;	csuxa usp;		;		;	;
+	;		woea;			dtor;		recclk;	;
+	;		;			dtor;		;	;
+	;		;			;		recclk;	;
+	call slogapprox;;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;	ptr5!c_sloge2b
+	;		las csla csuxa usp;	;		;	rcssp ptr5;
+	call wait3;	lbsf smn cslm;		reg;		;	;
+	call wait1;	csuxm usp;		;		;	;
+|		*start (-(-n) * loge2b) + logapprox(p-1)
+	;		lbsf sadd csla woem;	;		;	;	ptr5!c_sloge2a
+	;		;			;		;	rcssp ptr5;
+|		*start -(-n) * loge2a
+	call wait1;	lbsf smn cslm;		reg;		;	;
+	call wait1;	las csla csuxa usp;	;		;	;
+	call wait1;	csuxm usp;		;		;	;
+|		*start (n*loge2a) + (n*loge2b + logapprox(p-1))
+	call salu.inx1;	lbsf sadd csla woem;	;		;	;
+
+|*
+|*	subroutine get minus exponent
+|* Enter with:
+|*	x in recovery register
+|*
+|* Exit with:
+|*	result in c_dSCRATCH_0
+|*	  (Note that the result is the negative of the exponent!)
+|*
+sgetmexp:
+	;		;			;		recoe;	;
+	;		lalf sfloat csla;	reg;		recoe;	;
+	;		;			;		;	;	ptr5!c_stwopm23
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtint csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lalf sfloat csla csuxa ulsw;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_s127
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		lbsf ssub csla csuxa usp;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	rtn;		;			dtor;		;	ramwe ptr5;
+
+
+|*
+|*	subroutine logapprox
+|* Enter with:
+|*	x in recovery register
+|*
+|* Exit with:
+|*	result being calculated in ALU
+|*
+slogapprox:
+	;		;			;		recoe;	;	ptr5!stwo
+	;		las csla;		reg;		recoe;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbsf sadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbsf sdiv csla csuxa usp;;		;	;	lpreg!13
+slogap.e1:
+	jloop slogap.e1;;			;		;	;
+	;		;			;		;	;	lpreg-
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_9
+	;		csuxa usp;		;		;	ptr5;
+|		*save this in temp9 for later use
+	;		las cslm woea;		dtor;		;	ramwe rcssp ptr5;
+	;		lbsf smul cslm woea;	dtor;		;	ramwe ptr5;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_slogs3
+	;		las cslm csuxm usp;	;		;	rcssp ptr5;
+|		*start z2 * s(3)
+	;		lbsf smul cslm;		reg;		;	;
+	;		;			;		;	;	ptr5!c_slogs2
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+|		*start s(2) + (z2 * s(3))
+	;		lbsf sadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+|		*start z2 * (s2+z2*s3)
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;	ptr5!c_slogs1
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf sadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+|		*start z2 * (s1+z2*(s2+z2*s3))
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		recoe;	;
+	;		las csla;		reg;		recoe;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf ssub csla woem;	;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_9
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+|		*start z * (x-z2 ...
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+|		*we clock status here for ln (this will generate exact for
+|		*ln(1) and inexact for most other cases (all other cases
+|		*should be inexact))
+	rtn jwerr werr cstat;lbsf ssub csla woem;;		;	;
+
+|*
+|*		Double Precision ln(x) Instruction
+|*
+routine xd.ln w01000001111 lnop ssub
+	call dtran.start;;			;		;	;
+dlog.entry:
+	;		;			;		;	rcsmsw ptr1;	ptr5!dsqrthalf
+	;		lam csla;		reg;		;	rcslsw ptr1;
+	;		lal csla;		reg;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;	ptr5!dsqrt2
+|*  if the operand is a NaN, then branch
+	jwerr doberr;	woea;			;		;	;
+|*  if x < sqrt(1/2) then branch
+	jle xdln.e1;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		;			;		;	;	ptr5!sone
+	jgt xdln.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dsub csla;		;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	jne xdln.inx;	woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	;		;			dtor;		;	ramwe ptr1;
+	call dlogapprox;;			;		;	;
+	;		;			;		;	;	ptr5!c_szerostat
+	;		;			;		recclk;	rcssp ptr5;
+xdln.inxrtn:
+	;		;			;		;	;
+	jwerr drestor.r1 cstat restore;;	;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;
+	;		lal csla csuxm umsw;	reg;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	call wait3;	lblf dadd csla woem;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+
+xdln.inx:
+|*  generate inexact status
+	;		;			dtor;		;	ramwe ptr1;
+	call dlogapprox;;			;		;	;
+	;		;			;		;	;	ptr5!c_sinexact
+	call xdln.inxrtn;;			;		recclk;	rcssp ptr5;
+
+xdln.e1:
+	;		;			;		;	;	ptr5!dminnorm
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!c_dmaxln
+	;		;			;		;	;
+	jlt doberr;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jgt doberr;	woea;			;		;	;
+	call dgetmexp;	;			;		;	;
+	call dtwoton;	;			;		;	;
+	;		;			;		;	rcsmsw ptr1;
+	;		lam cslm;		reg;		;	rcslsw ptr1;	ptr5!dzero
+	;		lal cslm;		reg;		;	rcslsw ptr5;
+	;		lbl cslm csuxa ulsw;	reg;		;	;
+	;		;			;		;	;
+|		*start x * twoton(-n)
+	;		lbmf dmul cslm woea;	;		;	;	ptr5!dsqrt2
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	;		lbl csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lam cslm csuxm umsw;	;		;	;	ptr5!c_dSCRATCH_10
+	;		lal cslm csuxm ulsw;	;		;	ptr5;
+|		*save p in c_dSCRATCH_10
+	;		lam csla woem;		dtor;		;	ramwe rcsmsw ptr5;
+	;		lalf dcmp csla woem;	dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!shalf
+	;		;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbsf dmul cslm csuxa umsw;reg;		;	;	ptr5!c_dSCRATCH_10
+	;		;			;		;	;
+	jle xdln.e2;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_10
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr5;
+	;		woem;			dtor;		;	ramwe rcsmsw ptr5;
+	;		woem;			dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!sone
+	;		;			;		;	rcssp ptr5;	ptr5!c_dSCRATCH_0
+
+	;		lbs csla;		reg;		;	rcssp ptr5;
+|		*start m = m - 1 (m is -n)
+	call wait3;	lasf ssub csla;		reg;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!c_dSCRATCH_10
+
+xdln.e2:
+	;		;			;		;	rcsmsw ptr5;	ptr5!sone
+	;		lam csla;		reg;		;	rcssp ptr5;	ptr5!c_dSCRATCH_10
+	;		lbs csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lalf dsub csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr1;
+	;		woea;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woea;			dtor;		;	ramwe rcslsw ptr1;
+	call dlogapprox;;			dtor;		;	ramwe ptr1;
+	call wait2;	;			;		;	;
+	;		;			;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	rcssp ptr5;	ptr5!c_dloge2b
+	;		las cslm;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+|		*start dble(n) * dloge2b
+	;		lblf dmn cslm;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+	call wait1;	lal csla woem;		;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+|		*start (n*loge2b + logapprox(p))
+	;		lblf dadd csla woem;	;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		las cslm;		reg;		;	;
+	;		lbm csla csuxa umsw;	;		;	;
+	;		lbl csla csuxa ulsw;	;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;	ptr5!c_dloge2a
+	;		lalf dadd csla;		reg;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+|		*start dble(n) * dloge2a
+	;		lblf dmn cslm;		reg;		;	;
+	;		;			;		;	;
+	;		lbm csla csuxa umsw;	;		;	;
+	call wait2;	lbl csla csuxa ulsw;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;
+|		*start (n*loge2a) + (n*loge2b + logapprox(p))
+	call drtn.inx.soon;lalf dadd csla woem;	;		;	;
+
+|*
+|*	subroutine get minus exponent
+|* Enter with:
+|*	x at ptr1
+|*
+|* Exit with:
+|*	result in c_dSCRATCH_0 (single precision)
+|*	  (Note that the result is the negative of the exponent!)
+|*
+dgetmexp:
+	;		;			;		;	rcsmsw ptr1;
+	;		lalf sfloat csla;	reg;		;	;	ptr5!c_stwopm20
+	;		;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtint csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lalf sfloat csla csuxa ulsw;;		;	;	ptr5!c_s1023
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;
+	;		lbsf ssub csla csuxa usp;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	rtn;		;			dtor;		;	ramwe ptr5;
+
+
+|*
+|*	subroutine logapprox
+|* Enter with:
+|*	x ptr1
+|*
+|* Exit with:
+|*	result being calculated in MUL
+|*
+dlogapprox:
+	;		;			;		;	rcsmsw ptr1;	ptr5!stwo
+	;		lam csla;		reg;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	rcslsw ptr1;
+	;		lalf dadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbm csla csuxa umsw;	;		;	;
+	;		lblf ddiv csla csuxa ulsw;;		;	;	lpreg!28
+dlogap.e1:
+	jloop dlogap.e1;;			;		;	;
+	;		;			;		;	;	lpreg-
+	;		csuxa umsw;		;		;	;	ptr5!c_dSCRATCH_9
+	;		csuxa ulsw;		;		;	ptr5;
+|		*save z in temp9 for later use
+	;		lam cslm csuxa umsw woea;dtor;		;	ramwe rcsmsw ptr5;
+	;		lal cslm csuxa ulsw woea;dtor;		;	ramwe rcslsw ptr5;
+	;		lbm cslm woea;		dtor;		;	ramwe ptr5;
+	;		lblf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lam cslm csuxm umsw;	;		;	;	ptr5!c_dlogs7
+	;		lal cslm csuxm ulsw;	;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;	lpreg!6
+dlogapp.lp:
+	;		;			;		;	;
+	;		;			;		;	;	ptr5-
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla;		reg;		;	;	lpreg-
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf dadd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	jloop dlogapp.lp;lbm cslm woea;		;		;	;
+	;		lblf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	rcsmsw ptr1;
+	;		lbm csla;		reg;		;	rcslsw ptr1;
+	;		lbl csla;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lam csla woem;		;		;	;	ptr5!c_dSCRATCH_9
+	;		lalf dsub csla woem;	;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lam cslm;		reg;		;	rcslsw ptr5;
+	;		lal cslm;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	rtn;		lblf dmul cslm woea;;	;	;
+
+|* for sincos we must also restore reg4
+restor.r41:
+	;		;			;		;	;	ptr5!c_dSCRATCH_11
+	;		;			;		recclk;	rcssp ptr5;
+	;		;			;		recclk;	ptr4;
+	;		;			;		recoe;	ramwe rcssp ptr4;
+	;		;			;		recoe;	ramwe ptr4;
+|*	after writing into reg 1, we want to restore it
+restor.r1:
+	;		;			;		;	;	ptr5!c_dSCRATCH_4
+	;		;			;		recclk;	rcssp ptr5;
+	;		;			;		recclk;	ptr1;
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	call hang;	;			;		recoe;	ramwe ptr1;
+
+|* this is used for sincos
+drestor.r41:
+	;		;			;		;	;	ptr5!c_dSCRATCH_11
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;
+	;		;			;		;	ptr4;
+	;		;			;		recoe;	ramwe rcsmsw ptr4;
+	;		;			;		recoe recclk;ramwe ptr4;
+	;		;			;		recoe;	ramwe rcslsw ptr4;
+	;		;			;		recoe;	ramwe ptr4;
+drestor.r1:
+	;		;			;		;	;	ptr5!c_dSCRATCH_4
+	;		;			;		recclk;	rcsmsw ptr5;
+	;		;			;		recclk;	rcslsw ptr5;
+	;		;			;		;	ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	call hang;	;			;		recoe;	ramwe ptr1;
+
+#ifdef SQRT
+|*
+|*		Single Precision Sqrt
+|*
+routine xs.sqrt w01000010000 lnop ssub
+	call stran.start;;			;		;	;
+	;		;			;		;	;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!stwo
+	jlt ssqrt.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	ptr5!stwo
+	jgt ssqrt.e1;	woea;			;		;	;
+	call ckmode;	;			;		;	;
+|*  .5 < x < 2
+|*  make sure rounding mode is the default (2)
+|*  copy ptr2 to ptr1
+	;		;			;		recclk;	rcssp ptr2;
+	;		;			;		recclk;	ptr1;
+	;		;			;		recoe;	ramwe rcssp ptr1;
+	;		;			;		recoe;	ramwe ptr1;
+|*  now begin sqrt calculation with x in ptr1
+	;		;			;		;	;
+	call ssqrtapprox;;			;		;	;
+	call wait2;	;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+
+
+ssqrt.e1:
+	call wait3;	lf scmp0 csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jeq sreturnx0;	woea;			;		;	;
+	;		;			;		;	ptr1;
+	;		;			;		;	;	ptr5!sminnorm
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		csuxa usp;		;		;	;
+	jwerr soberr;	woea;			;		;	;
+	jlt soberr;	woea;			;		;	;
+	;		;			;		;	;	ptr5!smaxnorm
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jgt soberr;	woea;			;		;	;
+|*  make sure rounding mode is the default (2)
+	;		;			;		;	;	ptr5!c_dmode
+	;		;			;		;	rcssp ptr5;
+	;		las csla;		reg;		;	;	ptr5!c_dmode_cor
+	;		;			;		;	rcssp ptr5;
+	call wait3;	lbsf scmp csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jne soberr;	woea;			;		;	;
+	;		;			;		;	;
+	call sgethalfexp;;			;		;	;
+|		*get result and save it in c_dSCRATCH_15 while negating it
+	;		;			;		recclk;	rcssp ptr5;	ptr5!c_dSCRATCH_15
+	;		lasf sneg csla;		reg;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	call stwoton;	;			dtor;		;	ramwe ptr5;
+	call wait2;	;			;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		las cslm woea;		;		;	;
+	call wait3;	lbsf smul cslm woea;	;		;	;
+	;		las cslm csuxm usp;	;		;	rcssp ptr2;
+	call wait3;	lbsf smul cslm;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcssp ptr1;
+	call ssqrtapprox;;			dtor;		;	ramwe ptr1;
+	call wait2;	;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcssp ptr1;
+	;		;			dtor;		;	ramwe ptr1;	ptr5!c_dSCRATCH_15
+	;		;			;		recclk;	rcssp ptr5;	ptr5!c_dSCRATCH_0
+	;		;			;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	call stwoton;	;			;		recoe;	ramwe ptr5;
+	call wait1;	;			;		;	;
+	;		;			;		;	rcssp ptr1;
+	;		las cslm csuxa ulsw;	reg;		;	;
+	;		;			;		;	;
+	call wait3;	lbsf smul cslm woea;	;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcssp ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+
+
+
+sgethalfexp:
+	;		;			;		recoe;	;
+	;		lalf sfloat csla;	reg;		recoe;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_stwopm24
+	;		;			;		;	rcssp ptr5;
+	;		las cslm csuxa usp;	reg;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtint csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lalf sfloat csla csuxa ulsw;;		;	;
+	;		;			;		;	;	ptr5!c_s63
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	;		lasf ssub csla csuxa usp;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	rtn;		;			dtor;		;	ramwe ptr5;
+|*
+|*		Single Square Root Approximation
+|*
+|*  enter with:
+|*	x in ptr1
+|*  exit with:
+|*	MUL starting last calculation
+|*
+|*
+ssqrtapprox:
+	;		;			;		;	;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;
+|		*Note that we load both the MUL and the ALU
+	;		las cslma;		reg;		;	;
+	;		;			;		;	rcssp ptr1;
+	;		lbsf smul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf scmp csla woem;	dtor;		recclk;	;
+	;		;			dtor;		recclk;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	lpreg!0
+	jge ssqrta.l1;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_ssqrtr3
+	jmp soverlap.expansion;;		;		;	;
+	;		;			;		;	;
+ssqrta.l1:
+	;		;			;		;	;	ptr5!c_ssqrts3
+	jmp soverlap.expansion;;		;		;	;
+
+ssqrta.c1:
+	;		;			;		;	;
+	;		;			;		;	;
+	;		las cslm csuxm usp;	;		recoe;	;
+	;		lbsf smul cslm;		reg;		recoe;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm csuxm usp;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_s3o2
+	;		;			;		;	rcssp ptr5;
+	;		las csla csuxm usp;	reg;		;	;
+	;		;			;		;	;
+	;		lbsf ssub csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		las cslm csuxm usp;	;		;	rcssp ptr1;
+	;		lbsf smul cslm;		reg;		;	;
+	;		;			;		;	;
+|		*round to +infinity for divide
+	;		lmode3.0 0xa csla;	;		;	;
+	;		;			;		;	rcssp ptr1;
+	;		las csla csuxm usp;	reg;		;	;
+	;		;			;		;	;
+	;		lbsf sdiv csla woem;	;		;	;	lpreg!13
+sqrtlp:
+	jloop sqrtlp;	;			;		;	;
+	;		;			;		;	;	lpreg-
+|		*round to zero for add
+	;		lmode3.0 0x6 csla;	;		;	;
+	;		lasf scmp csla csuxa usp;;		;	;
+	;		;			;		;	;
+|		*if divide is inexact, then sqrt is inexact
+	jwerr restor.r1 cstat;woea;		;		;	;
+	;		;			;		;	;
+	;		lf sadd csla csuxa usp;	;		;	;
+	;		;			;		;	;	ptr5!shalf
+	jne ssqrtap.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las cslm csuxa usp;	reg;		;	;
+|		*restore original rounding mode
+	;		lmode3.0 0x2 csla;	;		;	;
+	rtn;		lbsf smul cslm woea;	;		;	;
+
+|*  y != t so we must punt iff inexact mask is set
+ssqrtap.e1:
+	;		;			;		;	;	ptr5!c_sinexact
+	;		;			;		recclk;	rcssp ptr5;
+	;		;			;		;	;	ptr5!shalf
+	jwerr restor.r1 cstat restore;;		;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las cslm csuxa usp;	reg;		;	;
+|		*restore original rounding mode
+	;		lmode3.0 0x2 csla;	;		;	;
+	rtn;		lbsf smul cslm woea;	;		;	;
+
+|*
+|*		Single Precision Overlapped Expansion
+|*
+|*  enter with:
+|*	ptr5 points to s3 (s5, s2, s4, s1)
+|*	x (xreal) is in recovery register
+|*	lpreg contains: 0 for s.p.; 1 for d.p.
+|*
+|*  exit with:
+|*	last multiplication beginning
+|*
+soverlap.expansion:
+	;		;			;		recoe;	;
+|		*Note that we load MUL and ALU both
+	;		las cslma;		reg;		recoe;	;
+	;		;			;		;	rcssp ptr5;	ptr5-
+|		*start xreal * r3
+	;		lbsf smul cslm;		reg;		;	rcssp ptr5;	ptr5-
+|		*start xreal + r5
+	;		lbsf sadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		las csla woem;		;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5-
+|		*start r2 + (xreal * r3)
+	;		lbsf sadd csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+|		*start xreal * (xreal + r5)
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+|		*start xreal * (r2+(xreal*r3))
+	;		lbsf smul cslm woea;	;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		las csla woem;		;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5-
+|		*start r4 + (xreal*(xreal+r5))
+	;		lbsf sadd csla;		reg;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		las csla woem;		;		;	;
+	;		;			;		;	rcssp ptr5;	ptr5-
+|		*start r1 + (xreal*(r2+xreal*r3))
+	;		lbsf sadd csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	;		lbs cslm woea;		;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+this is an illegal loading sequence!
+	jloop0 ssqrta.c1;lasf smul cslm woea;	;		;	;
+	jloop dsqrta.c1;;			;		;	;
+	;		;			;		;	;
+
+|*
+|*		Double Precision Sqrt
+|*
+routine xd.sqrt w01000010001 lnop ssub
+	;		lam csla;		reg;		;	rcslsw ptr2;	ptr5!shalf
+	;		lal csla;		reg;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmp csla;		;		;	;
+	;		csuxa umsw;		;		;	;
+	;		;			;		;	;	ptr5!stwo
+	jlt dsqrt.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	call wait3;	lf dcmp csla;		;		;	;
+	call wait1;	csuxa umsw;		;		;	;
+	jge dsqrt.e1;	woea;			;		;	;
+	;		;			;		;	;
+|*  .5 < x < 2
+	call dtran.start;;			;		;	;
+	call dsqrtapprox;;			;		;	;
+	call wait4;	;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+
+dsqrt.e1:
+	call wait3;	lf dcmp0 csla;		;		;	;
+	;		csuxa umsw;		;		;	;
+	;		;			;		;	;
+	jne dsqrt.e2;	woea;			;		;	;
+|		*x = 0
+	;		;			;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;
+	;		;			;		;	ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	call dreturnzerostat;;			;		recoe;	ramwe ptr1;
+
+dsqrt.e2:
+	;		;			;		;	;	ptr5!dminnorm
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa umsw;		;		;	;	ptr5!dmaxnorm
+	jlt doberr;	woea;			;		;	;
+	jwerr doberr;	woea;			;		;	;
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm csla;		reg;		;	rcslsw ptr5;
+	call wait3;	lblf dcmp csla;		reg;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa umsw;		;		;	;
+	jgt doberr;	woea;			;		;	;
+	call dtran.start;;			;		;	;
+	call dgethalfexp;;			;		;	;
+|		*get result and save it in c_dSCRATCH_15 while negating it
+	;		;			;		recclk;	rcssp ptr5;	ptr5!c_dSCRATCH_15
+	;		lasf sneg csla;		reg;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	call wait1;	;			;		recoe;	ramwe ptr5;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	call dtwoton;	;			dtor;		;	ramwe ptr5;
+	;		;			;		;	;	ptr5!dzero
+	;		;			;		;	rcslsw ptr5;
+	;		lal cslm;		reg;		;	rcslsw ptr5;
+	;		lbl cslm csuxa ulsw;	reg;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lam cslm woea;		;		;	;
+	call wait5;	lbmf dmul cslm woea;	;		;	;
+	;		lam cslm csuxm umsw;	;		;	;
+	;		lal cslm csuxm ulsw;	;		;	rcsmsw ptr2;
+	;		lbm cslm;		reg;		;	rcslsw ptr2;
+	call wait5;	lblf dmul cslm;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+	call dsqrtapprox;;			dtor;		;	ramwe ptr1;
+	call wait4;	;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+	;		;			dtor;		;	ramwe ptr1;	ptr5!c_dSCRATCH_15
+	;		;			;		recclk;	rcssp ptr5;	ptr5!c_dSCRATCH_0
+	;		lasf sneg csla;		reg;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	call dtwoton;	;			;		recoe;	ramwe ptr5;
+	;		;			;		;	rcsmsw ptr1;
+	;		lam cslm;		reg;		;	rcslsw ptr1;	ptr5!dzero
+	;		lal cslm;		reg;		;	rcslsw ptr5;
+	;		lbl cslm csuxa ulsw;	reg;		;	;
+	;		;			;		;	;
+	call wait5;	lbmf dmul cslm woea;	;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	ptr1;
+	;		woem;			dtor;		;	ramwe rcsmsw ptr1;
+	;		woem;			dtor;		;	ramwe rcslsw ptr1;
+	call idle1;	;			dtor;		;	ramwe ptr1;
+
+|*  enter with:
+|*	x in ptr1
+|*  exit with:
+|*	result in c_dSCRATCH_0
+dgethalfexp:
+	;		;			;		;	rcsmsw ptr1;
+	;		lalf sfloat csla;	reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_stwopm21
+	;		;			;		;	rcssp ptr5;
+	;		las cslm csuxa usp;	reg;		;	;
+	;		;			;		;	;
+	;		lbsf smul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtint csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lalf sfloat csla csuxa ulsw;;		;	;
+	;		;			;		;	;	ptr5!c_s511
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	;		lasf ssub csla csuxa usp;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;	ptr5!c_dSCRATCH_0
+	;		;			;		;	ptr5;
+	;		woea;			dtor;		;	ramwe rcssp ptr5;
+	rtn;		;			dtor;		;	ramwe ptr5;
+
+|*
+|*	Double Precision Square Root Approximation
+|*
+|*  enter with:
+|*	x in ptr1
+|*  exit with:
+|*	MUL starting last calculation
+|*
+dsqrtapprox:
+	;		;			;		;	;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	rcsmsw ptr1;
+	;		lbm cslm;		reg;		;	rcslsw ptr1;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;	ptr5!c_dSCRATCH_12
+	;		csuxm ulsw;		;		;	ptr5;
+	;		lam csla woem;		dtor;		;	ramwe rcsmsw ptr5;
+	;		lalf dcvts csla woem;	dtor;		;	ramwe rcslsw ptr5;
+	;		;			dtor;		;	ramwe ptr5;	ptr5!shalf
+	;		;			;		;	rcssp ptr5;
+	;		lbs csla;		reg;		;	;
+	;		lasf scmp csla csuxa usp;;		;	;
+	;		;			;		;	;
+	;		woea;			dtor;		recclk;	;
+	;		;			dtor;		recclk;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;	lpreg!1
+	jge dsqrta.l1;	woea;			;		;	;
+	;		;			;		;	;	ptr5!c_ssqrts3
+	jmp soverlap.expansion;;		;		;	;
+	;		;			;		;	;
+dsqrta.l1:
+	;		;			;		;	;	ptr5!c_ssqrtr3
+	jmp soverlap.expansion;;		;		;	;
+
+dsqrta.c1:
+	;		;			;		;	;
+	;		;			;		;	;
+|!!!???***this stinks; use your brain!
+	;		csuxm usp;		;		;	;
+	;		;			;		;	;
+	;		lasf scvtd csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lam cslm woea;		;		;	;
+	;		lal cslm woea;		;		;	;	ptr5!c_dSCRATCH_12
+	;		;			;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbm cslm csuxm umsw;	;		;	;
+	;		lblf dmul cslm csuxm ulsw;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;	ptr5!c_d3o2
+	;		;			;		;	rcsmsw ptr5;
+	;		lam csla;		reg;		;	rcslsw ptr5;
+	;		lal csla;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf dsub csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	;		lblf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lam cslm csuxm umsw;	;		;	;	ptr5!c_dSCRATCH_12
+	;		lal cslm csuxm ulsw;	;		;	rcsmsw ptr5;
+	;		lbm cslm;		reg;		;	rcslsw ptr5;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lbm cslm csuxm umsw;	;		;	;
+	;		lblf dmul cslm csuxm ulsw;;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf dsub csla woem;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	;		lblf dmul cslm woea;	;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lam cslm csuxm umsw;	;		;	;
+	;		lal cslm csuxm ulsw;	;		;	rcsmsw ptr1;
+	;		lbm cslm;		reg;		;	rcslsw ptr1;
+	;		lblf dmul cslm;		reg;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+|		*round to +infinity for divide
+	;		lmode3.0 0xa csla;	;		;	rcsmsw ptr1;
+	;		lam csla;		reg;		;	rcslsw ptr1;
+	;		lal csla;		reg;		;	;
+	;		csuxm umsw;		;		;	;
+	;		csuxm ulsw;		;		;	;
+	;		lbm csla woem;		;		;	;
+	;		lblf ddiv csla woem;	;		;	;	lpreg!28
+dsqrt.lp:
+	jloop dsqrt.lp;	;			;		;	;
+	;		;			;		;	;	lpreg-
+|		*round to zero for add
+	;		lmode3.0 0x6 csla ;	;		;	;
+	;		lam csla csuxa umsw;	;		;	;
+	;		lalf dcmp csla csuxa ulsw;;		;	;	ptr5!shalf
+	jwerr doberr;	woea;			;		;	;
+	;		;			;		;	;
+	;		;			;		;	;
+	;		lf dadd csla csuxa umsw;;		;	;
+	;		;			;		;	;
+|		*if divide is inexact, then sqrt in inexact
+	jne dsqrtap.e1;	woea;			;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;
+|		*restore original rounding mode
+	;		lmode3.0 0x2 csla;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	rtn;		lblf dmul cslm woea;	;		;	;
+
+dsqrtap.e1:
+|*   y != t so we must punt iff inexact mask is set
+	;		;			;		;	;	ptr5!c_sinexact
+	;		;			;		recclk;	rcssp ptr5;
+	;		;			;		;	;	ptr5!shalf
+	jwerr drestor.r1 cstat restore;;	;		;	;
+	;		;			;		;	rcssp ptr5;
+	;		las cslm;		reg;		;	;
+|		*restore original rounding mode
+	;		lmode3.0 0x2 csla;	;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		lbm cslm woea;		;		;	;
+	rtn;		lblf dmul cslm woea;	;		;	;
+#endif
+
+stran.start:
+	;		;			;		;	;	ptr5!c_dmode
+	;		;			;		;	rcssp ptr5;	ptr5!c_dmode_cor
+	;		las csla;		reg;		;	rcssp ptr5;
+	;		lbsf scmp csla;		reg;		recclk;	rcssp ptr1;	ptr5!c_dSCRATCH_4
+	;		;			;		recclk;	ptr5;
+	;		;			;		recoe;	ramwe rcssp ptr5;
+	;		;			;		recoe;	ramwe ptr5;
+	;		;			;		recclk;	rcssp ptr2;
+	;		las csla;		reg;		recclk;	rcssp ptr2;	ptr5!c_spio4
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jne soberr;	woea;			;		;	;
+	rtn;		;			;		;	;
+
+dtran.start:
+|*  make sure rounding mode is the default (2)
+	;		;			;		;	;	ptr5!c_dmode
+	;		;			;		;	rcssp ptr5;	ptr5!c_dmode_cor
+	;		las csla;		reg;		;	rcssp ptr5;
+|*		save ptr1 in c_dSCRATCH_4
+	;		lbsf scmp csla;		reg;		recclk;	rcsmsw ptr1;
+	;		;			;		recclk;	rcslsw ptr1;	ptr5!c_dSCRATCH_4
+	;		;			;		;	ptr5;
+	;		;			;		recoe;	ramwe rcsmsw ptr5;
+	;		csuxa usp;		;		recoe recclk;ramwe ptr5;
+	;		;			;		recoe;	ramwe rcslsw ptr5;
+	jne doberr;	woea;			;		recoe;	ramwe ptr5;
+|*		save ptr2 in ptr1 (we will overwrite ptr1 later)
+	;		;			;		recclk;	rcsmsw ptr2;
+	;		;			;		recclk;	rcslsw ptr2;
+	;		;			;		;	ptr1;
+	;		;			;		recoe;	ramwe rcsmsw ptr1;
+	;		;			;		recoe recclk;ramwe ptr1;
+	;		;			;		recoe;	ramwe rcslsw ptr1;
+	rtn;		;			;		recoe;	ramwe ptr1;

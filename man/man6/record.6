@@ -1,0 +1,119 @@
+.\" @(#)record.6 1.1 92/07/30 SMI;
+.TH RECORD 6 "10 January 1990"
+.SH NAME
+record \- record an audio file
+.SH SYNOPSIS
+.B record 
+[
+.B \-a
+] [
+.B \-f
+] [
+.BI \-d " dev"
+] [
+.BI \-i " info"
+] [
+.BI \-t " time"
+] [
+.BI \-v " vol"
+] [
+.IR filename
+]
+.SH AVAILABILITY
+.LP
+This command is only available with the
+.I Demos
+installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "record" "" "\fLrecord\fP \(em record an audio file" ""
+.IX "audio" "record audio file" "audio" "record audio file \(em \fLrecord\fP"
+.LP
+.B record
+copies audio data from the audio device to a named audio file.
+The output file will be prefixed by an audio file header.
+The encoding information in this header is taken from the
+configuration of the audio device.
+If no filename is present, or if the
+special filename
+.RB ` \- '
+is specified, output is directed to the
+standard output stream.
+.LP
+Recording begins immediately and continues until a
+.SB SIGINT
+signal (\s-1CTRL-C\s0) is received.
+If the
+.B \-t
+option is specified,
+.I record
+stops when the specified quantity of data has been recorded.
+.LP
+If the audio device is unavailable
+(that is, another process currently has read access),
+.B record
+prints an error message and exits immediately.
+.SH OPTIONS
+.TP 10
+.B \-a
+Append the data on the end of the named audio file.
+The audio encoding of the file must match the audio device configuration.
+.TP
+.B \-f
+Force.
+When the
+.B \-a
+flag is specified, the sample rate of the audio file must match
+the device configuration.  If the
+.B \-f
+flag is also specified, sample rate differences are ignored, with a warning
+message printed to the standard error.
+.TP
+.BI \-d " dev"
+Specify an alternate audio device from which input should be
+taken.
+If the
+.B \-d
+option is not specified,
+.B /dev/audio
+is used as the default audio device.
+.TP
+.BI \-i " info"
+The `information' field of the output file header is set to the string
+specified by the
+.I info
+argument.
+This option may not be specified in conjunction with the
+.B \-a
+argument.
+.TP
+.BI \-t " time"
+The
+.I time
+argument specifies the maximum length of time to record.
+Time may be specified as a floating-point value,
+indicating the number of seconds,
+or in the form:
+.IB hh : mm : ss .\fBdd\fR,
+where hour and minute specifications are optional.
+.TP
+.BI \-v " vol"
+Specify the recording gain.
+.I vol
+is an integer value between 0 and 100, inclusive.
+If this argument is not specified, the input volume will remain at the
+level most recently set by any process.
+.TP
+.B \-?
+.IR Help :
+Print a command line usage message.
+.SH "SEE ALSO"
+.BR play (6)
+.SH WARNINGS
+.LP
+This program is furnished on an 
+.I as is
+basis as a demonstration
+of audio applications programming.

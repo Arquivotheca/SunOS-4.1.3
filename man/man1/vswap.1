@@ -1,0 +1,77 @@
+.\" @(#)vswap.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH VSWAP 1 "10 January 1988"
+.SH NAME
+vswap \- convert a foreign font file
+.SH SYNOPSIS
+.B /usr/lib/vswap
+[
+.B \-r
+]
+.SH AVAILABILITY
+This command is available with the
+.I Versatec
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "vswap command"  ""  "\fLvswap\fP \(em convert foreign font files"
+.IX  "convert foreign font files"  ""  "convert foreign font files \(em \fLvswap\fP"
+.IX  "font" "files, convert foreign \(em \fLvswap\fP"
+.LP
+Without the
+.B -r
+option,
+.B vswap
+translates its standard input (which must be a
+.BR vfont (5)
+file in the reversed-byte order) into a locally correct
+.I vfont
+file on its standard output.  With the
+.B -r
+option,
+.B vswap
+translates its standard input (which must be a
+.B vfont
+file in the local-byte order) into a byte-reversed
+.B vfont
+file on its
+standard output.
+.LP
+The
+.SM UNIX
+system 
+.B vfont
+representation for fonts is a binary file
+containing machine-dependent elements \(em short (16-bit)
+integers, in particular.
+There are (at least) two common ways of representing a 16-bit integer.
+A program compiled
+on a
+.SM VAX
+will expect the
+.SM VAX
+format, while the same program compiled
+on a machine using a Motorola 68000-family processor or a SPARC processor
+will expect the reverse format.
+.B vswap
+can be used to convert font files created on a
+.SM VAX
+to the format
+required to use them on Suns.  (All Suns use the same
+.B vfont
+format, regardless of the native byte order of the processor, including
+Suns that use the Intel 80386 processor.  Programs that will be run on Suns
+that use the Intel 80386 processor must be aware of this, and convert the
+machine-dependent elements when they read or write
+.B vfont
+files.)
+It can also convert Sun-format font files to
+.SM VAX
+format (with the
+.B \-r
+option).
+.SH "SEE ALSO"
+.BR troff (1),
+.BR vfont (5)
+.SH BUGS
+A machine-independent font format should be defined.

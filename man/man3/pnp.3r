@@ -1,0 +1,101 @@
+.\" @(#)pnp.3r 1.1 92/07/30 SMI; from UCB 4.2
+.TH PNP 3R "2 February 1988"
+.SH NAME
+pnp \- automatic network installation
+.SH PROTOCOL
+.B /usr/include/rpcsvc/pnprpc.x
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "pnp()" "" "\fLpnp()\fP \(em automatic network installation"
+.IX "automatic network install"
+.LP
+.B pnp(\|)
+is used during unattended network installation, and routine booting,
+of Sun386i systems on a Sun386i network.
+Each network cable (subnetwork or full network) must have at least one
+.BR pnpd (8C)
+server running on it to support
+.SM PNP\s0.
+.SH PROGRAMMING
+.B #include <rpcsvc/pnprpc.h>
+.LP
+The following
+.SM RPC
+calls are available in version 2 of the
+.SM PNP
+protocol:
+.TP
+.SB NULLPROC
+Finds a
+.SM PNP
+daemon on the local network.  Used with
+.BR clntudp_broadcast(\|) ,
+often to measure network overhead.
+.TP
+.SB PNP_WHOAMI
+Used early in the boot process to acquire network configuration 
+information about a system, or to determine that a system is not known by the 
+network.
+.TP
+.SB PNP_ACQUIRE
+Used to acquire a server willing to 
+configure a new system after a
+.SB PNP_WHOAMI
+request fails.  This
+.SM RPC
+is typically broadcast; any successful reply may be used.
+.TP
+.SB PNP_SETUP
+Requests a network configuration from a
+.SM PNP
+daemon that has responded to a previous
+.SB PNP_ACQUIRE
+.SM RPC.
+.TP
+.SB PNP_POLL
+After a
+.SB PNP_SETUP
+request, if the status is 
+.BR in_progress ,
+the procedure is to wait 20
+seconds, and issue a
+.SB PNP_POLL
+request, and then check the status again.
+Once the status is 
+.BR success ,
+the system will be configured for the network.
+Entries in the yp database may be added or old ones deleted, and
+file storage may be assigned, according to the architecture and boot type.
+.PP
+If the server misses 5 
+.SB PNP_POLL
+requests, it will assume that the client system crashed and
+back out of the procedure.
+Similarly, if the client system does not receive responses from the server 
+for
+.SB PNP_MISSEDPOLLS
+consecutive requests, it should assume the server crashed and begin its
+.SM PNP
+sequence again.
+.LP
+.\"The following XDR routines are available in
+.\".I librpcsvc:
+.\".nf
+.\".ft B
+.\"xdr_pnp_errcode
+.\"xdr_how_to_boot
+.\"xdr_net_type
+.\"xdr_hw_addr
+.\"xdr_pnp_acquire_arg
+.\"xdr_pnp_setup_arg
+.\"xdr_pnp_poll_ret
+.\"xdr_pnp_whoami_arg
+.\"xdr_pnp_whoami_ret
+.\".ft R
+.\".fi
+.SH SEE ALSO
+.BR pnpboot (8C),
+.BR pnpd (8C)

@@ -1,0 +1,131 @@
+.\" @(#)routing.4n 1.1 92/07/30 SMI;
+.TH ROUTING 4N "9 October 1987"
+.SH NAME
+routing \- system supporting for local network packet routing
+.SH DESCRIPTION
+.IX  "routing device"  ""  "\fLrouting\fR \(em local network packet routing"  ""  PAGE START
+.IX  "packet routing device"  ""  "packet routing device \(em \fLrouting\fR"  ""  PAGE START
+.IX  "network packet routing device"  ""  "network packet routing device \(em \fLrouting\fR"  ""  PAGE START
+.LP
+The network facilities provided general packet routing,
+leaving routing table maintenance to applications processes.
+.LP
+A simple set of data structures comprise a ``routing table''
+used in selecting the appropriate network interface when
+transmitting packets.  This table contains a single entry for
+each route to a specific network or host.  A user process,
+the routing daemon, maintains this data base with the aid
+of two socket specific
+.BR ioctl (2)
+.IX  "ioctls for sockets"  "SIOCADDRT"  "\fLioctl\fR's for sockets"  "\fLSIOCADDRT\fR \(em add route"
+.IX  "SIOCADDRT add route"  ""  "\fLSIOCADDRT\fR \(em add route"
+.IX  "add route ioctl"  ""  "add route \fLioctl\fR \(em \fLSIOCADDRT\fR"
+.IX  "routing ioctls"  "SIOCADDRT"  "routing \fLioctl\fR's"  "\fLSIOCADDRT\fR \(em add route"
+.IX  "packet routing ioctls"  "SIOCADDRT"  "packet routing \fLioctl\fR's"  "\fLSIOCADDRT\fR \(em add route"
+.IX  "ioctls for sockets"  "SIOCDELRT"  "\fLioctl\fR's for sockets"  "\fLSIOCDELRT\fR \(em delete route"
+.IX  "SIOCDELRT delete route"  ""  "\fLSIOCDELRT\fR \(em delete route"
+.IX  "delete route ioctl"  ""  "delete route \fLioctl\fR \(em \fLSIOCDELRT\fR"
+.IX  "routing ioctls"  "SIOCDELRT"  "routing \fLioctl\fR's"  "\fLSIOCDELRT\fR \(em delete route"
+.IX  "packet routing ioctls"  "SIOCDELRT"  "packet routing \fLioctl\fR's"  "\fLSIOCDELRT\fR \(em delete route"
+commands,
+.SB SIOCADDRT
+and
+.BR \s-1SIOCDELRT\s0 .
+The commands allow
+the addition and deletion of a single routing
+table entry, respectively.  Routing table manipulations may
+only be carried out by super-user.
+.LP
+A routing table entry has the following form, as defined
+in
+.BR <net/route.h> :
+.RS
+.nf
+.ft B
+struct rtentry {
+	u_long	rt_hash;
+	struct	sockaddr rt_dst;
+	struct	sockaddr rt_gateway;
+	short	rt_flags;
+	short	rt_refcnt;
+	u_long	rt_use;
+	struct	ifnet *rt_ifp;
+};
+.ft R
+.fi
+.RE
+with
+.I rt_flags
+defined from:
+.RS
+.nf
+.ft B
+.\"._d
+#define	\s-1RTF_UP\s0		0x1		/* route usable */
+#define	\s-1RTF_GATEWAY\s0	0x2		/* destination is a gateway */
+#define	\s-1RTF_HOST\s0	0x4		/* host entry (net otherwise) */
+.ft R
+.fi
+.RE
+.LP
+Routing table entries come in three flavors: for a specific
+host, for all hosts on a specific network, for any destination
+not matched by entries of the first two types (a wildcard route).
+When the system
+is booted, each network interface autoconfigured
+installs a routing table entry when it wishes to have packets
+sent through it.  Normally the interface specifies the route
+through it is a ``direct'' connection to the destination host
+or network.  If the route is direct, the transport layer of
+a protocol family usually requests the packet be sent to the
+same host specified in the packet.  Otherwise, the interface
+may be requested to address the packet to an entity different
+from the eventual recipient (that is, the packet is forwarded).
+.LP
+Routing table entries installed by a user process may not specify
+the hash, reference count, use, or interface fields; these are filled
+in by the routing routines.  If
+a route is in use when it is deleted
+.RI ( rt_refcnt
+is non-zero),
+the resources associated with it will not
+be reclaimed until all references to it are removed.
+.LP
+The routing code returns
+.SM EEXIST
+if requested to duplicate an existing entry,
+.SM ESRCH
+if requested to delete a non-existent entry, or
+.SM ENOBUFS
+if insufficient resources were available
+to install a new route.
+.LP
+User processes read the routing tables through the
+.B /dev/kmem
+device.
+.LP
+The
+.I rt_use
+field contains the number of packets sent along the route.
+This value is used to select among multiple
+routes to the same destination.  When multiple routes to
+the same destination exist, the least used route is selected.
+.LP
+A wildcard routing entry is specified with a zero
+destination address value.  Wildcard routes are used
+only when the system fails to find a route to the
+destination host and network.  The combination of wildcard
+routes and routing redirects can provide an economical
+mechanism for routing traffic.
+.IX  "routing device"  ""  "\fLrouting\fR \(em local network packet routing"  ""  PAGE END
+.IX  "packet routing device"  ""  "packet routing device \(em \fLrouting\fR"  ""  PAGE END
+.IX  "network packet routing device"  ""  "network packet routing device \(em \fLrouting\fR"  ""  PAGE END
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/kmem
+.PD
+.SH "SEE ALSO
+.BR ioctl (2),
+.BR route (8C),
+.BR routed (8C)

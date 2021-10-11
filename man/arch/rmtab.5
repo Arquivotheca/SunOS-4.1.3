@@ -1,0 +1,64 @@
+.\" @(#)rmtab.5 1.1 92/07/30 SMI;
+.TH RMTAB 5 "19 October 1987"
+.SH NAME
+rmtab \- local file system mount statistics
+.SH DESCRIPTION
+.IX  "rmtab file"  ""  "\fLrmtab\fP \(em remote mounted file system table"
+.LP
+.B rmtab
+resides in directory
+.B /etc
+and contains a record of all clients
+that have done remote mounts of file systems
+from this machine.  Whenever a remote
+.BR mount (8)
+is done, an entry is made in the
+.B rmtab
+file of the machine serving up that file system.
+.B umount
+removes entries, if of a remotely mounted file system.
+.B umount \-a
+broadcasts to all servers, and informs
+them that they should remove all entries from
+.B rmtab
+created by the sender of the broadcast message.
+By placing a
+.B umount \-a
+command in
+.BR /etc/rc.boot ,
+.B rmtab
+tables can be purged of entries made by a crashed host,
+which upon rebooting did not remount
+the same file systems it had before.
+The table is a series of lines of the form
+.IP
+.IB hostname : directory
+.LP
+This table is used only to preserve
+information between crashes, and is read only by
+.BR mountd (8)
+when it starts up.
+.B mountd
+keeps an in-core table,
+which it uses to handle requests from programs like
+.BR showmount (1)
+and
+.BR shutdown (8).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/rmtab
+.TP
+.B /etc/rc.boot
+.PD
+.IX "files used by programs" "\fL/etc/rmtab\fR \(em list of hosts with local filesystems mounted"
+.SH "SEE ALSO"
+.BR showmount (1),
+.BR mountd (8),
+.BR mount (8),
+.BR shutdown (8)
+.SH BUGS
+Although the
+.B rmtab
+table is close to the truth,
+it is not always 100% accurate.

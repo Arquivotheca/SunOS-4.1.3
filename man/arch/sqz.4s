@@ -1,0 +1,66 @@
+.\" @(#)sqz.4s 1.1 92/07/30 SMI
+.TH SQZ 4S "01 April 1988"
+.SH NAME
+sqz \- driver to reduce available physical memory pages
+.SH SYNOPSIS
+.B pseudo-device
+.BI sqz n
+.SH DESCRIPTION
+.LP
+.B sqz
+is an optional driver used to reduce the number of physical
+memory pages available for any use (system or user).
+It is intended to approximate
+the behavior of a system with less physical memory.
+Alternatives are to patch the kernel variable
+.B physmem
+in
+.B /vmunix
+and reboot, or power down the system and remove memory boards.
+.LP
+Each minor device corresponds to a separate device
+which can independently reserve pages.
+Each device only supports exclusive open; when the device is closed,
+all the pages associated with it are returned to the system.
+.SH IOCTLS
+.LP
+.B sqz
+handles the following ioctl's, defined in
+.BR <sun/sqz.h> :
+.TP
+.SB SQZSET
+Requests a specified number of pages to be allocated.  If fewer pages
+are requested than are currently allocated, the excess pages are
+returned to the system.  If more pages are requested than are currently
+allocated, the balance is atomically allocated.  Note: the
+allocation is atomic, and if more pages are required than are
+on the freelist,
+.B sqz
+will sleep until that many pages are available;
+hence, this ioctl can fail to complete if too many additional
+pages are requested at once.
+.TP
+.SB SQZGET
+Fills in the following struct with the number of pages in each
+category:
+.RS
+.RS
+.sp .5v
+.ft B
+.nf
+struct sqz_status {
+	int count;	/* allocated by this sqz device */
+	int total;	/* allocated by all sqz devices */
+};
+.ft R
+.fi
+.RE
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/sqz*
+.PD
+.SH SEE ALSO
+.BR ioctl (4),
+.BR sqz (8)

@@ -1,0 +1,202 @@
+.\" @(#)getsubopt.3 1.1 92/07/30 SMI;
+.TH GETSUBOPT 3 "6 October 1987"
+.SH NAME
+getsubopt \- parse sub options from a string.
+.SH SYNOPSIS
+.nf
+.ft B
+int getsubopt(optionp, tokens, valuep)
+char	**optionp;
+char	*tokens[];
+char	**valuep;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "getsubopt()" "" "\fLgetsubopt()\fR \(em parse sub options from a string" ""
+.IX "options, parsing" "getsubopt()" "" "\fLgetsubopt()\fR"
+.IX "parse" "suboptions"
+.IX "suboptions" "parse"
+.IX "getopt()" "parse suboptions" "\fLgetopt()\fR" ""
+.LP
+.B getsubopt(\|) 
+is a function to parse suboptions in a flag argument that was initially
+parsed by 
+.BR getopt(3) .
+These suboptions are separated by commas and may consist of either
+a single token,
+or a token-value pair separated by an equal sign. 
+Since commas delimit suboptions in the option string they are not allowed 
+to be part of the suboption or the value of a suboption.
+An example command that uses this syntax is 
+.BR mount(8) ,
+which allows
+you to specify mount parameters with the \fI-o\fP switch as follows :
+.br
+.nf
+	pepper % mount\ \ -o\ \ rw,hard,bg,wsize=1024\ \ speed:/usr\  \ /usr
+.fi
+In this example there are four suboptions:
+`rw',
+`hard',
+`bg',
+and `wsize',
+the last of which has an associated value of 1024.
+.LP
+.B getsubopt(\|)
+takes the address of a pointer to the option string,
+a vector of possible tokens,
+and the address of a value string pointer.
+It returns the index of the token that matched the suboption in the
+input string or -1 if there was no match.
+If the option string at 
+.I *optionp
+contains only one subobtion,
+.B getsubopt(\|)
+updates 
+.I *optionp
+to point to the NUL at the end of the string, 
+otherwise it isolates the suboption by replacing the comma seperator with
+a NUL,
+and updates
+.I *optionp
+to point to the start of the next suboption.
+If the suboption has an associated value,
+.B getsubopt(\|)
+updates
+.I *valuep
+to point to the value's first character. 
+Otherwise it sets
+.I *valuep
+to
+.SM NULL\s0.
+.LP
+The token vector is organized as a series of pointers to null-terminated
+strings. The end of the token vector is identified by a
+.SM NULL
+pointer. 
+.LP
+When 
+.B getsubopt(\|)
+returns,
+if 
+.I *valuep
+is not
+.SM NULL\s0,
+then the suboption processed included a value.
+The calling program may use this information to determine if the
+presence or lack of a value for this subobtion is an error.
+.LP
+Additionally, 
+when 
+.B getsubopt(\|)
+fails to match the suboption with the tokens in the 
+.I tokens 
+array,
+the calling program should decide if this is an error,
+or if the unrecognized option should be passed on to another
+program.
+.SH DIAGNOSTICS
+.B getsubopt(\|)
+returns -1 when the token it is scanning is not in the token vector.
+The variable addressed by 
+.I valuep
+contains a pointer to the first character of the 
+.I token
+that was not recognized rather than a pointer to a value for that token.
+.LP
+The variable addressed by
+.I optionp
+points to the next option to be parsed, 
+or a NUL character if there are no more options.
+.SH EXAMPLE
+The following code fragment shows how you might process options to the 
+\fBmount(8)\fP command using 
+\fBgetsubopt(3)\fP.
+.LP
+.nf
+.ft B
+char *myopts[] = {
+#define READONLY	0
+			"ro",
+#define READWRITE	1
+			"rw",
+#define WRITESIZE	2
+			"wsize",
+#define READSIZE 	3
+			"rsize",
+			\s-1NULL\0};
+
+main(argc, argv)
+	int  argc;
+	char **argv;
+{
+	int sc, c, errflag;
+	char *options, *value;
+	extern char *optarg;
+	extern int optind;
+	.
+	.
+	.
+	while((c = getopt(argc, argv, "abf:o:")) != -1) {
+		switch (c) {
+		case 'a': /* process a option */
+			break;
+		case 'b': /* process b option */
+			break;
+		case 'f':
+			ofile = optarg;
+			break; 
+		case '?': 
+			errflag++;
+			break;
+		case 'o': 
+			options = optarg;
+			while (*options != '\e0') {
+				switch(getsubopt(&options,myopts,&value) {
+				case READONLY : /* process ro option */
+					break;
+				case READWRITE : /* process rw option */
+					break;
+				   case WRITESIZE : /* process wsize option */
+					if (value == \s-1NULL\s0) {
+						error_no_arg();
+						errflag++;
+					} else 
+						write_size = atoi(value);
+					break;
+				case READSIZE : /* process rsize option */
+					if (value == \s-1NULL\s0) {
+						error_no_arg();
+						errflag++;
+					} else 
+						read_size = atoi(value);
+					break;
+				default : 
+					/* process unknown token */
+					error_bad_token(value);
+					errflag++;
+					break;
+			   	}
+			}
+		  	break;
+		}
+	}
+	if (errflag) {
+		/* print Usage instructions etc. */
+	}
+	for (; optind<argc; optind++) {
+		/* process remaining arguments */
+	}
+	.
+	.
+	.
+}
+.ft
+.fi 
+.SH SEE ALSO
+.BR getopt (3)
+.SH NOTES
+During parsing, commas in the option input string are changed to nulls.
+.LP
+White space in tokens or token-value pairs must be protected from
+the shell by quotes.

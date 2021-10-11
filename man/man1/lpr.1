@@ -1,0 +1,441 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)lpr.1 1.1 92/07/30 SMI; from UCB 4.3 BSD 6.1
+.\"
+.TH LPR 1 "28 August 1989"
+.SH NAME
+lpr \- send a job to the printer
+.SH SYNOPSIS
+.B lpr
+[
+.BI \-P printer
+]
+[
+.BI \-# copies
+]
+[
+.BI \-C class
+]
+[
+.BI \-J job
+]
+.if n .ti +5n
+[
+.BI \-T title
+]
+[
+.B \-i
+[
+.I indent
+] ] [
+.BI \-1234 font
+]
+.if t .ti +.5i
+[
+.BI \-w cols
+]
+.if n .ti +5n
+[
+.B \-r
+] [
+.B \-m
+] [
+.B \-h
+] [
+.B \-s
+] [
+.BI \- filter-option
+]
+.if n .ti +5n
+[
+.I filename
+\&.\|.\|.
+]
+.SH DESCRIPTION
+.IX  "lpr command"  ""  "\fLlpr\fP \(em print files"
+.IX  "print files" "" "print files \(em \fLlpr\fP"
+.IX  file  print  ""  "print \(em \fLlpr\fP"
+.LP
+.B lpr
+creates a printer job in a spooling area for subsequent printing as
+facilities become available.
+Each printer job consists of a control file and one or more 
+data files.  The data files are
+copies of
+(or, with
+.B \-s ,
+symbolic links to) each
+.I filename
+you specify.
+The spool area is managed by the line printer daemon,
+.BR lpd (8).
+Jobs that specify a printer on a remote machine are
+forwarded by
+.BR lpd .
+.LP
+.B lpr
+reads from the standard input if no files are specified.
+.SH OPTIONS
+.LP
+.TP 15
+.BI \-P printer
+Send output to the named
+.IR printer .
+Otherwise send output to the printer named in the
+.SB PRINTER
+environment variable, or to the default printer,
+.BR lp .
+.TP
+.BI \-# copies
+Produce the number of
+.I copies
+indicated for each named file.  For example:
+.RS
+.IP
+.B "example% lpr \-#3 index.c lookup.c"
+.RE
+.IP
+produces three copies of
+.BR index.c ,
+followed by three copies of
+.BR lookup.c .
+On the other hand,
+.RS
+.IP
+.B "example% cat index.c lookup.c | lpr \-#3"
+.RE
+.IP
+generates three copies of the concatenation of the files.
+.TP
+.BI \-C class
+Print
+.I class
+as the job classification on the
+burst page.
+For example,
+.RS
+.IP
+.B example% lpr \-C Operations new.index.c
+.RE
+.IP
+replaces the system name (the name returned by
+.IR hostname )
+with \*(lqOperations\*(rq on the burst page, and prints the file
+.IR new.index.c .
+.TP
+.BI \-J job
+Print
+.I job
+as the job name on the
+burst page.  Normally,
+.B lpr
+uses the first file's name.
+.TP
+.BI \-T title
+Use
+.I title
+instead of the file name for the title
+used by
+.BR pr (1V).
+.TP
+\fB\-i\fR[ \fIindent\fR ]
+Indent output
+.I indent
+.SM SPACE
+characters.  Eight
+.SM SPACE
+characters is the default.
+The indent is passed to the input filter.
+If no input filter is present, this option
+is ignored.
+.PD 0
+.TP
+.BI \-1 " font "
+.TP
+.BI \-2 " font "
+.TP
+.BI \-3 " font "
+.TP
+.BI \-4 " font "
+Mount the specified
+.I font
+on font position
+.BR 1 ,
+.BR 2 ,
+.B 3
+or
+.BR 4 .
+The daemon will construct a
+.I .railmag
+file in the spool directory that
+indicates the mount by referencing
+.BR /usr/lib/vfont/font .
+.PD
+.TP
+.BI \-w cols
+Use
+.I cols
+as the page width for
+.BR pr .
+.TP
+.B \-r
+Remove the file upon completion of spooling,
+or upon completion of printing with the
+.B \-s
+option.
+.TP
+.B \-m
+Send mail upon completion.
+.TP
+.B \-h
+Suppress printing the burst page.
+.TP
+.B \-s
+Create a symbolic link from the spool
+area to the data files rather than trying to copy
+them (so large files can be printed).
+This means the data files should
+not be modified or removed until they
+have been printed.
+This option can be used to avoid truncating
+files larger than the maximum given in the
+.B mx
+capability of the
+.BR printcap (5)
+entry.
+.B \-s
+only prevents copies of local files from being made. 
+Jobs from
+remote hosts are copied anyway.
+.B \-s
+only works with named data files; if the
+.B lpr
+command is at the end of a pipeline, the data is copied to the
+spool.
+.br
+.ne 10
+.TP
+.I filter-option
+The following single letter options notify the line printer
+spooler that the files are not standard text files.
+The spooling daemon will use the appropriate filters to
+print the data accordingly.
+.ne 12
+.RS
+.TP
+.B \-p
+.PD 0
+Use
+.B pr
+to format the files
+.RB ( "lpr \-p"
+is very much like
+.RB ` "pr | lpr" ').
+.TP
+.B \-l
+Print control characters and suppress page breaks.
+.TP
+.B \-t
+The files contain
+.BR troff (1)
+(cat phototypesetter) binary data.
+.TP
+.B \-n
+The files contain data from
+.B ditroff
+(device independent troff).
+.TP
+.B \-d
+The files contain data from
+.B tex
+(\s-1DVI\s0
+format from Stanford).
+.TP
+.B \-g
+The files contain standard plot data as produced by the
+.BR plot (3X)
+routines (see also
+.BR plot (1G)
+for the filters used by the printer spooler).
+.TP
+.B \-v
+The files contain a raster image, see
+.BR rasterfile (5).
+The printer must support an appropriate imaging model such as
+PostScript in order to print the image.
+.TP
+.B \-c
+The files contain data produced by
+.BR cifplot .
+.TP
+.B \-f
+Interpret the first character of each line as a standard
+.SM FORTRAN
+carriage control character.
+.PD
+.LP
+If no
+.I filter-option
+is given (and the printer can interpret PostScript), the string
+.RB ` %! '
+as the first two characters of a file indicates that it
+contains PostScript commands.
+.LP
+These filter options offer a standard user interface,
+and all options may not be available for, nor applicable to,
+all printers.
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+personal identification
+.TP
+.B /etc/printcap
+printer capabilities data base
+.TP
+.B /usr/lib/lpd
+line printer daemon
+.TP
+.B /var/spool/l*
+directories used for spooling
+.TP
+.B /var/spool/l*/cf*
+daemon control files
+.TP
+.B /var/spool/l*/df*
+data files specified in
+.RB ` cf '
+files
+.TP
+.B /var/spool/l*/tf*
+temporary copies of
+.RB ` cf '
+files
+.TP
+.B /usr/lib/vfont/font
+.PD
+.SH "SEE ALSO"
+.BR lpq (1),
+.BR lprm (1),
+.BR plot (1G),
+.BR pr (1V),
+.BR screendump (1),
+.BR troff (1),
+.BR plot (3X),
+.BR printcap (5),
+.BR rasterfile (5),
+.BR lpc (8),
+.BR lpd (8)
+.SH DIAGNOSTICS
+.TP
+.B lpr: copy file is too large
+A file is determined to be too \*(lqlarge\*(rq
+to print by copying into the spool area.
+.BR lpr
+truncates the file, and prints as much of it as it can.
+The maximum file length is specified by the
+.B mx
+capability of the
+.BR printcap (5)
+entry for the printer.  If no
+.B mx
+capability is specified, the default limit is 1000 Kbytes.
+Use the
+.B \-s
+option as defined above to make a symbolic
+link to the file instead of copying
+it. 
+.TP
+.B lpr: \fIprinter\fP\|: unknown printer
+The
+.B printer
+was not found in the
+.B printcap
+database.  Usually this is a typing mistake; however, it may indicate
+a missing or incorrect entry in the
+.B /etc/printcap
+file.
+.TP
+.B "lpr: \fIprinter\fP\|: jobs queued, but cannot start daemon."
+The connection to
+.B lpd
+on the local machine failed.
+This usually means the printer server started at
+boot time has died or is hung.  Check the local socket
+.B /dev/printer
+to be sure it still exists (if it does
+not
+exist,
+there is no
+.B lpd
+process running).
+.br
+.ne 9
+.TP
+.B lpr: \fIprinter\fP\|: printer queue is disabled
+This means the queue was turned off with
+.RS
+.IP
+.BI "example% /usr/etc/lpc disable " printer
+.RE
+.IP
+to prevent
+.B lpr
+from putting files in the queue.  This is normally
+done by the system manager when a printer is
+going to be down for a long time.  The
+printer can be turned back on by a super-user with
+.BR lpc .
+.IP
+If a connection to
+.B lpd
+on the local machine cannot be made
+.B lpr
+will say that the daemon cannot be started.
+Diagnostics may be printed in the daemon log file
+regarding missing spool files by
+.BR lpd .
+.SH BUGS
+.LP
+Command-line options cannot be combined into a single argument
+as with some other commands.  The command:
+.IP
+.B lpr \-fs
+.LP
+is not equivalent to
+.IP
+.BR "lpr \-f \-s"
+.LP
+Placing the
+.B \-s
+flag first, or writing each option as a separate argument, makes a link
+as expected.
+.LP
+.B lpr \-p
+is not precisely
+equivalent
+to
+.BR "pr | lpr" .
+.B lpr \-p
+puts the current date at the top of each page, rather
+than the date last modified.
+.LP
+Fonts for
+.BR troff (1)
+and
+\s-1T\s-1\dE\u\s+1X\s+1\(rg
+reside on the printer host.
+It is currently not possible to use local font libraries.
+.LP
+.B lpr
+refuses to print a.out files and library archives.
+.LP
+The
+.B \-s
+option only avoids copying the data file to the spool directory
+of the local machine.  If the printer for a job resides on a
+remote machine, the data file will be copied to the remote spool
+directory in all cases.

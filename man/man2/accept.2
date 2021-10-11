@@ -1,0 +1,121 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)accept.2 1.1 92/07/30 SMI; from UCB 6.3 5/22/86
+.TH ACCEPT 2 "21 January 1990"
+.SH NAME
+accept \- accept a connection on a socket
+.SH SYNOPSIS
+.\" This is a dummy comment
+.ft B
+.nf
+#include <sys/types.h>
+#include <sys/socket.h>
+.LP
+.ft B
+int accept(s, addr, addrlen)
+int s;
+struct sockaddr *addr;
+int *addrlen;
+.fi
+.ft R
+.IX  accept()  ""  "\fLaccept()\fP \(em connection on socket"
+.IX  "socket operations, accept connection" "" "socket operations, accept connection \(em \fLaccept()\fP"
+.IX  "interprocess communication"  "accept connection \(em \fLaccept()\fP"
+.IX  "connection"  "accept on socket \(em \fLaccept()\fR"
+.SH DESCRIPTION
+.LP
+The argument
+.I s
+is a socket that has been created with
+.BR socket (2),
+bound to an address with
+.BR bind (2),
+and is listening for connections after a
+.BR listen (2).
+.B accept(\|)
+extracts the first connection
+on the queue of pending connections, creates
+a new socket with the same properties of
+.I s
+and allocates a new file descriptor
+for the socket.  If no pending connections are
+present on the queue, and the socket is not marked
+as non-blocking,
+.B accept(\|)
+blocks the caller until a connection is present.
+If the socket is marked non-blocking and no pending
+connections are present on the queue,
+.B accept(\|)
+returns an error as described below.
+The accepted socket
+is used to read and write data to and from the socket which connected
+to this one; it is not used
+to accept more connections.  The original socket
+.I s
+remains open for accepting further connections.
+.LP
+The argument
+.I addr
+is a result parameter that is filled in with
+the address of the connecting entity,
+as known to the communications layer.
+The exact format of the
+.I addr
+parameter is determined by the domain in which the communication
+is occurring.
+The
+.I addrlen
+is a value-result parameter; it should initially contain the
+amount of space pointed to by
+.IR addr ;
+on return it will contain the actual length (in bytes) of the
+address returned.
+This call
+is used with connection-based socket types, currently with
+.SB SOCK_STREAM\s0\fR.
+.LP
+It is possible to
+.BR select (2)
+a socket for the purposes of doing an
+.B accept(\|)
+by selecting it for read.
+.SH RETURN VALUES
+.LP
+.B accept(\|)
+returns
+a non-negative descriptor for the accepted socket
+on success.
+On failure, it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+The descriptor is invalid.
+.TP
+.SM EFAULT
+The
+.I addr
+parameter is not in a writable part of the
+user address space.
+.TP
+.SM ENOTSOCK
+The descriptor references a file, not a socket.
+.TP
+.SM EOPNOTSUPP
+The referenced socket is not of type
+.SB SOCK_STREAM\s0\fR.
+.TP
+.SM EWOULDBLOCK
+The socket is marked non-blocking and no connections
+are present to be accepted.
+.SH SEE ALSO
+.BR bind (2),
+.BR connect (2),
+.BR listen (2),
+.BR select (2),
+.BR socket (2)

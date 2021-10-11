@@ -1,0 +1,100 @@
+.\" @(#)screenblank.1 1.1 92/07/30 SMI;
+.TH SCREENBLANK 1 "9 September 1987"
+.SH NAME
+screenblank \- turn off the screen when the mouse and keyboard are idle
+.SH SYNOPSIS
+.B screenblank
+.RB [ " \-m " ]
+.RB [ " \-k " ]
+.RB [ " \-d "
+.IR "interval " ]
+.RB [ " \-e "
+.IR "interval " ]
+.RB [ " \-f "
+.IR "frame-buffer " ]
+.LP
+.SH DESCRIPTION
+.IX "screenblank command" "" "\fLscreenblank\fR \(em turn of idle screen"
+.LP
+.B screenblank
+turns off the display when the mouse and keyboard are idle
+for an extended period (the default is 10 minutes).
+.B screenblank
+will continue to run until killed by hand,
+using 
+.RB ` "kill"
+.IR processid '.
+.LP
+Place the
+.B screenblank
+command in your
+.B /etc/rc.local
+file.
+.SH OPTIONS
+.TP
+.B \-m
+Do not check whether the mouse has been idle.
+.TP
+.B \-k
+Do not check whether the keyboard has been idle.
+.TP
+.BI \-d " interval"
+Disable after
+.I interval
+seconds.
+.I interval
+is a number of the form
+.IB xxx . xxx
+where each
+.I x
+is a decimal digit.   The default is 600 seconds (10 minutes).
+.TP
+.BI \-e " interval"
+Enable within
+.I interval
+seconds.
+.I interval
+is the time between successive polls for keyboard or mouse
+activity.  If a poll detects keyboard or
+mouse activity, the display is resumed.
+.I interval
+is a number of seconds, of the form
+.IB xxx . xxx
+where each
+.I x
+is a  decimal digit.  The default is 0.25 seconds.
+.TP
+.BI \-f " frame-buffer"
+.I frame-buffer
+is the path name of the frame-buffer on which video disabling/enabling
+applies.  The defaults is
+.BR /dev/fb .
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/fb
+.PD
+.SH "SEE ALSO"
+.BR lockscreen (1),
+.BR sunview (1)
+.SH BUGS
+.LP
+.B screenblank
+only checks 
+.B /dev/console
+for activity; it does not check non-window programs from 
+.B /dev/tty
+which bypass
+.B /dev/console .
+Consequently,
+.B screenblank
+will turn off the display if
+.B /dev/tty
+programs (for example, pixrect-based programs) are
+the only ones running.
+.LP
+When not running
+.BR sunview (1),
+only the
+.SM RETURN
+key resumes video display.

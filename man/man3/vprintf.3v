@@ -1,0 +1,126 @@
+.\" @(#)vprintf.3v 1.1 92/07/30 SMI; from S5R2
+.TH VPRINTF 3V "21 January 1990"
+.SH NAME
+vprintf, vfprintf, vsprintf \- print formatted output of a varargs argument list
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <stdio.h>
+#include <varargs.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int vprintf(format, ap)
+char *format;
+va_list ap;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int vfprintf(stream, format, ap)
+\s-1FILE\s0 *stream;
+char *format;
+va_list ap;
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *vsprintf(s, format, ap)
+char *s, *format;
+va_list ap;
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.LP
+.nf
+.ft B
+int vsprintf(s, format, ap)
+char *s, *format;
+va_list ap;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "vprintf()" "" "\fLvprintf()\fR \(em format and print variable argument list"
+.IX "vfprintf()" "" "\fLvfprintf()\fR \(em format and print variable argument list"
+.IX "vsprintf()" "" "\fLvsprintf()\fR \(em format and print variable argument list"
+.LP
+.BR vprintf(\|) ,
+.BR vfprintf(\|) ,
+and
+.B vsprintf(\|)
+are the same as
+.BR printf (3V),
+.BR fprintf(\|) ,
+and
+.B sprintf(\|)
+(see
+.BR printf (3V))
+respectively, except that instead of being
+called with a variable number of arguments, they
+are called with an argument list as defined by
+.BR varargs (3).
+.SH RETURN VALUES
+.LP
+On success,
+.B vprintf(\|)
+and
+.B vfprintf(\|)
+return the number of characters transmitted,
+excluding the null character.
+On failure,
+they return
+.SM EOF\s0.
+.LP
+.B vsprintf(\|)
+returns
+.IR s .
+.SH SYSTEM V RETURN VALUES
+.LP
+.B vsprintf(\|)
+returns the number of characters transmitted,
+excluding the null character.
+.SH EXAMPLES
+.LP
+The following demonstrates how
+.B vfprintf(\|)
+could be used to write an error routine.
+.RS
+.nf
+.ft B
+#include <stdio.h>
+#include <varargs.h>
+\&.\|.\|.
+	/\(**\ \ error should be called like:
+	\(**	error(function_name, format, arg1, arg2.\|.\|.);
+	\(**\ \ Note: function_name and format cannot be declared
+	\(**\ \ separately because of the definition of varargs.
+	\(**/
+.sp .5v
+/\(**\s-1VARARGS\s00\(**/
+void
+error (va_alist)
+	va_dcl
+{
+	va_list args;
+	char \(**fmt;
+
+	va_start(args);
+		/\(** print name of function causing error \(**/
+	(void) fprintf(stderr, "\s-1ERROR\s0 in %s: ", va_arg(args, char \(**));
+	fmt = va_arg(args, char \(**);
+		/\(** print out remainder of message \(**/
+	(void) vfprintf(stderr, fmt, args);
+	va_end(args);
+	(void) abort(\|);
+}
+.fi
+.ft R
+.RE
+.SH SEE ALSO
+.BR printf (3V),
+.BR varargs (3)

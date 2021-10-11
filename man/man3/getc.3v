@@ -1,0 +1,191 @@
+.\" @(#)getc.3v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH GETC 3V "21 January 1990"
+.SH NAME
+getc, getchar, fgetc, getw \- get character or integer from stream
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <stdio.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getc(stream)
+\s-1FILE\s0 *stream;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getchar(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int fgetc(stream)
+\s-1FILE\s0 *stream;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int getw(stream)
+\s-1FILE\s0 *stream;
+.ft
+.fi
+.IX  "getc() macro"  ""  "\fLgetc()\fP \(em get character from stream"
+.IX  get "character from stream \(em \fLgetc()\fP"
+.IX  get "character from stream \(em \fLfgetc()\fP"
+.IX  "getchar macro"  ""  "\fLgetchar()\fP \(em get character from stdin"
+.IX  "fgetc()"  ""  "\fLfgetc()\fP \(em get character from stream"
+.IX  "getw macro"  ""  "\fLgetw()\fP \(em get word from stream"
+.IX  get "word from stream \(em \fLgetw()\fP"
+.IX  stream  "get character getc()"  ""  "get character \(em \fLgetc()\fP"
+.IX  stream  "get character getchar()"  ""  "get character \(em \fLgetchar()\fP"
+.IX  stream  "get character fgetc()"  ""  "get character \(em \fLfgetc()\fP"
+.IX  stream  "get word getw()"  ""  "get word \(em \fLgetw()\fP"
+.IX  stdin  "get character"  ""  "get character \(em \fLgetchar()\fP"
+.IX  character  "get from stream getc()"  ""  "get from stream \(em \fLgetc()\fP"
+.IX  character  "get from stdin"  ""  "get from stdin \(em \fLgetchar()\fP"
+.IX  character  "get from stream fgetc()"  ""  "get from stream \(em \fLfgetc()\fP"
+.IX  word  "get from stream"  word  "get from stream \(em \fLgetw()\fP"
+.SH DESCRIPTION
+.LP
+.B getc(\|)
+returns the next character (that is, byte) from the named input
+stream,
+as an integer.
+It also moves the file pointer, if defined,
+ahead one character in
+stream.
+.B getchar(\|)
+is defined as
+.BR getc(stdin) .
+.B getc(\|)
+and
+.B getchar(\|)
+are macros.
+.LP
+.B fgetc(\|)
+behaves like
+.BR getc(\|) ,
+but is a function rather than a macro.
+.B fgetc(\|)
+runs more slowly than
+.BR getc(\|) ,
+but it takes less space per invocation and its name can
+be passed as an argument to a function.
+.LP
+.B getw(\|)
+returns the next C
+.B int
+.BI ( word )
+from the named input
+stream.
+.B getw(\|)
+increments the associated file pointer, if defined,
+to point to the next word.
+The size of a word is the size of an integer and varies from machine
+to machine.
+.B getw(\|)
+assumes no special alignment in the file.
+.SH RETURN VALUES
+.LP
+On success,
+.BR getc(\|) ,
+.B getchar(\|)
+and
+.B fgetc(\|)
+return the next character from the named input
+stream
+as an integer.
+On failure,
+or on
+.SM EOF\s0,
+they return
+.SM EOF\s0.
+The
+.SM EOF
+condition is remembered, even on a terminal,
+and all subsequent operations which attempt to read
+from the stream will return
+.SM EOF
+until the condition is cleared with
+.B clearerr(\|)
+(see
+.BR ferror (3V)).
+.LP
+.B getw(\|)
+returns
+the next C
+.B int
+from the named input stream
+on success.
+On failure,
+or on
+.SM EOF\s0,
+it returns
+.SM EOF\s0,
+but since
+.SM EOF
+is a valid integer,
+use
+.BR ferror (3V)
+to detect
+.B getw(\|)
+errors.
+.SH SYSTEM V RETURN VALUES
+.LP
+On failure,
+or on
+.SM EOF\s0,
+these functions return
+.SM EOF\s0.
+The
+.SM EOF
+condition is remembered, even on a terminal,
+however, operations which attempt to read from the stream
+will ignore the current state of the
+.SM EOF
+indication and attempt to read from the file descriptor
+associated with the stream.
+.SH "SEE ALSO"
+.BR ferror (3V),
+.BR fopen (3V),
+.BR fread (3S),
+.BR gets (3S),
+.BR putc (3S),
+.BR scanf (3V),
+.BR ungetc (3S)
+.SH WARNINGS
+.LP
+If the integer value returned by
+.BR getc(\|) ,
+.BR getchar(\|) ,
+or
+.B fgetc(\|)
+is stored into a character variable and then compared against
+the integer constant
+.SM EOF\s0,
+the comparison may never succeed, because sign-extension of a character
+on widening to integer is machine-dependent.
+.SH BUGS
+Because it is implemented as a macro,
+.B getc(\|)
+treats a
+stream
+argument with side effects incorrectly.  In particular,
+.B getc(\(**f\(pl\(pl)
+does not work sensibly.
+.B fgetc(\|)
+should be used instead.
+.LP
+Because of possible differences in word length and byte ordering,
+files written using
+.B putw(\|)
+are machine-dependent, and may not be readable using
+.B getw(\|)
+on a different processor.

@@ -1,0 +1,63 @@
+#
+# @(#)Makefile.mach 1.1 92/07/30 SMI
+#
+# This file is included by ../$(ARCH)/Makefile
+# It defines the targets and rules needed to build the machine-dependent
+# sources for the boot os library.
+# 
+# The target library is built in ../$(ARCH) 
+#
+# The relocation symbols $LOAD, $BRELOC, and $BBRELOC must be
+# defined in ../$(ARCH)/Makefile
+
+# Machine-dependent boot os object files
+MACHDIR= ../m68k
+MACHOBJ= movc.o stubs.o trap.o vax.o
+
+MHDR= ../$(ARCH)/SYS.h
+.INIT:  $(MHDR)
+
+# Standalone start-off.
+SRTOPT=			  -DLOCORE -DLOAD=0x$(LOAD) -DBRELOC=0x$(BRELOC) 
+srt0xx.o:=	SRTOPT += -DBOOTBLOCK
+
+srt0.o srt0xx.o:  $(MACHDIR)/srt0.s assym.s
+	@ $(RM) tmp.c tmp.i $@
+	cp $(MACHDIR)/srt0.s tmp.c
+	cc -E $(CFLAGS) $(SRTOPT) $(BOOTOPT) tmp.c > tmp.i
+	$(AS) tmp.i -o $@
+	@ $(RM) tmp.c tmp.i
+
+# srt0.s needs to have some symbols defined from kernel header files
+assym.s: $(MACHDIR)/genassym.c
+	$(CC) -D$(ARCH) -o genassym $(MACHDIR)/genassym.c
+	./genassym >$@
+	@$(RM) genassym
+
+# Rules for arch-dependent .c files
+$$(LIB)(%.o): $(ARCHDIR)/%.c
+	$(CC) $(CFLAGS) -DLOAD=0x4000 -DBRELOC=0x$(BRELOC) -c $<
+	@ $(AR) $(ARFLAGS) $(LIB) $% ; $(RM) $%
+
+# Rules for arch-dependent .s files
+$$(LIB)(%.o): $(ARCHDIR)/%.s
+	@ $(RM) tmp.c tmp.i $%
+	cp $(ARCHDIR)/$< tmp.c
+	/lib/cpp -P $(CPPOPTS) $(SRTOPT) $(BOOTOPT) tmp.c > tmp.s
+	$(AS) -P -Q  tmp.s -o $%
+	@ $(AR) $(ARFLAGS) $(LIB) $%
+	@ $(RM) tmp.c tmp.i tmp.s $%
+
+# Rules for machine-dependent .c files
+$$(LIB)(%.o): $(MACHDIR)/%.c
+	$(CC) $(CFLAGS) -DLOAD=0x4000 -DBRELOC=0x$(BRELOC) -c $<
+	@ $(AR) $(ARFLAGS) $(LIB) $% ; $(RM) $%
+
+# Rules for machine-dependent .s files
+$$(LIB)(%.o): $(MACHDIR)/%.s
+	@ $(RM) tmp.c tmp.i $%
+	cp $(MACHDIR)/$< tmp.c
+	/lib/cpp -P $(CPPOPTS) $(SRTOPT) $(BOOTOPT) tmp.c > tmp.s
+	$(AS) tmp.s -o $%
+	@ $(AR) $(ARFLAGS) $(LIB) $%
+	@ $(RM) tmp.c tmp.i tmp.s $%

@@ -1,0 +1,222 @@
+.\" @(#)rlogin.1c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH RLOGIN 1C "17 December 1987"
+.SH NAME
+rlogin \- remote login
+.SH SYNOPSIS
+.B rlogin
+[
+.B \-L
+]
+[
+.B \-8
+] 
+[
+.BI \-e c
+] [
+.B \-l
+.I username
+]         
+.\"[
+.\".B \-7
+.\"]
+.if n .ti +0.5i
+.I hostname
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "rlogin command"  ""  "\fLrlogin\fP \(em remote login"
+.IX  "remote login"  \fLrlogin\fP
+.IX  login  "to remote machine"  ""  "to remote machine \(em \fLrlogin\fP"
+.LP
+.B rlogin
+establishes a remote login session from
+your terminal to the remote machine named
+.IR hostname .
+.LP
+Hostnames are listed in the 
+.I hosts 
+database,
+which may be contained in the
+.B /etc/hosts
+file, the
+Network Information Service
+(\s-1NIS\s0)
+.I hosts
+database,
+the Internet domain name server,
+or a combination of these.
+Each host has one official name (the
+first name in the database entry),
+and optionally one or more nicknames.
+Either official hostnames or nicknames may be specified in
+.IR hostname .
+.LP
+Each remote machine may have a file named
+.B /etc/hosts.equiv
+containing a list of trusted hostnames
+with which it shares usernames.
+Users with the same username on both the local
+and remote machine may 
+.nh
+.B rlogin 
+.hy
+from the
+machines listed in the remote machine's
+.B /etc/hosts.equiv
+file without supplying a password.
+Individual users
+may set up a similar private equivalence list with the file
+.B \&.rhosts
+in their home directories.
+Each line in this file contains two names: a
+.I hostname
+and a
+.I username
+separated by a 
+.SM SPACE\s0.
+An entry in a remote user's
+.B \&.rhosts
+file permits the user named
+.I username
+who is logged into
+.I hostname
+to rlogin to the remote machine as the remote user
+without supplying a password.
+If the name of the local host is not found in the 
+.B /etc/hosts.equiv
+file on the remote machine,
+and the local username and hostname are not found in
+the remote user's .rhosts file, then
+the remote machine will prompt for a password.
+Hostnames listed in 
+.B /etc/hosts.equiv
+and 
+.B \&.rhosts
+files must be the official hostnames listed in the hosts database;
+nicknames may not be used in either of these files.
+.LP
+To counter security problems, the
+.B \&.rhosts
+file must be owned by
+either the remote user or by root.
+.LP
+The remote terminal type is the same as your local
+terminal type (as given in your environment
+.SB TERM
+variable).  The terminal or window size
+is also copied to the remote system
+if the server supports the option, and
+changes in size are reflected as well.
+All echoing takes place at the remote site, so that (except for
+delays) the remote login is transparent.  Flow control using
+.B ^S
+(\s-1CTRL\s0-S)
+and
+.B ^Q
+(\s-1CTRL\s0-Q)
+and
+flushing of input and output on interrupts are handled properly.
+.SH ESCAPES
+.LP
+Lines that you type which start with the tilde
+character are \*(lqescape sequences\*(rq (the
+escape character can be changed using the
+.B \-e
+options):
+.TP
+.B \s+2~\s0\^.
+Disconnect from the remote host \(em this is not the same as a logout,
+because the local host breaks the connection with no warning to the
+remote end.
+.TP
+.B \s+2~\s0susp
+Suspend the login session (only if you are using the C shell).
+.B susp
+is your \*(lqsuspend\*(rq character, usually
+.BR \^^Z ,
+(\s-1CTRL\s0-Z),
+see
+.BR tty (1).
+.TP
+.B \s+2~\s0dsusp
+Suspend the input half of the login,
+but output will still be seen (only
+if you are using the C shell).
+.B dsusp
+is your \*(lqdeferred suspend\*(rq character, usually
+.BR \^^Y ,
+(\s-1CTRL\s0-Y),
+see
+.BR tty (1).
+.SH OPTIONS
+.TP
+.B \-L
+Allow the
+.B rlogin
+session to be run in \*(lqlitout\*(rq mode.
+.TP 
+.B \-8
+Pass eight-bit data across the net instead of seven-bit data.
+.\"This is the default.
+.TP 
+.BI \-e c
+Specify a different escape character,
+.IR c ,
+for the line used to disconnect from the remote host.
+.\".TP
+.\" .BR \-7 5
+.\"Pass seven-bit data across the net instead of eight-bit data.
+.TP 
+.BI \-l " username"
+Specify a different
+.I username
+for the remote login.  If you do not use
+this option, the remote username used is the
+same as your local username.
+.br
+.ne 5
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/hosts/*
+for the
+.I hostname
+version of the command
+.TP
+.B /etc/hosts.equiv	
+list of trusted hostnames
+with shared usernames
+.TP
+.B \s+2~\s0/.rhosts
+private list of trusted hostname/username combinations
+.SH SEE ALSO
+.BR rsh (1C),
+.BR stty (1V),
+.BR tty (1),
+.BR ypcat (1),
+.BR hosts (5),
+.BR named (8C)
+.SH BUGS
+.LP
+This implementation can only use the
+.SM TCP
+network service.
+.LP
+More of the environment should be propagated.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

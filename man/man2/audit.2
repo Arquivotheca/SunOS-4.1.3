@@ -1,0 +1,63 @@
+.\" @(#)audit.2 1.1 92/07/30 SMI;
+.TH AUDIT 2 "21 January 1990"
+.SH NAME
+audit \- write a record to the audit log
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/label.h>
+#include <sys/audit.h>
+.LP
+.ft B
+int audit (record)
+audit_record_t *record;
+.fi
+.SH DESCRIPTION
+.IX "audit function" "" "\fLaudit()\fP function"
+.LP
+The
+.B audit(\|)
+system call is used to write a record to the system audit log file.
+The data pointed to by
+.I record
+is written to the audit log file.
+The data should be a well-formed audit record as described by
+.BR audit.log (5).
+The kernel sets the time stamp value in the record and performs
+a minimal check on the data before writing it to the audit log file.
+.LP
+Only the super-user may successfully execute this call.
+.SH RETURN VALUES
+.LP
+.B audit(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+.I record
+points outside the process's allocated address space.
+.TP
+.SM EINVAL
+The length specified in the audit record is too short,
+or more than
+.SB MAXAUDITDATA\s0\fR.
+.TP
+.SM EPERM
+The process's effective user
+.SM ID
+is not super-user.
+.SH "SEE ALSO"
+.BR auditsvc (2),
+.BR getauid (2),
+.BR setuseraudit (2),
+.BR audit_args (3),
+.BR audit.log (5),
+.BR auditd (8)

@@ -1,0 +1,105 @@
+.\" @(#)rfuadmin.8 1.1 92/07/30 SMI; from S5r3
+.TH RFUADMIN 8 "30 September 1988"
+.SH NAME
+rfuadmin \- RFS notification shell script
+.SH SYNOPSIS
+.B rfuadmin
+.I "message remote_resource"
+[
+.I seconds
+]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "rfuadmin RFS" "" "\fLrfuadmin\fR \(em notification shell script"
+.IX RFS "notification shell script" "RFS" "notification shell script"
+.IX network "RFS notification shell script"
+.IX "unmount, forced" "RFS notification shell script"
+.LP
+The
+.B rfuadmin 
+shell script is used to respond to unexpected Remote File Sharing
+(\s-1RFS\s0)
+events picked up by the
+.BR rfudaemon (8) 
+process.
+Such events may include broken network connections and forced
+unmounts.
+This script is not intended to be run directly from the
+shell.
+.LP
+Responses to messages received by
+.B rfudaemon 
+can be tailored to suit the particular system by editing this script.
+The following paragraphs describe the arguments passed to
+.B rfuadmin 
+and its standard responses.
+.TP
+.BI disconnect " remote_resource"
+A link to a remote resource has been cut.
+.B rfudaemon
+executes
+.BR rfuadmin , 
+passing it the message
+.B disconnect 
+and the name of the disconnected resource.
+.B rfuadmin 
+sends this message to all terminals using
+.BR wall (1):
+.RS
+.RS
+.IB remote_resource " has been disconnected from the system."
+.RE
+.RE
+.IP
+.B rfuadmin
+executes
+.BR fuser (8)
+to kill all processes using the
+resource, unmounts the resource, and
+attempts to mount the resource again.
+.TP 8
+.B fumount " remote_resource"
+A remote server machine has forced an unmount of a resource
+a local machine has mounted. 
+The processing is 
+similar to processing for a disconnect.
+.TP 8
+.BI fuwarn " remote_resource seconds"
+This message notifies
+.B rfuadmin 
+that a resource is about to be unmounted.
+.B rfudaemon 
+sends this script the
+.B fuwarn 
+message, the resource name, and the number of seconds in
+which the forced unmount will occur.
+.B rfuadmin 
+sends this message to all terminals:
+.RS
+.RS
+.IB remote_resource " is being removed from the system in " # " seconds."
+.RE
+.RE
+.SH "SEE ALSO"
+.BR wall (1),
+.BR fumount (8),
+.BR fuser (8),
+.BR mount (8),
+.BR rfstart (8),
+.BR rfudaemon (8)
+.SH BUGS
+.LP
+The console must be on when
+.SM RFS
+is running, otherwise
+.B rfuadmin 
+hangs when it attempts to write to it,
+in which case recovery from disconected resources
+may not complete.

@@ -1,0 +1,126 @@
+#! /bin/sh -
+#
+#	%Z%%M% %I% %E% SMI; from UCB 4.3
+#
+# The rc sh gets the console.  All commands are by
+# default protected from tty signals (i.e. are not interruptable).
+# Interrupts can be enabled by proceeding any command line with "intr".
+# Console redirection is no longer needed.
+#
+# Make sure PATH is exported or intr won't find what it needs.
+HOME=/; export HOME
+PATH=/bin:/usr/bin:/usr/etc; export PATH
+
+#
+# See if things look like they are still mounted read-only.
+# If so, perform all the remounting and set up work now.
+#
+touch /
+if [ $? -ne 0 ]; then
+	echo "Remounting file systems"
+	sh /etc/rc.single
+fi
+#
+# Make sure ld.so.cache is removed (rc.single may not be invoked
+# when going from multi-user mode to single-user then back to multi-user)
+#
+if [ -f /etc/ld.so.cache ]; then
+        #
+        # Carefully delete ld.so cache in case it is corrupted.
+        #
+        mv /etc/ld.so.cache /etc/ld.so.cache-
+        rm /etc/ld.so.cache-
+fi
+if [ -r /fastboot ]; then
+	rm -f /fastboot
+elif [ $1x = autobootx ]; then
+	echo Automatic reboot in progress...
+else
+	echo Multiuser startup in progress...
+fi
+date 
+
+# attempt to rationally recover the passwd file if needed
+if [ -s /etc/ptmp ]; then
+	if [ -s /etc/passwd ]; then
+		ls -l /etc/passwd /etc/ptmp 
+		rm -f /etc/ptmp		# should really remove the shorter
+	else
+		echo 'passwd file recovered from ptmp'
+		mv /etc/ptmp /etc/passwd
+	fi
+elif [ -r /etc/ptmp ]; then
+	echo 'removing passwd lock file'
+	rm -f /etc/ptmp
+fi
+
+intr mount -at 4.2
+				echo -n 'checking quotas: '
+intr quotacheck -a -p
+				echo 'done.'
+quotaon -a
+
+/bin/ps -U						
+rm -f /etc/nologin
+if [ -f /dev/ttyp0 ]; then
+	chown 0 /dev/tty[pqrs]*
+	chmod 666 /dev/tty[pqrs]*
+fi
+/usr/etc/ttysoftcar -a	> /dev/null 2>&1
+
+sh /etc/rc.local
+
+swapon -a						
+				echo preserving editor files
+(cd /tmp; /usr/lib/expreserve -a)
+				echo clearing /tmp
+(cd /tmp; rm -f - *)
+
+				echo -n 'standard daemons:'
+update;				echo -n ' update'
+rm -f /var/spool/cron/FIFO
+cron;				echo -n ' cron'
+#
+# accounting, 
+#	accounting is off by default.
+#
+#/usr/lib/acct/startup
+
+if [ -d /var/spool/uucp ]; then
+	(cd /var/spool/uucp
+	>LCK.0
+	rm -f LCK.*
+	if [ -d /usr/lib/uucp ]; then
+		su uucp -c /usr/lib/uucp/uusched & \
+				echo -n ' uucp'
+	fi)
+fi
+				echo '.'
+
+echo -n 'starting network daemons:'
+# rwhod (currently) is a real performance pig for systems with limited memory.
+#if [ -f /usr/etc/in.rwhod ]; then
+#	in.rwhod;		echo -n ' rwhod'
+#fi
+if [ -f /usr/etc/inetd ]; then
+	inetd;			echo -n ' inetd'
+fi
+if [ -f /usr/lib/lpd ]; then
+	rm -f /dev/printer /var/spool/lpd.lock
+	/usr/lib/lpd;		echo -n ' printer'
+fi
+				echo '.'
+#if [ -f /usr/nserve/rfmaster ]; then
+#	echo -n starting rfs: 
+#	if [ ! -f /usr/nserve/loc.passwd ]; then
+#		echo "" > /usr/nserve/loc.passwd
+#		echo "" > /usr/nserve/loc.passwd.dummy
+#	fi
+#	/usr/bin/dorfs start; echo ' done.'
+#	if [ -f /usr/nserve/loc.passwd.dummy ]; then
+#		rm -f /usr/nserve/loc.passwd /usr/nserve/loc.passwd.dummy
+#	fi
+#fi
+
+				date
+exit 0

@@ -1,0 +1,430 @@
+.\" @(#)ftpd.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH FTPD 8C "18 December 1989"
+.SH NAME
+ftpd, in.ftpd \- TCP/IP Internet File Transfer Protocol server
+.SH SYNOPSIS
+.B /usr/etc/in.ftpd
+[
+.B \-dl
+] [
+.BI \-t timeout
+]
+.IB host .\fIsocket
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "ftpd command"  ""  "\fLftpd\fP \(em file transfer protocol server"
+.IX  "file transfer protocol" "server \(em \fLftpd\fP"
+.IX  Internet "file transfer protocol server \(em \fLftpd\fP"
+.IX  TCP/IP "Internet file transfer protocol server \(em \fLftpd\fP"
+.IX  servers  ftpd  ""  "\fLftpd\fP \(em Internet File Transfer Protocol"
+.LP
+.B ftpd
+is the
+.SM TCP/IP
+Internet File Transfer Protocol (\s-1FTP\s0)
+server process.  The server is invoked by the Internet daemon
+.BR inetd (8C)
+each time a connection to the
+.SM FTP
+service (see
+.BR services (5))
+is made, with the connection available as descriptor 0 and the
+host and socket the connection originated from (in hex
+and decimal respectively) as argument.
+.LP
+Inactive connections are timed out after 60 seconds.
+.LP
+If the
+.B \-d
+option is specified,
+debugging information is logged to the system log daemon,
+.BR syslogd (8).
+.LP
+If the
+.B \-l
+option is specified, each
+.SM FTP
+session is logged to
+.BR syslogd .
+.LP
+The FTP server
+will timeout an inactive session after 15 minutes.
+If the
+.B \-t
+option is specified,
+the inactivity timeout period will be set to
+.IR timeout .
+.LP
+The
+.SM FTP
+server currently supports the following
+.SM FTP
+requests;  case is not distinguished.
+.LP
+.TP 10
+.B Request
+.B Description
+.TP
+.SB ABOR
+abort previous command
+.TP
+.SB ACCT
+specify account (ignored)
+.TP
+.SB ALLO
+allocate storage (vacuously)
+.TP
+.SB APPE
+append to a file
+.TP
+.SB CDUP
+change to parent of current working directory
+.TP
+.SB CWD
+change working directory
+.TP
+.SB DELE
+delete a file
+.TP
+.SB HELP
+give help information
+.TP
+.SB LIST
+give list files in a directory
+(\fBls \-lg\fP)
+.TP
+.SB MKD
+make a directory
+.TP
+.SB MODE
+specify data transfer
+.I mode
+.TP
+.SB NLST
+give name list of files in directory
+(\fBls\fP)
+.TP
+.SB NOOP
+do nothing
+.TP
+.SB PASS
+specify password
+.TP
+.SB PASV
+prepare for server-to-server transfer
+.TP
+.SB PORT
+specify data connection port
+.TP
+.SB PWD
+print the current working directory
+.TP
+.SB QUIT
+terminate session
+.TP
+.SB RETR
+retrieve a file
+.TP
+.SB RMD
+remove a directory
+.TP
+.SB RNFR
+specify rename-from file name
+.TP
+.SB RNTO
+specify rename-to file name
+.TP
+.SB STOR
+store a file
+.TP
+.SB STOU
+store a file with a unique name
+.TP
+.SB STRU
+specify data transfer
+.I structure
+.TP
+.SB TYPE
+specify data transfer
+.I type
+.TP
+.SB USER
+specify user name
+.TP
+.SB XCUP
+change to parent of current working directory
+.TP
+.SB XCWD
+change working directory
+.TP
+.SB XMKD
+make a directory
+.TP
+.SB XPWD
+print the current working directory
+.TP
+.SB XRMD
+remove a directory
+.LP
+The remaining
+.SM FTP
+requests specified in
+.SM RFC
+959 are recognized, but not implemented.
+.LP
+The
+.SM FTP
+server will abort an active file transfer only when the
+.SB ABOR
+command is preceded by a Telnet \*(lqInterrupt Process\*(rq (IP)
+signal and a Telnet \*(lqSynch\*(rq signal in the command Telnet stream,
+as described in
+.SM RFC
+959.
+.LP
+.B ftpd
+interprets file names according to the \*(lqglobbing\*(rq
+conventions used by
+.BR csh (1).
+This allows users to utilize the metacharacters
+.RB ` "* ? [\s0] {\s0}\s+2~\s0" '.
+.LP
+.B ftpd
+authenticates users according to three rules.
+.TP
+\(bu
+The user name must be in the password data base,
+.BR /etc/passwd ,
+and not have a null password.  In this case a password
+must be provided by the client before any file operations
+may be performed.
+.TP
+\(bu
+If the file
+.B /etc/ftpusers
+exists, the user name must not appear in that file.
+.TP
+\(bu
+The user must have a standard shell returned by
+.BR getusershell (3).
+.TP
+\(bu
+If the user name is \*(lqanonymous\*(rq or \*(lqftp\*(rq, an
+anonymous
+.SM FTP
+account must be present in the password
+file (user \*(lqftp\*(rq).  In this case the user is allowed
+to log in by specifying any password (by convention this
+is given as the client host's name).
+.LP
+In the last case,
+.B ftpd
+takes special measures to restrict the client's access privileges.
+The server performs a
+.BR chroot (2)
+command to the home directory of the \*(lqftp\*(rq user.
+In order that system security is not breached, it is recommended
+that the \*(lqftp\*(rq subtree be constructed with care;  the following
+rules are recommended.
+.TP 8
+.B ~ftp
+Make the home directory owned by \*(lqftp\*(rq and unwritable by anyone.
+.TP 8
+.B ~ftp/bin
+Make this directory owned by the super-user and unwritable by
+anyone.  The program
+.BR ls (1V)
+must be present to support the list commands.  This
+program should have mode 111.
+Since the default /bin/ls command is linked with a shared
+library, so you need to set up the files for dynamic linking as well.
+.TP 8
+.B ~ftp/usr/lib/ld.so
+the runtime loader must be present and executable.
+.TP 8
+.B ~ftp/dev/zero
+used by the runtime loader, create this with the command
+\*(lqmknod zero c 3 12\*(rq.
+.TP 8
+.B ~ftp/usr/lib/libc.so.*
+should be a copy of the latest version of the shared C library.
+.TP 8
+.B ~ftp/etc
+Make this directory owned by the super-user and unwritable by
+anyone.  The files
+.BR passwd (5)
+and
+.BR group (5)
+must be present for the
+.B ls
+command to work properly.  These files should be mode 444.
+.TP 8
+.B ~ftp/pub
+Make this directory mode 777 and owned by \*(lqftp\*(rq.  Users
+should then place files which are to be accessible via the
+anonymous account in this directory.
+.SH DIAGNOSTICS
+.B ftpd
+logs various errors to the system log daemon,
+.BR syslogd ,
+with a facility code of
+.BR daemon .
+The messages are listed here, grouped by severity level.
+.SS Err Severity
+.HP
+.B "getpeername failed:"
+.I reason
+.br
+A
+.BR getpeername (2)
+call failed.
+.HP
+.B "getsockname failed:"
+.I reason
+.br
+A
+.BR getsockname (2)
+call failed.
+.HP
+.B "signal failed:"
+.I reason
+.br
+A
+.B signal (3V)
+(see
+.BR signal (3V))
+call failed.
+.HP
+.B "setsockopt failed:"
+.I reason
+.br
+A
+.B setsockopt
+call
+(see
+.BR getsockopt (2))
+failed.
+.HP
+.B "ioctl failed:"
+.I reason
+.br
+A
+.BR ioctl (2)
+call failed.
+.TP
+.IB directory : " reason"
+.B ftpd
+did not have write permission on the directory
+.I directory
+in which a file was to be created by the
+.SB STOU
+command.
+.SS Info Severity
+These messages are logged only if the
+.B \-l
+flag is specified.
+.HP
+.B "\s-1FTPD\s0: connection from"
+.I host
+.B at
+.I time
+.br
+A connection was made to
+.B ftpd
+from the host
+.I host
+at the date and time
+.IR time .
+.HP
+.B "\s-1FTPD\s0: User"
+.I user
+.B "timed out after"
+.I timeout
+.B "seconds at"
+.I time
+.br
+The user
+.I user
+was logged out because they hadn't entered any commands after
+.I timeout
+seconds; the logout occurred at the date and time
+.IR time .
+.SS Debug Severity
+These messages are logged only if the
+.B \-d
+flag is specified.
+.HP
+.B "\S-1FTPD\s0: command:"
+.I command
+.br
+A command line containing
+.I command
+was read from the
+.SM FTP
+client.
+.TP
+.B "lost connection"
+The
+.SM FTP
+client dropped the connection.
+.TP
+<\^\-\^\-\^\- \fIreplycode\fP
+.PD 0
+.TP
+<\^\-\^\-\^\- \fIreplycode\-\fP
+A reply was sent to the
+.SM FTP
+client with the reply code
+.IR replycode .
+The next message logged will include the message associated with the
+reply.  If a
+.B \-
+follows the reply code, the reply is continued on later lines.
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR ftp (1C),
+.BR ls (1V),
+.BR chroot (2)
+.BR getpeername (2),
+.BR getsockname (2),
+.BR getsockopt (2),
+.BR ioctl (2),
+.BR getusershell (3),
+.BR ftpusers (5),
+.BR group (5),
+.BR passwd (5),
+.BR services (5),
+.BR inetd (8C),
+.BR syslogd (8)
+.LP
+Postel, Jon, and Joyce Reynolds,
+.I File Transfer Protocol (\s-1FTP\s0),
+\s-1RFC\s0
+959, Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+October 1985.
+.SH BUGS
+.LP
+The anonymous account is inherently dangerous
+and should be avoided when possible.
+.LP
+The server must run as the super-user to create sockets with privileged
+port numbers. 
+It maintains an effective user
+.SM ID
+of the logged in user, reverting to the super-user only when
+binding addresses to sockets.
+The possible security holes have been extensively scrutinized, but are
+possibly incomplete.

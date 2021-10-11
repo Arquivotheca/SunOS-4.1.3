@@ -1,0 +1,337 @@
+.\" @(#)idload.8 1.1 92/07/30 SMI; from S5R3
+.TH IDLOAD 8 "30 June 1988"
+.SH NAME
+idload \- RFS user and group mapping
+.SH SYNOPSIS
+.B idload
+[
+.B \-n
+] [
+.B \-g
+.I g_rules
+] [
+.B \-u
+.I u_rules
+] [
+.I directory
+]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "idload RFS" "" "\fLidload\fP \(em \s-1RFS\s0 user and group mapping" ""
+.IX mapping "RFS user and group" "mapping" "\s-1RFS\s0 user and group"
+.IX RFS "user and group mapping" "\s-1RFS\s0" "user and group mapping"
+.IX "translation tables" "build with idload" "translation tables" "build with \fLidload\fP"
+.IX "Remote File Sharing" "see RFS"
+.LP
+.B idload
+is used on Remote File Sharing
+(\s-1RFS\s0)
+servers to build translation tables for user and group
+.SM ID\s0s.
+It takes your
+.B /etc/passwd
+and
+.B /etc/group
+files and produces translation tables for user and group 
+.SM ID\s0s
+from remote machines, according to the rules set down in the
+.I u_rules
+and
+.I g_rules
+files.
+If you are mapping by user and group name, you will
+need copies of remote
+.B /etc/passwd
+and
+.B /etc/group
+files.
+If no rules files are specified, remote user and group
+.SM ID\s0s
+are mapped to
+.SM MAXUID\s0+1.
+This is an
+.SM ID
+number that is one higher than the highest number
+you could assign on your system.
+.LP
+By default, the remote password and group files are assumed to
+reside in
+.BI /usr/nserve/auth.info/ domain / host /[passwd\||\|group].
+The
+.I directory
+argument indicates that some directory structure other than
+.B /usr/nserve/auth.info
+contains the
+.IB domain / host
+.B passwd
+and
+.B group
+files.
+.I host
+is the name of the host the files are from and
+.I domain
+is the domain where
+.I host
+can be found.
+.LP
+This command is restricted to the super-user.
+.LP
+This command is run automatically when the first remote mount
+is done of a remote resource (see
+.BR mount (8)).
+.LP
+If any of the following are true, an error message
+will be sent to standard error. 
+.RS
+.TP 3
+\(bu
+Neither rules files can be found or opened.
+.TP
+\(bu
+There are syntax errors in the rules file.
+.TP
+\(bu
+There are semantic errors in the rules file.
+.TP
+\(bu
+Host information could not be found.
+.TP
+\(bu
+The command is not run with super-user privileges.
+.RE
+.LP
+Partial failures will display a
+warning message, although the process will continue.
+.SH OPTIONS
+.TP 12
+.B \-n
+Do not produce a translation table, however, send a
+display of the
+.SM ID
+mapping to the standard out.
+This is used to do a trial run of the mapping.
+.TP
+.BI \-u " u_rules""
+The
+.I u_rules
+file contains the rules for user
+.SM ID
+translation.
+The default rules file is
+.BR /usr/nserve/auth.info/uid.rules .
+.TP
+.BI \-g " g_rules"
+The
+.I g_rules
+file contains the rules for group
+.SM ID
+translation.
+The default rules file is
+.BR /usr/nserve/auth.info/gid.rules .
+.SH USAGE
+.SS Rules
+.LP
+The rules files have two types of sections, both optional:
+.B global
+and
+.BR host .
+There can be only one global
+section, though there can be one host section for each host
+you want to map.
+.LP
+The
+.B global
+section describes the default conditions for translation
+for any machines that are not explicitly referenced in a
+.B host
+section.
+If the global section is missing, the default action is to map all remote
+user and group
+.SM ID\s0s
+from undefined hosts to
+.SM MAXUID\s0+1.
+The syntax of the first line of the
+.B global
+section is:
+.IP
+.B global
+.br
+.ne 5
+.LP
+A
+.B host
+section is used for each client machine or group
+of machines that you want to map differently from the global definitions.
+The syntax of the first line of each
+.B host
+section is:
+.RS
+.BI host name\fR[.\|.\|.\|]
+.LP
+where
+.I name
+is replaced by the full name(s) of a host
+.RI ( domain.hostname ).
+.RE
+.LP
+The format of a rules file is described below.
+All lines are optional, but must appear in the order shown.
+.RS
+.sp .5
+.nf
+.ft B
+global
+default \fIlocal\fP | transparent
+exclude
+[\fIremote_id\fP\-\fIremote_id\fP] | [\fIremote_id\fP]
+map [\fIremote_id\fP:\fIlocal\fP]
+.sp
+host \fIdomain\fP.\fIhostname\fP [\fIdomain\fP.\fIhostname\fP\|.\|.\|.\|]
+default \fIlocal\fP | transparent
+exclude [\fIremote_id\fP\-\fIremote_id\fP] | [\fIremote_id\fP] | [\fIremote_name\fP]
+map [\fIremote\fP:\fIlocal\fP] | \fIremote\fP | all
+.ft R
+.fi
+.RE
+.br
+.ne 5
+Each of these instruction types is described below.
+.LP
+The line
+.IP
+.BI default " local " "| transparent" 
+.LP
+defines the mode of mapping for remote users that are not
+specifically mapped in instructions in other lines.
+.B transparent
+means that all remote
+user and group 
+.SM ID\s0s
+will have the same numeric value locally unless they
+appear in the
+.B exclude
+instruction.
+.I local
+can be replaced by a local user name or
+.SM ID
+to map all users into a particular local name or
+.SM ID
+number.
+If the default line is omitted, all users that are not specifically
+mapped are mapped into a \*(lqspecial guest\*(rq login
+.SM ID \s0.
+.LP
+The line
+.IP
+\fBexclude [\fIremote_id\fB\-\fIremote_id\fB] | [\fIremote_id\fB] | [\fIremote_name\fB]\fR
+.LP
+defines remote
+.SM ID\s0s
+that will be excluded from the
+.B default
+mapping.
+The
+.B exclude
+instruction must precede any
+.B map
+instructions in a block.
+You can use a range of
+.SM ID
+numbers, a single
+.SM ID
+number, or a single name.
+.RI ( remote_name
+cannot be used in a global block.)
+.LP
+The line
+.IP
+\fBmap [\fIremote\fB:\fIlocal\fB] | \fIremote\fB | all\fR
+.LP
+defines the local
+.SM ID\s0s
+and names that remote 
+.SM ID\s0s
+and names will be mapped into.
+.I remote
+is either a remote 
+.SM ID
+number or remote name;
+.I local
+is either a local 
+.SM ID
+number or local name.
+Placing a colon between a
+.I remote
+and
+a
+.I local
+will give the value on the left
+the permissions of the value on the right.
+A single
+.I remote
+name or
+.SM ID
+will assign the user or group permissions of the
+same local name or
+.SM ID\s0.
+.B all
+is a predefined alias for the set of all user and group
+.SM ID\s0s
+found in the local
+.B /etc/passwd
+and
+.B /etc/group
+files.
+You cannot map by remote name in
+.B global
+blocks.
+.LP
+Note:
+.B idload
+will always output warning messages for
+.RB ` "map all" ',
+since password files always contain multiple administrative
+user names with the same 
+.SM ID
+number.
+The first mapping attempt on the
+.SM ID
+number will succeed, all subsequent attempts will fail.
+.LP
+.SM RFS
+does not need to be running to use
+.BR idload .
+.SH "EXIT STATUS"
+.LP
+On successful completion,
+.B idload
+will produce one or more
+translation tables and return a successful exit status.
+If
+.B idload
+fails, the command will return an unsuccessful exit
+status without producing a translation table.
+.br
+.ne 7
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.TP
+.B /etc/group
+.TP
+.BI /usr/nserve/auth.info/ domain / host /[user\||\|group]
+.TP
+.B /usr/nserve/auth.info/vid.rules
+.TP
+.B /usr/nserve/auth.info/gid.rules
+.PD
+.SH SEE ALSO
+.BR mount (8)

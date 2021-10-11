@@ -1,0 +1,83 @@
+.\" @(#)rexd.8c 1.1 92/07/30 SMI;
+.TH REXD 8C "9 September 1987"
+.SH NAME
+rexd, rpc.rexd \- RPC-based remote execution server
+.SH SYNOPSIS
+.B /usr/etc/rpc.rexd
+.RB [ \-s ]
+.SH DESCRIPTION
+.IX rexd "" "\fLrexd\fR \(em remote execution daemon"
+.LP
+.B rexd
+is the Sun
+.SM RPC
+server for remote program execution.
+This daemon is started by
+.BR inetd (8C)
+whenever a remote execution request is made.
+.LP
+For noninteractive programs, the standard file
+descriptors are connected directly to
+.SM TCP
+connections.
+Interactive programs involve pseudo-terminals, in a fashion that
+is similar to the login sessions provided by
+.BR rlogin (1C).
+This daemon may use
+.SM NFS
+to mount file systems specified
+in the remote execution request.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/ttyp\fIn\fR
+pseudo-terminals used for interactive mode
+.TP
+.B /etc/passwd
+authorized users
+.TP
+.B /tmp_rex/rexd??????
+temporary mount points for remote file systems.
+.PD
+.SH  OPTIONS
+.TP
+.B \-s
+Secure.
+When specified, requests must have valid
+des credentials.
+If the request does not have
+a
+.SM DES
+credential it is rejected.
+The default
+publickey credential is rejected.
+Only newer
+.B on
+commands send
+.SM DES
+credentials.
+.IP
+If access is denied with an Authentication error,
+you may have to set your publickey
+with the
+.BR chkey (1)
+command.
+.SH "SEE ALSO"
+.LP
+.BR chkey (1),
+.BR on (1C),
+.BR rlogin (1C),
+.BR rex (3R),
+.BR exports (5),
+.BR inetd.conf (5),
+.BR publickey (5),
+.BR inetd (8C)
+.SH DIAGNOSTICS
+.LP
+Diagnostic messages are normally printed on the console, and
+returned to the requestor.
+.SH RESTRICTIONS
+Root cannot execute commands using
+.B rexd
+client programs such as
+.BR on (1C).

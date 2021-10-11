@@ -1,0 +1,1672 @@
+.PL RIGHT
+.UH M "Introduction"
+.LP
+This document outlines in detail the procedure for building a beta release
+of the SunOS Reference Manual,
+more commonly known as the
+``man pages''.
+It is intended to be followed step by step from beginning to end,
+although it's a good idea to familiarize yourself somewhat with this
+document before you start the build.
+.LP
+The procedure outlined here applies to a standard beta release of
+the man pages.
+Thus,
+there may be problems specific to your build that
+are not addressed in this document.
+It's therefore a good idea to know someone whom you can consult
+when problems arise.
+Building the man pages is a long,
+intricate,
+tiring and often frustrating process,
+which contains many potential pitfalls.
+It's important,
+therefore,
+that you adhere strictly to the procedure
+outlined here.
+.UH S \fBOverview\fP
+.LP
+First, set up all the online sources (the
+.L .so
+files)
+so that the
+.L man
+command will work as expected (chapter one).
+Next,
+update the
+.L List
+pages found at the end of the
+.L Intro
+page of each of the eight manual sections (chapter two).
+Then,
+update the index and review
+formatting (chapters three, four and five).
+After that,
+you'll update the Makefiles,
+used in setting up the online sources,
+and the Printfiles,
+used in printing the manual (chapter six),
+after which,
+you'll clone the manual sources from the release machine
+to your doctools host (chapter seven),
+and print the manual (chapter eight).
+Finally,
+there will be some housekeeping for you to do,
+including moving back any sources that you've changed since
+the clone,
+and testing the
+.L catman
+command (chapter nine).
+.LP
+It may not sound difficult,
+but it is.
+Good luck.
+.H C "Setting Up \fL.so\fP Files"
+.LP
+In order to set up the correct
+.L .so
+references and to update the List pages
+for each of the manual sections,
+you'll need to compile lists of man
+pages that have been added and deleted
+since the last release.
+.H 2 "Get Lists of Pages as of the Last Release"
+.LP
+.L cd
+to the
+.L man
+directory on the release machine
+(typically
+.L /usr/src/man ).
+Once there, you'll need to reconstruct the list of old
+entries from the Makefile used in the last release,
+so you can compare it with a current list of
+files under
+.SM SCCS :
+.LS 4
+sccs prt Makefile | more
+.LE
+This displays a version history for
+.L Makefile .
+One of the history list entries should
+be the version used in the last major release
+or build.
+Retrieve this version from
+.SM SCCS
+and put it
+in
+.L Makefile.old :
+.LS 4
+sccs get -GMakefile.old -r\fIversion\fP Makefile
+.LE
+You can now extract the list of files from
+.L Makefile.old
+and put it in
+.L FILES.old :
+.LS 4
+make -fMakefile.old show | sort -u > FILES.old
+vi FILES.old
+.LE
+Eliminate filenames
+that aren't, in fact, man pages.
+.H 2 "Get Current Lists of Pages"
+.LP
+Now generate and sort a list of new manual entries
+and put it in
+.L FILES.new :
+.LS 4
+ls SCCS/s.* | sed 's/SCCS\e/s\e.//' | sort -u > FILES.new
+vi FILES.new
+.LE
+Again,
+remove any entries that aren't man pages.
+.H 2 "Get Lists of Pages Added and Deleted Since the Last Release"
+.LP
+You can now use:
+.LS 4
+comm -3 FILES.old FILES.new
+.LE
+which will display two columns on the screen.
+The left hand column lists entries found in
+.L FILES.old
+but not in 
+.L FILES.new
+(deletions)
+and the right hand column lists entries found in 
+.L FILES.new
+but not in 
+.L FILES.old
+(additions).
+If there are entries in the left hand column,
+put them in
+.L FILES.delete :
+.LS 4
+comm -23 FILES.old FILES.new > FILES.delete
+.LE
+If there are entries in the right hand column,
+put them in
+.L FILES.add :
+.LS 4
+comm -13 FILES.old FILES.new > FILES.add
+.LE
+Repeat the above process for each of the
+eight manual sections.
+.H 2 "Generate \fL.so\fP Files"
+.LP
+Now that you have lists of added man pages in
+.L FILES.add
+in each section's source directory,
+.L cd
+to one of these directories and generate a list
+of
+.L .so
+references:
+.LS 4
+\&../bin/getNAME -s `cat FILES.add`
+.LE
+This will display on the screen a shell script
+for creating any new
+.L .so
+files that may be needed.
+If a script does indeed appear on the screen,
+you will want to run the command again and redirect
+the output to
+.L List.so :
+.LS 4
+\&../bin/getNAME -s `cat FILES.add` > List.so
+vi List.so
+.LE
+Verify that the script is correct!
+Specifically,
+search for filenames which contain
+`.' (dot) characters,
+as
+.L getNAME
+does not treat these correctly.
+Executing
+.L List.so
+will generate the
+.L .so
+files and echo their filenames to the standard
+output.
+Therefore,
+you can create the
+.L .so
+files and put them under
+.SM SCCS
+with the command
+.LS 4
+sccs create `sh List.so`
+.LE
+.H C "Updating the \fLList\fP Pages"
+.LP
+It remains now to update the List pages of each
+manual section.
+You'll want to delete the List page entries
+for man pages that have been deleted since the
+last release and add entries for the new man pages:
+.H 2 "Delete Entries of Pages Deleted Since the Last Release"
+.LS 4
+cp FILES.delete FILES.zap
+vi FILES.zap
+.LE
+Remove the section suffixes from the filenames
+listed there:
+.LS 4
+:%s/\e(.*\e)\e.[1-8].*/\e1/
+.LE
+Now,
+.L FILES.zap
+doesn't list filenames,
+but rather lists names of commands or functions
+that have been deleted since the last release.
+.LP
+Now generate the new List page entries for the section into
+.L List.add :
+.LS 4
+\&../bin/getNAME -ip `cat FILES.add` > List.add
+vi List.add
+.LE
+Verify that the entries are correct!
+Again, search for filenames which contain
+`.' (dot) characters.
+.LP
+Check out the current List file from
+.SM SCCS :
+.LS 4
+sccs edit List.\fIsection\fP
+.LE
+Before deleting any lines of
+.L List. "\fIsection\fP,"
+make sure the right deletions will be performed.
+Search
+.L List. \fIsection\fP
+for occurrences of names in
+.L FILES.zap
+and redirect the output to 
+.L List.zap :
+.LS 4
+fgrep -f FILES.zap List.\fIsection\fP > List.zap
+vi List.zap
+.LE
+Make sure that you want these lines deleted
+from
+.L List. \fIsection\fP!
+If there are lines which you
+don't
+want to delete,
+but they are comparatively few,
+you'll want to make the deletions from
+.L List. "\fIsection\fP ,"
+and merge back in any mistakenly deleted lines afterwards.
+It's therefore very important to preserve
+.L List.zap !
+.LP
+To make the deletions,
+.LS 4
+vi List.\fIsection\fP
+.LE
+Type:
+.LS 4
+!G
+.LE
+At the prompt,
+type:
+.LS 4
+fgrep -v -f FILES.delete %
+.LE
+followed by
+.SM RETURN .
+If the file doesn't look right,
+you can always undo.
+Now,
+restore any mistakenly deleted lines from
+.L List.zap
+to
+.L List. \fIsection\fP
+and write the file.
+In general it's a good idea to keep records of any deletions
+you make,
+so keep
+.L List.zap
+around,
+just to be safe.
+.H 2 "Add New Entries"
+.LP
+To generate the new entries,
+position the cursor on the first line containing
+.L .zZ .
+Read in
+.L List.add
+at this point:
+.LS 4
+:r List.add
+.LE
+Sort the entries:
+.LS 4
+!G
+.LE
+At the prompt,
+type:
+.LS 4
+sort
+.LE
+followed by
+.SM RETURN .
+The
+.L .fi
+request will be moved to beginning of the list.
+Be sure to return it to the end of the list where it belongs.
+If there are any capitalized entries,
+sort will place them at the top of the list.
+Move the capitalized entries to just after the
+corresponding lower-case entries to restore the list to
+dictionary order.
+.LP
+In sections 2 and 3,
+make sure that function names are followed by
+.L (\e|) ' `
+(parentheses separated by a half-space).
+To do this,
+use the substitution command
+.LS 4
+:%s/\e\efR/(\e\e|)&/
+.LE
+The next steps in the process are updating
+the index for each section, and running
+a final check on the formatting of all
+pages changed since the last release.
+These processes should happen concurrently.
+.H C "Updating the Index \(em Phase One"
+.LP
+In order to update the index,
+you'll need to compile a list of man pages
+changed since the last release.
+Then, you'll want to run off a
+trial index containing only references
+to those man pages, in order to
+check it for accuracy and completeness.
+.H 2 "Get Lists of Pages Changed Since the Last Release"
+.LP
+.L cd
+to the directory containing the 
+sources for one of the sections.
+List the
+.L s.
+files for the man pages in the
+.SM SCCS
+directory using the long form and by modification
+time.
+Redirect the output to
+.L FILES.index :
+.LS 4
+ls -lt SCCS/s.* > FILES.index
+vi FILES.index
+.LE
+Find the start of that part of
+the list bearing the date of the last release.
+Delete these and all entries below it
+by typing:
+.LS 4
+dG
+.LE
+in command mode
+(vi will not echo this).
+Now,
+in order to strip away all but
+the desired filename from the file,
+type:
+.LS 4
+:%s/.*\e/s\e.//
+.LE
+Sort the resulting list by positioning the
+cursor on the first line of the file and
+typing
+.LS 4
+!G
+.LE
+At the prompt,
+type:
+.LS 4
+sort
+.LE
+followed by
+.SM RETURN .
+Write the file!
+The success of the succeeding
+steps depends on this!
+.LP
+At this point,
+you want to make sure that current versions of the
+files listed in
+.L FILES.index
+are extant.
+To do this,
+type
+.SM CTRL-Z
+to suspend
+.L vi
+and get a shell prompt.
+Get the files from
+.SM SCCS :
+.LS 4
+sccs get `cat FILES.index`
+.LE
+Go back into
+.L vi :
+.LS 4
+fg
+.LE
+Since
+.L .so
+files do not contain indexing requests,
+you'll want to eliminate them from the list.
+Again position the cursor on the first line
+of the file and type:
+.LS 4
+!G
+.LE
+At the prompt,
+type:
+.LS 4
+grep -l NAME `cat %`
+.LE
+This will replace the
+.L vi
+buffer with the names of
+those files in the list which contain
+.SM NAME
+lines.
+.L % ' (`
+stands for the name of the file currently being edited,
+in this case,
+.L FILES.index .)
+.LP 
+Write the file and quit
+.L vi .
+.LP 
+You now have a list of man pages
+for which the index entries must be checked.
+.H 2 "Copy the Sources from the Release Machine"
+.LP
+Now you need to get copies of the sources from the release machine:
+.LS 4
+cd /usr/src/man/man\fIsection\fP
+.LE
+On your own machine:
+.LS 4
+cd \fIyour-home-directory\fP
+mkdir index.pages
+.LE
+Go back to the release machine:
+.LS 4
+foreach i (man1 man2 man3 man4 man5 man6 man7 man8)
+cd $i
+rcp `cat FILES.index` \fIyour-machine\fP:\fIyour-home-directory\fP/index.pages
+cd ..
+end
+.LE
+You'll also need a copy of
+.L FILES.index
+on your own machine.
+Rather than copying it from the release machine,
+you can do it more easily:
+.LS 4
+cd \fIyour-home-directory\fP/index.pages
+ls > FILES.index
+vi FILES.index
+.LE
+Remove
+.L FILES.index '' ``
+itself from the list.
+.H 2 "Generate a Trial Index"
+.LP
+Now generate a trial index:
+.LS 4
+make -f Printfile trial.index
+.LE
+This invokes the
+.L trial.index
+target in
+.L Printfile ,
+which generates the file
+.L trial.index .
+.LP
+In order to preview this file,
+you must copy it from the release machine
+to your own machine:
+.LS 4
+rcp trial.index \fIyour-machine\fP:/tmp/trial.index.\fIsection\fP
+.LE
+Now for the fun part:
+.LS 4
+preview /tmp/trial.index.\fIsection\fP
+.LE
+This will display the formatted trial index
+on the screen.
+.H C "Reviewing Page Formatting"
+.H 2 "Print Out the Pages Changed Since the Last Release"
+.LP
+Go back to the release machine and print out
+the man pages listed in
+.L FILES.index:
+.LS 4
+(troff -Tlw -msunman `cat FILES.index`) >& /dev/null &
+.LE
+.H 2 "Make Fixes"
+.LP
+Proofread them and make additional index
+entries and corrections:
+.LS 4
+vi `cat FILES.index`
+.LE
+.H 2 "Merge in the Changes"
+.LP
+In order to this operation,
+you must have the man pages mounted from the release machine
+(typically on
+.L /usr/src/man
+or
+.L /usr/man )
+This is to ensure that you are comparing your versions of the pages
+against the versions that you originally copied.
+.LP
+Create a destination directory where
+.L filemerge
+can store the merged versions of the files:
+.LS 4
+cd \fIyour-home-directory\fP/index.pages
+mkdir pages.merged
+.LE
+Now extract from
+.L FILES.index
+separate lists for each section of pages changed since the last release:
+.LS 4
+foreach i (1 2 3 4 5 6 7 8)
+grep "\.$i" FILES.index > FILES.index.$i
+end
+.LE
+You're now ready to run
+.L filemerge:
+.LS 4
+filemerge -b -l FILES.index.\fIsection\fP . /usr/src/man/man\fIsection\fP pages.merged
+.LE
+Repeat the process for each section.
+.LP
+Note:
+If you've made many changes to a file,
+.L filemerge
+may prove prohibitively cumbersome.
+In this case,
+just
+.L vi
+the file
+to review your changes.
+.LP
+When you've finished,
+and you're satisfied that you prefer the merged versions,
+you need to move them onto the files in
+.L index.pages:
+.LS 4
+cd \fIyour-home-directory\fP/index.pages
+mv pages.merged/*.[1-8]* .
+.LE
+.H C "Updating the Index \(em Phase Two"
+.H 2 "Using the \fL.IX\fP Macro"
+.LP
+The usage of the
+.SM \fL.IX\fP
+macro is as follows:
+.LS 4
+\&.IX "\fI1st-index-term\fP" "\fI2nd-index-term\fP" "\fIformat-of-1st\fP" "\fIformat-of-2nd\fP"
+.LE
+The first argument,
+.I 1st-index-term ,
+is the unformatted primary index term
+and specifies where the entry will appear in the index.
+The second argument,
+.I 2nd-index-term ,
+is the unformatted secondary index term and
+will appear as a subentry in the index under
+.I 1st-index-term .
+The third argument,
+.I format-of-first ,
+specifies how
+.I 1st-index-term
+should be formatted in the index.
+And the fourth argument,
+.I format-of-second ,
+specifies how
+.I 2nd-index-term
+should be formatted in the index.
+.I format-of-first .
+and
+.I format-of-second
+should be similar enough to
+.I 1st-index-term
+and
+.I 2nd-index-term ,
+respectively,
+to ensure that the entries will appear in the right
+places in the index!
+.H 2 "Review \fLtrial.index\fP"
+.LP
+The next step in the indexing process is to
+compare the trial index you have just generated
+with the extant manual index.
+Print out
+.L trial.index :
+.LS 4
+lpr -n trial.index
+.LE
+Look over the printed copy and mark any ghastly
+errors that you find.  Look specifically for
+primary entries with only one secondary entry,
+entries out of order,
+formatting errors,
+misleading or confusing entries and typos.
+A primary entry that has only one secondary entry
+in the trial index may well have several in the extant
+index.
+That is,
+it may not be a problem.
+Be sure to check for this.
+.LP
+It is sometimes difficult to determine the page on
+which problem entries are indexed.
+You may just have to make a few guesses until
+you find the right pages.
+.L grep "" (
+is your friend.)
+Usually,
+though,
+the name of the page in which a particular index entry occurs will appear
+in the entry itself.
+.H 2 "Fix the Bad Index Entries"
+.LP
+Now that you've identified the bad entries,
+.L vi
+the offending files and fix them.
+Indexing can best be described as a black art,
+and the best way to learn it is to learn by
+example.
+Look at the sources for the current release of the man pages
+and see how indexing is done there,
+and when in doubt,
+ask someone about it.
+.H 2 "Index the New Pages"
+.LP
+Once you've fixed the bad index entries,
+you need to generate index entries for the
+pages that have been added since the last release.
+Many of these pages will not have been indexed at all,
+and many others may have been indexed incorrectly.
+Recall that
+.L FILES.add
+contains a list of added pages in each section:
+.LS 4
+cd /usr/src/man/man\fIsection\fP
+vi `cat FILES.add`
+.LE
+In generating index entries,
+try making each name listed in the
+.SM NAME
+line a primary entry,
+checking frequently with the extant index for precedents,
+rotating the NAME line to generate primary entries,
+looking at
+.SM "SEE ALSO"
+entries to help indentify groups of related pages,
+borrowing and modifying secondaries form other pages in such groups,
+and converting new entries to secondaries when they belong logically
+to some existing primary.
+Remember,
+it'll take some practice to get good at this.
+.H 2 "Merge in the Indexing Changes"
+.LP
+Once you've satisfied yourself that the new pages are adequately
+indexed,
+you'll need to confirm the changes you've made and check the
+new pages in on the release machine.
+Use
+.L filemerge
+just as you did for the formatting fixes.
+(See the chapter on reviewing page formatting.)
+.LP
+Now go to the release machine:
+.LS 4
+cd /usr/src/man
+.LE
+Check out the files in question:
+.LS 4
+foreach i (man[1-8])
+cd$i
+sccs edit `cat FILES.index`
+cd ..
+end
+.LE
+Copy the merged sources from your machine onto the sources on the
+release machine:
+.LS 4
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+rcp \fIyour-machine\fP:\fIyour-homedir\fP/index.pages/*.$i* .
+cd ..
+end
+.LE
+Check these copies in:
+.LS 4
+foreach i (man[1-8])
+cd $i
+sccs delget -y"indexing fixes for \fIrelease\fP" `cat FILES.index`
+cd ..
+end
+.LE
+.H C "Updating Makefiles and Printfiles"
+.LP
+You're now nearly ready to clone the sources and print the document,
+but in order to do that,
+you'll need to update the Makefiles and Printfiles.
+The Makefiles will go on the release tape,
+and the Printfiles will be used to generate the hard copy of the manual.
+.H 2 "\fLmake update\fP"
+.LP
+Go to the release machine:
+.LS 4
+cd /usr/src/man
+make update
+.LE
+This will append lists of pages deleted from and added to each section
+to the Makefile and Printfile in each section.
+.H 2 "Edit the Makefiles"
+.LP
+Now edit the Makefiles:
+.LS 4
+cd /usr/src/man/man\fIsection\fP
+vi Makefile
+.LE
+Check the deletion and insertion lists for any obvious errors.
+Delete all filenames ending with
+.L .eqn
+from these lists.
+.L .eqn
+files do not ship on the release tape.
+Position the cursor on the first line of the
+.L FILES
+list definition.
+You need to break the list out so that there's one filename per line:
+.LS 4
+!}
+.LE
+At the prompt,
+type:
+.LS 4
+make show
+.LE
+Now go through the expanded
+.L FILES
+list and delete those filenames which appear
+in the delete list.
+You can do this by hand,
+since the delete list won't ordinarily be large.
+Be sure to keep a record of the deleted pages!
+.LP
+When you've made the deletes and noted them down,
+delete the delete list and position the cursor on the first
+line of the insert list.
+Remove the comment characters and the extra spaces:
+.LS 4
+:.,$s/# //
+.LE
+Now you need to add the insert list to the
+.L FILES
+list.
+Again position the cursor on the first line of the insert list.
+Delete the list:
+.LS 4
+dG
+.LE
+Position the cursor on the line
+.L "FILES= \e" ''. ``
+.L "FILES= \e" '' (``
+should be by itself on a line.)
+Now get the list from the delete buffer and insert it at the top
+of the
+.L FILES
+list:
+.LS 4
+p
+.LE
+Now position the cursor on the first line following the line
+.L "FILES= \e" ''. ``
+Sort and repack the
+.L FILES
+list and append a backslash
+.L \e ) (
+to each
+line:
+.LS 4
+!}
+.LE
+At the prompt,
+type:
+.LS 4
+sort -u | fmt | sed 's/$/ \e\e/'
+.LE
+There will be a backslash at the end of the last line.
+Delete it.
+.LP
+Repeat the above in the Makefile for each section.
+.H 2 "Review the Makefiles"
+.LP
+In each section,
+review the changes you've made:
+.LS 4
+make show | more
+.LE
+Does the list look right?
+.H 2 "Edit the Printfiles"
+.LP
+Now edit the Printfiles,
+doing just as you did in the Makefiles,
+with the following exceptions:
+.LP
+Do not delete the
+.L .eqn
+files from the list.
+You'll need them to print the manual.
+Instead,
+delete all
+.L . \fIsection\fP
+files
+that correspond to
+.L .eqn
+files.
+.LP
+Delete all the
+files containing
+.L .so
+requests.
+If you're not sure whether a file contains
+.L .so
+requests,
+you'll just have to look at it to find out.
+A little experience will make these identifications easier.
+.LP
+Finally,
+when dealing with the Printfiles,
+use
+.LS 4
+make showprint
+.LE
+instead of
+.L "make show"
+in all sections but Section 3.
+In section 3, for each of the subsections (3, 3L, 3M, 3R and 3V):
+.LS 4
+!}
+.LE
+At the prompt,
+type:
+.LS 4
+tr ' ' '\e012' | sed '/\e\e/d'
+.LE
+.LP
+Note:
+.L List. \fIsection\fP
+does not appear in the
+.L FILES
+lists in the Printfiles.
+This is as it should be.
+.H 2 "Review the Printfiles"
+.LP
+When you've edited the Printfiles,
+review them:
+.LS 4
+make showprint | more
+.LE
+.H 2 "Compare the Makefiles and Printfiles"
+.LP
+For a last sanity check,
+compare the
+.L FILES
+lists in the Makefiles and Printfiles.
+.LS 4
+cd /usr/src/man/man\fIsection\fP
+.LE
+Create a file called
+.L Print.list
+containing
+.L showprint
+output:
+.LS 4
+make showprint > Print.list
+.LE
+Compare the contents of
+.L Print.list
+with the output of
+.L "make show" :
+.LS 4
+make show | comm -3 Print.list - | more
+.LE
+All you should see is
+.L .so
+files in the right column
+(pages in the
+.L Makefile
+list,
+but not in the
+.L Printfile
+list).
+and
+.L .eqn
+files in the left column
+(pages in the
+.L Printfile
+list
+but not in the
+.L Makefile
+list).
+Investigate any other files that appear,
+since they're either extraneous
+or are missing from one of the lists.
+.LP
+Repeat this check for all sections.
+.H 2 "Check in the Makefiles and Printfiles"
+.LP
+Once you've satisfied yourself that the Makefiles and Printfiles are
+correct,
+check them in on the release machine:
+.LS 4
+foreach i (man[1-8])
+cd $i
+sccs delget -y"updated FILES list for \fIrelease\fP" Makefile Printfile
+cd ..
+end
+.LE
+.H C "Cloning the Sources"
+.LP
+Now you're ready to clone the sources.
+Check to see if there are any files still checked out:
+.LS 4
+cd /usr/src/man
+ls man?/SCCS/p*
+.LE
+If you find any such file,
+you'll have to force the owner off the file.
+This is serious matter!
+.LP
+Go to the
+.L man\fIsection\fP
+directory that contains the errant file,
+and save the file to the archive:
+.LS 4
+cd man\fIsection\fP
+mv \fIerrant-file\fP ../arch/\fIerrant-file\fP.\fIowner\fP
+.LE
+Now you need to remove the
+.L p.
+file from the
+.SM SCCS
+directory:
+.LS 4
+rm SCCS/p.\fIerrant-file\fP
+.LE
+When you do this,
+mail the release engineer and the owner of the file
+that you have done so!
+.H 2 "\fLmake clean\fP"
+.LP
+Once you're very sure that all the files are under
+.SM SCCS
+and are all checked in,
+Remove all the extant versions of the files before
+you extract just the printable versions from
+.SM SCCS .
+This is just to make verification easier.
+.LS 4
+cd /usr/src/man
+make clean
+.LE
+Now examine all the sections.
+.LS 4
+cd man\fIsection\fP
+.LE
+Investigate any files you find still lying around,
+as you may need to
+.L "sccs create"
+them.
+.LP
+There should be nothing left in the
+.L man \fIsection\fP
+directories but the
+.SM SCCS
+subdirectories.
+.LP
+Note:
+When you find a file that's been sneaked in after the freeze date,
+make sure that it's under
+.SM SCCS
+before you do a
+.L "make clean" !
+.H 2 "Retrieve Only the Printable Sources"
+.LP
+Now retrieve only the printable sources from
+.SM SCCS :
+.LS 4
+cd /usr/src/man
+make -f Printfile all
+.LE
+.H 2 "Make a Local Copy on the Release Machine"
+.LP
+The actual cloning of the sources will happen in two steps.
+First,
+make a local copy of the sources on the release machine.
+.LS 4
+cd /usr/src/man
+.LE
+Find out how much storage the sources require:
+.LS 4
+du
+.LE
+This command will display filesystem usage in k-bytes for the
+current directory and its subdirectories.
+.LP
+Find a filesystem partition with enough free space to hold the sources
+comfortably:
+.LS 4
+df
+.LE
+This command will display (among other things) available storage on each
+mounted filesystem and the directories on which those filesystems
+are mounted.
+.LP
+Find a directory with enough room in it,
+and create a subdirectory there called
+.L man :
+.LS 4
+cd \fIdirectorywithenoughroominit\fP
+mkdir man
+.LE
+You now need to edit
+.L Printfile
+and redefine the
+.L CLONEDIR
+macro:
+.LS 4
+cd /usr/src/man
+vi Printfile
+.LE
+Redefine
+.L CLONEDIR
+to be
+.LS 4
+\fIdirectorywithenoughroominit\fP/man
+.LE
+Next, execute the
+.L clone
+target in
+.L Printfile .
+Preview the actions of this target:
+.LS 4
+make -nf Printfile clone
+.LE
+This displays what the
+.L clone
+target will do.
+Look it over carefully.
+If it's correct,
+execute
+.L clone :
+.LS 4
+make -f Printfile clone
+.LE
+Verify this copy by looking through
+.L CLONEDIR .
+.LP
+Once you're satisfied that the copy was successful,
+restore the online sources 
+.L .so "" (
+files) so that people who mount the
+man pages from the release machine won't get nasty messages when
+they invoke
+.L man :
+.LS 4
+cd /usr/src/man
+make all
+.LE
+Before doing the second step,
+make some general sanity checks:
+.LS 4
+cd CLONEDIR
+.LE
+Are all the Printfiles there?:
+.LS 4
+ls man?/Printfile
+.LE
+.H 2 "Make a Remote Copy to Your Doctools Host"
+.LP
+Now you're ready to copy the sources from
+.L CLONEDIR
+to your doctools host.
+Edit the Printfile on the release machine and redefine the
+.L DESTHOST
+and
+.L DESTDIR
+macros:
+.LS 4
+cd /usr/src/man
+vi Printfile
+.LE
+Redefine
+.L DESTHOST
+to be the name of your doctools host.
+Redefine
+.L DESTDIR
+to be the name of the directory in which you want to put the sources.
+.LP
+Do the remote copy:
+.LS 4
+make pinstall
+.LE
+This should have worked,
+but just to be sure,
+perform one more sanity check.
+On the release machine:
+.LS 4
+cd CLONEDIR
+du
+.LE
+On your doctools host:
+.LS 4
+cd DESTDIR
+du
+.LE
+Do the sources in both directories occupy the same amount of storage?
+.LP
+There's one last check you need to make before you pring the manual.
+You need to run
+.L checknr
+on all the source files:
+.LS 4
+make checknr
+.LE
+This will give warnings about dubious
+.L troff
+instructions.
+Most of the source files should generate relatively few warnings,
+and many of the warnings will not,
+in fact,
+indicate errors.
+You should soon get a feel for which warnings need to be investigated.
+Keep a list of files to investigate,
+and make any necessary fixes.
+When you're satified with these fixes,
+you're finally ready to start printing the manual!
+.H C "Printing the Manual"
+.H 2 "Preparation"
+.LP
+Start by making each section of the manual a single document
+by concatenating the pages in each section:
+.LS 4
+cd DESTDIR
+make man
+.LE
+This target will generate files called
+.L .man . \fIsection\fP
+.LP
+Generate PostScript images of these files:
+.LS 4
+make PS
+.LE
+This target will generate files called
+.L .PS . \fIsection\fP
+These are the files that will actually be printed.
+The
+.L PS
+target will also generate the pagination file
+.L pag.PS .
+.H 2 "Verify the Pagination"
+.LP
+The pagination sheets consist of diagrams of each page of the manual.
+Each sheet contains eighty to ninety small page diagrams.
+A page number appears on each diagram,
+and man page names appear on diagrams
+that mark the beginnings of man pages.
+.LP
+Print
+.L pag.PS :
+.LS 4
+lpr pag.PS
+.LE
+Review the printed copy very, very carefully!
+Check for pages out of order (especially in section 3),
+missing and duplicate pages,
+and bad page numbering.
+Make sure,
+too,
+that when a section ends on an odd page number,
+there is a blank,
+even-numbered page immediately following it.
+.LP
+Draw a diagonal slash through the page diagrams corresponding
+to blank pages.
+Circle the page numbers on the diagrams of pages
+on which no page number should be printed.
+.LP
+Note:
+There will be more than enough page diagrams at the end of the
+pagination sheet to account for the index.
+After you print the index,
+and decide that it's correct,
+go through and mark the page numbers on all the index page diagrams.
+This is tiring,
+but important.
+You can then cross out the remaining page diagrams at the end.
+.LP
+If you find pagination problems,
+you're going to have to fix them and 
+backtrack enough steps to recover the errors.
+This is frustrating and thoroughly unpleasant,
+especially if you have to reprint entire sections.
+.H 2 "Print Manual Sections"
+.LP
+Once you've ironed out the pagination problems,
+you're at last ready to start printing.
+A good strategy is to print the smaller sections first,
+so that major errors can be caught before much printing has
+been done:
+.LS 4
+lpr -s -P\fIprinter\fP \fIsection\fP.PS
+.LE
+Leaf through the printed copy and put yellow stickies
+on pages which contain errors.
+Especially important are errors which affect pagination,
+such as bad page breaks,
+bad size changes which alter vertical spacing
+and incomplete pages.
+Note any other technical or formatting errors as well.
+.LP
+Fix errors which affect pagination first,
+and then make any other fixes you think necessary.
+.LP
+Note:
+Edit the clones when you make fixes!
+Do not work on the release machine!
+.LP
+If you've found pagination problems,
+you'll have to redo some steps.
+.LP
+Note:
+A pagination botch in one section will affect all subsequent sections.
+In this case,
+a major reprint is unavoidable.
+.H 2 "Make Patches"
+.LP
+In the case of errors which don't affect pagination,
+it's possible to replace the bad pages with patches,
+instead of reprinting the whole manual.
+After you've made all the fixes you find necessary,
+you can write shell scripts to generate the patch pages
+for each section and to number them correctly:
+.LS 4
+cd DESTDIR
+vi \fIsection\fP.sh
+.LE
+Use this template to write your script:
+.LS 4
+#! /bin/sh
+t() {
+tbl $1 | troff -msunman -rC1 -rD1 -rP$2
+}
+t \fIpatchpage\fP \fIpagenumber\fP
+.LE
+.I patchpage
+is the name of the source file for the man page you want
+to reprint and
+.I pagenumber
+is the number given to the first page of
+.I patchpage .
+Include an invocation of the shell function
+.L t
+for each of the man pages in
+.I section
+you want to reprint.
+Now run the script:
+.LS 4
+cd man\fIsection\fP
+sh ../\fIsection\fP.sh
+.LE
+Write and run this script for each of the sections
+in which you have pages to patch.
+.H 2 "Fold in the Patch Pages"
+.LP
+Once you've printed all your patch pages,
+you'll need to fold them into the manual.
+Replace the stickied pages with their patches.
+Double-check to make sure the page numbering is correct!
+Watch for errors.
+(You may have to patch the patches!)
+Remember to insert blank sheets at the ends of sections
+which end on odd-numbered pages.
+Write page numbers in blue pencil on these blank sheets,
+and insert colored sheets where tabs will go in the finished manual.
+.LP
+Don't forget to print the index!
+.LS 4
+lpr -s -P\fIprinter\fP index.PS
+.LE
+Review the printed copy of the index and sticky any unnacceptable
+errors.
+.H 2 "A Final Review"
+.LP
+By now,
+you should be looking at an enormous pile of paper.
+You need to one last major sanity check.
+Yes,
+you guessed it.
+Leaf through the entire manual.
+Verify that the page numbering correlates with the pagination
+sheet.
+Check page ordering and completeness.
+Keep an eye out for greivous errors,
+and put stickies on them.
+.H 2 "More Patches"
+.LP
+When you've gone through the entire document,
+print any final patches you think necessary,
+and fold them in.
+Again,
+be careful about page numbering.
+.H 2 "Print the Cover Sheet"
+.LP
+Now all your manual needs is a cover sheet.
+.LS 4
+cd DESTDIR
+vi cover.mex
+.LE
+You need to update the part number and dash level,
+the revision level and the revision date.
+The dash level is 01 for an alpha release,
+greater than 01 and less than 10 for a beta release
+and 10 for an
+.SM FCS
+release.
+.LP
+Nobody knows why.
+.LP
+The revision level is 1 for an alpha release,
+51 for a beta release
+and A for an
+.SM FCS
+release.
+.LP
+Nobody knows why.
+.LP
+Print the cover sheet:
+.LS 4
+troff -Tlw -mex cover.mex
+.LE
+.H 2 "Deliver the Document"
+.LP
+You are now ready to send the hellish thing out the door.
+Stack the manual neatly in a box,
+section by section.
+Check the page numbers at the beginnings and ends of sections
+against the pagination sheet.
+Review the pagination sheet itself for completeness and order.
+Do the printer a favor:
+Number the pages of the pagination sheet,
+put a paper clip on them,
+and put them in the box on top of the document.
+.LP
+Deliver it to the production department.
+Now it's their problem!
+.LP
+.H C "Final Housekeeping"
+.LP
+I hate to tell you this,
+but you're not finished yet.
+Yes,
+there's some final housekeeping still left to do.
+.H 2 "Move Changed Pages Back to the Release Machine"
+.LP
+You've undoubtedly made changes to some of the pages since
+you cloned the sources.
+Now you have to move them back to the release machine.
+.H 2 "Make Lists of Pages Changed Since the Clone"
+.LP
+The first step in this is to make lists of pages changed
+since the clone and put them in files called
+.L Mutantclones \fIsection\fP:
+.LS 4
+cd man\fIsection\fP
+ls -lt > Mutantclones\fIsection\fP
+vi Mutantclones\fIsection\fP
+.LE
+Delete
+.L Mutantclones \fIsection\fP
+itself from the list.
+Find the start of that part of
+the list bearing the date of the clone.
+Delete these and all entries below it:
+.LS 4
+dG
+.LE
+Now,
+in order to strip away all but
+the desired filename from the file,
+type
+.LS 4
+:%s/.*[0-9][0-9] //
+.LE
+Sort the list.
+position the cursor on the first line of the file and
+type:
+.LS 4
+!G
+.LE
+At the prompt,
+type
+.LS 4
+sort
+.LE
+followed by
+.SM RETURN .
+Review the list visually to make sure there are no spurious entries.
+.LP
+Generate such a list for each section.
+.H 2 "Copy the Lists to the Release Machine"
+.LP
+Now you need to copy these lists to the release machine:
+.LS 4
+cd DESTDIR
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+rcp Mutantclones$i \fIrelease-machine\fP:/tmp
+cd ..
+end
+.LE
+.H 2 "\fLsid\fP"
+.LP
+Now use
+.L sid
+to fix the
+.SM SCCS
+id lines:
+.LS 4
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+sid `cat Mutantclones$i`
+cd ..
+end
+.LE
+Verify this process:
+.LS 4
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+grep 'SMI' * | more
+cd ..
+end
+.LE
+If you still see any bad
+.SM SCCS
+id lines,
+.L vi
+the offending files and fix them.
+.H 2 "Check out the Files Modified Since the Clone"
+.LP
+Now you need to go to the release machine
+and check out all the files that have been modified since the
+clone:
+.LS 4
+cd /usr/src/man
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+sccs edit -s `cat /tmp/Mutantclones$i`
+cd ..
+end
+.LE
+.H 2 "Copy the Files from Your Doctools Host"
+.LP
+Now you're ready to copy the files back.
+Return to your doctools host:
+.LS 4
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+rcp * \fIrelease-machine\fP:/usr/src/man/man$i
+cd ..
+end
+.LE
+After a remote copy of that magnitude
+you need to do a sanity check.
+Go back to the release machine.
+For each of the files you copied,
+display the number of lines of difference between
+your modified copy of a file and the version of the file
+which you originally cloned:
+.LS 4
+foreach i ( 1 2 3 4 5 6 7 8 )
+cd man$i
+foreach j (`cat /tmp/Mutantclones$i`)
+echo -n "$j   " >>! /tmp/diffs.list
+sccs diffs $j | wc -l >>! /tmp/diffs.list
+end
+cd ..
+end
+.LE
+If there are less than five lines of difference,
+you should investigate.
+It's possible that the changes you made didn't get copied correctly.
+If there are more than one hundred lines of difference,
+you're probably missing something.
+Investigate in this case, too.
+You may have to try copying a file again,
+or you may have to reconstruct your changes.
+.H 2 "Check the Files In"
+.LP
+If you're satisfied that the copy was successful,
+you're ready to check the files in:
+.LS 4
+cd /usr/src/man
+foreach i (1 2 3 4 5 6 7 8)
+cd man$i
+sccs delget -s -y"\fIcomment\fP" `cat /tmp/Mutantclones$i`
+cd ..
+end
+.LE
+.I comment
+should probably indicate that the modifications you made were
+last-minute changes for the build.
+.LP
+One more sanity check:
+.LS 4
+cd man\fIsection\fP
+sccs tell
+.LE
+If there's anything left checked out,
+investigate and fix it.
+Do this in each section.
+.H 2 "Test \fLcatman\fP"
+.LP
+There's one final test you have to do.
+You need to run some tests to assure that
+.L catman
+will work properly.
+.LP
+.L catman
+produces formatted versions of the man pages
+("cat files")
+that take up space.
+During testing,
+though,
+there's no need to do that time-consuming formatting.
+You can trick catman into generating dummy cat files
+that won't take up much space and will be easy to clean up.
+.H 2 "Create \fLcat\fP\fIsection\fP Directories"
+.LP
+Create
+.L cat \fIsection\fP
+directories in
+.L /usr/src/man ,
+create a test directory,
+and make symbolic links from the
+.L cat \fIsection\fP
+directories to your test directory:
+.LS 4
+cd /usr/src/man
+mkdir cat1 cat2 cat3 cat4 cat5 cat6 cat7 cat8 
+mkdir /tmp/cat
+foreach i (1 2 3 4 5 6 7 8)
+ln -s /tmp/cat cat$i
+end
+.LE
+.H 2 "\fLNroff\fP"
+.LP
+There should be a file called
+.L Nroff
+in
+.L /usr/src/man/bin.
+It should consist of one line:
+.LS 4
+head -1 $2
+.LE
+.H 2 "Run \fLcatman\fP"
+.LP
+You can trick
+.L catman
+into using this
+script instead of the usual
+.L nroff :
+.LS 4
+cd /usr/src/man/bin
+mv Nroff nroff
+catman
+.LE
+Note:
+You may have to adjust the argument number
+.L $2 ) (
+if you get this error message:
+.LS 4
+Bad number format
+.LE
+If you get errors from
+.L catman ,
+.L "sccs get"
+the offending files,
+and try again.
+.LP
+.L catman
+should in all likelihood give error messages only about bad
+.L .so
+references.
+These are usually references to files the names of which have
+been changed.
+These should be easy to fix.
+Other,
+more cryptical error messages may take some investigating.
+.H 2 "Test \fLwhatis\fP"
+.LP
+You still need to run
+.L catman
+once more,
+to test the
+.L whatis
+database:
+.LS 4
+catman -w
+more /usr/man/whatis
+.LE
+The bad entries should appear at the top.
+They indicate problems with the
+.SM NAME
+lines of certain pages.
+It should usually be apparent which files are the sources of the dreck.
+.L vi
+these files and fix those 
+.SM NAME
+lines!
+.H 2 "Cleanup"
+.LP
+When you're finally satisfied that
+.L catman
+will work properly,
+clean up after yourself:
+.LS 4
+cd /usr/src/man/bin
+mv nroff Nroff
+cd ..
+rm cat?
+rm -r /tmp/cat
+.LE
+.H 2 "Recover"
+.LP
+Now,
+you are well and truly finished with the build.
+.LP
+Follow these final instructions very carefully:
+.LP
+.SM "LEAVE THE OFFICE" !
+Go out and indulge wholeheartedly in your favorite vice.
+Sleep late tomorrow.
+Repeat for a week.

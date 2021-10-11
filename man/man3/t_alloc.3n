@@ -1,0 +1,191 @@
+.\" @(#)t_alloc.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_ALLOC 3N "21 January 1990"
+.SH NAME
+t_alloc \- allocate a library structure
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *t_alloc(fd, struct_type, fields)
+int fd;
+int struct_type;
+int fields;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_alloc()" "" "\fLt_alloc()\fR \(em allocate a library structure" ""
+.IX allocate "a library structure"
+.IX transport "allocate a library structure"
+.LP
+.B t_alloc(\|)
+dynamically allocates memory for the
+various transport function argument structures as specified below.
+.B t_alloc(\|)
+allocates memory for the specified structure and
+for buffers referenced by the structure.
+.LP
+The structure to allocate is specified by
+.IR struct_type ,
+and can be one of the following (each of of these 
+structures may be used as an argument
+to one or more transport functions):
+.PD 0
+.RS
+.ft B
+.nf
+\s-1T_BIND\s0		 struct t_bind
+\s-1T_CALL\s0		 struct t_call
+\s-1T_OPTMGMT\s0	 struct t_optmgmt
+\s-1T_DIS\s0 		 struct t_discon
+\s-1T_UNITDATA\s0 	 struct t_unitdata
+\s-1T_UDERROR\s0	 struct t_uderr
+\s-1T_INFO\s0		 struct t_info
+.ft R
+.fi
+.RE
+.PD
+.LP
+Each of the above structures, except
+.BR \s-1T_INFO\s0 ,
+contains at least one field of type
+.RB ` "struct netbuf" '.
+The
+.IR maxlen , 
+.IR len , 
+and 
+.I buf
+members of the 
+.B netbuf 
+structure are described in 
+.BR t_accept (3N).
+For each field of this type, the user may specify that
+the buffer for that field should be allocated as well.
+The
+.I fields
+argument specifies this option, where the argument is the
+bitwise\-\s-1OR\s0 of any of the following:
+.RS
+.TP 10
+.PD 0
+.SB T_ADDR
+The
+.I addr
+field of the
+.BR t_bind ,
+.BR t_call ,
+.BR t_unitdata ,
+or
+.B t_uderr
+structures.
+.TP
+.SB T_OPT
+The
+.I opt
+field of the
+.BR t_optmgmt ,
+.BR t_call ,
+.BR t_unitdata ,
+or
+.B t_uderr
+structures.
+.TP
+.SB T_UDATA
+The
+.I udata
+field of the
+.BR t_call ,
+.BR t_discon ,
+or
+.B t_unitdata
+structures.
+.TP
+.SB T_ALL
+All relevant fields of the given structure.
+.RE
+.PD
+.LP
+For each field specified in
+.IR fields ,
+.B t_alloc(\|)
+allocates memory for the buffer associated with the field,
+and initializes the
+.I buf
+pointer and
+.I maxlen
+field accordingly.
+The length of the buffer allocated is based on the same size
+information returned to the user on
+.BR t_open (3N)
+and
+.BR t_getinfo (3N).
+Thus,
+.I fd
+must refer to the transport endpoint through which the newly
+allocated structure is passed, so that the appropriate
+size information can be accessed.
+If the size value associated with any specified field is \-1 or \-2
+(see
+.BR t_open (3N)
+or
+.BR t_getinfo (3N)),
+.B t_alloc(\|)
+is unable to determine the size of the buffer
+to allocate and fails,
+setting
+.B t_errno
+to
+.SM TSYSERR
+and
+.B errno
+to
+.SM EINVAL .
+For any field not specified in
+.IR fields ,
+.I buf
+is set to
+.SM NULL\s0
+and
+.I maxlen
+is set to zero.
+.LP
+Use of
+.B t_alloc(\|)
+to allocate structures helps ensure the compatibility of user
+programs with future releases of the transport interface.
+.SH RETURN VALUES
+.LP
+On success,
+.B t_alloc(\|)
+returns a pointer to the type of structure specified by
+.BR struct_type .
+On failure,
+it returns
+.SM NULL
+and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM TBADF
+The specified file descriptor does not refer to a transport
+endpoint.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.br
+.ne 5
+.SH SEE ALSO
+.BR intro (3),
+.BR t_free (3N),
+.BR t_getinfo (3N),
+.BR t_open (3N)
+.LP
+.TX NETP

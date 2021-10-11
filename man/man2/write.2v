@@ -1,0 +1,503 @@
+.\" @(#)write.2v 1.1 92/07/30 SMI; from UCB 4.3 and S5R3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" TODO
+.\" Work on the bit about O_NONBLOCK.  It needs help.
+.TH WRITE 2V "21 January 1990"
+.SH NAME
+write, writev \- write output
+.SH SYNOPSIS
+.nf
+.ft B
+int write(fd, buf, nbyte)
+int fd;
+char *buf;
+int nbyte;
+.ft
+.fi
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/uio.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int writev(fd, iov, iovcnt)
+int fd;
+struct iovec *iov;
+int iovcnt;
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+int write(fd, buf, nbyte)
+int fd;
+char *buf;
+unsigned nbyte;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "System V library, system call versions" "\fLwrite()\fR"
+.IX  write()  ""  \fLwrite()\fP
+.IX  "generic operations"  write()  ""  \fLwrite()\fP
+.IX  "write gathered writev()"  ""  "write gathered \(em \fLwritev()\fP"
+.IX  "generic operations"  "gather write writev()"  ""  "gather write \(em \fLwritev()\fP"
+.IX  "gather write writev()"  ""  "gather write \(em \fLwritev()\fP"
+.LP
+.B write(\|)
+attempts to write
+.I nbyte
+bytes of data to the object referenced by the descriptor
+.I fd
+from the buffer pointed to by
+.IR buf .
+.B writev(\|)
+performs the same action, but gathers the output data
+from the
+.I iovcnt
+buffers specified by the members
+of the
+.I iov
+array:
+.IR iov [0], iov "[1], ...,"
+.IR iov [ iovcnt "\|\-\|1]."
+If
+.I nbyte
+is zero,
+.B write(\|)
+takes no action and returns 0.
+.BR writev(\|) ,
+however,
+returns \-1 and sets the global variable
+.B errno
+(see
+.SM ERRORS
+below).
+.LP
+For
+.BR writev(\|) ,
+the
+.B iovec
+structure is defined as
+.LP
+.nf
+.RS
+.DT
+.ft B
+struct iovec {
+	caddr_t	iov_base;
+	int	iov_len;
+};
+.ft R
+.RE
+.fi
+.LP
+Each
+.B iovec
+entry specifies the base address and length of an area
+in memory from which data should be written.
+.B writev(\|)
+always writes a complete area before proceeding
+to the next.
+.LP
+On objects capable of seeking, the
+.B write(\|)
+starts at a position
+given by the seek pointer associated with
+.IR fd ,
+(see
+.BR lseek (2V)).
+Upon return from
+.BR write(\|) ,
+the seek pointer is incremented by the number of bytes actually written.
+.LP
+Objects that are not capable of seeking always write from the current
+position.  The value of the seek pointer associated with such an object
+is undefined.
+.LP
+If the
+.SB O_APPEND
+flag of the file status flags is set,
+the seek pointer is set to the end of the file prior to each write.
+.LP
+If the process calling
+.B write(\|)
+or
+.B writev(\|)
+receives a signal before any data are written, the system call is restarted,
+unless the process explicitly set the signal to interrupt the call using
+.B sigvec(\|)
+or
+.B sigaction(\|)
+(see the discussions of
+.SB SV_INTERRUPT
+on
+.BR sigvec (2)
+and
+.SB SA_INTERRUPT
+on
+.BR sigaction (3V)).
+If
+.B write(\|)
+or
+.B writev(\|)
+is interrupted by a signal after successfully writing some data,
+it returns the number of bytes written.
+.LP
+For regular files, if the
+.SB O_SYNC
+flag of the file status flags is set,
+.B write(\|)
+does not return until both the file data and file status have
+been physically updated.
+This function is for special applications that require extra reliability
+at the cost of performance.
+For block special files, if
+.SB O_SYNC
+is set, the
+.B write(\|)
+does not return until the data has been physically updated.
+.LP
+If the real user is not the super-user, then
+.B write(\|)
+clears the set-user-id bit on a file.
+This prevents penetration of system security
+by a user who
+\*(lqcaptures\*(rq a writable set-user-id file
+owned by the super-user.
+.LP
+For
+.SM STREAMS
+(see
+.BR intro (2))
+files, the operation of
+.B write(\|)
+and
+.B writev(\|)
+are determined by the values of the minimum and maximum packet sizes
+accepted by the
+.IR stream .
+These values are contained in the topmost
+.I stream
+module.
+Unless the user pushes (see
+.SB I_PUSH
+in
+.BR streamio (4))
+the topmost module,
+these values can not be set or tested from user level.
+If the total number of bytes to be written
+falls within the packet size range, that many bytes are written.
+If the total number of bytes to be written
+does not fall within the range and the minimum packet size value is zero,
+.B write(\|)
+and
+.B writev(\|)
+break the data to be written
+into maximum packet size segments prior to sending the data downstream
+(the last segment may contain less than the maximum packet size).
+If the total number of bytes to be written does not fall within the
+range and the minimum value is non-zero,
+.B write(\|)
+and
+.B writev(\|)
+fail and set
+.B errno
+to
+.SM ERANGE\s0.
+Writing a zero-length buffer (the total number of bytes to be written
+is zero) sends zero bytes with zero returned.
+.LP
+When a descriptor or the object it refers to is marked for non-blocking
+I/O, and the descriptor refers to an object subject to flow control,
+such as a socket, a pipe (or
+.SM FIFO\s0),
+or a
+.IR stream ,
+.B write(\|)
+and
+.B writev(\|)
+may write fewer bytes than requested;
+the return value must be noted,
+and the remainder of the operation should be retried when possible.
+If such an object's buffers are full, so that it cannot accept any data,
+then:
+.RS
+.TP 3
+\(bu
+If the object to which the descriptor refers is marked for
+non-blocking I/O using the
+.SB FIONBIO
+request to
+.BR ioctl (2),
+or by using
+.BR fcntl (2V)
+to set the
+.SB FNDELAY
+or
+.SB O_NDELAY
+flag (defined in
+.BR <sys/fcntl.h> ),
+.B write(\|)
+returns \-1 and sets
+.B errno
+to
+.SM EWOULDBLOCK\s0.
+.RE
+.LP
+Upon successful completion,
+.B write(\|)
+marks for update the
+.B st_ctime
+and
+.B st_mtime
+fields of the file.
+.SH SYSTEM V DESCRIPTION
+.LP
+.B write(\|)
+and
+.B writev(\|)
+behave as described above, except:
+.LP
+When a descriptor or the object it refers to is marked for non-blocking
+I/O, and the descriptor refers to an object subject to flow control,
+such as a socket, a pipe (or
+.SM FIFO\s0),
+or a
+.IR stream ,
+.B write(\|)
+and
+.B writev(\|)
+may write fewer bytes than requested;
+the return value must be noted,
+and the remainder of the operation should be retried when possible.
+If such an object's buffers are full, so that it cannot accept any data,
+then:
+.RS
+.TP 3
+\(bu
+If the descriptor is marked for non-blocking I/O by using
+.B fcntl(\|)
+to set the
+.SB FNBIO
+or
+.SB O_NDELAY
+flag (defined in 
+.BR <sys/fcntl.h> ),
+and does not refer to a
+.IR stream ,
+the
+.B write(\|)
+returns 0.
+If the descriptor is marked for non-blocking I/O, and
+refers to a
+.IR stream ,
+.B write(\|)
+returns \-1 and sets
+.B errno
+to
+.SM EAGAIN\s0.
+.TP
+\(bu
+If the descriptor is marked for non-blocking I/O using
+.B fcntl(\|)
+to set the
+.SB FNONBLOCK
+or
+.SB O_NONBLOCK
+flag (defined in
+.BR <sys/fcntl.h> ),
+.B write(\|)
+requests for
+.SM {PIPE_BUF}
+(see
+.BR pathconf (2V))
+or fewer bytes either succeed completely and return
+.IR nbyte ,
+or return \-1 and set
+.B errno
+to
+.SM EAGAIN\s0.
+A
+.B write(\|)
+request for greater than
+.SM {PIPE_BUF}
+bytes either transfers what it can and returns
+the number of bytes written, or transfers no data and returns \-1
+and sets
+.B errno
+to
+.SM EAGAIN\s0.
+If a
+.B write(\|)
+request is greater than
+.SM {PIPE_BUF}
+bytes and all data previously written to the pipe has been read,
+.B write(\|)
+transfers at least
+.SM {PIPE_BUF}
+bytes.
+.RE
+.SH RETURN VALUES
+.LP
+.B write(\|)
+and
+.B writev(\|)
+return
+the number of bytes actually written
+on success.
+On failure,
+they return
+\-1
+and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B write(\|)
+and
+.B writev(\|)
+fail and the seek pointer remains unchanged if one or more
+of the following are true:
+.TP 20
+.SM EBADF
+.I fd
+is not a valid descriptor open for
+writing.
+.TP
+.SM EDQUOT
+The user's quota of disk blocks on the file system containing the
+file has been exhausted.
+.TP
+.SM EFAULT
+Part of
+.I iov
+or data to be written to the file
+points outside the process's allocated address space.
+.br
+.ne 3
+.TP
+.SM EFBIG
+An attempt was made to write a file that exceeds the process's
+file size limit or the maximum file size.
+.TP
+.SM EINTR
+The process performing a write received a signal before
+any data were written, and the signal was set to interrupt the system call.
+.TP
+.SM EINVAL
+The
+.I stream
+is linked below a multiplexor.
+.IP
+The seek pointer associated with
+.I fd
+was negative.
+.TP
+.SM EIO	
+An I/O error occurred while reading from or writing to the file system.
+.IP
+The process is in a background process group and is attempting to write
+to its controlling terminal,
+.SM TOSTOP
+is set,
+the process is neither ignoring nor blocking
+.SM SIGTTOU\s0,
+and the process group of the process is orphaned.
+.TP
+.SM ENOSPC
+There is no free space remaining on the file system containing the file.
+.TP
+.SM ENXIO
+A hangup occurred on the
+.I stream
+being written to.
+.TP
+.SM EPIPE
+An attempt is made to write to a pipe that is not open
+for reading by any process (or to a socket of type
+.SB SOCK_STREAM
+that is connected to a peer socket.)  Note: an attempted write of this
+kind also causes you to receive a
+.SB SIGPIPE
+signal from the
+kernel.  If you've not made a special provision to catch or ignore this
+signal, then your process dies.
+.TP
+.SM ERANGE
+.I fd
+refers to a
+.IR stream ,
+the total number of bytes to be written is
+outside the minimum and maximum write range, and the minimum value is
+non-zero.
+.TP
+.SM EWOULDBLOCK
+The file was marked for non-blocking I/O,
+and no data could be written immediately.
+.LP
+In addition to the above,
+.B writev(\|)
+may set
+.B errno
+to:
+.TP 20
+.SM EINVAL
+.I iovcnt
+was less than or equal to 0, or greater than 16.
+.IP
+One of the
+.B iov_len
+values in the
+.I iov
+array was negative.
+.IP
+The sum of the
+.B iov_len
+values in the
+.I iov
+array overflowed a 32-bit integer.
+.LP
+A write to a
+.SM STREAMS
+file can fail
+if an error message has been received at the stream head.
+In this case,
+.B errno
+is set to the value included
+in the error message.
+.SH SYSTEM V ERRORS
+.LP
+.B write(\|)
+fails and sets
+.B errno
+as described above, except:
+.TP 20
+.SM EAGAIN
+The descriptor referred to a
+.IR stream ,
+was marked for non-blocking I/O,
+and no data could be written immediately.
+.IP
+The
+.SB O_NONBLOCK
+flag is set for the file descriptor and
+.B write(\|)
+would block.
+.SH "SEE ALSO"
+.BR dup (2V),
+.BR fcntl (2V),
+.BR intro (2),
+.BR ioctl (2),
+.BR lseek (2V),
+.BR open (2V),
+.BR pipe (2V),
+.BR select (2),
+.BR sigvec (2),
+.BR signal (3V)

@@ -1,0 +1,193 @@
+.\" @(#)diag.8s 1.1 92/07/30 SMI;
+.TH DIAG 8S "25 July 1986"
+.SH NAME
+diag \- stand-alone disk initialization and diagnosis
+.SH SYNOPSIS
+>\fBb stand/diag\fP
+.SH DESCRIPTION
+.IX  "diag command"  ""  "\fLdiag\fP \(em initialize/diagnose disk"
+.IX  "initialize/diagnose disk"  ""  "initialize/diagnose disk \(em \fLdiag\fP"
+.IX  "diagnose/initialize disk"  ""  "diagnose/initialize disk \(em \fLdiag\fP"
+.IX  disk "diagnose/initialize \(em \fLdiag\fP"
+.IX  "stand-alone utilities"  diag  ""  "\fLdiag\fP \(em initialize/diagnose disk"
+\fIDiag\fP is a general purpose stand-alone package
+for initializing, diagnosing, and repairing disks.
+It supports the various 
+.SM SMD
+and
+.SM SCSI
+disk controllers.
+.LP
+\fBNote\fP: \fIDiag\fP is not a system utility and can only be called 
+from the Sun Workstation
+.SM PROM
+monitor. 
+.LP
+The most common use of \fIdiag\fP is formatting and labelling a disk
+\(em see the \fIformat\fP, \fIlabel\fP, and \fIpartition\fP commands.
+.LP
+Immediately after startup, \fIdiag\fP
+prompts for information about the particular disk drive(s) and controller(s) 
+it is to work with.  
+There is a facility for specifying additional information
+about nonstandard disks.
+.LP
+\fIDiag\fR tries to access the disk controller you have defined.  If the 
+attempt succeeds,
+it gives you a status report on the disk and issues the `diag>' prompt. 
+If the attempt fails (if the controller is ill-defined or 
+nonexistent), you get a bus error message,
+and return to the PROM monitor.
+.LP
+Once configured, \fIdiag\fR accepts the comands listed below.  Only enough 
+characters to uniquely identify the command need be typed.  
+.IP \fBabortdma\fP 12
+Aborts/does not abort the \fIdmatest\fP command when a data
+miscompare is detected.  That is, if the internal variable set by
+\fIabortdma\fP is `on' (default), the \fIdmatest\fP command aborts as soon as
+it finds an error; otherwise, the \fIdmatest\fP continues.
+.IP \fBclear\fP 12
+Sends a restore command to a disk.  This is needed to manually reset
+disk faults.
+.IP \fBdiag\fP
+Re-initializes the \fIdiag\fP program itself \(em goes back to phase one
+of the initialization process described above.
+.IP \fBdmatest\fP
+Begins a continuous DMA test.  The test copies random data to and from
+the designated controller, comparing data.  If a miscompare is found, an
+error message is displayed and the test aborts (unless the \fIabortdma\fP
+command is used \(em see \fIabortdma\fP,
+above).  \fBNote\fP:  this command is available only with the Xylogics
+450 Controller.
+.IP \fBerrors\fP
+Reports/does not report all errors as they occur
+(toggles; default is reporting off).
+.IP \fBfix\fP
+Formats and verifies a range of tracks; any defective tracks/sectors
+found are automatically corrected using mapping or slipping.
+\fBNote:\fP  this command is available for SMD controllers only.
+.\"Interphase controller or Xylogics controller).  This command is not available
+.\"for use with Adaptec disk controllers (ST-506 interface). 
+.IP \fBformat\fP
+For SMD disks, formats the entire disk; for SCSI disks,
+initiates the SCSI \fIformat\fP program.
+.\"(Interphase and Xylogics controllers).
+.\"With Adaptec disk controllers (ST-506 interface),
+.IP \fBsformat\fP
+Initiates a special formatting program that allows manual manipulation of
+the defect list.  \fBNote\fP:  this command is available for SMD controllers
+only.  For SCSI controllers, use the \fIformat\fP command.
+.IP "\fBhelp\fP or \fB?\fP"
+Displays a list of the available commands.
+.IP \fBinfo\fP
+Reports/suppresses report of all disk activity as it completes
+.\"Toggles an option to report
+(toggles; default is reporting off).
+.IP \fBlabel\fP
+Labels the disk. 
+.IP \fBmap\fP
+Displays current mappings and allows you to
+explicitly map one track/sector to a different track/sector.
+Usually used for manual bad sector mapping.  The \fIformat\fP
+and \fIfix\fP commands usually do this automatically
+when a bad track/sector is found.
+\fBNote:\fP  the \fImap\fP command is disk controller-dependent:
+you can \fImap\fP tracks with an Interphase controller, and sectors with
+Xylogics controllers.  This command is not available for use
+with SCSI disk controllers.
+.IP \fBmapcheck\fP
+Enables/disables checking for overlapping mapped sectors/tracks during
+the \fIposition\fP, \fIread\fP, \fItest\fP, or \fIwrite\fP commands.  If 
+the internal variable set by \fImapcheck\fP is `on'
+when an error occurs (default),
+then the current mappings (if any) are read from the disk and checked to see if
+there are overlapping mappings over the area of the disk where the
+transfer failed.
+.IP \fBpartition\fP
+Creates, assigns, or modifies logical partition tables for a disk.
+The UNIX operating system requires logical partitions.  The \fIlabel\fP
+command writes the partition map to the disk.  There are standard
+partition tables for each type of disk that \fIdiag\fP knows about.
+.IP \fBposition\fP
+Continuously tests the disk by reading random sectors from the disk.
+To abort the test, type
+.\"This command runs until the user aborts it by typing
+a \fB^C\fP (CONTROL-C).
+.IP \fBquit\fP
+Quits from \fIdiag\fP and returns to the PROM monitor.
+.IP \fBrhdr\fP
+Reads and displays the track headers for a specified track.
+\fBNote:\fP  this command is available for Xylogics controllers only.
+.IP \fBread\fP
+Reads specified blocks from the disk.  The \fIread\fP command prompts
+for the starting block number, number of blocks, and the block
+increment.  The \fIread\fP command doesn't report the data it reads \(em
+it is intended for verifying that blocks are readable.
+.IP \fBscan\fP
+Continuously scans over a range of sectors looking for defective sectors
+by writing/reading/verifying various bit patterns to sequential sectors.
+Any data on the disk in the range to be scanned is destroyed.
+Sectors previously mapped are not scanned,
+so any errors reported will be newly found defective sectors.
+If used with a Xylogics controller,
+defective sectors can be automatically mapped/slipped when they are found.
+To abort the \fIscan\fP, type a \fB^C\fP (CONTROL-C).
+.\"This command runs until the user aborts it by typing
+.IP \fBseek\fP
+Performs a seek test on the disk: it can either continuously seek between
+two specified blocks or seek to every
+cylinder and every possible cylinder distance.
+.IP \fBslip\fP
+Explicitly slips one sector on a track.
+Usually used for manual bad sector slipping.
+The \fIformat\fP and \fIfix\fP commands usually do this automatically
+when bad sectors are found and the proper conditions exist.
+\fBNote:\fP  slipping is available only with Xylogics controllers,
+and only when the disk has a spare data sector per track.
+.IP \fBslipmsgs\fP
+Displays/suppresses display of track headers before and after each slip
+operation that occurs during the \fIfix\fP, \fIformat\fP, and \fIslip\fP
+commands (toggles; default is display off).
+.IP \fBstatus\fP
+Reports the ready status of each drive on the current controller.
+.IP \fBtest\fP
+Continuously tests the disk
+by writing random data to random sectors on
+the disk and then verifying that the correct data can be read back.  The
+\fItest\fP command destroys data on the disk.
+To abort the \fItest\fP, type a \fB^C\fP (CONTROL-C).
+.IP \fBtime\fP
+Turns timing on/off.  When timing is on,
+\fIdiag\fP reports on how long certain operations take \(em \fIdiag\fP is less
+verbose in this state so it doesn't waste time displaying messages
+(toggles; default is timing off).
+.IP \fBtranslate\fP
+Translates a given block number into its decimal value,
+hexadecimal value, and logical disk address.
+.IP \fBverify\fP
+Reads and displays the label from the disk.  Shows the logical partition
+assignments.  This is done automatically when the \fIlabel\fP
+command has labelled the disk.
+.IP \fBversion\fP
+Displays the SCCS identification string for this version of \fIdiag\fP.
+.IP \fBwhdr\fP
+Modifies and writes the track headers for a specified track.
+\fBNote:\fP  this command is available with Xylogics controllers only.
+Also, it should be used only for specialized patching \(em misuse may
+destroy track data.
+.IP \fBwrite\fP
+Verifies that blocks are writable by writing garbage data to
+specified blocks on the disk.  The \fIwrite\fP
+command prompts for the starting block number, number of blocks, and the block
+increment.
+.IP \fB+\fP
+Adds two block numbers and reports the result in decimal, hexadecimal,
+and as a logical disk address.
+.IP \fB\-\fP
+Subtracts two block numbers and reports the result in decimal, hexadecimal,
+and as a logical disk address.
+.LP
+Block numbers may be entered either as an absolute decimal block number,
+or as a disk address of the form cylinder/head/sector.
+.LP
+Any \fIdiag\fP command may be aborted by typing a \fB^C\fP (CONTROL-C).

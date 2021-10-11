@@ -1,0 +1,58 @@
+.\" @(#)clone.4 1.1 92/07/30 SMI; from S5
+.TH CLONE 4 "24 November 1987"
+.SH "NAME"
+clone \- open any minor device on a STREAMS driver
+.SH "DESCRIPTION"
+.IX "clone device" "" "\fLclone\fP, \s-1STREAMS\s0 device driver"
+.IX "STREAMS" clone "" "\fLclone\fP device driver"
+.LP
+.B clone
+is a
+.SM STREAMS
+software driver that finds and opens an
+unused minor device on another
+.SM STREAMS
+driver.  The minor device passed to
+.B clone
+during the open operation is interpreted as the major device number of
+another
+.SM STREAMS
+driver for which an unused minor device is to be
+obtained.
+Each such open results in a separate stream to a previously
+unused minor device.
+.LP
+The
+.B clone
+driver supports only an
+.BR open (2V)
+function.
+This open function performs all of the necessary work so that
+subsequent system calls (including
+.BR close (2V))
+require no further involvement of the
+.B clone
+driver.
+.SH ERRORS
+.LP
+.B clone
+generates an
+.SM ENXIO
+error, without opening the device, if the minor device number provided
+does not correspond to a valid major device, or if the driver indicated
+is not a
+.SM STREAMS
+driver.
+.SH "WARNINGS"
+Multiple opens of the same minor device are not supported through the
+.B clone
+interface.  Executing
+.BR stat (2V)
+on the file system node for a cloned device yields a
+different result than does executing
+.B fstat
+using a file descriptor obtained from opening that node.
+.SH SEE ALSO
+.BR close (2V),
+.BR open (2V),
+.BR stat (2V)

@@ -1,0 +1,276 @@
+.\" @(#)named.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH NAMED 8C "30 June 1989"
+.SH NAME
+named, in.named \- Internet domain name server
+.SH SYNOPSIS
+.B /usr/etc/in.named
+.RB [ " \-d "
+.IR level " ]"
+.RB [ " \-p "
+.IR port " ]"
+.RB [\|[ \|\-b\| \|]
+.IR bootfile " ]"
+.SH DESCRIPTION
+.IX  "named command"  ""  "\fLnamed\fP \(em internet domain name server daemon"
+.IX  servers  named  ""  "\fLnamed\fP \(em internet domain name server daemon"
+.B named
+is the Internet domain name server.
+It is used by resolver libraries to provide access
+to the Internet distributed naming database.
+The domain name server is described in the
+.TX ADMIN .
+See
+.SM RFC
+1034 and
+.SM RFC
+1035 for more details.
+With no arguments
+.B named
+reads
+.B /etc/named.boot
+for any initial data, and listens for queries on a privileged port.
+.SH OPTIONS
+.TP
+.BI \-d " level"
+Print debugging information.
+.I level
+is a number indicating the level of messages printed.
+.TP
+.BI \-p " port"
+Use 
+.I port
+as the port number, rather than the standard port number.
+.TP
+.BI \-b " bootfile"
+Use
+.I bootfile
+rather than
+.BR /etc/named.boot .
+.SH EXAMPLE
+.RS
+.nf
+.ft B
+.\" Unfortunately, this is how you have to set tabs every 8 spaces
+.ta +8u*\w'\0'u +8u*\w'\0'u +8u*\w'\0'u +8u*\w'\0'u
+;
+;	boot file for name server
+;
+; type		domain		source file or host
+;
+primary		berkeley.edu    named.db
+secondary	cc.berkeley.edu 10.2.0.78 128.32.0.10
+cache		.               named.ca
+.DT
+.ft P
+.fi
+.RE
+.LP
+The
+.B primary
+line states that the file
+.B named.db
+contains authoritative data for
+.BR berkeley.edu .
+The file
+.B named.db
+contains data in the master file format, described in
+.SM RFC
+1035, except
+that all domain names are relative to the origin; in this
+case,
+.B berkeley.edu
+(see below for a more detailed description).
+.LP
+The
+.B secondary
+line specifies that all authoritative data
+under
+.B cc.berkeley.edu
+is to be transferred from the name server
+at
+.BR 10.2.0.78 .
+If the transfer fails it will try
+.BR 128.32.0.10 ,
+and continue for up to 10 tries at that address.
+The secondary copy is also authoritative for the domain.
+.LP
+The
+.B cache
+line specifies that data in
+.B named.ca
+is to be placed in
+the cache (only used to find the root domain servers).  The file
+.B named.ca
+is in the same format as
+.BR named.db .
+.LP
+The master file consists of entries of the form:
+.RS
+.BI "$\s-1INCLUDE\s0 <" filename >
+.br
+.BI "$\s-1ORIGIN\s0 <" domain >
+.br
+.BI < domain >
+.BI < opt_ttl >
+.BI < opt_class >
+.BI < type > 
+.BI < resource_record_data >
+.br
+.RE
+where
+.I domain
+is
+.RB ` . '
+for the root,
+.RB ` @ '
+for the current origin, or a standard domain name.  If
+.I domain
+is a standard domain name that does not end with
+.RB ` . ',
+the current origin
+is appended to the domain.  Domain names ending with
+.RB ` . '
+are unmodified.
+.LP
+The
+.I opt_ttl
+field is an optional integer number for the time-to-live field.
+It defaults to zero.
+.LP
+The
+.I opt_class
+field is currently one token,
+.RB ` \s-1IN\s0 '
+for the Internet.
+.LP
+The
+.I type
+field is one of the following tokens; the data expected in the
+.I resource_record_data
+field is in parentheses.
+.TP
+.B A
+A host address (dotted quad).
+.TP
+.SB NS
+An authoritative name server (domain).
+.TP
+.SB MX
+A mail exchanger (domain).
+.TP
+.SB CNAME
+The canonical name for an alias (domain).
+.TP
+.SB SOA
+Marks the start of a zone of authority (5 numbers).
+(see
+.SM RFC
+1035)).
+.TP
+.SB MB
+A mailbox domain name (domain).
+.TP
+.SB MG
+A mail group member (domain).
+.TP
+.SB MR
+A mail rename domain name (domain).
+.TP
+.SB NULL
+A null resource record (no format or data).
+.TP
+.SB WKS
+A well know service description (not implemented yet).
+.TP
+.SB PTR
+A domain name pointer (domain).
+.TP
+.SB HINFO
+Host information (cpu_type OS_type).
+.TP
+.SB MINFO
+Mailbox or mail list information (request_domain error_domain).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/named.boot
+name server configuration boot file
+.TP
+.B /etc/named.pid
+the process
+.SM ID
+.TP
+.B /var/tmp/named.run
+debug output
+.TP
+.B /var/tmp/named_dump.db
+dump of the name servers database
+.PD
+.SH "SEE ALSO"
+.BR kill (1),
+.BR signal (3V),
+.BR resolver (3),
+.BR resolv.conf (5),
+.BR nslookup (8C)
+.LP
+.TX ADMIN
+.LP
+Mockapetris, Paul,
+.IR "Domain Names - Concepts and Facilities" ,
+.SM RFC
+1034,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+November 1987.
+.LP
+Mockapetris, Paul,
+.IR "Domain Names - Implementation and Specification" ,
+.SM RFC
+1035,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+November 1987.
+.LP
+Mockapetris, Paul,
+.IR "Domain System Changes and Observations" ,
+.SM RFC
+973,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+January 1986.
+.LP
+Partridge, Craig,
+.IR "Mail Routing and the Domain System" ,
+.SM RFC
+974,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+January 1986.
+.SH NOTES
+The following signals have the specified effect when sent to the
+server process using the
+.BR kill (1)
+command.
+.TP \w'SIGQUIT'u
+.SB SIGHUP
+Causes server to read named.boot and reload database.
+.TP
+.SB SIGINT
+Dumps current data base and cache to
+.BR /var/tmp/named_dump.db .
+.TP
+.SB SIGUSR1
+Turns on debugging; each subsequent
+.SB SIGUSR1
+increments debug level.
+.TP
+.SB SIGUSR2
+Turns off debugging completely.

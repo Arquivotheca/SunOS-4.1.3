@@ -1,0 +1,146 @@
+.\" @(#)traffic.1c 1.1 92/07/30 SMI;
+.TH TRAFFIC 1C "21 December 1987"
+.SH NAME
+traffic \- SunView program to display Ethernet traffic
+.SH SYNOPSIS
+.B traffic
+[
+.B \-h
+.I host
+] [
+.B \-s
+.I subwindows
+]
+.SH AVAILABILITY
+This command is available when both the
+.I Networking
+and the
+.I SunView User's
+software options are installed.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX traffic "" "\fLtraffic\fR \(em show Ethernet traffic"
+.B traffic
+graphically displays ethernet traffic.  It gets statistics from
+.BR etherd (8C),
+running on machine
+.IR host .
+The tool is divided into subwindows,
+each giving a different view of network traffic.
+.SH OPTIONS
+.TP 15
+.BI \-h " host"
+Specify a host from which to get statistics.
+The default value of
+.I host
+is the machine that
+.BR traffic
+is running on.
+.TP
+.BI \-s \ subwindows
+Specify the number of subwindows to display initially.
+The default value of
+.I subwindows
+is 1.
+.SH SUBWINDOWS
+.LP
+To the right of each subwindow is a panel that selects what
+the subwindow is viewing.  When
+.I Size
+is checked,
+than the size distribution of packets is displayed.
+.I Proto
+is for protocol,
+\fISrc\fP is for source of packet, and
+.I Dst
+is for destination of packet.  Since it is not possible to
+show all possible sources, when
+.I Src
+is selected, only the
+8 highest sources are displayed (and similarly for
+.I Dst
+).
+.LP
+For each of these choices, the distribution is displayed by
+a histogram.  The panel above each subwindow controls characteristics
+of the histograms.  At the left of the panel is a shaded square,
+corresponding to one of the two shades of bars in the histogram.
+You can switch the shade by either clicking on the square with the
+left button, or bringing up a menu over the square with the right mouse
+button.
+When the light colored square is visible, then
+the slider in the center of the panel controls how often the
+light colored bars are updated.  When the dark square is visible,
+then the slider refers to the dark bars of the histogram.  To the
+right of the slider is a choice of
+.I Abs
+versus
+.IR Rel .
+This selects whether the height of the histogram is
+.I Absolute
+in packets per second, or
+.I Relative
+in percent of total packets
+on the ethernet.  Next in the panel are three small horizontal bars.
+When selected (that is, when a check mark appears to the left of
+the three bars),
+a horizontal grid appears on the histogram.
+Finally the button marked
+.I Delete Me
+will delete the subwindow.
+.LP
+The right hand panel also has a choice for
+.I Load
+Load is
+represented as a strip chart, rather than a histogram.
+The maximum value of the
+graph represents a load of 100%, that is 10 megabits per second
+on the ethernet.  When
+.I Load
+is selected, there is only one
+slider, and no
+.I Rel
+versus
+.I Abs
+choice.
+.LP
+At the very top of the tool is a panel that contains filters, as
+well as a
+.I Split
+button that splits the tool and creates
+a new subwindow, and a
+.I Quit
+button that exits the tool.
+The filters apply to all the subwindows.  When a filter is selected,
+a check mark appears to the left of the word
+.IR Filter .
+There can be
+more than one filter active at the same time.
+The meaning of each filter is as follows.
+.I Src
+is
+a host or net, which can be specified either by name or address
+(similarly for
+\fIDst\fP).
+.I Proto
+is an ip protocol, and
+can either be a name (such as
+.IR udp ,
+.IR icmp )
+or a number.
+.I Lnth
+is either a packet length, or a range of
+lengths
+separated by a dash.
+.SH "SEE ALSO"
+.BR etherd (8C)
+.SH BUGS
+If multiple copies of
+.B traffic
+are using the same copy of
+.BR etherd ,
+and one of them invokes a filter,
+then all the copies of
+.B traffic
+will be filtered.

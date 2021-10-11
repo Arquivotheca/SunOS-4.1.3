@@ -1,0 +1,347 @@
+.\" @(#)nlsadmin.8 1.1 92/07/30 SMI;
+.TH NLSADMIN 8 "1 November 1988"
+.SH NAME
+listen, nlsadmin \- network listener service administration for RFS
+.SH SYNOPSIS
+.B nlsadmin
+[
+.B \-mx
+]
+[
+.B \-edr
+.I "service_code net_spec"
+]
+[
+.B \-ikqsv
+.I net_spec
+]
+.if t .ti +.5i
+[
+.B \-lt
+.I "addr net_spec"
+]
+[
+.B \-a
+.I service_code
+[
+.B \-p
+.I modules
+]
+.B \-c
+.I command
+.B \-y
+.I "comment net_spec"
+]
+.if t .ti +.5i
+[
+.B \-qz
+.I "code net_spec"
+]
+[
+.B \-z
+.I "code net_spec"
+]
+[
+.I net_spec
+]
+.LP
+.B /usr/etc/listen
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I \s-1RFS\s0
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "listen network" "" "\fLlisten\fP \(em network listener service administration" ""
+.IX "nlsadmin network" "" "\fLnlsadmin\fP \(em network listener service administration" ""
+.IX network "listener service administration"
+.IX configure "network listener server"
+.IX initiate "network listener server"
+.IX terminate "network listener server"
+.IX stop "network listener server"
+.IX RFS "network listener server" "\s-1RFS\s0" "network listener server" 
+.LP
+.B nlsadmin
+configures, initiates and terminates network listener
+.RB ( listen )
+servers for the local host.  Each network (transport provider)
+has an associated
+.B listen
+daemon to service it locally.  The
+.B listen
+daemon for each is configured separately.
+A
+.B listen
+daemon accepts network service requests when they arrive,
+and spawns servers in response to those requests.
+It can be used on any network (transport provider) that conforms to the
+transport provider specification.
+.\".LP
+.\"The listener process supports two classes of service:  a general
+.\"listener service for remote proceses, and a terminal login
+.\"service, for terminals connected directly to a network.
+.\".LP
+.\"The direct terminal service requires special associated software,
+.\"and is only available with some networks (for example, the
+.\".SM "AT&T STARLAN"
+.\"network).
+.LP
+.B nlsadmin
+can also report on the listener processes on a
+machine, either individually (per network) or collectively.
+.LP
+Changing the list of services provided by the listener produces
+immediate changes, while changing an address on which the listener listens
+has no effect until the listener is restarted.
+.LP
+.B nlsadmin
+without any options gives a brief usage message.
+.TP
+.SH OPTIONS
+The
+.I net_spec 
+argument to
+.B nlsadmin
+refers to a particular
+.B listen
+daemon.  Specifically,
+.I net_spec 
+is the relative path name of the entry under
+.B /dev 
+for a given network.
+.TP 15 
+.B \-x
+Report the status of all of the listener processes installed on this
+machine.
+.TP
+.BI \-e " service_code net_spec"
+.br
+.PD 0
+.TP
+.BI \-d " service_code net_spec"
+.br
+.PD
+Enable or disable, respectively, the service indicated by
+.I service_code 
+for the specified network.
+The service must have previously been added to the listener for that
+network (see the
+.B \-a 
+option).
+When a listener is disabled, processes serving prior requests
+continue until they complete.
+.TP
+.BI \-r " service_code net_spec"
+Remove the entry for the
+.I service_code 
+from that listener's list of services.
+.TP
+.BI \-i " net_spec"
+Initialize or change a listener process for the network specified by
+.IR net_spec .
+That is, create and initialize the files required by the listener.
+Initializing a listener with this option does not start it running.
+The listener must be initialized before assigning addressing or services.
+Note: the listener should only be initialized once for a given network.
+.TP
+.BI \-q " net_spec"
+Query the status of the listener process for the specified
+network.
+If the listener process is active,
+.B nlsadmin 
+exits with a status of 0. 
+If no such process is active, the exit code is 1.
+The exit code will be greater than 1 if there is an error.
+.TP
+.BI \-s " net_spec"
+.br
+.PD 0
+.TP
+.BI \-k " net_spec"
+.br
+.PD
+Start or kill, respectively, the listener process for the
+indicated network.
+When a listener is killed, processes that are still running as a result
+of prior service requests will continue unaffected.
+The listener runs under its own 
+.SM ID 
+of
+.B listen 
+with group ID (\s-1GID\s+1)
+.BR adm .
+This 
+.SM GID 
+appear in the system password file
+.BR /etc/passwd ;
+the
+.SB HOME
+directory listed for the 
+.SM GID 
+is concatenated with 
+.I net_spec 
+to determine the location of the listener 
+configuration information for each network.
+.IP
+.B nlsadmin 
+may be invoked by any user to generate 
+reports, but all operations that affect 
+a listener's status or configuration are
+restricted to the super-user.
+.TP
+.BI \-v " net_spec"
+Verbose.  Report on the servers associated with
+.IR net_spec , 
+giving the service code, status, command, and comment for each.
+.HP
+.BI \-l " addr net_spec"
+Change or set the address for the general listener service.
+This is the address generally used by remote processes to access
+the servers available through the listener (see the
+.B \-a 
+option).
+.I addr 
+is the transport address on which to listen,
+and is interpreted using a syntax that allows for a
+variety of address formats.  By default
+.I addr 
+is interpreted as the symbolic 
+.SM ASCII 
+representation of the transport address.  An
+.I addr 
+preceded by a
+.RB ` \ex '
+(\s-1BACKSLASH-X\s0)
+lets you enter an address in hexadecimal notation.  
+Note: 
+.I addr 
+must be quoted if it contains any blanks.  If
+.I addr 
+is just a dash 
+.RB (` \(em '),
+.B nlsadmin 
+merely reports the currently configured address.
+.IP
+A change of address does not take effect until the next time the
+listener for that network is started.
+.TP
+.BI \-t " addr net_spec"
+Change or set the address on which the listener listens for requests for
+terminal service. Otherwise, this is similar to
+.BR \-l  .
+A terminal service address should not be defined unless the appropriate
+remote login software is available; if such software is available, it
+must be configured as service code 
+.B 1 
+(see the
+.B \-a 
+option).
+.HP
+.RB [ \-m ] 
+.B \-a
+.I service_code 
+.\"[
+.\".B \-p
+.\".I modules
+.\"]
+.B \-c
+.I  cmd
+.B \-y
+.I comment
+.I net_spec
+.br
+Add a new service to the list of services available through the
+indicated listener.
+.I service_code 
+is the code for the service,
+.I cmd
+is the command to be invoked in response to that service code, comprised of
+the full path name of the server and its arguments, and
+.I comment 
+is a brief (free-form) description of the service for use in various
+reports.  Note: 
+.I cmd 
+must be quoted if it contains arguments for the server.
+Similarly, 
+.I comment 
+must also be quoted, so as to appear to be a single word to the shell.
+When a service is added, it is initially enabled (see the
+.B \-e 
+and
+.B \-d 
+options).
+.IP
+If the
+.B \-m 
+option is specified, the entry is marked as an administrative entry.
+Service codes 
+.B 1 
+through 
+.B 100 
+are reserved for administrative
+entries, which are those that require special handling internally.
+In particular, code 
+.B 1 
+is assigned to the remote login service,
+which is the service automatically invoked for 
+connections to the terminal login address.
+.\".IP
+.\"If the
+.\".B \-p 
+.\"option is specified, then
+.\".I modules 
+.\"will be interpreted as a list of 
+.\".SM STREAMS 
+.\"modules for the listener to push before starting the service
+.\"being added.  The modules are pushed in the order they are specified.
+.\".I modules
+.\"should be a comma-separated list of modules, with no white space
+.\"included.  This option is only available with 
+.\".SM UNIX 
+.\"System V Release 3.0.
+.br
+.ne 7
+.IP
+A service must explicitly be added to the listener for each network on
+which that service is to be available.
+This operation is normally performed only when the service is
+installed on a machine, or when populating the list of services for a
+new network.
+.TP
+.BI \-qz " code net_spec"
+Query the status of the service with service code
+.I code 
+on network
+.IR net_spec , 
+Exit with a status of 0 if the service is enabled, 1
+if the service is disabled, or greater than 1 on error.
+.TP
+.BI \-z " code net_spec"
+ Print a report on the server associated with
+.I net_spec 
+that has service code
+.IR code , 
+giving the same information as in the
+.B \-v
+option.
+.TP
+.I net_spec
+Print the status of the listener process for
+.I net_spec.
+.SH DIAGNOSTICS
+If the command is not run under the proper 
+.SM ID\s0,
+an error message is sent
+to the standard error, and the command terminates.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/etc/listen
+.TP
+.BI /usr/net/nls/ net_spec
+.PD
+.SH "SEE ALSO"
+.TX NETP

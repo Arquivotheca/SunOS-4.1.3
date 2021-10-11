@@ -1,0 +1,206 @@
+.\" @(#)send.2 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SEND 2 "21 January 1990"
+.SH NAME
+send, sendto, sendmsg \- send a message from a socket
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/socket.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int send(s, msg, len, flags)
+int s;
+char *msg;
+int len, flags;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sendto(s, msg, len, flags, to, tolen)
+int s;
+char *msg;
+int len, flags;
+struct sockaddr *to;
+int tolen;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int sendmsg(s, msg, flags)
+int s;
+struct msghdr *msg;
+int flags;
+.ft
+.fi
+.IX  send()  "message from socket \(em \fLsend()\fR"
+.IX  "socket operations"  send()  ""  \fLsend()\fP
+.IX  "interprocess communication"  send()  ""  \fLsend()\fP
+.IX  sendto()  ""  "\fLsendto()\fP \(em send message to socket"
+.IX  "socket operations"  sendto()  ""  \fLsendto()\fP
+.IX  "interprocess communication"  sendto()  ""  \fLsendto()\fP
+.IX  sendmsg()  ""  "\fLsendmsg()\fP \(em send message over socket"
+.IX  "socket operations"  sendmsg()  ""  \fLsendmsg()\fP
+.IX  "interprocess communication"  sendmsg()  ""  \fLsendmsg()\fP
+.IX  message  "send from socket \(em \fLsend()\fR"
+.SH DESCRIPTION
+.LP
+.I s
+is a socket created with
+.BR socket (2).
+.BR send(\|) ,
+.BR sendto(\|) ,
+and
+.B sendmsg(\|)
+are used to transmit a message to another socket.
+.B send(\|)
+may be used only when the socket is in a
+.I connected
+state, while
+.B sendto(\|)
+and
+.B sendmsg(\|)
+may be used at any time.
+.LP
+The address of the target is given by
+.I to
+with
+.I tolen
+specifying its size.
+The length of the message is given by
+.IR len .
+If the message is too long to pass atomically through the
+underlying protocol, then the error
+.SM EMSGSIZE
+is returned, and
+the message is not transmitted.
+.LP
+No indication of failure to deliver is implicit in a
+.BR send(\|) .
+Return values of \-1 indicate some locally detected errors.
+.LP
+If no buffer space is available at the socket to hold
+the message to be transmitted, then
+.B send(\|)
+normally blocks, unless the socket has been placed in
+non-blocking I/O mode.  The
+.BR select (2)
+call may be used to determine when it is possible to
+send more data.
+.LP
+If the process calling
+.BR send(\|) ,
+.BR sendmsg(\|)
+or
+.BR sendto(\|)
+receives a signal before any data are buffered to be sent,
+the system call is restarted unless the calling process
+explicitly set the signal to interrupt these calls using
+.B sigvec(\|)
+or
+.B sigaction(\|)
+(see the discussions of
+.SB SV_INTERRUPT
+on
+.BR sigvec (2),
+and
+.SB SA_INTERRUPT
+on
+.BR sigaction (3V)).
+.LP
+The
+.I flags
+parameter is formed by
+.SM OR\s0ing
+one or more of the following:
+.TP 20
+.SB MSG_OOB
+Send ``out-of-band''
+data on sockets that support this notion.  The underlying protocol must also
+support ``out-of-band'' data.  Currently, only
+.SB SOCK_STREAM
+sockets created in the
+.SB AF_INET
+address family support out-of-band data.
+.TP
+.SB MSG_DONTROUTE
+The
+.SB SO_DONTROUTE
+option is turned on for the duration of the operation.
+This is usually used only by diagnostic or routing programs.
+.LP
+See
+.BR recv (2)
+for a description of the
+.B msghdr
+structure.
+.SH RETURN VALUES
+.LP
+On success,
+these functions
+return
+the number of bytes sent.
+On failure,
+they return
+\-1
+and set
+.B errno
+to indicate the error.
+.br
+.ne 10
+.SH ERRORS
+.TP 20
+.SM EBADF
+.I s
+is an invalid descriptor.
+.TP
+.SM EFAULT
+The data was specified to be sent to a non-existent
+or protected part of the process address space.
+.TP
+.SM EINTR
+The calling process received a signal before
+any data could be buffered to be sent, and the signal was set to
+interrupt the system call.
+.TP
+.SM EINVAL
+.I len
+is not the size of a valid address for the specified address family.
+.TP
+.SM EMSGSIZE
+The socket requires that message be sent atomically,
+and the size of the message to be sent made this impossible.
+.TP
+.SM ENOBUFS
+The system was unable to allocate an internal buffer.
+The operation may succeed when buffers become available.
+.TP
+.SM ENOBUFS
+The output queue for a network interface was full.
+This generally indicates that the interface has stopped sending,
+but may be caused by transient congestion.
+.TP
+.SM ENOTSOCK
+.I s
+is a descriptor for a file, not a socket.
+.TP
+.SM EWOULDBLOCK
+The socket is marked non-blocking and the requested operation
+would block.
+.SH SEE ALSO
+.BR connect (2),
+.BR fcntl (2V),
+.BR getsockopt (2),
+.BR recv (2),
+.BR select (2),
+.BR socket (2),
+.BR write (2V)

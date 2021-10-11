@@ -1,0 +1,65 @@
+.\" @(#)rwall.1c 1.1 92/07/30 SMI;
+.TH RWALL 1C "17 December 1987"
+.SH NAME
+rwall \- write to all users over a network
+.SH SYNOPSIS
+.B /usr/etc/rwall
+.IR hostname .\|.\|.
+.br
+.B /usr/etc/rwall
+.B \-n
+.IR netgroup .\|.\|.
+.br
+.B /usr/etc/rwall
+.B \-h
+.B hostname
+.B \-n
+.B netgroup
+.SH AVAILABILITY
+.LP
+This command is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "write to all users on network \(em \fLrwall\fP"
+.IX  network  rwall  ""  "\fLrwall\fP \(em write to all users"
+.IX  "broadcast messages to all users on network \(em \fLrwall\fR"
+.LP
+.B rwall
+reads a message from standard input until
+.SM EOF\s0.
+It then sends this message,
+preceded by the line
+.RB ` "Broadcast Message .\|.\|." ',
+to all users logged in on the specified host machines.
+With the
+.B \-n
+option, it sends to the specified network groups,
+which are defined in
+.BR netgroup (5).
+.LP
+A machine can only receive such a message if it is running
+.BR rwalld (8C),
+which is normally started up from
+.B /etc/inetd.conf
+by the daemon
+.BR inetd (8C).
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/inetd.conf
+.PD
+.SH "SEE ALSO"
+.BR wall (1),
+.BR netgroup (5),
+.BR inetd (8C),
+.BR rwalld (8C),
+.BR shutdown (8)
+.SH BUGS
+.LP
+The timeout is fairly short in order to be able to send to
+a large group of machines (some of which may be down)
+in a reasonable amount of time.
+Thus the message may not get through to a heavily loaded machine.

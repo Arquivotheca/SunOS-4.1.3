@@ -1,0 +1,117 @@
+#!/bin/sh
+#
+#ident  "%Z%%M% %I% %E%"	/* from SVR3.2 uucp:uulog 2.7 */
+#
+# usage:
+# 	uulog
+# or	uulog foo
+# or	uulog -sfoo
+# or	uulog -s foo
+# or	uulog -ffoo
+# or	uulog -f foo
+#
+#	-x means check the execute file
+#	-nnn where 'nnn' is a number will do tail -nnn
+#
+LOGDIR=/usr/spool/uucp/.Log
+type=uucico
+n=""
+
+cd $LOGDIR
+
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-x)	type=uuxqt
+		shift
+		;;
+
+	-[0-9]*)n=`echo $1|cut -c2-`
+		shift
+		;;
+
+	-f)	fflag=1
+		shift
+		if [ $# -eq 0 ]
+		then
+			echo "uulog: system name must follow -f flag" 1>&2
+			exit 1
+		else
+			case "$1" in
+			-*)
+				echo "uulog: system name must follow -f flag" 1>&2
+				exit 1
+				;;
+			esac
+		fi
+		;;
+
+	-f*)	x=`echo $1|cut -c3-`
+		shift
+		set - $x $*
+		fflag=1
+		;;
+
+	-s)	shift
+		if [ $# -eq 0 ]
+		then
+			echo "uulog: system name must follow -s flag" 1>&2
+			exit 1
+		else
+			case "$1" in
+			-*)
+				echo "uulog: system name must follow -s flag" 1>&2
+				exit 1
+				;;
+			esac
+		fi
+		;;
+
+	-s*)	x=`echo $1|cut -c3-`
+		shift
+		set - $x $*
+		;;
+
+	-*)	echo "Invalid flag $1" 1>&2
+		exit 1
+		;;
+
+	*)	sys="$sys $1"
+		shift
+		;;
+
+	esac
+done
+
+set - $sys
+if [ x$fflag = x ]; then
+	if [ $# = 0 ]; then
+		set - `ls $type`
+	fi
+	for i
+	do
+		if [ -f $type/$i ]
+		then
+			if [ x$n = x ]; then
+				cat $type/$i
+			else
+				tail -$n $type/$i
+			fi
+		else
+			echo "uulog: no log file available for system $i"
+			exit 1
+		fi
+	done
+else
+	if [ $# != 1 ]; then
+		echo "uulog: only one system allowed with -f" 1>&2
+		exit 2
+	fi
+	if [ -f $type/$1 ]
+	then
+		exec tail -${n}f $type/$1
+	else
+		echo "uulog: no log file available for system $1"
+		exit 1
+	fi
+fi

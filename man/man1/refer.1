@@ -1,0 +1,182 @@
+.\" @(#)refer.1 1.1 92/07/30 SMI;
+.TH REFER 1 "21 December 1987"
+.SH NAME
+refer \- expand and insert references from a bibliographic database
+.SH SYNOPSIS
+.B refer
+[
+.B \-ben
+] [
+.BI \-a r
+] [
+.BI \-c string
+] [
+.BI \-k x
+] [
+.BI \-l m,n
+]
+.if n .ti +0.5i
+[
+.BI \-p " filename"
+] [
+.BI \-s keys
+]
+.IR filename .\|.\|.
+.SH AVAILABILITY
+This command is available with the
+.I Text
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "refer command"  ""  "\fLrefer\fP \(em insert literature references"
+.IX  "insert literature references"  ""  "insert literature references \(em \fLrefer\fP"
+.IX  find "literature references"  ""  "find literature references \(em \fLrefer\fP"
+.IX  "document production"  refer  ""  "\fLrefer\fP \(em insert literature references"
+.IX  "bibliography"  refer  ""  "\fLrefer\fP \(em insert literature references"
+.IX  "literature references, find and insert \(em \fLrefer\fP"
+.B refer
+is a preprocessor for
+.BR nroff (1),
+or
+.BR troff (1),
+that finds and formats references.
+The input files (standard input by
+default) are copied to the standard output, except for lines between
+.RB ` .\|[ '
+and
+.RB ` .\|] '
+command lines,
+Such lines are assumed to contain keywords as for
+.BR lookbib (1),
+and are replaced by information from a bibliographic data base.  The
+user can avoid the search, override
+fields from it, or add new fields.
+The reference data, from whatever source, is assigned to a set of
+.B troff
+strings.  Macro packages such as
+.BR ms (7)
+print the finished reference text from
+these strings.  A flag is placed
+in the text at the point of reference.
+By default, the references are
+indicated by numbers.
+.LP
+When
+.B refer
+is used with
+.BR eqn (1),
+.BR neqn ,
+or
+.BR tbl (1),
+.B refer
+should be used first in the sequence, to minimize the
+volume of data passed through pipes.
+.SH OPTIONS
+.TP
+.B \-b
+Bare mode \(em do not put any flags in
+text (neither numbers or labels).
+.TP
+.B \-e
+Accumulate references instead of leaving
+the references where encountered,
+until a sequence of the form:
+.RS
+.RS
+.sp .5
+.nf
+.ft B
+\&.[
+$\s-1LIST\s0$
+\&.]
+.fi
+.RE
+.RE
+.IP
+is encountered, and then write out all references collected so far.
+Collapse references to the same source.
+.TP
+.B \-n
+Do not search the default file.
+.TP
+.BI \-a r
+Reverse the first
+.I r
+author names (Jones, J. A. instead of J. A. Jones).  If
+.I r
+is omitted, all author names are reversed.
+.TP
+.BI \-c string
+Capitalize (with
+\s-1SMALL CAPS\s0)
+the fields whose key-letters are in
+.IR string .
+.TP
+.BI \-k x
+Instead of numbering references, use labels
+as specified in a reference
+data line beginning with the characters
+.IR %x ;
+By default,
+.I x
+is
+.BR L .
+.TP
+.BI \-l m,n
+Instead of numbering references, use labels
+from the senior author's last
+name and the year of publication.  Only the first
+.I m
+letters of the
+last name and the last
+.I n
+digits of the date are used.  If either of
+.I m
+or
+.I n
+is omitted, the entire name or date, respectively, is used.
+.TP
+.BI \-p " filename"
+Take the next argument as a file of references to be searched.  The
+default file is searched last.
+.TP
+.BI \-s keys
+Sort references by fields whose key-letters are in the
+.I keys
+string, and permute reference numbers in the text accordingly.
+Using this option implies the
+.B \-e
+option.  The key-letters in
+.I keys
+may be followed by a number indicating how many such fields are used,
+with a
+.B +
+sign taken as a very large number.  The default is
+.SM
+.BR AD\s0 ,
+which sorts on the senior author and date.
+To sort on all authors and
+then the date, for instance, use the options
+.RB  ` \-sA+T '.
+.br
+.ne 6
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/dict/papers
+directory of default publication lists and indexes
+.TP
+.B /usr/lib/refer
+directory of programs
+.PD
+.SH "SEE ALSO"
+.BR addbib (1),
+.BR eqn (1),
+.BR indxbib (1),
+.BR lookbib (1),
+.BR nroff (1),
+.BR roffbib (1),
+.BR sortbib (1),
+.BR tbl (1),
+.BR troff (1)

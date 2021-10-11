@@ -1,0 +1,172 @@
+.\" @(#)shmop.2 1.1 92/07/30 SMI; from S5R3
+.TH SHMOP 2 "21 January 1990"
+.SH NAME
+shmop, shmat, shmdt \- shared memory operations
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *shmat(shmid, shmaddr, shmflg)
+int shmid;
+char *shmaddr;
+int shmflg;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int shmdt(shmaddr)
+char *shmaddr;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  shmop()  ""  "\fLshmop()\fR \(em get shared memory operations"
+.IX  "shared memory" "operation \(em\fLshmop()\fR"
+.B shmat(\|)
+maps the shared memory segment associated with the shared memory identifier
+specified by
+.I shmid
+into the data segment of the calling process.  Upon successful completion,
+the address of the mapped segment is returned.
+.LP
+The shared memory segment is mapped at the address specified
+by one of the following criteria:
+.TP 3
+\(bu
+If
+.I shmaddr
+is equal to zero, the segment is mapped at an address selected by the
+system.  Ordinarily, applications should invoke
+.B shmat(\|)
+with
+.I shmaddr
+equal to zero so that the operating system may make the best
+use of available resources.
+.TP
+\(bu
+If
+.I shmaddr
+is not equal to zero and
+.RI ( shmflg " &"
+.SM
+.BR SHM_RND \s0)
+is ``true'', the segment is mapped at the address given by
+.RI ( shmaddr " -"
+.RI ( shmaddr " modulus"
+.SM
+.BR SHMLBA \s0)).
+.TP
+\(bu
+If
+.I shmaddr
+is not equal to zero and
+.RI ( shmflg " &"
+.SM
+.BR SHM_RND \s0)
+is ``false'', the segment is mapped at the address given by
+.IR shmaddr .
+.LP
+The segment is mapped for reading if
+.RI ( shmflg " &"
+.SM
+.BR SHM_RDONLY \s0)
+is ``true''
+.BR \%[\s-1READ\s0] ,
+otherwise it is mapped for reading and writing
+.BR \%[\s-1READ\s0/\s-1WRITE\s0] 
+(see
+.BR shmctl (2)).
+.LP
+.B shmdt(\|)
+unmaps from the calling process's address space
+the shared memory segment that is mapped at the address specified by
+.IR shmaddr .
+The shared memory segment must have been mapped with a prior
+.B shmat(\|)
+function call.  The segment and contents are retained until explicitly
+removed by means of the
+.SB IPC_RMID
+function (see
+.BR shmctl (2)).
+.SH RETURN VALUES
+.On success,
+.B shmat(\|)
+returns
+the data segment start address of the mapped shared memory segment.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.LP
+.B shmdt(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.B shmat(\|)
+will fail and not map the shared memory segment if one or more of the
+following are true:
+.TP 15
+.SM EACCES
+Operation permission is denied to the calling process (see
+.BR intro (2)).
+.TP
+.SM EINVAL
+.I shmid
+is not a valid shared memory identifier.
+.IP
+.I shmaddr
+is not equal to zero, and the value of
+.RI ( shmaddr " -"
+.RI ( shmaddr " modulus"
+.SM
+.BR SHMLBA \s0))
+is an illegal address.
+.IP
+.I shmaddr
+is not equal to zero,
+.RI ( shmflg " &"
+.SM
+.BR SHM_RND \s0)
+is ``false'', and the value of
+.I shmaddr
+is an illegal address.
+.TP
+.SM EMFILE
+The number of shared memory segments mapped to the calling process would
+exceed the system-imposed limit.
+.TP
+.SM ENOMEM
+The available data space
+is not large enough to accommodate the shared memory segment.
+.LP
+.B shmdt(\|)
+will fail and not unmap the shared memory segment if:
+.TP 15
+.SM EINVAL
+.I shmaddr
+is not the data segment start address of a shared memory segment.
+.SH SEE ALSO
+.BR ipcrm (1),
+.BR ipcs (1),
+.BR intro (2),
+.BR execve (2V),
+.BR exit (2V),
+.BR fork (2V),
+.BR shmctl (2),
+.BR shmget (2)

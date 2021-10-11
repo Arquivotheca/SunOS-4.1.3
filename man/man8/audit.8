@@ -1,0 +1,100 @@
+.\" @(#)audit.8 1.1 92/07/30 SMI;
+.TH AUDIT 8 "26 January 1988"
+.SH NAME
+audit \- audit trail maintenance
+.SH SYNOPSIS
+.LP
+.B audit
+[
+.BR \-n \||\| \-s \||\| \-t
+]
+.br
+.B audit
+.B \-d
+.I username
+.br
+.B audit
+.B \-u
+.I username
+.I audit_event_state
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Security
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  audit  ""  "\fLaudit\fP \(em maintain audit trail"
+.IX  change  "audit characteristics"
+.LP
+The
+.B audit
+command is the general administrator's interface to kernel auditing.
+The process audit state for a user can be temporarily or permanently altered.
+The audit daemon may be notified to read the contents of the
+.B audit_control
+file and re-initialize the current audit directory to the
+first directory listed in the
+.B audit_control
+file, or to open a new audit file
+in the current audit directory specified in the
+.B audit_control
+file as last read by the audit daemon.
+Auditing may also be terminated/disabled.
+.SH OPTIONS
+.TP
+.B \-n
+Signal audit daemon to close the current audit file and open a new
+audit file in the current audit directory.
+.TP
+.B \-s
+Signal audit daemon to read audit control file.  The audit daemon stores
+the information internally.
+.TP
+.B \-t
+Signal audit daemon to disable auditing and die.
+.TP
+.BI \-d " username"
+Change the process audit state of all processes owned by
+.IR username .
+This new process audit state is constructed from the
+system and user audit values as specified in the
+.B audit_control
+and
+.BR passwd.adjunct
+files respectively.
+.TP
+.BI \-u " username audit_event_state"
+Set the process audit state from
+.I audit_event_state
+for all current processes owned by
+.IR username .
+See
+.BR audit_control (5)
+for the format of the system audit value.
+The process audit state is one argument.
+Enclose the audit event state in quotes,
+or do not use 
+.SM SPACE
+characters in the process audit state specification.
+A new login session reconstructs the process audit state 
+from the audit flags in the
+.B audit_control 
+and
+.BR passwd.adjunct
+files.
+.\" .SH FILES
+.\" .PD 0
+.\" .TP 20
+.\" .B /etc/security/passwd.adjunct
+.\" .TP
+.\" .B /etc/security/audit/audit_control
+.\" .PD
+.SH SEE ALSO
+.BR audit (2),
+.BR setuseraudit (2),
+.BR getauditflags (3),
+.BR getfauditflags (3),
+.BR audit_control (5),
+.BR passwd.adjunct (5)

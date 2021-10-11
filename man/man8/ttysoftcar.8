@@ -1,0 +1,76 @@
+.\" @(#)ttysoftcar.8 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH TTYSOFTCAR 8 "21 July 1989"
+.SH NAME
+ttysoftcar \- enable/disable carrier detect
+.SH SYNOPSIS
+.B ttysoftcar
+[
+.BR \-y \||\| \-n
+]
+.IR tty \|.\|.\|.
+.LP
+.B ttysoftcar
+.B \-a
+.SH DESCRIPTION
+.IX "ttysoftcar" "" "\fLttysoftcar\fP \(em enable/disable carrier detect"
+.LP
+For each
+.I tty
+specified
+.B ttysoftcar
+changes the carrier detect flag using the
+.SB TIOCSSOFTCAR
+.B ioctl(\|)
+request
+(see
+.BR tty (4)).
+If the
+.B \-a
+option is specified,
+.B ttysoftcar
+sets all
+.BR tty 's
+in the
+.B /etc/ttytab
+file to the carrier detection mode specified by their
+status field.
+If this field is set to
+.BR local ,
+software carrier detection is turned on.
+If this field is set to anything other than
+.BR local ,
+as is usually the case for modems,
+software carrier detection is turned off.
+.B ttysoftcar 
+ignores devices in the
+.B /etc/ttytab
+file which do not exist.
+.LP
+If no options are specified,
+.B ttysoftcar
+returns the current status for
+.IR tty .
+This status is reported as 
+.B y
+or
+.BR n .
+.SH OPTIONS
+.TP
+.B \-a
+Reset
+.BR tty s
+to appropriate values based on the
+status field of the
+.B /etc/ttytab
+file.
+.TP
+.B \-y
+Turn on software carrier detect.
+.TP
+.B \-n
+Turn off software carrier detect.
+Use hardware carrier detect.
+.SH SEE ALSO
+.BR termio (4),
+.BR zs (4S),
+.BR ttytab (5)

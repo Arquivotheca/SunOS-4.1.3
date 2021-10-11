@@ -1,0 +1,89 @@
+.\" @(#)quotacheck.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH QUOTACHECK 8 "9 September 1987"
+.UC 4
+.SH NAME
+quotacheck \- file system quota consistency checker
+.SH SYNOPSIS
+.B /usr/etc/quotacheck
+[
+.B \-v
+] [
+.B \-p
+]
+.IR filesystem .\|.\|.
+.LP
+.B /usr/etc/quotacheck
+[
+.B \-apv
+]
+.SH DESCRIPTION
+.IX  "quotacheck command"  ""  "\fLquotacheck\fP \(em check quota consistency"
+.IX  "user quotas"  "quotacheck command"  ""  "\fLquotacheck\fP \(em check quota consistency"
+.IX  "disk quotas"  "quotacheck command"  ""  "\fLquotacheck\fP \(em check quota consistency"
+.IX  "quotas"  "quotacheck command"  ""  "\fLquotacheck\fP \(em check quota consistency"
+.IX  "file system"  "quotacheck command"  ""  "\fLquotacheck\fP \(em check quota consistency"
+.IX  "check quota consistency quotacheck"  ""  "check quota consistency \(em \fLquotacheck\fP"
+.LP
+.B quotacheck
+examines each file system, builds a table of current disk usage, and
+compares this table against that stored in the disk quota file for the
+file system.
+If any inconsistencies are detected, both the quota file
+and the current system copy of the incorrect quotas are updated (the
+latter only occurs if an active file system is checked).
+.LP
+.B quotacheck
+expects each file system to be checked to have a quota file named
+.I quotas
+in the root directory.  If none is present,
+.B quotacheck
+will ignore the file system.
+.LP
+.B quotacheck
+is normally run at boot time from the
+.B /etc/rc.local
+file, see
+.BR rc (8),
+before enabling disk quotas with
+.BR quotaon (8).
+.LP
+.B quotacheck
+accesses the raw device in calculating the actual disk usage for each
+user.  Thus, the file systems checked should be quiescent while
+.B quotacheck
+is running.
+.SH OPTIONS
+.TP
+.B \-v
+Indicate the calculated disk quotas
+for each user on a particular file system.
+.B quotacheck
+normally reports only those quotas modified.
+.TP
+.B \-a
+Check all the file systems indicated in
+.B /etc/fstab
+to be read-write with disk quotas.
+.TP
+.B \-p
+Run parallel passes on the required file systems,
+using the pass numbers in
+.B /etc/fstab
+in an identical fashion to
+.BR fsck (8).
+.SH FILES
+.PD 0
+.TP 20
+.B quotas
+quota file at the file system root
+.TP
+.B /etc/mtab
+mounted file systems
+.TP
+.B /etc/fstab
+default file systems
+.PD
+.SH "SEE ALSO"
+.BR quotactl (2),
+.BR quotaon (8),
+.BR rc (8)

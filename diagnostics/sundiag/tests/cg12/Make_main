@@ -1,0 +1,311 @@
+#
+# @(#)Make_main 1.1 92/07/30 SMI
+#
+
+# Makefile for Egret System Diagnostics
+
+.DEFAULT:
+	$(SCCS) get $(@F)
+
+SUNDIAG_DIR=	/usr/diag/sundiag
+BINDIR=	../bin
+SRCDIR= ../src
+TARGETS=	$(BINDIR)/esd
+
+#sources & objectS
+SRCS=	main.c\
+	fork_test.c\
+	menu.c\
+	msg.c\
+	exec_tests.c\
+	popup_select.c\
+	sb_testlist.c\
+	timestamp.c
+
+OBJS=	$(SRCS:.c=.o)
+
+# commands
+SCCS=		/usr/ucb/sccs
+RM=		/bin/rm -f
+CP=		/bin/cp
+ED=		/usr/bin/ed
+CPP=		/lib/cpp -E
+LINT=		lint
+
+# system include directory
+STDINCL= /usr/include
+
+# used during development to include new or modified include files
+DEVEL_INCLPATH=
+
+# used during development to include new or modified include files
+DEVEL_LIBPATH=
+
+# compilation flags
+TARGET_ARCH=
+FLOAT= -fsoft
+OPTIM= -g
+DEFINES=
+INCLUDES= -I.
+
+CFLAGS= $(TARGET_ARCH) $(FLOAT) $(OPTIM)
+CPPFLAGS = $(INCLUDES) $(DEFINES)
+LDFLAGS= $(OPTIM)
+
+LINT_FLAGS= -abh $(INCLUDES) $(DEFINES)
+
+LIBS= -lsuntool -lsunwindow -lpixrect
+
+LINT_LIB_PATH= /usr/lib/lint
+LINT_LIBS= $(LINT_LIB_PATH)/llib-lsuntool.ln \
+	   $(LINT_LIB_PATH)/llib-lsunwindow.ln \
+	   $(LINT_LIB_PATH)/llib-lpixrect.ln
+
+all: $(TARGETS)
+
+$(BINDIR)/esd:	$(OBJS)
+		$(CC) $(LDFLAGS) $(OBJS) -o $(BINDIR)/esd $(LIBS)
+
+install: all
+	$(CP) $(BINDIR)/esd $(DESTDIR)/esd
+
+
+lint:	$(SRCS) $(LINT_LIBS)
+	$(LINT) $(LINT_FLAGS) $(SRCS) $(LINT_LIBS)
+
+clean:
+	$(RM) *.o *.pp *.ln $(TARGETS) core *~ #*
+
+info: FRC
+	$(SCCS) info
+
+depend: $(SRCS)
+	$(RM) makedep eddep
+	for i in $(SRCS) ; do \
+	    ( $(CPP) -M $(CPPFLAGS) $$i >> makedep ); \
+	    echo `basename $$i .c`.h: $$i >> makedep ; \
+	done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	$(CP) Make_main Make_main.bak
+	$(ED) - Make_main < eddep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Make_main
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Make_main
+	echo '# see make depend above' >> Make_main
+	$(RM) eddep makedep
+	
+FRC:
+
+# DO NOT DELETE THIS LINE -- make depend uses it
+# DEPENDENCIES MUST END AT END OF FILE
+main.o: main.c
+main.o: /usr/include/stdio.h
+main.o: /usr/include/sys/file.h
+main.o: /usr/include/sys/fcntlcom.h
+main.o: ./esd.h
+main.h: main.c
+fork_test.o: fork_test.c
+fork_test.o: /usr/include/strings.h
+fork_test.h: fork_test.c
+menu.o: menu.c
+menu.o: /usr/include/stdio.h
+menu.o: /usr/include/sys/file.h
+menu.o: /usr/include/sys/fcntlcom.h
+menu.o: /usr/include/sys/ioctl.h
+menu.o: /usr/include/sys/ttychars.h
+menu.o: /usr/include/sys/ttydev.h
+menu.o: /usr/include/sys/ttold.h
+menu.o: /usr/include/sys/ioccom.h
+menu.o: /usr/include/sys/ttycom.h
+menu.o: /usr/include/sys/filio.h
+menu.o: /usr/include/sys/ioccom.h
+menu.o: /usr/include/sys/sockio.h
+menu.o: /usr/include/sys/ioccom.h
+menu.o: /usr/include/sys/wait.h
+menu.o: /usr/include/sys/time.h
+menu.o: /usr/include/time.h
+menu.o: /usr/include/strings.h
+menu.o: /usr/include/suntool/sunview.h
+menu.o: /usr/include/signal.h
+menu.o: /usr/include/vm/faultcode.h
+menu.o: /usr/include/pixrect/pixrect_hs.h
+menu.o: /usr/include/sys/types.h
+menu.o: /usr/include/sys/sysmacros.h
+menu.o: /usr/include/pixrect/pixrect.h
+menu.o: /usr/include/sys/types.h
+menu.o: /usr/include/pixrect/pr_dblbuf.h
+menu.o: /usr/include/pixrect/pr_line.h
+menu.o: /usr/include/pixrect/pr_planegroups.h
+menu.o: /usr/include/pixrect/pr_util.h
+menu.o: /usr/include/pixrect/traprop.h
+menu.o: /usr/include/pixrect/bw1var.h
+menu.o: /usr/include/pixrect/cg1var.h
+menu.o: /usr/include/pixrect/bw2var.h
+menu.o: /usr/include/pixrect/cg2var.h
+menu.o: /usr/include/pixrect/gp1var.h
+menu.o: /usr/include/sun/fbio.h
+menu.o: /usr/include/pixrect/cg2var.h
+menu.o: /usr/include/pixrect/cg9var.h
+menu.o: /usr/include/sundev/cg9reg.h
+menu.o: /usr/include/sundev/ramdac.h
+menu.o: /usr/include/pixrect/pixrect.h
+menu.o: /usr/include/pixrect/memvar.h
+menu.o: /usr/include/sunwindow/cms.h
+menu.o: /usr/include/pixrect/cg4var.h
+menu.o: /usr/include/pixrect/memvar.h
+menu.o: /usr/include/pixrect/cg8var.h
+menu.o: /usr/include/pixrect/cg4var.h
+menu.o: /usr/include/sundev/cg8reg.h
+menu.o: /usr/include/machine/param.h
+menu.o: /usr/include/sundev/p4reg.h
+menu.o: /usr/include/sundev/ramdac.h
+menu.o: /usr/include/sunwindow/cms.h
+menu.o: /usr/include/pixrect/cg9var.h
+menu.o: /usr/include/pixrect/memvar.h
+menu.o: /usr/include/pixrect/pixfont.h
+menu.o: /usr/include/rasterfile.h
+menu.o: /usr/include/pixrect/pr_io.h
+menu.o: /usr/include/sunwindow/window_hs.h
+menu.o: /usr/include/sys/time.h
+menu.o: /usr/include/pixrect/pixrect_hs.h
+menu.o: /usr/include/sunwindow/notify.h
+menu.o: /usr/include/sunwindow/rect.h
+menu.o: /usr/include/sunwindow/rectlist.h
+menu.o: /usr/include/sunwindow/pixwin.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/sunwindow/pw_util.h
+menu.o: /usr/include/sunwindow/win_struct.h
+menu.o: /usr/include/sunwindow/win_environ.h
+menu.o: /usr/include/sunwindow/cms.h
+menu.o: /usr/include/sunwindow/win_screen.h
+menu.o: /usr/include/sunwindow/win_input.h
+menu.o: /usr/include/sundev/vuid_event.h
+menu.o: /usr/include/sunwindow/win_cursor.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/sunwindow/win_notify.h
+menu.o: /usr/include/suntool/icon.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/suntool/walkmenu.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/suntool/window.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/suntool/frame.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/suntool/panel.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/suntool/textsw.h
+menu.o: /usr/include/suntool/tool_struct.h
+menu.o: /usr/include/suntool/selection_attributes.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/suntool/window.h
+menu.o: /usr/include/suntool/alert.h
+menu.o: /usr/include/sunwindow/attr.h
+menu.o: /usr/include/pixrect/pixrect_hs.h
+menu.o: ./esd.h
+menu.o: ./esd_icon.h
+menu.o: ./int_button.icon
+menu.o: ./sb_button.icon
+menu.o: ./stop_button.icon
+menu.h: menu.c
+exec_tests.o: exec_tests.c
+exec_tests.o: /usr/include/stdio.h
+exec_tests.o: /usr/include/sys/ioctl.h
+exec_tests.o: /usr/include/sys/ttychars.h
+exec_tests.o: /usr/include/sys/ttydev.h
+exec_tests.o: /usr/include/sys/ttold.h
+exec_tests.o: /usr/include/sys/ioccom.h
+exec_tests.o: /usr/include/sys/ttycom.h
+exec_tests.o: /usr/include/sys/filio.h
+exec_tests.o: /usr/include/sys/ioccom.h
+exec_tests.o: /usr/include/sys/sockio.h
+exec_tests.o: /usr/include/sys/ioccom.h
+exec_tests.o: /usr/include/sys/wait.h
+exec_tests.o: /usr/include/signal.h
+exec_tests.o: /usr/include/vm/faultcode.h
+exec_tests.o: ./esd.h
+exec_tests.h: exec_tests.c
+popup_select.o: popup_select.c
+popup_select.o: /usr/include/suntool/sunview.h
+popup_select.o: /usr/include/signal.h
+popup_select.o: /usr/include/vm/faultcode.h
+popup_select.o: /usr/include/pixrect/pixrect_hs.h
+popup_select.o: /usr/include/sys/types.h
+popup_select.o: /usr/include/sys/sysmacros.h
+popup_select.o: /usr/include/pixrect/pixrect.h
+popup_select.o: /usr/include/sys/types.h
+popup_select.o: /usr/include/pixrect/pr_dblbuf.h
+popup_select.o: /usr/include/pixrect/pr_line.h
+popup_select.o: /usr/include/pixrect/pr_planegroups.h
+popup_select.o: /usr/include/pixrect/pr_util.h
+popup_select.o: /usr/include/pixrect/traprop.h
+popup_select.o: /usr/include/pixrect/bw1var.h
+popup_select.o: /usr/include/pixrect/cg1var.h
+popup_select.o: /usr/include/pixrect/bw2var.h
+popup_select.o: /usr/include/pixrect/cg2var.h
+popup_select.o: /usr/include/pixrect/gp1var.h
+popup_select.o: /usr/include/sun/fbio.h
+popup_select.o: /usr/include/pixrect/cg2var.h
+popup_select.o: /usr/include/pixrect/cg9var.h
+popup_select.o: /usr/include/sundev/cg9reg.h
+popup_select.o: /usr/include/sundev/ramdac.h
+popup_select.o: /usr/include/pixrect/pixrect.h
+popup_select.o: /usr/include/pixrect/memvar.h
+popup_select.o: /usr/include/sunwindow/cms.h
+popup_select.o: /usr/include/pixrect/cg4var.h
+popup_select.o: /usr/include/pixrect/memvar.h
+popup_select.o: /usr/include/pixrect/cg8var.h
+popup_select.o: /usr/include/pixrect/cg4var.h
+popup_select.o: /usr/include/sundev/cg8reg.h
+popup_select.o: /usr/include/machine/param.h
+popup_select.o: /usr/include/sundev/p4reg.h
+popup_select.o: /usr/include/sundev/ramdac.h
+popup_select.o: /usr/include/sunwindow/cms.h
+popup_select.o: /usr/include/pixrect/cg9var.h
+popup_select.o: /usr/include/pixrect/memvar.h
+popup_select.o: /usr/include/pixrect/pixfont.h
+popup_select.o: /usr/include/rasterfile.h
+popup_select.o: /usr/include/pixrect/pr_io.h
+popup_select.o: /usr/include/sunwindow/window_hs.h
+popup_select.o: /usr/include/sys/time.h
+popup_select.o: /usr/include/time.h
+popup_select.o: /usr/include/pixrect/pixrect_hs.h
+popup_select.o: /usr/include/sunwindow/notify.h
+popup_select.o: /usr/include/sunwindow/rect.h
+popup_select.o: /usr/include/sunwindow/rectlist.h
+popup_select.o: /usr/include/sunwindow/pixwin.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: /usr/include/sunwindow/pw_util.h
+popup_select.o: /usr/include/sunwindow/win_struct.h
+popup_select.o: /usr/include/sunwindow/win_environ.h
+popup_select.o: /usr/include/sunwindow/cms.h
+popup_select.o: /usr/include/sunwindow/win_screen.h
+popup_select.o: /usr/include/sunwindow/win_input.h
+popup_select.o: /usr/include/sundev/vuid_event.h
+popup_select.o: /usr/include/sunwindow/win_cursor.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: /usr/include/sunwindow/win_notify.h
+popup_select.o: /usr/include/suntool/icon.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: /usr/include/suntool/walkmenu.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: /usr/include/suntool/window.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: /usr/include/suntool/frame.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: /usr/include/suntool/panel.h
+popup_select.o: /usr/include/sunwindow/attr.h
+popup_select.o: ./esd.h
+popup_select.o: ./ok.icon
+popup_select.h: popup_select.c
+sb_testlist.o: sb_testlist.c
+sb_testlist.o: ./esd.h
+sb_testlist.h: sb_testlist.c
+timestamp.o: timestamp.c
+timestamp.o: /usr/include/sys/types.h
+timestamp.o: /usr/include/sys/sysmacros.h
+timestamp.o: /usr/include/strings.h
+timestamp.h: timestamp.c
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above

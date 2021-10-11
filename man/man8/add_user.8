@@ -1,0 +1,179 @@
+.\" @(#)add_user.8 1.1 92/07/30 SMI; new for 4.1.1
+.TH ADD_USER 8 "5 October 1990"
+.SH NAME
+add_user \- shell script to add a user account to a machine
+.SH SYNOPSIS
+.B /usr/etc/install/add_user
+.I uname
+.I uid
+.I gid
+.I fullname
+.if n .ti +5n
+.I homedir
+.I shell
+.SH DESCRIPTION
+.IX add_user "" "\fLadd_user\fP \(em add a user account"
+.IX user "add_user command" user "\fLadd_user\fP \(em add a user account"
+.IX account "add_user command" account "\fLadd_user\fP \(em add a user account"
+.LP
+The
+.B add_user
+shell script creates a new user account.
+It is purposely limited in its abilities,
+and should be considered as a working example
+of how to add a user account to a machine.
+System administrators may wish to use this script
+as the basis for their own tools to create new accounts.
+.LP
+The
+.BR adduser (8)
+manual page provides a more detailed description of the
+steps involved in adding a user to a machine, including
+those steps automated by
+.BR add_user .
+Also refer to 
+.BR adduser (8)
+for information about user accounts involving the
+Network Information Service (\s-1NIS\s0).
+.LP
+When run,
+.B add_user
+first checks that the following conditions are satisfied.
+.IP
+The command must be run by root.
+.IP
+A valid number of arguments must be suplied.
+.IP
+.I uid
+and 
+.I gid
+are between 10 and 60000.
+.IP
+.I shell
+exists and is executable.
+.IP
+.I homedir
+does
+.I not
+already exist.
+.IP
+The parent directory where the home directory will be created exists.
+.IP
+The filesystem where the home directory
+will be created is a local filesystem.
+.IP
+.I uname
+and
+.I uid
+do not already exist in the
+.B /etc/passwd
+file.
+.LP
+When all of the preceding checks are satisfied,
+.B add_user
+performs the following steps to create a user account.
+.IP
+Creates an entry in the \fB/etc/passwd\fR file.
+.IP
+Creates the home directory.
+.IP
+Changes the ownership and group of the home directory
+to that of the new user.
+.IP
+Copies the default user startup files
+.RB ( ".login .cshrc .rootmenu .sunview" )
+to the user's home directory, and changes
+ownership and group of these files to that of the user's.
+.SH EXAMPLES
+.LP
+The following example shows the input required to add the
+user \*(lqLynn Long\*(rq to the current system.
+Note that
+.B /usr/etc/install
+is not a usual path for user executables, only
+administrators should have this in their path.
+.LP
+.ft B
+.nf
+example# /usr/etc/install/add_user lynnl 1099 10 "Lynn Long" /home/example/lynnl /bin/csh
+.fi
+.ft R
+.LP
+This adds the user \*(lqLynn Long\*(rq to the system,
+creating an entry in the
+.B /etc/passwd
+file that looks like:
+.LP
+.RS
+.ft B
+.nf
+lynnl::1099:10:Lynn Long:/home/example/lynnl:/bin/csh
+.fi
+.ft R
+.RE
+.LP
+It also creates the directory
+.B /home/example/lynnl
+and copies the default user startup files into it.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/Login 
+the default
+.B .login
+file placed in the user's home directory
+.TP
+.B /usr/lib/Cshrc
+the default
+.B .cshrc
+file placed in the user's home directory
+.TP
+.B /usr/lib/.sunview
+the default
+.B .sunview
+file placed in the user's home directory
+.TP
+.B /usr/lib/.rootmenu
+the default
+.B .rootmenu
+file placed in the user's home directory
+.TP
+.B /etc/passwd
+the system password file
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR passwd (1),
+.BR sunview (1),
+.BR adduser (8)
+.SH DIAGNOSTICS
+.LP
+The numerous error messages that
+.B add_user
+may issue are intended to be self-explanatory.
+.SH WARNINGS
+.LP
+Do not attempt to run
+.B add_user
+on a system that has the
+.I "C2 Security"
+software installed on it.
+.SH NOTES
+.LP
+After successfully running
+.BR add_user ,
+either the system administrator (running as root)
+or the user should immediately create
+a password for the account, using the
+.BR passwd (1)
+command, to deter unauthorized use of the new account.
+.SH BUGS
+.LP
+.B add_user
+does not check to see if the
+.I gid
+exists in the
+.B /etc/group
+file on the machine.
+Thus the user's group may not
+have a name associated with it.

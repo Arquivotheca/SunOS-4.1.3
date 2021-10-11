@@ -1,0 +1,660 @@
+.\" @(#)automount.8 1.1 92/07/30 SMI;
+.TH AUTOMOUNT 8 "20 January 1990"
+.SH NAME
+automount \- automatically mount NFS file systems
+.SH SYNOPSIS
+.B automount
+[
+.B \-mnTv
+] [
+.BI \-D " name" = " value"
+] [
+.BI \-f " master-file"
+]
+.if n .ti +5n
+[
+.BI \-M " mount-directory"
+] [
+.BI \-tl " duration"
+]
+.if t .ti +.5i
+.if n .ti +5n
+[
+.BI \-tm " interval"
+]
+[
+.BI \-tw " interval"
+]
+.if n .ti +5n
+[
+.I directory\ \ 
+.I map
+.RI [ " \-mount-options " ]
+] .\|.\|.
+.SH DESCRIPTION
+.IX "automount command" "" "\fLautomount\fP \(em automatically mount NFS file systems"
+.LP
+.B automount
+is a daemon that automatically and transparently mounts an
+.SM NFS
+file system as needed.  It monitors attempts to access
+directories that are associated with an
+.B automount
+map, along with any directories or files that reside under them.
+When a file is to be accessed, the daemon
+mounts the appropriate
+.SM NFS
+file system.
+You can assign a map to a directory using an entry in a direct
+.B automount
+map, or by specifying an indirect map on the command line.
+.LP
+The
+.B automount
+daemon appears to be an
+.SM NFS
+server to the kernel.
+.B automount
+uses the map to locate an
+appropriate
+.SM NFS
+file server, exported file system, and mount options.  It then
+mounts the file system in a temporary location, and creates
+a symbolic link
+to the temporary location.  If the file system is not accessed within
+an appropriate interval (five minutes by default), the daemon unmounts
+the file system and removes the symbolic link.  If the indicated
+directory has not already been created, the daemon creates it, and then
+removes it upon exiting.
+.LP
+Since the name-to-location binding is dynamic, updates to an
+.B automount
+map are transparent to the user.
+This obviates the need to ``pre-mount'' shared file
+systems for applications that have ``hard coded'' references to files.
+.LP
+If the
+.I directory
+argument is a pathname, the
+.I map
+argument must be an
+.I indirect
+map.
+In an indirect map the key for each entry is a simple name
+that represents a symbolic link within
+.I directory
+to an
+.SM NFS
+mount point.
+.LP
+If the
+.I directory
+argument is
+.RB ` /\- ',
+the map that follows must be a
+.I direct
+map.
+A direct map is not associated with a single directory.
+Instead, the key for each entry is a full pathname that will
+itself appear to be a symbolic link to an 
+.SM NFS 
+mount point.
+.LP
+A map can be a file or a 
+Network Information Service
+(\s-1NIS\s0)
+map; if a file, the
+.I map
+argument must be a full pathname.
+.LP
+The
+.BI \- mount-options
+argument, when supplied, is a comma-separated list of
+.BR mount (8)
+options, preceded by a
+.RB ` \- '.
+If these options are supplied,
+they become the default mount options
+for all entries in the map. 
+Mount options provided within a map
+entry override these defaults.
+.SH OPTIONS
+.TP
+.B \-m
+Suppress initialization of
+.IR directory - map
+pairs listed in the
+.B auto.master
+.SM NIS
+database.
+.TP
+.B \-n
+Disable dynamic mounts.  With this option, references through the
+.B automount
+daemon only succeed when the target filesystem has been previously
+mounted.  This can be used to prevent
+.SM NFS
+servers from cross-mounting each other.
+.TP
+.B \-T
+Trace.  Expand each
+.SM NFS
+call and display it on the standard output.
+.TP
+.B \-v
+Verbose.
+Log status and/or warning messages to the console.
+.TP
+.BI  \-D " envar" = value
+Assign
+.I value
+to the indicated
+.B automount
+(environment) variable.
+.TP
+.BI \-f " master-file"
+Read a local file for initialization, ahead of the
+.B auto.master
+.SM NIS
+map.
+.TP
+.BI \-M " mount-directory"
+Mount temporary file systems in the named directory, instead of
+.BR /tmp_mnt .
+.TP
+.BI \-tl " duration"
+Specify a
+.IR duration ,
+in seconds, that a file system is to remain mounted
+when not in use.  The default is 5 minutes.
+.br
+.ne 5
+.TP
+.BI \-tm " interval"
+Specify an
+.IR interval ,
+in seconds, between attempts
+to mount a filesystem. The default is 30 seconds.
+.br
+.ne 5
+.TP
+.BI \-tw " interval"
+Specify an
+.IR interval ,
+in seconds, between attempts to unmount
+filesystems that have exceeded their cached times.
+The default is 1 minute.
+.SH ENVIRONMENT
+Environment variables can be used within an
+.B automount
+map.  For instance, if
+.SB $HOME
+appeared within a map,
+.B automount
+would expand it to its current value for the
+.SB HOME
+variable.
+Environment variables are expanded only for the automounter's
+environment \(em not for the environment of a user using
+the automounter's services.
+.LP
+The special reference to
+.SB $ARCH
+expands to the output of
+.B arch (1).
+This can be useful in creating a map entry for mounting executables
+using a server's export pathname that varies according to the
+architecture of the client reading the map.
+.LP
+If a reference needs to be protected from affixed characters, you can
+surround the variable name with curly braces.
+.SH USAGE
+.SS Map Entry Format
+A simple map entry (mapping) takes the form:
+.IP
+.I key
+\ \ [
+.BI \- mount-options
+]
+.I location\ .\|.\|.
+.LP
+where
+.I key
+is the full pathname of the directory to mount when used in a direct
+map, or simple name in an indirect map.
+.I mount-options
+is a comma-separated list of
+.B mount
+options, and
+.I location
+specifies a remote filesystem from which the directory may be mounted.
+In the simple case,
+.I location
+takes the form:
+.IP
+.IB hostname : pathname
+.LP
+.SS "\fIReplicated Filesystems\fP"
+Multiple
+.I location
+fields can be specified for replicated read-only filesystems,
+in which case
+.B automount
+sends multiple
+.B mount
+requests;
+.B automount
+mounts the file system from the first host that replies to the
+.B mount
+request.  This request is first made to the local net or subnet.  If
+there is no response, any connected server may respond.
+Since
+.B automount
+does not monitor the status of the server while the filesystem
+is mounted it will not use another location in the list if the
+currently mounted server crashes.  This support for replicated
+filesystems is available only at mount time.
+.LP
+If each
+.I location
+in the list shares the same 
+.I pathname
+then a single 
+.I location
+may be used with a comma-separated list of hostnames.
+.IP
+.IB hostname , hostname\|.\|.\|. \|:\| pathname
+.LP
+.SS "\fISharing Mounts\fP"
+If
+.I location
+is specified in the form:
+.IP
+.IB hostname : pathname : subdir
+.LP
+.I hostname
+is the name of the server from which to mount the file system,
+.I pathname
+is the pathname of the directory to mount, and
+.IR subdir ,
+when supplied, is the name of a subdirectory to which the
+symbolic link is made.  This can be used to prevent duplicate
+mounts when multiple directories in the same remote file system may
+be accessed.  With a map for
+.BR /home
+such as:
+.LP
+.RS
+.B "able	homeboy:/home/homeboy:able"
+.br
+.B "baker	homeboy:/home/homeboy:baker"
+.RE
+.LP
+and a user attempting to access a file in
+.BR /home/able ,
+.B automount
+mounts
+.BR homeboy:/home/homeboy ,
+but creates a symbolic link called
+.B /home/able
+to the
+.B able
+subdirectory in the temporarily-mounted filesystem.
+If a user immediately tries to access a file in
+.BR /home/baker ,
+.B automount
+needs only to create a symbolic link that points to the
+.B baker
+subdirectory;
+.B /home/homeboy
+is already mounted.
+.br
+.ne 5
+.LP
+With the following map:
+.LP
+.RS
+.B "able	homeboy:/home/homeboy/able"
+.br
+.B "baker	homeboy:/home/homeboy/baker"
+.RE
+.LP
+.B automount
+would have to mount the filesystem twice.
+.LP
+.SS "\fIComments and Quoting\fP"
+A mapping can be continued across input lines by escaping the
+.SM NEWLINE
+with a backslash.
+Comments begin with a
+.B  #
+and end at the subsequent
+.SM NEWLINE\s0.
+.LP
+Characters that have special significance to the
+.B automount
+map parser may be protected either with double quotes (") or by
+escaping with a backslash (\\).  Pathnames with embedded whitespace,
+colons (:) or dollar ($) should be protected.
+.br
+.ne 7
+.SS "\fIDirectory Pattern Matching"
+The
+.RB ` & '
+character is expanded to the value of the
+.I key
+field for the entry in which it occurs.   In this case:
+.LP
+.IP
+.B
+able	homeboy:/home/homeboy:&
+.LP
+the
+.B &
+expands to
+.BR able .
+.LP
+The
+.RB ` * '
+character, when supplied as the
+.I key
+field, is recognized as the catch-all entry.
+Such an entry will be used if any previous entry has not
+successfully matched the key being searched for.
+For instance, if the following entry appeared in the indirect map for
+.BR /home :
+.IP
+.B
+*	&:/home/&
+.LP
+this would allow automatic mounts in
+.B /home
+of any remote file system whose location could be specified as:
+.IP
+.IB hostname :/home/ hostname
+.br
+.ne 6
+.SS "\fIMultiple Mounts\fP"
+.LP
+A multiple mount entry takes the form:
+.IP
+.I key
+[
+.B /\c
+.RI [ mountpoint
+[
+.BI \- mount-options
+]
+.I 
+location\ .\|.\|.
+]
+\&.\|.\|.
+.LP
+The initial
+.B /
+within the
+`\fB/\fR[\fImountpoint\|\fR]'
+is required; the optional
+.I mountpoint
+is taken as a pathname relative to the
+destination of the symbolic link for
+.IR key .
+If
+.I mountpoint
+is omitted in the first occurrence, a
+.I mountpoint
+of
+.B /
+is implied.
+.LP
+Given the direct map entry:
+.LP
+.nf
+.ft B
+/arch/src\ \ \ \e
+	/               	\-ro,intr		arch:/arch/src      	alt:/arch/src\ \ \ \e
+	/1.0           	\-ro,intr		alt:/arch/src/1.0   	arch:/arch/src/1.0\ \ \ \e
+	/1.0/man	\-ro,intr		arch:/arch/src/1.0/man	alt:/arch/src/1.0/man
+.fi
+.ft
+.LP
+.B automount
+would automatically mount
+.BR /arch/src ,
+.BR /arch/src/1.0
+and
+.BR /arch/src/1.0/man ,
+as needed, from either
+.B arch
+or
+.BR alt ,
+whichever host responded first.
+If the mounts are hierarchically related mounts closer to the
+root must appear before submounts.
+All the mounts of a multiple mount
+entry will occur together and will be unmounted together.  This
+is important if the filesystems reference each other with relative
+symbolic links.
+Multiple mount entries can be used both in direct maps
+and in indirect maps.
+.LP
+.SS "Included Maps"
+The contents of another map can be included within a map with an entry
+of the form:
+.IP
+.BI + mapname
+.LP
+.I mapname
+can either be a filename, or the name of an
+.SM NIS
+map, or one of the special maps described below.
+If the key being searched for is not located in an included map, the
+search continues with the next entry.
+.br
+.ne 6
+.SS Special Maps
+.LP
+There are two special maps currently available:
+.BR \-hosts ,
+and
+.BR \-null .
+The
+.B \-hosts
+map uses the 
+.SM NIS
+.B hosts.byname
+map to locate a remote host when the hostname is specified.
+This map specifies mounts of all exported file systems from any host.
+For instance, if the following
+.B automount
+command is already in effect:
+.IP
+.B
+automount\ \ /net\ \ \-hosts
+.LP
+then a reference to
+.B /net/hermes/usr
+would initiate an automatic mount of all file systems from
+.B hermes
+that
+.B automount
+can mount; references to a directory under
+.B /net/hermes
+will refer to the corresponding directory relative to
+.B hermes
+root.
+.LP
+The
+.B \-null
+map, when indicated on the command line, cancels any subsequent map
+for the directory indicated.  It can be used to cancel a map
+given in
+.B auto.master
+or for a mount point specified as an entry in a direct map.
+.SS Configuration and the auto.master Map
+.B automount
+normally consults the
+.B auto.master
+.SM NIS
+configuration map for a list of initial
+.B automount
+maps, and sets up automatic mounts for them in addition to
+those given on the command line.  If there are duplications, the
+command-line arguments take precedence over a local
+.B \-f
+master map and they both take precedence over an
+.SM NIS
+.B auto.master
+map.
+This configuration database contains arguments to the
+.B automount
+command, rather than mappings; unless
+.B \-f
+is in effect,
+.B automount
+does 
+.I not
+look for an
+.B auto.master
+file on the local host.
+.LP
+Maps given on the command line, or those given in a local
+.B auto.master
+file specified with
+.B \-f
+override those in the
+.SM NIS
+.BR auto.master
+map.  For instance, given the command:
+.IP
+.B
+automount\ \-f\  /etc/auto.master\ /home\ \-null\ \ \ /\-\ \ \/etc/auto.direct
+.LP
+and a file named
+.B /etc/auto.master
+that contains:
+.IP
+.B
+/home\ \ \ auto.home
+.LP
+.B automount
+would ignore /home entry in /etc/auto.master.
+.br
+.ne 5
+.SH FILES
+.PD 0
+.TP 20
+.B /tmp_mnt
+directory under which filesystems are dynamically mounted
+.PD
+.SH "SEE ALSO"
+.BR df (1V),
+.BR ls (1V),
+.BR stat (2V),
+.BR passwd (5),
+.BR mount (8)
+.LP
+.TX ADMIN
+.SH NOTES
+.LP
+The
+.B \-hosts
+map must mount all the exported filesystems from a server.
+If frequent access to just a single filesystem is required it
+is more efficient to access the filesystem with a map entry
+that is tailored to mount just the filesystem of interest.
+.LP
+When it receives signal number 1,
+.BR \s-1SIGHUP\s0 ,
+.B automount
+rereads the
+.B /etc/mtab
+file to update its internal record of currently-mounted file
+systems.  If a file system mounted with
+.B automount
+is unmounted by a
+.B umount
+command,
+.B automount
+should be forced to reread the file.
+.LP
+An
+.BR ls (1V)
+listing of the entries in the directory for an indirect map
+shows only the symbolic links for currently mounted filesystems.
+This restriction is intended to avoid unnecessary mounts as a
+side effect of programs that read the directory and
+.BR stat (2V)
+each of the names.
+.LP
+Mount points for a single automounter must not be hierarchically
+related.
+.B automount
+will not allow an automount mount point to be created within
+an automounted filesystem.
+.LP
+.B automount
+must not be terminated with the 
+.SB SIGKILL 
+signal 
+.RB ( "kill \-9" ).
+Without an opportunity to unmount itself, the 
+.B automount
+mount points will appear to the kernel to belong to a non-responding 
+.SM NFS 
+server.
+The recommended way to terminate
+.B automount
+services is to send a 
+.SB SIGTERM 
+.RB ( "kill \-15" ) 
+signal to the daemon.  
+This allows the automounter to catch the signal and unmount not
+only its daemon but also any mounts in 
+.BR /tmp_mnt .
+Mounts in 
+.B /tmp_mnt 
+that are busy will not be unmounted.
+.LP
+Since each direct map entry results in a separate mount for the
+mount daemon such maps should be kept short.  Entries added to
+a direct map will have no effect until the automounter is
+restarted.
+.LP
+Entries in both direct and indirect maps can be modified at any
+time.  The new information will be used when
+.B automount
+next uses the map entry to do a mount.
+.B automount
+does not cache map entries.
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+.SH BUGS
+.LP
+The
+.B bg
+mount option is not recognized by the automounter.
+.LP
+Since
+.B automount
+is single-threaded, any request that is delayed by a slow or
+non-responding
+.SM NFS
+server will delay all subsequent automatic mount requests until it completes. 
+.LP
+Programs that read
+.B /etc/mtab
+and then touch files that reside under automatic mount points will
+introduce further entries to the file.
+.LP
+Automatically-mounted file systems are mounted with type
+.BR ignore ;
+they do not appear in the output of either
+.BR mount (8),
+or
+.BR df (1V).

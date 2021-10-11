@@ -1,0 +1,427 @@
+.\" @(#)m4.1v 1.1 92/07/30 SMI; from S5R2 X.X
+.if t .ds ' \h@.05m@\s+4\v@.333m@\'\v@-.333m@\s-4\h@.05m@
+.if n .ds ' '
+.if t .ds ` \h@.05m@\s+4\v@.333m@\`\v@-.333m@\s-4\h@.05m@
+.if n .ds ` `
+.TH M4 1V "23 September 1987"
+.SH NAME
+m4 \- macro language processor
+.SH SYNOPSIS
+.B m4
+[
+.I filename
+] .\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/m4
+[
+.B \-es
+]
+[
+.BI \-B int
+]
+[
+.BI \-H int
+]
+[
+.BI \-S int
+]
+[
+.BI \-T int
+]
+[
+.BI \-D\fIname\fB= val
+]
+[
+.BI \-U name
+]
+[
+.I filename 
+].\|.\|.
+.SH AVAILABILITY
+.LP
+The System V version of this command is available with the
+.I System V
+software installation option.
+Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLm4\fR"
+.IX  "m4 command"  ""  "\fLm4\fP \(em macro processor"
+.IX  "macro processor"  ""  "macro processor \(em \fLm4\fP"
+.IX  "programming tools"  m4  ""  "\fLm4\fP \(em macro processor"
+.LP
+.B m4
+is a macro processor intended as a front end
+for Ratfor, C, and other languages.
+Each of the argument files is processed in order;
+if there are no files, or if a file name is
+.RB ` \- ',
+the standard input is read.
+The processed text is written on the standard output.
+.LP
+Macro calls have the form:
+.LP
+.RS
+.IB name ( argument1\c
+.RB [ ","
+.IB argument2 ,
+.RB \&.\|.\|. , ]
+.IB argumentn )
+.RE
+.LP
+The
+.RB ` ( '
+must immediately follow the name of the macro.
+If the name of a defined macro is not followed by a
+.RB ` ( ',
+it is interpreted as a call of the macro with no arguments.
+Potential macro names consist of letters, digits, and
+.RB ` _ ',
+(underscores)
+where the first character is not a digit.
+.LP
+Leading unquoted
+.SM SPACE\s0,
+.SM TAB\s0,
+and
+.SM NEWLINE
+characters are ignored while collecting arguments.
+Left and right single quotes
+.RB ( `\|' )
+are used to quote strings.
+The value of a quoted string is the string stripped of the quotes.
+.LP
+When a macro name is recognized,
+the arguments are collected by searching
+for a matching right parenthesis.
+If fewer arguments are supplied than are in the macro definition,
+the trailing arguments are taken to be
+.SM NULL\s0.
+Macro evaluation proceeds normally during
+the collection of the arguments,
+and any commas or right parentheses which
+happen to turn up within the value
+of a nested call are as effective as those
+in the original input text.
+After argument collection, the value of
+the macro is pushed back onto the
+input stream and rescanned.
+.SH SYSTEM V OPTIONS
+.LP
+The options and their effects are as follows:
+.TP
+.B \-e
+Operate interactively.
+Interrupts are ignored and the output is unbuffered.
+.TP
+.B \-s
+Enable line sync output for the C preprocessor
+.RB ( # "line .\|.\|.\|)"
+.TP
+.BI \-B int
+Change the size of the push-back and argument collection
+buffers from the default of 4,096.
+.TP
+.BI \-H int
+Change the size of the symbol table hash array from the
+default of 199.
+The size should be prime.
+.TP
+.BI \-S int
+Change the size of the call stack from the default of 100 slots.
+Macros take three slots, and non-macro arguments take one.
+.TP
+.BI \-T int
+Change the size of the token buffer from the default of 512 bytes.
+.LP
+To be effective, these flags must appear before any
+file names and before any
+.B \-D
+or
+.B \-U
+flags:
+.TP
+.BI \-D name [= val ]
+Define
+.I filename
+to be
+.B val
+or to be
+.SM NULL
+in
+.IR val 's
+absence.
+.TP
+.BI \-U name
+Undefine
+.IR name .
+.SH USAGE
+.SS Built-In Macros
+.LP
+.B m4
+makes available the following built-in macros.
+They may be redefined, but once this is
+done the original meaning is lost.
+Their values are
+.SM NULL
+unless otherwise stated.
+.TP 12
+.B define
+The second argument is installed as the value of the macro
+whose name is the first argument.
+Each occurrence of
+.BI $ n
+in the replacement text, where
+.I n
+is a digit, is replaced by the
+.IR n 'th
+argument.
+Argument 0 is the name of the macro;
+missing arguments are replaced by the
+.SM NULL
+string.
+.TP
+.B undefine
+Remove the definition of the macro named in the argument.
+.TP
+.B ifdef
+If the first argument is defined, the value
+is the second argument, otherwise the third.
+If there is no third argument, the value is
+.SM NULL\s0.
+The word
+.I unix
+is predefined.
+.TP
+.B changequote
+Change quote characters to the first and second arguments.
+.B changequote
+without arguments restores the original values (that is,
+.BR `\|' ).
+.TP
+.B divert
+.B m4
+maintains 10 output streams, numbered 0-9.
+The final output is the concatenation of
+the streams in numerical order;
+initially stream 0 is the current stream.
+The
+.I divert
+macro changes the current output stream to
+the (digit-string) argument.
+Output diverted to a stream other than 0 through 9 is discarded.
+.TP
+.B undivert
+Display immediate output of text from diversions named as
+arguments, or all diversions if no argument.
+Text may be undiverted into another diversion.
+Undiverting discards the diverted text.
+.TP
+.B divnum
+Return the value of the current output stream.
+.TP
+.B dnl
+Read and discard characters up to and including the next
+.SM NEWLINE\s0.
+.TP
+.B ifelse
+Has three or more arguments.
+If the first argument is the same string as the second,
+then the value is the third argument.
+If not, and if there are more than four arguments, the process is repeated with arguments 4, 5, 6, 7 and so on.
+Otherwise, the value is either the last string not used by the above
+process, or, if it is not present,
+.SM NULL\s0.
+.TP
+.B incr
+Return the value of the argument incremented by 1.
+The value of the argument is calculated
+by interpreting an initial digit-string as a decimal number.
+.TP
+.B eval
+Evaluate the argument as an arithmetic expression, using 32-bit arithmetic.
+Operators include
+.BR + ,
+.BR \- ,
+.BR \(** ,
+.BR / ,
+.BR % ,
+.B ^
+(exponentiation); relationals; parentheses.
+.TP
+.B len
+Return the number of characters in the argument.
+.TP
+.B index
+Return the position in the first argument where the second argument
+begins (zero origin), or \-1 if the second argument does not occur.
+.TP
+.B substr
+Return a substring of the first argument.
+The second argument is a zero origin
+number selecting the first character;
+the third argument indicates the length of the substring.
+A missing third argument is taken to be large enough to extend to
+the end of the first string.
+.TP
+.B translit
+Transliterate the characters in the first argument
+from the set given by the second argument
+to the set given by the third.
+No abbreviations are permitted.
+.TP
+.B include
+Return the contents of the file named in the argument.
+.TP
+.B sinclude
+Is similar to
+.BR include ,
+except that it says nothing if the file is inaccessible.
+.TP
+.B syscmd
+Execute the
+system command given in the first argument.
+No value is returned.
+.TP
+.B maketemp
+Fill in a string of
+.SM XXXXX
+in the argument with the current process
+.SM ID\*S.
+.TP
+.B errprint
+Print the argument on the diagnostic output file.
+.TP
+.B dumpdef
+Print current names and definitions,
+for the named items, or for all if no arguments are given.
+.SH SYSTEM V USAGE
+.LP
+In the System V version of
+.BR m4 ,
+the following built-in macros have added capabilities.
+.SS Built-In Macros
+.TP 12
+.B define
+.RB ` $# '
+is replaced by the number of arguments;
+.B $\(**
+is replaced by a list of all the arguments separated by commas;
+.B $@
+is like
+.RB ` $\(** ',
+but each argument is quoted (with the current quotes).
+.TP
+.B changequote
+Change quote symbols to the first and second arguments.
+The symbols may be up to five characters long.
+.TP
+.B eval
+Additional operators include
+bitwise
+.RB ` & ',
+.RB ` \(bv ',
+.RB ` ^ ' 
+and
+.RB ` ~ '.
+Octal, decimal and hex numbers may be specified as in C.
+The second argument specifies the radix for the result;
+the default is 10.
+The third argument may be used to specify the minimum number
+of digits in the result.
+.dt
+.LP
+The System V version of
+.B m4
+makes available the following additional built-in macros.
+.TP 12
+.B defn
+Return the quoted definition of the argument(s).
+It is useful for renaming macros, especially built-ins.
+.TP
+.B pushdef
+Like
+.BR define ,
+but saves any previous definition.
+.TP
+.B popdef
+Remove current definition of the argument(s),
+exposing the previous one, if any.
+.TP
+.B shift
+Return all but the first argument.
+The other arguments are quoted and pushed back with
+commas in between.
+The quoting nullifies the effect of the extra scan that
+will subsequently be performed.
+.TP
+.B changecom
+Change left and right comment markers from the default
+.B #
+and
+.SM NEWLINE.
+With no arguments, the comment mechanism is effectively
+disabled.
+With one argument, the left marker becomes the argument and
+the right marker becomes
+.SM NEWLINE.
+With two arguments, both markers are affected.
+Comment markers may be up to five characters long.
+.TP
+.B decr
+Return the value of the argument decremented by 1.
+.TP
+.B sysval
+Return code from the last call to
+.BR syscmd .
+.TP
+.B m4exit
+Exit immediately from
+.BR m4 .
+Argument 1, if given, is the exit code;
+the default is 0.
+.TP
+.B m4wrap
+Argument 1 will be pushed back at final
+.SM EOF\*S.
+For example,
+`\fBm4wrap(\*(lqcleanup(\|)\*(rq)\fP'.
+.TP
+.B traceon
+With no arguments, turn on tracing for all macros
+(including built-ins).
+Otherwise, turn on tracing for named macros.
+.TP
+.B traceoff
+Turn off trace globally and for any macros specified.
+Macros specifically traced by
+.B traceon
+can be untraced only by specific calls to
+.BR traceoff .
+.SH SEE ALSO
+.BR cc (1V)
+.LP
+.IR "m4 \(em A Macro Processor" ,
+in
+.TX PUL
+.SH NOTES
+.LP
+While the compiler allows 8-bit strings and comments,
+8-bits are not allowed
+anywhere else.
+.\".br
+.\"Is there a better way to phrase "anywhere else"?
+.\".br
+The 
+.BR cc (1V)
+command does not generate or support 8-bit symbol names
+because, until
+.SM ANSI C\s0,
+non-\s-1ASCII\s0
+support was not expected.
+The
+.SM ANSI C
+specification now suggests that string literals
+and comments can contain any characters from any
+character code set.

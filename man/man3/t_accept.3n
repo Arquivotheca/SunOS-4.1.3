@@ -1,0 +1,233 @@
+.\" @(#)t_accept.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_ACCEPT 3N "21 January 1990"
+.SH NAME
+t_accept \- accept a connect request
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_accept(fd, resfd, call)
+int fd;
+int resfd;
+struct t_call *call;
+.ft
+.fi
+.SH DESCRIPTION
+.IX "t_accept()" "" "\fLt_accept()\fR \(em accept a connect request"
+.IX accept "a connect request"
+.IX transport "accept a connect request"
+.LP
+.B t_accept(\|)
+is issued by a transport user
+to accept a connect request.
+.I fd
+identifies the local transport endpoint where the connect
+indication arrived,
+.I resfd
+specifies the local transport endpoint
+where the connection is to be established,
+and
+.I call
+contains information required by the transport provider
+to complete the connection.
+.I call
+points to a
+.B t_call
+structure which contains the following members:
+.RS
+.ft B
+.nf
+	struct netbuf addr;
+	struct netbuf opt;
+	struct netbuf udata;
+	int sequence;
+.fi
+.RE
+.ft R
+.LP
+The
+.I netbuf
+structure contains the following members:
+.LP
+.RS
+.ft B
+.nf
+unsigned int maxlen;
+unsigned int len;
+char *buf;
+.fi
+.ft R
+.RE
+.LP
+.I buf
+points to a user input and/or output buffer.
+.I len
+generally specifies the number of bytes contained in the buffer.
+If the structure is used for both input and output, the transport
+function will replace the user value of
+.I len
+on return.
+.I maxlen
+generally has significance only when
+.I buf
+is used to receive output from the transport function.
+In this case, it specifies the physical size of the buffer,
+and the maximum value of
+.I len
+that can be set by the function.
+If
+.I maxlen
+is not large enough to hold the returned information, a
+.SM TBUFOVFLW
+error will generally result.
+However, certain functions may return part of the
+data and not generate an error.
+In
+.IR call ,
+.I addr
+is the address of the caller,
+.I opt
+indicates any protocol-specific
+parameters associated with the connection,
+.I udata
+points to any user data to be returned to the caller, and
+.I sequence
+is the value returned by
+.BR t_listen (3N)
+that uniquely associates the response with a
+previously received connect indication.
+.LP
+A transport user may accept a connection on either the same, or on a different, local transport endpoint than the one on which the connect indication arrived.
+If the same endpoint is specified
+.RI ( "resfd \fB=\fP fd" ),
+the connection can be accepted unless the following condition is true:
+The user has received other
+indications on that endpoint but has not responded to them (with
+.B t_accept(\|)
+or
+.BR t_snddis (3N)).
+For this condition,
+.B t_accept(\|)
+will fail and set
+.B t_errno
+to
+.SM TBADF\s0.
+.LP
+If a different transport endpoint is specified
+.RI ( "resfd \fB!=\fP fd" ),
+the endpoint must be bound to a protocol address and must be
+in the
+.SB T_IDLE
+state (see
+.BR t_getstate (3N))
+before the
+.B t_accept(\|)
+is
+issued.
+.LP
+For both types of endpoints,
+.B t_accept(\|)
+will fail and set
+.B t_errno
+to
+.SM TLOOK\s0
+if there are indications (such as a connect or disconnect) waiting to be received on that endpoint.
+.LP
+The values of parameters specified by
+.I opt
+and the syntax of those values are protocol specific.
+The
+.I udata
+field enables the called transport user to send user data to the
+caller and
+the amount of user data must not exceed the limits supported by
+the transport provider as returned by
+.BR t_open (3N)
+or
+.BR t_getinfo (3N).
+If the
+.I len
+field of
+.I udata
+is zero,
+no data will be sent to the caller.
+.br
+.ne 5
+.SH RETURN VALUES
+.LP
+.B t_accept(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TACCES
+The user does not have permission
+to accept a connection on the responding
+transport endpoint.
+.IP
+The user does not have permission
+to use the specified options.
+.TP
+.SM TBADDATA
+The amount of user data specified was not within the bounds allowed by
+the transport provider.
+.TP
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.IP
+The user is illegally accepting a connection on the same
+transport endpoint on which the connect indication arrived.
+.TP
+.SM TBADOPT
+The specified options were in an incorrect format or contained illegal
+information.
+.TP
+.SM TBADSEQ
+An invalid sequence number was specified.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on the transport endpoint referenced by
+.I fd
+and requires
+immediate attention.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TOUTSTATE
+The function was issued in the wrong sequence on the transport endpoint referenced by
+.IR fd .
+.IP
+The transport endpoint referred to by
+.I resfd
+is not in the
+.SB T_IDLE
+state.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set
+.B errno
+to indicate the error.
+.SH SEE ALSO
+.BR intro (3),
+.BR t_connect (3N),
+.BR t_getstate (3N),
+.BR t_listen (3N),
+.BR t_open (3N),
+.BR t_rcvconnect (3N)
+.LP
+.TX NETP

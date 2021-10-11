@@ -1,0 +1,192 @@
+.\" @(#) dbri.4 1.1@(#) Copyright 1991 Sun Microsystems Computer Company, Inc.
+.TH DBRI 4  "29 May 1992"
+.SH NAME
+.LP
+dbri - Dual Basic Rate ISDN Interface and audio interface
+.SH CONFIG
+.B device-driver dbri
+.IX "dbri" "" "\fLdbri\fP \(em ISDN and audio interface"
+.SH AVAILABILITY
+.LP
+.SM SPARC\s0station
+10 systems only.
+.LP
+The SpeakerBox audio peripheral
+.\" (Sun part number #X491A)
+is available for most
+.B dbri
+equipped systems and provides an integral monaural speaker as well as
+stereo line out, stereo line in, stereo headphone, and monaural
+microphone connections.
+The headset output level is adequate to power most headphones,
+but may be too low for some external speakers.  Powered
+speakers or an external amplifier may be used with both the
+headphone and line out ports.
+.LP
+The Sun Microphone
+.\" (Sun part number #370-1414)
+is recommended
+for normal desktop audio recording.
+When the Sun Microphone is used in conjunction with the
+SpeakerBox, the microphone battery is bypassed.
+Other audio sources may be recorded by
+connecting their line output to the SpeakerBox line input
+(audio sources may also be connected from their headphone
+output if the volume is adjusted properly).
+.SH DESCRIPTION
+The
+.B dbri
+device uses the Dual Basic Rate
+.SM ISDN
+Interface
+(\s-1DBRI\s0)
+and Multimedia Codec chips to implement the
+audio device interface.
+This interface is described fully in the
+.BR audio (4)
+manual page.
+.LP
+The
+.SB AUDIO_GETDEV
+.BR ioctl (2V)
+returns
+.SB AUDIO_DEV_SPEAKERBOX
+to identify
+the
+.B dbri
+device type. The
+.SB AUDIO_SETINFO
+.B ioctl
+controls device configuration parameters.
+.SS Audio Data Formats
+The
+.B dbri
+device supports the audio formats listed in the following table.
+When the device is open for simultaneous play and record,
+the input and output data formats must match.
+.sp
+.\" === troff version of table ============
+.if n .ig IG
+.ps -1
+.vs -1
+.TS
+center allbox;
+c s s s
+c c c c
+c c c c.
+Supported Audio Data Formats
+Sample Rate	Encoding	Precision	Channels
+8000 Hz	\(*m-law	8	1
+8000 Hz	A-law	8	1
+8000 Hz	linear	16	1 or 2
+9600 Hz	linear	16	1 or 2
+11025 Hz	linear	16	1 or 2
+16000 Hz	linear	16	1 or 2
+18900 Hz	linear	16	1 or 2
+22050 Hz	linear	16	1 or 2
+32000 Hz	linear	16	1 or 2
+37800 Hz	linear	16	1 or 2
+44100 Hz	linear	16	1 or 2
+48000 Hz	linear	16	1 or 2
+.TE
+.br
+.ps +1
+.vs +1
+.DT
+.IG
+.\" === end troff version ======
+.\" ====nroff version ==========
+.if t .ig IG
+.cs R 20
+.nf
+.ta 13n +13n +10n +10n
+.RS
+	Supported Audio Data Formats
+.sp
+.RS
+Sample Rate	Encoding	Precision	Channels
+.sp
+8000 Hz	u-law	8	1
+8000 Hz	A-law	8	1
+8000 Hz	linear	16	1 or 2
+9600 Hz	linear	16	1 or 2
+11025 Hz	linear	16	1 or 2
+16000 Hz	linear	16	1 or 2
+18900 Hz	linear	16	1 or 2
+22050 Hz	linear	16	1 or 2
+32000 Hz	linear	16	1 or 2
+37800 Hz	linear	16	1 or 2
+44100 Hz	linear	16	1 or 2
+48000 Hz	linear	16	1 or 2
+.cs R
+.RE
+.RE
+.fi
+.DT
+.IG
+.\" === end nroff version ======
+.SS Audio Ports
+The
+.I record.avail_ports
+and
+.I play.avail_ports
+fields of the
+.B audio_info
+structure report the available input and output ports.  The
+.B dbri
+device supports two input ports, selected by setting the
+.I record.port
+field to either
+.SB AUDIO_MICROPHONE
+or
+\s-1\fBAUDIO_LINE_IN\fP\s0.
+The
+.I play.port
+field may be set to any combination of
+\s-1\fBAUDIO_SPEAKER\fP\s0,
+\s-1\fBAUDIO_HEADPHONE\fP\s0,
+and
+.SB AUDIO_LINE_OUT
+by
+.SM OR\s0'ing
+the desired port names together.  Note that some ports
+may be unavailable for particular
+.SM SPARC\s0systems.
+.SS Sample Granularity
+Since the
+.B dbri
+device manipulates buffers of audio data, at any given time
+the reported input and output
+sample counts will vary from the actual sample count by no more than
+the size of the buffers it is transferring.
+Programs should, in general, not rely on absolute accuracy
+of the
+.I play.samples
+and
+.I record.samples
+fields of the
+.B audio_info
+structure.
+.SH ERRORS
+In addition to the errors described in
+.BR audio (4),
+an
+.B open(\|)
+will fail if:
+.TP 15
+.SM ENODEV
+The driver is unable to communicate with the SpeakerBox, possibly because it
+is currently not plugged in.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/audio
+.TP
+.B /dev/audioctl
+.TP
+.B /usr/demo/SOUND
+.PD
+.SH SEE ALSO
+.BR ioctl (2V),
+.BR audio (4),
+.BR streamio (4)

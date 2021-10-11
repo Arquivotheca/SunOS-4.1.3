@@ -1,0 +1,116 @@
+.\" @(#)rotcvph.6 1.1 92/07/30 SMI;
+.TH ROTCVPH 6 "16 February 1988"
+.SH NAME
+rotcvph \- rotate convex polyhedron
+.SH SYNOPSIS
+.BI /usr/demo/rotcvph filename
+.SH DESCRIPTION
+.IX "rotcvph convex" "" "\fLrotcvph\fP \(em rotate convex polyhedron" ""
+.IX rotate "convex polyhedron"
+.IX polyhedron rotate
+.LP
+.B rotcvph
+rotates a convex polyhedron with hidden surfaces removed.
+Using the SunCore Graphics Package, a 3-D projection
+is drawn on the Sun Monochrome Bitmap Display.
+The mandatory file argument contains a polygonal object definition as
+described below.
+.LP
+Initially the program displays a fixed view of the object.  The following
+commands may be typed at any time:
+.RS
+.TP
+.B n
+Display successive views with no waiting.
+.TP
+.B w
+Wait for
+.SM SPACE 
+to be typed before displaying each view.
+.TP
+.B q
+Exit the program.
+.RE
+.LP
+The format of the polygonal object definition is illustrated by this example
+of the definition of a pyramid:
+.IP
+	5	5
+.br
+-1.0 1.0 -1.0 1.0 -1.0 1.0
+.br
+1.0  1.0 -1.0
+.br
+1.0 -1.0 -1.0
+.br
+-1.0 -1.0 -1.0
+.br
+-1.0  1.0 -1.0
+.br
+0.0  0.0  1.0
+.br
+4	4 3 2 1
+.br
+3	1 5 4
+.br
+3	2 5 1
+.br
+3	3 5 2
+.br
+3	4 5 3
+.LP
+The first line gives the number of vertices followed by the number of
+polygons.  The second line gives the coordinates of a bounding box for the
+object.  Minimum and maximum coordinate values are given for each of three
+dimensions in the order 
+.IR minx , 
+.IR maxx , 
+.IR miny , 
+.IR maxy , 
+.IR minz , 
+.IR maxz .  
+Lines 3 through
+v+2 (where v is the number of vertices) give vertex coordinates in the order
+.IR x , 
+.IR y , 
+,IR z .  
+Lines v+3 through v+p+2 (where p is the number of polygons) give
+polygon descriptions.  The first number is the number of vertices for the
+polygon.  Succeeding numbers on the line are indices into the vertex list.
+Polygons should be planar.  Coordinates are given in floating point format
+and everything else is integer.  Entries on a given line are separated by
+arbitrary whitespace. A maximum of 400 vertices and 400 polygons may be
+defined. The polygon definitions may contain a maximum of 1600 instances of
+the vertices.
+.B /usr/demo/data
+contains several object definition files, including
+.BR icosa.dat ,
+.BR socbal.dat ,
+and
+.BR pyramid.dat .
+.LP
+The above format may be used to define non-convex 
+objects.  The program will
+display these objects but hidden surface 
+computations will not be done correctly.
+.SH FILES
+.PD 0
+.TP 30
+.B /usr/demo/data/*.dat	
+sample object definition files
+.TP
+.B icosa.dat
+.TP
+.B socbal.dat
+.TP
+.B pyramid.dat
+.PD
+.br
+.ne 9
+.SH BUGS
+.LP
+All floating point transformations are done twice
+for each view, once to draw the object and once to undraw it.
+.LP
+Lines which are common to two visible polygons
+in a view are drawn twice, once for each polygon.

@@ -1,0 +1,262 @@
+.\" @(#)udp.4p 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH UDP 4P "24 November 1987"
+.SH NAME
+udp \- Internet User Datagram Protocol
+.SH SYNOPSIS
+.nf
+.B #include <sys/socket.h>
+.B #include <netinet/in.h>
+.LP
+.B s = socket(\s-1AF_INET\s0, \s-1SOCK_DGRAM\s0, 0);
+.fi
+.IX  "udp protocol"  ""  "\fLudp\fP \(em Internet User Datagram Protocol"  ""  PAGE START
+.IX  Internet  "User Datagram Protocol"  ""  "User Datagram Protocol \(em \fLudp\fP"  ""  PAGE START
+.SH DESCRIPTION
+.LP
+.SM UDP
+is a simple, unreliable datagram protocol which is used
+to support the
+.SB SOCK_DGRAM
+abstraction for the Internet
+protocol family.
+It is layered directly above the
+Internet Protocol (\s-1IP\s0).
+.SM UDP
+sockets are connectionless, and are
+normally used with the
+.BR sendto ,
+.BR sendmsg ,
+.BR recvfrom ,
+and
+.B recvmsg
+system calls (see
+.BR send (2)
+and
+.BR recv (2)).
+If the
+.BR connect (2)
+system call is used to fix the destination for future packets,
+then the
+.BR recv (2)
+or
+.BR read (2V)
+and
+.BR send (2)
+or
+.BR write (2V)
+system calls may be used.
+.LP
+.SM UDP
+address formats are identical to those used by the
+Transmission Control Protocol (\s-1TCP\s0).
+Like
+.SM TCP\s0,
+.SM UDP
+uses a port number along with
+an
+.SM IP
+address to identify the endpoint of communication.
+Note: the
+.SM UDP
+port number
+space is separate from the
+.SM TCP
+port number space (that is, a
+.SM UDP
+port
+may not be \*(lqconnected\*(rq to a
+.SM TCP
+port).
+The
+.BR bind (2)
+system call can be used to set the local address and port number of
+a
+.SM UDP
+socket.
+The local
+.SM IP
+address may be left unspecified in the
+.B bind
+call by using the special value
+.SM
+.BR INADDR_ANY \*S.
+If the
+.B bind
+call is not done,
+a local
+.SM IP
+address and port number will be assigned to each
+packet as it is sent.
+Broadcast packets may be sent
+(assuming the underlying network supports this)
+by using a reserved \*(lqbroadcast address\*(rq;
+this address is network interface dependent.
+Broadcasts may only be sent by the super-user.
+.LP
+Options at the
+.SM IP
+level may be used with
+.SM UDP\s0;
+see
+.BR ip (4P).
+.LP
+There are a variety of ways that a
+.SM UDP
+packet can be lost or discarded,
+including a failure of the underlying communication mechanism.
+.SM UDP
+implements a checksum over the data portion of the packet.
+If the checksum of a received packet is in error,
+the packet will be dropped with no indication given to the user.
+A queue of received packets is provided for each
+.SM UDP
+socket.
+This queue has a limited capacity.
+Arriving datagrams which will not fit within its
+.I high-water
+capacity are silently discarded.
+.LP
+.SM UDP
+processes Internet Control Message Protocol (\s-1ICMP\s0)
+error messages received in response to
+.SM UDP
+packets it has sent.
+See
+.BR icmp (4P).
+.SM ICMP
+\*(lqsource quench\*(rq messages are ignored.
+.SM ICMP
+\*(lqdestination unreachable,\*(rq \*(lqtime exceeded\*(rq and \*(lqparameter
+problem\*(rq messages disconnect the socket from
+its peer so that subsequent attempts to send packets using that socket
+will return an error.
+.SM UDP
+will not guarantee that packets are delivered in the
+order they were sent.
+As well, duplicate packets may be generated
+in the communication process.
+.SH ERRORS
+A socket operation may fail if:
+.TP 20
+.SM EISCONN
+A
+.B connect
+operation was attempted on a socket on which a
+.B connect
+operation had already been performed, and the socket could not be successfully
+disconnected before making the new connection.
+.TP 20
+.SM EISCONN
+A
+.B sendto
+or
+.B sendmsg
+operation specifying an address to which the message should be sent
+was attempted on a socket on which a
+.B connect
+operation had already been performed.
+.TP 20
+.SM ENOTCONN
+A
+.B send
+or
+.B write
+operation, or a
+.B sendto
+or
+.B sendmsg
+operation not specifying an address to which the message should be sent,
+was attempted on a socket on which a
+.B connect
+operation had not already been performed.
+.TP 20
+.SM EADDRINUSE
+A
+.B bind
+operation was attempted on a socket with a network address/port pair that has
+already been bound to another socket.
+.TP 20
+.SM EADDRNOTAVAIL
+A
+.B bind
+operation was attempted on a socket with a network address
+for which no network interface exists.
+.TP 20
+.SM EINVAL
+A
+.BR sendmsg
+operation with a non-\s-1NULL\s0
+.B msg_accrights
+was attempted.
+.TP 20
+.SM EACCES
+A
+.B bind
+operation was attempted with a \*(lqreserved\*(rq port number and the effective user
+.SM ID
+of the process was not super-user.
+.TP 20
+.SM ENOBUFS
+The system ran out of memory for internal data structures.
+.br
+.ne 6
+.SH SEE ALSO
+.BR bind (2),
+.BR connect (2),
+.BR read (2V),
+.BR recv (2),
+.BR send (2),
+.BR write (2V),
+.BR icmp (4P),
+.BR inet (4F),
+.BR ip (4P),
+.BR tcp (4P)
+.LP
+Postel, Jon,
+.IR "User Datagram Protocol" ,
+.SM RFC
+768,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+August 1980.
+(Sun 800-1054-01)
+.SH BUGS
+.LP
+.SB SIOCSHIWAT
+and
+.SB SIOCGHIWAT
+ioctl's to set and get the high water mark
+for the socket queue, and so that it can be changed from 2048 bytes
+to be larger or smaller, have been defined (in
+.BR sys/ioctl.h )
+but not
+implemented.
+.LP
+Something sensible should be done with
+.SM ICMP
+source quench
+error messages if the socket is
+bound to a peer socket.
+.IX  "ioctls for sockets"  "SIOCSHIWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCSHIWAT\fP \(em set high water mark"
+.IX  "SIOCSHIWAT set high water mark"  ""  "\fLSIOCSHIWAT\fP \(em set high water mark"
+.IX  "set high water mark ioctl"  ""  "set high water mark \fLioctl\fP \(em \fLSIOCSHIWAT\fP"
+.IX  "UDP ioctls"  "SIOCSHIWAT"  "UDP \fLioctl\fP's"  "\fLSIOCSHIWAT\fP \(em set high water mark"
+.IX  "ioctls for sockets"  "SIOCGHIWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCGHIWAT\fP \(em get high water mark"
+.IX  "SIOCGHIWAT get high water mark"  ""  "\fLSIOCGHIWAT\fP \(em get high water mark"
+.IX  "get high water mark ioctl"  ""  "get high water mark \fLioctl\fP \(em \fLSIOCGHIWAT\fP"
+.IX  "UDP ioctls"  "SIOCGHIWAT"  "UDP \fLioctl\fP's"  "\fLSIOCGHIWAT\fP \(em get high water mark"
+.IX  "ioctls for sockets"  "SIOCSLOWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCSLOWAT\fP \(em set low water mark"
+.IX  "SIOCSLOWAT set low water mark"  ""  "\fLSIOCSLOWAT\fP \(em set low water mark"
+.IX  "set low water mark ioctl"  ""  "set low water mark \fLioctl\fP \(em \fLSIOCSLOWAT\fP"
+.IX  "UDP ioctls"  "SIOCSLOWAT"  "UDP \fLioctl\fP's"  "\fLSIOCSLOWAT\fP \(em set low water mark"
+.IX  "ioctls for sockets"  "SIOCGLOWAT"  "\fLioctl\fP's for sockets"  "\fLSIOCGLOWAT\fP \(em get low water mark"
+.IX  "SIOCGLOWAT get low water mark"  ""  "\fLSIOCGLOWAT\fP \(em get low water mark"
+.IX  "get low water mark ioctl"  ""  "get low water mark \fLioctl\fP \(em \fLSIOCGLOWAT\fP"
+.IX  "UDP ioctls"  "SIOCGLOWAT"  "UDP \fLioctl\fP's"  "\fLSIOCGLOWAT\fP \(em get low water mark"
+.IX  "udp protocol"  ""  "\fLudp\fP \(em Internet User Datagram Protocol"  ""  PAGE END
+.IX  Internet  "User Datagram Protocol"  ""  "User Datagram Protocol \(em \fLudp\fP"  ""  PAGE END

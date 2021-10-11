@@ -1,0 +1,441 @@
+.\" @(#)sort.1v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5R2 6.3 9/2/83
+.TH SORT 1V "19 September 1989"
+.SH NAME
+sort \- sort and collate lines
+.SH SYNOPSIS
+.B sort
+[
+.B \-bdf\|iMnr
+]
+[
+.BI \-t c
+]
+[
+.I sort-field
+\&\|.\|.\|.\|]
+[
+.B \-cmu
+]
+[
+.BR \-o [\0]\c
+.I output-file
+]
+[
+.BI \-T " directory"
+]
+.if t .ti +.5i
+ [
+.BI \-y " kmem"
+] 
+[
+.BI \-z " recsz"
+]
+.IR filename .\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/sort
+[
+.B \-bdf\|iMnr
+]
+[
+.BI \-t c
+]
+[
+.I sort-field
+\&\|.\|.\|.\|]
+[
+.B \-cmu
+]
+[
+.BR \-o [\0]\c
+.I output-file
+]
+[
+.BI \-T " directory"
+]
+.if t .ti +.5i
+[
+.BI \-y " kmem"
+]
+[
+.BI \-z " recsz"
+]
+.IR filename .\|.\|.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "sort command"  ""  "\fLsort\fP \(em sort and collate lines"
+.IX  "sort or merge files"  ""  "sort and collate lines \(em \fLsort\fP"
+.IX  "merge files"  ""  "sort and collate lines \(em \fLsort\fP"
+.IX  files  sort  ""  "\fLsort\fP \(em sort and collate lines"
+.IX  "text processing utilities"  sort  ""  "\fLsort\fP \(em sort and collate lines"
+.IX "System V commands" "\fLsort\fR"
+.LP
+The
+.B sort
+program sorts and collates lines contained in the named files,
+and writes the result onto the standard output.  If no
+.I filename
+argument is given, or if
+.RB ` \-  '
+appears as an argument,
+.B sort
+accepts input from the standard input.
+.LP
+Output lines are normally sorted on a character-by-character basis,
+from left to right within a line.  The default collating sequence
+is the
+.SM ASCII
+character set.  Lines can also be sorted
+according to the contents of one or more fields specified by a
+.IR sort-field ,
+specification, using the
+.BI + sw
+(starting-word),
+.BI \- ew
+(end-at-word), and the
+.BI \-t c
+(set-\s-1TAB\s0-character/word
+delimiter) options, as described under
+.SM OPTIONS
+below.  When no word delimiter is specified, one or more adjacent
+white-space characters (\s-1SPACE\s0 and
+.SM TAB\s0)
+signify the end of the previous word; the lines:
+.RS
+.sp .5
+.nf
+.ft B
+^^^\0xyz
+^^^\0\0\0xyz
+.ft R
+.fi
+.RE
+.LP
+are collated as:
+.RS
+.sp .5
+.ft B
+.nf
+^^^\0\0\0xyz
+^^^\0xyz
+.fi
+.RE
+.LP
+Each
+.I sort-field
+is evaluated in command-line order; later fields
+are applied to the sorting sequence only when all earlier
+fields compare equally.  When all specified fields compare equally
+between two or more lines, that subset of lines is sorted on a
+character-by-character basis, from left to right.
+.SH SYSTEM V DESCRIPTION
+.LP
+When no fields are specified in the command line, the System V
+version of
+.BR sort
+treats leading blanks as significant, even with the
+.B \-n
+(numeric collating sequence) option;
+the lines:
+.RS
+.sp .5
+.nf
+.ft B
+123
+\0\023
+.ft R
+.fi
+.RE
+.LP
+are collated as:
+.RS
+.sp .5
+.nf
+.ft B
+\0\023
+123
+.ft R
+.fi
+.RE
+.SH OPTIONS
+.SS Collating Flags
+.TP
+.B \-b
+Ignore leading
+.SM SPACE
+characters when determining the starting and ending
+positions of a field.
+.TP
+.B \-d
+Dictionary order.  Only letters, digits and
+the white-space characters
+.SM SPACE
+and
+.SM TAB
+are significant in comparisons.
+.TP
+.B \-f
+Fold in lower case.  Treat upper- and lower-case letters equally
+in collating comparisons.
+.TP
+.B \-i
+Ignore characters outside the
+.SM ASCII
+range 040-0176
+in non-numeric comparisons.
+.br
+.ne 4
+.TP
+.B \-M
+Month order.
+The first three non-blank characters of the field are folded to upper
+case and collated according to the sequence:
+.SB JAN FEB
+\&.\|.\|.
+.BR \s-1DEC\s0 .
+Field values outside this range appear earlier than
+.BR \s-1JAN\s0 .
+The
+.B \-M
+option implies the
+.BR \-b
+option.
+.TP
+.B \-n
+Numeric collating sequence.
+An initial numeric string, consisting of optional blanks, optional
+minus signs, and zero or more digits with an optional decimal point,
+is sorted by arithmetic value.  The
+.B \-n
+option implies the
+.B \-b
+option, but only when at least one
+.I sort-field
+is specified on the command line.
+.TP
+.B \-r
+Reverse the current collating sequence.
+.SS Field Specification Options
+.TP 5
+.BI \-t c
+Use
+.I c
+as the word delimiter character; unlike white-space characters,
+adjacent delimiters indicate word breaks; if
+.B :
+is the delimiter character,
+.B ::
+delimits an empty word.
+.TP
+.I sort-field
+This is a combination of options that specifies a field, within
+each line, to sort on.  A
+.I sort-field
+specification can take either of the following forms:
+.RS
+.RS
+.BI + sw\c
+.RI [ cf ]
+.br
+.BI + sw
+.BI \- ew\c
+.RI [ cf ]
+.RE
+.RE
+.IP
+where
+.I sw
+is the number of the starting word (beginning with `0') to include
+in the field,
+.I ew
+is the number of the word before which to end the field, and
+.I cf
+is a string containing collating flags (without a
+leading
+.RB ` \- '.)
+When included in a
+.I sort-field
+specification, these flags apply only to the field being specified,
+and when given, override other collating flags given in separate
+arguments (which otherwise apply to an entire line).
+.IP
+If the
+.BI \- ew
+option is omitted, the field continues to the end of a line.
+.IP
+You can apply a character offset to
+.I sw
+and
+.I ew
+to indicate that a field is to start or end a given number of
+characters within a word, using the notation:
+.RI ` w . c '.
+A starting position specified in the form:
+.RB ` "+\fIw\fP.\fIc\fP" '
+indicates the character in position
+.I c
+(beginning with
+.B 0
+for the first character), within word
+.I w
+.RB ( 1
+and
+.B 1.0
+are equivalent).  An ending position specified in the form:
+.RB ` "\-\fIw\fP.\fIc\fP" '
+indicates that the field ends at the character just prior to position
+.I c
+(beginning with
+.B 0
+for the delimiter just prior to the first
+character), within word
+.IR w .
+If the
+.B \-b
+flag is in effect,
+.I c
+is counted from the first non-white-space or non-delimiter character
+in the field, otherwise, delimiter characters are counted.
+.SS Other Options
+.TP
+.B \-c
+Check that the input file is sorted according to the ordering rules;
+give no output unless the file is out of sort.
+.TP
+.B \-m
+Merge only, the input files are already sorted.
+.TP
+.B \-u
+Unique.  Emit only the first line in each set of lines for which
+all sorting fields compare equally.
+.TP
+.PD 0
+.BI \-o output-file
+.TP
+.BI \-o " output-file"
+.PD
+Direct output to the file specified as
+.IR output-file ,
+instead of the standard output.
+This file may be the same as one of the input files.
+.br
+.ne 9
+.TP
+.BI \-y " kmem"
+The amount of main memory used by the sort
+has a large impact on its performance.
+Sorting a small file in a large amount
+of memory is a waste.
+If this option is omitted,
+.B sort
+begins using a system default memory size,
+and continues to add space as needed.
+If this option is given
+.B sort
+starts with
+.IR kmem ,
+kilobytes of memory, if allowed, or as close to that amount as
+possible.  Supplying
+.B \-y0
+guarantees that
+.B sort
+starts with a minimum of memory.
+By convention,
+.B \-y
+(with no argument) starts with maximum memory.
+.br
+.ne 7
+.TP
+.BI \-z " recsz"
+The size of the longest line read is recorded
+in the sort phase so that buffers can be allocated
+during the merge phase.
+If the sort phase is omitted because either of the
+.B \-c
+or
+.B \-m
+options is in effect, a default size of 1024 bytes is used.
+Lines longer than the buffer size terminate
+.B sort
+abnormally.
+Supplying the actual number of bytes in the longest line
+to be merged (or some larger value)
+avoids this.
+.TP
+.BI \-T " directory"
+The
+.I directory
+argument is the name of a directory in which to place temporary files.
+.SH EXAMPLES
+.LP
+Sort the contents of
+.B input-file
+with word number 1 (the second word) as the sort key:
+.IP
+.B "sort +1 \-2 input-file"
+.LP
+Sort, in reverse order, the contents of
+.B input-file1
+and
+.BR input-file2 ,
+placing the output in
+.B output-file
+and using the first character of the second field
+as the sort key:
+.IP
+.B "sort \-r \-o output-file +1.0 \-1.1 input-file1 input-file2"
+.LP
+Sort, in reverse order, the contents of
+.B input-file1
+and
+.B input-file2
+using the first non-blank character of the second field
+as the sort key:
+.IP
+.B "sort \-r +1.0b \-1.1b input-file1 input-file2"
+.LP
+Print the password file
+.RB ( passwd (5))
+sorted by the numeric user
+.SM ID
+(the third colon-separated field):
+.IP
+.B "sort \-t: +2n \-3 /etc/passwd"
+.LP
+Print the lines of the already sorted file
+.BR input-file ,
+suppressing all but the first occurrence of lines
+having the same third field
+(the options
+.B \-mu
+with just one input file make the choice of a unique
+representative from a set of equal lines predictable):
+.IP
+.B "sort \-mu +2 \-3 input-file"
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/tmp/stm???
+.PD
+.SH SEE ALSO
+.BR comm (1),
+.BR join (1),
+.BR rev (1),
+.BR uniq (1)
+.PD
+.SH DIAGNOSTICS
+.LP
+Comments and exits with non-zero status for various trouble
+conditions (such as when input lines are too long),
+and for disorders discovered under the
+.B \-c
+option.
+.LP
+When the last line of an input file is missing a
+.SM NEWLINE\s0,
+.B sort
+appends one, prints a warning message, and continues.

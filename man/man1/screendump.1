@@ -1,0 +1,127 @@
+.\" @(#)screendump.1 1.1 92/07/30 SMI;
+.TH SCREENDUMP 1 "8 September 1988"
+.SH NAME
+screendump \- dump a frame-buffer image to a file
+.SH SYNOPSIS
+.B screendump
+.RB [ " \-cCeo " ]
+.RB [ " \-f "
+.IR frame-buffer " ]"
+.RB [ " \-t "
+.IR type " ]"
+.RB [ " \-xyXY "
+.IR value " ]"
+.RI [ " filename " ]
+.SH DESCRIPTION
+.IX  "screendump command"  ""  "\fLscreendump\fP \(em dump frame buffer image"
+.IX  "dump frame buffer image"  ""  "dump frame buffer image \(em \fLscreendump\fP"
+.LP
+.B screendump
+reads the contents of a frame buffer and writes the display image to
+.I filename
+(the default is the standard output ) in Sun standard
+rasterfile format.
+.LP
+If the frame buffer has both an overlay plane and color planes,
+.B screendump
+examines the overlay enable plane and tries to make the output file
+represent what is visible on the screen.  It maps the overlay plane
+foreground and background colors into the closest values present in the
+color map for the color planes.
+.SH OPTIONS
+.TP 15
+.B \-c
+Dump the frame-buffer contents directly without making a temporary copy
+in a memory pixrect.  Saves time and memory but lengthens the time the
+frame-buffer must be inactive to guarantee a consistent screen dump.
+.TP
+.B \-C
+Dump the frame-buffer color planes only (ignored if the
+display does not have color planes).
+.TP
+.B \-e
+Set the output rasterfile type to 2,
+.SM RT_BYTE_ENCODED\s0.
+For most images this saves a significant amount
+of space compared to the standard format.
+.TP
+.B \-o
+Dump the frame-buffer overlay plane only (ignored if the
+display does not have an overlay plane).
+.TP
+.BI \-f " frame-buffer"
+Dump the specified frame-buffer device (default is
+.BR /dev/fb ).
+.TP
+.BI \-t " type"
+Set the output rasterfile type (default 1,
+.SM RT_STANDARD\s0).
+.TP
+.PD 0
+.BI \-x " value"
+.TP
+.BI \-y " value"
+.PD
+Set the x or y coordinate of the upper left corner of the area to be
+dumped to the given value.
+.TP
+.PD 0
+.BI \-X " value"
+.TP
+.BI \-Y " value"
+.PD
+Set the width or height of the area to be dumped to the given value.
+.SH EXAMPLES
+.LP
+The command:
+.IP
+.B example% screendump save.this.image
+.LP
+writes the current contents of the console frame buffer into the file
+.BR save.this.image ,
+.LP
+while the command:
+.IP
+.B example% screendump \-f /dev/cgtwo save.color.image
+.LP
+writes the current contents of the color frame buffer
+.B /dev/cgtwo
+into the file
+.BR save.color.image .
+.LP
+The command:
+.IP
+.B example% screendump  |  lpr \-Pversatec \-v
+.LP
+sends a rasterfile containing the current
+frame-buffer to the lineprinter,
+selecting the printer
+.B versatec
+and the
+.B v
+output filter
+(see
+.BR /etc/printcap ).
+The printer must support an appropriate imaging model such as
+PostScript in order to print the image.
+.SH FILES
+.PD 0
+.TP 24
+.B /usr/lib/rasfilters/*
+filters for non-standard rasterfile formats
+.TP
+.B /dev/fb
+default frame buffer device
+.TP
+.B /etc/printcap
+.PD
+.SH "SEE ALSO"
+.BR lpr (1),
+.BR rasfilter8to1 (1),
+.BR rastrepl (1),
+.BR screenload (1)
+.LP
+.TX PIXRCT
+.SH BUGS
+The output file or the screen may be corrupted if the frame-buffer
+contents are modified while the dump is in progress.

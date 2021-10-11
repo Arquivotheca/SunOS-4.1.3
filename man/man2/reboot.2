@@ -1,0 +1,119 @@
+.\" @(#)reboot.2 1.1 92/07/30 SMI; from UCB 4.2
+.TH REBOOT 2 "21 January 1990"
+.SH NAME
+reboot \- reboot system or halt processor
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/reboot.h>
+.ft
+.fi
+.LP
+.nf
+.BR "reboot(howto, " [ " bootargs " ] " )"
+.ft B
+int howto;
+char *bootargs;
+.ft
+.fi
+.IX  reboot()  ""  "\fLreboot()\fP \(em halt processor"
+.IX  "system operation support"  reboot()  ""  \fLreboot()\fP
+.IX  "halt processor"
+.IX  "stop processor"
+.SH DESCRIPTION
+.B reboot(\|)
+reboots the system, and is invoked automatically
+in the event of unrecoverable system failures.
+.I howto
+is a mask of options passed to the bootstrap program.
+The system call interface permits only
+.SB RB_HALT
+or
+.SB RB_AUTOBOOT
+to be passed to the reboot program; the other flags
+are used in scripts stored on the console storage media, or used
+in manual bootstrap procedures.
+When none of these options (for instance
+.SM
+.BR RB_AUTOBOOT \s0)
+is given, the system is rebooted
+from file 
+.B /vmunix
+in the root file system of unit 0
+of a disk chosen in a processor specific way.
+An automatic consistency check of the disks is then normally performed.
+.LP
+The bits of
+.I howto
+are:
+.TP 15
+.SB RB_HALT
+the processor is simply halted; no reboot takes place.
+.SB RB_HALT
+should be used with caution.
+.TP
+.SB RB_ASKNAME
+Interpreted by the bootstrap program itself, causing it to
+inquire as to what file should be booted.  Normally, the system is
+booted from the file
+.B /vmunix
+without asking.
+.TP
+.SB RB_SINGLE
+Normally, the reboot procedure involves an automatic disk consistency
+check and then multi-user operations.
+.SB RB_SINGLE
+prevents the consistency
+check, rather simply booting the system with a single-user shell on
+the console.
+.SB RB_SINGLE
+is interpreted by the
+.BR init (8)
+program in the newly booted system.
+.TP
+.SB RB_DUMP
+A system core dump is performed before rebooting.
+.TP
+.SB RB_STRING
+The optional argument
+.I bootargs
+is passed to the bootstrap program.
+See
+.BR boot (8S)
+for details.
+This option overrides
+.SB RB_SINGLE
+but the same effect can be achieved by including
+.B \-s
+as an option in
+.IR bootargs .
+.LP
+Only the super-user may
+.B reboot(\|)
+a machine.
+.SH RETURN VALUES
+On success,
+.B reboot(\|)
+does not return.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EPERM
+The caller is not the super-user.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+.PD
+.SH "SEE ALSO"
+.BR panic (8S),
+.BR halt (8),
+.BR init (8),
+.BR intro (8),
+.BR reboot (8)

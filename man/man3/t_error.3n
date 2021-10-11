@@ -1,0 +1,91 @@
+.\" @(#)t_error.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_ERROR 3N "21 January 1990"
+.SH NAME
+t_error \- produce error message
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+void t_error(errmsg)
+char *errmsg;
+.ft
+.fi
+.LP
+.nf
+.ft B
+extern int t_errno;
+extern char *t_errlist[\|];
+extern int t_nerr;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_error()" "" "\fLt_error()\fR \(em produce error message" ""
+.IX transport "describe error during call to transport function"
+.IX error "describe error during call to transport function"
+.LP
+.B t_error(\|)
+produces a message on the standard error output
+which describes the last error received during a call to a transport
+function.
+The argument string
+.I errmsg
+is a user-supplied error message that gives context to the error.
+.B t_error(\|)
+prints the user-supplied error message followed by a colon and
+a standard error message for the current error defined in
+.BR t_errno .
+To simplify variant formatting of messages, the array of message
+strings
+.B t_errlist
+is provided;
+.B t_errno
+can be used as an index in this table to get the message string
+without the
+.SM NEWLINE\s0.
+.B t_nerr
+is the largest message number provided for in the
+.B t_errlist
+table.
+.LP
+.B t_errno
+is only set when an error occurs and is not cleared
+on successful calls.
+.SH EXAMPLE
+If a
+.BR t_connect (3N)
+function fails on transport endpoint
+.IR fd 2
+because a bad address was given, the following call
+might follow the failure:
+.sp
+.\"********** The following font changes are **********
+.\"***********necessary for the literal dbl quotes
+.ft B
+.ti 5
+t_error ("t_connect failed on fd2");
+.ft R
+.sp
+The diagnostic message to be printed would look like:
+.sp
+.ft B
+.ti 5
+t_connect failed on fd2:  Incorrect transport address format
+.ft R
+.sp
+where
+.RB ` "Incorrect transport address format"'
+identifies the
+specific error that occurred,
+and
+.RB ` "t_connect failed on fd2" '
+tells the user which function failed on
+which transport endpoint.
+.SH SEE ALSO
+.LP
+.TX NETP

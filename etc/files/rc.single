@@ -1,0 +1,72 @@
+#! /bin/sh -
+#
+#	%Z%%M% %I% %E% SMI
+#
+#
+# This function is executed when the file systems look ok.
+# It will remount the / and /usr file systems (which are probably
+# still mounted read-only), fix up /mtab, clean up the ld.so cache,
+# reset /etc/utmp, use tzsetup to set the kernel's notion of
+# timezone for compatibility with old binaries, and use loadkeys
+# to load the keyboard translation tables for the current keyboard.
+#
+# This function is invoked from /etc/rc.boot on a clean
+# fsck, from /etc/rc when it detects that the root file
+# system is still mounted read-only, and can be run
+# interactively from single-user mode after any any file
+# system problems have been corrected when read-write
+# access is needed for the root file system.
+#
+
+PATH=/sbin:/single:/usr/bin:/usr/etc; export PATH
+HOME=/; export HOME
+(
+	intr mount -o remount /
+	if [ $? -ne 0 ]; then exit 1 ; fi
+	intr mount -o remount /usr
+	if [ $? -ne 0 ]; then exit 2 ; fi
+
+	intr umount -at nfs
+	> /etc/mtab
+	intr mount -f /
+	intr mount -f /usr
+
+	#
+	# Explicitly mount /usr/kvm in case it need be.
+	# (If it is not in /etc/fstab, this will silently fail)
+	# This is commonly the case for diskless clients of a different
+	# sub-architecture than the server. See /usr/share comments
+	# below for perils associated with this.
+	#
+	intr mount /usr/kvm			2>/dev/null
+
+	#
+	# Carefully delete ld.so cache in case it is corrupted.
+	#
+	mv /etc/ld.so.cache /etc/ld.so.cache-
+	rm -f /etc/ld.so.cache-
+
+	#
+	# Reset /etc/utmp to cover case when init was unable
+	# to do this because the root file system was still
+	# mounted read-only after rc.boot was finished.
+	#
+	> /etc/utmp
+
+	#
+	# Explicitly mount /usr/share for the benefit of tzsetup and loadkeys
+	# and diskless machines booting into single user mode.
+	# We could be in trouble here if /usr/share is mounted as a
+	# separate 4.2 file system and has not been fscked and is corrupt.
+	# Fortunately /usr/share is normally mounted only a separate file
+	# system for NFS diskless clients so this is not a problem.
+	#
+	if [ ! -d /usr/share/lib ]; then
+		intr mount /usr/share
+	fi
+	tzsetup
+	loadkeys -e
+
+	sync
+	exit 0
+) < /dev/null > /dev/null 2>&1

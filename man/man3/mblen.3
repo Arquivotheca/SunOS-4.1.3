@@ -1,0 +1,248 @@
+.\" @(#)mblen.3 1.1 92/07/30 SMI; from _source_
+.TH MBLEN 3 "6 June 1991"
+.SH NAME
+mblen, mbstowcs, mbtowc, wcstombs, wctomb \- multibyte character handling
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <stdlib.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int mblen(s, n)
+char *s;
+size_t n;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+size_t mbstowcs(s, pwcs, n)
+char *s;
+wchar_t *pwcs;
+size_t n;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int mbtowc(pwc, s, n)
+wchar_t *pwc;
+char *s;
+size_t n;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int wcstombs(s, pwcs, n)
+char *s;
+wchar_t *pwcs;
+size_t n;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int wctomb(s, wchar)
+char *s;
+wchar_t wcar;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "mblen()" "" "\fLmblen()\fR \(em multibyte character handling" ""
+.IX "mbtowc()" "" "\fLmbtomb()\fR \(em multibyte character handling" ""
+.IX "wctomb()" "" "\fLwctomb()\fR \(em multibyte character handling" ""
+.IX "mbstowcs()" "" "\fLmbstowcs()\fR \(em multibyte character handling" ""
+.IX "wcstowcs()" "" "\fLwcstowcs()\fR \(em multibyte character handling" ""
+.LP
+The behavior of these functions is affected by the
+.SB LC_CTYPE
+category of the program's locale.
+For a stat-dependent encoding, each function is placed into its initial
+state by a call for which its character pointer argument,
+.IR s ,
+is a 
+.SM NULL
+pointer.
+Subsequent calls with 
+.I s
+as other than a 
+.SM NULL
+pointer cause the internal stste of the function to be altered
+as necessary.
+A call with a
+.I s
+as a 
+.SM NULL
+pointer causes these functions to return a nonzero value if encodings
+have state dependency, and zero otherwise. 
+After the
+.SB LC_CTYPE
+category is changed, the shift state of these functions
+is indeterminate.
+.LP
+If
+.I s
+is not a
+.SM NULL
+pointer,
+these functions work as follows:
+.TP
+.B mblen(\|)
+Determines the number of bytes comprising the multibyte character pointed
+to by
+.IR s .
+.TP
+.B mbstowcs(\|)
+Converts a sequence of multibyte characters that begins in the initial shift
+state from the array pointed to by 
+.I s
+into a sequence of corresponding codes and stores no more than
+.I n 
+codes into the array pointed to by
+.IR pwcs .
+No multibyte characters that follow a null character (which is converted into a
+code with value zero) will be examined or converted.
+Each multibyte character is converted as if by a call to
+.BR mbtowc(\|) ,
+except that the shift state of 
+.B mbtowc(\|)
+is not affected.
+.IP
+No more than
+.I n
+elements will be modified in the array pointed to by
+.IR pwcs .
+If copying takes place between objects that overlap, the behavior is
+undefined.
+.TP
+.B mbtowc(\|)
+Determines the number of bytes that comprise the multibyte character pointed 
+to by
+.IR s .
+.B mbtowc(\|)
+then determines the code for value of type
+.B wchar_t
+that corresponds to that multibyte character.
+The value of the code corresponding to the null caharacter is zero.
+If the multibyte character is valid and
+.I pwc
+is not a null pointer,
+.B mbtowc(\|)
+stores the code in the object pointed to by
+.IR pwc .
+At most
+.I n
+bytes of the array pointed to by
+.I s
+will be examined.
+.br
+.ne 7
+.TP
+.B wcstowcs(\|)
+Converts a sequence of codes that correspond to multibyte characters from the
+array pointed to by
+.I pwcs 
+into a sequence of multibyte characters that begins in the initial shift state
+and stores these multibyte characters into the array pointed to by
+.IR s ,
+stopping if a multibyte character would exceed the limit of
+.I n
+total bytes or if a null character is stored.
+Each code is converted as if by a call to 
+.BR wctomb(\|) ,
+except that the shift state of 
+.B wctomb(\|)
+is not affected.
+.br
+.ne 5
+.TP
+.B wctomb(\|)
+Determines the number of bytes needed to represent the multibyte
+character corresponding to the code whose value is
+.I wchar
+(including any change in shift state).
+.B wctomb(\|)
+stores the multibyte character representation in the array object pointed to by
+.I s
+(if
+.I s
+is not a null pointer).
+At most,
+.SB MB_CUR_MAX
+characters are stored.
+If the value of
+.I wchar
+is zero,
+.B wctomb(\|)
+is left in the initial shift state.
+.SH RETURN VALUES
+.LP
+If 
+.I s
+is a null pointer,
+.BR mblen(\|) ,
+.BR mbtowc(\|),
+and
+.B wctomb(\|)
+return a nonzero or zero value,
+if multibyte character encodings, respectively, do or do not have state
+dependent encodings.
+.LP
+If
+.I s
+is not a null pointer,
+.B mblen(\|)
+and
+.B mbtowc(\|)
+either return 0
+(if 
+.I s
+points to the null character),
+or
+return the number of bytes that comprise the converted multibyte character
+(if the next
+.I n
+or fewer bytes form a valid multibyte character),
+or
+return \-1
+(if they do not form a valid multibyte character).
+.LP
+In no case will the value returned by
+.B mbtowc(\|)
+be greater than 
+.I n
+or the value of the
+.SB MB_CUR_MAX
+macro.
+If
+.I s
+is not a null pointer,
+.B wctomb(\|)
+returns \-1
+(if the value does not correspond to a valid multibyte character),
+or
+returns the number of bytes that comprise the multibyte character corresponding
+to
+.IR wchar .
+.LP
+If an invalid multibyte character is encountered,
+.B mbstowcs(\|)
+and
+.B wcstombs(\|)
+return
+.B (size_t)
+\-1.
+Otherwise,
+they return the number of bytes modified, not including a terminating null
+character, if any.
+.SH NOTE
+.LP
+When an application program using these routines is statically linked,
+user defined multibyte character handling routines in a user provided
+shared library will not be used.
+

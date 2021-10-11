@@ -1,0 +1,290 @@
+.\" @(#)cron.8 1.1 92/07/30 SMI; from S5R3
+.TH CRON 8 "6 December 1988"
+.SH NAME
+cron \- clock daemon
+.SH SYNOPSIS
+.B /usr/etc/cron
+.SH DESCRIPTION
+.IX  "cron command"  ""  "\fLcron\fP \(em clock daemon"
+.IX  "timed events"  ""  "timed events \(em \fLcron\fP"
+.IX  "execute commands at specified times"  ""  "execute commands at specified times \(em \fLcron\fP"
+.B cron
+executes commands at specified dates and times.
+Regularly scheduled commands can be specified according
+to instructions found in
+.B crontab
+files in the directory
+.BR /var/spool/cron/crontabs .
+Users can submit their own
+.B crontab
+files using the
+.BR crontab (1)
+command.
+Commands that are to be executed only once may be
+submitted using the
+.BR at (1)
+command.
+.LP
+.B cron
+only examines
+.B crontab
+files and
+.B at
+command files during process
+initialization and when a file changes using
+.B crontab
+or
+.BR at .
+This reduces the overhead of checking for new or
+changed files at regularly scheduled intervals.
+.LP
+Since
+.B cron
+never exits, it should only be executed once.  This is normally done
+by running
+.B cron
+from the initialization process through the file
+.BR /etc/rc ;
+see
+.BR init (8).
+.B /var/spool/cron/\s-1FIFO\s0
+is a
+.SM FIFO
+file that
+.B crontab
+and
+.B at
+use to communicate with
+.BR cron ;
+it is also used as a lock file to prevent
+the execution of more than one
+.BR cron .
+.SH FILES
+.PD 0
+.TP 25
+.B /var/spool/cron
+main cron directory
+.TP
+.B /var/spool/cron/\s-1FIFO\s0
+.SM FIFO
+for sending messages to
+.B cron
+.TP
+.B /var/spool/cron/crontabs
+directory containing
+.B crontab
+files
+.PD
+.SH "SEE ALSO"
+.BR at (1),
+.BR crontab (1),
+.BR sh (1),
+.BR queuedefs (5),
+.BR init (8),
+.BR syslogd (8)
+.SH DIAGNOSTICS
+.B cron
+logs various errors to the system log daemon,
+.BR syslogd (8),
+with a facility code of
+.BR cron .
+The messages are listed here, grouped by severity level.
+.SS Err Severity
+.TP
+.BI "Can't create /var/spool/cron/\s-1FIFO\s0: " reason
+.B cron
+was unable to start up because it could not create
+.BR /var/spool/cron/\s-1FIFO\s0 .
+.TP
+.BI "Can't access /var/spool/cron/\s-1FIFO\s0: " reason
+.B cron
+was unable to start up because it could not access
+.BR /var/spool/cron/\s-1FIFO\s0 .
+.TP
+.BI "Can't open /var/spool/cron/\s-1FIFO\s0: " reason
+.B cron
+was unable to start up because it could not open
+.BR /var/spool/cron/\s-1FIFO\s0 .
+.TP
+.B
+Can't start cron - another cron may be running (/var/spool/cron/\s-1FIFO\s0 exists)
+.B cron
+found that
+.B /var/spool/cron/\s-1FIFO\s0
+already existed when it was started; this normally means that
+.B cron
+had already been started, but it may mean that an earlier
+.B cron
+terminated abnormally without removing
+.BR /var/spool/cron/\s-1FIFO\s0 .
+.TP
+.BI "Can't stat /var/spool/cron/\s-1FIFO\s0: " reason
+.B cron
+could not get the status of
+.BR /var/spool/cron/\s-1FIFO\s0 .
+.TP
+.BI "Can't change directory to " directory : reason
+.B cron
+could not change to
+.IR directory .
+.TP
+.BI "Can't read " directory : reason
+.B cron
+could not read
+.IR directory .
+.TP
+.BI "error reading message: " reason
+An error occurred when
+.B cron
+tried to read a control message from
+.BR /var/spool/cron/\s-1FIFO\s0 .
+.br
+.ne 8
+.TP
+.B message received \(em bad format
+A message was successfully read by
+.B cron
+from
+.BR /var/spool/cron/\s-1FIFO\s0 ,
+but the message was not of a form recognized by
+.BR cron .
+.TP
+.SB SIGTERM\s0
+received
+.B cron
+was told to terminate by having a
+.SM SIGTERM
+signal sent to it.
+.TP
+.BI "cron could not unlink /var/spool/cron/\s-1FIFO\s0: " reason
+.B cron
+was told to terminate, but it was unable to unlink
+.B /var/spool/cron/\s-1FIFO\s0
+before it terminated.
+.TP
+.B ******* \s-1CRON ABORTED\s0 ********
+.B cron
+terminated, either due to an error or because it was told to.
+.TP
+.BI "Can't open queuedefs file " file : reason
+.B cron
+could not open a
+.I queuedefs
+file.
+.TP
+.BI "\s-1I/O\s0 error reading queuedefs file " file : reason
+An
+.SM I/O
+error occurred while
+.B cron
+was reading a
+.I queuedefs
+file.
+.TP
+.B Using default queue definitions
+An error occurred while trying to read a
+.I queuedefs
+file; the default queue definitions will be used.
+.TP
+.BI "Can't allocate " number "bytes of space"
+An internal error occurred in
+.B cron
+while trying to allocate memory.
+.SS Info Severity
+.TP
+.IB queue " queue max run limit reached"
+There were more jobs running or to be run in the queue
+.I queue
+than the maximum number specified.
+.B cron
+will wait until one of the currently-running jobs completes before
+starting to run a new one.
+.TP
+.SB MAXRUN\s0 (25) procs reached
+There were more than 25 jobs running or to be run by
+.BR cron .
+.B cron
+will wait until one of the currently-running jobs completes before
+starting to run a new one.
+.TP
+.B *** cron started ***
+.B cron
+started running.
+.TP
+.BI ">  \s-1CMD\s0: " " pid queue command job"
+A
+.B cron
+job was started, in queue
+.IR queue ,
+with process
+.SM ID
+.IR pid .
+.I command
+is the command to be run.
+For
+.B at
+or
+.B batch
+jobs,
+.IR job
+is the job number.
+.TP
+.BI ">" " user pid queue time job"
+A
+.B cron
+job was started for user
+.IR user ,
+in queue
+.IR queue ,
+with process
+.SM ID
+.IR pid ,
+at the date and time
+.IR time .
+For
+.B at
+or
+.B batch
+jobs,
+.IR job
+is the job number.
+.TP
+.BI <  " user pid queue time job status"
+A
+.B cron
+job completed for user
+.IR user ,
+in queue
+.IR queue ,
+with process
+.SM ID
+.IR pid ,
+at the date and time
+.IR time .
+For
+.B at
+or
+.B batch
+jobs,
+.IR job
+is the job number.
+If the command terminated with a non-zero exit status or a signal,
+.I status
+indicates the exit status or signal.
+.SS Notice Severity
+.TP
+.B Can't fork
+An attempt to
+.B fork (2)
+to run a new job failed;
+.B cron
+will attempt again after a 30-second delay.
+.SS Warning Severity
+.TP
+.BI "Can't stat queuedefs file " file : reason
+.B cron
+could not get the status of a
+.I queuedefs
+file in order to determine whether it has changed.
+.B cron
+will assume it has changed and will reread it.

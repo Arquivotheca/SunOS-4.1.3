@@ -1,0 +1,91 @@
+#
+# @(#)Makefile.master 1.1 92/07/30 SMI
+#
+.KEEP_STATE:
+DESTDIR= 
+INCLUDE=${DESTDIR}/usr/src/usr.lib/libsunwindow/include \
+	-I${DESTDIR}/usr/src/usr.lib/libsuntool/include  \
+	-I/usr/ucbinclude -I/usr/include
+AWK=	/bin/awk
+TOUCH=	touch -cf
+CTAGS=	/usr/ucb/ctags -w
+CC= /bin/cc
+LD= ld
+AR= ar
+RANLIB= ranlib
+CHOWN=	/etc/chown -f
+CPUFLAG=
+MAKE= make
+LINT= lint
+PROFILE=
+PRODLIBDIR=/usr/lib
+PRODBINDIR=/usr/bin/
+PRODINCLUDEDIR=${DESTDIR}/usr/include/suntool
+SRCDIR=/usr/share/src/sun/sunview1
+LINKDIR=sunview1
+
+DBX=
+CFLAGS=	-O -I. -I$(INCLUDE)
+CFLAGS_LOCAL=
+MERGE_LIB= libtoolmerge.a
+GPROF_MERGE_LIB= libtoolmerge_p.a
+LINTFLAGS= huz
+LINTFILESALL= ${CFILESALL:.c=.ln}
+GPROFFILESALL= ${CFILESALL:.c=.pg}
+PRIVATE_LIBS=
+
+CFLAGS_NOT_ROI_DATA= $(CFLAGS) $(DBX) $(CFLAGS_LOCAL) $(CPUFLAG)
+
+LDFLAGS=
+
+LIBS=	-lsuntool -lsunwindow -lpixrect
+
+LINTLIBS= /usr/lib/lint/llib-lpixrect.ln \
+	  /usr/lib/lint/llib-lsunwindow.ln \
+	  /usr/lib/lint/llib-lsuntool.ln
+  
+GPROF_LIBS= -lsuntool_p -lsunwindow_p -lpixrect
+# BINS are the binaries that live in ${DESTDIR}/usr/bin/sunview1
+BASETOOLS_BIN=	suntools
+OTHERTOOLS_BIN=	othertools
+
+# add suffixes for lint and gprof
+.SUFFIXES: .ln .pg
+
+COMMONFLAGS= "INCLUDE=${INCLUDE}" "CC=${CC}" "DESTDIR=${DESTDIR}" \
+	"CPUFLAG=${CPUFLAG}" "DBX=${DBX}" "CFLAGS=${CFLAGS}" \
+	"LIBS=${LIBS}" "BASETOOLS_BIN=${BASETOOLS_BIN}" \
+	"OTHERTOOLS_BIN=${OTHERTOOLS_BIN}" "MAKE=${MAKE}" \
+	"LINTFLAGS=${LINTFLAGS}"
+
+.c.ln:
+	${LINT}  -I${INCLUDE} -${LINTFLAGS} $< ${LINTLIBS}
+	touch $*.ln
+
+.c.pg:
+	if [ -f $*.o ]; then \
+		mv $*.o $*.o.tmp; \
+	fi
+	${CC} ${CFLAGS_NOT_ROI_DATA} -pg -c $<
+	-mv $*.o $*.pg
+	if [ -f $*.o.tmp ]; then \
+		mv $*.o.tmp $*.o; \
+	fi
+
+lint:: ${LINTFILESALL}
+	if [ ! -f llib-lsunwindow ]; then \
+		ln -s /usr/lib/lint/llib-lsunwindow .; \
+	fi
+	if [ ! -f llib-lsuntool ]; then \
+		ln -s /usr/lib/lint/llib-lsuntool .; \
+	fi
+	if [ ! -f llib-lpixrect ]; then \
+		ln -s /usr/lib/lint/llib-lpixrect .; \
+	fi
+	if [ ! -f llib-lc ]; then \
+		ln -s /usr/lib/lint/llib-lc .; \
+	fi
+	@echo
+	@echo 'IF YOU CHANGE THE INTERFACE, PLEASE CHANGE THE LINT LIBRARY TO REFLECT THAT.'
+	@echo
+

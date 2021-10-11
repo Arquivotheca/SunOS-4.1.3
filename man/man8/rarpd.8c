@@ -1,0 +1,136 @@
+.\" @(#)rarpd.8c 1.1 92/07/30 SMI;
+.TH RARPD 8C "18 December 1989"
+.SH NAME
+rarpd \- TCP/IP Reverse Address Resolution Protocol server
+.SH SYNOPSIS
+.B /usr/etc/rarpd
+.I interface
+[
+.I hostname
+]
+.LP
+.B /usr/etc/rarpd 
+.B \-a
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "rarpd daemon" "" "\fLrarpd\fR \(em Reverse Address Resolution Protocol daemon"
+.LP
+.B rarpd
+starts a daemon that responds to Reverse Address Resolution Protocol
+(\s-1RARP\s0) requests.
+The daemon forks a copy of itself that runs in background.
+It must be run as root.
+.LP
+.SM RARP\s0
+is used by machines at boot time to discover their
+Internet Protocol (\s-1IP\s0) address.
+The booting machine provides its Ethernet Address in an
+.SM RARP
+request message.
+Using the \*(lqethers\*(rq and \*(lqhosts\*(rq databases,
+.B rarpd
+maps this Ethernet Address into the corresponding
+.SM IP
+address which it returns to the booting machine in an
+.SM RARP
+reply message.
+The booting machine must be listed in both databases for
+.B rarpd
+to locate its
+.SM IP
+address.
+.B rarpd
+issues no reply when it fails to locate an
+.SM IP
+address.
+The \*(lqethers\*(rq and \*(lqhosts\*(rq databases may be contained 
+either in files under 
+.B /etc 
+or in 
+Network Information Service
+(\s-1NIS\s0)
+maps.
+.LP
+In the first synopsis, the
+.I interface 
+parameter names the network interface upon which 
+.B rarpd
+is to listen for requests.
+The
+.I interface
+parameter takes the \*(lqname unit\*(rq form used by
+.BR ifconfig (8C).
+The second argument,
+.IR hostname ,
+is used to obtain the 
+.SM IP
+address of that interface.
+An 
+.SM IP
+address in \*(lqdecimal dot\*(rq notation may be used for
+.IR hostname .
+If
+.I hostname
+is omitted, the address of the interface will be obtained from the kernel.
+When the first form of the command is used,
+.B rarpd
+must be run separately for each interface
+on which \s-1RARP\s0 service is to be supported.
+A machine that is a router may invoke
+.B rarpd
+multiple times, for example:
+.LP
+.RS
+.B /usr/etc/rarpd ie0 host
+.br
+.B /usr/etc/rarpd ie1 host-backbone
+.RE
+.LP
+In the second synopsis,
+.B rarpd
+locates all of the network interfaces present on the system
+and starts a daemon process for each one that supports \s-1RARP\s0.
+.SH "FILES"
+.PD 0
+.TP 20
+.B /etc/ethers
+.\" .TP 
+.\" .BI /var/yp/ domainname /ethers.byaddr.*
+.\" .TP
+.\" .BI /var/yp/ domainname /ethers.byname.*
+.TP
+.B /etc/hosts
+.\" .TP
+.\" .BI /var/yp/ domainname /hosts.byname.*
+.PD
+.SH "SEE ALSO"
+.BR ethers (5),
+.BR hosts (5),
+.BR policies (5),
+.BR boot (8S),
+.BR ifconfig (8C),
+.BR ipallocd (8C),
+.BR netconfig (8C)
+.LP
+Finlayson, Ross, Timothy Mann, Jeffrey Mogul, and Marvin Theimer,
+.IR "A Reverse Address Resolution Protocol" ,
+.SM RFC
+903,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+June 1984.
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

@@ -1,0 +1,108 @@
+.\" @(#)tfs.4s 1.1 92/07/30 SMI;
+.TH TFS 4S "23 November 1988"
+.SH NAME
+tfs, TFS \- translucent file service
+.SH CONFIG
+.IB options TFS
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/mount.h>
+mount("tfs", dir, \s-1M_NEWTYPE\s0|flags, nfsargs);
+.fi
+.ft
+.SH DESCRIPTION
+.IX "tfs translucent" "" "\fLtfs\fP \(em translucent file service" ""
+.IX "TFS translucent" "" "\fLtfs\fP \(em translucent file service" ""
+.IX "translucent file service"
+.LP
+The translucent file service
+(\s-1TFS\s0)
+supplies a copy-on-write filesystem
+allowing users to share file hierarchies while providing each user
+with a private hierarchy into which files are copied as they are modified.
+Consequently, users are isolated from each other's changes.
+.LP
+.I nfsargs
+specifies
+.SM NFS
+style
+.BR mount (2V)
+arguments, including the address
+of the file server (the
+.BR tfsd (8))
+and the file handle to be mounted.
+.I dir
+is the directory on which the
+.SM TFS
+filesystem is to be mounted.
+.LP
+.SM TFS
+allows a user to
+mount a private, writable filesystem in front of any number of public,
+read-only filesystems in such a way that the contents of the public
+filesystems remain visible behind the contents of the private filesystem.
+Any change made to a file that
+is being shared from a public filesystem will cause that file to be copied
+into the private filesystem, where the modification will be performed.
+.LP
+A directory in a 
+.SM TFS
+filesystem consists of a number
+of stacked directories.
+The searchpath
+.SM TFS
+uses to look up
+a file in a directory corresponds to the stacking order: the 
+.SM TFS
+will search the
+\*(lqfrontmost\*(rq directory first, then the directory behind it, and
+so on until the first occurrence of the file is found.
+Modifications to a file can be made only in the frontmost directory.
+.SM TFS
+copies a file to the frontmost directory
+when the file is opened for writing with
+.BR open (2V)
+or when its
+.BR stat (2V)
+attributes are changed.
+.LP
+If a user removes a file which is not in the frontmost
+directory,
+.SM TFS
+creates a
+.I whiteout
+entry in the frontmost
+directory and leaves the file intact in the back directory.
+This whiteout entry makes it appear that the file no longer exists,
+although the file can be reinstated in the directory by using the
+.BR unwhiteout (1)
+command to remove the whiteout entry.
+The
+.BR lsw (1)
+command lists whiteout entries.
+.LP
+.SM TFS
+filesystems are served by the
+.BR tfsd (8).
+A 
+.SM TFS
+filesystem is mounted on a directory by making a
+.SB TFS_MOUNT
+protocol request of the
+.BR tfsd ,
+specifying the directories that are to be stacked.
+The
+.B tfsd
+responds with a file handle,
+which the client then supplies to the
+.BR mount (2V)
+system call, along with
+the address of the
+.BR tfsd .
+.SH "SEE ALSO"
+.BR lsw (1),
+.BR unwhiteout (1),
+.BR mount (2V),
+.BR tfsd (8),
+.BR mount_tfs (8)

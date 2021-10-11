@@ -1,0 +1,182 @@
+.\" @(#)catman.8 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH CATMAN 8 "9 September 1987"
+.SH NAME
+catman \- create the cat files for the manual
+.SH SYNOPSIS
+.B /usr/etc/catman
+.RB "[\|" \-nptw "\|]"
+.RB "[\|" \-M "
+.B directory
+]
+.RB "[\|" \-T "
+.I tmac.an
+] [
+.I sections
+]
+.SH DESCRIPTION
+.IX  "catman command"  ""  "\fLcatman\fP \(em create cat files for manual pages"
+.IX  "create" "cat files for manual pages \(em \fLcatman\fP"
+.IX  "manual pages"  "create \fLcat\fR files for \(em \fLcatman\fP"
+.IX  "system administration"  catman  ""  "\fLcatman\fP \(em create cat files for manual pages"
+.B catman
+creates the preformatted versions of
+the on-line manual from the
+.BR nroff (1)
+input files.
+Each manual page is examined and those whose preformatted versions are
+missing or out of date are recreated.
+If any changes are made,
+.B catman
+recreates the
+.B whatis
+database.
+.LP
+If there is one parameter not starting with a
+.RB ` \- ',
+it is taken to be a list of manual sections to look in.
+For example
+.IP
+.B catman 123
+.LP
+only updates manual sections
+.BR 1 ,
+.BR 2 ,
+and
+.BR 3 .
+.LP
+If an unformatted source file contains only a line
+of the form
+.RB ` ".so manx/yyy.x" ',
+a symbolic link is made in the catx or fmtx directory
+to the appropriate preformatted manual page.
+This feature allows easy distribution of the preformatted manual pages
+among a group of associated machines with
+.BR rdist (1),
+since it makes the directories of preformatted manual pages
+self-contained and independent of the unformatted entries.
+.SH OPTIONS
+.TP
+.B \-n
+Do not (re)create the
+.B whatis
+database.
+.TP
+.B \-p
+Print what would be done instead of doing it.
+.TP
+.B \-t
+Create
+.BR troff ed
+entries in the appropriate
+.B fmt
+subdirectories instead of
+.BR nroff ing
+into the
+.B cat
+subdirectories.
+.TP
+.B \-w
+Only create the
+.B whatis
+database that is used by
+.BR whatis (1)
+and the
+.BR man (1)
+.B \-f
+and
+.B \-k
+options.  No manual reformatting is done.
+.TP
+.B \-M
+Update manual pages located in the specified
+.B directory
+.RB ( /usr/man
+by default).
+.TP
+.B \-T
+Use
+.B tmac.an
+in place of the standard manual page macros.
+.SH ENVIRONMENT
+.PD 0
+.TP \w'\s-1TROFF\s0'u+(3n)u
+.SB TROFF
+The name of the formatter to use when the
+.B \-t
+flag is given.
+If not set,
+.RB ` troff '
+is used.
+.PD
+.SH FILES
+.PD 0
+.TP 25
+.B /usr/[share]/man
+default manual directory location
+.TP
+.B /usr/[share]/man/man?/*.*
+raw (nroff input) manual sections
+.TP
+.B /usr/[share]/man/cat?/*.*
+preformatted
+.BR nroff ed
+manual pages
+.TP
+.B /usr/[share]/man/fmt?/*.*
+preformatted
+.BR troff ed
+manual pages
+.TP
+.B /usr/[share]/man/whatis	
+.B whatis
+database location
+.TP
+.B /usr/lib/makewhatis
+command script to make whatis database
+.PD
+.SH "SEE ALSO"
+.BR apropos (1),
+.BR man (1),
+.BR nroff (1),
+.BR rdist (1),
+.BR troff (1),
+.BR whatis (1)
+.SH NOTES
+.LP
+If the
+.B \-n
+option is specified,
+the
+.B /usr/man/whatis
+database is not created and
+the
+.BR apropos ,
+.BR whatis ,
+.RB ` "man \-f" ',
+and
+.RB ` "man \-k" '
+commands will fail.
+.SH DIAGNOSTICS
+.TP
+.B
+man?/xxx.? (.so'ed from man?/yyy.?): No such file or directory
+The file outside the parentheses is missing, and is referred to
+by the file inside them.
+.TP
+.B
+target of .so in man?/xxx.? must be relative to /usr/man
+.B catman
+only allows references to filenames that are relative to the directory
+.BR /usr/man .
+.br
+.ne 5
+.TP
+.B opendir:man?: No such file or directory
+A harmless warning message indicating that one of the directories
+.B catman
+normally looks for is missing.
+.TP
+.B *.*: No such file or directory
+A harmless warning message indicating
+.B catman
+came across an empty directory.

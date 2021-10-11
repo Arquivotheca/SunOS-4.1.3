@@ -1,0 +1,139 @@
+.\" @(#)is.4s 1.1 92/07/30 SMI;
+.TH IS 4S "19 March 1991"
+.SH NAME
+is \- IPI channel driver for Sun IPI string controllers
+.SH "CONFIG \(em SUN-4, SPARCsystem 600MP SERIES"
+.ft B
+.nf
+controller	isc0	at vme32d32 ? csr 0x01080000 priority 2 vector isintr 0x4c
+channel		is0	at isc0 ipi_addr 0x00000	# channel 0 slave 0
+controller	isc1	at vme32d32 ? csr 0x01080400 priority 2 vector isintr 0x4d
+channel		is1	at isc1 ipi_addr 0x00100	# channel 0 slave 1
+controller	isc2	at vme32d32 ? csr 0x01080800 priority 2 vector isintr 0x4e
+channel		is2	at isc2 ipi_addr 0x00200	# channel 0 slave 2
+controller	isc3	at vme32d32 ? csr 0x01080c00 priority 2 vector isintr 0x4f
+channel		is3	at isc3 ipi_addr 0x00300	# channel 0 slave 3
+controller	isc4	at vme32d32 ? csr 0x01081000 priority 2 vector isintr 0x50
+channel		is4	at isc4 ipi_addr 0x00400	# channel 0 slave 4
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "is device"  ""  "\fLis\fP \(em IPI disk driver"  ""  PAGE START
+.LP
+The first four
+.B controller
+and 
+.B channel
+lines given in the synopsis section above correspond to
+the first, second, third, and fourth
+.SM ISP\s0-80
+.SM IPI
+disk controllers in a Sun system; the fifth controller and channel
+pair are currently available on \s-1SPARC\s0system 600MP series
+machines only.
+These controllers are treated as integrated
+channel/disk-controller cards,
+in that there are two drivers that
+manage them.
+This driver, the
+.B is
+driver, presents a generic
+.SM IPI\s0-3
+interface to the 
+.B id
+driver, which handles the controller as if it were a channel-attached
+.SM IPI\s0-3
+controller.
+See
+.BR id (4S).
+.LP
+The
+.B csr
+value gives the
+.SM VME
+address of the controller. 
+The 
+.B ipi_addr
+field gives the 3-byte channel, slave, and facility address supported
+by the controller; the facility address portion is ignored and should
+be specified as zero.
+.SH SEE ALSO
+.BR id (4S)
+.SH DIAGNOSTICS
+.TP 
+.B "isc\fIn\fP: channel reset timed out"
+The probe routine, called during system initialization, determined that
+the controller reset, initiated by the boot, had not completed in the
+allotted time.
+The controller cannot be used.
+.TP
+.B "isc\fIn\fP: bad \s-1IPI\s0 address \fIaddr\fP"
+The specified address contained a slave address larger than 7.
+.TP
+.B "isc\fIn\fP: interrupt vector not specified in config"
+The configuration did not specify an interrupt vector for the controller.
+.TP
+.B "is\fIn\fP: refnum lookup on success failed.  refnum \fIrefnum\fP"
+A completion interrupt occurred for a command which was unknown to the 
+controller.
+The interrupt is ignored.
+.TP
+.B "is\fIn\fP: response too short.  len \fIl\fP min \fIm\fP response \fIr\fP"
+The response packet presented in an interrupt was too short to contain
+a valid header.
+The response is printed, but otherwise the
+interrupt is ignored.
+.TP
+.B "is\fIn\fP: response too long.   max \fIm\fP len \fIl\fP truncating"
+The response packet is longer than the maximum,
+.IR m ,
+for this controller,
+.TP
+.B "is\fIn\fP: is_reset_slave: resetting slave"
+The driver is resetting the controller under  direction
+from  the
+.B id 
+disk driver.
+This occurs during recovery
+from timed out requests, also known as missing interrupts.
+.TP
+.B "is\fIn\fP: is_reset_slave: slave reset not enabled"
+The
+.B id
+driver attempted  to  reset  the  controller  to
+recovery from an error, but the driver has been set to
+disable such resets.
+.TP
+.B "is\fIn\fP: ctlr reset timed out"
+The reset of the controller took longer than expected
+and has presumably failed.
+.TP
+.B "isc\fIn\fP: response reg \fIr\fP not same as packet refnum \fIref\fP "
+After reading a response packet,
+the response register was read and did not
+match the command reference number in the response packet.
+This could indicate a problem with the driver or the controller.
+.TP
+.B "isc\fIn\fP: error status \fIs\fP response \fIr\fP "
+The controller presented error status code
+.I s
+and a response register value of
+.IR r .
+These will be interpreted by messages that follow.
+.TP
+.B "isc\fIn\fP: ctlr fault \fIf\fP - bus error on cmd refnum \fIr\fP"
+The controller reported a bus error while fetching the command.
+.TP
+.B "isc\fIn\fP: ctlr fault \fIf\fP - timeout on cmd refnum \fIr\fP"
+The controller reported a
+.SM VME
+timeout while fetching the command.
+.TP
+.B "isc\fIn\fP: ctlr fault \fIf\fP - invalid command reg write on cmd refnum \fIr\fP"
+The controller indicates that the command register
+was written after the controller has panicked.
+.\" [check with Dave on this ---- ]
+.TP
+.B "isc\fIn\fP: ctlr fault \fIf\fP - unknown fault code on cmd refnum \fIr\fP"
+The controller has presented an unknown fault code in its status.
+.IX  "is device"  ""  "\fLis\fP \(em IPI disk driver"  ""  PAGE END

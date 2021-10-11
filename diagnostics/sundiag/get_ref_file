@@ -1,0 +1,107 @@
+#!/bin/sh
+#########################################################################
+#									#
+#       %Z%%M% %I% %E% SMI; 						#
+#									#
+# File Name: get_ref_file.sh 						#
+#									#
+# This script will create the SunDiag release reference file containing #
+# the official files with associated checksums and SCCS release levels. #
+# This script will be only used by the release engineers and SunDiag	#
+# Engineers.  This script must also be run in directories with stripped	#
+# binaries.								#
+#									#
+# 	History								#
+# 	Created d.yee 	89/12/01					#
+#									#
+#########################################################################
+#
+# define variables
+WHAT=/usr/ucb/what
+FILE=/bin/file
+# SUNDIAG_REF_FILE=/usr/diag/sundiag/revision_ref_file
+SUNDIAG_REF_FILE=revision_ref_file
+SCRIPTNAME=`echo $0`
+SYNTAX="$SCRIPTNAME -i [input directory] -o [output directory] |-h [help]"
+CURRENT_DIR=`pwd`
+
+############################
+# Get inputs from the user #
+############################
+if [ "$#" -gt 0 ]
+	then  for ARG in $@
+	do
+		case "$ARG" in
+		-h ) 
+			# print usage text
+			echo $SYNTAX 
+			exit 1
+			;;
+		-i )	
+			# get input directory
+			INPUT_DIR=`echo $2 `
+			DIRPATH=$INPUT_DIR
+			;;
+		-o )	
+			# get output directory
+			OUTPUT_DIR=`echo $4 `
+			if [ "$INPUT_DIR" -eq "$OUTPUT_DIR" ]
+			then
+				OUTPUT_FILE=$SUNDIAG_REF_FILE
+			else
+				OUTPUT_FILE=$OUTPUT_DIR/$SUNDIAG_REF_FILE
+			fi
+			;;
+		esac
+	done
+else 
+	echo " SunDiag Pathway Assumed to be:  /usr/diag/sundiag"
+ 	DIRPATH=/usr/diag/sundiag
+	OUTPUT_FILE=$DIRPATH/$SUNDIAG_REF_FILE
+fi
+
+if  test -r $DIRPATH/$SUNDIAG_REF_FILE
+then 
+    	rm -f $DIRPATH/$SUNDIAG_REF_FILE
+fi
+
+###################################
+# Get Release Version of SunDiag  #
+###################################
+VERSION=`grep "VERSION	" sunview/sundiag.h | awk -F'"' '{ print $2 }' `
+
+##########################################################
+# Loop in directory and get information on all the files #
+##########################################################
+cd $DIRPATH
+for file_name in *
+do
+	############################
+	# Get file's checksum value#
+	############################
+	CHECKSUM=`sum $file_name`
+
+	###################
+	# Get file's type #
+	###################
+ 	TYPE=`$FILE $file_name | awk '{print $2}'`
+
+	##################################
+	# Get file's sccs revision level #
+	##################################
+  	$WHAT $file_name >/tmp/xyz
+  	REV=`sed -e "/^$file_name/d" /tmp/xyz | awk '{print $1 " " $2}'`
+
+	##################################
+	# Create SunDiag reference file  #
+	##################################
+	echo "$file_name, checksum= $CHECKSUM, binary type= $TYPE," >> $OUTPUT_FILE
+	echo "$REV" >> $OUTPUT_FILE
+	echo "=+=, $VERSION," >> $OUTPUT_FILE
+
+done
+#######################
+# Clean Up afterwards #
+#######################
+rm /tmp/xyz
+cd $CURRENT_DIR

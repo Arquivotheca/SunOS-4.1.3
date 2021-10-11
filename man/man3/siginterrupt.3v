@@ -1,0 +1,93 @@
+.\" @(#)siginterrupt.3v 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SIGINTERRUPT 3V "21 January 1990"
+.SH NAME
+siginterrupt \- allow signals to interrupt system calls
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+int siginterrupt(sig, flag)
+int sig, flag;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  "siginterrupt()"  ""  "\fLsiginterrupt()\fP \(em interrupt system calls with software signal"
+.IX  "software signal"  ""  "interrupt system calls with software signal \(em \fLsiginterrupt()\fP"
+.LP
+.B siginterrupt(\|)
+is used to change the system call restart
+behavior when a system call is interrupted by the specified signal.
+If the flag is false (0), then system calls will be restarted if
+they are interrupted by the specified signal
+and no data has been transferred yet.
+System call restart is the default behavior on 4.2\s-1BSD\s0, and on Sun\s-1OS\s0 in
+the 4.2 environment, when the
+.B signal (3V)
+routine is used.
+.LP
+If the flag is true (1), then restarting of system calls is disabled.
+If a system call is interrupted by the specified signal
+and no data has been transferred,
+the system call will return \-1 with
+.B errno
+set to
+.SM EINTR\s0.
+Interrupted system calls that have started transferring
+data will return the amount of data actually transferred.
+System call interrupt is the signal behavior found on older
+version of the
+.SM UNIX
+operating systems, such as 4.1\s-1BSD\s0 and System V
+\s-1UNIX\s0.
+It is the default behavior on Sun\s-1OS\s0
+in the System V environment when the
+.B signal(\|)
+routine is used; therefore, this routine is useful in that environment
+only if a signal that a
+.BR sigvec (2)
+specified should restart system calls is to be changed not to restart them.
+.LP
+Note: the new 4.2\s-1BSD\s0 signal handling semantics are not
+altered in any other way.
+Most notably, signal handlers always remain installed until
+explicitly changed by a subsequent
+.B sigvec(\|)
+call, and the signal mask operates as documented in
+.BR sigvec(\|) ,
+unless the
+.SB SV_RESETHAND
+bit has been used to specify that the pre-4.2\s-1BSD\s0
+signal behavior is to be used.
+Programs may switch between restartable and interruptible
+system call operation as often as desired in the execution of a program.
+.LP
+Issuing a
+.B siginterrupt(\|)
+call during the execution of a signal handler will cause
+the new action to take place on the next signal to be caught.
+.SH NOTES
+.LP
+This library routine uses an extension of the
+.BR sigvec (2)
+system call that is not available in 4.2\s-1BSD\s0,
+hence it should not be used if backward compatibility is needed.
+.SH RETURN VALUES
+.LP
+.B siginterrupt(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+if an invalid signal number was supplied.
+.SH SEE ALSO
+.BR sigblock (2),
+.BR sigpause (2V),
+.BR sigsetmask (2),
+.BR sigvec (2),
+.BR signal (3V)

@@ -1,0 +1,85 @@
+.\" @(#)hostconfig.8c 1.1 92/07/30 SMI
+.\"
+.TH HOSTCONFIG 8C "14 December 1990"
+.SH NAME
+hostconfig \- configure a system's host parameters
+.SH SYNOPSIS
+.B /usr/etc/hostconfig
+.B \-p
+.I protocol
+[
+.B \-d
+]
+[
+.B \-v
+]
+[
+.B \-n
+]
+[
+.B \-i
+.I interface
+]
+[
+.B \-f
+.I hostname
+]
+.SH DESCRIPTION
+.LP
+The 
+.B hostconfig
+program uses a network protocol to acquire a machine's ``host parameters''
+and then sets these parameters on the system.
+The program selects which protocol to use based on the argument to the
+required 
+.B \-p
+flag. 
+Different protocols may set different host parameters.
+Currently, two protocols are defined but only one protocol is supported.
+.SH OPTIONS
+.TP 15
+.B \-p bootparams
+Use the ``whoami'' call of the Sun RPC ``bootparams'' protocol.
+This sets the system's 
+.IR hostname ,
+.IR domainname ,
+and
+\fIdefault IP router\fR
+parameters.
+.TP
+.B \-p bootp
+Use the BOOTP protocol [not currently supported].
+.TP
+.B \-d
+Enable ``debug'' output.
+.TP
+.B \-v
+Enable verbose output.
+.TP
+.B \-n
+Run the network protocol, but do not set the acquired parameters into the 
+system.
+.TP
+.BI \-i " interface"
+Use only the named network interface to run the protocol.
+.TP
+.BI \-f " hostname"
+Run the protocol as if this machine were named
+.IR hostname .
+.SH EXAMPLES
+.LP
+To configure a machine's host parameters using the ``bootparams whoami''
+protocol, getting a verbose output:
+.IP
+.B hostconfig \-p bootparams \-v
+.LP
+To see what parameters would be set using the ``bootparams whoami''
+protocol:
+.IP
+.B hostconfig \-p bootparams \-n \-v
+.LP
+.SH "SEE ALSO"
+.BR  hostname (1),
+.BR  domainname (1),
+.BR bootparam (3R),
+.BR  route (8C)

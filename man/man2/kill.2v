@@ -1,0 +1,194 @@
+.\" @(#)kill.2v 1.1 92/07/30 SMI; from UCB 4.2
+.TH KILL 2V "21 January 1990"
+.\" TODO
+.\" Check with Larry about Bob's markups re: implementation-defined dreck
+.SH NAME
+kill \- send a signal to a process or a group of processes
+.SH SYNOPSIS
+.nf
+.ft B
+#include <signal.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kill(pid, sig)
+int pid;
+int sig;
+.ft
+.fi
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+#include <signal.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kill(pid, sig)
+pid_t pid;
+int sig;
+.ft
+.fi
+.IX  kill()  ""  "\fLkill()\fP \(em send signal to process"
+.IX  signals  kill()  ""  \fLkill()\fP
+.IX  process  "send signal to \(em \fLkill()\fR"
+.IX  send "signal to process \(em \fLkill()\fR"
+.SH DESCRIPTION
+.LP
+.B kill(\|)
+sends the signal
+.I sig
+to a process or a group of processes.
+The process or group of
+processes to which the signal is to be sent is specified by
+.IR pid .
+.I sig
+may be one of the signals specified in
+.BR sigvec (2),
+or it may be 0, in which case
+error checking is performed but no
+signal is actually sent.
+This can be used to check the validity of
+.IR pid
+or the existence of process
+.IR pid .
+.LP
+The real or effective user
+.SM ID
+of the sending process must match the real or saved set-user
+.SM ID
+of the receiving process, unless the effective user
+.SM ID
+of the sending process is super-user.
+A single exception is the signal
+.SM
+.BR SIGCONT \s0,
+which may always be sent to any
+member of the same session as the current process.
+.\"(see
+.\".BR termio (4)).
+.LP
+In the following discussion, ``system processes'' are processes, such as
+processes 0 and 2, that are not running a regular user program.
+.LP
+If
+.I pid
+is greater than zero, the signal is sent to the process whose process
+.SM ID
+is equal to
+.IR pid .
+.I pid
+may equal 1.
+.LP
+If
+.I pid
+is 0, the signal is sent to all processes,
+except system processes and process 1,
+whose process group
+.SM ID
+is equal to the process group
+.SM ID
+of the sender; this is a variant of
+.BR killpg (2).
+.LP
+If
+.I pid
+is \-1 and the effective user
+.SM ID
+of the sender is not super-user, the signal is sent to all processes,
+except system processes, process 1, and the process sending the signal,
+whose real or saved set-user
+.SM ID
+matches the real or effective
+.SM ID
+of the sender.
+.LP
+If
+.I pid
+is \-1 and the effective user
+.SM ID
+of the sender is super-user, the signal is sent to all processes
+except system processes, process 1, and the process sending the signal.
+.LP
+If
+.I pid
+is negative but not \-1, the signal is sent to all processes,
+except system processes, process 1, and the process sending the signal,
+whose process group
+.SM ID
+is equal to the absolute value of
+.IR pid ;
+this is a variant of
+.BR killpg (2).
+.LP
+Processes may send signals to themselves.
+.SH SYSTEM V DESCRIPTION
+.LP
+If a signal is sent to a group of processes (as
+with, if
+.I pid
+is 0 or negative), and if the process sending the signal is a member of that
+group, the signal is sent to that process as well.
+.LP
+The signal
+.SB SIGKILL
+cannot be sent to process 1.
+.SH RETURN VALUES
+.LP
+.B kill(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.br
+.ne 12
+.SH ERRORS
+.LP
+.B kill(\|)
+will fail and no signal will be sent if any of the following
+occur:
+.TP 15
+.SM EINVAL
+.I sig
+was not a valid signal
+number.
+.TP
+.SM EPERM
+The effective user
+.SM ID
+of the sending process was not super-user, and neither its real nor
+effective user
+.SM ID
+matched the real or saved set-user
+.SM ID
+of the receiving process.
+.TP
+.SM ESRCH
+No process could be found corresponding to that specified by
+.IR pid .
+.SH SYSTEM V ERRORS
+.LP
+.B kill(\|)
+will also fail, and no signal will be sent, if the following occurs:
+.TP 15
+.SM EINVAL
+.I sig
+is
+.SM SIGKILL
+and
+.I pid
+is 1.
+.SH "SEE ALSO"
+.BR getpid (2V),
+.BR killpg (2),
+.BR getpgrp (2V),
+.BR sigvec (2),
+.BR termio (4)

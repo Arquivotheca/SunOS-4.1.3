@@ -1,0 +1,198 @@
+.\" @(#)compress.1 1.1 92/07/30 SMI; from UCB 6.5 5/11/86
+.TH COMPRESS 1 "9 September 1987"
+.SH NAME
+compress, uncompress, zcat \- compress or expand files, display expanded contents
+.SH SYNOPSIS
+.B compress
+.RB [ " \-cfv " ]
+[
+.B \-b
+.I bits
+] 
+[
+.IR filename \&.\|.\|.
+]
+.LP
+.B uncompress
+.RB [ " \-cv " ]
+[
+.IR filename \&.\|.\|.
+]
+.LP
+.B zcat
+[
+.IR filename .\|.\|.
+]
+.SH DESCRIPTION
+.IX  compress  ""  "\fLcompress\fP \(em compress files"
+.IX  uncompress  ""  "\fLuncompress\fP \(em uncompress files"
+.IX  zcat  ""  "\fLzcat\fP \(em extract compressed files"
+.IX  files  "compress command"  files  "\fLcompress\fP \(em compress files"
+.IX  files  "uncompress command"  files "\fLuncompress\fP \(em uncompress files"
+.IX  files  "zcat command"  files  "\fLzcat\fP \(em extract compress files"
+.LP
+.B compress
+reduces the size of the named files using
+adaptive Lempel-Ziv coding.
+Whenever possible, each file is replaced by one with the extension
+.BR "\&.\|Z" ,
+while keeping the same ownership modes,  as well as access and
+modification times.
+If no files are specified, the standard input is compressed to the
+standard output.
+.LP
+The amount of compression obtained depends on the size of the
+input, the number of
+.I bits
+per code, and the distribution of common substrings.
+Typically, text such as source code or English
+is reduced by 50\-60%.
+Compression is generally much better than that achieved by
+Huffman coding (as used in
+.BR sys-unconfig (8)),
+or adaptive Huffman coding
+.RB ( old-compact (1)),
+and takes less time to compute.
+The 
+.I bits 
+parameter specified during compression is encoded within
+the compressed
+file, along with a magic number to ensure that neither
+decompression of 
+random data nor recompression of compressed data is subsequently
+allowed. 
+.LP
+Compressed files can be restored to their original form using
+.BR uncompress .
+.LP
+.B zcat 
+produces uncompressed output on the standard output, but leaves
+the compressed 
+.B \&.\|Z
+file intact.
+.SH OPTIONS
+.TP
+.B \-c
+Write to the standard output; no files are changed.
+The nondestructive behavior of
+.B zcat
+is identical to that of
+.RB ` "uncompress \-c" '.
+.TP
+.B \-f
+Force compression,
+even if the file does not actually shrink,
+or the corresponding
+.B .\|Z
+file already exists.
+Except when running in the background (under
+.BR sh (1)),
+if
+.B \-f
+is not given,
+prompt to verify whether an existing
+.B .\|Z
+file should be overwritten.
+.TP
+.B \-v
+Verbose.
+Display the percentage reduction for each file compressed.
+.TP
+.BI \-b " bits"
+Set the upper limit (in bits) for common substring codes.
+.I bits
+must be between 9 and 16 (16 is the default).
+.SH SEE ALSO
+.BR ln (1V),
+.BR old-compact (1),
+.BR sh (1),
+.BR sys-unconfig (8)
+.LP
+.IR "A Technique for High Performance Data Compression" ,
+Terry A. Welch,
+.IR "computer" ,
+vol. 17, no. 6 (June 1984), pp. 8-19.
+.SH DIAGNOSTICS
+.LP
+Exit status is normally 0.
+If the last file was not compressed because it became
+larger, the status
+is 2.
+If an error occurs, exit status is 1.
+.TP 10
+.BI "Usage: compress [\-fvc] [\-b maxbits] [" filename \fR.\|.\|.\fB]
+Invalid options were specified on the command line.
+.TP
+.B Missing maxbits
+Maxbits must follow
+.BR \-b \ .
+.TP
+.IB filename ": not in compressed format"
+The file specified to
+.B uncompress
+has not been compressed.
+.br
+.ne 3
+.TP
+.IB filename ": compressed with " xx "bits, can only handle " yy bits
+.I filename
+was compressed by a program that could deal with
+more
+.I bits
+than the compress code on this machine.
+Recompress the file with smaller
+.IR bits .
+.br
+.ne 5
+.TP
+.IB filename ": already has .\|Z suffix -- no change"
+The file is assumed to be already compressed.
+Rename the file and try again.
+.\".TP
+.\".IR filename ": filename too long to tack on .\|Z"
+.\"The file cannot be compressed because its name is longer than
+.\"12 characters.
+.\"Rename and try again.
+.\"This message does not occur on BSD systems.
+.TP
+.IB filename ": already exists; do you wish to overwrite (y or n)?"
+Respond
+.B y
+if you want the output file to be replaced;
+.B n
+if not.
+.TP
+.B uncompress: corrupt input
+A
+.SM SIGSEGV
+violation was detected, which usually means that the input
+file is corrupted.
+.TP
+.BI Compression: "  xx.xx" %
+Percentage of the input saved by compression.
+(Relevant only for
+.BR \-v \.)
+.TP
+.B \-\|\- not a regular file: unchanged
+When the input file is not a regular file, (such as a
+directory), it is left unaltered.
+.TP
+.BI "\-\|\- has " xx " other links: unchanged"
+The input file has links; it is left unchanged.  See
+.BR ln (1V)
+for more information.
+.TP
+.B \-\|\- file unchanged
+No savings are achieved by compression.
+The input remains uncompressed.
+.SH "BUGS"
+Although compressed files are compatible between
+machines with large memory,
+.BR \-b 12
+should be used for file transfer to architectures with 
+a small process data space (64KB or less).
+.LP
+.B compress
+should be more flexible about the existence of the
+.B .\|Z
+suffix.

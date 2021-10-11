@@ -1,0 +1,127 @@
+.\" @(#)nfs.4p 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH NFS 4P "24 November 1987"
+.SH NAME
+nfs, NFS \- network file system
+.SH CONFIG
+.B options NFS
+.SH DESCRIPTION
+.IX  "NFS, network file system protocol"
+.LP
+The Network File System, or
+.SM NFS\s0,
+allows a client workstation to perform
+transparent file access over the network.  Using it, a client
+workstation can operate on files that reside on a variety of servers,
+server architectures and across a variety of operating systems.  Client
+file access calls are converted to
+.SM NFS
+protocol requests, and are sent
+to the server system over the network.  The server receives the request,
+performs the actual file system operation, and sends a response back to
+the client.
+.LP
+The Network File System operates in a stateless fashion using
+remote procedure (\s-1RPC\s0) calls built on top of external data
+representation (\s-1XDR\s0) protocol.  These protocols are documented in
+.TX NETP
+The
+.SM RPC
+protocol provides for version and authentication parameters
+to be exchanged for security over the network.
+.LP
+A server can grant access to a specific filesystem to certain
+clients by adding an entry for that filesystem to the server's
+.B /etc/exports
+file and running
+.BR exportfs (8).
+.LP
+A client gains access to that filesystem with the
+.BR mount (2V)
+system call, which requests a file handle for the filesystem itself.
+Once the filesystem is mounted by the client, the server issues a file
+handle to the client for each file (or directory) the client accesses
+or creates.
+If the file is somehow removed on the server side, the file handle
+becomes stale (dissociated with a known file).
+.LP
+A server may also be a client with respect to filesystems it
+has mounted over the network, but its clients cannot gain access
+to those filesystems.  Instead, the client
+must mount a filesystem directly from the server on which it resides.
+.LP
+The user
+.SM ID
+and group
+.SM ID
+mappings must be the same between client and
+server.  However, the server maps uid 0 (the super-user) to uid \-2
+before performing access checks for a client.  This inhibits
+super-user privileges on remote filesystems.
+This may be changed by use of the \*(lqanon\*(rq export option.
+See
+.BR exportfs (8).
+.LP
+.SM NFS\s0-related
+routines and structure definitions are described in
+.TX NETP .
+.SH ERRORS
+.LP
+Generally physical disk I/O errors detected at the server are returned
+to the client for action.  If the server is down or inaccessible,
+the client will see the console message:
+.RS
+.BI "\s-1NFS\s0 server " \fIhost " not responding still trying\fR."
+.RE
+Depending on whether the file system has been mounted \*(lqhard\*(rq or \*(lqsoft\*(rq
+(see
+.BR mount (8)),
+the client will either  continue (forever) to resend the request until it
+receives an acknowledgement from the server,
+or return an error to user-level.
+For hard mounts, this means the server can crash or power down
+and come back up
+without any special action required by the client.
+If the \*(lqintr\*(rq mount option was not specified,
+a client process requesting I/O will block and
+remain insensitive to signals, sleeping inside the kernel at
+.SB PRIBIO
+until the request is satisfied.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/exports
+.PD
+.SH "SEE ALSO"
+.BR mount (2V),
+.BR exports (5),
+.BR fstab (5),
+.BR fstab (5),
+.BR exportfs (8),
+.BR mount (8),
+.BR nfsd (8),
+.BR sticky (8)
+.LP
+.TX NETP
+.br
+.ne 6
+.SH BUGS
+.LP
+When a file that is opened by a client is unlinked (by the
+server), a file with a name of the form
+.BI \&.nfs \s-1XXX\s0
+(where
+.I \s-1XXX\s0
+is a number) is created by the client.
+When the open file is closed, the
+.BI \&.nfs \s-1XXX\s0
+file is removed.
+If the client crashes before the file can be closed,
+the
+.BI \&.nfs \s-1XXX\s0
+file is not removed.
+.LP
+.SM NFS
+servers usually mark their clients' swap files specially to avoid
+being required to sync their inodes to disk before returning from
+writes.  See
+.BR sticky (8).

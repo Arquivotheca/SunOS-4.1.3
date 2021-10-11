@@ -1,0 +1,126 @@
+.\" @(#)ipi.4s 1.1 92/07/30 SMI;
+.TH IPI 4S "19 March 1991"
+.SH NAME
+ipi \- IPI driver
+.SH "CONFIG \(em SUN-4, SPARCsystem 600MP SERIES"
+.ft B
+.nf
+controller	ipi \fIcpu-type\fP at nexus ?
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "ipi bus"  ""  "\fLipi\sfP \(em IPI driver"  ""  PAGE START
+.IX  "ipi"  ""  "\fLipi\sfP \(em IPI driver"  ""  PAGE START
+.LP
+The controller line above declares the pseudo-bus
+.SM IPI\s0,
+providing a connection between 
+.SM IPI
+device drivers and
+.SM IPI
+channel drivers (also known as host adaptor drivers).
+Declaring the bus pulls in this middle layer of the
+.SM IPI
+drivers, so the
+.SM IPI
+bus declaration should be omitted if there are no
+.SM IPI
+drivers.
+See
+.BR id (4S)
+and
+.BR is (4S).
+The \fIcpu-type\fP number should be the same as that used in the
+.B obio
+declaration.
+.SH FILES
+.LP
+This driver supports only an interface to other drivers, and therefore
+does not have any special file access to user programs.
+.SH SEE ALSO
+.BR id (4S),
+.BR is (4S)
+.SH DIAGNOSTICS
+.TP 
+.B "ipi_alloc \fIcsf\fP: invalid \s-1IPI\s0 address"
+A device driver called
+.B ipi_alloc(\|)
+for a device on a non-existent channel
+or for an illegal slave address.
+.TP 
+.B "ipi_async: ipi \fIcsf\fP slave number out of range"
+A channel driver called
+.B ipi_async(\|)
+with a response packet containing
+an illegal slave address.
+.TP 
+.B "ipi_setup \fIcsf\fP: invalid IPI address"
+An
+.SM IPI
+device driver used an incorrect
+.SM IPI
+address.
+The channel, slave, or facility number was out of range. 
+This could be a configuration problem.
+.TP 
+.B "ipi \fIcsf\fP: channel not configured"
+This message is printed when a channel driver makes an invalid call
+to the
+.SM IPI
+driver.
+.TP 
+.B "ipi_async: \s-1IPI\s0 channel \fIc\fP not configured"
+The channel driver made an invalid call to
+.BR ipi_async(\|) .
+.TP 
+.B "ipi_channel: No memory to add channel \fIc\fP"
+Dynamic memory allocation failed.
+.TP 
+.B "ipi_channel:  no memory to alloc channel \fIc\fP"
+Dynamic memory allocation failed.
+.TP 
+.B "ipi_channel: channel \fIc\fP already defined"
+A channel driver tried to add a channel which was previously assigned
+to a channel driver.
+This could be caused by a configuration problem.
+.TP 
+.B "ipi_free_chan: channel \fIc\fP not allocated"
+A channel driver attempted to delete a channel which had never been added.
+.TP 
+.B "ipi channel \fIc\fP deleted"
+A channel driver deleted the channel because the channel device 
+failed to respond.
+.TP 
+.B "ipi: assign_refnum:  q \fIaddr\fP already has refnum \fIr\fP"
+A command reference number is being assigned to a command that already
+had a reference number.
+This indicates a driver problem.
+.TP 
+.B "free_refnum: q \fIaddr\fP refnum \fIr\fP lookup \fIl-addr\fP"
+The driver was freeing an
+.SM IPI
+request at address
+.IR addr ,
+and found that the reference number it used,
+.IR r ,
+was assigned to another request at address
+.IR l-addr .
+.TP 
+.PD 0
+.B "ipi_lookup:  found wrong command for refnum"
+.TP 
+.B "ipi_lookup:  looking for \fIr\fP, found \fIfr\fP q \fIaddr\fP
+The driver was looking for a command with a particular reference number,
+.IR r ,
+but the lookup table found one with a different reference number,
+.IR fr .
+These messages are always received together.
+.PD
+.TP 
+.B "ipi \fIcsf\fP: missing interrupt.  refnum \fIr\fP"
+The driver detected that a command took longer than the device driver
+expected it to take.
+This message will be followed by other messages
+from the device driver.
+.IX  "ipi bus"  ""  "\fLipi\sfP \(em IPI driver"  ""  PAGE END
+.IX  "ipi"  ""  "\fLipi\sfP \(em IPI driver"  ""  PAGE END

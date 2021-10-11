@@ -1,0 +1,131 @@
+.\" @(#)lsearch.3 1.1 92/07/30 SMI; from S5
+.TH LSEARCH 3 "6 October 1987"
+.SH NAME
+lsearch, lfind \- linear search and update
+.SH SYNOPSIS
+.nf
+.ft B
+#include <stdio.h>
+#include <search.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *lsearch (key, base, nelp, width, compar)
+char *key;
+char *base;
+unsigned int *nelp;
+unsigned int width;
+int (*compar)(\|);
+.ft
+.fi
+.LP
+.nf
+.ft B
+char *lfind (key, base, nelp, width, compar)
+char *key; 
+char *base; 
+unsigned int *nelp;
+unsigned int width;
+int (*compar)(\|);
+.ft
+.fi
+.SH DESCRIPTION
+.IX "lsearch()" "" "\fLlsearch()\fR \(em linear search and update routine"
+.IX "linear search and update routine \(em \fLlsearch()\fR"
+.IX "search functions" "lsearch()" "" "\fLlsearch()\fR \(em linear search and update"
+.IX "lfind()" "" "\fLlfind()\fR \(em linear search routine"
+.IX "linear search routine \(em \fLlfind()\fR"
+.LP
+.B lsearch(\|)
+is a linear search routine generalized from Knuth (6.1) Algorithm S.
+It returns a pointer into a table indicating where
+a datum may be found.
+If the datum does not occur, it is added
+at the end of the table.
+.I key
+points to the datum to be sought in the table.
+.I base
+points to the first element in the table.
+.I nelp
+points to an integer containing the current number of
+elements in the table.
+The integer is incremented if the datum is added to the table.
+.I compar
+is the name of the comparison function which the user must supply
+.RB ( strcmp(\|) ,
+for example).
+It is called with two arguments that point
+to the elements being compared.
+The function must return zero if the elements
+are equal and non-zero otherwise.
+.LP
+.B lfind(\|)
+is the same as
+.B lsearch(\|)
+except that if the datum is not found, it is not added
+to the table.
+Instead, a
+.SM NULL
+pointer is returned.
+.SH NOTES
+The pointers to the key and the element
+at the base of the table should be
+of type pointer-to-element,
+and cast to type pointer-to-character.
+.LP
+The comparison function need not compare every byte,
+so arbitrary data may be contained in the elements
+in addition to the values being compared.
+.LP
+Although declared as type pointer-to-character,
+the value returned should be cast into type pointer-to-element.
+.SH EXAMPLE
+.LP
+This fragment will read in \(<=
+.SM TABSIZE\s0
+strings of length \(<=
+.SM ELSIZE\s0
+and store them in a table, eliminating duplicates.
+.LP
+.RS
+.nf
+.ft B
+#include <stdio.h>
+#include <search.h>
+#define
+\s-1TABSIZE\s0 50
+#define
+\s-1ELSIZE\s0 120
+	char line[\s-1ELSIZE\s+1], tab[\s-1TABSIZE\s+1][\s-1ELSIZE\s+1], \(**lsearch( );
+	unsigned nel = 0;
+	int strcmp( );
+	\&. . .
+	while (fgets(line,
+	\s-1ELSIZE\s0, stdin) != \s-1NULL\s0 &&
+	   nel < \s-1TABSIZE\s0)
+		 (void) lsearch(line, (char \(**)tab, &nel, \s-1ELSIZE\s0, strcmp);
+	\&. . .
+.ft R
+.fi
+.RE
+.SH SEE ALSO
+.BR bsearch (3),
+.BR hsearch (3),
+.BR tsearch (3)
+.SH DIAGNOSTICS
+If the searched for datum is found, both
+.B lsearch(\|)
+and
+.B lfind(\|)
+return a pointer to it.  Otherwise,
+.B lfind(\|)
+returns
+.SM NULL
+and
+.B lsearch(\|)
+returns a pointer to the newly added element.
+.SH BUGS
+Undefined results can occur if there is not enough room in the table to
+add a new item.

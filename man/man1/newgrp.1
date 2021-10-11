@@ -1,0 +1,115 @@
+.\" @(#)newgrp.1 1.1 92/07/30 SMI; from S5R2
+.TH NEWGRP 1 "16 November 1987"
+.SH NAME
+newgrp \- log in to a new group
+.SH SYNOPSIS
+.B newgrp
+[
+.B \-
+] [
+.B group
+]
+.IX  "newgrp command"  "" "\fLnewgrp\fP \(em change group ID of user"
+.IX  change  "group ID of user \(em \fLnewgrp\fR"
+.IX  "group ID"  "\fLnewgrp\fR \(em change group ID of user"
+.SH DESCRIPTION
+.LP
+.B newgrp
+changes a user's group identification.  Only the group-\s-1ID\s0 is changed;
+the user remains a member of all groups previously established by
+.B setgroups
+(see
+.BR getgroups (2V)).
+The user remains logged in
+and the current directory is unchanged,
+but the group-\s-1ID\s0 of newly-created files will be
+set to the new effective group-\s-1ID\s0 (see
+.BR open (2V)).
+The user is always given a new shell, replacing the current shell,
+regardless of whether 
+.B newgrp
+terminated successfully or
+due to an error condition (such as an unknown group).
+.LP
+Exported variables retain their values after invoking
+.BR newgrp ;
+however, all unexported variables are either reset to their
+default value or set to null.
+System variables (such as
+.BR \s-1HOME\s0 ,
+.BR \s-1LOGNAME\s0 ,
+.BR \s-1PATH\s0 ,
+.BR \s-1SHELL\s0 ,
+.BR \s-1TERM\s0 ,
+and
+.BR \s-1USER\s0 ),
+unless exported by the system
+or explicitly exported by
+the user, are reset to default values.
+Note: the shell command
+.B export
+(see
+.BR sh (1))
+is the method to export variables, while the C shell command
+.B setenv
+(see
+.BR csh (1))
+implicitly exports its argument.
+.LP
+With no arguments,
+.B newgrp
+changes the group identification back to
+the group specified in the user's password file entry.
+.LP
+If the first argument to
+.B newgrp
+is a
+.RB ` \- ',
+the environment is changed to what would be expected if the
+user actually logged in again.
+.LP
+A password is demanded if the group has
+a password and the user does not,
+or if the group has a password and the user is not listed
+in
+.B /etc/group
+as being
+a member of that group.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/group
+system group file
+.TP
+.B /etc/passwd
+system password file
+.PD
+.SH SEE ALSO
+.BR csh (1),
+.BR login (1),
+.BR sh (1),
+.BR su (1V),
+.BR open (2V),
+.BR getgroups (2V),
+.BR initgroups (3),
+.BR environ (5V),
+.BR group (5),
+.BR passwd (5)
+.SH NOTES
+.LP
+For consistency with
+.B login
+naming rules (which do not allow 8-bit file names),
+group identifications cannot contain 8-bit characters.
+See
+.BR login (1)
+for explanations about why
+.B login
+is not 8-bit clean.
+.SH BUGS
+.LP
+There is no convenient way to enter a password into
+.BR /etc/group .
+Use of group passwords is not encouraged, because,
+by their very nature, they encourage poor security practices.
+Group passwords may disappear in the future.

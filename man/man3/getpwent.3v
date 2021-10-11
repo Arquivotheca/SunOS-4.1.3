@@ -1,0 +1,269 @@
+.\" @(#)getpwent.3v 1.1 92/07/30 SMI; from UCB 4.3 and S5
+.TH GETPWENT 3V "21 January 1990"
+.SH NAME
+getpwent, getpwuid, getpwnam, setpwent, endpwent, setpwfile, fgetpwent \- get password file entry
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <pwd.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct passwd *getpwent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct passwd *getpwuid(uid)
+uid_t uid;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct passwd *getpwnam(name)
+char *name;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void setpwent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+void endpwent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setpwfile(name)
+char *name;
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct passwd *fgetpwent(f)
+\s-1FILE\s0 *f;
+.ft
+.fi
+.IX  "getpwent()"  ""  "\fLgetpwent()\fP \(em get password file entry"
+.IX  "getpwuid()"  ""  "\fLgetpwuid()\fP \(em get password file entry"
+.IX  "getpwnam()"  ""  "\fLgetpwnam()\fP \(em get password file entry"
+.IX  "setpwent()"  ""  "\fLsetpwent()\fP \(em get password file entry"
+.IX  "endpwent()"  ""  "\fLendpwent()\fP \(em get password file entry"
+.IX  "setpwfile()"  ""  "\fLfgetpwent()\fP \(em get password file entry"
+.IX  "fgetpwent()"  ""  "\fLfgetpwent()\fP \(em get password file entry"
+.IX  "get password file entry"  "getpwent()"  ""  "\fLgetpwent()\fP"
+.IX  "get password file entry"  "getpwuid()"  ""  "\fLgetpwuid()\fP"
+.IX  "get password file entry"  "getpwnam()"  ""  "\fLgetpwnam()\fP"
+.IX  "get password file entry"  "setpwent()"  ""  "\fLsetpwent()\fP"
+.IX  "get password file entry"  "endpwent()"  ""  "\fLendpwent()\fP"
+.IX  "get password file entry"  "setpwfile()"  ""  "\fLfgetpwent()\fP"
+.IX  "get password file entry"  "fgetpwent()"  ""  "\fLfgetpwent()\fP"
+.IX  "password file"  "get entry getpwent()"  ""  "get entry \(em \fLgetpwent()\fP"
+.IX  "password file"  "get entry getpwuid()"  ""  "get entry \(em \fLgetpwuid()\fP"
+.IX  "password file"  "get entry getpwnam()"  ""  "get entry \(em \fLgetpwnam()\fP"
+.IX  "password file"  "get entry setpwent()"  ""  "get entry \(em \fLsetpwent()\fP"
+.IX  "password file"  "get entry endpwent()"  ""  "get entry \(em \fLendpwent()\fP"
+.IX  "password file"  "get entry setpwfile()"  ""  "get entry \(em \fLfsetpwfile()\fP"
+.IX  "password file"  "get entry fgetpwent()"  ""  "get entry \(em \fLfgetpwent()\fP"
+.SH DESCRIPTION
+.LP
+.BR getpwent(\|) ,
+.B getpwuid(\|)
+and
+.B getpwnam(\|)
+each return a pointer to an object with the
+following structure
+containing the
+fields of a line in the password file.
+Each line in the file
+contains a
+.B passwd
+structure, declared in the
+.B <pwd.h>
+header file:
+.RS
+.LP
+.nf
+.ft B
+struct	passwd {
+	char	*pw_name;
+	char	*pw_passwd;
+	uid_t	pw_uid;
+	gid_t	pw_gid;
+	int	pw_quota;
+	char	*pw_comment;
+	char	*pw_gecos;
+	char	*pw_dir;
+	char	*pw_shell;
+};
+struct passwd *getpwent(\|), *getpwuid(\|), *getpwnam(\|);
+.ft R
+.fi
+.RE
+.LP
+The fields
+.B pw_quota
+and
+.B pw_comment
+are unused; the others have meanings described in
+.BR passwd (5).
+When first called,
+.B getpwent(\|)
+returns a pointer to the first passwd structure in the file;
+thereafter, it returns a pointer to the next passwd structure in the file;
+so successive calls can
+be used to search the entire file.
+.B getpwuid(\|)
+searches from the beginning of the file until a numerical user
+.SM ID
+matching
+.I uid
+is found and
+returns a pointer to the particular structure in which it was found.
+.B getpwnam(\|)
+searches from the beginning of the
+file until a login name matching
+.I name
+is found, and returns a pointer to the particular structure
+in which it was found.
+If an end-of-file or an error
+is encountered on reading, these functions return a
+.SM NULL
+pointer.
+.LP
+A call to
+.B setpwent(\|)
+has the effect of rewinding
+the password file to allow repeated searches.
+.B endpwent(\|)
+may be called to
+close the password file
+when processing is complete.
+.LP
+.B setpwfile(\|)
+changes the default password file to
+.I name
+thus allowing alternate password files to be used.
+Note: it does
+.I not
+close the previous file.
+If this is desired,
+.B endpwent(\|)
+should be called prior to it.
+.B setpwfile(\|)
+will fail if it is called before a call to one of
+.BR getpwent(\|) ,
+.BR getpwuid(\|) ,
+.BR setpwent(\|) ,
+or
+.B getpwnam(\|) ,
+or if it is called before a call to one of
+these functions and after a call to
+.BR endpwent(\|) .
+.LP
+.B fgetpwent(\|)
+returns a pointer to the next passwd structure in the stream
+.IR f ,
+which matches the format of the password file
+.BR /etc/passwd .
+.SH SYSTEM V DESCRIPTION
+.LP
+.B struct passwd
+is declared in
+.B pwd.h
+as:
+.RS
+.LP
+.nf
+.ft B
+struct	passwd {
+	char	*pw_name;
+	char	*pw_passwd;
+	uid_t	pw_uid;
+	gid_t	pw_gid;
+	char	*pw_age;
+	char	*pw_comment;
+	char	*pw_gecos;
+	char	*pw_dir;
+	char	*pw_shell;
+};
+.ft R
+.fi
+.RE
+.LP
+The field
+.B pw_age
+is used to hold a value for \*(lqpassword aging\*(rq on some systems;
+\*(lqpassword aging\*(rq is not supported on Sun systems.
+.SH RETURN VALUES
+.LP
+.BR getpwent(\|) ,
+.BR getpwuid(\|) ,
+and
+.BR getpwnam(\|)
+return a pointer to
+.B struct passwd
+on success.
+On
+.SM EOF
+or error,
+or if the requested entry is not found,
+they return
+.SM NULL\s0.
+.LP
+.B setpwfile(\|)
+returns:
+.TP
+1
+on success.
+.TP
+0
+on failure.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.TP
+.BI /var/yp/ domainname /passwd.byname
+.TP
+.BI /var/yp/ domainname /passwd.byuid
+.PD
+.SH "SEE ALSO"
+.BR getgrent (3V),
+.BR issecure (3),
+.BR getlogin (3V),
+.BR passwd (5),
+.BR ypserv (8)
+.SH NOTES
+.LP
+The above routines use the standard I/O library, which
+increases the size of programs
+not otherwise using standard I/O more
+than might be expected.
+.LP
+.B setpwfile(\|)
+and
+.B fgetpwent(\|)
+are obsolete and should not be used, because
+when the system is running in secure mode (see
+.BR issecure (3)),
+the password file only contains part of the
+information needed for a user database entry.
+.SH BUGS
+.LP
+All information
+is contained in a static area which is overwritten by subsequent calls
+to these functions,
+so it must be copied if it is
+to be saved.

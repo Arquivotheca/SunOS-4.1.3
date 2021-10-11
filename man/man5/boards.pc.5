@@ -1,0 +1,496 @@
+'\" t
+.\" @(#)boards.pc.5 1.1 92/07/30 SMI;
+.TH BOARDS.PC 5 "25 September 1989"
+.SH NAME
+boards.pc \- information about AT- and XT-compatible boards for DOS windows
+.SH SYNOPSIS
+.B /etc/dos/defaults/boards.pc
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "boards.pc data file"  ""  "\fLboards.pc\fP \(em file for DOS windows"
+.IX "data file"  "boards.pc data file"  ""  "\fLboards.pc\fP \(em file for DOS windows"
+.IX "DOS windows" "boards.pc data file" "" "\fLboards.pc\fP \(em file for DOS windows"
+.LP
+The
+.B boards.pc
+file stores information about
+.SM AT\s0-
+and 
+.SM XT\s0-compatible
+boards installed on a system.
+.LP
+Only the super-user may alter the file.
+.LP
+The file format is as follows, with entries separated by
+.SM SPACE
+or
+.SM TAB
+characters:
+.RS
+.nf
+.sp
+.ft I
+Board-name	\s-1I/O\s0 port range	\s-1IRQ	DMA\s0	Memory	  Options
+.ft P
+.sp
+.fi
+.RE
+.TP
+.I Board-name
+The name of the board as it will appear in the
+.SM DOS
+Windows Device menu.
+Use any name that is not longer than 19 characters.
+.TP
+.I "\s-1I/O\s0 port range"
+Most boards have
+.SM I/O
+addresses through which they exchange 
+information with the workstation.
+For boards that will be used by 
+.SM DOS\s0,
+the
+.SM I/O
+address is entered in the
+.B boards.pc
+file, directly to the right of the board name.
+.IP
+Certain
+.SM I/O
+addresses are already used by
+.SM DOS
+Windows emulated devices (such as drive C and the
+.SM DOS
+printers), and by built-in system hardware.
+The following list shows the
+.SM AT\s0-bus
+.SM I/O
+address spaces:
+.IP
+.TS
+center ;
+lfB lfB .
+Address	\s-1DOS\s0 Use
+.sp .5
+1F8-1FF *	Hard disk (C:) emulation
+218-21F	Expanded memory
+230-23F	Bus mouse emulation
+278-27F	Parallel port 2 (usually accessed through LPT3)
+378-37F *	Parallel port 1 (usually accessed through LPT2)
+3B0-3BF	Monochrome display adapter
+3D0-3DF	Color display adapter
+3F0-3F7 *	Diskette controller
+.TE
+.TP
+\&
+An address marked with an asterisk cannot be replaced
+by a board.
+When the board you are installing uses one
+of these addresses, or it uses the same
+address as another board that is already
+installed, change the jumpers or switch settings 
+on your board to use a different address.
+If you add a board that 
+occupies one of these address spaces,
+.SM DOS
+ignores the entry.
+An address not marked with an asterisk
+may be used for a board you are installing,
+as long as you do not plan to use the emulated
+device at that address. 
+.sp .5
+.B "Adding an \s-1I/O\s0 Address Entry to boards.pc:"
+.sp .5
+If the board uses addresses that can be contained within one
+eight-address block, note the block base address and
+include it in the
+.I \s-1I/O\s0 port range
+column of the
+.B boards.pc
+file.
+When using a multiple-block address, specify the base
+address of each block.
+For example, when entering a two-block 
+address, specify the base addresses of both
+the first and second blocks, and
+separated with a
+.SM SPACE
+character. 
+Suppose you have a board with a two-block I/O address space that 
+begins at 380.
+You would specify 380 388 in the
+.B boards.pc
+file's 
+.I \s-1I/O\s0 port range
+column.
+.br
+.ne 5v
+.TP
+.I \s-1IRQ\s0    
+Some boards send periodic signals asking
+.SM DOS
+to delay whatever it is doing
+and accept information from the device. 
+These signals are known as
+.BR "interrupt requests" ,
+or more simply, as
+.BR interrupts .
+The following chart shows the interrupt levels available under
+.SM DOS 
+Windows.
+Valid interrupt levels are 1 to 15,
+although some of these are reserved for emulated
+.SM DOS
+devices. 
+.LP
+.RS 1.0i
+.nf
+.ft B
+Interrupt 
+Level	Availability
+.sp .5
+  0	Unavailable; used for timer emulation
+  1	Unavailable; used for keyboard emulation
+  2	Unavailable; used for interrupt controller 2 cascade
+  3	Available for board, unless COM2 emulation in use
+   	(specified in setup.pc)
+  4	Available for board, unless COM1 emulation in use
+   	(specified in setup.pc)
+  5	Available for board, unless LPT3 emulation in use
+   	(specified in setup.pc)
+  6	Unavailable; used for diskette drive emulation
+  7	Unavailable; used by built-in parallel port
+  8	Unavailable; used for real-time clock emulation
+  9	Available for board
+ 10	Available for board
+ 11	Available for board
+ 12	Available for board
+ 13	Unavailable; used for 8087 numeric coprocessor emulation
+ 14	Unavailable; used for hard disk emulation
+ 15	Available for board
+.ft P
+.fi
+.RE
+.TP
+\&
+To ensure that signals do not become confused,
+set each board or emulated device that uses
+interrupts for a different interrupt level.
+Normally, interrupt settings are changed by
+pressing small switches or moving metal
+jumpers on the board itself. 
+Consult the manual of the board you are installing
+for details on how this is done.
+In addition to the changes required on the
+board itself, make sure that the interrupt level in your
+.B boards.pc
+file matches the setting on the card. 
+For example, if a board's physical
+interrupt was previously 3,
+and you change it to 4 by altering switch settings
+or board jumpers, make a corresponding change in the
+.B boards.pc
+file.
+If the card uses a
+.SM DOS 
+driver, you may also need to make changes in
+.SB C:\CONFIG.SYS
+or other files to reflect the switch settings on the card.
+.sp
+.ft B
+Adding an Interrupt Entry to boards.pc
+.ft P
+.sp
+Some boards do not generate interrupts, and therefore will not 
+have an interrupt level listed in their manuals. 
+If this is the case, leave the
+.I \s-1IRQ\s0
+column empty. 
+For boards where an interrupt level is required,
+enter the letters 
+.B irq
+followed by the appropriate number in the
+.B boards.pc
+file, as shown in
+.SM EXAMPLES
+below.
+.TP
+.I \s-1DMA\s0  
+Certain boards use direct memory access
+.SM (DMA)
+channels to ensure speedy transfer of large
+quantities of data. 
+.SM DMA
+channels 0, 1, 3, and 5 are available.
+Each
+.SM DOS
+or SunOS
+.SM DMA
+board on the system must be assigned a unique
+.SM DMA
+channel.
+When two or more boards expect to use
+.SM DMA
+channel 1, physically alter
+.SM DMA
+settings on one of the boards so that
+it uses a different channel (such as
+.SM DMA
+channel 3).
+Normally these settings are changed
+by pressing small switches or
+moving metal jumpers on the board itself.
+Consult the manual for the board
+you are installing for details on changing a
+.SM DMA
+channel setting.
+.br
+.ne 5v
+.sp
+.ft B
+Adding a
+.SM DMA
+.ft B
+Entry to boards.pc
+.ft R
+.sp
+When the board you are installing uses a
+.SM DMA
+channel, include a
+.B dma 
+entry for that board. 
+For example, when the board is set up to use
+.SM DMA
+channel 3, the entry can look like this:
+.LP
+.RS 1.0i
+.nf
+.ft B
+\s-1MYBOARD\s0   200 208 irq 2 dma 3
+.ft P
+.fi
+.RE
+.br 
+.ne 7v
+.TP
+.I Memory        
+Some boards are equipped with memory chips for
+.SM DOS\s0.
+Because this memory is \*(lqmapped\*(rq (transferred) into
+.SM DOS
+memory so that
+.SM DOS
+can read it, the boards are called
+.IR "memory mapped boards" .
+When you install such a board, include a
+.B mem
+entry with the following format:
+.LP
+.RS 1.0i
+.B mem
+.I address size
+.RE
+.TP
+\&
+The
+.I address
+is the starting address of the memory segment, in 
+hexadecimal notation.
+Enter the size of the memory block in 
+kilobytes, in decimal notation.
+The following example is for
+a board that starts mapped memory
+at the address $DE00 and 
+uses a block of 8 kilobytes.
+.LP
+.RS 1.0i
+.B "\s-1MYBOARD\s0 258    irq 5   dma 3   mem de00 8"
+.RE
+.TP
+\&
+When determining the size of the memory block, be careful not to confuse
+.SM DOS
+address size (the number you should use) with actual on-board memory (the
+number you should not use).
+For example, a 
+.SM LIM
+memory board might have 2 megabytes of on-board memory, yet may require
+only 64 kilobytes of
+.SM DOS
+address space for its memory mapping.
+Therefore, the number to use for the
+.B mem 
+entry is 64.
+.TP
+.I Options
+.TP
+.B "       reboot"
+Certain boards require
+.SM DOS
+rebooting before they work. 
+These same boards require that you reboot 
+.SM DOS
+after you have finished using them.
+You can set up
+.SM DOS
+to reboot the current
+.SM DOS
+window automatically whenever the board is attached.
+.SM DOS
+displays a confirmatory alert before rebooting.
+.sp
+To force
+.SM DOS
+to reboot when you attach the board, add the word
+.B reboot
+at the end of the
+.B boards.pc
+line for that board, as shown in the following example:
+.LP
+.RS 1.0i
+.nf
+.ft B
+\s-1MYBOARD\s0 3e8  mem a000 192  reboot
+.ft P
+.fi
+.RE
+.TP
+\&
+If you choose to omit the
+.B reboot
+instruction, you can enable the board by attaching it and then manually
+rebooting:
+.LP
+.RS 1.0i
+.nf
+1.  Choose \fBAttached from the Device\fP menu to enable the board.
+2.  Choose \fBReboot DOS Window\fP.
+.fi
+.RE
+.TP
+\&
+To detach such a board from a
+.SM DOS
+window, choose
+.B Detach
+and then reboot the
+.SM DOS
+window.
+.TP
+.B "       shared"
+You can specify that a device is to be shared between windows, 
+rather than being reserved for use by one window at a time.
+Generally, you should do this only with devices, such as joysticks, which
+can fluidly move from one
+.SM DOS
+window to another. 
+To designate a device as shared, place the word
+.B shared
+at the very end of the
+.B boards.pc
+line:
+.LP
+.RS 1.0i
+.nf
+.ft B
+Joystick     200               shared
+.ft P
+.fi
+.RE
+.SS Determining Board Information
+.LP
+In many cases, you may need to determine whether a board you are 
+installing will conflict with other devices on the system.
+Also, you 
+sometimes may need to install a board for which there is no entry 
+in the
+.B boards.pc
+file.
+In most cases, the instruction manual included with the board 
+you are installing should contain the technical information you need, including:
+.LP
+.RS .5i
+The
+.SM I/O
+port addresses at which the board is accessed.
+One or more blocks can be reserved,
+and there are eight consecutive 
+addresses per block.
+.LP
+The board's interrupt level,
+if the board generates interrupts. 
+.LP
+The
+.SM DMA
+channel number, if the board uses a direct memory access channel.
+.LP
+Memory mapping information, if the board maps data into
+.SM DOS 
+memory.
+.RE
+.LP
+If the board's manual does not provide such information, contact 
+the manufacturer.
+.SH EXAMPLES
+.LP
+The following is an example of a
+.B boards.pc
+file:
+.LP
+.if n .ig ZZ
+.\" next line (#Tallgrass...) removed from tbl for nroff reasons
+.\"#Tallgrass-TG-2025e	288	irq 3	dma 3	mem d800 4	reboot
+.TS
+center;
+l1fB l1fB l1fB l1fB l1fB l1fB .
+#COM2	2f8	irq 3
+#Joystick	200				shared     
+#EGA	3b0 3b8 3c0 3c8 3d0 3d8			mem a000 192	reboot
+#VGA	3b0 3b8 3c0 3c8 3d0 3d8 102 2e8			mem a000 192		reboot
+#3COM-3C501	300 308	irq 3	dma 1
+#TOPS-FlashTalk	398	irq 3
+#IBM-3363-Worm	258	irq 5	dma 3	mem de00 8	reboot
+#Plus-Hardcard20	320	irq 5	dma 3	mem ca00 8	reboot
+#HP-Basic	390	irq 3
+#DCA-IRMA1	220 228
+#DCA-IRMA2	220 228 280 288
+#Bernoulli-A220H	350				reboot
+#WD8003E	280 288 290 298	irq 5		mem d000 8 
+#NI5210	360	irq 5		mem c000 16
+#NIC		irq 5		mem d000 32
+#LPT2	278	irq 5
+.TE
+.ZZ
+.if t .ig ZZ
+.nf
+#COM2            2f8                             irq 3
+#Joystick        200                                                      shared
+#EGA             3b0 3b8 3c0 3c8 3d0 3d8                     mem a000 192 reboot
+#VGA             3b0 3b8 3c0 3c8 3d0 3d8 102 2e8             mem a000 192
+#3COM-3C501      300 308                         irq 3 dma 1
+#TOPS-FlashTalk  398                             irq 3
+#IBM-3363-Worm   258                             irq 5 dma 3 mem de00 8   reboot
+#Plus-Hardcard20 320                             irq 5 dma 3 mem ca00 8   reboot
+#HP-Basic        390                             irq 3
+#DCA-IRMA1       220 228
+#DCA-IRMA2       220 228 280 288
+#Bernoulli-A220H 350                                                      reboot
+#WD8003E         280 288 290 298                 irq 5       mem d000 8
+#NI5210          360                             irq 5       mem c000 16
+#NIC                                             irq 5       mem d000 32
+#LPT2            278                             irq 5
+.fi
+.ZZ
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/help/*/*
+.PD
+.SH SEE ALSO
+.BR dos (1),
+.BR setup.pc (5)
+.LP
+.I Sun386i Advanced Skills

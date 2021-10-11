@@ -1,0 +1,184 @@
+.\" @(#)panic.8s 1.1 92/07/30 SMI; from UCB 4.2
+.TH PANIC 8S "25 September 1987"
+.SH NAME
+panic \- what happens when the system crashes
+.SH DESCRIPTION
+.IX  "crash information"  ""  "\fLpanic\fP \(em crash information"
+.IX  "panic information"  ""  "\fLpanic\fP \(em crash information"
+.LP
+This section explains what happens when the system crashes and how
+you can analyze crash dumps.
+.LP
+When the system crashes voluntarily, it displays a message of the form
+.IP
+.BI panic: " why i gave up the ghost"
+.LP
+on the console, takes a dump on a mass storage peripheral,
+and then invokes an automatic reboot procedure as described in
+.BR reboot (8).
+Unless some unexpected inconsistency is encountered in the state
+of the file systems due to hardware or software failure, the system
+will then resume multiuser operations.
+.LP
+The system has a large number of internal consistency checks; if one
+of these fails, it will panic with a very short message indicating
+which one failed.
+.LP
+When the system crashes it writes (or at least attempts to write)
+an image of memory into the back end of the primary swap
+area.  After the system is rebooted, you can run the program
+.BR savecore (8)
+to preserve a copy of this core image and kernel namelist
+for later perusal.  See
+.BR savecore (8)
+for details.
+.LP
+To analyze a dump you should begin by running
+.BR adb (1)
+with the
+.B \-k
+flag on the core dump, as described in
+.TX DEBUG .
+.LP
+The most common cause of system failures is hardware failure, which
+can reflect itself in different ways.
+.LP
+See
+.SM DIAGNOSTICS
+for some messages that
+you may encounter, with some hints as to causes.
+In each case there is a possibility that a hardware or software
+error produced the message in some unexpected way.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+the
+system kernel
+.TP
+.B /etc/rc.local
+script run when the local system starts up
+.PD
+.SH "SEE ALSO"
+.BR adb (1),
+.BR old-analyze (8),
+.BR reboot (8)
+.BR sa (8),
+.BR savecore (8)
+.LP
+.TX DEBUG
+.  \"  This stuff is specific to the VAX and is here for reference only.
+.  \".sp
+.  \".nf
+.  \"0	reserved addressing fault
+.  \"1	privileged instruction fault
+.  \"2	reserved operand fault
+.  \"3	bpt instruction fault
+.  \"4	xfc instruction fault
+.  \"5	system call trap
+.  \"6	arithmetic trap
+.  \"7	ast delivery trap
+.  \"8	segmentation fault
+.  \"9	protection fault
+.  \"10	trace trap
+.  \"11	compatibility mode fault
+.  \"12	page fault
+.  \"13	page table fault
+.  \".fi
+.  \".sp
+.SH DIAGNOSTICS
+.PD 0
+.TP 1.25i
+.B \s-1IO\s0 err in push
+.TP
+.B hard \s-1IO\s0 err in swap
+The system encountered an error trying to write to the paging device
+or an error in reading critical information from a disk drive.
+You should fix your disk if it is broken or unreliable.
+.TP
+.B timeout table overflow
+This really should not be a panic, but until
+the data structure is fixed,
+involved, running out of entries causes a crash.  If this happens,
+you should make the timeout table bigger by changing the value of
+.B ncallout
+in the
+.B param.c
+file, and then rebuild your system.
+.\".TP
+.\"SUN-specific message
+.\"<<< Need to explain these here. >>>
+.TP
+.B "trap type \fItype\fP, pid \fIprocess-id\fP, pc = \fIprogram-counter\fP, sr = \fIstatus-register\fP, context \fIcontext-number\fP"
+A unexpected trap has occurred within the system; typical trap types are:
+.RS
+.PD 0
+.TP 3
+\(bu
+Bus error
+.TP 3
+\(bu
+Address error
+.TP 3
+\(bu
+Illegal instruction
+.TP 3
+\(bu
+Divide by zero
+.TP 3
+\(bu
+Chk instruction
+.TP 3
+\(bu
+Trapv instruction
+.TP 3
+\(bu
+Privilege violation
+.TP 3
+\(bu
+Trace
+.TP 3
+\(bu
+1010 emulator trap
+.TP 3
+\(bu
+1111 emulator trap
+.TP 3
+\(bu
+Stack format error
+.TP 3
+\(bu
+Uninitialized interrupt
+.TP 3
+\(bu
+Spurious interrupt
+.PD
+.RE
+.IP
+The favorite trap types in system crashes
+are ``Bus error'' or ``Address error'',
+indicating a wild reference.  The
+.I process-id
+is the
+.SM ID
+of the process
+running at the time of the fault,
+.I program-counter
+is the hexadecimal value
+of the program counter,
+.I status-register
+is the hexadecimal value of the
+status register, and
+.I context-number
+is the context that the process was
+running in.  These problems tend to be easy to track
+down if they are kernel bugs since
+the processor stops cold, but random
+flakiness seems to cause this sometimes.
+.TP
+.B init died
+The system initialization process has exited.
+This is bad news, as no new
+users will then be able to log in.
+Rebooting is the only fix, so the
+system just does it right away.

@@ -1,0 +1,100 @@
+.\" @(#)ieee_test.3m 1.1 92/07/30 SMI;
+.TH IEEE_TEST 3M "21 January 1988"
+.ds nn \fINaN\fR
+.SH NAME
+ieee_test, logb, scalb, significant \- IEEE test functions for verifying standard compliance
+.SH SYNOPSIS
+.nf
+.B #include <math.h>
+.LP
+.B double logb(x)
+.B double x;
+.LP
+.B double scalb(x,y)
+.B double x; double y;
+.LP
+.B double significant(x)
+.B double x;
+.fi
+.SH DESCRIPTION
+.IX "logb()" "" "\fLlogb()\fP function"
+.IX "scalb()" "" "\fLscalb()\fP function"
+.IX "significant()" "" "\fLsignificant()\fP function"
+.LP
+These functions allow users to verify compliance to
+.SM ANSI/IEEE
+Std 754-1985 by running certain test vectors
+distributed by the University of California.
+Their use is not otherwise recommended; instead use
+.BI scalbn( x , n )
+and
+.BI ilogb( x )
+described in
+.BR ieee_functions (3M).
+See the
+.TX FPOINT
+for details.
+.LP
+.BI logb( x )
+returns the unbiased exponent of
+.I x
+in floating-point format,
+for exercising the
+logb(L)
+test vector.
+.BR "logb(\(+-\(if) = +\(if" ;
+.B logb(0) = \-\(if
+with a division by zero exception.
+.BI logb( x )
+differs from
+.BI ilogb( x )
+in returning a result in floating-point rather than integer format,
+in sometimes signaling
+.SM IEEE
+exceptions, and in not normalizing subnormal
+.IR x .
+.LP
+.BI scalb( x ,(double)n )
+returns
+.I x * 2**n
+computed by exponent manipulation rather than by actually
+performing an exponentiation or a multiplication,
+for exercising the
+scalb(S)
+test vector.  Thus
+.RS
+.BI "0 \(<= scalb(fabs(" x "),\-logb(" x ")) < 2"
+.RE
+for every
+.I x
+except 0,
+.if n \
+infinity
+.if t \
+\(if
+and \*(nn.
+.BI scalb( x , y )
+is not defined when
+.I y
+is not an integral value.
+.BI scalb( x , y )
+differs from
+.BI scalbn( x ,n )
+in that the second argument is in floating-point rather than integer format.
+.LP
+.BI significant( x )
+computes just
+.RS
+.BI scalb( x ", (double) -ilogb(" x "))"\fR,
+.RE
+for exercising the fraction-part(F) test vector.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/libm.a
+.PD
+.SH "SEE ALSO"
+.BR floatingpoint (3),
+.BR ieee_values (3M),
+.BR ieee_functions (3M),
+.BR matherr (3M)

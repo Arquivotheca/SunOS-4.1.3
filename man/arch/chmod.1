@@ -1,0 +1,134 @@
+.TH CHMOD 1V "9 April 1986"
+.\" @(#)chmod.1 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.SH NAME
+chmod \- change mode
+.SH SYNOPSIS
+.B chmod
+[
+.B \-fR
+] 
+.I mode 
+.I filename \fB.\|.\|.\fP
+.SH SYSTEM V SYNOPSIS
+.B chmod
+.I mode 
+.I filename \fB.\|.\|.\fP
+.SH DESCRIPTION
+.IX  chmod  ""  "\fLchmod\fP \(em change mode"
+.IX  files   "chmod command"  files   "\fLchmod\fP \(em change mode"
+.IX  change  "mode of file"
+.IX  change  "permissions of file"
+.IX  modes  "chmod command"  modes  "\fLchmod\fP \(em change mode"
+.IX  permissions  "chmod command"  permissions  "\fLchmod\fP \(em change mode"
+Change the permissions, or mode, of a file or files.
+Only the owner of a file (or the superuser) may change its mode.
+.LP
+The mode of each named file is changed according to \fImode\fP,
+which may be absolute or symbolic.  
+.SS Absolute Modes
+An absolute \fImode\fP is an octal number constructed from the 
+.SM OR 
+of the following modes:
+.nf
+.ta +.5i
+\0\fB4\fR00	read by owner
+\0\fB2\fR00	write by owner
+\0\fB1\fR00	execute (search in directory) by owner
+.sp .25v
+\00\fB4\fR0	read by group
+\00\fB2\fR0	write by group
+\00\fB1\fR0	execute (search) by group
+.sp .25v
+\000\fB4\fR	read by others
+\000\fB2\fR	write by others
+\000\fB1\fR	execute (search) by others
+.sp .25v
+\fB4\fR000	set user ID on execution
+\fB2\fR000	set group ID on execution
+\fB1\fR000	sticky bit, (see \fIchmod\fR\|(2) for more information)
+.fi
+.SS Symbolic Modes
+.LP
+A symbolic \fImode\fP has the form:
+.IP
+[ \fIwho\fP ] \fIop permission\fP [ \fIop permission\fP ]\fB.\|.\|.\fP
+.LP
+\fIwho\fP is a combination of: 
+.ta +.5i
+.nf
+\fBu\fP	user's permissions
+\fBg\fP	group permissions
+\fBo\fP	others
+\fBa\fP	all, or \fBugo\fP
+.fi
+.IP
+If \fIwho\fR is omitted, the default is \fBa\fP,
+but the setting of the file creation mask (see \fIumask\fR in
+.IR sh (1)
+or
+.IR csh (1) 
+for more information) is taken into account.  When 
+.I who
+is omitted,
+.I chmod
+will not override the restrictions of your user mask.
+.LP
+\fIop\fP is one of:
+.ta +.5i
+.nf
+\fB+\fP	to add the \fIpermission\fP 
+\fB\-\fP	to remove the \fIpermission\fP 
+\fB=\fP	to assign the permission explicitly (all other bits for that category, owner, group, or others, will be reset).
+.fi
+.LP
+\fIpermission\fP is any combination of:
+.ta +.5i
+.nf
+\fBr\fP	read
+\fBw\fP	write
+\fBx\fP	execute
+\fBX\fP	give execute permission if the file is a directory or if there is execute permission for one of the other user classes
+\fBs\fP	set owner- or group-ID.  This is only useful with \fBu\fP or \fBg\fP.
+\fBt\fP	set the sticky bit to save program text between processes.
+.fi
+.IP
+The letters \fBu\fP, \fBg\fP, or \fBo\fP indicate that \fIpermission\fP
+is to be taken from the current mode for the user-class.
+.IP
+Omitting \fIpermission\fP
+is only useful with \fB=\fP, to take away all permissions.
+.LP
+Multiple symbolic modes, separated by commas, may be given.
+Operations are performed in the order specified.  
+.SH SYSTEM V DESCRIPTION
+If
+.I who
+is omitted in a symbolic mode, it does not take the file creation mask into
+account, but acts as if
+.I who
+were
+.BR a .
+The
+.B \-f
+and
+.B \-R
+flags do not apply.
+.SH OPTIONS
+.TP
+.B \-f
+Force.
+.I chmod
+will not complain if it fails to change the mode of a file.
+.TP
+.B \-R
+recursively descend through directory arguments,
+setting the mode for each file as described above.
+.SH EXAMPLES
+The first example denies write permission to others,
+the second makes a file executable by all if it is executable by anyone:
+.IP
+\fLchmod o\-w file
+.br
+chmod +X file\fR
+.SH "SEE ALSO"
+ls(1), sh(1), csh(1), chmod(2), chown(8)

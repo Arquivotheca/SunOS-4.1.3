@@ -1,0 +1,264 @@
+#
+# @(#)rc.local 1.1 92/07/30 SMI; from UCB 4.27 83/07/06
+#
+PATH=/bin:/usr/bin:/usr/etc:/usr/ucb; export PATH
+
+#
+# The file "/etc/.UNCONFIGURED" exists on machines shipped from the
+# factory.  We use this file here in order to run configuration programs
+# at the time a machine is booted for the first time.  The configuration
+# programs are responsible for deleting this file after they have
+# completed configuring the system.  These configure programs may halt
+# or reboot the system.
+#
+#
+LC="/usr/etc/install/run_configure"
+NC="/usr/etc/install/sysIDtool"
+
+#
+# Start the RPC portmapper.
+#
+if [ -f /usr/etc/portmap ]; then
+	portmap;		echo 'starting rpc port mapper.'
+fi
+
+if [ -f /etc/.UNCONFIGURED ]; then
+	if [ -f ${NC} ]; then
+		#
+		# run sysidtool to try and configure this system
+		# from the network
+		#
+		intr ${NC}
+		if [ $? = 0 ]; then
+			echo "System configured from network successfully."
+			intr /usr/etc/install/sys_rootpasswd
+		else
+			# sysidtool failed to configure this system,
+			# run sys-config
+			if [ -f ${LC} ]; then
+				intr ${LC}
+			fi
+		fi
+	else
+		# 
+		# run sys-config to configure system
+		#
+		if [ -f ${LC} ]; then
+			intr ${LC}
+		fi
+	fi
+	#
+	# re-run tzsetup since configuration program probably changed timezone
+	#
+	tzsetup
+fi
+
+
+#
+# set NIS domainname if locally configured.
+#
+if [ -f /etc/defaultdomain ]; then
+	domainname `cat /etc/defaultdomain`
+fi
+
+#
+# Run NIS only if we have a set domainname. 
+#
+dname=`domainname`
+if [ "$dname" -a -d /var/yp ]; then
+	echo "NIS domainname is $dname"
+	echo -n "starting NIS services:"
+
+	if [ -f /usr/etc/ypserv -a -d /var/yp/$dname ]; then
+		ypserv;		echo -n ' ypserv'
+#
+#		Master NIS server runs the XFR daemon
+#
+#		ypxfrd;		echo -n ' ypxfrd'
+	fi
+
+	if [ -f /etc/security/passwd.adjunct ]; then
+		ypbind -s;	echo -n ' ypbind'
+	else
+		ypbind;		echo -n ' ypbind'
+	fi
+
+	if [ -f /usr/etc/rpc.ypupdated -a -d /var/yp/$dname ]; then
+		rpc.ypupdated;	echo -n ' ypupdated'
+	fi
+	echo '.'
+fi
+
+if [ -f /usr/etc/keyserv ]; then
+	keyserv;		echo 'starting RPC key server.'
+fi
+
+# set the netmask from NIS if running, or /etc/netmasks for all ether interfaces
+
+ifconfig -a netmask + broadcast + > /dev/null
+
+#
+# Try to add a default route again, now that "/usr" is mounted and NIS
+# is running.
+#
+if [ ! -f /sbin/route -a -f /etc/defaultrouter ]; then
+	route -f add default `cat /etc/defaultrouter` 1
+fi
+
+#
+# all interfaces are completely configured now.  print it out for posterity.
+#
+echo "network interface configuration:"
+ifconfig -a
+
+#
+# set up gt graphics accelerator
+#
+if [ -f /usr/etc/gtconfig ]; then
+	 /usr/etc/gtconfig
+	fi
+
+# If we are a diskless client, synchronize time-of-day with the server.
+#
+server=`grep ":.*[	 ][	 ]*/[	 ]" /etc/fstab | sed -e "/^#/d" -e "s/:.*//"`
+if [ "$server" ]; then
+	intr -a rdate $server
+fi
+
+#
+# Run routed only if we don't already have a default route installed.
+#
+defroute="`netstat -n -r | grep default`"
+if [ -z "$defroute" ]; then
+	if [ -f /usr/etc/in.routed ]; then
+		in.routed;	echo 'running routing daemon.'
+	fi
+fi
+
+#
+# The following will mount /tmp if set up in /etc/fstab.  If you want to use
+# the anonymous memory based file system, have an fstab entry of the form:
+# 	swap	/tmp	tmp rw 0 0
+# Make sure that option TMPFS is configured in the kernel
+# (consult the System and Network Administration Manual).
+#
+# mount /tmp
+
+intr -a mount -vat nfs
+
+echo -n 'starting additional services:'
+
+if [ -f /usr/etc/in.named -a -f /etc/named.boot ]; then
+	in.named;		echo -n ' named'
+fi
+
+if [ -f /usr/etc/biod ]; then
+	biod 4;			echo -n ' biod'
+fi
+
+echo '.'
+
+rm -f /tmp/t1
+dmesg | grep SunOS | tail -1 | sed -e "s/^.*SunOS/SunOS/" >/tmp/t1
+tail +2 /etc/motd >>/tmp/t1
+mv /tmp/t1 /etc/motd
+chmod 666 /etc/motd
+
+# syslogd doesn't belong here, but needs to be started before the others.
+# It needs to be started after NIS, though, so it can find the "syslog"
+# udp service.
+if [ -f /usr/etc/syslogd ]; then
+	echo 'starting system logger'
+	rm -f /dev/log
+	syslogd
+fi
+
+#
+# Default is to not do a savecore
+#
+# mkdir -p /var/crash/`hostname`
+# echo -n 'checking for crash dump... '
+# intr savecore /var/crash/`hostname`
+# echo ''
+
+if [ -f /dev/sky ]; then
+	skyrc /usr/lib/sky.ucode
+fi
+if [ -f /dev/fpa ]; then
+	/usr/etc/fpa/fpa_download -d -r
+fi
+if [ -f /dev/fpa ]; then
+	/usr/etc/fpa/fparel
+fi
+if [ -f /usr/etc/gpconfig ]; then
+	/usr/etc/gpconfig -f -b
+fi
+if [ -f /dev/dialbox ]; then
+	dbconfig /dev/dialbox
+fi
+
+echo -n 'starting local daemons:'
+if [ -f /usr/etc/auditd ]; then
+	auditd;			echo -n ' auditd'
+fi
+if [ -f /usr/lib/sendmail -a -f /etc/sendmail.cf ]; then
+	(cd /var/spool/mqueue; rm -f nf* lf*)
+	/usr/lib/sendmail -bd -q1h; echo -n ' sendmail'
+fi
+if [ -d /tftpboot -a -f /tftpboot/sun2.bb ]; then
+	ndbootd;		echo -n ' ndbootd'
+fi
+
+#
+# if /etc/exports file exists become nfs server
+#
+if [ -f /etc/exports ]; then
+	> /etc/xtab
+	exportfs -a
+	nfsd 8 &		echo -n ' nfsd'
+	if [ -f /etc/security/passwd.adjunct ]; then
+		# Warning! Turning on port checking may deny access to
+		# older versions (pre-3.0) of NFS clients.
+		rpc.mountd
+		echo "nfs_portmon/W1" | adb -w /vmunix /dev/kmem >/dev/null 2>&1
+	else
+		rpc.mountd -n
+	fi
+fi
+
+#
+# if /tftpboot exists become a boot server
+#
+if [ -d /tftpboot ]; then
+	rarpd -a;		echo -n ' rarpd'
+	rpc.bootparamd; 	echo -n ' bootparamd'
+fi
+
+#
+# start up status monitor and locking daemon if present
+#
+if [ -f /usr/etc/rpc.statd ]; then
+	rpc.statd &		echo -n ' statd'
+fi
+if [ -f /usr/etc/rpc.lockd ]; then
+	rpc.lockd &		echo -n ' lockd'
+fi
+#
+# start up authentication daemon if present and if adjunct file exists
+#
+if [ -f /usr/etc/rpc.pwdauthd -a -f /etc/security/passwd.adjunct ]; then
+	rpc.pwdauthd &		echo -n ' pwdauthd'
+fi
+#
+# start up the automounter
+#
+if [ -f /usr/etc/automount ]; then
+	automount && 		echo -n ' automount'
+fi
+				echo '.'
+#
+# Build the link-editor fast directory cache.
+#
+if [ -f /usr/etc/ldconfig ]; then
+	ldconfig; echo "link-editor directory cache"
+fi

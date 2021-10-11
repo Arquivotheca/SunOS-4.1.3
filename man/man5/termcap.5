@@ -1,0 +1,1151 @@
+'\" t
+.\" @(#)termcap.5 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.hw trans-parently
+.TH TERMCAP 5 "16 February 1988"
+.SH NAME
+termcap \- terminal capability data base
+.SH DESCRIPTION
+.IX  "termcap file"  ""  "\fLtermcap\fP \(em terminal capability data base"
+.LP
+.B termcap
+is a data base describing the capabilities of terminals.
+Terminals are described in
+.B termcap
+source descriptions
+by giving a set of capabilities which they have, by describing
+how operations are performed, by describing
+padding requirements, and by specifying initialization sequences.
+This database is used by applications programs such as
+.BR vi (1),
+and libraries such as
+.BR curses (3V),
+so they can work with a variety of terminals
+without changes to the programs.
+.LP
+Each
+.B termcap
+entry consist of a number of colon-separated
+.RB ( : ) 
+fields.  The first field for each terminal lists the various names by
+which it is known, separated by bar ( | ) characters.  The first name is
+always two characters long, and is used by older (version 6) systems
+(which store the terminal type in a 16-bit word in a system-wide
+database).  The second name given is the most common abbreviation for
+the terminal (this is the one to which the environment variable
+.SB TERM
+would normally be set).
+The last name should fully identify the terminal's make
+and model.  All other names are taken as synonyms for the initial
+terminal name.  All names but the first and last should be in lower
+case and contain no blanks; the last name may well contain upper case
+and blanks for added readability.
+.LP
+Terminal names (except for the last, verbose entry) should be chosen using
+the following conventions:
+.TP 3
+\(bu
+The particular piece of hardware making up the terminal
+should have a root name chosen; for example, for the Hewlett-Packard 2621,
+.BR hp2621 .
+This name should not contain hyphens.
+.TP
+\(bu
+Modes that the hardware can be
+in or user preferences should be indicated by appending a hyphen and
+an indicator of the mode.  Thus, a
+.B vt100
+in 132-column mode would be given as:
+.BR vt100\-w .
+The following suffixes should be used where possible:
+.LP
+.\" ==== troff version ===
+.if n .ig IG
+.RS
+.RS
+.TS
+cfI cfI cfI
+lfB lfR lfB .
+Suffix	Meaning	Example
+.sp .5v
+\-w	 wide mode (more than 80 columns)	vt100\-w
+\-am	with automatic margins (usually default)	vt100\-am
+\-nam	without automatic margins	vt100\-nam
+\-\fIn\fP	number of lines on the screen	aaa\-60
+\-na	no arrow keys (leave them in local)	concept100\-na
+\-\fIn\fPp	number of pages of memory	concept100\-4p
+\-rv	reverse video	concept100\-rv
+.TE
+.RE
+.RE
+.IG
+.\" === end troff version ===
+.\" ==== nroff version ===
+.if t .ig IG
+.TS
+cfI cfI cfI
+lfB lfR lfB .
+Suffix	Meaning	Example
+.sp .5v
+\-w	 wide mode (more than 80 columns)	vt100\-w
+\-am	with automatic margins (usually default)	vt100\-am
+\-nam	without automatic margins	vt100\-nam
+\-\fIn\fP	number of lines on the screen	aaa\-60
+\-na	no arrow keys (leave them in local)	concept100\-na
+\-\fIn\fPp	number of pages of memory	concept100\-4p
+\-rv	reverse video	concept100\-rv
+.TE
+.IG
+.\" === end nroff version ===
+.LP
+Terminal entries may continue onto multiple lines by giving a 
+.B \e
+as the last character of a line, and empty fields
+may be included for readability (here between the last field on a line
+and the first field on the next).
+Comments may be included on lines beginning with 
+.BR # .
+.SS Types of Capabilities
+.LP
+Terminal capabilities each have a two-letter code, and are of three
+types:
+.TP 12
+.I boolean
+These indicate particular features of the terminal.  For instance, an entry
+for a terminal that has automatic margins (an automatic
+.SM RETURN
+and
+.SM LINEFEED
+when the end of a line is reached) would contain a field with the boolean
+capability
+.BR am .
+.TP
+.I numeric
+These give the size of the display of some other attribute.
+Numeric capabilities are followed by the character 
+.RB ` # ',
+and a number.  An entry for a teminal with an 80-column display would
+have a field containing
+.BR co#80 .
+.TP
+.I string
+These indicate the character sequences used to perform particular
+terminal operations.  String-valued capabilities, such as
+.B ce
+(clear-to-end-of-line
+sequence) are given by the two-letter code, followed by the character
+.RB ` = ',
+and a string (which ends at the following
+.B :
+field delimiter).
+.LP
+A delay factor, in milliseconds may appear after
+the
+.RB ` = '.
+Padding characters are supplied by
+.B tputs
+after the remainder of the string is sent.
+The delay can be either a number, or a number followed by
+the character
+.RB ` * ',
+which indicates that the proportional padding is required, in which case
+the number given is the amount of padding for each line affected by an
+operation using that capability.
+(In the case of an insert-character operation,
+the factor is still the number of
+.I lines
+affected; this is always 1 unless the terminal has
+.B in
+and the software uses it.)
+.LP
+When a 
+.B *
+is specified, it is sometimes useful to give a delay of the form
+.B 3.5
+to specify a delay per line to tenths of milliseconds.
+(Only one decimal place is allowed.)
+.SS Comments
+.LP
+To comment-out a capability field, insert a
+.RB ` . '
+(period) as the first character in that field (following the 
+.BR : ).
+.SS Escape Sequence Codes
+A number of escape sequences are provided in the string-valued capabilities
+for easy encoding of characters there:
+.RS
+.TP
+.B \eE
+.PD 0
+maps to
+.SM ESC
+.TP
+.B ^X
+maps to 
+.SM CTRL-\fIX\fR
+for any appropriate character
+.I X
+.TP
+.B \en
+maps to
+.SM LINEFEED
+.TP
+.B \er
+maps to
+.SM RETURN
+.TP
+.B \et
+maps to
+.SM TAB
+.TP
+.B \eb
+maps to
+.SM BACKSPACE
+.TP
+.B \ef
+maps to
+.SM FORMFEED
+.PD
+.RE
+.LP
+Finally, characters may be given as three octal digits after a
+backslash (for example,
+.BR \e123 ),
+and the characters
+.B ^
+(caret)
+and
+.B \e
+(backslash)
+may be given as
+.B \e^
+and
+.B \e\e
+respectively.
+.LP
+If it is necessary to place a
+.B :
+in a capability it must be escaped in octal as
+.BR \e072 .
+.LP
+If it is necessary to place a
+.SM NUL
+character in a string capability it
+must be encoded as
+.BR \e200 .
+(The routines that deal with
+.B termcap
+use C strings and strip the high bits of the output very late, so that a
+.B \e200
+comes out as a
+.BR \e000
+would.)
+.SS Parameterized Strings
+.LP
+Cursor addressing and other strings requiring parameters are described
+by a parameterized string capability, with 
+.BR printf (3V)-like
+escapes
+.RB ( %\fIx\fP\| )
+in it; other characters are passed through unchanged.
+For example, to address the cursor, the
+.B cm
+capability is given, using two parameters: the row and column to move
+to.  (Rows and columns are numbered from zero and refer to the
+physical screen visible to the user, not to any unseen memory.
+If the terminal has memory-relative cursor addressing,
+that can be indicated by an analogous
+.SB CM
+capability.)
+.LP
+The
+.B %
+escapes have the following meanings:
+.RS
+.\" === troff version ===
+.if n .ig IG
+.TS
+lfB   l   .
+.sp .5v
+%%	produce the character \fB%\fR
+%d	output \fIvalue\fR as in \fBprintf \fB%d\fR
+%2	output \fIvalue\fR as in \fBprintf \fB%2d\fR
+%3	output \fIvalue\fR as in \fBprintf \fB%3d\fR
+%.	output \fIvalue\fR as in \fBprintf \fB%c\fR
+%+\fIx\fP	add \fIx\fP to \fIvalue\fR, then do `\fB%\fR.'
+%>\fIxy\fP	if \fIvalue\fR > \fIx\fP then add \fIy\fP, no output
+%r	reverse order of two parameters, no output
+%i	increment by one, no output
+%n	exclusive-or all parameters with 0140 (Datamedia 2500)
+%B	\s-1BCD\s0 (16*(\fIvalue\fR/10)) + (\fIvalue\fR%10), no output
+%D	Reverse coding (\fIvalue\fR \- 2*(\fIvalue\fR%16)), no output (Delta Data)
+.TE
+.RE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.TS
+lfB   l   .
+.sp .5v
+%%	produce the character \fB%\fR
+%d	output \fIvalue\fR as in \fBprintf \fB%d\fR
+%2	output \fIvalue\fR as in \fBprintf \fB%2d\fR
+%3	output \fIvalue\fR as in \fBprintf \fB%3d\fR
+%.	output \fIvalue\fR as in \fBprintf \fB%c\fR
+%+\fIx\fP	add \fIx\fP to \fIvalue\fR, then do `\fB%\fR.'
+%>\fIxy\fP	if \fIvalue\fR > \fIx\fP then add \fIy\fP, no output
+%r	reverse order of two parameters, no output
+%i	increment by one, no output
+%n	exclusive-or all parameters with 0140 (Datamedia 
+	2500)
+%B	\s-1BCD\s0 (16*(\fIvalue\fR/10)) + (\fIvalue\fR%10), no output
+%D	Reverse coding (\fIvalue\fR \- 2*(\fIvalue\fR%16)), no output 
+	(Delta Data)
+.TE
+.RE
+.IG
+.\" === end nroff version ===
+.br
+.ne 9
+.LP
+Consider the Hewlett-Packard 2645, which, to get to row 3 and column
+12, needs to be sent 
+.B \eE&a12c03Y
+padded for 6 milliseconds.  Note: the order of the row and column
+coordinates is reversed here and that the row and column are sent as
+two-digit integers.  Thus its
+.B cm
+capability is
+.RB ` :cm=6\eE&%r%2c%2Y: '.
+Terminals that use 
+.RB ` %. '
+need to be able to backspace the cursor
+.RB ( le )
+and to move the cursor up one line on the screen
+.RB ( up ).
+This is necessary because it is not always safe to transmit
+.BR \en ,
+.BR ^D ,
+and
+.BR \er ,
+as the system may change or discard them.
+(Programs using
+.B termcap
+must set terminal modes so that
+.SM TAB
+characters are not expanded, making
+.B \et
+safe to send.
+This turns out to be essential for the Ann Arbor 4080.)
+.LP
+A final example is the Lear Siegler
+.SM ADM\s0\-3a,
+which offsets row and column by a blank character, thus it requires
+.RB ` ":cm=\eE=%+ %+:" '.
+.LP
+Row or column absolute cursor addressing can be given as
+single-parameter capabilities
+.B ch
+(horizontal position absolute) and
+.B cv
+(vertical position absolute).
+Sometimes these are shorter than the more general two-parameter sequence
+(as with the Hewlett-Packard 2645) and can be used in preference to
+.BR cm .
+If there are parameterized local motions
+(for example, move
+.I n
+positions to the right)
+these can be given as
+.BR \s-1DO\s0 ,
+.BR \s-1LE\s0 ,
+.BR \s-1RI\s0 ,
+and
+.SB UP
+with a single parameter indicating how many positions to move.
+These are primarily useful if the terminal does not have
+.BR cm ,
+such as the Tektronix 4025.
+.SS Delays
+.LP
+Certain capabilities control padding in the terminal driver.
+These are primarily needed by hardcopy terminals and are used by the
+.B tset (1)
+program to set terminal driver modes appropriately.
+Delays embedded in the capabilities
+.BR cr ,
+.BR sf ,
+.BR le ,
+.BR ff ,
+and
+.B ta
+will set the appropriate delay bits in the terminal driver.
+If
+.B pb
+(padding baud rate) is given, these values can be ignored at baud rates
+below the value of
+.BR pb .
+For 4.2\s-1BSD\s0
+.BR tset ,
+the delays are given as numeric capabilities
+.BR dC ,
+.BR dN ,
+.BR dB ,
+.BR dF ,
+and
+.BR dT
+instead.
+.SS Similar Terminals
+.LP
+If there are two very similar terminals, one can be defined as being
+just like the other with certain exceptions.  The string capability
+.B tc
+can be given with the name of the similar terminal.
+This capability must be
+.IR last ,
+and the combined length of the entries must not exceed 1024.
+The capabilities given before
+.B tc
+override those in the terminal type invoked by
+.BR tc .
+A capability can be canceled by placing
+.B xx@
+to the left of the
+.B tc
+invocation, where
+.I xx
+is the capability.
+For example, the entry
+.IP
+.B hn\||\|2621\-nl:ks@:ke@:tc=2621:
+.LP
+defines a 
+.B 2621\-nl
+that does not have the
+.B ks
+or
+.B ke
+capabilities,
+hence does not turn on the function key labels when in visual mode.
+This is useful for different modes for a terminal, or for different
+user preferences.
+.\"==============
+.SH CAPABILITIES
+.LP
+The characters in the
+.I Notes
+field in the next table have the following meanings
+(more than one may apply to a capability):
+.LP
+.\" === troff version ===
+.if n .ig IG
+.RS
+.TS
+lfB lfR .
+N	indicates numeric parameter(s)
+P	indicates that padding may be specified
+*	indicates that padding may be based on the number of lines affected
+o	indicates capability is obsolete
+.TE
+.RE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.RS
+.TS
+lfB lfR .
+N	indicates numeric parameter(s)
+P	indicates that padding may be specified
+*	indicates that padding may be based on the number of 
+	lines affected
+o	indicates capability is obsolete
+.TE
+.RE
+.IG
+.\" === end nroff version ===
+.LP
+Obsolete capabilities have no
+.B terminfo
+equivalents,
+since they were considered useless, or are subsumed by other
+capabilities.  New software should not rely on them.
+.LP
+.\" === troff version ===
+.if n .ig IG
+.RS
+.TS
+cfI cfI cfI lfI
+lfB cfI cfI lfR .
+Name	Type	Notes	Description
+.sp .5v
+.ps -1
+.vs -1
+!1	str		sent by shifted save key
+!2	str		sent by shifted suspend key
+!3	str		sent by shifted undo key
+#1	str		sent by shifted help key
+#2	str		sent by shifted home key
+#3	str		sent by shifted input key
+#4	str		sent by shifted left-arrow key
+%0	str		sent by redo key
+%1	str		sent by help key
+%2	str		sent by mark key
+%3	str		sent by message key
+%4	str		sent by move key
+%5	str		sent by next-object key
+%6	str		sent by open key
+%7	str		sent by options key
+%8	str		sent by previous-object key
+%9	str		sent by print or copy key
+%a	str		sent by shifted message key
+%b	str		sent by shifted move key
+%c	str		sent by shifted next-object key
+%d	str		sent by shifted options key
+%e	str		sent by shifted previous-object key
+%f	str		sent by shifted print or copy key
+%g	str		sent by shifted redo key
+%h	str		sent by shifted replace key
+%i	str		sent by shifted right-arrow key
+%j	str		sent by shifted resume key
+&0	str		sent by shifted cancel key
+&1	str		sent by ref(erence) key
+&2	str		sent by refresh key
+&3	str		sent by replace key
+&4	str		sent by restart key
+&5	str		sent by resume key
+&6	str		sent by save key
+&7	str		sent by suspend key
+&8	str		sent by undo key
+&9	str		sent by shifted beg(inning) key
+*0	str		sent by shifted find key
+*1	str		sent by shifted cmd (command) key
+*2	str		sent by shifted copy key
+*3	str		sent by shifted create key
+*4	str		sent by shifted delete-char key
+*5	str		sent by shifted delete-line key
+*6	str		sent by select key
+*7	str		sent by shifted end key
+*8	str		sent by shifted clear-line key
+*9	str		sent by shifted exit key
+5i	bool		printer will not echo on screen
+@0	str		sent by find key
+@1	str		sent by beg(inning) key
+@2	str		sent by cancel key
+@3	str		sent by close key
+@4	str		sent by cmd (command) key
+@5	str		sent by copy key
+@6	str		sent by create key
+@7	str		sent by end key
+@8	str		sent by enter/send key (unreliable)
+@9	str		sent by exit key
+AL	str	(NP*)	add \fIn\fP new blank lines
+CC	str		terminal settable command character in prototype
+CM	str	(NP)	memory-relative cursor motion to row \fIm\fP, column \fIn\fP
+DC	str	(NP*)	delete \fIn\fP characters
+DL	str	(NP*)	delete \fIn\fP lines
+DO	str	(NP*)	move cursor down \fIn\fP lines
+EP	bool	(o)	even parity
+F1-F9	str		sent by function keys 11-19
+FA-FZ	str		sent by function keys 20-45
+Fa-Fr	str		sent by function keys 46-63
+HC	bool		cursor is hard to see
+HD	bool	(o)	half-duplex
+IC	str	(NP*)	insert \fIn\fP blank characters
+K1	str		sent by keypad upper left
+K2	str		sent by keypad center
+K3	str		sent by keypad upper right
+K4	str		sent by keypad lower left
+K5	str		sent by keypad lower right
+LC	bool	(o)	lower-case only
+LE	str	(NP)	move cursor left \fIn\fP positions
+LF	str	(P)	turn off soft labels
+LO	str	(P)	turn on soft labels
+MC	str	(P)	clear left and right soft margins
+ML	str	(P)	set soft left margin
+MR	str	(P)	set soft right margin
+NL	bool	(o)	\fB\en\fP is NEWLINE, not LINEFEED
+NP	bool		pad character does not exist
+NR	bool		\fBti\fP does not reverse \fBte\fP
+Nl	num		number of labels on screen (start at 1)
+OP	bool	(o)	odd parity
+RA	str	(P)	turn off automatic margins
+RF	str		send next input character (for ptys)
+RI	str	(NP)	move cursor right \fIn\fP positions
+RX	str	(P)	turn off xoff/xon handshaking
+SA	str	(P)	turn on automatic margins
+SF	str	(NP*)	scroll forward \fIn\fP lines
+SR	str	(NP*)	scroll backward \fIn\fP lines
+SX	str	(P)	turn on xoff/xon handshaking
+UC	bool	(o)	upper-case only
+UP	str	(NP*)	move cursor up \fIn\fP lines
+XF	str		x-off character (default \s-2DC3\s0)
+XN	str		x-on character (default \s-2DC1\s0)
+ac	str		graphic character set pairs aAbBcC \- def=VT100
+ae	str	(P)	end alternate character set
+al	str	(P*)	add new blank line
+am	bool		terminal has automatic margins
+as	str	(P)	start alternate character set
+bc	str	(o)	backspace if not \fB^H\fP
+bl	str	(P)	audible signal (bell)
+bs	bool	(o)	terminal can backspace with \fB^H\fP
+bt	str	(P)	back-tab
+bw	bool		\fBle\fP (backspace) wraps from column 0 to last column
+cb	str	(P)	clear to beginning of line, inclusive
+cd	str	(P*)	clear to end of display
+ce	str	(P)	clear to end of line
+ch	str	(NP)	set cursor column (horizontal position)
+cl	str	(P*)	clear screen and home cursor
+cm	str	(NP)	screen-relative cursor motion to row \fIm\fP, column \fIn\fP
+co	num		number of columns in a line
+cr	str	(P*)	RETURN
+cs	str	(NP)	change scrolling region to lines \fIm\fP through \fIn\fP (VT100)
+ct	str	(P)	clear all tab stops
+cv	str	(NP)	set cursor row (vertical position)
+dB	num	(o)	milliseconds of \fBbs\fP delay needed (default 0)
+dC	num	(o)	milliseconds of \fBcr\fP delay needed (default 0)
+dF	num	(o)	milliseconds of \fBff\fP delay needed (default 0)
+dN	num	(o)	milliseconds of \fBnl\fP delay needed (default 0)
+dT	num	(o)	milliseconds of horizontal tab delay needed (default 0)
+dV	num	(o)	milliseconds of vertical tab delay needed (default 0)
+da	bool		display may be retained above the screen
+db	bool		display may be retained below the screen
+dc	str	(P*)	delete character
+dl	str	(P*)	delete line
+dm	str		enter delete mode
+do	str		down one line
+ds	str		disable status line
+eA	str	(P)	enable graphic character set
+ec	str	(NP)	erase \fIn\fP characters
+ed	str		end delete mode
+ei	str		end insert mode
+eo	bool		can erase overstrikes with a blank
+es	bool		escape can be used on the status line
+ff	str	(P*)	hardcopy terminal page eject
+fs	str		return from status line
+gn	bool		generic line type (for example dialup, switch)
+hc	bool		hardcopy terminal
+hd	str		half-line down (forward 1/2 linefeed)
+ho	str	(P)	home cursor
+hs	bool		has extra \*(lqstatus line\*(rq
+hu	str		half-line up (reverse 1/2 linefeed)
+hz	bool		cannot print ~s (Hazeltine)
+i1	str		terminal initialization string (\fBterminfo\fP only)
+i3	str		terminal initialization string (\fBterminfo\fP only)
+iP	str		pathname of program for initialization (\fBterminfo\fP only)
+ic	str	(P*)	insert character
+if	str		name of file containing initialization string
+im	str		enter insert mode
+in	bool		insert mode distinguishes nulls
+ip	str	(P*)	insert pad after character inserted
+is	str		terminal initialization string
+it	num		tab stops initially every \fIn\fP positions
+k0-k9	str		sent by function keys 0-9
+k;	str		sent by function key 10
+kA	str		sent by insert-line key
+kB	str		sent by back-tab key
+kC	str		sent by clear-screen or erase key
+kD	str		sent by delete-character key
+kE	str		sent by clear-to-end-of-line key
+kF	str		sent by scroll-forward/down key
+kH	str		sent by home-down key
+kI	str		sent by insert-character or enter-insert-mode key
+kL	str		sent by delete-line key
+kM	str		sent by insert key while in insert mode
+kN	str		sent by next-page key
+kP	str		sent by previous-page key
+kR	str		sent by scroll-backward/up key
+kS	str		sent by clear-to-end-of-screen key
+kT	str		sent by set-tab key
+ka	str		sent by clear-all-tabs key
+kb	str		sent by backspace key
+kd	str		sent by down-arrow key
+ke	str		out of \*(lqkeypad transmit\*(rq mode
+kh	str		sent by home key
+kl	str		sent by left-arrow key
+km	bool		has a \*(lqmeta\*(rq key (shift, sets parity bit)
+kn	num	(o)	number of function (\fBk0\fP\-\fBk9\fP) keys (default 0)
+ko	str	(o)	termcap entries for other non-function keys
+kr	str		sent by right-arrow key
+ks	str		put terminal in \*(lqkeypad transmit\*(rq mode
+kt	str		sent by clear-tab key
+ku	str		sent by up-arrow key
+l0-l9	str		labels on function keys 0-9 if not f0-f9
+la	str		label on function key 10 if not f10
+le	str	(P)	move cursor left one position
+lh	num		number of rows in each label
+li	num		number of lines on screen or page
+ll	str		last line, first column
+lm	num		lines of memory if > \fBli\fP (0 means varies)
+lw	num		number of columns in each label
+ma	str	(o)	arrow key map (used by \fIvi\fP version 2 only)
+mb	str		turn on blinking attribute
+md	str		turn on bold (extra bright) attribute
+me	str		turn off all attributes
+mh	str		turn on half-bright attribute
+mi	bool		safe to move while in insert mode
+mk	str		turn on blank attribute (characters invisible)
+ml	str	(o)	memory lock on above cursor
+mm	str		turn on \*(lqmeta mode\*(rq (8th bit)
+mo	str		turn off \*(lqmeta mode\*(rq
+mp	str		turn on protected attribute
+mr	str		turn on reverse-video attribute
+ms	bool		safe to move in standout modes
+mu	str	(o)	memory unlock (turn off memory lock)
+nc	bool	(o)	no correctly-working \fBcr\fP (Datamedia 2500, Hazeltine 2000)
+nd	str		non-destructive space (cursor right)
+nl	str	(o)	NEWLINE character if not \fB\\n\fP
+ns	bool	(o)	terminal is a \s-1CRT\s0 but does not scroll
+nw	str	(P)	NEWLINE (behaves like \fBcr\fP followed by \fBdo\fP)
+nx	bool		padding will not work, xoff/xon required
+os	bool		terminal overstrikes
+pO	str	(N)	turn on the printer for \fIn\fP bytes
+pb	num		lowest baud where delays are required
+pc	str		pad character (default \s-2NUL\s0)
+pf	str		turn off the printer
+pk	str		program function key \fIn\fP to type string \fIs\fP (\fBterminfo\fP only)
+pl	str		program function key \fIn\fP to execute string \fIs\fP (\fBterminfo\fP only)
+pn	str	(NP)	program label \fIn\fP to show string \fIs\fP (\fBterminfo\fP only)
+po	str		turn on the printer
+ps	str		print contents of the screen
+pt	bool	(o)	has hardware tab stops (may need to be set with \fBis\fP)
+px	str		program function key \fIn\fP to transmit string \fIs\fP (\fBterminfo\fP only)
+r1	str		reset terminal completely to sane modes (\fBterminfo\fP only)
+r2	str		reset terminal completely to sane modes (\fBterminfo\fP only)
+r3	str		reset terminal completely to sane modes (\fBterminfo\fP only)
+rP	str	(P)	like \fBip\fP but when in replace mode
+rc	str	(P)	restore cursor to position of last \fBsc\fP
+rf	str		name of file containing reset string
+ri	?		unknown at present
+rp	str	(NP*)	repeat character \fIc n\fP times
+rs	str		reset terminal completely to sane modes
+sa	str	(NP)	define the video attributes (9 parameters)
+sc	str	(P)	save cursor position
+se	str		end standout mode
+sf	str	(P)	scroll text up
+sg	num		number of garbage chars left by \fBso\fP or \fBse\fP (default 0)
+so	str		begin standout mode
+sr	str	(P)	scroll text down
+st	str		set a tab stop in all rows, current column
+ta	str	(P)	move cursor to next 8-position hardware tab stop
+tc	str		entry of similar terminal \- must be last
+te	str		string to end programs that use \fBtermcap\fP
+ti	str		string to begin programs that use \fBtermcap\fP
+ts	str	(N)	go to status line, column \fIn\fP
+uc	str		underscore one character and move past it
+ue	str		end underscore mode
+ug	num		number of garbage chars left by \fBus\fP or \fBue\fP (default 0)
+ul	bool		underline character overstrikes
+up	str		upline (cursor up)
+us	str		start underscore mode
+vb	str		visible bell (must not move cursor)
+ve	str		make cursor appear normal (undo \fBvs\fP/\fBvi\fP)
+vi	str		make cursor invisible
+vs	str		make cursor very visible
+vt	num		virtual terminal number (not supported on all systems)
+wi	str	(N)	set current window to lines \fIi\fP through \fIj\fP, columns \fIm\fP through \fIn\fP
+ws	num		number of columns in status line
+xb	bool		Beehive (f1=\s-2ESC\s0, f2=^C)
+xn	bool		NEWLINE ignored after 80 cols (Concept)
+xo	bool		terminal uses xoff/xon handshaking
+xr	bool	(o)	RETURN acts like \fBce cr nl\fP (Delta Data)
+xs	bool		standout not erased by overwriting (Hewlett-Packard)
+xt	bool		TAB characters destructive, magic \fBso\fP char (Teleray 1061)
+xx	bool	(o)	Tektronix 4025 insert-line
+.ps +1
+.vs +1
+.TE
+.RE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.RS
+.TS
+cfI cfI cfI lfI
+lfB cfI cfI lfR .
+Name	Type	Notes	Description
+.sp .5v
+.ps -1
+.vs -1
+!1	str		sent by shifted save key
+!2	str		sent by shifted suspend key
+!3	str		sent by shifted undo key
+#1	str		sent by shifted help key
+#2	str		sent by shifted home key
+#3	str		sent by shifted input key
+#4	str		sent by shifted left-arrow key
+%0	str		sent by redo key
+%1	str		sent by help key
+%2	str		sent by mark key
+%3	str		sent by message key
+%4	str		sent by move key
+%5	str		sent by next-object key
+%6	str		sent by open key
+%7	str		sent by options key
+%8	str		sent by previous-object key
+%9	str		sent by print or copy key
+%a	str		sent by shifted message key
+%b	str		sent by shifted move key
+%c	str		sent by shifted next-object key
+%d	str		sent by shifted options key
+%e	str		sent by shifted previous-object key
+%f	str		sent by shifted print or copy key
+%g	str		sent by shifted redo key
+%h	str		sent by shifted replace key
+%i	str		sent by shifted right-arrow key
+%j	str		sent by shifted resume key
+&0	str		sent by shifted cancel key
+&1	str		sent by ref(erence) key
+&2	str		sent by refresh key
+&3	str		sent by replace key
+&4	str		sent by restart key
+&5	str		sent by resume key
+&6	str		sent by save key
+&7	str		sent by suspend key
+&8	str		sent by undo key
+&9	str		sent by shifted beg(inning) key
+*0	str		sent by shifted find key
+*1	str		sent by shifted cmd (command) key
+*2	str		sent by shifted copy key
+*3	str		sent by shifted create key
+*4	str		sent by shifted delete-char key
+*5	str		sent by shifted delete-line key
+*6	str		sent by select key
+*7	str		sent by shifted end key
+*8	str		sent by shifted clear-line key
+*9	str		sent by shifted exit key
+5i	bool		printer will not echo on screen
+@0	str		sent by find key
+@1	str		sent by beg(inning) key
+@2	str		sent by cancel key
+@3	str		sent by close key
+@4	str		sent by cmd (command) key
+@5	str		sent by copy key
+@6	str		sent by create key
+@7	str		sent by end key
+@8	str		sent by enter/send key (unreliable)
+@9	str		sent by exit key
+AL	str	(NP*)	add \fIn\fP new blank lines
+CC	str		terminal settable command character in 
+			prototype
+CM	str	(NP)	memory-relative cursor motion to row \fIm\fP, 
+			column \fIn\fP
+DC	str	(NP*)	delete \fIn\fP characters
+DL	str	(NP*)	delete \fIn\fP lines
+DO	str	(NP*)	move cursor down \fIn\fP lines
+EP	bool	(o)	even parity
+F1-F9	str		sent by function keys 11-19
+FA-FZ	str		sent by function keys 20-45
+Fa-Fr	str		sent by function keys 46-63
+HC	bool		cursor is hard to see
+HD	bool	(o)	half-duplex
+IC	str	(NP*)	insert \fIn\fP blank characters
+K1	str		sent by keypad upper left
+K2	str		sent by keypad center
+K3	str		sent by keypad upper right
+K4	str		sent by keypad lower left
+K5	str		sent by keypad lower right
+LC	bool	(o)	lower-case only
+LE	str	(NP)	move cursor left \fIn\fP positions
+LF	str	(P)	turn off soft labels
+LO	str	(P)	turn on soft labels
+MC	str	(P)	clear left and right soft margins
+ML	str	(P)	set soft left margin
+MR	str	(P)	set soft right margin
+NL	bool	(o)	\fB\en\fP is NEWLINE, not LINEFEED
+NP	bool		pad character does not exist
+NR	bool		\fBti\fP does not reverse \fBte\fP
+Nl	num		number of labels on screen (start at 1)
+OP	bool	(o)	odd parity
+RA	str	(P)	turn off automatic margins
+RF	str		send next input character (for ptys)
+RI	str	(NP)	move cursor right \fIn\fP positions
+RX	str	(P)	turn off xoff/xon handshaking
+SA	str	(P)	turn on automatic margins
+SF	str	(NP*)	scroll forward \fIn\fP lines
+SR	str	(NP*)	scroll backward \fIn\fP lines
+SX	str	(P)	turn on xoff/xon handshaking
+UC	bool	(o)	upper-case only
+UP	str	(NP*)	move cursor up \fIn\fP lines
+XF	str		x-off character (default \s-2DC3\s0)
+XN	str		x-on character (default \s-2DC1\s0)
+ac	str		graphic character set pairs aAbBcC \- 
+			def=VT100
+ae	str	(P)	end alternate character set
+al	str	(P*)	add new blank line
+am	bool		terminal has automatic margins
+as	str	(P)	start alternate character set
+bc	str	(o)	backspace if not \fB^H\fP
+bl	str	(P)	audible signal (bell)
+bs	bool	(o)	terminal can backspace with \fB^H\fP
+bt	str	(P)	back-tab
+bw	bool		\fBle\fP (backspace) wraps from column 0 to 
+			last column
+cb	str	(P)	clear to beginning of line, inclusive
+cd	str	(P*)	clear to end of display
+ce	str	(P)	clear to end of line
+ch	str	(NP)	set cursor column (horizontal position)
+cl	str	(P*)	clear screen and home cursor
+cm	str	(NP)	screen-relative cursor motion to row 
+			\fIm\fP, column \fIn\fP
+co	num		number of columns in a line
+cr	str	(P*)	RETURN
+cs	str	(NP)	change scrolling region to lines \fIm\fP 
+			through \fIn\fP (VT100)
+ct	str	(P)	clear all tab stops
+cv	str	(NP)	set cursor row (vertical position)
+dB	num	(o)	milliseconds of \fBbs\fP delay needed (default 0)
+dC	num	(o)	milliseconds of \fBcr\fP delay needed (default 0)
+dF	num	(o)	milliseconds of \fBff\fP delay needed (default 0)
+dN	num	(o)	milliseconds of \fBnl\fP delay needed (default 0)
+dT	num	(o)	milliseconds of horizontal tab delay 
+			needed (default 0)
+dV	num	(o)	milliseconds of vertical tab delay 
+			needed (default 0)
+da	bool		display may be retained above the screen
+db	bool		display may be retained below the screen
+dc	str	(P*)	delete character
+dl	str	(P*)	delete line
+dm	str		enter delete mode
+do	str		down one line
+ds	str		disable status line
+eA	str	(P)	enable graphic character set
+ec	str	(NP)	erase \fIn\fP characters
+ed	str		end delete mode
+ei	str		end insert mode
+eo	bool		can erase overstrikes with a blank
+es	bool		escape can be used on the status line
+ff	str	(P*)	hardcopy terminal page eject
+fs	str		return from status line
+gn	bool		generic line type (for example 
+			dialup, switch)
+hc	bool		hardcopy terminal
+hd	str		half-line down (forward 1/2 linefeed)
+ho	str	(P)	home cursor
+hs	bool		has extra \*(lqstatus line\*(rq
+hu	str		half-line up (reverse 1/2 linefeed)
+hz	bool		cannot print ~s (Hazeltine)
+i1	str		terminal initialization string 
+			(\fBterminfo\fP only)
+i3	str		terminal initialization string 
+			(\fBterminfo\fP only)
+iP	str		pathname of program for initialization 
+			(\fBterminfo\fP only)
+ic	str	(P*)	insert character
+if	str		name of file containing 
+			initialization string
+im	str		enter insert mode
+in	bool		insert mode distinguishes nulls
+ip	str	(P*)	insert pad after character inserted
+is	str		terminal initialization 
+			string
+it	num		tab stops initially every 
+			\fIn\fP positions
+k0-k9	str		sent by function keys 0-9
+k;	str		sent by function key 10
+kA	str		sent by insert-line key
+kB	str		sent by back-tab key
+kC	str		sent by clear-screen or erase key
+kD	str		sent by delete-character key
+kE	str		sent by clear-to-end-of-line key
+kF	str		sent by scroll-forward/down key
+kH	str		sent by home-down key
+kI	str		sent by insert-character or 
+			enter-insert-mode key
+kL	str		sent by delete-line key
+kM	str		sent by insert key while in 
+			insert mode
+kN	str		sent by next-page key
+kP	str		sent by previous-page key
+kR	str		sent by scroll-backward/up key
+kS	str		sent by clear-to-end-of-screen key
+kT	str		sent by set-tab key
+ka	str		sent by clear-all-tabs key
+kb	str		sent by backspace key
+kd	str		sent by down-arrow key
+ke	str		out of \*(lqkeypad transmit\*(rq mode
+kh	str		sent by home key
+kl	str		sent by left-arrow key
+km	bool		has a \*(lqmeta\*(rq key (shift, sets 
+			parity bit)
+kn	num	(o)	number of function (\fBk0\fP\-\fBk9\fP) keys 
+			(default 0)
+ko	str	(o)	termcap entries for other 
+			non-function keys
+kr	str		sent by right-arrow key
+ks	str		put terminal in \*(lqkeypad transmit\*(rq 
+			mode
+kt	str		sent by clear-tab key
+ku	str		sent by up-arrow key
+l0-l9	str		labels on function keys 0-9 if not f0-f9
+la	str		label on function key 10 if not f10
+le	str	(P)	move cursor left one position
+lh	num		number of rows in each label
+li	num		number of lines on screen or page
+ll	str		last line, first column
+lm	num		lines of memory if > \fBli\fP (0 means varies)
+lw	num		number of columns in each label
+ma	str	(o)	arrow key map (used by \fIvi\fP version 2 only)
+mb	str		turn on blinking attribute
+md	str		turn on bold (extra bright) attribute
+me	str		turn off all attributes
+mh	str		turn on half-bright attribute
+mi	bool		safe to move while in insert mode
+mk	str		turn on blank attribute (characters 
+			invisible)
+ml	str	(o)	memory lock on above cursor
+mm	str		turn on \*(lqmeta mode\*(rq (8th bit)
+mo	str		turn off \*(lqmeta mode\*(rq
+mp	str		turn on protected attribute
+mr	str		turn on reverse-video attribute
+ms	bool		safe to move in standout modes
+mu	str	(o)	memory unlock (turn off memory lock)
+nc	bool	(o)	no correctly-working \fBcr\fP (Datamedia 
+			2500, Hazeltine 2000)
+nd	str		non-destructive space (cursor right)
+nl	str	(o)	NEWLINE character if not \fB\\n\fP
+ns	bool	(o)	terminal is a \s-1CRT\s0 but does not scroll
+nw	str	(P)	NEWLINE (behaves like \fBcr\fP followed by \fBdo\fP)
+nx	bool		padding will not work, xoff/xon required
+os	bool		terminal overstrikes
+pO	str	(N)	turn on the printer for \fIn\fP bytes
+pb	num		lowest baud where delays are required
+pc	str		pad character (default \s-2NUL\s0)
+pf	str		turn off the printer
+pk	str		program function key \fIn\fP to type string 
+			\fIs\fP (\fBterminfo\fP only)
+pl	str		program function key \fIn\fP to execute string 
+			\fIs\fP (\fBterminfo\fP only)
+pn	str	(NP)	program label \fIn\fP to show string 
+			\fIs\fP (\fBterminfo\fP only)
+po	str		turn on the printer
+ps	str		print contents of the screen
+pt	bool	(o)	has hardware tab stops (may need to be 
+			set with \fBis\fP)
+px	str		program function key \fIn\fP to transmit string 
+			\fIs\fP (\fBterminfo\fP only)
+r1	str		reset terminal completely to sane modes 
+			(\fBterminfo\fP only)
+r2	str		reset terminal completely to sane modes 
+			(\fBterminfo\fP only)
+r3	str		reset terminal completely to sane modes 
+			(\fBterminfo\fP only)
+rP	str	(P)	like \fBip\fP but when in replace mode
+rc	str	(P)	restore cursor to position of last \fBsc\fP
+rf	str		name of file containing reset string
+ri	?		unknown at present
+rp	str	(NP*)	repeat character \fIc n\fP times
+rs	str		reset terminal completely to sane 
+			modes
+sa	str	(NP)	define the video attributes 
+			(9 parameters)
+sc	str	(P)	save cursor position
+se	str		end standout mode
+sf	str	(P)	scroll text up
+sg	num		number of garbage chars left by 
+			\fBso\fP or \fBse\fP (default 0)
+so	str		begin standout mode
+sr	str	(P)	scroll text down
+st	str		set a tab stop in all rows, current 
+			column
+ta	str	(P)	move cursor to next 8-position hardware 
+			tab stop
+tc	str		entry of similar terminal \- must be last
+te	str		string to end programs that use \fBtermcap\fP
+ti	str		string to begin programs that use \fBtermcap\fP
+ts	str	(N)	go to status line, column \fIn\fP
+uc	str		underscore one character and move past it
+ue	str		end underscore mode
+ug	num		number of garbage chars left by \fBus\fP or 
+			\fBue\fP (default 0)
+ul	bool		underline character overstrikes
+up	str		upline (cursor up)
+us	str		start underscore mode
+vb	str		visible bell (must not move cursor)
+ve	str		make cursor appear normal (undo \fBvs\fP/\fBvi\fP)
+vi	str		make cursor invisible
+vs	str		make cursor very visible
+vt	num		virtual terminal number (not supported 
+			on all systems)
+wi	str	(N)	set current window to lines \fIi\fP 
+			through \fIj\fP, columns \fIm\fP through \fIn\fP
+ws	num		number of columns in status line
+xb	bool		Beehive (f1=\s-2ESC\s0, f2=^C)
+xn	bool		NEWLINE ignored after 80 cols (Concept)
+xo	bool		terminal uses xoff/xon handshaking
+xr	bool	(o)	RETURN acts like \fBce cr nl\fP (Delta Data)
+xs	bool		standout not erased by overwriting 
+			(Hewlett-Packard)
+xt	bool		TAB characters destructive, magic \fBso\fP char 
+			(Teleray 1061)
+xx	bool	(o)	Tektronix 4025 insert-line
+.ps +1
+.vs +1
+.TE
+.RE
+.IG
+.\" === end nroff version ====
+.\"===================
+.SH ENVIRONMENT
+.LP
+If the environment variable
+.SB TERMCAP
+contains an absolute pathname,
+programs look to that file for terminal descriptions, rather than
+.BR /usr/share/lib/termcap .
+If the value of this variable is in the form of a
+.B termcap
+entry, programs use that value for the
+terminal description.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/share/lib/termcap
+file containing terminal descriptions
+.PD
+.SH SEE ALSO
+.BR ex (1),
+.BR more (1),
+.BR tset (1),
+.BR ul (1),
+.BR vi (1),
+.BR curses (3V),
+.BR printf (3V),
+.BR termcap (3X),
+.BR term (5V),
+.BR terminfo (5V)
+.LP
+.TX ADMIN
+.SH WARNINGS
+.LP
+.SM UNIX
+System V uses
+.BR terminfo (5V)
+rather than
+.BR termcap .
+Sun\s-1OS\s0 supports either
+.B termcap 
+or
+.BR terminfo (5V)
+terminal databases, depending on whether you link with the
+.BR termcap (3X)
+or
+.BR curses (3V)
+libraries.
+Transitions between the two should be relatively painless if capabilities
+flagged as \*(lqobsolete\*(rq are avoided.
+.LP
+.B vi
+allows only 256 characters for string capabilities, and the routines in 
+.BR termcap (3X)
+do not check for overflow of this buffer.
+The total length of a single entry (excluding only escaped
+.SM NEWLINE
+characters) may not exceed 1024.
+.LP
+Not all programs support all entries.

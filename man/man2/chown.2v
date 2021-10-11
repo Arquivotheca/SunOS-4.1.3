@@ -1,0 +1,250 @@
+.\" @(#)chown.2v 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH CHOWN 2V "21 January 1990"
+.SH NAME
+chown, fchown \- change owner and group of a file
+.SH SYNOPSIS
+.nf
+.ft B
+int chown(path, owner, group)
+char \(**path;
+int owner;
+int group;
+.sp .5
+int fchown(fd, owner, group)
+int fd;
+int owner;
+int group;
+.fi
+.ft
+.SH SYSTEM V SYNOPSIS
+.nf
+.ft B
+#include <sys/types.h>
+.sp .5
+int chown(path, owner, group)
+char \(**path;
+uid_t owner;
+gid_t group;
+.ft
+.fi
+.IX  chown()  ""  \fLchown()\fP
+.IX  "file system"  chown()  ""  \fLchown()\fP
+.IX  fchown()  ""  \fLfchown()\fP
+.IX  "file system"  fchown()  ""  \fLfchown()\fP
+.IX  "change" "owner and group of file \(em \fLchown()\fR"
+.SH DESCRIPTION
+.LP
+The file that is named by
+.I path
+or referenced by
+.I fd
+has its
+.I owner
+and
+.I group
+changed as specified.  Only the super-user
+may change the owner of the file,
+because if users were able to give files away,
+they could defeat the file-space accounting procedures
+(see
+.SM NOTES\s0).
+The owner of the file may change the group
+to a group of which he is a member.
+The super-user may change the group
+arbitrarily.
+.LP
+.B fchown(\|)
+is particularly useful when used in conjunction
+with the file locking primitives (see
+.BR flock (2)).
+.LP
+If
+.I owner
+or
+.I group
+is specified as \-1, the corresponding
+.SM ID
+of the file is not changed.
+.LP
+If a process whose effective user
+.SM ID
+is not super-user successfully
+changes the group
+.SM ID
+of a file, the set-user-\s-1ID\s0 and set-group-\s-1ID\s0
+bits of the file mode,
+.SB S_ISUID
+and
+.SB S_ISGID
+respectively
+(see
+.BR stat (2V)),
+will be cleared.
+.LP
+If the final component of
+.I path
+is a symbolic link,
+the ownership and group of the symbolic link is changed,
+not the ownership and group of the file or directory to which it points.
+.SH RETURN VALUES
+.B chown(\|)
+and
+.B fchown(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B chown(\|)
+will fail and the file will be unchanged if:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.SM EFAULT
+.I path
+points outside the process's allocated address space.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.TP
+.SM EPERM
+The user
+.SM ID
+specified by
+.I owner
+is not the current owner
+.SM ID
+of the file
+.IP
+The group
+.SM ID
+specified by
+.I group
+is not the current group
+.SM ID
+of the file and is not in the process'
+supplementary group \s-1ID\s0s, and the effective user
+.SM ID
+is not the super-user.
+.TP
+.SM EROFS
+The file referred to by
+.I path
+resides on a read-only file system.
+.LP
+.B fchown(\|)
+will fail if:
+.TP 20
+.SM EBADF
+.I fd
+does not refer to a valid descriptor.
+.TP
+.SM EINVAL
+.I fd
+refers to a socket, not a file.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM EPERM
+The user
+.SM ID
+specified by
+.I owner
+is not the current owner
+.SM ID
+of the file.
+.IP
+The group
+.SM ID
+specified by
+.I group
+is not the current group
+.SM ID
+of the file and is not in the
+supplementary group \s-1ID\s0s, and the effective user
+.SM ID
+is not the super-user.
+.TP
+.SM EROFS
+The file referred to by
+.I fd
+resides on a read-only file system.
+.SH SYSTEM V ERRORS
+.LP
+In addition to the above, the following may also occur:
+.TP 20
+.SM ENOENT
+.I path
+points to an empty string.
+.SH "SEE ALSO"
+.BR chmod (2V),
+.BR flock (2)
+.SH NOTES
+.LP
+For
+.B chown(\|)
+to behave as described above,
+.SM {_POSIX_CHOWN_RESTRICTED}
+must be in effect (see
+.BR pathconf (2V)).
+.SM {_POSIX_CHOWN_RESTRICTED}
+is always in effect
+on SunOS systems, but for portability, applications should call
+.B pathconf(\|)
+to determine whether
+.SM {_POSIX_CHOWN_RESTRICTED}
+is in effect for
+.IR path .
+.LP
+If
+.SM {_POSIX_CHOWN_RESTRICTED}
+is in effect for the file system on which the file referred to by
+.I path
+or
+.I fd
+resides,
+only the super-user may change the owner of the file.
+Otherwise, processes with effective user
+.SM ID
+equal to the file owner or super-user may change the owner of the file.

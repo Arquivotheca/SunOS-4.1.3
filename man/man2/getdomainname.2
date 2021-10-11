@@ -1,0 +1,96 @@
+.\" @(#)getdomainname.2 1.1 92/07/30 SMI;
+.TH GETDOMAINNAME 2 "21 January 1990"
+.SH NAME
+getdomainname, setdomainname \- get/set name of current domain
+.SH SYNOPSIS
+.nf
+.ft B
+int getdomainname(name, namelen)
+char \(**name;
+int namelen;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setdomainname(name, namelen)
+char \(**name;
+int namelen;
+.ft
+.fi
+.SH DESCRIPTION
+.IX  getdomainname()  ""  "\fLgetdomainname()\fP \(em get process domain"
+.IX  "processes and protection"  getdomainname()  ""  \fLgetdomainname()\fP
+.IX  domain  "get name of current \(em \fLgetdomainname()\fR"
+.IX  get "process domain name \(em \fLgetdomainname()\fR"
+.IX  setdomainname()  ""  "\fLsetdomainname()\fP \(em set process domain"
+.IX  "processes and protection"  setdomainname()  ""  \fLsetdomainname()\fP
+.IX  domain  "set name of current \(em \fLsetdomainname()\fR"
+.IX  set "process domain name \(em \fLsetdomainname()\fR"
+.LP
+.B getdomainname(\|)
+returns the name of the domain for the current processor, as previously
+set by
+.BR setdomainname .
+The parameter
+.I namelen
+specifies the size of the array pointed to by
+.IR name .
+The returned name is null-terminated unless insufficient space
+is provided.
+.LP
+.B setdomainname(\|)
+sets the domain of the host machine to be
+.IR name ,
+which has length
+.IR namelen .
+This call is restricted to the super-user and is normally used only
+when the system is bootstrapped.
+.LP
+The purpose of domains is to enable two distinct networks that may have
+host names in common to merge.
+Each network would be distinguished by
+having a different domain name.
+At the current time, only the 
+Network Information Service
+(\s-1NIS\s0)
+and
+.BR sendmail (8)
+make use of domains.
+.SH RETURN VALUES
+.LP
+.B getdomainname(\|)
+and
+.B setdomainname(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EFAULT
+The
+.I name
+parameter gave an invalid address.
+.LP
+In addition to the above,
+.BR setdomainname(\|)
+will fail if:
+.TP 15
+.SM EPERM
+The caller was not the super-user.
+.SH NOTES
+.LP
+Domain names are limited to 64 characters.
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

@@ -1,0 +1,176 @@
+.\" @(#)makedbm.8 1.1 92/07/30 SMI;
+.TH MAKEDBM 8 "9 September 1987"
+.SH NAME
+makedbm \- make a NIS ndbm file
+.SH SYNOPSIS
+.B /usr/etc/yp/makedbm
+[
+.B \-b
+]
+[
+.B \-l
+]
+[
+.B \-s
+]
+[
+.BI \-i " yp_input_file"
+] [
+.BI \-o " yp_output_name"
+]
+.if t .ti +.5i
+[
+.BI \-d " yp_domain_name"
+]
+[
+.BI \-m " yp_master_name"
+]
+.I infile
+.I outfile
+.LP
+.B makedbm
+[
+.BI \-u " dbmfilename"
+]
+.SH DESCRIPTION
+.IX  "makedbm command"  ""  "\fLmakedbm\fP \(em make NIS ndbm file"
+.IX  "create" "NIS ndbm file \(em \fLmakedbm\fP"
+.IX  "YP"  "make ndbm file"  ""  "make ndbm file \(em \fLmakedbm\fP"
+.IX  "NIS"  "make ndbm file"  ""  "make ndbm file \(em \fLmakedbm\fP"
+.LP
+.B makedbm
+takes
+.I infile
+and converts it to a pair of files in
+.BR ndbm (3)
+format, namely
+.IB outfile .pag
+and
+.IB outfile .dir\fR.
+Each line of the input file is converted to a single
+.B dbm
+record.
+All characters up to the first
+.SM TAB
+or
+.SM SPACE
+form the key, and the rest of the line is the data.
+If a line ends with
+.RB ` \e ',
+then the data for that record is continued on to the next line.
+It is left for the clients of the 
+Network Information Service
+(\s-1NIS\s0)
+to interpret
+.BR # ;
+.B makedbm
+does not itself treat it as a comment character.
+.I infile
+can be
+.RB ` \- ',
+in which case the standard input is read.
+.LP
+.B makedbm
+is meant to be used in generating
+.B dbm
+files for the 
+.SM NIS
+service,
+and it generates a special entry with the key
+.IR yp_last_modified ,
+which is the date of
+.I infile
+(or the current time, if
+.I infile
+is
+.RB ` \- ').
+.SH OPTIONS
+.TP
+.B \-b
+Interdomain. 
+Propagate a map to all servers using the interdomain
+name server
+.BR named (8C).
+.TP
+.B \-l
+Lowercase.
+Convert the keys of the given map to lower case, so
+that host name matches, for example, can work independent of upper
+or lower case distinctions.
+.TP
+.B \-s
+Secure map.
+Accept connections from secure 
+.SM NIS
+networks only.
+.TP
+.BI \-i " yp_input_file"
+Create a special entry with the key
+.IR yp_input_file .
+.TP
+.BI \-o " yp_output_name"
+Create a special entry with the key
+.IR yp_output_name .
+.TP
+.BI \-d " yp_domain_name"
+Create a special entry with the key
+.IR yp_domain_name .
+.TP 
+.BI \-m " yp_master_name"
+Create a special entry with the key
+.IR yp_master_name .
+If no master host name is specified,
+.IR yp_master_name
+will be set to the local host name.
+.TP 
+.BI \-u " dbmfilename"
+Undo a
+.B dbm
+file.
+That is, print out a
+.B dbm
+file one entry per line,
+with a single space separating keys from values.
+.SH EXAMPLE
+.LP
+It is easy to write shell scripts
+to convert standard files such as
+.B /etc/passwd
+to the key value form used by
+.BR makedbm .
+For example:
+.LP
+.RS
+.ft B
+.nf
+#!/bin/awk -f
+\s-1BEGIN\s0 { \s-1FS\s0 = ":"; \s-1OFS\s0 = "\et"; }
+{ print $1, $0 }
+.fi
+.ft R
+.RE
+.LP
+takes the
+.B /etc/passwd
+file and converts it to a form that can be read by
+.B makedbm
+to make the 
+.SM NIS
+file
+.BR passwd.byname .
+That is, the key is a username,
+and the value is the remaining line in the
+.B /etc/passwd
+file.
+.SH "SEE ALSO"
+.BR yppasswd (1),
+.BR ndbm (3),
+.BR named (8C)
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.

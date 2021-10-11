@@ -1,0 +1,64 @@
+.\" @(#)time.1 1.1 92/07/30 SMI; from UCB 4.1
+.TH TIME 1  "23 September 1985"
+.SH NAME
+time \- time a command
+.SH SYNOPSIS
+.B time
+[ \fIcommand\fR ]
+.IX  "time command"  ""  "\fLtime\fP \(em time command"
+.IX  "performance monitoring"  time  ""  "\fLtime\fP \(em time command"
+.IX  "programming tools"  time  ""  "\fLtime\fP \(em time command"
+.SH DESCRIPTION
+There are two distinct versions of
+.IR time :
+it is built in to the C-shell, and is an executable program available in
+.I /bin/time
+when using the Bourne shell.
+In both cases, times are displayed on the diagnostic output stream.
+.LP
+In the case of the C-shell, a
+.I time
+command with no
+.I command
+argument simply displays a summary of time used by this shell and its children.
+When arguments are given the specified simple
+.I command
+is timed and the C-shell displays a time summary as described in csh(1).
+.LP
+The
+.I time
+command in `/bin/time' times the given
+.IR command ,
+which must be specified, that is, 
+.I command
+is not optional as it is in the C-shell's timing facility.  When the
+command is complete, 
+.I time
+displays the elapsed time during the command, the time
+spent in the system, and the time spent in execution of the command.
+Times are reported in seconds.
+.SH EXAMPLES
+.LP
+The two examples here show the differences between the \fIcsh\fP version of 
+.I time
+and the version in
+.IR /bin/time .
+The example assumes that \fIcsh\fP is the shell in use.
+.RS
+.nf
+angel% \fBtime wc /usr/man/man1/csh.1\fP
+    1876   11223   65895 /usr/man/man1/csh.1
+2.7u 0.9s 0:03 91% 3+5k 19+2io 1pf+0w
+angel% \fB/bin/time wc /usr/man/man1/csh.1\fP
+    1876   11223   65895 /usr/man/man1/csh.1
+        4.3 real         2.7 user         1.0 sys  
+angel%
+.fi
+.RE
+.SH "SEE ALSO"
+.LP
+csh(1)
+.SH BUGS
+Elapsed time is accurate to the second, while the CPU times are measured
+to the 50th second.  Thus the sum of the CPU times can be up to a second larger
+than the elapsed time.

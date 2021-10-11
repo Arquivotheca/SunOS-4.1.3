@@ -1,0 +1,126 @@
+.\" @(#)syslogd.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1983,1986 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SYSLOGD 8 "13 January 1990"
+.SH NAME
+syslogd \- log system messages
+.SH SYNOPSIS
+.B /usr/etc/syslogd
+[
+.B \-d
+] [
+.BI \-f configfile
+] [
+.BI \-m " interval"
+]
+.SH DESCRIPTION
+.IX  "syslogd"  ""  "\fLsyslogd\fP \(em system log message daemon"
+.IX  "system log daemon \(em \fLsyslog\fR"
+.IX  "log files and system log daemon \(em \fLsyslogd\fR"
+.B syslogd
+reads and forwards system messages to the appropriate log files
+and/or users, depending upon the priority of a message and the
+system facility from which it originates.  The configuration file
+.BR /etc/syslog.conf
+(see
+.BR syslog.conf (5))
+controls where messages are forwarded.
+.B syslogd
+logs a mark 
+.nh
+(timestamp)
+.hy
+message every
+.I interval
+minutes (default 20) at priority
+.SB LOG_INFO
+to the facility whose name is given as
+.B mark
+in the
+.B syslog.conf
+file.
+.LP
+A system message consists of a single line of text, which may be
+prefixed with a priority code number enclosed in angle-brackets
+.RB ( <\|> );
+priorities are defined in
+.BR sys/syslog.h .
+.LP
+.B syslogd
+reads from the
+.SB AF_UNIX
+address family socket
+.BR /dev/log ,
+from an Internet address family socket specified in
+.BR /etc/services ,
+and from the special device
+.B /dev/klog
+(for kernel messages).
+.LP
+.B syslogd
+reads the configuration file when it starts up, and again
+whenever it receives a
+.SM HUP
+signal, at which time it also closes all files it has open,
+re-reads its configuration file, and then opens only the log
+files that are listed in that file.
+.B syslogd
+exits when it receives a
+.SB TERM
+signal.
+.LP
+As it starts up,
+.B syslogd
+creates the file
+.BR /etc/syslog.pid ,
+if possible, containing its process
+.SM ID
+(\s-1PID\s0).
+.SH Sun386i DESCRIPTION
+.B syslogd
+translates messages using
+the databases specified on an optional line in the 
+.B syslog.conf
+as indicated with a
+.B translate 
+entry.
+.LP
+The format of these databases is described in
+.BR translate (5).
+.SH OPTIONS
+.TP 17
+.B \-d
+Turn on debugging.
+.TP
+.BI \-f configfile
+Specify an alternate configuration file.
+.TP
+.BI \-m " interval"
+Specify an interval, in minutes, between mark messages.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/syslog.conf
+configuration file
+.TP
+.B /etc/syslog.pid
+process
+.SM ID
+.TP
+.B /dev/log
+\s-1AF_UNIX\s0
+address family  datagram log socket
+.TP
+.B /dev/klog
+kernel log device
+.TP
+.B /etc/services
+network services database
+.PD
+.SH SEE ALSO
+.BR logger (1),
+.BR syslog (3),
+.BR syslog.conf (5),
+.BR translate (5)

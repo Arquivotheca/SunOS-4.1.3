@@ -1,0 +1,138 @@
+.\" @(#)fparel.8 1.1 92/07/30 SMI;
+.TH FPAREL 8 "29 September 1987"
+.SH NAME
+fparel \- Sun FPA online reliability tests
+.SH SYNOPSIS
+.B fparel
+.RB [ " \-p"\c
+.IR n " ]"
+.RB [ " \-v " ]
+.SH AVAILABILITY
+.LP
+Not available on Sun386i systems.
+.SH DESCRIPTION
+.IX fparel "" "\fLfparel\fR \(em floating-point reliability tests"
+.IX floating-point "reliability tests \(em \fLfparel\fR"
+.LP
+.B fparel
+is a command to execute the Sun
+.SM FPA
+online confidence and
+reliability test program.
+.B fparel
+tests about 90% of the functions of the
+.SM FPA
+board, and tests all
+.SM FPA
+contexts not in use by other processes.
+.B fparel
+runs without disturbing other processes that may be using the
+.SM FPA\s0.
+.B fparel
+can only be run by the super-user.
+.LP
+After a successful pass,
+.B fparel
+writes
+.IP
+.B time, date: Sun
+.SB FPA
+.B
+Passed.  The contexts tested are: 0, 1, ... 31
+.LP
+to the file
+.BR /var/adm/diaglog .
+.LP
+If a pass fails,
+.B fparel
+writes
+.IP
+.B time, date: Sun
+.SB FPA
+.B failed
+.LP
+along with the test name and context number that failed,
+to the file
+.BR /var/adm/diaglog .
+.B fparel
+then broadcasts the message
+.IP
+.B time, date: Sun
+.SB FPA
+.B failed, disabled, service required
+.LP
+to all users of the system.  Next,
+.B fparel
+causes the kernel to disable the
+.SM FPA\s0.
+Once the
+kernel disables the
+.SM FPA\s0,
+the system must be rebooted to make it
+accessible.
+.LP
+The file
+.B /etc/rc.local
+should contain an entry to cause
+.B fparel
+to be invoked upon reboot to be sure that the
+.SM FPA
+remains
+unaccessible in cases where rebooting doesn't correct the
+problem.  See
+.BR rc (8).
+.LP
+The 
+.BR crontab (5)
+file for root should contain an entry indicating that
+.BR cron (8)
+is to run
+.B fparel
+daily, such as:
+.IP
+.B 7 2 * * * /usr/etc/fpa/fparel
+.LP
+which causes
+.B fparel
+to run at seven minutes past two, every day.
+See
+.BR cron (8)
+and
+.BR crontab (5)
+for details.
+.LP
+.SH OPTIONS
+.TP
+.B \-p\fP\fIn
+Perform
+.I n
+passes.  Default is
+\fIn\fP=1.
+.B \-p0
+means perform 2147483647 passes.
+.TP
+.B \-v
+Run in verbose mode with detailed test
+results to the standard output.
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/diaglog
+Log of
+.B fparel
+diagnostics.
+.TP
+.B /etc/rc.local
+.TP
+.B /var/spool/cron/crontabs/root
+.TP
+.B /usr/etc/fpa/*
+directory containing 
+.SM FPA
+microcode, data files, and loader
+.PD
+.SH SEE ALSO
+.BR crontab (5),
+.BR cron (8),
+.BR fpaversion (8),
+.BR rc (8)

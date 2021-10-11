@@ -1,0 +1,192 @@
+#
+#        @(#)Makefile.master  1.1     92/07/30 SMI
+#
+# Copyright (c) 1987 by Sun Microsystems, Inc
+CPP = /lib/cpp
+CC = /bin/cc
+DESTDIR=
+INCLUDE=${DESTDIR}/usr/src/usr.lib/libsunwindow/include \
+	-I${DESTDIR}/usr/src/usr.lib/libsuntool/include \
+	-I${DESTDIR}/usr/ucbinclude -I${DESTDIR}/usr/include
+PRODINCLUDEDIR=${DESTDIR}/usr/include/suntool
+REPLACETAGS=/usr/view/pe/bin/replace_tags
+FULLPATH= ${DESTDIR}/usr/src/usr.lib/libsuntool/${WHOAMI}
+LINTLIBS= ${DESTDIR}/usr/src/usr.lib/libpixrect/llib-lpixrect.ln \
+	  ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow.ln \
+	  ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow-private.ln \
+	  ${DESTDIR}/usr/src/usr.lib/libsuntool/llib-lsuntool.ln \
+	  ${DESTDIR}/usr/src/usr.lib/libsuntool/llib-lsuntool-private.ln
+SCCS_DIRS=/usr/view/1.80
+INSTALL=install -m 444
+LINT=lint
+RANLIB= ranlib
+AR= ar
+AWK=	/bin/awk
+CTAGS= /usr/ucb/ctags -w
+TOUCH= touch -c
+LINTFLAGS = huz
+DBX= -O 
+NO_XSTR=
+
+HDRSALL= ${HDRSPUBLIC} ${HDRSPRIVATE}
+CFILESALL= ${CFILESLIB}
+OBJFILESALL= ${CFILESLIB:.c=.o} ${SFILESLIB:.s=.o}
+TAGFILESALL= ${CFILESALL:%.c=${FULLPATH}/%.c} ${HDRSALL:%.h=${FULLPATH}/%.h}
+
+
+ASFLAGS-mc68010 += $(TARGET_MACH)
+ASFLAGS-mc68020 += $(TARGET_MACH)
+ASFLAGS-sparc 	+= $(TARGET_MACH)
+ASFLAGS-i386	+= $(TARGET_MACH)
+
+CFLAGS-mc68010 	+= $(TARGET_MACH)
+CFLAGS-mc68020 	+= $(TARGET_MACH)
+CFLAGS-sparc 	+= $(TARGET_MACH)
+CFLAGS-i386	+= $(TARGET_MACH)
+
+LIBS-mc68010 = libsuntool.a libsuntool_p.a  libsuntool.so libsuntool_g.a
+LIBS-mc68020 = $(LIBS-mc68010)
+LIBS-sparc = $(LIBS-mc68010)
+LIBS-i386 = libsuntool.a libsuntool_p.a  
+LIBS = $(LIBS$(TARGET_MACH))
+
+LIBS_SA-mc68010 = libsuntool.sa
+LIBS_SA-mc68020 = $(LIBS_SA-mc68010)
+LIBS_SA-sparc = $(LIBS_SA-mc68010)
+LIBS_SA-i386 =
+LIBS_SA = $(LIBS_SA$(TARGET_MACH))
+
+libsuntool.a $(CFILESLIB:%.c=obj/%.o)		:=	VARIANT = obj
+libsuntool_p.a $(CFILESLIB:%.c=obj_p/%.o)	:=	VARIANT = obj_p
+libsuntool_g.a $(CFILESLIB:%.c=obj_g/%.o)	:=	VARIANT = obj_g
+libsuntool.so $(CFILESLIB:%.c=shared/%.o)	:=	VARIANT = shared
+
+libsuntool.a 		:=	LIB = libsuntool.a
+libsuntool_p.a		:=	LIB = libsuntool_p.a
+libsuntool_g.a		:=	LIB = libsuntool_g.a
+libsuntool.so		:=	LIB = libsuntool.so
+clean			:= 	LIB = clean
+clean_obj		:= 	LIB = clean_obj
+clean_obj_p		:= 	LIB = clean_obj_p
+clean_obj_g		:= 	LIB = clean_obj_g
+clean_shared		:= 	LIB = clean_shared
+lint			:= 	LIB = lint
+
+libsuntool.a		:=	LDFLAGS = -r -x
+libsuntool_p.a		:=	LDFLAGS = -r -X
+libsuntool.so		:=	LDFLAGS = -r -x
+
+libsuntool_p.a $(CFILESLIB:%.c=obj_p/%.o)	:=	CPPFLAGS += -DGPROF
+libsuntool.so $(CFILESLIB:%.c=shared/%.o)	:= 	CPPFLAGS += -DPIC
+
+NO_XSTR =
+ROI_DATA= -R
+CFLAGS = $(DBX) -I${INCLUDE} 
+CFLAGS_NOT_DBX= -I${INCLUDE}
+libsuntool_p.a $(CFILESLIB:%.c=obj_p/%.o)	:=	CFLAGS += -pg 
+libsuntool_g.a $(CFILESLIB:%.c=obj_g/%.o)	:=	CFLAGS += -g 
+libsuntool.so $(CFILESLIB:%.c=shared/%.o)	:=	CFLAGS += -pic
+
+libsuntool.so 		:= 	ASFLAGS = -k
+
+LD_ACTION= -@true
+libsuntool.a libsuntool_p.a  := LD_ACTION = ($(LD)  $(LDFLAGS) $@; mv a.out $@ )
+libsuntool_g.a  := LD_ACTION =
+
+lint			:= 	LINT_FLAGS = "LINTFLAGS=huz"
+
+$$(VARIANT)/%.o:	$$(ARCH)/%.s
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS$(TARGET_MACH)) $< > tmp.s
+	$(AS) $(ASFLAGS) $(ASFLAGS$(TARGET_MACH)) -o $@ tmp.s
+	rm -f tmp.s
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	$$(ARCH)/%.c
+	$(CC)  $(CFLAGS) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) -o $@ -c $<
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.s
+	$(CPP) $(CPPFLAGS) $(CPPFLAGS$(TARGET_MACH)) $< > tmp.s
+	$(AS) $(ASFLAGS)  $(ASFLAGS$(TARGET_MACH)) -o $@ tmp.s
+	rm -f tmp.s
+	$(LD_ACTION)
+
+$$(VARIANT)/%.o:	%.c
+	if [ "$(NO_XSTR)" = "ON" ]; then \
+		$(CC) $(CFLAGS) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) -o $@ -c $<; \
+	else \
+		$(CC) -E $(CFLAGS_NOT_DBX) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) $< | xstr -l _libsuntool_xstr -c -; \
+		$(CC) $(CFLAGS) $(ROI_DATA) $(CFLAGS$(TARGET_MACH)) -o $@ -c x.c; \
+		rm -f x.c; \
+	fi
+	$(LD_ACTION)
+
+COMMON_DIRS =	obj obj_p shared obj_g
+
+$(COMMON_DIRS):
+	test -d $@ || mkdir $@
+
+.KEEP_STATE:
+
+master.clean:
+	rm -fr $(COMMON_DIRS)
+
+master.clean_obj master.clean_obj_p master.clean_obj_g master.clean_shared:
+	rm -fr $(LIB)
+
+clean_obj: master.clean_obj
+
+clean_obj_p: master.clean_obj_p
+clean_obj_g: master.clean_obj_g
+
+clean_shared: master.clean_shared
+
+gprof:
+
+lint:: ${LINTFILESALL}
+	if [ ! -f llib-lsunwindow ]; then \
+                ln -s ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow .; \
+	fi
+	if [ ! -f llib-lsunwindow-private ]; then \
+                ln -s ${DESTDIR}/usr/src/usr.lib/libsunwindow/llib-lsunwindow-private .; \
+	fi 
+	if [ ! -f llib-lsuntool ]; then \
+                ln -s ${DESTDIR}/usr/src/usr.lib/libsuntool/llib-lsuntool .; \
+	fi
+	if [ ! -f llib-lsuntool-private ]; then \
+                ln -s ${DESTDIR}/usr/src/usr.lib/libsuntool/llib-lsuntool-private .; \
+	fi
+	if [ ! -f llib-lpixrect ]; then \
+                ln -s ${DESTDIR}/usr/src/usr.lib/libpixrect/llib-lpixrect .; \
+	fi 
+	if [ ! -f llib-lc ]; then \
+                ln -s /usr/lib/lint/llib-lc .; \
+	fi 
+	@echo
+	@echo 'IF YOU CHANGE THE INTERFACE, PLEASE CHANGE THE LINT LIBRARY TO REFLECT THAT.'
+	@echo
+ 
+tags::   ${CFILESALL} ${HDRSALL}
+	if [ "${TAGFILESALL}" ]; then \
+		rm -f tags; \
+		${CTAGS} -t ${TAGFILESALL}; \
+		${REPLACETAGS} tags ${DESTDIR}/usr/src/usr.lib/tags 'libsuntool:${WHOAMI}'; \
+		rm -f tags; \
+		ln -s ${DESTDIR}/usr/src/usr.lib/tags tags; \
+	fi;
+
+#install_subdir_h::	$(HDRSPUBLIC) FRC
+#	-for i in ${HDRSPUBLIC}; do \
+#		echo "installing $$i"; \
+#		cmp -s $$i ${PRODINCLUDEDIR}/$$i || \
+#		${INSTALL} $$i ${PRODINCLUDEDIR}/$$i; \
+#	done
+
+usr_latest::
+	-for i in ${HDRSPUBLIC}; do \
+	(	echo "Linking $$i"; \
+		ln -s ../../../usr/src/usr.lib/libsuntool/${WHOAMI}/$$i ${DESTDIR}/usr_latest/include/suntool/$$i \
+	);  done
+ 
+FRC:
+

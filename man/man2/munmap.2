@@ -1,0 +1,64 @@
+.\" @(#)munmap.2 1.1 92/07/30 SMI;
+.TH MUNMAP 2 "21 January 1990"
+.SH NAME
+munmap \- unmap pages of memory.
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/mman.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int munmap(addr, len)
+caddr_t addr;
+int len;
+.ft R
+.fi
+.IX  munmap()  ""  \fLmunmap()\fP
+.IX  "memory management"  munmap()  ""  \fLmunmap()\fP
+.IX  "unmap memory pages \(em \fLmmap()\fP"
+.SH DESCRIPTION
+.LP
+.B munmap(\|)
+removes the mappings for pages in the range
+[\fIaddr, addr + len\fP\^).
+Further references to these pages will result
+in the delivery of a
+.SB SIGSEGV
+signal to the process, unless these pages are
+considered part of the \*(lqdata\*(rq or \*(lqstack\*(rq segments.
+.LP
+.B brk(\|)
+and
+.B mmap(\|)
+often perform implicit
+\fBmunmap\fP's.
+.SH RETURN VALUES
+.LP
+.B munmap(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+.I addr
+is not a multiple of the page size as returned by
+.BR getpagesize (2).
+.IP
+Addresses in the range
+[\fIaddr, addr + len\fP\^)
+are outside the valid range for
+the address space of a process.
+.SH SEE ALSO
+.BR brk (2),
+.BR getpagesize (2),
+.BR mmap (2)

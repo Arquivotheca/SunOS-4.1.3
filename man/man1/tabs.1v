@@ -1,0 +1,200 @@
+.\" @(#)tabs.1v 1.1 92/07/30 SMI; from S5R3
+.TH TABS 1V "7 January 1988"
+.SH NAME
+tabs \- set tab stops on a terminal
+.SH SYNOPSIS
+.B /usr/5bin/tabs
+[
+.I tabspec
+] [
+.BI \-T type
+] [
+.BI +m n
+]
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "tabs command" "" "\fLtabs\fR command"  
+.LP
+.B tabs
+can be used to specify
+.SM TAB 
+stops on terminals that support
+remotely-settable hardware
+.SM TAB
+characters.
+.SM TAB
+stops are set according to the
+.I tabspec
+option, as described below, and previous settings are erased.
+.LP
+Four types of tab specification are accepted for
+.IR tabspec .
+They are:
+.LP
+.TP 8
+.BI \- code
+Set the
+.SM TAB
+stops according to the canned
+.SM TAB
+setting specified by
+.IR code ,
+as given by
+.BR fspec (5).
+.TP 8
+.BI \- n
+Set the
+.SM TAB
+stops at intervals of
+.I n
+columns, that is, at
+.RI 1+ n ,
+.RI 1+2\(** n ,
+and so on, as per the
+.BI \- n
+specification as given by
+.BR fspec (5).
+.TP
+.IR n1 , n2 ,\|.\|.\|.
+Set the
+.SM TAB
+stops at positions
+.IR n1 ,
+.IR n2 ,
+and so on, as per the
+.IR n1 , n2 ,\|.\|.\|.
+specification as given by
+.BR fspec (5).
+.TP
+.BI \-\|\- file
+Read the first line of the file specified by
+.IR file ,
+searching for a format specification as given by
+.BR fspec (5).
+If this line contains a format specification, set the
+.SM TAB
+stops accordingly,
+otherwise set them to every 8 columns.
+This type of specification may be used to make sure that a file containing a
+.SM TAB
+specification is displayed with correct
+.SM TAB 
+settings.  For example, it can be used with the
+.BR pr (1V)
+command:
+.RS
+.IP
+.B "tabs \-\|\-file; pr file"
+.RE
+If no
+.I tabspec
+is given, the default value
+is
+.BR \-8 ,
+the standard default
+.SM TAB
+setting. The
+lowest column number is 1. Note: for
+.BR tabs ,
+column 1 always refers to the leftmost column on a
+terminal, even one whose column markers begin at 0,
+(such as the
+.SM DASI
+300,
+.SM DASI
+300s,
+and
+.SM DASI
+450).
+.SM TAB
+and margin setting is performed by echoing to the proper
+sequences to the standard output.
+.SH OPTIONS
+.TP
+.BI \-T type
+.B tabs
+usually needs to know the type of terminal in
+order to set
+.SM TAB
+characters, and always needs to know
+to set margins.
+.I type
+is a name listed in
+.BR term (5).
+If no
+.B \-T
+flag is supplied,
+.B tabs
+uses the value of the environment variable
+.SM
+.BR TERM .
+If
+.SB TERM
+is not defined in the environment (see
+.BR environ (5V)),
+.B tabs
+tries a default sequence that will work for many terminals.
+.TP
+.BI +m n
+The margin argument may be used for some terminals.
+It moves all
+.SM TAB
+stops over
+.I n
+columns by making column
+.IR n +1
+the left margin. If
+.B +m
+is given without a value of
+.IR n ,
+the value assumed is 10. For
+a TermiNet, the first value in the tab list should
+be 1, or the margin will move even further to the
+right. The normal (leftmost) margin on most terminals
+is obtained by
+.BR +m0 .
+The margin for most terminals is reset only when the
+.B +m
+flag is given explicitly.
+.\".SH DIAGNOSTICS
+.\".TP
+.\".B illegal tabs
+.\".SM TAB
+.\"characters are ordered incorrectly in the specification.
+.\".TP
+.\".B illegal increment
+.\"A missing or zero increment is found in the specification.
+.\".TP
+.\".B unknown tab code
+.\"An invalid predefined code was specified.
+.\".TP
+.\".B can't open
+.\"The file named in the 
+.\".BI \-\|\- file
+.\"option could not be opened.
+.\".TP
+.\".B file indirection
+.\"The
+.\".BI \-\|\- file
+.\"option was used and the specification in the file points to another file.
+.SH SEE ALSO
+.BR pr (1V),
+.BR tput (1V),
+.BR environ (5V),
+.BR fspec (5),
+.BR term (5),
+.BR terminfo (5V)
+.br
+.ne 15
+.SH BUGS
+There is no consistency between different terminals regarding
+ways of clearing tabs and setting the left margin.
+.LP
+.B tabs
+clears only 20 tabs (on terminals requiring a long
+sequence), but is willing to set 64.

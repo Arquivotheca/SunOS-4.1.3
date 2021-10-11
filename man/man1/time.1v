@@ -1,0 +1,120 @@
+.\" @(#)time.1v 1.1 92/07/30 SMI; from UCB 4.1
+.TH TIME 1V "19 September 1989"
+.SH NAME
+time \- time a command
+.SH SYNOPSIS
+.B time
+[
+.I command
+]
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/time
+[
+.I command
+]
+.IX  "time command"  ""  "\fLtime\fP \(em time command"
+.IX  "performance monitoring"  time  ""  "\fLtime\fP \(em time command"
+.IX  "programming tools"  time  ""  "\fLtime\fP \(em time command"
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLtime\fR"
+.LP
+There are three distinct versions of
+.BR time :
+it is built in to the C shell, and is an
+executable program available in
+.B /usr/bin/time
+and
+.B /usr/5bin/time
+when using the Bourne shell.
+In each case, times are displayed on the diagnostic output stream.
+.LP
+In the case of the C shell, a
+.B time
+command with no
+.I command
+argument simply displays a summary of
+time used by this shell and its children.
+When arguments are given the specified simple
+.I command
+is timed and the C shell displays a time
+summary as described in
+.BR csh (1).
+.LP
+The
+.B time
+commands in
+.B /usr/bin/time
+and
+.B /usr/5bin/time
+time the given
+.IR command ,
+which must be specified, that is,
+.I command
+is not optional as it is in the C shell's timing facility.  When the
+command is complete,
+.B time
+displays the elapsed time during the command, the time
+spent in the system, and the time spent in execution of the command.
+Times are reported in seconds.
+The only difference between the versions in
+.B /usr/bin/time
+and
+.B /usr/5bin/time
+is between their output formats;
+.B /usr/bin/time
+prints all three times on the same line, while
+.B /usr/5bin/time
+prints them on separate lines.
+.SH EXAMPLES
+.LP
+The three examples here show the differences between the
+.B csh
+version of
+.B time
+and the versions in
+.B /usr/bin/time
+and
+.BR /usr/bin/time .
+The example assumes that
+.B csh
+is the shell in use.
+.RS
+.sp .5
+.nf
+.ft B
+example% time wc /usr/share/man/man1/csh.1
+1876   11223   65895 /usr/share/man/man1/csh.1
+2.7u 0.9s 0:03 91% 3+5k 19+2io 1pf+0w
+example%/usr/bin/time wc /usr/share/man/man1/csh.1
+1876   11223   65895 /usr/share/man/man1/csh.1
+4.3 real         2.7 user         1.0 sys
+example% /usr/5bin/time wc /usr/share/man/man1/csh.1
+1876   11223   65895 /usr/share/man/man1/csh.1
+real        4.3
+user        2.7
+sys         1.0
+example%
+.ft R
+.fi
+.RE
+.SH "SEE ALSO"
+.BR csh (1)
+.br
+.ne 15
+.SH BUGS
+.LP
+Elapsed time is accurate to the second, while the
+.SM CPU
+times are measured to the 50th second.  Thus the sum of the
+.SM CPU
+times can be up to a
+second larger than the elapsed time.
+.LP
+When the command being timed is interrupted, the timing values
+displayed may not always be accurate.

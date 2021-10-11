@@ -1,0 +1,383 @@
+.\ "@(#)rpc_clnt_calls.3n 1.1 92/07/30 SMI;
+.TH RPC_CLNT_CALLS 3N "20 January 1990"
+.SH NAME
+callrpc, clnt_broadcast, clnt_call, clnt_freeres, clnt_geterr, clnt_perrno, clnt_perror, clnt_sperrno, clnt_sperror \- library routines for client side calls
+.SH DESCRIPTION
+.IX "rpc routines" "callrpc()" "" "\fLcallrpc()\fP \(em client side calls"
+.IX "rpc routines" "clnt_broadcast()" "" "\fLclnt_broadcast()\fP \(em client side calls"
+.IX "rpc routines" "clnt_call()" "" "\fLclnt_call()\fP \(em client side calls"
+.IX "rpc routines" "clnt_freeres()" "" "\fLclnt_freeres()\fP \(em client side calls"
+.IX "rpc routines" "clnt_geterr()" "" "\fLclnt_geterr()\fP \(em client side calls"
+.IX "rpc routines" "clnt_perrno()" "" "\fLclnt_perrno()\fP \(em client side calls"
+.IX "rpc routines" "clnt_perror()" "" "\fLclnt_perror()\fP \(em client side calls"
+.IX "rpc routines" "clnt_sperrno()" "" "\fLclnt_sperrno()\fP \(em client side calls"
+.IX "rpc routines" "clnt_sperror()" "" "\fLclnt_sperror()\fP \(em client side calls"
+.IX "callrpc()" "" "\fLcallrpc()\fP \(em client side calls"
+.IX "clnt_broadcast()" "" "\fLclnt_broadcast()\fP \(em client side calls"
+.IX "clnt_call()" "" "\fLclnt_call()\fP \(em client side calls"
+.IX "clnt_freeres()" "" "\fLclnt_freeres()\fP \(em client side calls"
+.IX "clnt_geterr()" "" "\fLclnt_geterr()\fP \(em client side calls"
+.IX "clnt_perrno()" "" "\fLclnt_perrno()\fP \(em client side calls"
+.IX "clnt_perror()" "" "\fLclnt_perror()\fP \(em client side calls"
+.IX "clnt_sperrno()" "" "\fLclnt_sperrno()\fP \(em client side calls"
+.IX "clnt_sperror()" "" "\fLclnt_sperror()\fP \(em client side calls"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+The
+.BR clnt_call(\|) ,
+.B callrpc(\|)
+and
+.B clnt_broadcast(\|)
+routines handle the client side of the
+procedure call.
+The remaining routines deal with error handling
+in the case of errors.
+.SS Routines
+.LP
+The
+.SB CLIENT
+data structure is defined in the
+.SM RPC/XDR
+Library Definition of the
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft 1
+.br
+.if t .ne 13
+.LP
+.ft B
+.nf
+.sp .5
+int callrpc(host, prognum, versnum, procnum, inproc, in, outproc, out)
+char *host;
+u_long prognum, versnum, procnum;
+char *in;
+xdrproc_t inproc;
+char *out;
+xdrproc_t outproc;
+.fi
+.ft R
+.IP
+Call the remote procedure associated with
+.IR prognum ,
+.IR versnum ,
+and
+.I procnum
+on the machine,
+.IR host .
+The parameter
+.I in
+is the address of the procedure's argument, and
+.I out
+is the address of where to place the result;
+.I inproc
+is an 
+.SM XDR
+function used to encode the procedure's parameters, and
+.I outproc
+is an 
+.SM XDR
+function used to decode the procedure's results.
+This routine returns 0 if it succeeds, or the value of
+.B "enum clnt_stat"
+cast to an integer if it fails.
+Use
+.B clnt_perrno(\|)
+to translate failure statuses into messages.
+.IP
+Warning: 
+Calling remote procedures with this routine uses
+.SM UDP/IP
+as the transport; see
+.B clntudp_create(\|)
+on
+.BR rpc_clnt_create (3N)
+for restrictions.
+You do not have control of timeouts or authentication using
+this routine.
+.br
+.if t .ne 16
+.LP
+.ft B
+.nf
+.sp .5
+enum clnt_stat clnt_broadcast(prognum, versnum, procnum, inproc, in, outproc, out, eachresult)
+u_long prognum, versnum, procnum;
+char *in;
+xdrproc_t inproc;
+char *out;
+xdrproc_t outproc;
+bool_t eachresult;
+.fi
+.ft R
+.IP
+Like
+.BR callrpc(\|) ,
+except the call message is broadcast to all locally
+connected broadcast nets. Each time the caller receives a
+response, this routine calls
+.BR eachresult(\|) ,
+whose form is:
+.RS 1i
+.ft B
+.nf
+int eachresult(out, addr)
+char *out;
+struct sockaddr_in *addr;
+.ft R
+.fi
+.RE
+.IP
+where
+.I out
+is the same as
+.I out
+passed to
+.BR clnt_broadcast(\|) ,
+except that the remote procedure's output is decoded there;
+.I addr
+points to the address of the machine that sent the results.
+If
+.B eachresult(\|)
+returns 0
+.B clnt_broadcast(\|)
+waits for more replies; otherwise it returns with appropriate
+status.  If
+.B eachresult(\|)
+is
+.SM NULL\s0,
+.B clnt_broadcast(\|)
+returns without waiting for any replies. 
+.br
+.ne 6
+.IP
+Note: 
+.B clnt_broadcast(\|)
+uses
+.SB AUTH_UNIX
+style of authentication.
+.IP
+Warning: 
+Broadcast packets are limited in size to the
+maximum transfer unit of the data link.
+For Ethernet, the callers argument size should not
+exceed 1400 bytes.
+.br
+.if t .ne 13
+.LP
+.ft B
+.nf
+.sp .5
+enum clnt_stat clnt_call(clnt, procnum, inproc, in, outproc, out, timeout)
+\s-1CLIENT\s0 *clnt;
+u_long procnum;
+xdrproc_t inproc, outproc;
+char *in, *out;
+struct timeval timeout;
+.fi
+.ft R
+.IP
+Call the remote procedure
+.I procnum
+associated with the client handle,
+.IR clnt ,
+which is obtained with an
+.SM RPC
+client creation routine such as
+.B clnt_create(\|)
+(see
+.BR rpc_clnt_create (3N).
+The parameter
+.I in
+is the address of the procedure's argument, and
+.I out
+is the address of where to place the result;
+.I inproc
+is an 
+.SM XDR
+function used to encode the procedure's parameters in
+.SM XDR\s0,
+and
+.I outproc
+is used to decode the procedure's results;
+.I timeout
+is the time allowed for a response from the server.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+bool_t clnt_freeres(clnt, outproc, out)
+\s-1CLIENT\s0 *clnt;
+xdrproc_t outproc;
+char *out;
+.fi
+.ft R
+.IP
+Free any data allocated by the
+.SM RPC/XDR
+system when it decoded the results of an
+.SM RPC
+call.  The
+parameter
+.I out
+is the address of the results, and
+.I outproc
+is the
+.SM XDR
+routine describing the results.
+This routine returns 
+.SM TRUE
+if the results were successfully
+freed,
+and 
+.SM FALSE
+otherwise.
+Note: 
+This is equivalent to doing 
+.B xdr_free(outproc, out)
+(see
+.BR xdr_simple (3N)).
+.br
+.if t .ne 6
+.LP
+.ft B
+.nf
+.sp .5
+void clnt_geterr(clnt, errp)
+\s-1CLIENT\s0 *clnt;
+struct rpc_err *errp;
+.fi
+.ft R
+.IP
+Copy the error structure out of the client
+handle
+to the structure at address
+.IR errp .
+.I errp
+should point to preallocated space.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void clnt_perrno(stat)
+enum clnt_stat stat;
+.fi
+.ft R
+.IP
+Print a message to the standard error corresponding
+to the condition indicated by
+.IR stat .
+A
+.SM NEWLINE
+is appended at the end of the message.
+Used after
+.BR callrpc(\|) 
+or
+.BR clnt_broadcast(\|) .
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void clnt_perror(clnt, str)
+\s-1CLIENT\s0 *clnt;
+char *str;
+.fi
+.ft R
+.IP
+Print a message to the standard error indicating why an
+.SM RPC
+call failed;
+.I clnt
+is the handle used to do the call.
+The message is prepended with string
+.I s
+and a colon.
+A
+.SM NEWLINE
+is appended at the end of the message.
+Used after
+.BR clnt_call(\|) .
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+char *clnt_sperrno(stat)
+enum clnt_stat stat;
+.fi
+.ft R
+.IP
+Take the same arguments as
+.BR clnt_perrno(\|) ,
+but instead of sending a message to the standard error
+indicating why an
+.SM RPC
+failed, return a pointer to a string which contains
+the message.
+.B clnt_sperrno(\|)
+does not append a
+.SM NEWLINE
+at the end of the message.
+.IP
+.B clnt_sperrno(\|)
+is used instead of
+.B clnt_perrno(\|)
+if the program does not have a standard error (as a program
+running as a server quite likely does not), or if the
+programmer
+does not want the message to be output with
+.BR printf (3V),
+or if a message format different than that supported by
+.B clnt_perrno(\|)
+is to be used.
+.LP
+.ft B
+.nf
+.sp .5
+char *clnt_sperror(clnt, str)
+\s-1CLIENT\s0 *clnt;
+char *str;
+.fi
+.ft R
+.IP
+Like
+.BR clnt_perror(\|) ,
+except that (like
+.BR clnt_sperrno(\|) )
+it returns a string instead of printing to the standard error.
+Unlike
+.BR clnt_perror(\|) ,
+it does not append the message with a
+.SM NEWLINE\s0.
+.IP
+Note: 
+.B clnt_sperror(\|)
+returns pointer to a static buffer that is overwritten
+on each call.
+.SH SEE ALSO
+.BR printf (3V),
+.BR rpc (3N),
+.BR rpc_clnt_auth (3N),
+.BR rpc_clnt_create (3N),
+.BR xdr_simple (3N)

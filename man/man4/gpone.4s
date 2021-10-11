@@ -1,0 +1,190 @@
+.\" @(#)gpone.4s 1.1 92/07/30 SMI;
+.TH GPONE 4S "9 October 1987"
+.SH NAME
+gpone \- graphics processor
+.SH "CONFIG \(em SUN-3, SUN-3x, SUN-4 SYSTEMS"
+.ft B
+.nf
+device gpone0 at vme24d16 ? csr 0x210000	# GP or GP+
+device gpone0 at vme24d32 ? csr 0x240000	# GP2
+.fi
+.ft R
+.SH DESCRIPTION
+.IX  "gpone device"  ""  "\fLgpone\fP \(em graphics processor interface"  ""  PAGE START
+.IX  "graphics processor interface"  ""  "graphics processor interface \(em \fLgpone\fP"  ""  PAGE START
+The
+.B gpone
+interface provides access to the optional Graphics Processor Board (\s-1GP\s0).
+.LP
+The hardware consumes 64 kilobytes of
+.SM VME
+bus address space.  The
+.SM GP
+board starts at standard address 0x210000
+and must be configured for interrupt level 4.
+.SH "IOCTLS"
+.LP
+The graphics processor responds to a number of ioctl calls as described
+here.  One of the calls uses a
+.B gp1fbinfo
+structure that looks like this:
+.RS
+.nf
+.ft B
+struct	gp1fbinfo {
+	int		fb_vmeaddr;	/* physical color board address */
+	int		fb_hwwidth;	/* fb board width */
+	int		fb_hwheight;	/* fb board height */
+	int		addrdelta;	/* phys addr diff between fb and gp */
+	caddr_t		fb_ropaddr;	/* cg2 va thru kernelmap */
+	int		fbunit;		/* fb unit to use  for a,b,c,d */
+};
+.ft R
+.fi
+.RE
+.LP
+The ioctl call looks like this:
+.RS
+.nf
+.B "ioctl(file, request, argp)"
+.B "int file, request;"
+.fi
+.RE
+.LP
+.B argp
+is defined differently for each
+.SM GP
+ioctl request and is specified in the
+descriptions below.
+.LP
+The following ioctl commands provide for transferring data
+between the graphics processor and color boards and processes.
+.TP
+.SB GP1IO_PUT_INFO
+.IX  "ioctls for graphics processor"  "GP1IO_PUT_INFO"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_PUT_INFO\fP \(em pass framebuffer info"
+.IX  "GP1IO_PUT_INFO put info"  ""  "\fLGP1IO_PUT_INFO\fP \(em pass framebuffer info"
+.IX  "pass framebuffer info ioctl"  ""  "pass framebuffer info \fLioctl\fP \(em \fLGP1IO_PUT_INFO\fP"
+Passes information about the frame buffer into driver.
+.B argp
+points to a
+.B "struct gp1fbinfo"
+which is passed to the driver.
+.TP
+.SB GP1IO_GET_STATIC_BLOCK
+.IX  "ioctls for graphics processor"  "GP1IO_GET_STATIC_BLOCK"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_GET_STATIC_BLOCK\fP \(em get static block"
+.IX  "GP1IO_GET_STATIC_BLOCK get static block"  ""  "\fLGP1IO_GET_STATIC_BLOCK\fP \(em get static block"
+.IX  get "static block \fLioctl\fP \(em \fLGP1IO_GET_STATIC_BLOCK\fP"
+Hands out a static block from the
+.SM GP\s0.
+.B argp
+points to an
+.B int
+which is returned from the driver.
+.TP
+.SB GP1IO_FREE_STATIC_BLOCK
+.IX  "ioctls for graphics processor"  "GP1IO_FREE_STATIC_BLOCK"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_FREE_STATIC_BLOCK\fP \(em free static block"
+.IX  "GP1IO_FREE_STATIC_BLOCK free static block"  ""  "\fLGP1IO_FREE_STATIC_BLOCK\fP \(em free static block"
+.IX  "free static block ioctl"  ""  "free static block \fLioctl\fP \(em \fLGP1IO_FREE_STATIC_BLOCK\fP"
+Frees a static block from the
+.SM GP\s0.
+.B argp
+points to an
+.B int
+which is passed to the driver.
+.TP
+.SB GP1IO_GET_GBUFFER_STATE
+.IX  "ioctls for graphics processor"  "GP1IO_GET_GBUFFER_STATE"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_GET_GBUFFER_STATE\fP \(em check buffer state"
+.IX  "GP1IO_GET_GBUFFER_STATEget buffer state"  ""  "\fLGP1IO_GET_GBUFFER_STATE\fP \(em check buffer state"
+.IX  "check buffer state ioctl"  ""  "check buffer state \fLioctl\fP \(em \fLGP1IO_GET_GBUFFER_STATE\fP"
+Checks to see if there is a buffer present on the
+.SM GP\s0.
+.B argp
+points to an
+.B int
+which is returned from the driver.
+.TP
+.SB GP1IO_CHK_GP
+.IX  "ioctls for graphics processor"  "GP1IO_CHK_GP"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_CHK_GP\fP \(em restart GP"
+.IX  "GP1IO_CHK_GP check GP"  ""  "\fLGP1IO_CHK_GP\fP \(em restart GP"
+.IX  "restart GP ioctl"  ""  "restart GP \fLioctl\fP \(em \fLGP1IO_CHK_GP\fP"
+Restarts the
+.SM GP
+if necessary.
+.B argp
+points to an
+.B int
+which is passed to the driver.
+.TP
+.SB GP1IO_GET_RESTART_COUNT
+.IX  "ioctls for graphics processor"  "GP1IO_GET_RESTART_COUNT"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_GET_RESTART_COUNT\fP \(em get restart count"
+.IX  "GP1IO_GET_RESTART_COUNT get restart count"  ""  "\fLGP1IO_GET_RESTART_COUNT\fP \(em get restart count"
+.IX  get "restart count \fLioctl\fP \(em \fLGP1IO_GET_RESTART_COUNT\fP"
+Returns the number of restarts of a
+.SM GP
+since power on.  Needed to differentiate
+.SB SIGXCPU
+calls in user processes.
+.B argp
+points to an
+.B int
+which is returned from the driver.
+.TP
+.SB GP1IO_REDIRECT_DEVFB
+.IX  "ioctls for graphics processor"  "GP1IO_REDIRECT_DEVFB"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_REDIRECT_DEVFB\fP \(em reconfigure fb"
+.IX  "GP1IO_REDIRECT_DEVFB redirect fb"  ""  "\fLGP1IO_REDIRECT_DEVFB\fP \(em reconfigure fb"
+.IX  "reconfigure fb ioctl"  ""  "reconfigure fb \fLioctl\fP \(em \fLGP1IO_REDIRECT_DEVFB\fP"
+Configures
+.B /dev/fb
+to talk to a graphics processor device.
+.B argp
+points to an
+.B int
+which is passed to the driver.
+.TP
+.SB GP1IO_GET_REQDEV
+.IX  "ioctls for graphics processor"  "GP1IO_GET_REQDEV"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_GET_REQDEV\fP \(em get requested minor device"
+.IX  "GP1IO_GET_REQDEV get requested device"  ""  "\fLGP1IO_GET_REQDEV\fP \(em get requested minor device"
+.IX  get "requested minor device \fLioctl\fP \(em \fLGP1IO_GET_REQDEV\fP"
+Returns the requested minor device.
+.B argp
+points to a
+.B dev_t
+which is returned from the driver.
+.TP
+.SB GP1IO_GET_TRUMINORDEV
+.IX  "ioctls for graphics processor"  "GP1IO_GET_TRUMINORDEV"  "\fLioctl\fP's for graphics processor"  "\fLGP1IO_GET_TRUMINORDEV\fP \(em get true minor device"
+.IX  "GP1IO_GET_TRUMINORDEV get true minor device"  ""  "\fLGP1IO_GET_TRUMINORDEV\fP \(em get true minor device"
+.IX  get "true minor device \fLioctl\fP \(em \fLGP1IO_GET_TRUMINORDEV\fP"
+Returns the true minor device.
+.B argp
+points to a
+.B char
+which is returned from the driver.
+.LP
+The graphics processor driver also responds to the
+.BR \s-1FBIOGTYPE\s0 ,
+ioctl which a program can use to inquire as to
+the characteristics of the display device, the
+.BR \s-1FBIOGINFO\s0 ,
+ioctl for passing generic information, and the
+.SB FBIOGPIXRECT
+ioctl so that SunWindows can run on it.  See
+.BR fbio (4S).
+.SH FILES
+.PD 0
+.TP 20
+.B /dev/fb
+.TP
+.B /dev/gpone[0-3][abcd]
+.PD
+.SH "SEE ALSO"
+.BR fbio (4S),
+.BR mmap (2),
+.BR gpconfig (8)
+.LP
+.TX CGI
+.SH DIAGNOSTICS
+.LP
+.B "The Graphics Processor has been restarted.  You may see display garbage as a result."
+.IX  "gpone device"  ""  "\fLgpone\fP \(em graphics processor interface"  ""  PAGE END
+.IX  "graphics processor interface"  ""  "graphics processor interface \(em \fLgpone\fP"  ""  PAGE END

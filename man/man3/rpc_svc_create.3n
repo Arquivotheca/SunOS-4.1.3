@@ -1,0 +1,210 @@
+.\" @(#)rpc_svc_create.3n 1.1 92/07/30 SMI;
+.TH RPC_SVC_CREATE 3N "20 January 1990"
+.SH NAME
+svc_destroy, svcfd_create, svcraw_create, svctcp_create, svcudp_bufcreate \- library routines for dealing with the creation of server handles
+.SH DESCRIPTION
+.IX "rpc routines" "svc_destroy()" "" "\fLsvc_destroy()\fP \(em create server handles"
+.LP
+.IX "rpc routines" "svcfd_create()" "" "\fLsvcfd_create()\fP \(em create server handles"
+.IX "rpc routines" "svcraw_create()" "" "\fLsvcraw_create()\fP \(em create server handles"
+.IX "rpc routines" "svctcp_create()" "" "\fLsvctcp_create()\fP \(em create server handles"
+.IX "rpc routines" "svcudp_bufcreate()" "" "\fLsvcudp_bufcreate()\fP \(em create server handles"
+.IX "svc_destroy()" "" "\fLsvc_destroy()\fR \(em create server handles"
+.IX "svcfd_create()" "" "\fLsvcfd_create()\fR \(em create server handles"
+.IX "svcraw_create()" "" "\fLsvcraw_create()\fR \(em create server handles"
+.IX "svctcp_create()" "" "\fLsvctcp_create()\fR \(em create server handles"
+.IX "svcudp_bufcreate()" "" "\fLsvcudp_bufcreate()\fR \(em create server handles"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+The
+.SB SVCXPRT
+data structure is defined in the
+.SM RPC/XDR
+Library Definitions of the
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.LP
+.ft B
+.nf
+.sp .5
+void svc_destroy(xprt)
+\s-1SVCXPRT\s0 *xprt;
+.fi
+.ft R
+.IP
+Destroy the
+.SM RPC
+service transport handle,
+.IR xprt .
+Destruction usually involves deallocation
+of private data structures, including
+.I xprt
+itself.  Use of
+.I xprt
+is undefined after calling this routine.
+.br
+.if t .ne 11
+.LP
+.ft B
+.nf
+.sp .5
+\s-1SVCXPRT\s0 * svcfd_create(fd, sendsz, recvsz)
+int fd;
+u_int sendsz;
+u_int recvsz;
+.fi
+.ft R
+.IP
+Create a service on top of any open and bound descriptor and
+return the handle to it.
+Typically, this descriptor is a connected socket for a 
+stream protocol such as
+.SM TCP\s0.
+.I sendsz
+and
+.I recvsz
+indicate sizes for the send and receive buffers.
+If they are zero, a reasonable default is chosen.
+It returns
+.SM NULL
+if it fails.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+\s-1SVCXPRT\s0 * svcraw_create(\|)
+.fi
+.ft R
+.IP
+This routine creates a 
+.SM RPC
+service transport, to which it returns a pointer.  The
+transport
+is  a buffer within the process's address space,
+so the corresponding
+.SM RPC
+client must live in the same
+address space;
+see
+.B clntraw_create(\|)
+on
+.BR rpc_clnt_create (3N).
+This routine allows simulation of
+.SM RPC
+and getting
+.SM RPC
+overheads (such as round trip times), without any kernel
+interference.
+This routine returns
+.SM NULL
+if it fails.
+.br
+.if t .ne 11
+.LP
+.ft B
+.nf
+.sp .5
+\s-1SVCXPRT\s0 * svctcp_create(sock, sendsz, recvsz)
+int sock;
+u_int sendsz, recvsz;
+.fi
+.ft R
+.IP
+This routine creates a
+.SM TCP/IP\s0-based
+.SM RPC
+service transport, to which it returns a pointer.
+The transport is associated with the socket
+.IR sock .
+If sock is 
+.BR \s-1RPC_ANYSOCK\s0 ,
+then a new socket is created.
+If the socket is not bound to a local
+.SM TCP
+port, then this routine binds it to an arbitrary port.  Upon
+completion,
+\fB\%xprt\->xp_sock\fR
+is the transport's socket descriptor, and
+\fB\%xprt\->xp_port\fR
+is the port number on which it is listening.
+This routine returns
+.SM NULL
+if it fails. Since
+.SM TCP\s0-based
+.SM RPC
+uses buffered
+.SM I/O\s0,
+users may specify the size of buffers with
+.I sendsz 
+and
+.IR recvsz ;
+values of zero
+choose defaults.
+.br
+.if t .ne 11
+.LP
+.ft B
+.nf
+.sp .5
+\s-1SVCXPRT\s0 * svcudp_bufcreate(sock, sendsz, recvsz)
+int sock;
+u_int sendsz, recvsz;
+.fi
+.ft R
+.IP
+This routine creates a
+.SM UDP/IP\s0-based
+.SM RPC
+service transport, to which it returns a pointer.
+The transport is associated with the socket
+.IR sock .
+If sock is
+.B \s-1RPC_ANYSOCK\s0 ,
+then a new socket is created.
+If the socket is not bound to a local
+.SM UDP
+port, then this routine binds it to an arbitrary port. Upon
+completion,
+\fB\%xprt\->xp_sock\fR
+is the service's socket descriptor, and
+\fB\%xprt\->xp_port\fR
+is the service's port number.
+This routine returns
+.SM NULL
+if it fails.
+.IP
+The user specifies the maximum packet size for sending and 
+receiving
+.SM UDP\s0-based
+.SM RPC
+messages by using the
+.I sendsz
+and
+.I recvsz
+parameters.
+.br
+.SH SEE ALSO
+.BR rpc (3N),
+.BR rpc_clnt_create (3N),
+.BR rpc_svc_calls (3N),
+.BR rpc_svc_err (3N),
+.BR rpc_svc_reg (3N),
+.BR portmap (8C)

@@ -1,0 +1,313 @@
+################
+#
+#	@(#)Printfile 1.49 89/12/01 SMI;
+#
+#	Makefile for building printed reference manual.  Comments go in
+#	chronological order.
+#
+#	This makefile only works with SunPro make.
+#
+################
+
+CLONEDIR=    /mounts/argon/man
+DESTHOST=    caps
+DESTDIR=     /var/man
+DIRS=        man1 man2 man3 man4 man5 man6 man7 man8
+SECTIONS=    1.man 2.man 3.man 3l.man 3m.man 3r.man 4.man \
+	5.man 6.man 7.man 8.man
+NESTED.SECTIONS=    man1/1.man man2/2.man man3/3.man man3/3l.man \
+	man3/3m.man man3/3r.man man4/4.man man5/5.man man6/6.man \
+	man7/7.man man8/8.man
+SECTIONS.PS= $(SECTIONS:%.man=%.PS)
+
+MAKE	= make
+SLUSH	= slush.mex
+GETPG	= `grep "^[1-9][0-9]*" $(SLUSH) | tail -1`
+INDEX	= index.assist
+PAG  	= paginate -b12 -t300
+PAG.T	= /usr/doctools/bin/Pagination.Template
+PIC  	= pic -Plw
+TBL  	= tbl
+PSDIT	= psdit
+MACROS	= -msunman
+TROFF	= troff -t -Tlw $(TOPTS)
+
+##########
+#
+#	On the release machine.
+#
+#	Update the Makefiles and Printfiles with comments noting
+#	additions and deletions to FILES macros.
+#
+##########
+
+#	Extract all printable pages from SCCS.
+all:
+	-set -x ; for i in $(DIRS) ; \
+	do ( cd $$i ; $(MAKE) -f Printfile $@ ) ; done
+
+update:
+	-$(MAKE) -f Prepfile update
+
+##########
+#
+#	Install printable man page sources in a temporary location.
+#	Not called "install" to avoid name conflicts with the install
+#	target in Makefile.
+#
+##########
+
+clone: clone.local clone.nested 
+
+#	Make clone directory structure and clone ancillary files.
+clone.local:
+	-mkdir $(CLONEDIR)
+	-cd $(CLONEDIR) ; mkdir tmp bin man0 $(DIRS)
+	-cp Printfile Printfile.master $(CLONEDIR)
+	-cd $(CLONEDIR) ; ln Printfile Makefile
+	-cp /usr/bin/make $(CLONEDIR)/bin
+	-touch $(CLONEDIR)/default.mk
+	-cd bin ; $(MAKE) getNAME pix sid ; \
+		cp getNAME pix sid $(CLONEDIR)/bin
+	-cd man0 ; $(MAKE) cover.mex LASTPAGE ; \
+		cp cover.mex LASTPAGE $(CLONEDIR)/man0
+
+#	Clone the man page sources.
+clone.nested:
+	-set -x ; for i in $(DIRS) ; \
+		do	(	cd $$i ; $(MAKE) -f Printfile clone \
+					CLONEDIR=$(CLONEDIR)/$$i \
+			) ; \
+		done
+
+##########
+#
+#	Install printable sources onto a remote host.  (Using rsh
+#	and/or rcp in a makefile is a very dangerous practice.
+#	Hence the warning issued by the shell.)
+#
+##########
+
+pinstall:
+	#	This will issue rsh and rcp commands to host "$(DESTHOST)",
+	#	directory "$(DESTHOST):$(DESTDIR)".  ARE YOU SURE?
+	#	(Use ^C to abort.)
+	sleep 10
+	-rsh $(DESTHOST) 'mkdir $(DESTDIR)'
+	-cd $(CLONEDIR) ; \
+		rcp -r Printfile Printfile.master tmp bin man0 \
+			$(DIRS) \
+			$(DESTHOST):$(DESTDIR)
+	-rsh $(DESTHOST) "cd $(DESTDIR) ; $(MAKE) -f Printfile links"
+
+#	Create 'Makefile' links to Printfiles in destination subdirs.
+links:
+	-ln Printfile Makefile
+	-set -x ; for i in $(DIRS) ; \
+		do ( cd $$i ; ln Printfile Makefile ) ; done
+
+###########
+#
+#	On the doctools host.
+#
+#	Run the doctools version of checknr on the sources.
+#	Ignore cautions and unrecognized -man constructs.
+#
+###########
+
+checknr:
+	-for i in $(DIRS) ; do \
+		cd $$i ; checknr *.[1-8]* | egrep -v 'SS|SB' \
+			> ../man0/$$i.checknr ; \
+	done
+
+##########
+#
+#	Build indexing scripts, trial index source file,
+#	and trial index.
+#
+##########
+
+#	Build various horizontal subindexes.
+indexes: files.index diags.index classes.index
+
+trial.index: trial.index.mex
+	-rm $@ tmp/$@
+	-cd tmp ; \
+		( nroff -mex -rF1 $@.mex 2>&1 | egrep '^.IE' ) \
+	 		| $(INDEX) | troff -t -mex > $@
+	-ln tmp/$@ $@
+
+#	Build source file for trial indexes.
+trial.index.mex: trial.index.nested
+	-rm $@ tmp/$@
+	cat man[1-8]/trial.index.mex > tmp/trial.index.mex
+	-ln tmp/trial.index.mex trial.index.mex
+
+#	Create indexing scripts and trial index sources in each section.
+trial.index.nested:
+	-set -x ; for i in $(DIRS) ; \
+		do ( cd $$i ; $(MAKE) -f Printfile trial.index ) ; done
+	-touch trial.index.nested
+
+#########
+#
+#	Apply indexing scripts to source files.
+#
+#########
+
+apply.scripts:
+	-set -x ; for i in $(DIRS) ; \
+	do ( cd $$i ; $(MAKE) $@ ) ; done
+
+###########
+#
+#	Collate section sources in a separate step.  (This is also
+#	done for you by PS.)
+#
+###########
+
+man: $(SECTIONS) cover.mex
+
+  1.man := NESTED = man1/1.man
+  2.man := NESTED = man2/2.man
+  3.man := NESTED = man3/3.man
+  3l.man := NESTED = man3/3l.man
+  3m.man := NESTED = man3/3m.man
+  3r.man := NESTED = man3/3r.man
+  4.man := NESTED = man4/4.man
+  5.man := NESTED = man5/5.man
+  6.man := NESTED = man6/6.man
+  7.man := NESTED = man7/7.man
+  8.man := NESTED = man8/8.man
+
+#	First indicate that ?.man depends on man?/?.man.
+#	Then go down to man? to build ?.man with the nested Printfile.
+#	Then remove the local link to ?.man and make a fresh link to
+#   	man?/?.man.
+#	Funky macros: $@ => man?/?.man $(@D) => man?  $(@F) => ?.man
+
+$(SECTIONS): $$(NESTED)
+$(NESTED.SECTIONS): FRC
+	-cd $(@D) ; $(MAKE) -f Printfile $(@F)
+	-rm $(@F) ; ln $@ $(@F)
+
+#	Link to cover source in the working directory.
+cover.mex: man0/cover.mex
+	-rm cover.mex
+	-ln man0/cover.mex cover.mex
+
+###########
+#
+#	Format the PostScript image of the manual.
+#	Save the slush file for use in the global index.
+#	Make extra links to derived files, just in case.
+#
+###########
+
+#	Format the entire manual.
+PS: warning cover.PS preface.PS $(SLUSH) $(SECTIONS.PS) recode index.PS pag.PS
+
+warning:
+	@ echo  "Check the ']W' string in the macro pkg before continuing! (^C)" | tee warning
+	sleep 10
+
+#	Format the cover.
+cover.PS: cover.mex
+	$(TBL) cover.mex | $(TROFF) -mex | $(PSDIT) > $@
+
+#	Format the preface.
+preface.PS: preface.mex
+	$(TBL) preface.mex | $(TROFF) -mex | $(PSDIT) > $@
+
+#	Initialize the slush file.
+$(SLUSH): FRC
+	-mv $(SLUSH) $(SLUSH).old
+	echo 3 > $(SLUSH)
+	echo ".IE	DOCUMENT	SunOS Reference Manual" >> $(SLUSH)
+	-rm recode
+
+#	Format each section.
+$(SECTIONS.PS): $$(@:.PS=.man)
+	$(TBL) $(@:.PS=.man) | ( $(TROFF) \
+		-rC1 -rD1 -rF1 -rP$(GETPG) $(MACROS) - \
+		2>> $(SLUSH) ) | $(PSDIT) > $@
+
+#	Recode (fix) the slush file.
+recode: $(SLUSH)
+	recode < $(SLUSH) > $(SLUSH).done
+	mv $(SLUSH).done $(SLUSH)
+	-touch recode
+
+#	Format the index.
+index.PS:
+	-grep -h '^.IE' $(SLUSH) | ( echo .UH INDEX ; $(INDEX) ) \
+		| ( $(TROFF) -mex -rP$(GETPG) 2>> $(SLUSH) ) | $(PSDIT) > $@
+
+#	Format the pag sheets.
+pag.PS:
+	-$(PAG) $(SLUSH) | $(PIC) | $(TROFF) -mex $(PAG.T) - | $(PSDIT) > $@ 
+
+#  Generate diffs of pages modified on doctools host.
+mergeback:
+	-rm -f tmp/mergeback
+	-for j in 1 2 3 4 5 6 7 8 ; do \
+		cd man$$j ; pwd | sed 's/^/	/' >> ../tmp/mergeback ; \
+		for i in [a-z]*.$${j}* ; do \
+			if test `diff $$i /usr/man/man$$j/$$i | wc -l` -gt 4 ; \
+			then echo "	$$i" >> ../tmp/mergeback ; \
+			fi ; \
+		done ; cd .. ; \
+	done
+
+##########
+#
+#	Archive the slush file and the indexing scripts.
+#
+##########
+
+arch: arch.nested
+	-pwd
+	-mkdir arch ; chmod 777 arch
+	-cp Printfile Printfile.master $(SLUSH) cover.mex trial.index arch
+	-chmod 555 arch
+
+arch.nested:
+	-set -x ; for i in $(DIRS) ; \
+	do ( cd $$i ; $(MAKE) arch ) ; done
+
+##########
+#
+#	On the printer host.
+#
+#	Print the PostScript image files in reverse order.
+#
+##########
+
+print:
+	-lpr -s pag.PS index.PS [87654].PS 3[vrml].PS [321].PS cover.PS
+
+##########
+#
+#	Housekeeping.
+#
+##########
+
+clean:
+	-/bin/rm -f cover.PS [1-8].PS [1-8]?.PS index.PS pag.PS
+	-/bin/rm -f [1-8].man [1-8]?.man man?/[1-8].man man?/[1-8]?.man
+
+final.cleanup:
+	#	This will remove all files but the 'arch' subdir in this
+	#	directory and each man? subdir.  ARE YOU SURE?
+	#	(Use ^C to abort.)
+	sleep 10
+	$(MAKE) final.cleanup.nested
+	-/bin/rm man0/* *
+	-/bin/rm -r tmp bin
+
+final.cleanup.nested:
+	-set -x; for i in $(DIRS) ; \
+	do ( cd $i ; /bin/rm *.[1-9]* ) ; done
+
+FRC:

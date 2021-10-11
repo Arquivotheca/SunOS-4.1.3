@@ -1,0 +1,1122 @@
+.\" @(#)cc.1v 1.1 92/07/30 SMI;
+.TH CC 1V "6 October 1988"
+.SH NAME
+cc \- C compiler
+.SH SYNOPSIS
+.B cc
+[
+.B \-a
+]
+.\"[
+.\".BI \-A opt
+.\"]
+[
+.B \-align
+.BI _ block
+]
+[
+.BI \-B binding
+]
+.\"[
+.\".B \-B
+.\"]
+.\"[
+.\".B \-bigsharedlib
+.\"]
+[
+.B \-c
+]
+[
+.B \-C
+]
+.if n .ti +5
+[
+.B \-dalign
+]
+[
+.B \-dryrun
+]
+[
+.BI \-D name
+.RB [ =\fIdef\fR
+] ]
+.\"[
+.\".B \-dl
+.\"]
+[
+.B \-E
+]
+.if n .ti +5
+.if t .ti +.5i
+[
+.I float_option
+]
+[
+.B \-fsingle
+]
+.\"[
+.\".B \-fsingle2
+.\"]
+[
+.B \-g
+]
+[
+.B \-go
+]
+[
+.B \-help
+]
+.if n .ti +5
+[
+.BI \-I pathname
+]
+[
+.B \-J
+]
+[
+.BI \-L directory
+]
+[
+.B \-M
+]
+.\"[
+.\".B \-mc68010
+.\"]
+.\"[
+.\".B \-mc68020
+.\"]
+.if n .ti +5
+.if t .ti +.5i 
+[
+.B \-misalign
+]
+[
+.B \-o 
+.I outputfile
+]
+[
+.BR \-O [\c
+.IR level ]
+]
+.if n .ti +5
+[
+.B \-p
+]
+[
+.B \-P
+]
+[
+.B \-pg
+]
+[
+.B \-pic
+]
+[
+.B \-PIC
+]
+[
+.B \-pipe 
+]
+.if t .ti +.5i 
+.if n .ti +5
+[
+.B \-Qoption
+.I prog opt
+]
+[
+.B \-Qpath 
+.I pathname
+]
+.if n .ti +5
+[
+.B \-Qproduce
+.I sourcetype 
+]
+[
+.B \-R
+]
+[
+.B \-S
+]
+[
+.B \-sb
+]
+.\"[
+.\".B \-sharedlib
+.\"]
+.\"[
+.\".BI \-sl library
+.\"]
+.\"[
+.\".B \-sparc
+.\"]
+.if n .ti +5
+.if t .ti +.5i
+[
+.B -target
+.I target_arch
+]
+[
+.BI \-temp= directory
+]
+[
+.B \-time
+]
+.if n .ti +5
+[
+.BI \-U name
+]
+[
+.B \-w
+]
+.I sourcefile
+\&.\|.\|.
+.if t .ti +.5i
+[
+.BI \-l library
+]
+.SH SYSTEM V SYNOPSIS
+.LP
+.B /usr/5bin/cc
+.I arguments
+.LP
+.B /usr/xpg2bin/cc
+.I arguments
+.LP
+Note:
+.I arguments
+to 
+.B /usr/5bin/cc
+and
+.B /usr/xpg2bin/cc
+are identical to those listed above.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLcc\fR"
+.IX  cc  ""  "\fLcc\fP \(em C compiler"
+.IX  "C compiler"
+.IX  "programming languages"  "cc command"  ""  "\fLcc\fP \(em C compiler"
+.IX  "languages"  "cc command"  ""  "\fLcc\fP \(em C compiler"
+.IX  "compilers"  "cc command"  ""  "\fLcc\fP \(em C compiler"
+.LP
+.B cc
+is the C compiler. 
+It translates programs written in the C
+programming language into executable load modules, or into relocatable
+binary programs for subsequent loading with the
+.BR ld (1)
+link editor.
+.LP
+In addition to the many options,
+.B cc
+accepts several types of filename arguments.  For instance, files with 
+names ending in
+.B \&.c
+are taken to be C source programs. 
+They are compiled, and each 
+resulting object program is placed in the current directory.  The 
+object file is named after its source file \(em the suffix
+.B \&.o
+replacing 
+.BR \&.c 
+in the name of the object.
+In the same way, files whose names end with
+.B \&.s
+are taken to be assembly source programs.
+They are assembled, and produce
+.B \&.o
+files.  
+Filenames ending in
+.B \&.il
+are taken to be inline expansion code template files; these are
+used to expand calls to selected routines in-line when code
+optimization is enabled.
+See 
+.SM FILES\s0,
+below for a complete list of compiler-related filename suffixes.
+.LP
+Other arguments refer to assembler or loader options,
+object programs, or object libraries.  Unless
+.BR \-c ,
+.BR \-S , 
+.B \-E
+.B \-P
+or
+.B \-Qproduce
+is specified, these programs and libraries, together with the results of any
+specified compilations or assemblies, are loaded
+(in the order given) to produce an output file named
+.BR a.out .
+You can specify a name for the executable by using the
+.B \-o 
+option.
+.LP
+If a single
+file is compiled and loaded all at once, the intermediate
+file is deleted.
+.LP
+.B /usr/xpg2bin/cc
+is a shell script that should be used to compile 
+X/Open compliant applications.
+.B /usr/5bin/cc
+and
+.B /usr/xpg2bin/cc
+accept the same arguments and options as
+.BR cc .
+.B /usr/xpg2bin/cc
+searches 
+.B /usr/xpg2include
+for 
+.B #include
+files before
+.BR /usr/include ,
+and specifies
+.B /usr/xpg2lib/libxpg.a
+as an additional static library of object-library routines.
+.SH OPTIONS
+.LP
+When debugging or profiling 
+objects are compiled using the
+.B \-g
+or
+.B \-pg
+options, respectively, the
+.B ld
+command for linking them should also contain the appropriate option.
+.LP
+See
+.BR ld (1)
+for link-time options.
+.TP 1i
+.B \-a
+Insert code to count how many times each basic block is executed.
+Invokes a run-time recording mechanism that creates a
+.B \&.d
+file for every
+.B \&.c
+file (at normal termination).
+The
+.B \&.d
+file accumulates execution data for the corresponding source file.  The
+.BR tcov (1)
+utility can then be run on the source file to generate statistics about
+the program.  Since this option entails some optimization, it is
+incompatible with
+.BR \-g .
+.\".TP
+.\".BI \-A opt
+.\"Pass option 
+.\".I opt
+.\"to 
+.\".BR as (1).
+.TP
+.BI \-align " " _ block
+Force the global uninitialized data symbol 
+.IR block 
+to be page-aligned by
+increasing its size to a whole number of pages, and placing its first
+byte at the beginning of a page.
+.\".TP
+.\".B \-B
+.\"Obsolete option.
+.\".TP
+.\".B \-bigsharedlib
+.\"Compile and link shared library with big data segment.
+.TP
+.BI \-B binding
+Specify whether bindings of libraries for linking are
+.B static
+or
+.BR dynamic ,
+indicating whether libraries are non-shared or shared, respectively.
+.TP
+.B \-c
+Suppress linking with
+.BR ld (1)
+and produce a
+.B \&.o
+file for each source file.
+A single object file can be named explicitly using the
+.B \-o
+option.
+.TP
+.B \-C
+Prevent the C preprocessor,
+.BR cpp (1),
+from removing comments.
+.TP
+.BR \-dalign "		(Sun-4 systems only.)"
+Generate double load/store instructions whenever possible for
+improved performance.  Assumes that all double typed data are double
+aligned, and should not be used when correct alignment is not
+assured.
+.TP
+.B \-dryrun
+Show but do not execute the commands constructed
+by the compilation driver.
+.TP
+.BI \-D name\fR[\fP = def\fR]
+Define a symbol
+.I name
+to the C preprocessor 
+.RB ( cpp (1)). 
+Equivalent to a
+.B #define
+directive in the source.  If no
+.I def
+is given,
+.I name
+is defined as
+.RB ` 1 '.
+.\".TP
+.\".B \-dl
+.\"Generate 
+.\".B something or other 
+.\"for SunRise.
+.PD
+.\".TP
+.\".B \-ds
+.\"Generate 
+.\".B something or other 
+.\"for SunRise.
+.TP
+.B \-E
+Run the source file through
+.BR cpp (1),
+the C preprocessor, only.
+Sends the output to the standard output, or to
+a file named with the
+.B \-o
+option.  Includes the 
+.B cpp
+line numbering information.  (See also, the 
+.B \-P
+option.)
+.br
+.ne 24
+.TP 
+.I float_option
+Floating-point code generation option.  Can be one of:
+.RS
+.TP 10
+.B \-f68881
+Generate in-line code for Motorola
+.SM MC\s068881
+floating-point processor
+(supported only on Sun-3 systems).
+.TP
+.B \-ffpa
+Generate in-line code for Sun Floating Point Accelerator
+(supported only on Sun-3 systems).
+.TP
+.B \-fsky
+Generate in-line code for Sky floating-point processor
+(supported only on Sun-2 systems).
+.TP
+.B \-fsoft
+Generate software floating-point calls.  Supported
+only on Sun-2 and Sun-3 systems, for which it is the
+default.
+.TP
+.B \-fstore
+Insure that expressions allocated to extended precision registers
+are rounded to storage precision whenever an assignment occurs
+in the source code.
+Only has effect when
+.B \-f68881
+is specified
+(Sun-3 systems only).
+.TP
+.B \-fswitch
+Run-time-switched floating-point calls.
+The compiled object code is linked at runtime
+to routines that support one of the above types of floating
+point code.  This was the default in previous releases.
+Only for use with programs that are floating-point intensive,
+and must be portable to machines with various floating-point
+hardware options (supported only on Sun-2 and Sun-3 systems).
+.RE
+.TP
+.BR \-fsingle "		(Sun-2, Sun-3 and Sun-4 systems)"
+Use single-precision arithmetic in computations involving only
+.B float
+expressions.  Do not convert everything to
+.BR double ,
+which is the default.  Note: floating-point 
+.I parameters 
+are still converted to double precision, and 
+.I functions 
+returning values still return double-precision values.  
+.IP
+Although not standard C,
+certain programs run much faster using this option.  
+Be aware that some significance can be lost due
+to lower-precision intermediate values.
+.\".TP
+.\".\" Added for Sun386i, Should be part of SunOS4.0
+.\".B \-fsingle2
+.\"Pass
+.\".B float
+.\"values as float, not
+.\".BR double .
+.\"Often used in conjuction with
+.\".BR \-fsingle .
+.TP
+.B \-g
+Produce additional symbol table information for 
+.BR dbx (1)
+and 
+.BR dbxtool (1)
+and pass
+.B \-lg
+option to 
+.BR ld (1)
+(so as to include the
+.B g
+library, that is:
+.BR /usr/lib/libg.a ).
+When this option is given, the
+.B \-O
+and
+.B \-R
+options are suppressed.
+.TP
+.B \-go
+Produce additional symbol table information for 
+.BR adb (1).
+When this option is given, the
+.B \-O
+and
+.B \-R
+options are suppressed.
+.TP
+.B \-help
+Display helpful information about 
+.BR cc .
+.br
+.ne 5
+.TP
+.BI \-I pathname
+Add
+.I pathname
+to the list of directories in which to search for
+.B #include
+files with relative filenames (not beginning with slash
+.RB ` / ').
+The preprocessor first searches for
+.B #include
+files in the directory containing
+.IR sourcefile ,
+then in directories named with
+.B \-I
+options (if any), and finally, in
+.BR /usr/include .
+.TP
+.B \-J
+Generate 32-bit offsets in 
+.B switch
+statement labels (supported only on Sun-2 and Sun-3 systems).
+.TP
+.BI \-l library
+Link with object library 
+.I library
+(for 
+.BR ld (1)).
+This option must follow
+the
+.I sourcefile
+arguments.
+.TP
+.BI \-L directory
+Add 
+.I directory
+to the list of directories containing object-library routines (for linking
+using
+.BR ld (1).
+.TP
+.B \-M
+Run only the macro preprocessor
+on the named C programs,
+requesting that it generate makefile dependencies
+and send the result to the standard output (see
+.BR make (1)
+for details about makefiles and dependencies).
+.TP
+.B \-misalign
+Generate code to allow loading and storage of misaligned data
+(Sun-4 systems only).
+.\".TP
+.\".B \-mc68010
+.\"Generate relocatable object 
+.\".RB ( \&.o )
+.\"files for the
+.\".SM MC\s068010
+.\"microprocessor (which, when linked, can
+.\"also run on the
+.\".SM MC\s068020).
+.\".TP
+.\".B \-mc68020
+.\"Generate relocatable object 
+.\".RB ( \&.o )
+.\"files for the
+.\".SM MC\s068020
+.\"microprocessor.
+.TP
+.BI \-o " outputfile"
+Name the output file
+.IR outputfile .
+.I outputfile 
+must have the appropriate suffix for the type of file to be produced
+by the compilation (see
+.SM FILES\s0,
+below).  
+.I outputfile
+cannot be the same as 
+.I sourcefile 
+(the compiler will not overwrite the source file).
+.br
+.ne 5
+.TP
+.BI \-O\fR[\fP level\fR]
+Optimize the object code.  Ignored when either 
+.BR \-g ,
+.BR \-go ,
+or
+.B \-a
+is used.
+.B \-O 
+with the
+.I level
+omitted is equivalent to
+.BR \-O2 .
+On Sun386i systems, any level supplied is treated as level
+.BR 1 .
+.I level
+is one of:
+.RS
+.RS
+.TP
+.B 1
+Do postpass assembly-level optimization only.
+.TP
+.B 2
+Do global optimization prior to code generation,
+including loop optimizations, common subexpression
+elimination, copy propagation, and automatic register allocation.  
+.BR \-O2
+does not optimize references to or definitions of external or
+indirect variables.
+.TP
+.B 3
+Same as
+.BR \-O2 ,
+but optimize uses and definitions of external variables.
+.BR \-O3
+does not trace the effects of pointer assignments.
+Neither
+.BR \-O3
+nor
+.BR \-O4
+should be used when compiling either device drivers, or programs that
+modify external variables from within signal handlers.
+.TP
+.B 4
+Same as
+.BR \-O3 ,
+but trace the effects of pointer assignments.
+.RE
+.RE
+.
+.TP
+.B \-p
+Prepare the object code to collect data for profiling with
+.BR prof (1).
+Invokes a run-time recording mechanism that produces a
+.B mon.out
+file (at normal termination).
+.TP
+.B \-P
+Run the source file through
+.BR cpp (1),
+the C preprocessor, only.  Puts the output in a file with a
+.B \&.i
+suffix.  Does not include
+.BR cpp -type
+line number information in the output.
+.TP
+.B \-pg
+Prepare the object code to collect data for profiling with
+.BR gprof (1).
+Invokes a run-time recording mechanism that produces a
+.B gmon.out
+file (at normal termination).  
+.TP
+.B \-pic
+Produce position-independent code.  Each reference to a global datum is
+generated as a dereference of a pointer in the global offset table.
+Each function call is generated in pc-relative addressing mode through
+a procedure linkage table.  The size of the global offset table is
+limited to 64K on MC68000-family processors, or to 8K on
+.SM SPARC
+processors.
+.TP
+.B \-PIC
+Like
+.BR \-pic ,
+but allows the global offset table to span the range of 32-bit
+addresses in those rare cases where there are too many global data
+objects for
+.BR \-pic .
+.TP
+.B \-pipe
+Use pipes, rather than intermediate files, between
+.BR cpp (1)
+and
+.BR ccom
+compilation stages.  Very cpu-intensive.
+.br
+.ne 3
+.TP
+.BI "\-Qoption " "prog opt"
+Pass the option
+.I opt
+to the program
+.IR prog .
+The option must be appropriate to that program and may begin with a
+minus sign.
+.I prog
+can be one of:
+.BR as ,
+.\".BR bb_count ,
+.\".BR c2 ,
+.\".BR c_plus ,
+.\".BR ccom ,
+.BR cpp ,
+.BR inline ,
+or
+.BR ld .
+.br
+.ne 5
+.TP
+.BI \-Qpath " pathname"
+Insert  directory
+.I pathname
+into the compilation search path.
+.I pathname will be searched for alternate versions of the
+compilation programs, such as
+.BR cpp (1),
+and
+.BR ld (1).
+This path will also be searched first for certain relocatable
+object files that are implicitly referenced by the
+compiler driver, for example
+.B *crt*.o
+and
+.BR  bb_link.o .
+.TP
+.BI \-Qproduce " sourcetype"
+Produce source code of the type
+.IR sourcetype .
+.I sourcetype
+can be one of:
+.RS
+.RS
+.PD 0
+.TP
+.B \&.c
+C source (from
+.BR bb_count ).
+.TP
+.B \&.i
+Preprocessed C source from
+.BR cpp (1).
+.\".TP
+.\".B \&.c++
+.\"C++ source.
+.TP
+.B \&.o
+Object file from
+.BR as (1).
+.TP
+.B \&.s
+Assembler source (from
+.\" .BR ccom ,
+.BR inline ,
+or
+.BR c2 ).
+.PD
+.RE
+.RE
+.\".TP
+.\".BI \-Qtarget " arch"
+.\"Produce object and executable files for another machine architecture.
+.\".I arch
+.\"is the name of a directory in
+.\".B /usr/bin/arch
+.\"that contains the proper compilers and object libraries to produce
+.\"code for the designated architecture (other than Sun-2 or Sun-3
+.\"systems).
+.\".\" or sparc).
+.\".I arch
+.\"is either a link to a directory with a name of the form
+.\".IR host.target ,
+.\"or the latter may be mounted (see
+.\".BR mount (8)
+.\"for details) as
+.\".IR arch .
+.\".TP
+.\".I host
+.\"is a string, such as
+.\".RB ` M68020 ',
+.\"that indicates the architecture of the machine
+.\"performing the compilation.
+.\".I target
+.\"is a string indicating the architecture of the machine on which the
+.\"executables will run.
+.TP
+.B \-R
+Merge data segment with text segment for
+.BR as (1).
+Data initialized in the object file produced by this compilation is
+read-only, and (unless linked with
+.BR "ld \-N" )
+is shared between processes.  Ignored when either
+.B \-g
+or
+.B \-go
+is used.
+.TP
+.B \-S
+Do not assemble the program but produce an assembly source file.
+.TP
+.B \-sb
+Generate extra symbol table information for the Sun Source Code Browser.
+This is an unbundled product that will be released based on 4.1.
+.\".TP
+.\".B \-sharedlib
+.\"Compile and link a shared library.
+.\".TP
+.\".BI \-sl library
+.\"Read a shared object library for
+.\".BR ld (1).
+.\".TP
+.\".B \-sparc
+.\".B Use
+.\".SB SPARC
+.\".B compiler parts
+.br
+.ne 10
+.TP
+.BI\ -target " target_arch"
+Compile object files for the specified processor architecture.
+Unless used in conjunction with one of the Sun Cross-Compilers, correct
+programs can be generated only for the architecture of the host on
+which the compilation is performed.
+.I target_arch
+can be one of:
+.RS
+.RS
+.PD 0
+.TP 10
+.B sun2
+Produce object files for a Sun-2 system.
+.TP
+.B sun3
+Produce object files for a Sun-3 system.
+.TP
+.B sun4
+Produce object files for a Sun-4 system.
+.PD
+.RE
+.RE
+.TP
+.BI \-temp= directory
+Set directory for temporary files to be
+.IR directory .
+.TP
+.B \-time
+Report execution times for the various compilation passes.
+.TP
+.BI \-U name
+Remove any initial definition of the
+.BR cpp (1)
+symbol
+.IR name .
+Inverse of the
+.B \-D
+option.
+.TP
+.B \-w
+Do not print warnings.
+.SH ENVIRONMENT
+.TP 20
+.SB FLOAT_OPTION
+.\" Sun386i 
+(Sun-2, Sun-3, Sun-4 systems only.)
+When no floating-point option is specified, the compiler uses the value
+of this environment variable (if set).  Recognized values are:
+.BR f68881 ,
+.BR ffpa ,
+.BR fsky ,
+.BR fswitch 
+and
+.BR fsoft .
+.br
+.ne 6
+.SH FILES
+.PD 0
+.TP 20
+.B a.out
+executable output file
+.TP
+.IB file .a
+library of object files
+.TP
+.IB file .c
+C source file
+.TP
+.IB file .d
+.BR tcov (1)
+.\" Sun386i 
+test coverage input file (Sun-2, Sun-3, Sun-4 systems only)
+.TP
+.IB file .i
+C source file after preprocessing with
+.BR cpp (1)
+.TP
+.IB file .il
+.I inline 
+expansion file
+.TP
+.IB file .o
+object file
+.TP
+.IB file .s
+assembler source file
+.TP
+.IB file .S
+assembler source for
+.BR cpp (1)
+.TP
+.IB file .tcov
+output from 
+.BR tcov (1)
+.\" Sun386i 
+(Sun-2, Sun-3, Sun-4 systems only)
+.TP
+.B /usr/lib/c2
+object code optimizer
+.TP
+.B /usr/lib/ccom
+compiler
+.TP
+.B /usr/lib/compile
+compiler command-line processing driver
+.TP
+.B /usr/lib/cpp
+macro preprocessor
+.TP
+.B /usr/lib/crt0.o
+runtime startup code
+.TP
+.B /usr/lib/Fcrt1.o
+startup code for
+.B \-fsoft
+option
+.\" Sun386i 
+(Sun-2, Sun-3, Sun-4 systems only)
+.TP
+.B /usr/lib/gcrt0.o
+startup for profiling with
+.BR gprof (1)
+.TP
+.B /usr/lib/libc.a
+standard library, see
+.BR intro (3)
+.TP
+.B /usr/lib/mcrt0.o
+startup for profiling with
+.BR prof (1)
+.BR intro (3)
+.TP
+.B /usr/lib/Mcrt1.o
+startup code for
+.B \-f68881
+option (for Sun-3 systems)
+.TP
+.B /lib/optim
+Sun386i code optimizer
+.TP
+.B /lib/Scrt1.o
+startup code for
+.B \-fsky
+option (for Sun-2 systems)
+.TP
+.B /usr/lib/Wcrt1.o
+startup code for
+.B \-ffpa
+option (for Sun-3 systems)
+.TP
+.B /usr/include
+standard directory for 
+.B #include 
+files
+.TP
+.B /usr/lib/bb_link.o
+basic block counting routine
+.TP
+.B /usr/lib/cg
+code generator used with 
+.B /usr/lib/iropt
+.TP
+.B /usr/lib/libc_p.a
+profiling library, see 
+.BR gprof (1)
+or 
+.BR prof (1)
+.TP
+.B /usr/lib/inline
+inline expander of library calls
+.TP
+.B /usr/lib/iropt
+intermediate representation optimizer
+.TP
+.B /usr/lib/libm.a
+math library
+.TP
+.B /usr/5lib/libc.a
+System V standard compatibility library, see
+.BR intro (3)
+.TP
+.B /usr/5lib/libc_p.a
+System V profiling library, see 
+.BR gprof (1)
+or 
+.BR prof (1)
+.br
+.ne 5
+.TP
+.B /tmp/*
+compiler temporary files
+.TP
+.B /usr/xpg2include
+directory for 
+.SM X/O\s0pen
+.B #include
+files
+.TP
+.B /usr/xpg2lib/libxpg.a
+.SM X/O\s0pen
+.SM XPG2
+compatibility library
+.TP
+.B /usr/xpg2lib/libxpg_p.a
+Profiled version of
+.SM X/O\s0pen
+.SM XPG2
+compatibility library
+.TP
+.B mon.out
+file produced for analysis by
+.BR prof (1)
+.TP
+.B gmon.out
+file produced for analysis by
+.BR gprof (1)
+.TP
+.B .cb
+subdirectory that holds the information generated by the
+.B \-cb
+option
+.PD
+.SH "SEE ALSO"
+.BR adb (1),
+.BR ar (1V),
+.BR as (1),
+.BR cflow (1V),
+.BR cpp (1),
+.BR ctags (1),
+.BR cxref (1V),
+.BR dbx (1),
+.BR dbxtool (1),
+.BR gprof (1),
+.BR inline (1),
+.BR ld (1),
+.BR lint (1V),
+.BR m4 (1V),
+.BR make (1),
+.BR prof (1),
+.BR tcov (1),
+.BR intro (3),
+.BR monitor (3)
+.LP
+.TX FPOINT
+.br
+.TX PUL
+.br
+B. W. Kernighan and D. M. Ritchie,
+.IR "The C Programming Language" ,
+Prentice-Hall, 1978
+.\".br
+.\".I "\s-1UNIX\s0 Interface Overview"
+.SH DIAGNOSTICS
+.LP
+The diagnostics produced by the C compiler 
+are intended to be self-explanatory.
+Occasional obscure messages may be produced by
+the preprocessor, assembler, or loader.
+.br
+.ne 10
+.SH NOTES
+.LP
+While the compiler allows 8-bit strings and comments,
+8-bits are not allowed anywhere else.
+The 
+.B cc 
+command does not generate or support 8-bit symbol names
+because, until
+.SM ANSI C\s0,
+non-\s-1ASCII\s0
+support was not expected.
+The
+.SM ANSI C
+specification now suggests that string literals
+and comments can contain any characters from any
+character code set.
+.LP
+The following commands are affected by this
+lack of support for 8-bit characters:
+.BR cflow (1V),
+.BR cpp (1),
+.BR ctags (1),
+.BR cxref (1V),
+.BR dbx (1),
+.BR lint (1V),
+.BR m4 (1V),
+and
+.\".BR sdb (?),
+.BR yacc (1).
+.SH BUGS
+.LP
+The program context given in syntax error messages
+is taken from the input text
+.I after 
+the C preprocessor has performed substitutions.
+Therefore, error messages
+involving syntax errors in or near macro references or manifest 
+constants may be misleading.
+.LP
+Compiling with optimization level
+.B 2 
+or greater may produce
+incorrect object code if tail-recursion
+elimination is applied to functions called with fewer actual
+parameters (arguments) than the number of formal parameters in
+the function's definition. 
+Such parameter-count mismatches can be detected using
+.BR lint (1V).

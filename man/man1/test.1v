@@ -1,0 +1,261 @@
+.\" @(#)test.1v 1.1 92/07/30 SMI; from UCB 4.3 BSD and S5
+.TH TEST 1V "15 December 1988"
+.SH NAME
+test \- return true or false according to a conditional expression
+.SH SYNOPSIS
+.B test
+.I expression
+.LP
+[
+.I expression
+]
+.SH DESCRIPTION
+.IX "System V commands" "\fLtest\fR"
+.IX  "test command"  ""  "\fLtest\fP \(em condition command"
+.B test
+evaluates the expression
+.I expression
+and, if its value is true, returns a zero (true)
+exit status; otherwise, a
+non-zero (false) exit status is returned.
+.B test
+returns a non-zero exit if there are no arguments.
+.SH USAGE
+.SS Primitives
+.LP
+The following primitives are used to construct
+.IR expression .
+.TP 9n
+.BI \-b " filename"
+True if
+.I filename
+exists and is a block special device.
+.TP
+.BI \-c " filename"
+True if
+.I filename
+exists and is a character special device.
+.TP
+.BI \-d " filename"
+True if
+.I filename
+exists and is a directory.
+.TP
+.BI \-f " filename"
+True if
+.I filename
+exists and is not a directory.
+.TP
+.BI \-g " filename"
+True if
+.I filename
+exists and its set-group-\c
+.SM ID
+bit is set.
+.TP
+.BI \-h " filename"
+True if
+.I filename
+exists and is a symbolic link.
+.TP
+.BI \-k " filename"
+True if
+.I filename
+exists and its sticky bit is set.
+.TP
+.BI \-l " string"
+the length of the string.
+.TP
+.BI \-n " s1"
+True if the length of the string
+.I s1
+is non-zero.
+.TP
+.BI \-p " filename"
+True if
+.I filename
+exists and is a named pipe (\c
+.SM FIFO\s0).
+.TP
+.BI \-r " filename"
+True if
+.I filename
+exists and is readable.
+.TP
+.BI \-s " filename"
+True if
+.I filename
+exists and has a size greater than zero.
+.TP
+\fB\-t\fR\ [\fI\ fildes\ \fR]
+True if the open file whose file descriptor number is
+.I fildes
+(1 by default)
+is associated with a terminal device.
+.TP
+.BI \-u " filename"
+True if
+.I filename
+exists and its set-user-\c
+.SM ID
+bit is set.
+.TP
+.BI \-w " filename"
+True if
+.I filename
+exists and is writable.
+.TP
+.BI \-x " filename"
+True if
+.I filename
+exists and is executable.
+.TP
+.BI \-z " s1"
+True if the length of string
+.I s1
+is zero.
+.TP
+.IB s1 " = " s2
+True
+if the strings
+.I s1
+and
+.I s2
+are equal.
+.TP
+.IB s1 " != " s2
+True
+if the strings
+.I s1
+and
+.I s2
+are not equal.
+.TP
+.I s1
+True if
+.I s1
+is not the null string.
+.TP
+.IB n1 " \-eq " n2
+True if the integers
+.I n1
+and
+.I n2
+are numerically equal.
+.TP
+.IB n1 " \-ne " n2
+True if the integer
+.I n1
+is not numerically equal to the integer
+.IR n2 .
+.TP
+.IB n1 " \-gt " n2
+True if the integer
+.I n1
+is numerically greater than the integer
+.IR n2 .
+.TP
+.IB n1 " \-ge " n2
+True if the integer
+.I n1
+is numerically greater than or equal to the integer
+.IR n2 .
+.TP
+.IB n1 " \-lt " n2
+True if the integer
+.I n1
+is numerically less than the integer
+.IR n2 .
+.TP
+.IB n1 " \-le " n2
+True if the integer
+.I n1
+is numerically less than or equal to the integer
+.IR n2 .
+.ne 4
+.SS Operators
+.LP
+The above primaries may be combined with the
+following operators:
+.RS
+.TP
+.B  !
+Unary negation operator.
+.TP
+.B  \-a
+Binary
+.I and
+operator.
+.TP
+.B  \-o
+Binary
+.I or
+operator.
+.TP
+.BI ( expression )
+Parentheses for grouping.
+.RE
+.LP
+.B \-a
+has higher precedence than
+.B \-o.
+Notice that all the operators and flags are separate
+arguments to
+.BR test .
+Notice also that parentheses are meaningful
+to the Shell and must be escaped.
+.SH SYSTEM V USAGE
+The actions of the System V version of
+.B test
+are the same, except for the following primitives:
+.TP 12
+.BI \-f " filename"
+True if
+.I filename
+exists and is a regular file.
+.TP
+.BI \-l " string"
+Not supported.
+.SH "SEE ALSO"
+.BR find (1),
+.BR sh (1)
+.SH WARNING
+In the second form of the command (that is, the one that uses
+.BR [\|] ,
+rather than the word
+.BR test ),
+the square brackets must be delimited by blanks.
+.LP
+Some
+.SM UNIX
+systems do not recognize the second form of the command.
+.SH NOTES
+The
+.B test
+command is built into the Bourne shell, which chooses the 4.2
+.SM BSD
+or the System V version of
+.BR test ,
+depending on whether
+.B /usr/5bin
+appears before
+.B /usr/bin
+in the shell's
+.B
+.SM PATH
+variable.  This is consistent with the behavior of other
+commands present in both
+.B /usr/bin
+and
+.BR /usr/5bin .
+.LP
+The fact that
+.B test
+is built into the shell also means that a program named
+.B test
+cannot be run without specifying a pathname; if the program is in the
+current directory,
+.B .\|/\|test
+will suffice.
+
+

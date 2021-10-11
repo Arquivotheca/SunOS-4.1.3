@@ -1,0 +1,222 @@
+.\" @(#)sa.8 1.1 92/07/30 SMI; from UCB 4.3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH SA 8 "8 January 1988"
+.SH NAME
+sa, accton \- system accounting
+.SH SYNOPSIS
+.B /usr/etc/sa
+[
+.B \-abcdDfijkKlmnrstu
+] [
+\fB\-v\fR[\fIn\fR]
+] [
+.B \-S
+.I savacctfile
+] [
+.B \-U
+.I usracctfile
+] [
+.I filename
+]
+.LP
+.B /usr/lib/acct/accton
+[
+.I filename
+]
+.SH DESCRIPTION
+.IX  "sa command"  ""  "\fLsa\fP \(em process accounting summary"
+.IX  "accton command"  ""  "\fLaccton\fP \(em processing accounting on or off"
+.IX  "accounting" "process accounting, on or off \(em \fLaccton\fR"
+.IX  "accounting" "process accounting, display record \(em \fLsa\fR"
+With an argument naming an existing
+.IR filename ,
+.B accton
+causes system accounting information for
+every process executed to be placed at the end of the file.
+If no argument is given, accounting is turned off.
+.LP
+.B sa
+reports on, cleans up, and generally maintains accounting files.
+.LP
+.B sa
+is able to condense the information in
+.B /var/adm/pacct
+into a summary file
+.B /var/adm/savacct
+which contains a count of the
+number of times each command was called and the time resources consumed.
+This condensation is desirable because on a large system
+.B /var/adm/pacct
+can grow by 500K bytes per day.
+The summary file is normally read before the accounting file,
+so the reports include all available information.
+.LP
+If a file name is given as the last argument, that file will be treated
+as the accounting file;
+.B /var/adm/pacct
+is the default.
+.LP
+Output fields are labeled:
+.B cpu
+for the sum of user+system time
+(in minutes),
+.B re
+for real time (also in minutes),
+.B k
+for
+.SM CPU\s0-time
+averaged core usage (in 1k units),
+.B avio
+for average number of
+.SM I/O
+operations per execution.
+With options fields labeled
+.B tio
+for total
+.SM I/O
+operations,
+.B k*sec
+for
+.SM CPU
+storage integral (kilo-core seconds),
+.B u
+and
+.B s
+for user and system
+.SM CPU
+time alone (both in minutes) will sometimes appear.
+.LP
+.B sa
+also breaks out accounting statistics by user.  This
+information is kept in the file
+.BR /var/adm/usracct .
+.SH OPTIONS
+.TP
+.B \-a
+Print all command names, even those containing unprintable characters
+and those used only once.  By default, those are placed under the
+name `***other.'
+.TP
+.B \-b
+Sort output by sum of user and system time divided by number of calls.
+Default sort is by sum of user and system times.
+.TP
+.B \-c
+Besides total user, system, and real time
+for each command print percentage
+of total time over all commands.
+.TP
+.B \-d
+Sort by average number of disk
+.SM I/O
+operations.
+.TP
+.B \-D
+Print and sort by total number of disk
+.SM I/O
+operations.
+.TP
+.B \-f
+Force no interactive threshold compression with
+.B \-v
+flag.
+.TP
+.B \-i
+Do not read in summary file.
+.TP
+.B \-j
+Instead of total minutes time for each category, give seconds per call.
+.TP
+.B \-k
+Sort by
+.SM CPU\s0-time
+average memory usage.
+.TP
+.B \-K
+Print and sort by
+.SM CPU\s0-storage
+integral.
+.TP
+.B \-l
+Separate system and user time; normally they are combined.
+.TP
+.B \-m
+Print number of processes and number of
+.SM CPU
+minutes for each user.
+.TP
+.B \-n
+Sort by number of calls.
+.TP
+.B \-r
+Reverse order of sort.
+.TP
+.B \-s
+Merge accounting file into summary file
+.B /var/adm/savacct
+when done.
+.TP
+.B \-t
+For each command report ratio of real time
+to the sum of user and system times.
+.TP
+.B \-u
+Superseding all other flags, print for each record
+in the accounting file the user
+.SM ID
+and command name.
+.br
+.ne 5
+.TP
+.B \-v
+Followed by a number
+.IR n ,
+types the name of each command used
+.I n
+times or fewer.  If
+.I n
+is not specified, it defaults to 1.
+Await a reply from the terminal; if it begins with
+.BR y ,
+add the command to
+the category `**junk**.' This is used to strip out garbage.
+.TP
+.B \-S
+The following filename is used as the command summary file instead of
+.BR /var/adm/savacct .
+.TP
+.B \-U
+The following filename is used instead of
+.B /var/adm/usracct
+to accumulate the per-user statistics printed by the
+.B \-m
+option.
+.dt
+.SH FILES
+.PD 0
+.TP 20
+.B /var/adm/pacct
+raw accounting
+.TP
+.B /var/adm/savacct
+summary by command
+.TP
+.B /var/adm/usracct
+summary by user
+.SM ID
+.PD
+.SH "SEE ALSO"
+.BR acct (2V),
+.BR acct (5),
+.BR ac (8)
+.SH BUGS
+.LP
+.BR sa 's
+execution time increases linearly with the magnitude of the
+largest positive user
+.SM ID
+in
+.BR /etc/passwd .

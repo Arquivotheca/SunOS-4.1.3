@@ -1,0 +1,78 @@
+.\" @(#)t_rcvrel.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_RCVREL 3N "21 January 1990"
+.SH NAME
+t_rcvrel \- acknowledge receipt of an orderly release indication
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_rcvrel(fd)
+int fd;
+.fi
+.SH DESCRIPTION
+.IX "t_rcvrel()" "" "\fLt_rcvrel()\fR \(em acknowledge orderly release indication" ""
+.IX "transport" "acknowledge orderly release indication"
+.LP
+.B t_rcvel(\|)
+acknowledges receipt of an orderly release indication.
+.I fd
+identifies the local transport endpoint where the connection exists.
+After receipt of this indication, the user may not attempt to
+receive more data because such an attempt will block forever.
+However, the user may continue to send data over the connection if
+.BR t_sndrel (3N)
+has not been issued by the user.
+.LP
+.B t_rcvrel(\|)
+is an optional service of the transport provider,
+and is only supported if the transport provider returned service
+type
+.SB T_COTS_ORD
+on
+.BR t_open (3N)
+or
+.BR t_getinfo (3N).
+.SH RETURN VALUES
+.LP
+.B t_rcvrel(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on this transport endpoint and requires
+immediate attention.
+.TP
+.SM TNOREL
+No orderly release indication currently exists on the specified
+transport endpoint.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR t_open (3N),
+.BR t_sndrel (3N)
+.LP
+.TX NETP

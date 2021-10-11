@@ -1,0 +1,115 @@
+.\" @(#)uname.2v 1.1 92/07/30 SMI; from S5R3
+.TH UNAME 2V "21 January 1990"
+.SH NAME
+uname \- get information about current system
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/utsname.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int uname (name)
+struct utsname *name;
+.ft
+.fi
+.SH DESCRIPTION
+.LP
+.B uname(\|)
+stores information identifying the current operating
+system in the structure pointed to by
+.IR name .
+.LP
+.B uname(\|)
+uses the structure defined in
+.BR <sys/utsname.h> ,
+the members of which are:
+.LP
+.RS
+.nf
+.ft B
+struct utsname {
+.RS
+.ft B
+char	sysname[9];
+char	nodename[9];
+char	nodeext[65-9];
+char	release[9];
+char	version[9];
+char	machine[9];
+.RE
+.ft B
+}
+.ft R
+.fi
+.RE
+.LP
+.B uname(\|)
+places a null-terminated character string naming the current
+operating system in the character array
+.IR sysname ;
+this string is \(lqSunOS\(rq on Sun systems.
+.I nodename
+is set to the name that the system is known by on a communications
+network; this is the same value as is returned by
+.BR gethostname (2).
+.I release
+and
+.I version
+are set to values that further identify the operating system.
+.I machine
+is set to a standard name that identifies the hardware on which the SunOS
+system is running.
+This is the same as the value displayed by
+.BR arch (1).
+.SH RETURN VALUES
+.LP
+.B uname(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.\"and sets
+.\".B errno
+.\"to indicate the error.
+.SH SEE ALSO
+.BR arch (1),
+.BR uname (1),
+.BR gethostname (2)
+.SH NOTES
+.LP
+.I nodeext
+is provided for backwards compatability with previous SunOS Releases
+and provides space for node names longer than eight bytes.
+Applications should not use
+.IR nodeext .
+To be maximally portable, applications that want to copy the node name
+to another string should use
+.B strlen(nodename)
+rather than
+the constant 9 or
+.B sizeof(nodename)
+as the size of the target string.
+.LP
+System administrators should note that systems with node names
+longer than eight bytes do not conform to
+.IR "\s-1IEEE\s0 Std 1003.1-1988" ,
+.I "System V Interface Definition"
+(Issue 2),
+or
+.I "X/Open Portability Guide"
+(Issue 2)
+requirements.
+.\".LP
+.\"In a future SunOS release
+.\"the size of
+.\"n.I nodename
+.\"will increase and
+.\".I nodeext
+.\"will disappear.

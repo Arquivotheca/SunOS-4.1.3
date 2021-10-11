@@ -1,0 +1,111 @@
+.\"	@(#)indent.tmac 1.1 92/07/30 SMI
+.\"	Troff macro package for "indent -troff" output
+.nr PS 11	\" Text point size
+.nr CS 10	\" Major comment point size
+.nr RC 3.5i	\" Distance from the left margin to right adjusted comments
+.nr LC .25i	\" Distance from the left text edge to left adjusted comments
+.nr MC .25i	\" Distance from the left margin to major comments
+.nr CL 2.75i	\" Line length for snuggled left comments
+.nr VS 13	\" Vertical line spacing
+.nr HM 1i	\" Header margin
+.nr FM 1i	\" Footer margin
+.nr TI 1i	\" Text indent
+.nr LL 6.5i
+.de HD
+'sp .2i
+'ft I
+'ps 14
+.tl /\\*(FN//\\*(PR/
+'ps
+'ft
+'sp |\\n(HMu
+..
+.de FT
+'sp .4i
+.tl ///%/
+'bp
+..
+.wh 0 HD
+.wh 11i-\n(FMu FT
+.de RT
+.in \\n(TIu
+.ps \\n(PS
+.vs \\n(VS
+.ll \\n(LLu
+.ft R
+..
+.de Fn
+.ds FN \\$1
+.nf
+.in 0
+.ps 28
+.sp .5i
+.ce 1
+.ft I
+\- \\$1 \-
+.sp .5i
+.RT
+.ns
+..
+.de Pr
+.ds PR \\$1
+.ne 1i
+.sp .2i
+.ft B
+.ps 14
+.ti 0
+\\$1
+.if \\n(.nu+1p<\\n(TIu .sp -1
+.RT
+.ti 0
+\\l`\\n(LLu\(ul`
+.sp -1
+.ns
+..
+.de De
+.br
+.if \\n(.nu<(\\$1) .sp -1
+\\h`\\$1`\\c
+..
+.de Du
+.br
+.if \\n(.nu+\\w`\\$2`u<(\\$1) .sp -1
+\\h'\\$1-\\w`\\$2`u'\\$2\\c
+..
+.de */
+.RT
+.nf
+..
+.de /*
+.ft I
+.fi
+.ad l
+.ps \\n(CS
+.ie \\$2<0 \\{\
+.	ne 2i
+.	nf
+.	sp .3i
+.	vs \\n(CS+1
+.	in \\n(MCu
+.	ft L \\}
+.el .ie \\$2 \\{\
+.	sp -1
+.	ie (\\n(.n+\\n(TIu>=\\n(RCu):(\\$3>(\\n(CLu-1n)) \\{\
+.		in \\n(LCu
+.		ie \\n(CLu-\\n(TI<\\$3 .ll \\n(CLu
+.		el .ie (\\$3+\\n(TIu-\\n(LCu>=\\n(C!u):(\\$3>=1i) .ll \\$3+\\n(TIu-1n
+.		    el \\{\
+.			in \\n(RCu
+.			sp 1 \\}\\}
+.	el .	in \\n(RCu\\}
+.el \\{\
+.	ne 1i
+.	sp .1i
+.	vs \\n(CS+1
+.	ie \\$1<=7p \\{\
+.		in \\n(MCu
+.		sp .2i
+.		ft H  \\}
+.	el .	in \\n(TIu+\\$3-\\n(LCu\\}
+.nr C! 10i
+..

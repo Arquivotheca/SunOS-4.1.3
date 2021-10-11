@@ -1,0 +1,110 @@
+.\" @(#)fbio.4s 1.1 92/07/30 SMI;
+.TH FBIO 4S "7 October 1990"
+.SH NAME
+fbio \- frame buffer control operations
+.SH DESCRIPTION
+.IX  "fbio device"  ""  "\fLfbio\fP \(em frame buffer control operations"  ""  PAGE START
+.LP
+All Sun frame buffers support the same general interface that is defined
+by 
+.BR <sun/fbio.h> .
+Each responds to an
+.SB FBIOGTYPE
+.BR ioctl(2)
+request which returns information in a
+.B fbtype
+structure.
+.LP
+Each device has an
+.SB FBTYPE
+which is used by higher-level software
+to determine how to perform graphics functions.
+Each device is used by opening it, doing an
+.SB FBIOGTYPE
+.B ioctl(\|)
+to see which frame buffer type is present, and thereby selecting the
+appropriate device-management routines.
+.LP
+Full-fledged frame buffers (that is,
+those that run SunView1) implement an
+.SB FBIOGPIXRECT
+.B ioctl(\|)
+request, which returns a pixrect.
+This call is made only from inside the kernel.
+The returned pixrect is used by
+.BR win (4S)
+for cursor tracking and colormap loading.
+.LP
+.SB FBIOSVIDEO
+and
+.SB FBIOGVIDEO
+are general-purpose
+.B ioctl(\|)
+reuqests for controlling
+possible video features of frame buffers.
+These
+.B ioctl(\|)
+requests either set or return the value
+of a flags integer.
+At this point, only the
+.SB FBVIDEO_ON
+option is available, controlled by
+.BR \s-1FBIOSVIDEO\s0 .
+.SB FBIOGVIDEO
+returns the current video state.
+.LP
+The
+.SB FBIOSATTR
+and
+.SB FBIOGATTR
+.B ioctl(\|)
+requests allow access to special features of
+newer frame buffers.
+They use the 
+.B fbsattr
+and
+.B fbgattr
+structures.
+.LP
+Some color frame buffers support the
+.SB FBIOPUTCMAP
+and
+.SB FBIOGETCMAP
+.B ioctl(\|)
+reuqests, which provide access to the colormap.
+They use the
+.B fbcmap
+structure.
+.SH "SEE ALSO"
+.BR ioctl (2),
+.BR mmap (2),
+.BR bw* (4S),
+.BR cg* (4S),
+.BR gp* (4S),
+.BR fb (4S),
+.BR win (4S)
+.SH BUGS
+.LP
+The
+.SB FBIOSATTR
+and
+.SB FBIOGATTR
+.B ioctl(\|)
+requests are only supported by frame buffers which emulate older
+frame buffer types.
+For example,
+.BR cgfour (4S)
+frame buffers emulate
+.BR bwtwo (4S)
+frame buffers.
+If a frame buffer is emulating another frame buffer,
+.SB FBIOGTYPE
+returns the emulated type.
+To get the real type, use
+\fB\s-1FBIOGATTR\s0\fP.
+.\".LP
+.\"The
+.\".SB FBVIDEO_ON
+.\"flag may be incorrect for Sun-1 black and white frame buffers; see
+.\".BR bwone (4S).
+.IX  "fbio device"  ""  "\fLfbio\fP \(em frame buffer control operations"  ""  PAGE END

@@ -1,0 +1,140 @@
+.\" @(#)tcov.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH TCOV 1 "18 February 1988"
+.SH NAME
+tcov \- construct test coverage analysis and statement-by-statement profile
+.SH SYNOPSIS
+.B tcov
+[
+.B \-a
+] [
+.BI \- n
+]
+.IR srcfile .\|.\|.
+.SH AVAILABILITY
+.LP
+This command is available on Sun-3 and Sun-4 systems only.
+.SH DESCRIPTION
+.IX  "tcov command"  ""  "\fLtcov\fP \(em code coverage tool"
+.IX  "code coverage tool"  ""  "code coverage tool \(em \fLtcov\fP"
+.IX  "programming tools"  tcov  ""  "\fLtcov\fP \(em code coverage tool"
+.IX  "C programming language"  tcov  ""  "\fLtcov\fP \(em code coverage tool"
+.IX  languages  tcov  ""  "\fLtcov\fP \(em code coverage tool"
+.LP
+.B tcov
+produces a test coverage analysis and
+statement-by-statement profile of a C or
+.SM FORTRAN
+program.
+When a program in a file named
+.IB file .c
+or
+.IB file .f
+is
+compiled with the
+.B \-a
+option, a corresponding
+.IB file .d
+file is created.
+Each time the program is executed, test coverage information is
+accumulated in
+.IB file .d.
+.LP
+.B tcov
+takes source files as arguments.
+It reads the corresponding
+.IB file .d
+file and produces an annotated listing of
+the program with coverage data in
+.IB file .tcov.
+Each straight-line segment of code (or each line if the
+.B \-a
+option to
+.B tcov
+is specified) is prefixed with the number of times it has been
+executed; lines which have not been executed are prefixed with
+.BR ##### .
+.LP
+Note: the profile produced includes only the number of times each
+statement was executed, not execution times;
+to obtain times for routines use
+.BR gprof (1)
+or
+.BR prof (1).
+.SH OPTIONS
+.TP
+.B \-a
+Display an execution count for each statement; if
+.B \-a
+is not specified, an execution count
+is displayed only for the first statement
+of each straight-line segment of code.
+.TP
+.BI \- n
+Display table of the line numbers of the
+.I n
+most frequently executed statements and their execution counts.
+.SH "EXAMPLES"
+.LP
+The command:
+.IP
+.B example% cc -a -o prog prog.c
+.LP
+compiles with the
+.B -a
+option
+.B \(em
+produces
+.B prog.d
+.LP
+The command:
+.B example% prog
+.LP
+executes the program
+.RB ` \- '
+accumulates data in
+.B prog.d
+.LP
+The command:
+.IP
+.B example% tcov prog.c
+produces an annotated listing in file
+.B prog.tcov
+.SH FILES
+.PD 0
+.TP 20
+.B file.c
+input C program file
+.TP
+.B file.f
+input
+.SM FORTRAN
+program file
+.TP
+.B file.d
+input test coverage data file
+.TP
+.B file.tcov
+output test coverage analysis listing file
+.\".TP
+.\".B /usr/bin/count
+.\"preprocessor for test coverage analysis for C program
+.TP
+.B /usr/lib/bb_link.o
+entry and exit routines for test coverage analysis
+.SH "SEE ALSO"
+.BR cc (1V),
+.BR gprof (1),
+.BR prof (1),
+.BR exit (2V)
+.SH DIAGNOSTICS
+.TP
+.B "premature end of file"
+Issued for routines containing no statements.
+.SH BUGS
+.LP
+The analyzed program must call
+.BR exit (2V)
+or return normally for
+the coverage information to be saved in the
+.BI . d
+file.

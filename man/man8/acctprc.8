@@ -1,0 +1,100 @@
+.\" @(#)acctprc.8 1.1 92/07/30 SMI; from S5R2
+.TH ACCTPRC 8 "13 January 1990"
+.SH NAME
+acctprc1, acctprc2 \- process accounting
+.SH SYNOPSIS
+.B /usr/lib/acct/acctprc1
+[
+.I ctmp
+]
+.LP
+.B /usr/lib/acct/acctprc2
+.SH DESCRIPTION
+.IX "acctprc1" "" "\fLacctprc1\fP \(em process accounting" ""
+.IX "acctprc2" "" "\fLacctprc2\fP \(em process accounting" ""
+.IX "acounting" "process accouting" "accounting" "process accouting \(em \fLacctprc\fP"
+.SS acctprc1
+.LP
+.B acctprc1
+reads input in the form described by
+.BR acct (5),
+adds login names corresponding to user
+.SM ID\s0s,
+then writes for each process an
+.SM ASCII
+line giving user
+.SM ID\s0,
+login name,
+prime
+.SM CPU
+time (ticks),
+non-prime
+.SM CPU
+time (ticks),
+and mean memory size (in pages).
+If
+.I ctmp
+is given,
+it is expected to be the name of a file containing a list of login sessions,
+in the form described in
+.BR acctcon (8),
+sorted by user
+.SM ID
+and login name.
+If this file is not supplied,
+it obtains login names from the password file.
+The information in
+.I ctmp
+helps it distinguish among different login names that share the same user
+.SM ID\s0.
+.SS acctprc2
+.LP
+.B acctprc2
+reads records in the form written by
+.BR acctprc1 ,
+summarizes them by user
+.SM ID
+and name,
+then writes the sorted summaries to the standard output
+as total accounting records.
+.SH EXAMPLES
+.LP
+These commands are typically used as shown below:
+.LP
+.RS
+.ft B
+acctprc1 \|ctmp \|</var/adm/pacct \|\(bv \|acctprc2 \|>ptacct
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/passwd
+.PD
+.SH SEE ALSO
+.BR acctcom (1),
+.BR acct (2V),
+.BR acct (5),
+.BR utmp (5V),
+.BR acct (8),
+.BR acctcms (8),
+.BR acctcon (8),
+.BR acctmerg (8),
+.BR acctsh (8),
+.BR cron (8),
+.BR fwtmp (8),
+.BR runacct (8)
+.SH BUGS
+.LP
+Although it is possible to distinguish among login names
+that share user
+.SM ID\s0s
+for commands run from the command line,
+it is difficult to do this for those commands run by
+.BR cron (8),
+for example.
+More precise conversion can be done by faking login sessions
+on the console using the
+.B acctwtmp
+program in
+.BR acct (8).

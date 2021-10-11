@@ -1,0 +1,156 @@
+.\" @(#)yppasswdd.8c 1.1 92/07/30 SMI
+.TH YPPASSWDD 8C "17 December 1987"
+.SH NAME
+yppasswdd, rpc.yppasswdd \- server for modifying NIS password file
+.SH SYNOPSIS
+.B /usr/etc/rpc.yppasswdd
+.I filename
+[
+.I adjunct_file
+]
+[
+.B \-nogecos
+]
+[
+.B \-noshell
+]
+[
+.B \-nopw
+]
+.if t .ti +.5i
+[
+.B \-m
+.I argument1
+.I argument2
+\&.\|.\|.
+]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "yypasswdd command"  ""  "\fLyppasswdd\fP \(em NIS password server"
+.IX  servers  yppasswdd  ""  "\fLyppasswdd\fP \(em NIS password server"
+.LP
+.B yppasswdd
+is a server that handles password change requests from
+.BR yppasswd (1).
+Unless an
+.I adjunct_file
+is specified,
+it changes a password entry in
+.IR filename ,
+which is assumed to be in the format of
+.BR passwd (5).
+.I filename
+is the password file that provides the basis for the
+.I passwd.byname
+and
+.I passwd.byuid
+maps. 
+This should not be confused with the servers 
+.I /etc/passwd
+file which controls access to the server.
+In particular this file should not contain an entry for the super user.
+.LP
+If an
+.I adjunct_file
+is specified or
+.B /etc/security/passwd.adjunct
+exists, this file will be changed instead of the
+.IR filename .
+An entry in
+.I filename
+or
+.I adjunct_file
+will only be changed if the password presented by
+.BR yppasswd (1)
+matches the encrypted password of that entry.
+.LP
+If the 
+.B \-noshell
+.B \-nogecos
+or
+.B \-nopw
+options are given then these fields may not be changed remotely
+using
+.BR chfn ,
+.BR chsh ,
+or
+.BR passwd (1).
+.LP
+If the
+.B \-m
+option is given, then after
+.I filename
+or
+.I adjunct_file
+is modified, a
+.BR make (1)
+will be performed in
+.IR /var/yp .
+Any arguments following the flag will be passed to
+.IR make .
+.LP
+This server is not run by default, nor can it be started up from
+.BR inetd (8C).
+If it is desired to enable remote password updating for the 
+Network Information Service
+(\s-1NIS\s0),
+then an entry for
+.B yppasswdd
+should be put in the
+.B /etc/rc
+file of the host serving as the master for the 
+.SM NIS
+.B passwd
+file.
+.SH EXAMPLE
+.LP
+If the 
+.SM NIS
+password file is stored as
+.BR /var/yp/passwd ,
+then to have password changes propagated immediately,
+the server should be invoked as
+.RS
+.IP
+.B /usr/etc/rpc.yppasswdd
+.B /var/yp/passwd \-m passwd
+.SB DIR\s0=/var/yp
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /var/yp/Makefile
+.TP
+.B /etc/security/passwd.adjunct
+.TP
+.B /etc/rc
+.PD
+.SH SEE ALSO
+.BR make (1),
+.BR yppasswd (1),
+.BR passwd (1),
+.BR passwd (5),
+.BR passwd.adjunct (5),
+.BR ypfiles (5),
+.BR inetd (8C),
+.BR ypmake (8)
+.SH NOTES
+.LP
+The password file specified to 
+.I rpc.yppasswdd
+may not be a link.
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.  The name Yellow Pages is a registered
+trademark in the United Kingdom of British Telecommunications plc,
+and may not be used without permission.

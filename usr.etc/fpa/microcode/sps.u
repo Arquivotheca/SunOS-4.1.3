@@ -1,0 +1,127 @@
+|*
+|*		Nop Instruction
+|*
+routine sp.nop w000000xxxx0 lnop sneg
+	;		;			;		;	;
+	call idle1;	;			;		;	;
+|*
+|*		Single Precision Negate Instruction
+|*		Single Precision Absolute Vaulue Instruction
+|*
+routine sp.neg w000001xxxx0 las sneg
+routine sp.abs w000010xxxx0 las sabs
+	call wait3;	lasf fmap csla;		opdsp;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Fix Instruction (convert to integer)
+|*
+routine sp.fix w000100xxxx0 las scvtint
+	call wait3;	lasf scvtint csla;	opdsp;		;	;
+	;		csuxa ulsw;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Float Instruction (convert to float)
+|*
+routine sp.float w000011xxxx0 lal sfloat
+	call wait3;	lalf sfloat csla;	opdsp;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Convert Instruction
+|*
+routine sp.conv w000101xxxx0 las scvtd
+	call wait3;	lasf fmap csla;		opdsp;		;	;
+	;		csuxa umsw;		;		;	;
+	;		csuxa ulsw;		;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcsmsw ptr2;
+	;		woea;			dtor;		;	ramwe rcslsw ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Square Instruction
+|*
+routine sp.sqar w000110xxxx0 las smul
+	call wait3;	lbsf fmap cslm;		opdsp;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woem;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Add Instruction
+|*		Single Precision Subtract Instruction
+|*
+routine sp.add w000111xxxx0 lbs sadd
+routine sp.sub w001000xxxx0 lbs ssub
+	call wait3;	lasf fmap csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Multiply Instruction
+|*
+routine sp.mul w001001xxxx0 las smul
+	call wait3;	lbsf fmap cslm;		reg;		;	;
+	;		csuxm usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woem;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Divide Instruction
+|*
+routine sp.div w001010xxxx0 lbs sdiv
+|#				(Note: 12 will cause a delay of 26)
+	;		lasf fmap csla;		reg;		;	;	lpreg!12
+	call wait;	;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Backwards Subtract Instruction
+|*
+routine sp.b.sub w001011xxxx0 las ssub
+	call wait3;	lbsf fmap csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Backwards Divide Instruction
+|*
+routine sp.b.div w001100xxxx0 las sdiv
+|#				(Note: 12 will cause a delay of 26)
+	;		lbsf fmap csla;		reg;		;	;	lpreg!12
+	call wait;	;			;		;	;
+	;		;			;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	ptr2;
+	jwerr ser2 cstat;woea;			dtor;		;	ramwe rcssp ptr2;
+	call idle1;	;			dtor;		;	ramwe ptr2;
+|*
+|*		Single Precision Compare With 0
+|*
+routine sp.eqlzero w001101xxxx0 las scmp0
+	call wait3;	lasf fmap csla;		opdsp;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jwerr ser2 cstat;woea;			;		;	;
+	call idle1;	;			;		;	;
+|*
+|*		Single Precision Compare Reg 1 With Operand
+|*		Single Precision Compare Magnitude Reg 1 With Operand
+|*
+routine sp.eqlreg1 w001110xxxx0 lbs scmp
+routine sp.cmpreg1 w001111xxxx0 lbs scmpm
+	call wait3;	lasf fmap csla;		reg;		;	;
+	;		csuxa usp;		;		;	;
+	;		;			;		;	;
+	jwerr ser2 cstat;woea;			;		;	;
+	call idle1;	;			;		;	;

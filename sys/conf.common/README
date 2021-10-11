@@ -1,0 +1,85 @@
+CONFIGURING THE KERNEL
+
+1. Choose a name for your configuration of the system; here, PICKLE.
+2. Create the config file by making a writable copy of GENERIC:
+	cp GENERIC PICKLE; chmod +w PICKLE
+3. Edit PICKLE to reflect your system, e.g., delete devices that will
+   never be present on your system.
+4. Run config:  
+	/etc/config PICKLE
+	(the directory ../PICKLE will be made if it doesn't exist and
+	a "make depend" will be done unless you specify a "-n" flag)
+5. Make the new system:
+	cd ../PICKLE
+	make
+6. Typically the running kernel should be "/vmunix" because programs
+   like 'ps' and 'w' expect "/vmunix" to be the running kernel.
+   Save the original kernel, install the new one in /vmunix, and
+   try it out:
+	mv /vmunix /vmunix.old
+	cp vmunix /vmunix
+	/etc/halt
+	b vmunix
+7. If the system does not appear to work, boot and restore the
+   original kernel, then fix the new kernel:
+	/etc/halt
+	b vmunix.old -s
+	mv /vmunix.old /vmunix
+	^D      [Brings the system up multi-user]
+
+CONFIGURING AN OBJECT-ONLY DISTRIBUTION
+
+The following lines from the GENERIC config file must be in every
+config file for object-only configurations:
+
+	machine		"sunN"		# where 'N' is 2 or 3 or 4
+	options		INET
+
+	pseudo-device	loop
+
+Failing to include these lines in a config file will probably result
+in undefined routines during the making of the kernel, but may just
+silently cause the resulting kernel to blow up.
+
+Except for drivers which supply the source for sizing data structures
+(e.g., xy_conf.c, sc_conf.c, xd_conf.c), you may not configure in more
+devices of a particular type than is allowed by the distributed object
+code in ../OBJ.  Attempting to do so will not be detected and may cause
+the kernel to appear to work but have only occasional failures.  Double
+check the .h files in ../OBJ if you change the number of devices
+configured for any standard drivers.
+
+See the manual page for config(8) and the Sun System Manager's Guide
+for further details.
+
+ADDING A DEVICE DRIVER
+
+New device drivers require entries in ../../sun/conf.c, files, and
+possibly ../../sun/swapgeneric.c and devices. They are included by
+mentioning the device name in the config file.  Examples:
+
+  ../../sun/conf.c:
+
+
+	#include "cgone.h"
+	#if NCGONE > 0
+	int	cgoneopen(), cgonemmap(), cgoneioctl();
+	int	cgoneclose();
+	#else
+	#define	cgoneopen	nodev
+	#define	cgonemmap	nodev
+	#define	cgoneioctl	nodev
+	#define	cgoneclose	nodev
+	#endif
+
+    {
+	cgoneopen,	cgoneclose,	nodev,		nodev,		/*14*/
+	cgoneioctl,	nodev,		nodev,		0,
+	seltrue,	cgonemmap,
+    },
+
+  files:
+	sundev/cgone.c		optional cgone device-driver
+
+  PICKLE:
+	device			cgone0 at mbmem ? csr 0xec000 priority 3

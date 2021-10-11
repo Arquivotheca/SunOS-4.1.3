@@ -1,0 +1,112 @@
+#	.\" @(#)Printfile.master 1.1 92/07/30 SMI;
+
+#	Master Printfile for nested sections.
+
+INITFILES=	`ls SCCS/s.[Ll]ist.* SCCS/s.[Ii]ntro.* | sed "s@.*/s\.@@"`
+
+.DEFAULT:
+	-@sccs get -s -G$@ $@ 
+
+all: $$(FILES)
+
+$(FILES):
+	@-sccs get -s -G$@ $@
+
+#	Build a (small) trial index to compare indexing script output
+#	with real index.  FILES.index is a list of printable
+#	new/changed files.
+trial.index: FILES.index # Pix
+	egrep -h '^\.IX' `cat FILES.index` > trial.index.mex
+	 ( nroff -mex -rF1 trial.index.mex 2>&1 | egrep '^.IE' ) \
+ 		| recode | index.assist 2> trial.index.errs \
+		| troff -t -mex > trial.index
+
+#	Build raw indexing scripts for man pages not yet indexed.
+Pix: $$(FILES)
+	-egrep -l '.\" pix' * | sort -u > Pix.exclude
+	-ls *.[1-8] *.[1-8]? | sort -u | comm -23 - Pix.exclude > Pix
+	../bin/pix `cat Pix`
+
+#	Apply (edited) indexing scripts to man pages.
+apply.scripts:
+	-set -x ; for i in *.IX ; \
+		do ( sh $$i ) ; done
+
+#	Archive indexing scripts for later use.
+arch: FRC
+	-mkdir arch ; chmod 777 arch
+	-mv *.IX arch
+	-chmod 555 arch
+
+#	Build source files for sections and subsections.  Make
+#	symlink in parent dir.
+1.man 2.man 3.man 3l.man 3m.man 3r.man \
+4.man 5.man 6.man 7.man 8.man: $$(FILES)
+	# Edit Intro pages to correct .so references.
+	for i in Intro.* ; do \
+		sed 's,^\.so.*/,.so ,' $$i > $$i.local ; \
+		mv $$i.local $$i ; \
+	done
+	# Collate pages into section sources.
+	-@rm $@
+	-(	soelim $(FILES) ; echo ".if o .nr yY \\n%+2" ; \
+		echo ".if e .nr yY \\n%+1" ; echo ".tm \\n(yY" \
+	) > $@
+
+#	Extract printable man page sources.
+pextract px:
+	@-echo "only extracting originals, no .so's ..."
+	@-$(MAKE) -f Printfile $(FILES)
+
+#	Extract all sources.
+extract px:
+	@-$(MAKE) $(FILES)
+
+#	Show list of printable sources.
+showprint sp:
+	-@echo $(FILES) | tr ' ' '\012'
+
+#	Add update instructions for FILES list as comments to
+#	makefiles.
+update:
+	-@ echo "Checking out Makefile & Printfile"
+	-sccs edit -s Makefile Printfile
+	ls SCCS/s.* | sed 's,SCCS/s\.,,' | sort -u > Sccs.list
+	make show | sort -u > Show.list
+	comm -13 Sccs.list Show.list > Delete.make
+	comm -23 Sccs.list Show.list > Insert.make
+	echo "#	Delete" >> Makefile ; sed 's/^/# /' Delete.make >> Makefile
+	echo "#	Insert" >> Makefile ; sed 's/^/# /' Insert.make >> Makefile
+	#
+	-sccs get -s SCCS
+	grep -l NAME * | sort -u > Grep.list
+	make showprint | sort -u > Sp.list
+	comm -13 Grep.list Sp.list > Delete.print
+	comm -23 Grep.list Sp.list > Insert.print
+	echo "#	Delete" >> Printfile ; \
+		sed 's/^/# /' Delete.print >> Printfile
+	echo "#	Insert" >> Printfile ; \
+		sed 's/^/# /' Insert.print >> Printfile
+	@ echo "# Makefile and Printfile not checked in."
+
+#	Install man page sources to destination file system.
+clone: $$(FILES)
+	-cp Printfile $(FILES) List.[1-8] List.3? $(CLONEDIR)
+	-cd $(CLONEDIR) ; chmod +w *
+
+# It is simpler overall to perform soelim only when building *.man
+# files after a pinstall.  Patching and mergeing should be the
+# same for List.* as for any other file. -bob.
+#	-cd $(CLONEDIR) ; \
+#		(	for i in `ls Intro.*` ; do	\
+#				soelim $$i > $$i.soelim ; \
+#				mv $$i.soelim $$i ; \
+#			done \
+#	 	)
+
+#	Clean up directory, but leave sources intact.
+clean.sources:
+	-rm -rf Sccs.list Show.list Delete.make Insert.make Grep.list \
+		Sp.list Delete.print Insert.print *.BAK *~ *% ./tmp
+
+FRC:

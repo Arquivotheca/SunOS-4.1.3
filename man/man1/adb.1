@@ -1,0 +1,987 @@
+.\" @(#)adb.1 1.1 92/07/30 SMI; from UCB 4.2
+.TH ADB 1 "18 February 1988"
+.SH NAME
+adb \- general-purpose debugger
+.SH SYNOPSIS
+.B adb
+[ 
+.B \-w
+] 
+[ 
+.B \-k
+] 
+[ 
+.B \-I
+.I dir 
+] 
+[ 
+.I objectfile
+[ 
+.I corefile
+] 
+]
+.SH AVAILABILITY
+.LP
+.B adb
+is available with the
+.I Debugging
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  adb  ""  "\fLadb\fP \(em debugger"
+.IX  "debug tools"  "adb command"  ""  "\fLadb\fP \(em debugger"
+.IX  "programming tools" "adb debugger" "" "\fLadb\fP \(em debug tool"
+.LP
+.B adb
+is an interactive, general-purpose debugger.  It can be used to
+examine files and provides
+a controlled environment for the execution of 
+programs.
+.LP
+.I objectfile
+is normally an executable program file, preferably
+containing a symbol table. If the file does not contain a symbol table,
+it can still be examined, but the symbolic features of
+.B adb
+cannot be used.
+The default for
+.I objectfile
+is
+.BR a.out .
+.I corefile
+is assumed to be a core image file produced after executing
+.IR objectfile .
+The default for
+.I corefile
+is
+.BR core .
+.SH OPTIONS
+.TP
+.B \-k
+Perform kernel memory mapping; should be used when
+.I corefile
+is a system crash dump or
+.BR /dev/mem .
+.TP
+.B \-w
+Create both
+.I objectfile
+and
+.IR corefile ,
+if necessary, and open them for reading and writing
+so that they can be modified using
+.BR adb .
+.TP
+.BI \-I " dir"
+specifies a directory where files to be read
+with
+.B $<
+or
+.B $<<
+(see below) will be sought; the default is
+.BR /usr/lib/adb .
+.SH USAGE
+Refer to 
+.B adb
+in 
+.TX DEBUG
+for more complete information on how to use
+.BR adb .
+Note:  Some commands require that you compile progams to be debugged 
+with the
+.B \-go
+compiler flag; see
+.BR cc (1V)
+for details.
+These commands are not currently available on Sun-4 systems;
+they are marked
+.RB ` \-go
+only' below.
+.PD
+.SS Commands
+.B adb
+reads commands from the standard input and displays responses on the
+standard output.  It does not supply a prompt.  It ignores the
+.SM QUIT
+signal.  
+.SM INTERRUPT
+invokes the next
+.B adb
+command.
+.B adb
+generally recognizes command input of the form:
+.IP
+[ \fIaddress\fR ] [\fB,\fI count\fR ] \fIcommand\fR [ \fB;\fR ]
+.LP
+.I address 
+and 
+.I count
+(if supplied) are expressions that result, respectively, in a new
+current address, and a repetition count. 
+.I command 
+is composed of a verb followed by a modifier or list of modifiers.
+.LP
+The symbol
+.RB ` \&. '
+represents the current location. 
+It is initially zero.  The default
+.I count
+is
+.RB ` 1 '.
+.PD
+.SS \fIVerbs\fR
+.PD 0
+.TP 15
+.B ?
+Print locations starting at
+.I address
+in
+.IR objectfile .
+.TP
+.B /
+Print locations starting at
+.I address
+in
+.IR corefile .
+.TP
+.B =
+Print the value of
+.I address
+itself.
+.TP
+.B @
+Interpret
+.I address
+as a source address. Print locations in
+.I objectfile
+or lines of source, as appropriate.
+.B \-go
+only.
+.TP
+.B :
+Manage a subprocess.
+.TP
+.B $r 
+Print names and contents of
+.SM CPU
+registers.
+.TP
+.B $R 
+Print names and contents of
+.SM MC\s068881
+registers, if any.
+.TP
+.B $x
+Print the names and contents of
+.SM FPA
+registers 0 through 15, if any.
+.TP
+.B $X
+Print the names and contents of
+.SM FPA
+registers 16 through 31, if any.
+.TP
+.B >
+Assign a value to a variable or register.
+.TP
+.SM RETURN
+Repeat the previous command with a
+.I count
+of 1.  Increment
+.RB ` . '.
+.TP
+.B !
+Shell escape.
+.PD
+.br
+.ne 7
+.SS Modifiers
+.LP
+Modifiers specify the format of command output.  
+Each modifier consists of a letter, preceded by an integer 
+repeat count.  
+.SS "\fIFormat Modifiers\fR"
+.LP
+The following format modifiers apply to the commands
+.BR ? ,
+.BR / ,
+.BR @ ,
+and
+.BR = .
+To specify a format, follow the command with an optional repeat count,
+and the desired format letter or letters:
+.IP
+[ \fIv\fR ] [ [ \fIr\fR ] \fIf .\|.\|.\fR ]
+.LP
+where 
+.I v
+is one of these four command verbs,
+.I r
+is a repeat count, and
+.I f
+is one of the format letters listed below:
+.PD 0
+.TP 15
+.B o
+.RB (` \&. '
+increment:  2)
+Print 2 bytes in octal.
+.TP
+.B O
+(4)
+Print 4 bytes in octal.
+.TP
+.B q
+(2)
+Print in signed octal.
+.TP
+.B Q 
+(4)
+Print long signed octal.
+.TP
+.B d 
+(2)
+Print in decimal.
+.TP
+.B D 
+(4)
+Print long decimal.
+.TP
+.B x 
+(2)
+Print 2 bytes in hexadecimal.
+.TP
+.B X 
+(4)
+Print 4 bytes in hexadecimal.
+.TP
+.B h
+(2)
+Print 2 bytes in hexadecimal in reverse order. Sun386i systems only.
+.TP
+.B H
+(4)
+Print 4 bytes in hexadecimal in reverse order. Sun386i systems only.
+.TP
+.B u 
+(2)
+Print as an unsigned decimal number.
+.TP
+.B U 
+(4) 
+Print long unsigned decimal.
+.TP
+.B f 
+(4)
+Print a single-precision floating-point number.
+.TP
+.B F 
+(8)
+Print a double-precision floating-point number.
+.TP
+.BR e " or " E
+(12)
+Print a 96-bit
+.SM MC\s068881
+extended-precision floating-point number.
+Sun-2 or Sun-3 systems only.
+.TP
+.B b 
+(1)
+Print the addressed byte in octal.
+.TP
+.B B
+(1)
+Print the addressed byte in hexadecimal. Sun386i systems only. 
+.TP
+.B c 
+(1)
+Print the addressed character.
+.TP
+.B C 
+(1)
+Print the addressed character using
+.B ^  
+escape convention.
+.TP
+.B s 
+.RI ( n )
+Print the addressed string.
+.TP
+.B S 
+.RI ( n )
+Print a string using the
+.B ^  
+escape convention.
+.TP
+.B Y 
+(4)
+Print 4 bytes in date format.
+.TP
+.B i 
+.RI ( n )
+Print as machine instructions.
+.TP
+.B M
+.RI ( n )
+Print as machine instructions along with machine code. Sun386i systems
+only.
+.TP
+.B z 
+.RI ( n )
+Print with
+.SM MC\s068010
+machine instruction timings.
+Sun-2 or Sun-3 system only.
+.TP
+.B I 
+(0)
+Print the source text line specified by
+.RB ` . ' .
+.B \-go
+only.
+.TP
+.B a 
+(0)
+Print the value of
+.RB ` . '   
+in symbolic form.
+.TP
+.B p 
+(4)
+Print the addressed value in symbolic form.
+.TP
+.B A 
+(0)
+Print the value of
+.RB ` . '
+in source-symbol form.
+.TP
+.B P 
+(4) 
+Print the addressed value in source-symbol form.
+.TP
+.B t 
+(0) 
+Tab to the next appropriate
+.SM TAB
+stop.
+.TP
+.B r 
+(0) 
+Print a
+.SM SPACE\s0.
+.TP
+.B n 
+(0) 
+Print a
+.SM NEWLINE\s0.
+.TP
+.BR ' .\|.\|. '
+(0) 
+Print the enclosed string.
+.TP
+.B \s+2^\s0
+(0) 
+Decrement
+.RB ` . '.
+.TP
+.B +
+(0) 
+Increment
+.RB ` . '.
+.TP
+.B \-
+(0) 
+Decrement
+.RB ` . '
+by 1.
+.PD
+.SS "\fIModifiers for \fB?\fP and \fB/\fP Only\fR"
+.PD 0
+.TP 15
+.BI l " value mask"
+Apply
+.I mask
+and compare for
+.IR value ;
+move
+.RB ` . '
+to matching location.
+.TP
+.BI L " value mask"
+Apply
+.I mask
+and compare for 4-byte
+.IR value ;
+move
+.RB ` . '
+to matching location.
+.TP
+.BI w " value"
+Write the 2-byte
+.I value  
+to address.
+.TP
+.BI W " value"
+Write the 4-byte
+.I value  
+to address.
+.TP
+.BI m " b1 e1 f1\fR[ ?\fR] 
+Map new values for
+.IR "b1, e1, f1" .
+If the
+.B ?
+or
+.B /
+is followed by 
+.B * 
+then the second segment
+.RI ( b2 \|,\| e2 \|,\| f2\fR)
+of the address mapping is changed.
+.PD
+.SS ": \fIModifiers\fR"
+.PD 0
+.TP 15
+.BI b " commands"
+Set breakpoint, execute
+.I commands  
+when reached.
+.TP
+.BI B " commands"
+Set breakpoint using source address, execute
+.I commands  
+when reached.
+.B \-go
+only.
+.TP
+.BI w " commands"
+Set a data write breakpoint at
+.I address .
+Like 
+.B b
+except that the breakpoint is hit when the program writes to 
+.I address .
+Sun386i systems only. 
+.TP
+.B D
+Delete breakpoint at source address.
+.B \-go
+only.
+.TP
+.B r
+Run
+.I objectfile  
+as a subprocess.
+.TP
+.BI c s
+The subprocess is continued with signal
+.IR s .
+.TP
+.BI s s
+Single-step the subprocess with signal
+.IR s .
+.TP
+.BI S s
+Single-step the subprocess with signal
+.I s  
+using source lines.
+.B \-go
+only.
+.TP
+.B i
+Add the signal specified by
+.I address  
+to the list of signals passed directly to the subprocess.
+.TP
+.B t
+Remove the signal specified by
+.I address  
+from the list implicitly passed to the subprocess.
+.TP
+.B k
+Single-step the subprocess with signal
+.I s
+using source lines.
+.B \-go
+only.
+.TP
+.BI e s
+Like 
+.IR s ,
+but steps over subroutine calls instead of into them. Sun386i systems
+only. 
+.TP
+.B u
+Continue uplevel, stopping after the current
+routine has returned. Should only be given after the frame pointer
+has been pushed on the stack. Sun386i systems only. 
+.TP
+.B i
+Add the signal specified by
+.I address
+to the list of signals passed directly to the subprocess 
+.TP
+.B t
+Remove the signal specified by
+.I address
+from the list implicitly passed to the subprocess.
+.TP
+.B k
+Terminate the current subprocess, if any.
+.TP
+.B A
+Attach the process whose process
+.SM ID
+is given by
+.IR address .
+The
+.SM PID
+is generally preceded by 
+.B  0t
+so that it will be interpreted in decimal. Sun386i systems only. 
+.TP
+.B R
+Release (detach) the current process. Sun386i systems only. 
+.PD
+.SS "$ \fIModifiers\fR"
+.PD 0
+.TP 15
+.BI < filename
+Read commands from the file
+.IR filename .
+.TP 
+.BI << filename
+Similar to
+.BR < ,
+but can be used in a file of commands without
+closing the file.  
+.TP 
+.BI > filename
+Append output to
+.IR filename ,
+which is created if it does not exist.  
+.TP 
+.B ?
+Print process
+.SM ID\s0,
+the signal which stopped the subprocess, and
+the registers.  
+.TP 
+.B r
+Print the names and contents of the general
+.SM CPU
+registers,
+and the instruction addressed by
+.BR pc .
+.TP 
+.B R
+On Sun-3 systems with an
+.SM MC\s068881
+floating-point coprocessor,
+print the names and contents of the coprocessor's registers.
+.TP
+.B x
+On Sun-3 systems with a Floating Point Accelerator
+(\s-1FPA\s0), print the names and contents of
+.SM FPA
+floating-point registers 0 through 15.
+On Sun-4 systems,
+print the names and contents of the floating-point registers 
+0 through 15.
+.TP 
+.B X
+On Sun-3 systems with an
+.SM FPA\s0,
+print the names and contents of
+.SM FPA
+registers 16 through 31.
+On Sun-4 systems,
+print the names and contents of floating-point registers 16 through 31.
+.TP
+.B b
+Print all breakpoints and their associated counts and commands.
+.TP 
+.B c
+C stack backtrace.  
+On Sun-4 systems, it is impossible for
+.B adb
+to determine how many parameters were passed to a function.
+The default that
+.B adb
+chooses in a
+.B $c
+command is to show the six parameter registers.
+This can be overridden by appending a hexadecimal
+number to the
+.B $c
+command, specifying how many parameters to display.
+For example, the
+.B $cf
+command will print 15 parameters for each function in the
+stack trace.
+.TP 
+.B C 
+C stack backtrace with
+names and (32 bit) values of all automatic
+and static variables for each active function.
+.RB ( \-go
+only).
+.TP 
+.B d
+Set the default radix to
+.I address
+and report the new value.  Note: 
+.I address
+is interpreted in the (old) current radix.
+Thus
+.RB ` 10$d '
+never changes the default radix.
+.TP 
+.B e
+Print the names and values of external variables.
+.TP 
+.B w
+Set the page width for output to
+.I address
+(default 80).
+.TP 
+.B s
+Set the limit for symbol matches to
+.I address
+(default 255).
+.TP 
+.B o
+All integers input are regarded as octal.
+.TP 
+.B q
+Exit from
+.BR adb .
+.TP 
+.B v
+Print all non zero variables in octal.
+.TP 
+.B m
+Print the address map.
+.TP 
+.B f
+Print a list of known source filenames.
+.RB ( \-go
+only).
+.TP 
+.B p
+Print a list of known procedure names.
+.RB ( \-go
+only).
+.TP 
+.B p
+.RI ( "Kernel debugging" )
+Change the current kernel memory mapping to map the designated 
+.B "user structure"
+to the address given by 
+.IR _u 
+(
+.IR u
+on Sun386i systems); this is 
+the address of the user's 
+.B proc
+structure. 
+.TP 
+.B i
+Show which signals are passed to the subprocess with the minimum of 
+.B adb
+interference.  
+.TP 
+.B W
+Reopen 
+.I objectfile
+and
+.I corefile
+for writing, as though the 
+.B \-w
+command-line argument had been given.
+.TP
+.B l
+Set the length in bytes (1, 2, or 4) of the object
+referenced by 
+.I :a
+and
+.I :w
+to 
+.IR address .
+Default is 1. Sun386i systems only. 
+.PD
+.br
+.ne 5
+.SS Variables
+.LP
+Named variables are set initially by
+.B adb
+but are not used subsequently.
+.PD 0
+.TP 15
+.B 0
+The last value printed.
+.TP
+.B 1
+The last offset part of an instruction source.
+.TP
+.B 2
+The previous value of variable 1.
+.TP
+.B 9
+The count on the last 
+.B $< 
+or 
+.B $<< 
+command.
+.PD
+.LP
+On entry the following are set from the system header in the
+.I corefile
+or 
+.I objectfile
+as appropriate.
+.PD 0
+.TP 15
+.B b
+The base address of the data segment.
+.TP
+.B B
+The number of an address register that points to the
+.SM FPA
+page. Sun-3 systems only.
+.TP
+.B d
+The data segment size.
+.TP
+.B e
+The entry point.
+.TP
+.B F
+On Sun-3 systems, a value of `1' indicates
+.SM FPA
+disassembly.
+.TP
+.B m
+The `magic' number (0407, 0410 or 0413).
+.TP
+.B s
+The stack segment size.
+.TP
+.B t
+The text segment size.
+.PD
+.SS Expressions
+.PD 0
+.TP 15
+.B .
+The value of
+.IR dot .
+.TP 
+.B +
+The value of
+.I dot
+incremented by the current increment.
+.TP 
+.B ^
+The value of
+.I dot
+decremented by the current increment.
+.TP 
+.B &
+The last
+.I address
+typed.  (In older versions of
+.BR adb ,
+`\fB"\fR' was used.)
+.TP 15
+.I integer
+A number.  The prefixes
+.B 0o
+and
+.B 0O
+indicate octal;
+.B 0t
+and
+.BR 0T ,
+decimal; 
+.B 0x
+and
+.BR 0X ,
+hexadecimal (the default).
+.TP 
+.IB int . frac
+A floating-point number.
+.TP 
+.BI ' cccc '
+.SM ASCII
+value of up to 4 characters.
+.TP 
+.BI < name
+The value of
+.IR name ,
+which is either a variable name or a register name.
+.TP 
+.I symbol
+A symbol in the symbol table.
+An initial
+.RB ` \_ '
+will be prepended to
+.I symbol
+if needed.
+Sun-2, Sun-3, and Sun-4 systems but not Sun386i systems.
+.TP
+.BI _ symbol
+An external symbol.
+Sun-2, Sun-3, and Sun-4 systems but not Sun386i systems.
+.TP 
+.IB routine . name
+The address of the variable
+.I name
+in the specified routine in the symbol table.
+If
+.I name
+is omitted, the address of the most recent stack frame for
+.IR routine .
+.TP 
+.BI ( exp )
+The value of 
+.IR exp .
+.PD
+.SS  "\fIUnary Operators"
+.PD 0
+.TP 15
+.BI * exp
+The contents of location 
+.I exp
+in 
+.IR corefile .
+.TP 
+.BI % exp
+The contents of location 
+.I exp
+in
+.I objectfile
+(In older versions of
+.BR adb ,
+.RB ` @ '
+was used).
+.TP 
+.RI \- exp
+Integer negation.
+.TP 
+.BI \s+2~\s0 exp
+Bitwise complement.
+.TP 
+.BI # exp
+Logical negation.
+.TP 
+.BI ^F exp
+(\s-1CTRL\-F\s0) Translate program address to source address.
+.RB ( \-go
+only).
+.TP 
+.BI ^A exp
+(\s-1CTRL\-A\s0) Translates source address to program address.
+.RB ( \-go
+only).
+.TP 
+.BI ` name
+(Backquote) Translates procedure name to sourcefile address.
+.RB ( \-go
+only).
+.TP 
+.tr '"
+.I 'file'
+The sourcefile address for the zero-th line of 
+.IR file .
+.RB ( \-go
+only).
+.tr ''
+.PD
+.SS  "\fIBinary Operators"
+.LP
+Binary operators are left associative and have lower precedence
+than unary operators.
+.PD 0
+.TP 15
+.B + 
+Integer addition.
+.TP 
+.B \- 
+Integer subtraction.
+.TP 
+.B *
+Integer multiplication.
+.TP 
+.B % 
+Integer division.
+.TP 
+.B & 
+Bitwise conjunction (\*(lq\s-1AND\s0\*(rq).
+.TP 
+.B |
+Bitwise disjunction (\*(lq\s-1OR\s0\*(rq).
+.TP 
+.I # 
+.I lhs
+rounded up to the next multiple of
+.IR rhs .
+.br
+.ne 10
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/adb
+.TP
+.B a.out
+.TP
+.B core
+.PD
+.SH SEE ALSO
+.BR cc (1V),
+.BR dbx (1),
+.BR ptrace (2),
+.BR a.out (5),
+.BR core (5),
+.BR kadb (8S)
+.LP
+.TX DEBUG
+.SH DIAGNOSTICS
+.LP
+.BR adb ,
+when there is no current command or format,
+comments about inaccessible files, syntax errors,
+abnormal termination of commands, etc.
+Exit status is 0, unless last command failed or returned nonzero status.
+.PD
+.br
+.ne 5
+.SH BUGS
+.LP
+There does not seem to be any way to clear all breakpoints.
+.LP
+.B adb
+uses the symbolic information in an old and now obsolete
+format generated by the
+.B \-go
+flag of
+.BR cc (1V);
+it should be changed to use the new
+format generated by
+.BR  \-g .
+.LP
+Since no shell is invoked to interpret the arguments of the
+.B :r
+command, the customary wild-card and variable expansions cannot occur.
+.LP
+Since there is little type-checking on addresses, using
+a sourcefile address in an inappropriate context
+may lead to unexpected results.
+.LP
+The
+.BI $c parameter-count
+command is a kluge.

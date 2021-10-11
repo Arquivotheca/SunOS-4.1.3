@@ -1,0 +1,33 @@
+#!/bin/sh
+#%Z%%M% %I% %E% SMI
+
+#!/bin/sh
+
+# Description:
+#	This script is used to backup a 4.1.1 build system. Archytas and
+# 	Valis are the two servers that have exabytes. The default is
+#	Archytas.
+
+# Note:
+#	Archytas uses /dev/rst0 for the exabyte tape drive
+#	Valis    uses /dev/rst2 for the exabyte tape drive
+
+
+# Constants:
+	REMOTEHOST=archytas
+	DEV=rst0
+	FS="/proto /tarfiles /usr/src /miniroot / /usr"
+
+
+echo "Rewinding Tape on $REMOTEHOST:/dev/$DEV"
+rsh -n $REMOTEHOST "mt -f /dev/$DEV rew"
+
+echo "Start Dump of `hostname` partitions:\"$FS\""
+for i in $FS
+do
+	dump 0ubsdf 126 6000 54000 $REMOTEHOST:/dev/n$DEV $i
+done
+
+echo "Rewinding Tape on $REMOTEHOST:/dev/$DEV"
+rsh -n $REMOTEHOST "mt -f /dev/$DEV offl"
+echo "Go HOME the DUMP is DONE"

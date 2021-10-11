@@ -1,0 +1,68 @@
+#
+# @(#)Makefile.src.release 1.1 92/07/30 SMI
+#
+
+#
+#  Makefile to be included on the actual release tapes
+#
+
+DESTDIR =	../
+
+CORE_DEMOS =	draw shaded showmap stringart suncube
+WINDOW_DEMOS =	cframedemo show maze
+OTHER_DEMOS =	goban
+DEMOS =		$(CORE_DEMOS) $(WINDOW_DEMOS) $(OTHER_DEMOS)
+
+GOBANSRC =	goban.c goboard.c gopanel.c goservice.c gocapture.c gocircle.c \
+	goprint.c gomaster.c
+GOBANOBJ =	$(GOBANSRC:.c=.o)
+
+CORELIBS =	-lcore -lm
+WINLIBS =	-lsuntool -lsunwindow -lpixrect
+
+FLOAT-sun2 =	-fswitch
+FLOAT-sun3 =	-fswitch
+FLOAT-sun4 =
+FLOATFLAG =	-fsingle $(FLOAT$(TARGET_ARCH))
+CFLAGS =	-O $(FLOATFLAG)
+
+all:		$(DEMOS)
+
+goban:		$(GOBANOBJ)
+	cc -o goban $(CFLAGS) $(GOBANOBJ) $(WINLIBS)
+
+$(GOBANOBJ):	goban.h
+
+goban.o:	goban.icon
+
+draw:		draw.o
+	cc draw.o -o draw $(CORELIBS) $(WINLIBS) 
+
+maze:		maze.o
+	cc maze.o -o maze $(WINLIBS)
+
+shaded:		shaded.o
+	cc shaded.o -o shaded $(CORELIBS) $(WINLIBS)
+
+showmap:	showmap.o
+	cc showmap.o -o showmap $(CORELIBS) $(WINLIBS)
+
+stringart:	stringart.o
+	cc stringart.o -o stringart $(CORELIBS) $(WINLIBS)
+
+suncube:	suncube.o
+	cc suncube.o -o suncube $(CORELIBS) $(WINLIBS) 
+
+cframedemo:	cframedemo.o
+	cc cframedemo.o -o cframedemo $(WINLIBS) 
+
+show:		show.o
+	cc show.o -o show $(WINLIBS)
+
+clean:
+	rm -f *.o errs core $(DEMOS)
+
+install:	all
+	-for i in $(DEMOS); do \
+		install -s $$i $(DESTDIR) && \
+		rm $$i; rm $$i.o; done

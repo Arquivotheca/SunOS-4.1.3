@@ -1,0 +1,82 @@
+.\" @(#)dkinfo.8 1.1 92/07/30 SMI; from UCB 4.1
+.TH DKINFO 8 "20 October 1987"
+.SH NAME
+dkinfo \- report information about a disk's geometry and partitioning
+.SH SYNOPSIS
+\fB/usr/etc/dkinfo
+.I disk
+[
+.I partition
+]
+.SH DESCRIPTION
+.IX  "dkinfo command"  ""  "\fLdkinfo\fP \(em disk geometry information"
+.IX  disk  "geometry information"  ""  "\fLdkinfo\fP \(em geometry information"
+.B dkinfo
+gives the total number of cylinders, heads, and sectors or tracks on the
+specified
+.IR disk ,
+and gives this information along with the
+starting cylinder for the specified
+.IR partition .
+If no
+.I partition
+is specified on the command line,
+.B dkinfo
+reports
+on all partitions.
+.LP
+The
+.I disk
+specification here is a disk name of the form
+.IR xxn ,
+where
+.I xx
+is the controller device abbreviation (ip, xy, etc.) and
+.I n
+is the disk number.  The
+.I partition
+specification is simply
+the letter used to identify that partition in the standard
+.SM UNIX
+system nomenclature.  For example,
+.RB ` "/usr/etc/dkinfo xy0" '
+reports on the first disk in a
+system controlled by a Xylogics controller;
+.RB ` "/usr/etc/dkinfo xy0g" '
+reports on the seventh partition of such a disk.
+.SH EXAMPLE
+.LP
+A request for information on my local disk, an 84
+.SM MB\s0yte
+disk controlled by a
+Xylogics 450 controller, might look like this:
+.RS
+.nf
+.ft B
+#/usr/etc/dkinfo xy0
+xy0: Xylogics 450 controller at addr ee40, unit # 0
+586  cylinders 7 heads 32 sectors/track
+a: 15884 sectors (70 cyls, 6 tracks, 12 sectors)
+starting cylinder 0
+b: 33440 sectors (149 cyls, 2 tracks)
+starting cylinder 71
+c: 131264 sectors (586 cyls)
+starting cylinder 0
+d: No such device or address
+e: No such device or address
+f: No such device or address
+g: 81760 sectors (365 cyls)
+starting cylinder 221
+h: No such device or address
+#
+.fi
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.BI /dev/r xxnp
+.PD
+.SH "SEE ALSO"
+.BR dkio (4S),
+.BR format (8S)

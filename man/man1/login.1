@@ -1,0 +1,265 @@
+.\" @(#)login.1 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH LOGIN 1 "12 June 1988"
+.SH NAME
+login \- log in to the system
+.SH SYNOPSIS
+.B login
+[
+.B \-p
+] [
+.I username
+]
+.SH DESCRIPTION
+.IX  login  "to local machine \(em \fLlogin\fR"
+.IX  "sign on"  ""  "\fLlogin\fP \(em sign on"
+.LP
+.B login
+signs
+.I username
+on to the system initially;
+.B login
+may also be used at any time to change from one user
+.SM ID
+to another.
+.LP
+When used with no argument,
+.B login
+requests a user name and password (if appropriate).
+Echoing is turned off (if possible) while typing the password.
+Note: the number of significant characters in a password is 8.
+See
+.BR passwd (1).
+.LP
+If password aging is enabled and the password corresponding to the user
+name has expired, the user will be prompted for a new password.
+The user has to successfully modify his password for login to proceed. 
+See
+.BR passwd (1).
+.LP
+When successful,
+.B login
+updates accounting files, prints disk usage and limits (by running
+.BR quota (1),)
+prints the message of the day, informs you
+of the existence of any mail, and displays
+the time you last logged in.
+None of these messages is printed if there is a
+.B \&.hushlogin
+file in your home directory.
+This is mostly used to make life easier for nonhuman users, such as
+.BR uucp (1C).
+.LP
+.B login
+initializes the user and group
+\s-1ID\s0s
+and the working directory,
+then starts a command interpreter shell (usually either
+.BR sh (1)
+or
+.BR csh (1))
+according to specifications found in the file
+.BR /etc/passwd .
+Argument 0 of the command interpreter is
+the name of the command interpreter with
+a leading dash
+.RB (` \- ')
+prepended.
+.LP
+.B login
+also modifies the environment
+.RB  ( environ (5V))
+with information specifying home directory, command interpreter,
+terminal-type (if available) and username.
+The
+.B \-p
+argument preserves the remainder of the environment,
+otherwise any previous environment is discarded.
+.LP
+The super-user
+.B root
+may only log in on those terminals marked as
+\*(lqsecure\*(rq in the
+.B /etc/ttytab
+file.  Otherwise, the super-user must log in as an ordinary user and become
+super-user using
+.BR su (1v).
+For example, if the file contained:
+.sp .5
+.RS
+.ft B
+.nf
+console	"/etc/getty Console-9600"	sun	on secure
+tty00	"/etc/getty Console-9600"	sun	on
+\&.\|.\|.
+.fi
+.ft R
+.RE
+.LP
+the super-user could only log in directly on the console.  See
+.BR ttytab (5)
+for a discussion of \(lqsecure\(rq and other
+.BR getty (8)
+options used in
+.BR /etc/ttytab .
+.LP
+If the file
+.B /etc/nologin
+exists,
+.B login
+prints its contents on the user's terminal and exits. This is used by
+.BR shutdown (8)
+to stop logins when the system is about to go down.
+.LP
+The
+.B login
+command, recognized by
+.BR sh (1)
+and
+.BR csh (1),
+is executed directly (without forking), and terminates that shell.
+To resume working, you must log in again.
+.LP
+.B login
+times out and exits if its prompt for input is not answered within a
+reasonable time.
+.LP
+When the Bourne shell
+.RB ( sh )
+starts up, it reads a file called
+.B .profile
+from your home directory (that of the username you use to log in).
+When the C shell
+.RB ( csh )
+starts up, it reads a file called
+.B \&.cshrc
+from your home directory, and then reads a file called
+.BR \&.login .
+.LP
+The shells read these files only if they are owned by the
+person logging in.
+.SH OPTIONS
+.TP
+.B \-p
+Preserve any existing environment variables and their values;
+otherwise the previous environment is discarded.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/utmp	
+accounting
+.TP
+.B /var/adm/wtmp	
+accounting
+.TP
+.B /var/adm/lastlog
+time of last login
+.TP
+.B /etc/ttytab
+terminal types
+.TP
+.B /usr/ucb/quota
+quota check
+.TP
+.B /var/spool/mail/*
+mail
+.TP
+.B /etc/motd
+message-of-the-day
+.TP
+.B /etc/passwd
+password file
+.TP
+.B /etc/nologin
+stop login, print message
+.TP
+.B ~/.hushlogin
+makes login quieter
+.TP
+.B \&.login
+.TP
+.B \&.profile
+.PD
+.SH "SEE ALSO"
+.BR csh (1),
+.BR mail (1),
+.BR passwd (1),
+.BR quota (1),
+.BR rlogin (1C),
+.BR sh (1),
+.BR uucp (1C),
+.BR environ (5V),
+.BR fbtab (5),
+.BR passwd (5),
+.BR svdtab (5),
+.BR utmp (5V),
+.BR getty (8),
+.BR init (8),
+.BR shutdown (8)
+.SH DIAGNOSTICS
+.TP 20
+.B Login incorrect
+If the name or the password is bad (or mistyped).
+.TP
+.B No Shell
+.TP
+.B cannot open password file
+.TP
+.B no directory
+Ask your system administrator for assistance.
+.SH NOTES
+.LP
+The following options are undocumented, and not intended
+for the user.
+The 
+.B \-r
+option is used by the remote login server,
+.BR rlogind (8C)
+to force
+.B login 
+to enter into an initial connection protocol.
+.B \-h
+is used by
+.BR telnetd (8C)
+and other servers to list the host from which the connection was
+received.
+.br
+.ne 10v
+.LP
+The following warnings apply when 
+.B login
+account names contain characters outside
+the range of 7-bit
+.SM ASCII\s0:
+.TP 3
+\(bu
+A user cannot 
+.B rlogin
+to 
+.I account-name
+containing 8-bit characters from a system
+that does not handle 8-bit characters.
+.TP 3
+\(bu
+A user cannot log in to
+.I account-name
+containing 8-bit characters
+from a 7-bit 
+.SM ASCII
+terminal (through a modem, for example).
+.TP 3
+\(bu
+Several parts of the C library are not tested for
+8-bit user names.
+.TP 3
+\(bu
+Codeset mapping can vary between systems,
+so an 8-bit pattern can represent
+different characters on different sytems.
+.TP 3
+\(bu
+Password algorithms do not work with 8-bit characters in
+the password.

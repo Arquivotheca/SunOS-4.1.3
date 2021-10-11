@@ -1,0 +1,177 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)tftpd.8c 1.1 92/07/30 SMI; from UCB 4.3
+.\"
+.TH TFTPD 8C "7 October 1990"
+.UC 5
+.SH NAME
+tftpd, in.tftpd \- TCP/IP Trivial File Transfer Protocol server
+.SH SYNOPSIS
+.B /usr/etc/in.tftpd
+.RB [ \-s ]
+.RI [ " homedir " ]
+.SH Sun386i SYNOPSIS
+.B /usr/etc/in.tftpd
+.RB [ \-s ]
+.RB [ \-p ]
+.RI [ " homedir " ]
+.SH AVAILABILITY
+.LP
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "tftpd daemon" "" "\fLtftpd\fP daemon"
+.LP
+.B tftpd
+is a server that supports the
+.SM TCP/IP
+Trivial File Transfer Protocol (\s-1TFTP\s0).
+This server is normally started by
+.BR inetd (8C)
+and operates at the port indicated in the
+.B tftp
+Internet service description in the
+.BR /etc/inetd.conf 
+file; see
+.BR inetd.conf (5)
+for details.
+The default 
+.B /etc/inetd.conf
+file starts this server in secure mode, that is, with the
+.B \-s
+option enabled.
+To run unsecure
+.BR tftpd ,
+modify this file and remove the
+.B \-s
+option.
+.LP 
+Before responding to a request, the server attempts to change its
+current directory to
+.IR homedir ;
+the default value is
+.BR /tftpboot .
+.SH Sun386i DESCRIPTION
+The
+.B tftpd
+daemon
+acts as described above, except that it will perform certain filename
+mapping operations unless instructed otherwise by the 
+.B \-p
+command line argument
+or when operating in a secure environment.
+This mapping affects only
+.SM TFTP
+boot requests and will not affect requests 
+for existing files.
+.LP
+The semantics of the changes are as follows. Only filenames of the format
+.I ip-address
+or
+.IB ip-address .  arch,
+where 
+.I ip-address
+is the IP address in hex, and 
+.I arch
+is the hosts's architecture (as returned by the
+.BR arch (1)
+command),
+that do not correspond to files in
+.BR /tftpboot ,
+are mapped. 
+If the address is known through a
+Network Information Service
+(\s-1NIS\s0)
+lookup, any file of the form
+.BI /tftpboot/ip-address *
+(with or without a suffix) is returned. If there are multiple such files,
+any one may be returned. If the
+.I ip-address
+is unknown (that is if the 
+.B ipalloc  (8C)
+service says the name service does not know the address), the filename
+is mapped as follows: Names without the 
+.I arch 
+suffix are mapped into the name
+.BR pnp.\s-1SUN3\s0 , 
+and names with the suffix are mapped into 
+\fBpnp. \fIarch\fR. 
+That file is returned if it exists.
+.SH OPTIONS
+.TP
+.B \-s
+Secure.  When specified, the directory change must succeed; and
+the daemon also changes its root directory to
+.IR homedir .
+This option is set in the default
+.B /etc/inetd.conf
+file.
+.IP
+The use of
+.B tftp  
+does not require an account or password on the remote system.
+Due to the lack of authentication information,
+.B tftpd
+will allow only publicly readable files to be accessed.  Files may be
+written only if they already exist and are publicly writable.  Note:
+this extends the concept of \*(lqpublic\*(rq to include all users on all
+hosts that can be reached through the network; this may not be
+appropriate on all systems, and its implications should be considered
+before enabling this service.
+.PP 
+.B tftpd
+runs with the user
+.SM ID
+(\s-1UID\s0)
+and group
+.SM ID
+(\s-1GID\s0)
+set to
+.BR \-2 ,
+under the assumption that no files exist with that owner or group. 
+However, nothing checks this assumption or enforces this restriction. 
+.SH Sun386i OPTIONS
+.TP
+.B \-p
+Disable pnp entirely. Do not map filenames.
+.SH Sun386i FILES
+.TP 20
+.B /tftpboot/*
+filenames are IP addresses
+.SH "SEE ALSO"
+.BR tftp (1C)
+.BR inetd (8C),
+.BR ipallocd (8C),
+.BR netconfig (8C),
+.LP
+Sollins, K.R., 
+.IR "The \s-1TFTP\s0 Protocol (Revision 2)" ,
+.SM RFC\s0 783,
+Network Information Center,
+.SM SRI
+International, Menlo Park, Calif.,
+June 1981.
+.br
+.ne 5
+.SH NOTES
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+.SH "Sun386i WARNINGS"
+.LP
+A request for an
+.I ip-address
+from a Sun-4 can be satisfied by a file named
+.IB ip-address .386
+for compatibility with some early Sun-4
+.SM PROM 
+monitors.

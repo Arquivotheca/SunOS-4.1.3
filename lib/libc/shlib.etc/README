@@ -1,0 +1,57 @@
+
+	This is a procedure you can use to substitute or add 
+a module in your shared libc library. 
+
+Note! if you are interested  system 5 libc, please substitute
+	libc_pic.a to libcs5_pic.a in step 3, 
+	libc.so.x.y.z to libcs5.so.x.y.z in step 8.
+
+-------------------------------------------------------------------------
+
+1. Become super user
+	% su
+
+2. Make a temporary directory
+	% mkdir tmp
+
+3. Change to the "tmp" directory just made, extract the pic .o from 
+   libc_pic.a and rm the file __.SYMDEF. The reason you need to do 
+   the 2 "mv" commands is because "ar" truncated filenames over 
+   16 characters.
+	% cd tmp
+	% ar x ../libc_pic.a
+	% rm __.SYMDEF
+	% mv rpc_dtablesize. rpc_dtablesize.o
+	% mv rpc_commondata. rpc_commondata.o
+
+4. Replace or add the .o that you wanted by doing a copy. Please
+   note here that you are advised to create your object with
+   the following compiler option, i.e "cc -c -pic yourprogram.c" to make
+   it shareable.
+	% cp your.o .
+
+5. If you add a new module then you need to do this step.
+   You need to edit the file "lorder-sparc" and add the name of the file
+   you have copied from step 4 at the end of this file. 
+	% vi ../lorder-sparc
+
+6. 	% cd ..
+
+7. 	% make libc.so
+
+8. Now you should have some libc.so.x.y.z built in the current directory.
+   It is recommended that you tested out this library at this point 
+   before installing it. You can do so by setting the environment
+   LD_LIBRARY_PATH  to the current directory for example:
+   	% setenv LD_LIBRARY_PATH `pwd`
+	% your_favorite_test_cmd
+   Once you are satisfied that the new library worked, you can proceed
+   to install it with the following commands:
+	% cp libc.so.x.y.z /usr/lib
+	% ldconfig
+	% unsetenv LD_LIBRARY_PATH
+
+9. You are now running with the new library. You can verify this by
+   doing a trace command of let's say "date".
+	% trace date
+   The output should informed you that the new library is being used.

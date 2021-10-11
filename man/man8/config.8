@@ -1,0 +1,771 @@
+.\" @(#)config.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH CONFIG 8 "10 April 1991"
+.SH NAME
+config \- build system configuration files
+.SH SYNOPSIS
+.B /usr/etc/config
+[
+.B \-fgnp
+]
+[
+.B \-o \fIobj_dir\fP
+]
+.I config_file
+.SH DESCRIPTION
+.IX  "config command"  ""  "\fLconfig\fP \(em build system configuration files"
+.IX  "build" "system configuration files \(em \fLconfig\fP"
+.IX  "create" "system configuration files \(em \fLconfig\fP"
+.IX  "system configuration files, build \(em \fLconfig\fP"
+.IX  "configuration files, build \(em \fLconfig\fP"
+.LP
+.B config
+does the preparation necessary for building a new system kernel with
+.BR make (1).
+The
+.I config_file
+named on the command line describes the kernel to
+be made in terms of options you want in your system, size of
+tables, and device drivers to be included. When you run
+.BR config ,
+it uses several input files
+located in the current directory (typically the
+.B conf
+subdirectory of the system source including your
+.IR config_file ).
+The format of this file is described below.
+.LP
+If the directory named
+.BI \&.\|./ config_file
+does not exist,
+.B config
+will create one.
+One of
+.BR config 's
+output files is a makefile
+which you use with
+.BR make (1)
+to build your system.
+.LP
+.B config
+must be run from the
+.B conf
+subdirectory of the system source
+(in a typical Sun environment, from
+.BR /usr/share/sys/sun{\|3,\|3x,\|4,\|4c,\|4m\|}/conf ):
+.sp .5v
+.RS
+.nf
+.ft B
+example# /usr/etc/config config_file
+Doing a "make depend"
+example# cd .\|.\|/config_file
+example# make
+\& \fI.\|.\|.\|lots of output.\|.\|.\fR
+.ft R
+.fi
+.RE
+.LP
+While
+.B config
+is running watch for any errors.
+Never use a kernel which
+.B config
+has complained about; the results are unpredictable.
+If
+.B config
+completes successfully, you can change directory
+to the
+.BI .\|. /config_file
+directory, where it has placed the new makefile, and use
+.BR make  
+to build a kernel.
+The output files placed in this directory include
+.BR ioconf.c ,
+which contains a description of I/O devices attached to the system;
+.BR mbglue.s ,
+which contains short assembly language routines used for
+vectored interrupts, a makefile,
+which is used by
+.B make
+to build the system; a set of header files
+.RI ( device_name\fB.h\fP )
+which contain the number of various devices that may
+be compiled into the system;
+and a set of swap configuration files which contain definitions for
+the disk areas to be used for the root file system, swapping,
+and system dumps.
+.LP
+Now you can install your new kernel and try it out.
+.SH OPTIONS
+.TP
+.B \-f
+Set up the makefile for fast builds. This is done by building a
+.B vmunix.o
+file which includes all the
+.B \&.o
+files which have no source.
+This reduces the number of files which have to be
+.BR stat ed
+during a system build. 
+This is done by prelinking all the files for which no source exists
+into another file which is then linked in place of all these
+files when the kernel is made.
+This makefile is faster because it does not
+.B stat
+the object files during the build.
+.TP
+.B \-g
+Get the current version of a missing source file from its 
+.SM SCCS
+history, if possible.
+.TP
+.B \-n
+Do not do the
+.RB ` "make depend" '.
+Normally
+.B config
+will do the
+.RB ` "make depend" '
+automatically.
+If this option is used
+.B config
+will print
+`\fBDon't forget to do a "make depend"\fP'
+before completing as a reminder.
+.TP
+.B \-p
+Configure the system for profiling
+(see
+.BR kgmon (8)
+and
+.BR gprof (1)).
+This option is only available for systems with
+full source releases.
+.TP
+.BI \-o\  obj_dir
+Use
+.BI \&.\|./ obj_dir
+instead of
+.B \&.\|./\s-1OBJ\s0
+as the directory to find the object files when the corresponding
+source file is not present in order 
+to generate the files necessary to compile and link
+your kernel.
+.SH USAGE
+.SS "Input Grammar"
+.LP
+In the following descriptions, a number can be a decimal integer,
+a whole octal number or a whole hexadecimal number.  Hex and octal numbers
+are specified to
+.B config
+in the same way they are specified to the C
+compiler, a number starting with
+.B 0x 
+is a hex number and a number starting with just a
+.B  0 
+is an octal number.  
+.LP
+Comments are begin with a
+.RB  # 
+character, and end at the next
+.SM NEWLINE.
+Lines beginning with
+.SM TAB
+characters are considered continuations of the previous line.
+Lines of the configuration file can be one of two basic types.
+First, there are lines which describe general things about your system:
+.TP
+\fBmachine "\fItype\fB"\fR
+This is system is to run on the machine type specified.
+Only one machine type can appear in the config file.
+The legal
+.IR type s
+for a Sun system are
+.BR sun3 ,
+.BR sun3x ,
+.BR sun4 ,
+.BR sun4c ,
+.BR sun4m ,
+and
+.BR sun386 .
+Note: the double quotes around
+.I type
+are part of the syntax, and must be included.
+.TP
+\fBcpu "\fItype\fB"
+This system is to run on the 
+.SM CPU
+type specified.
+More than one 
+.SM CPU
+type can appear in the config file.
+.\"Legal
+.\".IR type s
+.\"for a
+.\".B sun2
+.\"machine are noted in the annotated config file in
+.\".TX INSTALL .
+.TP
+.BI ident " name"
+Give the system identifier \(em a name for the machine or machines that
+run this kernel.  Note:
+.I name
+must be enclosed in double quotes if it contains both letters
+and digits.
+Also, note that if
+.I name
+is
+.BR \s-1GENERIC\s0 ,
+you need not include the
+.RB ` "options \s-1GENERIC\s0" '
+clause in order to specify
+.RB ` "swap generic" '.
+.TP
+.BI maxusers " number"
+The maximum expected number of simultaneously active user on this system is
+.IR number .
+This number is used to size several system data structures.
+.TP
+.BI options " optlist"
+Compile the listed options into the system.
+Options in this list are separated by commas.
+.\"There is a list of options that you may specify in the generic makefile.
+A line of the form:
+.RS
+.IP
+.B options \s-1FUNNY\|,\|HAHA\s0
+.RE
+.IP
+yields
+.RS
+.IP
+.SB \-DFUNNY \-DHAHA
+.RE
+.IP
+to the C compiler.
+An option may be given a value, by following its name with
+.B =
+(equal sign) then the value enclosed in (double) quotes.
+None of the standard options use such a value.
+.IP
+In addition, options can be used to bring in additional files if
+the option is listed in the
+.B files
+files. 
+All options should be listed in upper case. 
+In this case, no corresponding
+.IB option .h
+will be created as it would be using the corresponding
+.I pseudo-device
+method.
+.TP
+.BI config " sysname config_clauses\|.\|.\|."
+Generate a system with name
+.I sysname 
+and configuration as specified in
+.IR config-clauses .
+The
+.I sysname
+is used to name the resultant binary image
+and per-system swap configuration files.
+The
+.I config_clauses
+indicate the location for the
+root file system, one or more disk partitions for swapping and paging,
+and a disk partition to which system dumps should be made.
+All but the root device specification may be omitted;
+.B config
+will assign default values as described below.
+.RS
+.TP
+.B root
+A root device specification is of the form:
+.RS
+.IP
+.B "root on \fIxy0d\fP"
+.RE
+.IP
+If a specific partition is omitted \(em for example, if only
+.RS
+.IP
+.B "root on xy0"
+.RE
+.IP
+is specified \(em the
+.RB ` a '
+partition is assumed. 
+When a generic system is being built, no root
+specification should be given; the root device will be defined
+at boot time by prompting the console.
+.TP
+.B swap
+To specify a primary swap partition, use a clause of the form:
+.RS
+.IP
+.B "swap on \fIpartition\fP"
+.RE
+.IP
+Swapping areas may be almost any size.
+Partitions used for swapping are sized at boot time by the system;
+to override dynamic sizing of a swap area the number of sectors
+in the swap area can be specified in the config file.
+For example,
+.RS
+.IP
+.B "swap on \fIxy0b\fP size 99999"
+.RE
+.IP
+would configure a swap partition with 99999 sectors.
+If
+.B swap generic
+or no
+.I partition
+is specified with
+.BR on ,
+partition b on the root device is used.
+For dataless clients, use:
+.RS
+.IP
+.B "swap on type nfs"
+.RE
+.br
+.ne 7
+.TP
+.B dumps
+The location to which system dumps are sent may be specified with
+a clause of the form:
+.RS
+.IP
+.BI "dumps on " xy1
+.RE
+.IP
+If no dump device is specified,
+the first swap partition specified is used.  If a device is specified
+without a particular partition, the
+.RB ` b '
+partition is assumed.
+If a generic configuration is to be built, no dump device should
+be specified; the dump device will be assigned to the swap device
+dynamically configured at boot time.
+Dumps are placed at the end of the partition specified.  Their size
+and location is recorded in global kernel variables
+.I dumpsize
+and
+.IR dumplo ,
+respectively, for use by 
+.BR savecore (8).
+.RE
+.LP
+Device names specified in configuration clauses are mapped to block
+device major numbers with the file
+.BI devices. machine\fR,
+where
+.I machine
+is the machine type previously specified in the configuration file.
+If a device name to block device major number mapping must be overridden, a
+device specification may be given in the form:
+.RS
+.IP
+.BI major " x " minor " y"
+.RE
+.LP
+The second group of lines in the configuration file describe which
+devices your system has and what they are connected to
+(for example, an
+.SM IPI
+Channel Adaptor on the 
+.SM VME\s0bus).
+These lines have the following format:
+.RS
+.I "	dev_type\ \ \ \	dev_name\ \ \ "
+.B at
+.I "\ \ \ con_dev\ \ \ \ more_info"
+.RE
+.LP
+.I dev_type
+is either
+.BR controller ,
+.BR disk ,
+.BR tape ,
+.BR device ,
+.BR device-driver ,
+or
+.BR pseudo-device .
+These types have the following meanings:
+.RS
+.TP 15
+.B controller
+A disk or tape controller.
+.TP 
+.BR disk " or " tape
+Devices connected to a controller.
+.TP
+.B device
+Something \*(lqattached\*(rq to the main system bus,
+like a cartridge tape interface.
+.TP
+.B device-driver
+This declares support for a device of name
+.IR dev_name .
+For most devices on
+desktop \s-1SPARC\s0systems, this is all that is required.
+See
+.RB ` "Desktop \s-1SPARC\s0system Input Grammar" '
+below for details.
+.TP
+.B pseudo-device
+A software subsystem or driver treated like a device driver, but without
+any associated hardware.  Current examples are the pseudo-tty driver
+and various network subsystems.
+For pseudo-devices,
+.B more_info
+may be specified as an integer, that gives the value of the
+symbol defined in the header file created for that device, and
+is generally used to indicate the number of instances of the
+pseudo-device to create. 
+.RE
+.LP
+.I dev_name
+is the standard device name and unit number (if the device is not a
+.BR pseudo-device )
+of the device you are specifying.
+For example,
+.B idc0
+is the
+.I dev_name
+for the first
+.SM IPI
+disk controller in a system;
+.B st0
+names the first
+.SM SCSI
+tape controller.
+.LP
+.I con_dev
+is what the device you are specifying is connected to.
+It is either
+.BR nexus? ,
+a bus type, or a controller.  
+There are several bus types which  are used by
+.B config
+and the kernel.  
+.LP
+The possible bus types are:
+.ne 10
+.RS
+.sp .5
+.PD 0
+.TP 18
+.B obmem
+On board memory
+.TP
+.B obio
+On board io
+.\".TP
+.\".B mbmem
+.\"Multibus memory
+.\".RB ( sun2
+.\"system only)
+.\".TP
+.\".B mbio
+.\"Multibus io   
+.\".RB ( sun2
+.\"system only)
+.TP
+.B vme16d16 (vme16)
+16 bit
+.SM VME\s0bus/
+16 bit data
+.TP
+.B vme24d16 (vme24)
+24 bit
+.SM VME\s0bus/
+16 bit data
+.TP
+.B vme32d16
+32 bit
+.SM VME\s0bus/
+16 bit data
+.TP
+.B vme16d32
+16 bit
+.SM VME\s0bus/
+32 bit data
+.TP
+.B vme24d32
+24 bit
+.SM VME\s0bus/
+32 bit data
+.TP 
+.B vme32d32 (vme32)
+32 bit
+.SM VME\s0bus/
+32 bit data
+.TP 
+.B ipi
+IPI pseudo bus
+.RB ( sun4
+system only)
+.PD
+.RE
+.LP
+All of these bus types are declared to be connected to
+.BR nexus .
+The devices are hung off these buses.  If the bus is
+wildcarded, then the autoconfiguation code will determine
+if it is appropriate to probe for the device on the
+machine that it is running on.  If the bus is numbered,
+then the autoconfiguation code will only look for that
+device on machine type
+.BR  N .
+In general, the
+.SM VME\s0bus
+bus types are always wildcarded.
+.br
+.ne 10
+.LP
+.I more_info
+is a sequence of the following:
+.RS
+.TP 18
+.BI csr " address"
+Specify the address of the 
+.B csr 
+(command and status registers) for a
+device. The 
+.B csr 
+addresses specified for the device are  the
+addresses within the bus type specified.  
+.IP
+The
+.B csr
+address must be specified for all controllers, and for all devices
+connected to a main system bus.
+.TP
+.BI drive " number"
+For a disk or tape, specify which drive this is.
+.TP
+.BI flags " number"
+These flags are made available to the device driver, and are usually
+read at system initialization time.
+.TP
+.BI priority " level"
+For devices which interrupt, specify the interrupt
+level at which the device operates.
+.HP
+.BI vector " intr number"
+.RI [ " intr number . . . " ]
+.br
+For devices which use vectored interrupts on
+.SM VME\s0bus
+systems,
+.I intr
+specify the vectored interrupt routine and
+.I number
+the corresponding vector to be used (0x40-0x\s-1FF\s0).
+.RE
+.LP
+A
+.B ?
+may be substituted for a number in two places and the system
+will figure out what to fill in for the
+.B ?
+when it boots.
+You can put question marks on a
+.I con_dev
+(for example, at virtual `?'), or on a drive number (for example, drive `?').
+This allows redundancy, as a single system can
+be built which will boot on different hardware configurations.
+.LP
+The easiest way to understand 
+.B config 
+files it to look at a working
+one and modify it to suit your system.
+Good examples are provided in
+.TX INSTALL .
+.br
+.SS "Desktop SPARCsystem Input Grammar"
+.LP
+Desktop
+\s-1SPARC\s0systems'
+usage is a good deal simpler than what is described
+above, due primarily to information provided by the
+.SM PROM
+monitor that obviates the specific descriptions of 
+.B csr
+and 
+.B vector
+values.
+There is no need to declare a 
+.BR nexus ,
+or a 
+.BR controller :
+all primary controllers and main I/O units are simply described
+by the 
+.B device-driver
+keyword.
+That is, a complete specification of all 
+.SB UART
+controllers (see 
+.BR zs (4S))
+for a
+desktop \s-1SPARC\s0system
+is done by declaring:
+.RS
+.IP
+.B "device-driver  zs"
+.RE
+.LP
+An additional keyword has been introduced for
+desktop \s-1SPARC\s0systems to describe
+.SM SCSI
+disks and tapes that may be resident on the system:
+.BR scsibus .
+Its usage is:
+.RS
+.IP
+.BI scsibus N " at " device-driver
+.RE
+.LP
+which declares that there exists a
+.SM SCSI
+bus supported by a device-driver previously declared.
+.LP
+After specifying that there is a
+.SM SCSI
+bus, you then can specify disks and
+tapes that may be connected to this
+.SM SCSI
+bus. For example, the declaration
+.RS
+.IP
+.B "disk sd0 at scsibus0 target 3 lun 0"
+.RE
+.LP
+states that there may be a disk (in this example,
+.BR sd0 )
+attached to
+.BR scsibus0 ,
+at
+.SM SCSI
+Target
+.SM ID
+.BR 3 ,
+.SM SCSI
+Logical unit
+.BR 0 .
+.br
+.SS "SPARCsystem 600MP Series Input Grammar"
+.LP
+\s-1SPARC\s0system 600MP series machines have a combination
+of both the common input grammar (described above in
+`\fBInput Grammar\fP'), and the desktop \s-1SPARC\s0system
+grammar (described above in
+`\fBDesktop \s-1SPARC\s0system Input Grammar\fP').
+For
+.SM VME\s0bus
+devices, such as 
+.SM IPI\s0,
+the grammar is similar to the common grammar.
+For sbus devices, such as
+.SM SCSI\s0,
+the grammar is similar to that of desktop 
+\s-1SPARC\s0systems.
+.ne 6
+.SH FILES
+.LP
+Files in
+.B /usr/share/sys/sun{\|3,\|3x,\|4,\|4c,\|4m\|}/conf
+which may be useful for developing the
+.I config_file
+used by
+.B config
+are:
+.LP
+.RS
+.TP 20
+.SB GENERIC
+The generic configuration file for a given Sun system.
+This file contains all possible device description lines for the particular
+architecture.	  
+.TP
+.SB GENERIC_SMALL
+A reduced generic configuration file for certain vanilla
+configurations.  Check the comments at the top of the file
+for specific architectures and devices supported.
+.TP
+\s-1\fBDL\s0\fImodel\fR, \s-1\fBSDST\s0\fImodel\fR, etc.
+Many of the architectures supply template configuration
+files trimmed to support only certain devices or environments
+(like diskless clients, standalone systems with
+.SM SCSI
+disks and tape, and so on).  Comments at the top of these files
+specify models and devices supported.
+.TP
+.SB README
+File describing how to make a new kernel.
+.RE
+.LP
+As shipped from Sun, the files used by
+.B /usr/etc/config
+as input are in the
+.B /usr/include/sys/conf
+directory:
+.LP
+.RS
+.PD 0
+.TP 20
+.I config_file
+System-specific configuration file
+.TP
+.B Makefile.src
+Generic prototype makefile for Sun\-[34] systems
+.TP
+.B files
+List of common files required to build a basic kernel
+.TP
+.B devices
+Name to major device mapping file for Sun\-[34] systems
+.PD
+.RE
+.LP
+.B /usr/etc/config
+places its output files in the
+.BI .\|.\|/ config_file
+directory:
+.LP
+.RS
+.PD 0
+.TP 20
+.B mbglue.s
+Short assembly language routines used for vectored interrupts
+.TP
+.B ioconf.c
+Describes I/O devices attached to the system
+.TP
+.I makefile
+Used with
+.BR make (1)
+to build the system
+.TP
+.IB device_name .h
+a set of header files (various
+.IR device_name 's)
+containing devices which can be compiled into the system
+.PD
+.RE
+.SH SEE ALSO
+.BR gprof (1),
+.BR make (1),
+.BR zs (4S),
+.BR kgmon (8),
+.BR savecore (8),
+.BR swapon (8)
+.LP
+The
+.SM SYNOPSIS
+portion of each device entry in Section 4 of this manual.
+.LP
+.TX INSTALL
+.br
+.TX ADMIN

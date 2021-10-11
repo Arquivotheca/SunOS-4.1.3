@@ -1,0 +1,122 @@
+.\" Copyright (c) 1983 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\"
+.\" @(#)trpt.8c 1.1 92/07/30 SMI; from 6.2 (Berkeley) 5/26/86
+.TH TRPT 8C "9 September 1987"
+.UC 5
+.SH NAME
+trpt \- transliterate protocol trace
+.SH SYNOPSIS
+.B /usr/etc/trpt
+[
+.B \-afjst
+] [
+.B \-p\c
+.IR hex-address ]
+[
+.I system
+[
+.I core
+] ]
+.SH DESCRIPTION
+.IX  "trpt command"  ""  "\fLtrpt\fP \(em transliterate protocol trace"
+.IX  "transliterate protocol trace"  ""  "transliterate protocol trace \(em \fLtrpt\fP"
+.B trpt
+interrogates the buffer of
+.SM TCP
+trace records created
+when a socket is marked for \*(lqdebugging\*(rq (see
+.BR getsockopt (2)),
+and prints a readable description of these records.
+When no options are supplied,
+.B trpt
+prints all the trace records found in the system
+grouped according to
+.SM TCP
+connection protocol control
+block (\s-1PCB\s0).  The following options may be used to
+alter this behavior.
+.SH OPTIONS
+.TP
+.B \-a
+In addition to the normal output,
+print the values of the source and destination
+addresses for each packet recorded.
+.TP
+.B \-f
+Follow the trace as it occurs, waiting a
+short time for additional records
+each time the end of the log is reached.
+.TP
+.B \-j
+Just give a list of the protocol control block
+addresses for which there are trace records.
+.TP
+.B \-s
+In addition to the normal output,
+print a detailed description of the packet
+sequencing information.
+.TP
+.B \-t
+In addition to the normal output,
+print the values for all timers at each
+point in the trace.
+.TP
+.BI "\-p " hex-address
+Show only trace records associated with the protocol
+control block, the address of which follows.
+.LP
+The recommended use of
+.B trpt
+is as follows.
+Isolate the problem and enable debugging on the
+.BR socket (s)
+involved in the connection.
+Find the address of the protocol control blocks
+associated with the sockets using the
+.B \-A
+option to
+.BR netstat (8C).
+Then run
+.B trpt
+with the
+.B \-p
+option, supplying the associated
+protocol control block addresses.
+The
+.B \-f
+option can be used to follow the trace log once the trace is located.
+If there are
+many sockets using the debugging option, the
+.B \-j
+option may be useful in checking to see if
+any trace records are present for the socket in
+question.
+.LP
+If debugging is being performed on a system or
+core file other than the default, the last two
+arguments may be used to supplant the defaults.
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+.TP
+.B /dev/kmem
+.PD
+.SH "SEE ALSO"
+.BR getsockopt (2),
+.BR netstat (8C)
+.SH DIAGNOSTICS
+.TP 15
+.B no namelist
+When the system image does not
+contain the proper symbols to find the trace buffer;
+others which should be self explanatory.
+.SH BUGS
+Should also print the data for each input or output,
+but this is not saved in the trace record.
+.LP
+The output format is inscrutable and should be described
+here.

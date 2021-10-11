@@ -1,0 +1,150 @@
+.\" @(#)close.2v 1.1 92/07/30 SMI; from UCB 4.3 and S5R3
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH CLOSE 2V "21 January 1990"
+.SH NAME
+close \- delete a descriptor
+.SH SYNOPSIS
+.nf
+.ft B
+int close (fd)
+int fd;
+.ft
+.fi
+.IX  close()  ""  \fLclose()\fP
+.IX  descriptors  close()  ""  \fLclose()\fP
+.IX  descriptors  delete
+.IX  "delete descriptor"
+.SH DESCRIPTION
+.LP
+.B close(\|)
+deletes a descriptor from the per-process object
+reference table.
+If
+.I fd
+is the last reference to the underlying object, then
+the object will be deactivated.
+For example, on the last close of a file
+the current
+.I seek
+pointer associated with the file is lost.
+On the last close of a socket
+(see
+.BR socket (2)),
+associated naming information and queued data are discarded.
+On the last close of a file holding an advisory lock applied by
+.BR flock (2),
+the lock is released.
+(Record locks applied to the file by
+.BR lockf (3),
+however, are released on
+.I any
+call to
+.B close(\|)
+regardless of whether
+.I fd
+is the last reference to the underlying object.)
+.LP
+.B close(\|)
+does not unmap any mapped pages of the object referred to by
+.I fd
+(see
+.BR mmap(\|) ,
+.BR munmap (2)).
+.LP
+A close of all of a process's descriptors is automatic on
+.BR exit(\|) ,
+but since there is a limit on the number of active descriptors per process,
+.B close(\|)
+is necessary for programs that deal with many descriptors.
+.LP
+When a process forks (see
+.BR fork (2v)),
+all descriptors for the new child process reference the same
+objects as they did in the parent before the fork.
+If a new process is then to be run using
+.BR execve (2V),
+the process would normally inherit these descriptors.  Most
+of the descriptors can be rearranged with
+.BR dup (2V)
+or deleted with
+.B close(\|)
+before the
+.B execve(\|)
+is attempted, but if some of these descriptors will still
+be needed if the
+.B execve(\|)
+fails, it is necessary to arrange for them to be closed if the
+.B execve(\|)
+succeeds.  The
+.BR fcntl (2V)
+operation
+.SB F_SETFD
+can be used to arrange that a descriptor will be closed
+after a successful
+.BR execve(\|) ,
+or to restore the default behavior,
+which is to not close the descriptor.
+.LP
+If a
+.SM STREAMS
+(see
+.BR intro (2))
+file is closed, and the calling process had
+previously registered to receive a
+.SB SIGPOLL
+signal (see
+.BR sigvec (2))
+for events associated with that file (see
+.SB I_SETSIG
+in
+.BR streamio (4)),
+the calling process will be unregistered for events associated with the file.
+The last
+.B close(\|)
+for a stream causes that stream to be dismantled.
+If the descriptor is not marked for no-delay mode
+and there have been no signals posted for the stream,
+.B close(\|)
+waits up to 15 seconds, for each module and driver, for any output to drain
+before dismantling the stream.
+If the descriptor is marked for no-delay mode or if there are any
+pending signals,
+.B close(\|)
+does not wait for output to drain, and
+dismantles the stream immediately.
+.SH RETURN VALUES
+.LP
+.B close(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EBADF
+.I fd
+is not an active descriptor.
+.TP
+.SM EINTR
+A signal was caught before the close completed.
+.SH "SEE ALSO"
+.BR accept (2),
+.BR dup (2V),
+.BR execve (2V),
+.BR fcntl (2V),
+.BR flock (2),
+.BR intro (2),
+.BR open (2V),
+.BR pipe (2V),
+.BR sigvec (2),
+.BR socket (2),
+.BR socketpair (2),
+.BR streamio (4)

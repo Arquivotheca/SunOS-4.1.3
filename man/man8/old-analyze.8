@@ -1,0 +1,108 @@
+.\" @(#)old-analyze.8 1.1 92/07/30 SMI; from UCB 4.2
+.TH OLD-ANALYZE 8 "23 September 1987"
+.SH NAME
+old-analyze, analyze \- postmortem system crash analyzer
+.SH SYNOPSIS
+.B /usr/old/analyze
+[
+.B \-dfmvD
+] [
+.B \-s
+.I swapfile
+]
+.I corefile
+[
+.B system
+]
+.SH DESCRIPTION
+.IX  "analyze command"  ""  "\fLanalyze\fP \(em crash analyzer"
+.IX  "crash analyzer"  ""  "crash analyzer \(em \fLanalyze\fP"
+.IX  "postmortem crash analyzer"  ""  "postmortem crash analyzer \(em \fLanalyze\fP"
+.IX  "system administration"  analyze  ""  "\fLanalyze\fP \(em crash analyzer"
+.B analyze
+is the post-mortem analyzer for the state of the paging system.
+In order to use
+.B analyze
+you must arrange to get a image of the memory (and possibly the
+paging area) of the system after it crashes (see
+.BR panic (8S)).
+.LP
+The
+.B analyze
+program reads the relevant system data structures from the core
+image file and indexing information from
+.B /vmunix
+(or the specified file)
+to determine the state of the paging subsystem at the point of crash.
+It looks at each process in the system, and the resources each is
+using in an attempt to determine inconsistencies in the paging system
+state.  Normally, the output consists of a sequence of lines showing
+each active process, its state (whether swapped in or not), its
+.IR p0br ,
+and the number and location of its page table pages.
+Any pages which are locked while raw
+.SM I/O
+is in progress, or which
+are locked because they are
+.I intransit
+are also printed.  (Intransit text pages often diagnose as duplicated;
+you will have to weed these out by hand.)
+.LP
+The program checks that any pages in core which are marked as not
+modified are, in fact, identical to the swap space copies.
+It also checks for non-overlap of the swap space, and that the core
+map entries correspond to the page tables.
+The state of the free list is also checked.
+.LP
+Options to
+.BR analyze :
+.TP
+.B \-d
+Print the (sorted) paging area usage.
+.TP
+.B \-f
+Dump the free list.
+.TP
+.B \-m
+Dump the entire coremap state.
+.TP
+.B \-v
+(Long unused.) Use a hugely verbose output format.
+.TP
+.B \-D
+Print the diskmap for each process.
+.LP
+In general, the output from this program can be confused by processes
+which were forking, swapping, or exiting or
+happened to be in unusual states when the
+crash occurred.  You should examine the flags fields of relevant processes in the output of a
+.BR pstat (8)
+to weed out such processes.
+.LP
+It is possible to look at the core dump with
+.BR adb (1)
+if you do
+.IP
+.B adb \-k /vmunix /vmcore
+.SH FILES
+.PD 0
+.TP 20
+.B /vmunix
+default system namelist
+.PD
+.SH SEE ALSO
+.BR adb (1),
+.BR ps (1),
+.BR panic (8S),
+.BR pstat (8)
+.\".SH AUTHORS
+.\"Ozalp Babaoglu and William Joy
+.SH DIAGNOSTICS
+Various diagnostics about overlaps in
+swap mappings, missing swap mappings,
+page table entries inconsistent with the core map, incore pages which
+are marked clean but differ from disk-image copies, pages which are
+locked or intransit, and inconsistencies in the free list.
+.LP
+It would be nice if this program analyzed the system in general, rather
+than just the paging system in particular.

@@ -1,0 +1,861 @@
+.\" @(#)stty.1v 1.1 92/07/30 SMI; from S5R3
+.TH STTY 1V "2 October 1989"
+.SH NAME
+stty \- set or alter the options for a terminal
+.SH SYNOPSIS
+.B stty
+[
+.B \-ag
+]
+[
+.I option 
+] .\|.\|.
+.SH SYSTEM V SYNOPSIS
+.B /usr/5bin/stty
+[
+.B \-ag
+]
+[
+.I option 
+] .\|.\|.
+.SH AVAILABILITY
+The System V version of this command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "stty command" "" "\fLstty\fR command"  
+.IX  set "terminal characteristics \(em \fLstty\fP"
+.IX  terminal  "set characteristics"  ""  "set characteristics \(em \fLstty\fP"
+.IX  "tty, set characteristics \(em \fLstty\fP"
+.LP
+.B stty
+sets certain terminal
+.SM I/O
+options for the device that is the current standard output.
+Without arguments, it reports the settings of certain terminal
+options for the device that is the standard output; the settings are
+reported on the standard error.
+.LP
+Detailed information about the modes listed
+in the first five groups below may be found in
+.BR termio (4).
+Options in the last group are implemented using options in the previous
+groups.
+Note: many combinations of options make no sense, but no sanity
+checking is performed.
+.SH SYSTEM V DESCRIPTION
+.LP
+.B stty
+sets or reports terminal options for the device that is
+the current standard input; the settings are
+reported on the standard output.
+.SH OPTIONS
+.TP 12
+.B \-a
+Report all of the option settings.
+.TP
+.B \-g
+Report current settings in a form that can be used as an argument
+to another
+.B stty
+command.
+.SS Special Requests
+.TP 12
+.B speed
+The terminal speed alone is printed on the standard output.
+.TP
+.B size
+The terminal (window) sizes are printed on the standard output,
+first rows and then columns.
+.IP
+.B size
+and
+.B speed
+always report on the settings of 
+.BR /dev/tty ,
+and always report the settings to the standard output.
+.SS Control Modes
+.TP 12
+.RB [ \- ] parenb
+Enable parity generation and detection.
+With a
+.RB ` \- ',
+disable parity checking.
+.TP
+.RB [ \- ] parodd
+Select odd parity.
+With a
+.RB ` \- ',
+select even parity.
+.TP
+.B "cs5 cs6 cs7 cs8"
+Select character size.
+.TP
+.B 0
+Hang up phone line immediately.
+.TP
+.B "50 75 110 134 150 200 300 600 1200 1800 2400 4800 9600 19200 exta 38400 extb"
+Set terminal baud rate to the number given, if possible.
+(Not all speeds are supported by all hardware interfaces.)
+.TP
+.RB [ \- ] hupcl
+Hang up connection on last close.
+With a
+.RB ` \- ',
+do not hang up connection.
+.TP
+.RB [ \- ] hup
+Same as
+.BR hupcl .
+.TP
+.RB [ \- ] cstopb
+Use two stop bits per character.
+With a
+.RB ` \- ',
+use one stop bit per character.
+.TP
+.RB [ \- ] cread
+Enable the receiver.
+With a
+.RB ` \- ',
+disable the receiver.
+.TP
+.RB [ \- ] clocal
+Assume a line without modem control.
+With a
+.RB ` \- ',
+assume a line with modem control.
+.SS Input Modes
+.TP 12
+.RB [ \- ] ignbrk
+Ignore break on input.
+With a
+.RB ` \- ',
+do not ignore a break on input.
+.TP
+.RB [ \- ] brkint
+Signal
+.SB SIGINT
+on break.  With a
+.RB ` \- ',
+do not signal.
+.TP
+.RB [ \- ] ignpar
+Ignore parity errors.
+With a
+.RB ` \- ',
+do not ignore parity errors.
+.TP
+.RB [ \- ] parmrk
+Mark parity errors
+With a
+.RB ` \- ',
+do not mark parity errors.
+.TP
+.RB [ \- ] inpck
+Enable input parity checking.
+With a
+.RB ` \- ',
+disable input parity checking.
+.TP
+.RB [ \- ] istrip
+Strip input characters to seven bits.
+With a
+.RB ` \- ',
+do not strip input characters.
+.TP
+.RB [ \- ] inlcr
+Map
+.SM NEWLINE
+to
+.SM RETURN
+on input.
+With a
+.RB ` \- ',
+do not map on input.
+.TP
+.RB [ \- ] igncr
+Ignore
+.SM RETURN
+on input.
+With a
+.RB ` \- ',
+do not ignore
+.SM RETURN
+on input.
+.TP
+.RB [ \- ] icrnl
+Map
+.SM RETURN
+to
+.SM NEWLINE
+on input.
+With a
+.RB ` \- ',
+do not map.
+.TP
+.RB [ \- ] iuclc
+Map upper-case alphabetics to lower case on input.
+With a
+.RB ` \- ',
+do not map.
+.TP
+.RB [ \- ] ixon
+Enable
+.BR \s-1START\s0 / \s-1STOP\s0
+output control.
+With a
+.RB ` \- ',
+disable output control.
+When enabled, output is stopped by sending a
+.SB STOP
+character and started by sending a
+.SB START
+character.
+.TP
+.RB [ \- ] ixany
+Allow any character to restart output.
+With a
+.RB ` \- ',
+only restart with a
+.SB START
+character.
+.TP
+.RB [ \- ] decctlq
+Same as
+.BR \-ixany .
+.TP
+.RB [ \- ] ixoff
+Request that the system send
+.BR \s-1START\s0 / \s-1STOP\s0
+characters when the input queue is nearly empty/full.
+With a
+.RB ` \- ',
+request that the system not send
+.BR \s-1START\s0 / \s-1STOP\s0
+characters.
+.TP
+.RB [ \- ] tandem
+Same as
+.BR ixoff .
+.TP
+.RB [ \- ] imaxbel
+Request that the system send a
+.SM BEL
+character to your terminal, and not to flush the input queue,
+if a character received when the input queue is full.
+With a
+.RB ` \- ',
+request that it flush the input queue and not send a
+.SM BEL
+character.
+.TP
+.RB [ \- ] iexten
+Enable all SunOS special characters, such as word erase.
+With a 
+.RB ` \- ',
+enable only the
+.SM POSIX
+subset of special characters
+.RB ( \s-1INTR\s0 ,
+.BR \s-1QUIT\s0 ,
+.BR \s-1ERASE\s0 ,
+.BR \s-1KILL\s0 ,
+.BR \s-1EOF\s0 ,
+.BR \s-1NL\s0 ,
+.BR \s-1EOL\s0 ,
+.BR \s-1SUSP\s0 ,
+.BR \s-1STOP\s0 ,
+.BR \s-1START\s0 ,
+and
+.BR  \s-1CR\s0 ).
+.SS Output Modes
+.TP 12
+.RB [ \- ] opost
+Post-process output.
+With a
+.RB ` \- ',
+do not post-process output; ignore all other output modes.
+.TP
+.RB [ \- ] olcuc
+Map lower-case alphabetics to upper case on output.
+With a
+.RB ` \- ',
+do not map.
+.TP
+.RB [ \- ] onlcr
+Map
+.SM NEWLINE
+to
+.SM RETURN-NEWLINE
+on output.
+With a
+.RB ` \- ',
+do not map.
+.TP
+.RB [ \- ] ocrnl
+Map
+.SM RETURN
+to
+.SM NEWLINE
+on output.
+With a
+.RB ` \- ',
+do not map.
+.TP
+.RB [ \- ] onocr
+Do not place
+.SM RETURN
+characters at column zero.
+With a
+.RB ` \- ',
+do place
+.SM RETURN
+characters
+at column zero.
+.TP
+.RB [ \- ] onlret
+On the terminal
+.SM NEWLINE
+performs the
+.SM RETURN
+function.
+With a
+.RB ` \- ',
+.SM NEWLINE
+does not perform the
+.SM RETURN
+function.
+.TP
+.RB [ \- ] ofill
+Use fill characters for delays.
+With a
+.RB ` \- ',
+use timing for delays.
+.TP
+.RB [ \- ] ofdel
+Fill characters are
+.SM DEL
+characters.
+With a
+.RB ` \- ',
+fill characters are
+.SM NUL
+characters.
+.TP
+.B "cr0 cr1 cr2 cr3"
+Select style of delay for
+.SM RETURN
+characters.
+.TP
+.B "nl0 nl1"
+Select style of delay for
+.SM LINEFEED
+characters.
+.br
+.ne 3
+.TP
+.B "tab0 tab1 tab2 tab3"
+Select style of delay for horizontal
+.SM TAB
+characters.
+.TP
+.B "bs0 bs1"
+Select style of delay for
+.SM BACKSPACE
+characters.
+.TP
+.B "ff0 ff1"
+Select style of delay for form
+.SM FORMFEED
+characters.
+.TP
+.B "vt0 vt1"
+Select style of delay for vertical
+.SM TAB
+characters.
+.SS Local Modes
+.TP 12
+.RB [ \- ] isig
+Enable the checking of characters against the special characters
+.SB INTR
+and
+.BR \s-1QUIT\s0 .
+With a
+.RB ` \- ',
+disable this checking.
+.TP
+.RB [ \- ] icanon
+Enable canonical input (\c
+.BR \s-1ERASE\s0 ,
+.BR \s-1KILL\s0 ,
+.BR \s-1WERASE\s0 ,
+and
+.SB \s-1RPRNT
+processing).
+With a
+.RB ` \- ',
+disable canonical input.
+.TP
+.RB [ \- ] cbreak
+Same as
+.BR \-icanon .
+.TP
+.RB [ \- ] xcase
+Perform canonical upper/lower-case presentation.
+With a
+.RB ` \- ',
+do not perform canonical upper/lower-case presentation.
+.TP
+.RB [ \- ] echo
+Echo back every character typed.
+With a
+.RB ` \- ',
+do not echo back.
+.TP
+.RB [ \- ] echoe
+Echo the
+.SB ERASE
+character as a sequence of
+.SM BACKSPACE-SPACE-BACKSPACE\s0.
+With a
+.RB ` \- ',
+echo the
+.SB ERASE
+character as itself.
+.TP
+.RB [ \- ] crterase
+Same as
+.BR echoe .
+.TP
+.RB [ \- ] echok
+Echo
+.SM NEWLINE
+after echoing a
+.SB KILL
+character.
+With a
+.RB ` \- ',
+do not echo
+.SM NEWLINE
+after echoing a
+.SB KILL
+character.
+.TP
+.BR lfkc
+Same as
+.BR echok ;
+obsolete.
+.TP
+.RB [ \- ] echonl
+Echo
+.SM NEWLINE\s0,
+even if
+.B echo
+is not set.
+With a
+.RB ` \- ',
+do not echo
+.SM NEWLINE
+if
+.B echo
+is not set.
+.TP
+.RB [ \- ] noflsh
+Disable flush after
+.SB INTR
+or
+.BR \s-1QUIT\s0 .
+With a
+.RB ` \- ',
+enable flush.
+.TP
+.RB [ \- ] tostop
+Stop background jobs that attempt to write to the terminal.
+With a
+.RB ` \- ',
+allow background jobs to write to the terminal.
+.TP
+.RB [ \- ] echoctl
+Echo control characters as
+.B x
+(and delete as
+.RB ` ? '.)
+Print two
+.SM BACKSPACE
+characters following the
+.SB EOF
+character (default
+.SM CTRL-D\s0).
+With a
+.RB ` \- ',
+echo control characters as themselves.
+.TP
+.RB [ \- ] ctlecho
+Same as
+.BR echoctl .
+.TP
+.RB [ \- ] echoprt
+Echo erased characters backwards within
+.RB ` \e '
+and
+.RB ` / ';
+used on printing
+terminals.
+With a
+.RB ` \- ',
+echo erased characters as indicated by
+.BR echoe .
+.TP
+.RB [ \- ] prterase
+Same as
+.BR echoprt .
+.TP
+.RB [ \- ] echoke
+Echo the
+.SB KILL
+character by erasing each character on the line as
+indicated by
+.B echoprt
+and
+.BR echoe .
+With a
+.RB ` \- ',
+echo the
+.SB KILL
+character as indicated by
+.B echoctl
+and
+.BR echok .
+.TP
+.RB [ \- ] crtkill
+Same as
+.BR echoke .
+.TP
+.SS Control Assignments
+.TP 12
+.I "control-character c"
+Set
+.I control-character
+to
+.IR c ,
+where
+.I control-character
+is one of
+.BR erase ,
+.BR kill ,
+.BR intr ,
+.BR quit ,
+.BR eof ,
+.BR eol ,
+.BR eol2 ,
+.BR start ,
+.BR stop ,
+.BR susp ,
+.BR rprnt ,
+.BR flush ,
+.BR werase ,
+or
+.BR lnext .
+If
+.I c
+is preceded by a caret
+.RB ( ^ ),
+(escaped from the shell)
+then the value used is the corresponding
+.SM CTRL
+character
+(for instance,
+.RB ` ^D '
+is a
+.SM CTRL-D\s0);
+.RB ` ^? '
+is interpreted as
+.SM DEL
+and
+.RB ` ^\- '
+is interpreted as undefined.
+.TP
+.BI min " i"
+Set the
+.SB MIN
+value to
+.IR i .
+.TP
+.BI time " i"
+Set the
+.SB TIME
+value to
+.IR i .
+.TP
+.BI rows " n"
+Set the recorded number of rows on the terminal to
+.IR i .
+.TP
+.BI columns " i"
+Set the recorded number of columns on the terminal to
+.IR i .
+.TP
+.BI cols " i"
+An alias for
+.BI columns " i"\fR.
+.SS Combination Modes
+.TP 12
+.B cooked
+Process the
+.BR \s-1ERASE\s0 ,
+.BR \s-1WERASE\s0 ,
+.BR \s-1KILL\s0 ,
+.BR \s-1INTR\s0 ,
+.BR \s-1QUIT\s0 ,
+.BR \s-1EOF\s0 ,
+.BR \s-1EOL\s0 ,
+.BR \s-1EOL2\s0 ,
+.BR \s-1STOP\s0 ,
+.BR \s-1START\s0 ,
+.BR \s-1SUSP\s0 ,
+.BR \s-1RPRNT\s0 ,
+.BR \s-1FLUSH\s0 ,
+and
+.BR LNEXT
+characters specially, and perform output post-processing.
+.br
+.ne 3
+.TP
+.BR evenp " or " parity
+Enable
+.BR parenb ,
+disable
+.BR parodd ,
+and set
+.BR cs7 .
+.TP
+.B oddp
+Enable
+.B parenb
+and
+.BR parodd ,
+and set
+.BR cs7 .
+.TP
+.BR \-evenp " or " \-parity
+Disable
+.BR parenb ,
+and set
+.BR cs8 .
+.TP
+.BR \-oddp
+Disable
+.B parenb
+and
+.BR parodd ,
+and set
+.BR cs8 .
+.TP
+.B pass8
+Disable
+.B parenb
+and
+.BR istrip ,
+and set
+.BR cs8 .
+.TP
+.B \-pass8
+Enable
+.B parenb
+and
+.BR istrip ,
+and set
+.BR cs7 .
+.TP
+.B litout
+Disable
+.BR parenb ,
+.BR istrip ,
+and
+.BR opost ,
+and set
+.BR cs8 .
+.TP
+.B \-litout
+Enable
+.BR parenb ,
+.BR istrip ,
+and
+.BR opost ,
+and set
+.BR cs7 .
+.TP
+.RB [ \- ] raw
+Enable raw input and output.  With a
+.RB ` \- ',
+disable raw
+.SM I/O\s0.
+In raw mode, there is no special processing of the
+.BR \s-1ERASE\s0 ,
+.BR \s-1WERASE\s0 ,
+.BR \s-1KILL\s0 ,
+.BR \s-1INTR\s0 ,
+.BR \s-1QUIT\s0 ,
+.BR \s-1EOF\s0 ,
+.BR \s-1EOL\s0 ,
+.BR \s-1EOL2\s0 ,
+.BR \s-1STOP\s0 ,
+.BR \s-1START\s0 ,
+.BR \s-1SUSP\s0 ,
+.BR \s-1RPRNT\s0 ,
+.BR \s-1FLUSH\s0 ,
+nor
+.SB LNEXT
+characters, nor is there any other input pre-processing nor output
+post-processing.
+.BR brkint ,
+.BR istrip ,
+.BR imaxbel ,
+and
+.B parenb
+are disabled, and
+.B cs8
+is set.
+.br
+.ne 5
+.TP
+.RB [ \- ] nl
+Unset
+.BR icrnl ", " onlcr .
+With a
+.RB ` \- ',
+set them.
+In addition
+.B \-nl
+unsets
+.BR inlcr ,
+.BR igncr ,
+.BR ocrnl ,
+and
+.BR onlret .
+.TP
+.RB [ \- ] lcase
+Set
+.BR xcase ,
+.BR iuclc ,
+and
+.BR olcuc .
+With a
+.RB ` \- ',
+unset them.
+.TP
+.RB [ \- ] \s-1LCASE\s+1
+Same as
+.BR lcase " (" \-lcase ).
+.TP
+.PD 0
+.RB [ \- ] tabs
+.TP
+.B tab3
+.PD
+Preserve
+.SM TAB
+characters
+when printing. With a
+.RB ` \- ',
+or with
+.BR tab3 ,
+expand
+.SM TAB
+characters to
+.SM SPACE
+characters.
+.TP
+.B ek
+Reset the
+.SB ERASE
+and
+.SB KILL
+characters back to normal:
+.SB DEL
+and
+.RB \s-1CTRL\s+1 -U ).
+.TP
+.B sane
+Reset all modes to some reasonable values.
+.TP
+.B crt
+Set options for a
+.SM CRT
+.RB ( echoe ,
+.BR echoctl ,
+and, if >= 1200 baud,
+.BR echoke .)
+.TP
+.B dec
+Set all modes suitable for Digital Equipment Corp. operating systems
+users
+.RB ( \s-1ERASE\s0 ,
+.BR \s-1KILL\s0 ,
+and
+.SB INTR
+characters to
+.BR ^? ,
+.BR ^U ,
+and
+.BR ^C ,
+.BR decctlq ,
+and
+.BR crt .)
+.TP
+.B term
+Set all modes suitable for the
+terminal type
+.BR term ,
+where
+.B term
+is one of
+.BR tty33 ", " tty37 ", " vt05 ", "
+.BR tn300 ", " ti700 ", or " tek .
+.BR -crtscts
+Raise the
+.SM RTS
+(Request to Send) modem control line.  Suspends output until
+the
+.SM CTS
+(Clear to Send) line is raised.
+.br
+.ne 8
+.SH ENVIRONMENT
+.LP
+The environment variables
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.B \s-1LC\s0_default
+control the character classification
+throughout
+.BR stty .
+On entry to
+.BR stty ,
+these environment variables are checked in the
+following order:
+.BR \s-1LC_CTYPE\s0 ,
+.BR \s-1LANG\s0 ,
+and
+.BR \s-1LC\s0_default.
+When a valid value is found,
+remaining environment variables for character classification
+are ignored.
+For example, a new setting for
+.B \s-1LANG\s0
+does not override the current valid character
+classification rules of
+.BR \s-1LC_CTYPE\s0 .
+When none of the values is valid,
+the shell character
+classification defaults to the 
+.SM POSIX.1 \*(lqC\*(rq
+locale.
+.SH "SEE ALSO"
+.BR ioctl (2),
+.BR termio (4),
+.BR locale (5)

@@ -1,0 +1,414 @@
+.\" @(#)openboot.8s 1.1 92/07/30 SMI; new for 4.1.1
+.TH OPENBOOT 8S "29 April 1992"
+.SH NAME
+openboot \- start the system kernel or a standalone program
+.SH SYNOPSIS
+.SS "SPARCstation 1 SYSTEMS"
+.LP
+.B >b
+[
+.I device
+[
+.BI ( c , \|u\c
+.BI ,\| p )
+] ] [
+.I filename
+]
+.I boot-flags
+.SS "SPARCstation 2 SYSTEMS, SPARCstation 10 SYSTEMS, SPARCsystem 600MP SERIES"
+.LP
+
+.B >b
+[
+.I device-specifier
+] [
+.I filename
+]
+.I boot-flags
+.LP
+.B    or
+.LP
+.B ok boot
+[
+.I device-specifier
+] [
+.I filename
+]
+.I boot-flags
+
+.SH AVAILABILITY
+.LP
+Desktop \s-1SPARC\s0systems,
+\s-1SPARC\s0system 600MP series only.
+.SH DESCRIPTION
+.IX  "boot command"  ""  "\fLboot\fP \(em system startup procedures"
+.IX  "bootstrap procedures"  ""  "bootstrap procedures \(em \fLboot\fP"
+.IX  "autoboot procedures"  ""  "autoboot procedures \(em \fLboot\fP"
+.IX  "startup procedures"  ""  "startup procedures \(em \fLboot\fP"
+.LP
+The boot program is started by the
+.SM PROM
+monitor and loads the
+kernel, or another executable program, into memory.
+.SH USAGE
+.SS "Booting Standalone"
+.LP
+When booting standalone, the boot program
+.RB ( /boot )
+is brought in by the
+.SM PROM
+from the file system. 
+The
+.SM PROM
+contains drivers for all devices. The boot program simply accesses
+the 
+.SM PROM
+device drivers via the \s-1ROMVEC\s0 interface.
+.SS "Booting a System Over the Network"
+.LP
+When booting over the network, the system
+.SM PROM
+obtains a version of the boot program from
+a server using the Trivial File
+Transfer Protocol (\s-1TFTP\s0).
+The client broadcasts a
+.SM RARP
+request containing its Ethernet address.
+A server responds with the client's
+Internet address.
+The client then sends a
+.SM TFTP
+request for its boot program to that
+server (or if that fails, it broadcasts the request).
+The filename requested from a server must
+have a suffix that reflects the 
+.I kernel
+architecture of the
+machine being booted.
+For these systems, the requested filename
+has the form:
+.IP
+.IB ip-address . arch
+.LP
+where
+.I ip-address
+is the machine's Internet Protocol
+(\s-1IP\s0) address in hex, and
+.I arch
+is a suffix representing its kernel architecture.
+These filenames are restricted to 14 characters
+for compatibility with 
+.SM UNIX
+System V and other operating systems.
+Therefore, the architecture suffix is limited to 5 characters;
+it must be in upper case.  At present, the following suffixes are
+recognized:
+.SB SUN3
+for Sun-3 systems,
+.SB SUN3X
+for Sun-3x systems,
+.SB SUN4
+for Sun-4 systems,
+.SB SUN4C
+for Sun-4c systems,
+.SB SUN4M
+for Sun-4m systems,
+.SB S386 
+for Sun386i systems,
+and
+.SB PCNFS
+for
+.BR \s-1PC-NFS\s0.
+.BR arch (1)
+may be used to determine the kernel architecture of a machine.
+.LP
+When the Sun server receives the request, it looks in the directory
+.B /tftpboot
+for
+.IR filename .
+That file is typically a symbolic link to the client's boot program,
+normally
+.BI boot. arch
+in the same directory.
+The server invokes the
+.SM TFTP
+server,
+.BR tftpd (8C),
+to transfer the file to the client.
+.LP
+When the file is successfully read in by the client,
+the boot program jumps to the load-point and loads
+.B vmunix
+(or a standalone program). 
+In order to do this,
+the boot program makes a broadcast
+.SM RARP
+request to find the client's
+.SM IP
+address,
+and then makes a second broadcast request to a
+.BR bootparamd (8)
+bootparams daemon, for information necessary to boot the client.
+The bootparams daemon obtains this information either from a local
+.B /etc/bootparams
+database file, or from an NIS
+map.  The boot program sends two requests
+to the bootparams daemon \(em the first,
+.BR whoami ,
+to obtain its hostname, and the second,
+.BR getfile ,
+to obtain the name of the client's server and the pathname of
+the client's root partition.
+.LP
+The boot program then performs a
+.BR mount (8)
+operation to mount the client's root partition,
+after which it can read in and execute
+any program within that partition by pathname
+(including a symbolic link to another file within that same
+partition).
+Typically, it reads in the file
+.BR /vmunix .
+If the program is not read in successfully,
+.B boot
+responds with a short diagnostic message.
+.SS "System Startup"
+.LP
+Once the system is loaded and running, the
+kernel performs some internal housekeeping, configures its
+device drivers, and allocates its internal tables and buffers.
+The kernel then starts process number 1 to run
+.BR init (8),
+which performs file system housekeeping, starts system daemons,
+initializes the system console, and begins multiuser operation.
+Some of these activities are omitted when
+.B init
+is invoked with certain
+.IR boot-flags .
+These are typically entered as arguments to the boot command
+and passed along by the kernel to
+.BR init .
+.SH OPTIONS
+.TP 12
+.I device
+One of:
+.RS
+.TP
+.B le
+.PD 0
+Lance Ethernet
+.TP
+.B sd
+.SM SCSI
+disk, \s-1CDROM\s0
+.TP
+.B st
+.SM SCSI
+1/4" or 1/2" tape
+.TP
+.B fd
+Diskette (Desktop \s-1SPARC\s0systems only)
+.TP
+.B id
+\s-1IPI\s0 disk (\s-1SPARC\s0system 600\s-1MP\s0 series only)
+.PD
+.RE
+.TP
+.I c
+Controller number,
+.B 0
+if there is only one controller for the indicated
+type of device.
+.TP
+.I u
+Unit number,
+.B 0
+if there is only one driver.
+.TP
+.I p
+Partition number when booting off a disk, or
+tape file number when booting from a tape.
+Defaults to 
+.BR 0 .
+.TP
+.I device-specifier
+The
+.I device-specifier
+is a device name or a device alias.
+A default boot device is used if the
+.I device-specifier
+is not given. If a
+.I device-specifier
+is given and it is not a device alias, it is checked to see
+whether it is a valid device name.
+If it is not a valid device name (indicated by a leading "/"),
+then the default boot device is used, and the word is considered
+to be the
+.I filename.
+Refer to the
+.IR "Open Boot PROM 2.0 Toolkit User's Guide" .
+The Open Boot Prom(OBP) command
+.B show-devs
+can be used to retrieve all of the devices known to the system.
+A valid device name of a \s-1SCSI\s0 disk on a 
+\s-1SPARC\s0system 600\s-1MP\s0, for example, is shown as follows:
+.RS
+.IP
+/iommu@f,e0000000/sbus@f,e0001000/esp@f,80000/sd@3,0
+.RE
+.IP
+The OBP command
+.B devalias
+displays all of the system built-in and user-defined device aliases.
+For example, the alias
+.B disk
+may represent the
+.I device-path
+.RS
+.IP
+/iommu@f,e0000000/sbus@f,e0001000/esp@f,80000/sd@3,0
+.RE
+.br
+.TP
+.I filename
+Name of a standalone program in the selected partition, such as
+.BR stand/diag
+or
+.BR vmunix .
+Note:
+.I filename
+is relative to the root of the selected
+device and partition.
+It never begins with a
+.RB ` / '
+(slash).
+If
+.I filename
+is not given, the boot program uses a default value (normally
+.BR vmunix ).
+This is stored in the
+.B vmunix
+variable in the
+.B boot
+executable file supplied by Sun, but can
+be patched to indicate another
+standalone program loaded using
+.BR adb (1).
+.br
+.TP
+.I boot-flags
+The boot program passes all
+.I boot-flags
+to the kernel or standalone program.
+They are typically  arguments to
+that program or, as with those listed below, arguments to programs
+that it invokes.
+.RS
+.TP
+.B \-a
+Prompt interactively for the device and name of the file to boot.
+For more information on how to boot from a specific device, refer to
+.TX INSTALL .
+.TP
+.B \-v
+Verbose.  
+Print more detailed information to assist in
+diagnosing booting problems.
+.TP
+.B \-b
+Pass the
+.B \-b
+flag through the kernel to
+.BR init (8)
+to skip execution of the
+.B /etc/rc.local
+script.
+.TP
+.B \-h
+Halt after loading the system.
+.TP
+.B \-s
+Pass the
+.B \-s
+flag through the kernel to
+.BR init (8)
+for single-user operation.
+.TP
+.B \-d
+Pass the
+.B \-d
+debug flag through the debugger (e.g., kadb) to a standalone
+program being debugged.
+.TP
+.B \-w
+Pass the
+.B \-w
+flag to the kernel to mount a root file system read-write.
+.TP
+.BI \-i " initname"
+Pass the
+.BI \-i " initname"
+to the kernel to tell it to run
+.I initname
+as the first program rather than the default
+.BR /sbin/init .
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /boot
+standalone boot program
+.TP
+.BI /tftpboot/ address
+symbolic link to the boot program for the client whose Internet address,
+in uppercase hexadecimal, is
+.I address
+.TP
+.B /tftpboot/boot.sun4c
+Sun-4c first stage boot program
+.TP
+.B /tftpboot/boot.sun4m
+Sun-4m first stage boot program
+.TP
+.B /usr/etc/in.tftpd
+\s-1TFTP\s0
+server
+.TP
+.B /usr/kvm/mdec/installboot
+program to install boot blocks from a remote host
+.TP
+.B /vmunix
+kernel file that is booted by default
+.TP
+.B /usr/kvm/boot
+.TP
+.B /etc/bootparams
+file defining root and swap paths for clients
+.PD
+.SH SEE ALSO
+.BR adb (1),
+.BR arch (1),
+.BR tftp (1C),
+.BR boot (8S),
+.BR bootparamd (8),
+.BR init (8),
+.BR kadb (8S),
+.BR monitor (8S),
+.BR mount (8),
+.BR ndbootd (8C),
+.BR rc (8),
+.BR reboot (8),
+.BR tftpd (8C)
+.LP
+.I Open Boot PROM 2.0 Toolkit
+.I User's Guide
+.br
+.I Open Boot PROM Toolkit User's Guide
+.br
+.TX INSTALL
+.br
+.TX ADMIN
+.SH NOTES
+.LP
+NIS was formerly known as Sun Yellow Pages (\s-1YP\s0).  The
+functionality of the two remains the same; only the name has changed.

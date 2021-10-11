@@ -1,0 +1,46 @@
+#
+# @(#)Makefile.arch 1.1 92/07/30 SMI
+#
+# This file is included by ../boot/Makefile.com
+# It defines the targets and rules needed to build the machine-dependent
+# sources for the boot os library.
+# 
+# The target library is built in ../$(ARCH) 
+#
+# The relocation symbols $LOAD, $BRELOC, and $BBRELOC must be
+# defined in ../$(ARCH)/Makefile
+
+INCLUDEOPTS= -I.. -I$(BOOTDIR) -I$(SYSDIR)/$(ARCH) -I$(SYSDIR)
+
+# Machine-dependent boot os object files
+MACHDIR= ../m68k
+MACHOBJ= movc.o vax.o stubs1.o
+
+MHDR= ../$(ARCH)/SYS.h
+.INIT:  $(MHDR)
+
+# Standalone start-off.
+srt0.o	:=	SRTOPT= -DLOAD=0x$(LOAD)
+srt0xx.o:=	SRTOPT= -DLOAD=0x$(LOAD) -DBOOTBLOCK
+
+srt0.o srt0xx.o: assym.s $(MACHDIR)/srt0.s
+	${RM} tmp.c tmp.i $@
+	cp $(MACHDIR)/srt0.s tmp.c
+	${CC} -E -DBOOTBLOCK ${CFLAGS} ${BOOTOPT} -DLOAD=0x${LOAD} tmp.c > tmp.i
+	${AS} tmp.i -o $@
+	${RM} tmp.c tmp.i
+
+# srt0.s needs to have some symbols defined from kernel header files
+assym.s: $(MACHDIR)/genassym.c
+	@$(CC) $(CPPOPTS) -o genassym $(MACHDIR)/genassym.c
+	./genassym >$@
+	@$(RM) genassym
+
+# Rules for machine-dependent .s files
+$$(BOOT_LIB)(%.o): $(MACHDIR)/%.s
+	${RM} tmp.c tmp.i $%
+	cp $(MACHDIR)/$< tmp.c
+	${CC} -E ${CFLAGS} ${INCLUDEOPTS} ${BOOTOPT} -DLOAD=0x${LOAD} tmp.c > tmp.i
+	${AS} tmp.i -o $%
+	${RM} tmp.c tmp.i
+	${AR} rv $(BOOT_LIB) $%

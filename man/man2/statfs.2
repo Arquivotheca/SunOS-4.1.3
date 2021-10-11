@@ -1,0 +1,161 @@
+.\" @(#)statfs.2 1.1 92/07/30 SMI
+.TH STATFS 2 "21 January 1990"
+.SH NAME
+statfs, fstatfs \- get file system statistics
+.SH SYNOPSIS
+.ft B
+.nf
+#include <sys/vfs.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int statfs(path, buf)
+char *path;
+struct statfs *buf;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int fstatfs(fd, buf)
+int fd;
+struct statfs *buf;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX  "statfs()"  ""  "\fLstatfs()\fP \(em obtain file system statistics"
+.IX  "file system" "statistics \(em \fLstatfs()\fP"
+.IX  statistics "of file system \(em \fLstatfs()\fP"
+.LP
+.B statfs(\|)
+returns information about a mounted file system.
+.I path
+is the path name of any file within the mounted filesystem.
+.I buf
+is a pointer to a
+.B statfs(\|)
+structure defined as follows:
+.RS
+.ta \w'#define'u +\w'fsid_t\0\0'u +\w'f_spare[7]\0\0'u
+.sp .5
+.nf
+.ft B
+typedef struct {
+	long	val[2];
+} fsid_t;
+.sp.5
+struct statfs {
+	long	f_type; 	/* type of info, zero for now */
+	long	f_bsize;	/* fundamental file system block size */
+	long	f_blocks;	/* total blocks in file system */
+	long	f_bfree;	/* free blocks */
+	long	f_bavail;	/* free blocks available to non-super-user */
+	long	f_files;	/* total file nodes in file system */
+	long	f_ffree;	/* free file nodes in fs */
+	fsid_t	f_fsid; 	/* file system id */
+	long	f_spare[7];	/* spare for later */
+};
+.ft R
+.fi
+.RE
+.LP
+Fields that are undefined for a particular file system are set to \-1.
+.B fstatfs(\|)
+returns the same information about an open file referenced by descriptor
+.IR fd .
+.IX  "fstatfs()"  ""  "\fLfstatfs()\fP \(em obtain file system statistics"
+.IX  "file system" "statistics \(em \fLfstatfs()\fP"
+.IX  statistics "of file system \(em \fLfstatfs()\fP"
+.SH RETURN VALUES
+.LP
+.B statfs(\|)
+and
+.B fstatfs(\|)
+return:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and set
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+.B statfs(\|)
+fails if one or more of the following are true:
+.TP 20
+.SM EACCES
+Search permission is denied for a component of the path prefix of
+.IR path .
+.TP
+.SM EFAULT
+.I buf
+or
+.I path
+points to an invalid address.
+.TP
+.SM EIO
+An I/O error occurred while reading from or writing to the file system.
+.TP
+.SM ELOOP
+Too many symbolic links were encountered in translating
+.IR path .
+.TP
+.SM ENAMETOOLONG
+The length of the path argument exceeds
+.SM {PATH_MAX}\s0.
+.IP
+A pathname component is longer than
+.SM {NAME_MAX}
+(see
+.BR sysconf (2V))
+while
+.SM {_POSIX_NO_TRUNC}
+is in effect
+(see
+.BR pathconf (2V)).
+.TP
+.SM ENOENT
+The file referred to by
+.I path
+does not exist.
+.TP
+.SM ENOTDIR
+A component of the path prefix of
+.I path
+is not a directory.
+.LP
+.B fstatfs(\|)
+fails if one or more of the following are true:
+.TP 20
+.SM EBADF
+.I fd
+is not a valid open file descriptor.
+.br
+.ne 3
+.TP
+.SM EFAULT
+.I buf
+points to an invalid address.
+.TP
+.SM EIO
+An I/O error occurred while reading from the file system.
+.SH BUGS
+.LP
+The
+.SM NFS
+revision 2 protocol does not permit the number of free files to be provided to
+the client; thus, when
+.B statfs(\|)
+or
+.B fstatfs(\|)
+are done on a file on an
+.SM NFS
+file system,
+.B f_files
+and
+.B f_ffree
+are always \-1.

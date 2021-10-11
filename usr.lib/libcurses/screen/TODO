@@ -1,0 +1,70 @@
+#
+# @(#)TODO 1.1 92/07/30 SMI; from S5R3 1.2.1.1
+#
+
+This file documents things I would like to see done to curses
+that I simply don't have time for.  I can design them but there
+is no time to implement them.  Someone should.
+
+HP terminals: performance on HP terminals is terrible, because it
+outputs ESC & d x before every character that has the highlighting
+changed.  I was unable to make it work without doing this.  To make
+it work, you're going to have to keep a data structure of cookies
+that are on the screen, and when one gets in the way, change it.
+This is hard because operations like ins/del line, ins/del char,
+ceol, and clear affect the cookie map.  The philosophy has to change,
+currently it's "output cookies everywhere", it should change to
+"output as few cookies as you can get away with".
+
+Lots of variations.  The Ann Arbor Guru (and to a lesser extent the
+Ambassador) point out an amazing number of modes you might want to
+run the terminal in.  Different sizes, different amounts of memory,
+normal or reverse video, with or without a status line, with or without
+context, with or without destructive backspace, etc.  Including entries
+for all these possibilities is not only a lot of work (even with use=
+you have to list them all) but each one takes up lots of space.  Adding
+a new option with two possibilities doubles the number of terminal types
+(and hence the amount of disk spaced needed for the binaries).
+
+The solution to this is to make setupterm smarter about how it looks
+up terminal type names.  It should start with $TERM.  If that isn't
+there, it should strip off the final -opt and try that.  Keep stripping
+off -opt's until you find one.  Then look for "delta files" showing
+how to change the default for these options.  For example
+	aaa-60-s-rv
+Assume there is no aaa-60-s-rv.  Try aaa-60-s.  That fails, so try
+aaa-60.  Suppose that works.  You read in aaa-60, then search for
+aaa+s (the + is used internally to indicate an option, see the source
+code to terminfo for examples.)  The contents of aaa+s is applied as
+a difference to aaa-60.  Then aaa+rv is looked up, and it is applied
+as a delta.  This will require a new value in a compiled terminfo file:
+"unknown", plus "cancel".  If you interpret the current missing values
+(0 for Bool, -1 for int, 0 for string) as "unknown" in a delta (rather
+than "not present") you'll just need one new value - "cancel", which
+could be -1 for bool, -2 for int, -1 for string.  -2 should be defined
+as 377, 376.
+
+By convention, -60 means "60 lines", -x80 means "by 80", that is, "80
+columns", and -60x80 means "60 lines, 80 cols".  These should override
+the default "lines" and "columns", although this is a last resort, and
+you should check for the appropriate file first (there might be some
+other changes to some init strings, for example.)
+
+It would be nice to be able to define capabilities as strings and include
+them in the middle of other capabilities.  For instance:
+	foo,
+		is2=\E[^(lines);^(columns)z,
+might mean that the values of "lines" and "columns" (taken as text)
+should be inserted at these two points, to initialize the screen size.
+The ^(cap) notation won't conflict with existing usage.  The interpretation
+must be done by setupterm, since at compile time you don't know what
+the capabilities values are.  Some clever storage scheme will be needed
+since the compiler interprets existing ^'s, e.g. use the parity bit.
+
+Some future code changes and optimizations:
+
+	Get rid of _lastch since the information is never used
+	In _init_costs, add some decisions about using ins/del line
+		vs. scrolling regions so that it doesn't have to
+		be constantly checked
+	Rewrite _showstring()

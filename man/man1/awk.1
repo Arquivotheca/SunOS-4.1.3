@@ -1,0 +1,431 @@
+.\" @(#)awk.1 1.1 92/07/30 SMI; from UCB 4.3 BSD
+.TH AWK 1 "24 September 1987"
+.SH NAME
+awk \- pattern scanning and processing language
+.SH SYNOPSIS
+.B awk
+[
+.BI \-f " program-file"
+] 
+[
+.BI \-F c
+] 
+[ 
+.I program
+] 
+[ 
+.IB variable = value
+\&\.\|.\|. ]
+[
+.IR filename \.\|.\|.\|]
+.SH DESCRIPTION
+.IX  awk  ""  "\fLawk\fP \(em scan and process patterns"
+.IX  "text processing utilities"  "awk command"  ""  "\fLawk\fP \(em scan and process patterns"
+.LP
+.B awk
+scans each of its input
+.IR filename s
+for lines that match any of a set of patterns specified in
+.IR program .
+The input
+.IR filename s
+are read in order; the standard input is read if there are no
+.IR filename s.
+The filename
+.RB ` \- '
+means the standard input.
+.LP
+The set of patterns may either appear literally on 
+the command line as
+.IR program ,
+or, by using the
+.RB ` "\-f \fIprogram-file\fP" '
+option, the set of patterns may be in a 
+.IR program-file ;
+a
+.I program-file
+of
+.RB ` \- '
+means the standard input.
+If the
+.I program
+is specified on the command line,
+it should be enclosed in single quotes
+.RB (\| \(fm \|)
+to protect it from the shell.
+.LP
+.B awk
+variables may be set
+on the command line using arguments of the form
+.IB variable = value\fR.
+This sets the
+.B awk
+variable
+.I variable
+to
+.I value
+before the first record of the next
+.I filename
+argument is read.
+.LP
+With each pattern in 
+.I program
+there can be an associated action
+that will be performed when a line of a 
+.I filename
+matches the pattern.
+See the discussion below for the format of input lines and the 
+.B awk
+language.  Each line in each input
+.I filename
+is matched against the pattern portion of every pattern-action statement;
+the associated action is performed for each matched pattern.
+.SH OPTIONS
+.LP
+.TP
+.BI \-f " program-file"
+Use the contents of 
+.I program-file
+as the source for the 
+.IR program .
+.TP
+.BI \-F c
+Use the character 
+.I c
+as the field separator (\s-1FS\s0) character.  See
+the discussion of 
+.SM FS
+below.
+.SH USAGE
+.SS Input Lines
+.LP
+An input line is made up of fields separated by white space.
+The field separator can be changed by using
+.SM FS
+\(em see
+.B Special Variable Names
+below.
+Fields are denoted
+.BR $1 ,
+.BR $2 ,
+and so forth.
+.B $0
+refers to the entire line.
+.SS Pattern-action Statements
+.LP
+A pattern-action statement has the form
+.RS
+.IB pattern " { " action " }"
+.RE
+A missing 
+.I action
+means copy the line to the output; a missing 
+.I pattern
+always matches.
+.SS Action Statements
+.LP
+An 
+.I action
+is a sequence of 
+.IR statement s.
+A 
+.I statement
+can be one of the following:
+.RS
+.TP 20
+.PD 0
+\fBif (\fR \fIconditional\fR \fB)\fR \fIstatement\fR [ \fBelse\fR \fIstatement\fR ]
+.TP
+\fBwhile (\fR \fIconditional\fR \fB)\fR \fIstatement\fR
+.TP
+\fBfor (\fR \fIexpression\fR \fB;\fR \fIconditional\fR \fB;\fR \fIexpression\fR \fB)\fR \fIstatement\fR
+.TP
+.B break 
+.TP
+.B continue
+.TP
+\fB{\fR [ \fIstatement\fR ] .\|.\|.\fB}\fR
+.TP
+.IB variable "=" expression
+.TP
+\fBprint\fR [ \fIexpression-list\fR ] [ \fB> \fIexpression\fR ]
+.TP
+\fBSprintf\fR \fIformat\fR [ \fB,\fR \fIexpression-list\fR ] [ \fB> \fIexpression\fR ]
+.TP
+.B next
+skip remaining patterns on this input line 
+.TP
+.B exit
+skip the rest of the input
+.PD
+.RE
+.SS Format of the awk Language
+.LP
+.IR statement s
+are terminated by semicolons, 
+.SM NEWLINE
+characters or right braces.
+An empty 
+.I expression-list
+stands for the whole line.
+.LP
+.I expressions
+take on string or numeric values as appropriate,
+and are built using the operators
+.BR + ,
+.BR \- ,
+.BR \(** ,
+.BR / ,
+.BR % ,
+and concatenation (indicated by a blank).
+The C operators
+.B ++ ,
+.B \-\|\- ,
+.B += ,
+.B \-\|= ,
+.B \(**= ,
+.B /= ,
+and
+.B %=
+are also available in expressions.
+.LP
+.I variable
+may be scalars, array elements (denoted 
+.IB x " [ " i
+.BR ] )
+or fields.  Variables are initialized to the null string.
+Array subscripts may be any string, not necessarily numeric,
+providing a form of associative memory.
+String constants are quoted \fB"\fR.\|.\|. \fB"\fR.
+.LP
+The 
+.B print
+statement prints its arguments on the standard output
+(or on a file if 
+.BI > filename
+is present), separated by the current output field separator,
+and terminated by the output record separator.
+The 
+.B printf
+statement formats its expression list according to the
+format template 
+.I format
+(see
+.BR printf (3V)
+for a description of the formatting control characters).
+.SS Built In Functions
+.LP
+The built-in function 
+.B length
+returns the length of its argument
+taken as a string, or of the whole line if no argument.
+There are also built-in functions 
+.BR exp ,
+.BR log ,
+.BR sqrt ,
+and
+.BR int ,
+where 
+.B int
+truncates its argument to an integer.
+.RB ` substr(
+.IB s ,
+.IB m ,
+.I n
+.BR ) '
+returns the 
+.IR n -character
+substring of 
+.I s
+that begins at position
+.IR m .
+.RB ` sprintf
+.BI ( format ,
+.IB expression ,
+.IB expression ,
+.RB \|.\|.\|. ) '
+formats the expressions according to the
+.BR printf
+format given by 
+.IR format ,
+and returns the resulting string.
+.SS Patterns
+.LP
+Patterns are arbitrary Boolean combinations
+.RB ( ! ,
+\(bv\(bv,
+.BR && ,
+and parentheses) of regular expressions and relational expressions.
+Regular expressions must be surrounded by slashes and are as in
+.B egrep
+(see
+.BR grep (1V)),
+Isolated regular expressions in a pattern apply to the entire line.
+Regular expressions may also occur in relational expressions.
+.LP
+A pattern may consist of two patterns separated by a comma;
+in this case, the action is performed for all lines between an
+occurrence of the first pattern and the next occurrence of the second.
+.LP
+A relational expression is one of the following:
+.RS
+.sp .5
+.nf
+.ft I
+expression matchop regular-expression
+expression relop expression
+.ft R
+.fi 
+.RE
+.LP
+where a 
+.I relop
+is any of the six relational operators in C,
+and a 
+.I matchop
+is either
+.B ~
+(contains) or
+.B !~
+(does not contain).
+A conditional is an arithmetic expression, a relational expression,
+or a Boolean combination of these.
+.LP
+The special pattern
+.SB BEGIN
+may be used to capture control before the
+first input line is read, in which case
+.SB BEGIN
+must be the first pattern. The special pattern
+.SB END
+may be used to capture control after the last
+input line is read, in which case
+.SB END
+must be the last pattern.
+.SS Special Variable Names
+.LP
+A single character 
+.I c
+may be used to separate the fields by starting
+the program with
+.LP
+	\fB\s-1BEGIN\s0 {\s-1FS\s0 = "\fIc\fB" }\fP
+.LP
+or by using the
+.BI \-F c
+option.
+.LP
+Other variable names with special meanings
+include 
+.BR \s-1NF\s0 ,
+the number of fields in the current record;
+.BR \s-1NR\s0 ,
+the ordinal number of the current record;
+.BR \s-1FILENAME\s0 ,
+the name of the current input file;
+.BR \s-1OFS\s0 ,
+the output field separator (default blank);
+.BR \s-1ORS\s0 ,
+the output record separator (default 
+.SM NEWLINE\s0);
+and
+.BR \s-1OFMT\s0 ,
+the output format for numbers (default
+.BR %.6g ).
+.LP
+.SH EXAMPLES
+.LP
+Print lines longer than 72 characters:
+.RS
+.sp .5
+.nf
+.B length > 72
+.fi
+.RE
+.LP
+Print first two fields in opposite order:
+.RS
+.sp .5
+.nf
+.B { print $2, $1 }
+.fi
+.RE
+.LP
+Add up first column, print sum and average:
+.RS
+.sp .5
+.nf
+.ft B
+{ s += $1 }
+\s-1END\s0	{ print "sum is", s, " average is", s/\s-1NR\s0 }
+.ft R
+.fi
+.RE
+.LP
+Print fields in reverse order:
+.RS
+.sp .5
+.nf
+.B
+{ for (i = \s-1NF\s0; i > 0; \-\|\-i) print $i }
+.fi
+.RE
+.LP
+Print all lines between start/stop pairs:
+.RS
+.sp .5
+.nf
+.B /start/, /stop/
+.fi
+.RE
+.LP
+Print all lines whose first field is different from previous one:
+.RS
+.sp .5
+.nf
+.B
+$1 != prev { print; prev = $1 }
+.fi
+.RE
+.SH SEE ALSO
+.BR grep (1V),
+.BR lex (1),
+.BR sed (1V),
+.BR printf (3V)
+.LP
+.TX TEXT
+.LP
+A. V. Aho, B. W. Kerninghan, P. J. Weinberger,
+\f2The AWK Programming Language\f1
+Addison-Wesley, 1988.
+.SH NOTES
+The
+.B awk
+command is not changed to support 8-bit symbol names,
+as this would produce
+.B awk
+source code
+that is not portable between systems.
+.SH BUGS
+Input white space is not preserved on output if fields are involved.
+.LP
+There are no explicit conversions between numbers and strings.
+To force an expression to be treated as a number add 0 to it;
+to force it to be treated as a string concatenate the null string
+(\fB"\^"\fP) to it.
+.LP
+There is no escape sequence that prints a double-quote.  A
+workaround is to use the
+.B sprintf
+(see
+.BR printf (3V))
+function to store the character
+into a variable by its 
+.SM ASCII
+sequence.
+.IP
+.ft B 
+dq = sprintf("%c", 34)
+.LP
+Syntax errors result in the cryptic message
+.RB ` "awk:  bailing out near line 1" '.

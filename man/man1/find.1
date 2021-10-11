@@ -1,0 +1,480 @@
+.\" @(#)find.1 1.1 92/07/30 SMI;
+.TH FIND 1 "6 January 1989"
+.SH NAME
+find \- find files by name, or by other characteristics
+.SH SYNOPSIS
+.B find
+.I pathname-list  expression
+.br
+.B find
+.I component
+.SH DESCRIPTION
+.IX "find command"  ""  "\fLfind\fP \(em find files"
+.IX files  find
+.IX "search for files"
+.LP
+.B find
+recursively descends the directory hierarchy for each 
+pathname in the 
+.IR pathname-list ,
+seeking files that match a logical
+.I expression
+written using the operators listed below.  
+.LP
+.B find
+does 
+.I not
+follow symbolic links to other files or directories; it
+applies the selection criteria to the symbolic links themselves,
+as if they were ordinary files (see
+.BR ln (1V)
+for a description of symbolic links).
+.LP
+If the 
+.I fast-find
+feature is enabled,
+.B find
+displays pathnames in which a filename
+.I component
+occurs.
+.SH USAGE
+.SS Operators
+In the descriptions, the argument 
+.I n
+is used as a decimal integer where 
+.BI + n
+means more than 
+.IR n ,
+.BI \-  n
+means less than 
+.IR n ,
+and 
+.I n
+means exactly
+.IR n .
+.I
+.TP 15
+.BI \-fstype " type"
+True if the filesystem to which the
+file belongs is of type 
+.IR type ,
+where 
+.I type
+is typically
+.B "4.2"
+or
+.BR "nfs" .
+.TP
+.BI \-name " filename" 
+True if the 
+.I filename
+argument matches the current file name.
+Shell argument syntax can be used if escaped (watch out for
+.BR [ ", "
+.BR ? " and "
+.BR * ")."
+.TP
+.BI \-perm " onum"
+True if the file permission flags exactly match the octal number 
+.I onum
+(see
+.BR chmod (1V)).
+If 
+.I onum
+is prefixed by a minus sign, more flag bits (017777, see
+.BR chmod (1V))
+become significant and the flags are compared:
+.BI ( flags & onum )==\c
+.IR onum .
+.TP
+.B \-prune
+Always yields true.  Has the side effect of pruning the search
+tree at the file.  That is, if the current path name is a directory,
+.B find
+will not descend into that directory.
+.TP
+.BI \-type " c"
+True if the type of the file is 
+.IR c ,
+where 
+.I c
+is one of:
+.RS 
+.RS
+.TP
+.PD 0
+.B b
+for block special file
+.B c
+.PD 0
+.TP
+.B c
+for character special file
+.TP
+.B d
+for directory
+.TP
+.B f
+for plain file
+.TP
+.B p
+for named pipe (\s-1FIFO\s0)
+.TP
+.B l
+for symbolic link
+.TP
+.B s
+for socket
+.RE
+.RE
+.PD
+.TP 15
+.BI \-links " n"
+True if the file has 
+.I n
+links.
+.TP
+.BI \-user " uname"
+True if the file belongs to the user 
+.IR uname .
+If 
+.I uname
+is numeric and does not appear as a login name in the
+.B /etc/passwd
+database, it is taken as a user 
+.SM ID.
+.TP
+.B \-nouser
+True if the file belongs to a user
+.I not
+in the
+.B /etc/passwd
+database.
+.TP
+.BI \-group " gname"
+True if the file belongs to group 
+.IR gname .
+If 
+.I gname
+is numeric and does not appear as a login name in the
+.B /etc/group
+database, it is taken as a group 
+.SM ID.
+.TP
+.B \-nogroup
+True if the file belongs to a group
+.I not
+in the
+.B /etc/group
+database.
+.TP
+.BI \-size " n"
+True if the file is 
+.I n
+blocks long (512 bytes per block).
+If
+.I n
+is followed by a
+.BR c ,
+the size is in characters.
+.TP
+.BI \-inum " n"
+True if the file has inode number 
+.IR n .
+.TP
+.BI \-atime " n"
+True if the file has been accessed in 
+.I n
+days.
+.br
+Note: the access time of directories in 
+.I path-name-list
+is changed by 
+.B find
+itself.
+.TP
+.BI \-mtime " n"
+True if the file has been modified in 
+.I n
+days.
+.TP
+.BI \-ctime " n"
+True if the file has been changed in 
+.I n
+days.
+\*(lqChanged\*(rq means either that the file has been modified or some attribute
+of the file (its owner, its group, the number of links to it, etc.) has been
+changed.
+.TP
+.BI \-exec " command"
+True if the executed 
+.I command
+returns a zero value as exit status.
+The end of 
+.I command
+must be punctuated by an escaped semicolon.
+A command argument 
+.B {\|}
+is replaced by the current pathname.
+.TP
+.BI \-ok " command"
+Like
+.B \-exec
+except that the generated command is written on
+the standard output, then the standard input is read
+and the command executed only upon response
+.BR y .
+.TP
+.B \-print
+Always true; the current pathname is printed.
+.TP
+.B \-ls
+Always true;
+prints current pathname together
+with its associated statistics.
+These include (respectively) inode number,
+size in kilobytes (1024 bytes),
+protection mode,
+number of hard links,
+user,
+group,
+size in bytes,
+and modification time.
+If the file is a special file
+the size field will instead contain the major and minor
+device numbers.
+If the file is a symbolic link the
+pathname of the linked-to file is printed preceded by
+.RB ` \-> '.
+The format is identical to that of 
+.B "ls \-gilds"
+(see
+.BR ls (1V)).
+.br
+Note: formatting is done internally,
+without executing the
+.B ls
+program.
+.TP
+.BI \-cpio " device"
+Always true;
+write the current file on
+.I device
+in
+.BR cpio (5)
+format (5120-byte records).
+.TP
+.BI \-ncpio " device"
+Always true;
+write the current file on
+.I device
+in
+.B cpio \-c
+format (5120-byte records).
+.TP
+.BI \-newer " file"
+True if the current file has been modified more recently than the
+argument 
+.IR filename .
+.TP
+.B \-xdev
+Always true;
+find does
+.I not
+traverse down into a file system different
+from the one on which current
+.I argument
+pathname resides.
+.TP
+.B \-depth
+Always true;
+.B find
+descends the directory hierarchy, 
+acting on the entries in a directory before
+acting on 
+the directory itself.
+This can be useful when 
+.B find
+is used with
+.BR cpio (1)
+to transfer files
+that are contained in directories without 
+write permission.
+.TP
+.BI ( expression )
+True if the parenthesized 
+.I expression
+is true.
+.br
+Note: Parentheses are special to the shell and must be escaped.
+.TP
+.BI ! primary
+True if the 
+.I primary
+is false 
+.RB ( !
+is the unary 
+.I not
+operator).
+.HP
+.I primary1
+[
+.B \-a
+]
+.I primary2
+.br
+True if both 
+.I primary1
+and 
+.I primary2
+are true.
+The 
+.B \-a
+is not required.  It is implied by the juxtaposition of two 
+primaries.
+.HP
+.IB primary1 " \-o " primary2
+.br
+True if either 
+.I primary1
+or 
+.I primary2
+is true
+.RB "(" \-o " is the"
+.I or
+operator).
+.SS Fast-Find
+.LP
+The fast-find feature is enabled by the presence of the
+.B find.codes
+database in
+.BR /usr/lib/find .
+You must be
+.B root
+to build or update this database by running the
+.B updatedb
+script in that same directory.
+You may wish to modify the
+.B updatedb
+script to suit your needs.
+.LP
+An alternate database can be specified by setting the
+.SB FCODES
+environment variable.
+.SH EXAMPLE
+.LP
+In our local development system, we keep a file called 
+.SM TIMESTAMP
+in all the manual page directories.
+Here is how to find all entries that have
+been updated since 
+.SM TIMESTAMP
+was created:
+.RS
+.ft B
+.sp .5
+.nf
+example% find /usr/share/man/man2 \-newer /usr/share/man/man2/\s-1TIMESTAMP\s0 \-print
+/usr/share/man/man2
+/usr/share/man/man2/socket.2
+/usr/share/man/man2/mmap.2
+example%
+.fi
+.ft R
+.RE
+.LP
+To find all the files called 
+.B intro.ms
+starting from the current
+directory:
+.RS
+.sp .5
+.ft B
+.nf
+example% find . \-name intro.ms \-print
+\&.\|/manuals/assembler/intro.ms
+\&.\|/manuals/sun.core/intro.ms
+\&.\|/manuals/driver.tut/intro.ms
+\&.\|/manuals/sys.manager/uucp.impl/intro.ms
+\&.\|/supplements/general.works/unix.introduction/intro.ms
+\&.\|/supplements/programming.tools/sccs/intro.ms
+example%
+.fi
+.ft R
+.RE
+.LP
+To recursively print all files names in the current directory and below,
+but skipping 
+.SM SCCS
+directories:
+.RS
+.sp .5
+.ft B
+.nf
+example% find . \-name \s-1SCCS\s0 \-prune \-o \-print
+example%
+.ft R
+.fi
+.RE
+.LP
+To recursively print all files names in the current directory and below,
+skipping the contents of
+.SM SCCS
+directories, but printing out the
+.SM SCCS
+directory name:
+.RS
+.sp .5
+.ft B
+.nf
+example% find . \-print \-name \s-1SCCS\s0 \-prune
+example%
+.fi
+.ft R
+.RE
+.br
+.ne 8
+.LP
+To remove files beneath your home directory named
+.B a.out
+or
+.B *.o 
+that have not been accessed for a week
+and that are not mounted using
+.SM NFS\s0:
+.RS
+.sp .5
+.ft B
+.nf
+example% cd
+example% find . \e( \-name a.out \-o \-name '*.o' \e) \-atime +7 \-exec rm {\|} \e; \-o -fstype nfs \-prune
+.fi
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/lib/find/find.codes
+database for fast find
+.TP
+.B /usr/lib/find/updatedb
+script to update fast-find database
+.TP
+.B /usr/lib/find/code
+fast-find database utilities
+.TP
+.B /usr/lib/find/bigram
+.SH ENVIRONMENT
+.TP 20
+.SB FCODES
+alternate database for fast find
+.PD
+.SH "SEE ALSO"
+.BR chmod (1V),
+.BR cpio (1),
+.BR ln (1V),
+.BR ls (1V),
+.BR sh (1),
+.BR test (1V),
+.BR cpio (5),
+.BR fs (5)

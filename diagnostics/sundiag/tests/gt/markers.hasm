@@ -1,0 +1,134 @@
+
+;
+;      @(#)markers.hasm 1.1 92/07/30 17:41:40
+;
+; Copyright (c) 1990 by Sun Microsystems, Inc.
+;
+
+#include "hasm_public.h"
+;
+; Draw all combinations of markers around a circle.
+;
+; Assumes no Z-buffering and proper antialiasing already set up.
+;
+start:
+	set_attribute	hk_marker_color
+	.rgb		<0.5, 0.0, 1.0>	; Purple
+	set_attribute	hk_marker_size
+	.word		10.0		; 10 pixels across
+; Draw a circle with all combinations of markers with 10-pixel markers
+	jmpl		circle, r6
+
+	set_attribute	hk_pre_concat_lmt
+	.matrix \
+		< < 0.6, 0.0, 0.0, 0.0 > , \
+		  < 0.0, 0.6, 0.0, 0.0 > , \
+		  < 0.0, 0.0, 0.6, 0.0 > , \
+		  < 0.0, 0.0, 0.0, 1.0 > >
+	set_attribute	hk_marker_size
+	.word		4.0		; 5 pixels across
+; Draw a smaller circle with 4-pixel markers
+	jmpl		circle, r6
+
+	trap		0
+
+;
+; Draw a circle with all 5 markers and all 4 modes.
+;
+
+circle:
+	push		r6
+	ld		#9, r2
+	ld		#1, r1
+circ_loop:
+	set_attribute	hk_marker_antialiasing
+	.word		FALSE		; Jaggy
+	jmpl		marker5, r6
+	set_attribute	hk_pre_concat_lmt, @rotate_10
+	jmpl		color_marker5, r6
+	set_attribute	hk_pre_concat_lmt, @rotate_10
+
+	set_attribute	hk_marker_antialiasing
+	.word		TRUE		; Antialiased
+	jmpl		marker5, r6
+	set_attribute	hk_pre_concat_lmt, @rotate_10
+	jmpl		color_marker5, r6
+	set_attribute	hk_pre_concat_lmt, @rotate_10
+
+	sub		r1, r2
+	bleg		r2, circ_next, circ_next, circ_loop
+circ_next:
+	pop		r6
+	jmpl		(r6+0), r6	; Return
+
+rotate_10:		; Rotate 10 degrees about Z
+	.matrix \
+		< < 0.984807753, 0.173648178, 0.0, 0.0 > , \
+		  < -0.173648178, 0.984807753, 0.0, 0.0 > , \
+		  < 0.0, 0.0, 1.0, 0.0 > , \
+		  < 0.0, 0.0, 0.0, 1.0 > >
+
+;
+; One marker of each type along a line on the Y axis
+;
+marker5:
+	set_attribute	hk_marker_geom_format
+	.word		HK_LINE_XYZ
+	set_attribute	hk_marker_type
+	.word		NULL		; Dot
+	polymarker	1		; Draw a marker
+	.xyz		<0.0, 0.63, 0.0>
+	set_attribute	hk_marker_type
+	.word		marker_circle
+	polymarker	1
+	.xyz		<0.0, 0.71, 0.0>
+	set_attribute	hk_marker_type
+	.word		marker_plus
+	polymarker	1
+	.xyz		<0.0, 0.79, 0.0>
+	set_attribute	hk_marker_type
+	.word		marker_cross
+	polymarker	1
+	.xyz		<0.0, 0.87, 0.0>
+	set_attribute	hk_marker_type
+	.word		marker_star
+	polymarker	1
+	.xyz		<0.0, 0.95, 0.0>
+
+	jmpl	(r6+0), r6		; Return
+
+;
+; One color marker of each type along a line on the Y axis
+;
+color_marker5:
+	set_attribute	hk_marker_geom_format
+	.word		HK_LINE_XYZ_RGB
+	set_attribute	hk_marker_type
+	.word		NULL		; Dot
+	polymarker	1		; Draw a marker
+	.xyz		<0.0, 0.63, 0.0> 
+	.rgb		<1.0, 0.0, 0.0> ; red 
+	set_attribute	hk_marker_type
+	.word		marker_circle
+	polymarker	1
+	.xyz		<0.0, 0.71, 0.0> 
+	.rgb		<1.0, 0.5, 0.0> ; orange 
+	set_attribute	hk_marker_type
+	.word		marker_plus
+	polymarker	1
+	.xyz		<0.0, 0.79, 0.0> 
+	.rgb		<1.0, 1.0, 0.0> ; yellow 
+	set_attribute	hk_marker_type
+	.word		marker_cross
+	polymarker	1
+	.xyz		<0.0, 0.87, 0.0> 
+	.rgb		<0.0, 1.0, 0.0> ; green 
+	set_attribute	hk_marker_type
+	.word		marker_star
+	polymarker	1
+	.xyz		<0.0, 0.95, 0.0> 
+	.rgb		<0.0, 0.0, 1.0> ; blue 
+
+	jmpl	(r6+0), r6		; return
+
+#include "/usr/shbam2/tests/text/marker_table.hasm"

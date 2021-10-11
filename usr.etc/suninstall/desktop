@@ -1,0 +1,99 @@
+#!/bin/sh
+#
+#       %W% %G% SMI
+#
+# showrev - change user's default window system
+#
+#
+#
+option=$1
+
+# no more than 1 argument is accepted
+if [ $# -gt 1 ]; then
+	echo Usage: $0 [default-window-system]
+	exit 1
+fi
+
+# if no argument passwd, ask question and have user choose one from the menu,
+while [ ! "$option" ];  do
+	echo ""
+	echo "    Choose a window system for your default, press RETURN."
+	echo ""
+	echo " 	  o = OpenWindows"
+	echo " 	  s = SunView (default)"
+	echo -n "    > "
+	read ans
+	case $ans in
+	[Oo]* )
+		option=openwin
+		break;;
+	[Ss]* )
+		option=sunview
+		break;;
+	* )
+		echo "unknown input: ${ans}" ;;
+	esac 
+done
+
+# finally, set mychoice and set the default window system needs to be commented out.
+choice=`echo $option | /usr/bin/tr 'A-Z' 'a-z'`
+case $choice in
+openwin )
+	if [ ! "$OPENWINHOME" ]; then
+	    OPENWINHOME=/usr/bin/openwin; export OPENWINHOME
+	fi
+	if [ "$OPENWINHOME/bin/openwin" ]; then
+	    mychoice=openwin
+	    commentout=sunview
+	    break
+       	 else
+	    echo "Warning: $OPENWINHOME/bin/openwin not found"
+	    exit
+	fi;;
+sunview )
+	mychoice=sunview
+	commentout=openwin
+	break;;
+# Also, for user who gives argument but the argument is not a name of the default
+# windows, exit him/her to the shell and show him/her the correct command.  
+* )  
+	echo $0 openwin or $0 sunview
+	exit;;
+esac
+echo ""
+echo "   Your default window system has been changed to $mychoice."
+
+# edit this file to setup choice "forever"
+if [ -w $HOME/.desktop ]; then
+	remake_read_only=false
+else
+	chmod u+w $HOME/.desktop
+	remake_read_only=true
+fi
+# uncomment the chosen, comment out the other one
+#
+( echo "/^#set mychoice=${mychoice}/" ; \
+  echo "s/#//" ; \
+  echo "/^set mychoice=${commentout}/" ; \
+  echo "s/^/#/" ; \
+  echo "w" ; \
+  echo "q" \
+) | ed -s $HOME/.desktop > /dev/null
+#
+	
+if [ ! ${remake_read_only} ]; then
+	chmod u-w $HOME/.desktop
+fi
+
+echo
+echo 
+echo  "*****************************************************"
+echo  "*  To activate your default window system.          *"
+echo  "*     Execute the steps that apply:                 *"
+echo  "*         - Exit out of active window system        *"
+echo  "*         - Logout of active shell                  *"
+echo  "*         - Log back in to window system            *"
+echo  "*****************************************************"
+echo
+echo 
+

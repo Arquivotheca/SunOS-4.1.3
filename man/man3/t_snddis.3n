@@ -1,0 +1,160 @@
+.\" @(#)t_snddis.3n 1.1 92/07/30 SMI; from S5r3
+.TH T_SNDDIS 3N "21 January 1990"
+.SH NAME
+t_snddis \- send user-initiated disconnect request
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <tiuser.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int t_snddis(fd, call)
+int fd;
+struct t_call *call;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "t_snddis()" "" "\fLt_snddis()\fR \(em send user-initiated disconnect request" "" 
+.IX transport "send user-initiated disconnect request"
+.IX send "user-initiated disconnect request"
+.LP
+.B t_snddis(\|)
+is used to initiate an abortive release on an already established
+connection or to reject a connect request.
+.I fd
+identifies the local transport endpoint of the connection, and
+.I call
+specifies information associated with the abortive release.
+.I call
+points to a
+.B t_call(\|)
+structure which is defined in
+.B <nettlie/tiuser.h>
+as:
+.RS
+.LP
+.ft B
+.nf
+struct t_call {
+	struct netbuf addr;			/* address		*/
+	struct netbuf opt;			/* options		*/
+	struct netbuf udata;		/* user data		*/
+	int sequence;				/* sequence number	*/
+};
+.ft
+.fi
+.RE
+.LP
+The
+.IR maxlen ,
+.IR len ,
+and
+.I buf
+members of the
+.I netbuf
+structure are described in
+.BR t_accept (3N).
+The values in
+.I call
+have different semantics, depending on the context of the call to
+.BR t_snddis(\|) .
+When rejecting a connect request,
+.I call
+must be non-\s-1NULL\s0 and contain a valid value of
+.I sequence
+to uniquely identify the rejected connect indication to the transport provider.
+The
+.I addr
+and
+.I opt
+fields of
+.I call
+are ignored.
+In all other cases,
+.I call
+need only be used when data is being sent with the disconnect request.
+The
+.IR addr ,
+.IR opt ,
+and
+.I sequence
+fields of the
+.B t_call(\|)
+structure are ignored.
+If the user does not wish to send data to the remote user,
+the value of
+.I call
+may be
+.SM NULL\s0.
+.I udata
+specifies the user data to be sent to the remote user.
+The amount of user data must not exceed the limits supported by
+the transport provider as returned by
+.BR t_open (3N)
+or
+.BR t_getinfo (3N).
+If the
+.I len
+field of
+.I udata
+is zero,
+no data will be sent to the remote user.
+.SH RETURN VALUES
+.LP
+.B t_snddis(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B t_errno
+to indicate the error.
+.SH ERRORS
+.TP 20
+.SM TBADDATA
+The amount of user data specified was not within the bounds allowed by
+the transport provider.
+The transport provider's outgoing queue will be flushed, so data may be lost.
+.TP
+.SM TBADF
+The specified file descriptor does not refer to a transport endpoint.
+.TP
+.SM TBADSEQ
+An invalid sequence number was specified.
+The transport provider's outgoing queue will be flushed, so data may be lost.
+.IP
+A
+.SM NULL
+call structure was specified when rejecting a connect request.
+The transport provider's outgoing queue will be flushed, so data may be lost.
+.TP
+.SM TLOOK
+An asynchronous event has occurred on this transport endpoint and requires
+immediate attention.
+.TP
+.SM TNOTSUPPORT
+This function is not supported by the underlying transport
+provider.
+.TP
+.SM TOUTSTATE
+The function was issued in the wrong sequence.
+The transport provider's outgoing queue may be flushed, so data may be lost.
+.TP
+.SM TSYSERR
+The function failed due to a system error and set 
+.B errno 
+to indicate the error.
+.SH SEE ALSO
+.BR intro (3),
+.BR t_connect (3N),
+.BR t_getinfo (3N),
+.BR t_listen (3N),
+.BR t_open (3N)
+.LP
+.TX NETP

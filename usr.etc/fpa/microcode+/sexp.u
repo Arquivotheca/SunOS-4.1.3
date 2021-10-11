@@ -1,0 +1,226 @@
+|*	@(#)sexp.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Single Precision exp (x)
+|*
+routine xs.ex 001000001100	;				regtotmp;	rcssp imm2;
+	;			;				;		ptr5;	ptr5!c_ssin
+	;			smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr2;
+	jtierr bail.out cstat;	scmp enra enrb halt;		regtoti;	rcssp ptr2;
+	;			;				;		ptr5;		ptr5!c_sexp_ln2_2
+	jne sretnan;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!stwom9
+	jge notsmall;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!stwom14
+	jgt xgt2m9;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!szero
+	jgt xgt2m14;		scmpam enrb halt;		regtoti;	rcssp ptr5;
+|*  abs(x) < 2**-14
+	;			;				;		ptr5;		ptr5!sone
+	jeq xis0;		sadd enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+xis0:
+|* exp(0) is 1, 
+	;			snop enra halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr1;	
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+xgt2m14:
+|* abs(x) < 2** -9 but > 2**-14
+|* fr = fone + fx * (fone + fhalf * fx)
+	;			;				;		ptr5;		ptr5!shalf
+	;			smul enrb halt;			regtoti;	rcssp ptr5;
+	;			halt;				;		ptr5;		ptr5!sone
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		ptr2;
+	;			smul mulaalu enrb halt;		regtoti;	rcssp ptr2;
+	;			halt;				;		ptr5;		ptr5!sone
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+xgt2m9:
+|* abs(x) > 2**-9
+	;			;				;		ptr5;		ptr5!stwom6
+	;			scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sexp_p2
+	jge xge2m6;		smul enrb halt;			regtoti;	rcssp ptr5;
+xlt2m6:
+|* abs(x) < 2**-6 and >2**-9
+|* fr = fone + fx*(fone+fx*(p1+fx*p2))
+	;			snop halt;			;		ptr5;		ptr5!c_sexp_p1
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		ptr2;
+	;			smul mulaalu enrb halt;		regtoti;	rcssp ptr2;
+	;			halt;				;		ptr5;		ptr5!sone
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		ptr2;
+	;			smul mulaalu enrb halt;		regtoti;	rcssp ptr2;
+	;			halt;				;		ptr5;		ptr5!sone
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+xge2m6:
+|* abs(x) => 2**-6 and < ln2/2
+|* fr = fone + fx + fx * fx * (p1 + fx *(p2 + fx*(p3 +fx*(p4 + fx*p5))))
+	;			snop;				;		;
+	;			srccalu clkcc;			;		ptr5;	ptr5!c_sexp_p5
+	;			smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			halt;				;		ptr5;	ptr5!c_sexp_p4
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_sexp_p3
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_sexp_p2
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_sexp_p1
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		;
+	;			smul mulacreg mulbmul;		;		;
+	;			sadd aluamul alubcreg halt;	;		ptr5;	ptr5!sone
+	;			sadd aluamul alubcreg halt;	;		ptr5;	ptr5!sone
+	;			sadd alubalu enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+notsmall:
+	;			;				;		ptr5;		ptr5!c_sexp_con1
+	;			scmpam enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sexp_con2
+	jgt xsexnan;		scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sexp_invln2_32
+
+	jge xsexnan;		smul enrb halt;			regtoti;	rcssp ptr5;
+|*  Start Argument Reduction
+|*  k = invln2_32 *fx  Do not need to add/sub 0.5 since fpamode=2, and scvtint will round towards nearest
+	;			smul tioe tisp;			;		;
+	;			scvtint enra tioe tisp halt;	;		;
+	;			scvtint enra tioe tisp;		;		ptr5;		ptr5!0x700+0xD0
+	;			dfloat enra tioe tisp loaddp halt;titoreg;	rcssp ptr5;
+	;			dfloat enra tioe tisp loaddp halt;;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dnop enra tioe tilsw loaddp halt;;		;
+|* r = double x - double k * ln2_32
+	;			dnop;				;		ptr5;		ptr5!c_dexp_ln2_32
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	;			dnop enrb tioe timsw loaddp halt;;		;
+	;			dnop enrb tioe tilsw loaddp halt;;		;
+	;			scvtd enra halt;		regtoti;	rcssp ptr2;
+	;			scvtd enra halt;		regtoti;	rcssp ptr2;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dsub enra tioe tilsw loaddp halt;;		;
+	;			dsub;				;		;
+	;			dnop srccalu clkcc;		;		ptr5;	ptr5!c_dexp_a2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+|* p = 1.0+r*(1.0+r*(a1+r*a2))
+	;			dmul mulacreg enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulacreg;			;		ptr5;	ptr5!c_dexp_a1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dmul mulaalu mulbcreg;		;		ptr5;	ptr5!done
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dmul mulaalu mulbcreg;		;		;
+	;			dadd aluamul;			;		;
+	;			dnop;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop tioe tilsw halt;		titoreg;	rcslsw ptr5;
+	;			dnop tioe timsw halt;		titoreg;	rcsmsw ptr5;
+|*  m = k>>5
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sifive
+shft:
+	;			i2sftrl enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sitwo20
+|* m << 20 or multiply m by 2**20
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;
+	;			imul enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+|* Save m in D2
+	;			tioe tisp halt;			titoreg;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;	
+	;			;				;		ptr5;	ptr5!c_si1fmask
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+|* In order to get Sexp[j], we add one to j, then compare j with one.  We also increment ptr5, which
+|* has the base of the Sexp[] array.  We subtract -1 from j.  If j is not equal to 1, we go back to
+|* compare j with one.  If equal, we get out of the loop and decremeant ptr5, since it would have
+|* been incremented one too many times.  Then we load Sexp and add it to  m<<20
+	;			tioe tisp;			;		;	
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;	ptr5!c_sione
+	;			i2add enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;	ptr5!c_dSexp_0
+notj:
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		;
+	jne notj;		i2sub halt;			;		;	ptr5+
+	;			;				;		;
+	;			;				;		ptr5;		ptr5-
+	;			;				regtotmp;	rcsmsw ptr5;
+	;			;				regtotmp;	rcslsw ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD2
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	;			i2add enra halt;		tmptoti;	rcsmsw;
+	;			;				;		;
+	;			tioe tisp halt;			titotmp;	rcsmsw;
+	;			;				;		ptr5;	ptr5!0x700+0xD1
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dnop enrb loaddp halt;		regtoti;	rcslsw ptr5;
+	;			dnop;				;		;
+	;			dnop enra loaddp halt;		tmptoti;	rcsmsw;
+	;			dmul enra loaddp halt;		tmptoti;	rcslsw;
+	;			dmul;				;		;
+	;			dnop;				;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+	
+xsexnan:
+	;			;				;		ptr2;
+	;			scmp enra enrb halt;		regtoti;	rcssp ptr2;
+	;			;				;		ptr5;	ptr5!sinf
+	jne sretnan;		scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!c_sminf
+	jeq retsptr1;		scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!szero
+	jeq retzero;		scmp enrb halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!sminsub
+	jge bail.ov;		snop enra halt;			regtoti;	rcssp ptr5;
+	;			snop;				;		;
+| Create underflow.  IF TIFAST is on, no error will be reported, and 0 will be returned.
+	jtierr bail.out cstat;	snop halt;			;		;
+	;			;				;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+sretnan:
+|*  NAN routine:  If # is a signalling NaN, (msb fraction == 0), bail.out
+|*                if # is a quiet NaN, (msb fraction == 1), return #, without an exception.
+|*  Use integers to avoid errors. 
+	;			;				;		ptr2;
+	;			i2cmp enra halt;		regtitmp;	rcssp ptr2;
+	;			;				;		ptr5;		ptr5!c_simasknan
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_sizero
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		;
+	jeq bail.out;		halt;				;		;
+	;			;				;		ptr1;
+	call idle1;		;				tmptoreg;	rcssp ptr1;
+retzero:
+	;			;				;		ptr5;	ptr5!szero
+	;			;				regtotmp;	rcssp ptr5;
+	;			;				;		ptr1;
+	call idle1;		;				tmptoreg;	rcssp ptr1;

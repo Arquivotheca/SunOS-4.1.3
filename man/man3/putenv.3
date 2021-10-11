@@ -1,0 +1,74 @@
+.\" @(#)putenv.3 1.1 92/07/30 SMI; from S5
+.TH PUTENV 3 "21 February 1989"
+.SH NAME
+putenv \- change or add value to environment
+.SH SYNOPSIS
+.nf
+.B int putenv(string)
+.B char \(**string;
+.fi
+.SH DESCRIPTION
+.IX  "putenv()"  ""  "\fLputenv()\fP \(em set environment value"
+.IX  set "environment value \(em \fLputenv()\fP"
+.IX  environment  "set value"  ""  "set value \(em \fLputenv()\fP"
+.LP
+.I string
+points to a string of the form
+`\fIname\fB=\fIvalue\fR'
+.B putenv(\|)
+makes the value of the environment variable
+.I name
+equal to
+.I value
+by altering an existing variable or creating a new one.
+In either case, the string pointed to by
+.I string
+becomes part of the
+environment, so altering the string will change the environment.
+The space used by
+.I string
+is no longer used once a new string-defining
+.I name
+is passed to
+.BR putenv(\|) .
+.SH SEE ALSO
+.BR execve (2V),
+.BR getenv (3V),
+.BR malloc (3V),
+.BR environ (5V).
+.SH DIAGNOSTICS
+.LP
+.B putenv(\|)
+returns non-zero
+if it was unable to obtain enough space using
+.BR malloc (3V)
+for an expanded environment,
+otherwise zero.
+.SH WARNINGS
+.LP
+.B putenv(\|)
+manipulates the environment pointed to by
+.IR environ ,
+and can be used in conjunction with
+.BR getenv(\|) .
+However,
+.I envp
+(the third argument to
+.IR main )
+is not changed.
+.LP
+This routine uses
+.BR malloc (3V)
+to enlarge the environment.
+.LP
+After
+.B putenv(\|)
+is called, environmental variables are not in
+alphabetical order.
+.LP
+A potential error is to call
+.B putenv(\|)
+with an automatic variable
+as the argument, then exit the calling function while
+.I string
+is still part of the environment.

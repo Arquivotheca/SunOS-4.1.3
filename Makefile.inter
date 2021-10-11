@@ -1,0 +1,18 @@
+#
+# @(#)Makefile.inter 1.1 92/07/30 SMI
+#
+# For international releases, things that do encryption are either
+# modified or removed altogether.
+#
+DESTDIR=/proto
+ARCH=`arch`
+IDIRS=	lib/libc usr.lib/librpcsvc bin usr.bin usr.bin/ex usr.bin/des \
+	usr.etc/keyserv usr.etc
+IFLAGS= "-Dcbc_crypt=_C0095A2A -Decb_crypt=_C0095A2B \
+	-Dxencrypt=_C0095A2C -Dxdecrypt=_C0095A2D"
+
+international:
+	for i in $(IDIRS); do \
+		(cd $$i; $(MAKE) $(MFLAGS) IFLAGS=$(IFLAGS) \
+		 DESTDIR=$(DESTDIR) international); \
+	done

@@ -1,0 +1,114 @@
+.\" @(#)catopen.3c 1.1 92/07/30 SMI; from XPG2
+.TH CATOPEN 3C "22 January 1990"
+.SH NAME
+catopen, catclose \- open/close a message catalog
+.SH SYNOPSIS
+.B #include <nl_types.h>
+.LP
+.nf
+.ft B
+nl_catd catopen(name, oflag)
+char *name;
+int oflag;
+.ft R
+.fi
+.LP
+.nf
+.ft B
+int catclose(catd)
+nl_catd catd;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "catopen" "" "\fLcatopen\fR \(em open a message catalog" ""
+.IX "catclose" "" "\fLcatclose\fR \(em close a message catalog" ""
+.LP 
+.B catopen(\|) 
+opens a message catalog and returns a catalog descriptor.
+.I name 
+specifies the name of the message catalog to be opened.
+If
+.I name 
+contains a
+.RB ` / '
+then 
+.I name 
+specifies a pathname for the message catalog.
+Otherwise, the environment variable
+.SB NLSPATH 
+is used with
+.I name 
+substituted for 
+.B %N
+(see
+.BR locale (5)).
+If
+.SB NLSPATH 
+does not exist in the environment,
+or if a message catalog cannot be opened
+in any of the paths specified by
+.BR \s-1NLSPATH\s0 ,
+the 
+.BI /etc/locale/\s-1LC_MESSAGES\s+1/ locale
+directory is searched for a message catalog with filename
+.IR name ,
+followed by the 
+.BI /usr/share/lib/locale/\s-1LC_MESSAGES\s+1/ locale
+directory. In both cases
+.I locale
+stands for the current setting of the 
+.B \s-1LC_MESSAGES\s+1
+category of locale.
+.LP
+.I oflag 
+is reserved for future use and should be set to 0 (zero).
+The results of setting this field to any other value
+are undefined.
+.LP
+.B catclose(\|) 
+closes the message catalog identified by
+.IR catd .
+It invalidates any following references to the message catalog defined
+by
+.IR catd .
+.LP
+.SH RETURN VALUES
+.LP
+.B catopen(\|)
+returns
+a message catalog descriptor
+on success.
+On failure,
+it returns
+\-1.
+.\"and sets
+.\".B errno
+.\"to indicate the error.
+.LP
+.B catclose(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.\"and sets
+.\".B errno
+.\"to indicate the error.
+.SH SEE ALSO
+.BR catgets (3C),
+.BR locale (5)
+.SH NOTES
+.LP
+Using
+.B catopen(\|)
+and
+.B catclose(\|)
+in conjunction with
+.B gettext(\|) 
+or 
+.B textdomain(\|) 
+(see
+.BR gettext (3))
+is undefined.

@@ -1,0 +1,243 @@
+.\" @(#)runacct.8 1.1 92/07/30 SMI; from S5R2
+.TH RUNACCT 8 "17 January 1990"
+.SH NAME
+runacct \- run daily accounting
+.SH SYNOPSIS
+.B /usr/lib/acct/runacct
+[
+.I mmdd
+[
+.I state
+] ]
+.SH DESCRIPTION
+.IX "runacct" "" "\fLrunacct\fP \(em run daily accounting" ""
+.LP
+.B runacct
+is the main daily accounting shell procedure.
+It is normally initiated using
+.BR cron (8).
+.B runacct
+processes connect, fee, disk, and process accounting files.
+It also prepares summary files for
+.B prdaily
+or billing purposes.
+.LP
+.B runacct
+takes care not to damage active accounting files or summary
+files in the event of errors.
+It records its progress by writing descriptive diagnostic
+messages into
+.BR active .
+When an error is detected, a message is written to
+.BR /dev/console ,
+mail (see
+.BR mail (1))
+is sent to
+.BR root ,
+and
+.B runacct
+terminates.
+.B runacct
+uses a series of lock files to protect against re-invocation.
+The files
+.B lock
+and
+.B lock1
+are used to prevent simultaneous invocation, and
+.B lastdate
+is used to prevent more than one invocation per day.
+.LP
+.B runacct
+breaks its processing into separate, restartable
+.I states
+using
+.B statefile
+to remember the last
+.I state
+completed.
+It accomplishes this by writing the
+.I state
+name into
+.BR statefile .
+.B runacct
+then looks in
+.B statefile
+to see what it has done and to determine what to process next.
+.I states
+are executed in the following order:
+.RS
+.TP 15
+.SB SETUP
+Move active accounting files into working files.
+.TP
+.SB WTMPFIX
+Verify integrity of the
+.B wtmp
+file, correcting date changes if necessary.
+.TP
+.SB CONNECT1
+Produce connect session records in
+.B ctmp.h
+format.
+.TP
+.SB CONNECT2
+Convert
+.B ctmp.h
+records into
+.B tacct.h
+format.
+.TP
+.SB PROCESS
+Convert process accounting records into
+.B tacct.h
+format.
+.TP
+.SB MERGE
+Merge the connect and process accounting records.
+.TP
+.SB FEES
+Convert output of
+.B chargefee
+into
+.B tacct.h
+format and merge with connect and process accounting records.
+.TP
+.SB DISK
+Merge disk accounting records with connect, process, and fee accounting
+records.
+.TP
+.SB MERGETACCT
+Merge the daily total accounting records in
+.B daytacct
+with the summary total accounting records in
+.BR /var/adm/acct/sum/tacct .
+.TP
+.SB CMS
+Produce command summaries.
+.TP
+.SB USEREXIT
+Any installation-dependent accounting programs can be
+included here.
+.TP
+.SB CLEANUP
+Cleanup temporary files and exit.
+.RE
+.LP
+To restart
+.B runacct
+after a failure, first check the
+.B active
+file for diagnostics, then fix up any corrupted data files,
+such as
+.BR pacct
+or
+.BR wtmp .
+The
+.B lock
+files and
+.B lastdate
+file must be removed before
+.B runacct
+can be restarted.
+The argument
+.I mmdd
+is necessary if
+.B runacct
+is being restarted,
+and specifies the month and day for which
+.B runacct
+will rerun the accounting.
+Entry point for processing is based on the contents of
+.BR statefile ;
+to override this,
+include the desired
+.I state
+on the command line to designate where processing
+should begin.
+.SH EXAMPLES
+.LP
+To start
+.BR runacct :
+.RS 5
+.ft B
+nohup runacct 2> /var/adm/acct/nite/fd2log &
+.ft R
+.RE
+.LP
+To restart
+.BR runacct :
+.RS 5
+.ft B
+nohup runacct 0601 2>> /var/adm/acct/nite/fd2log &
+.ft R
+.RE
+.LP
+To restart
+.B runacct
+at a specific
+.IR state :
+.RS 5
+.ft B
+nohup runacct 0601 \s-1MERGE\s0 2>> /var/adm/acct/nite/fd2log &
+.ft R
+.RE
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/wtmp
+.TP
+.B /var/adm/pacct\(**
+.TP
+.B /var/adm/acct/nite/active
+.TP
+.B /var/adm/acct/nite/daytacct
+.TP
+.B /var/adm/acct/nite/lock
+.TP
+.B /var/adm/acct/nite/lock1
+.TP
+.B /var/adm/acct/nite/lastdate
+.TP
+.B /var/adm/acct/nite/statefile
+.TP
+.BI /var/adm/acct/nite/ptacct\(**. mmdd
+.PD
+.SH SEE ALSO
+.BR acctcom (1),
+.BR mail (1),
+.BR acct (2V),
+.BR acct (5),
+.BR utmp (5V),
+.BR acct (8),
+.BR acctcms (8),
+.BR acctcon (8),
+.BR acctmerg (8),
+.BR acctprc (8),
+.BR acctsh (8),
+.BR cron (8),
+.BR fwtmp (8)
+.SH BUGS
+.LP
+Normally it is not a good idea to restart
+.B runacct
+in the
+.SB SETUP
+.IR state .
+Run
+.SB SETUP
+manually and restart using:
+.LP
+.RS 5
+.B runacct
+.I mmdd
+.SB WTMPFIX
+.RE
+.LP
+If
+.B runacct
+failed in the
+.SB PROCESS
+.IR state ,
+remove the last
+.B ptacct
+file because it will not be complete.

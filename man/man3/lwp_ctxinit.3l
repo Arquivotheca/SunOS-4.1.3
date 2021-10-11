@@ -1,0 +1,240 @@
+.\" @(#)lwp_ctxinit.3l 1.1 92/07/30 SMI
+.\" Copyright (C) 1987, Sun Microsystems, Inc.
+.TH LWP_CTXINIT 3L "21 January 1990"
+.SH NAME
+lwp_ctxinit, lwp_ctxremove, lwp_ctxset, lwp_ctxmemget, lwp_ctxmemset, lwp_fpset, lwp_libcset \- special LWP context operations
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <lwp/lwp.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_ctxset(save, restore, ctxsize, optimize)
+void (*save)(/* caddr_t ctx, thread_t old, thread_t new */);
+void (*restore)(/* caddr_t ctx, thread_t old, thread_t new */);
+unsigned int ctxsize;
+int optimize;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_ctxinit(tid, cookie)
+thread_t tid;		/* thread with special contexts */
+int cookie;		/* type of context */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_ctxremove(tid, cookie)
+thread_t tid;
+int cookie;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_ctxmemget(mem, tid, ctx)
+caddr_t mem;
+thread_t tid;
+int ctx;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_ctxmemset(mem, tid, ctx)
+caddr_t mem;
+thread_t tid;
+int ctx;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_fpset(tid)
+thread_t tid;		/* thread utilizing floating point hardware */
+.ft
+.fi
+.LP
+.nf
+.ft B
+int lwp_libcset(tid)
+thread_t tid;		/* thread utilizing errno */
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "lwp_ctxinit()" "" "\fLlwp_ctxinit()\fP function"
+.IX "lwp_ctxremove()" "" "\fLlwp_ctxremove()\fP function"
+.IX "lwp_ctxset()" "" "\fLlwp_ctxset()\fP function"
+.IX "lwp_ctxmemget()" "" "\fLlwp_ctxmemget()\fP function"
+.IX "lwp_ctxmemset()" "" "\fLlwp_ctxmemset()\fP function"
+.IX "lwp_fpset()" "" "\fLlwp_fpset()\fP function"
+.IX "lwp_libcset()" "" "\fLlwp_libcset()\fP function"
+.LP
+Normally on a context switch, only machine registers are
+saved/restored to provide each thread its own virtual machine.
+However, there are other hardware and software resources which
+can be multiplexed in this way.
+For example, floating point registers can be used
+by several threads in a pod.
+As another example, the global value
+.B errno
+in the standard C library may be used by all
+threads making system calls.
+.LP
+To accommodate the variety of contexts that a thread
+may need without requiring all threads to pay for unneeded switching
+overhead,
+.B lwp_ctxinit(\|)
+is provided.
+This primitive allows a client to specify that a given thread
+requires certain context to be saved and restored across context switches
+(by default just the machine registers are switched).
+More than one special context may be given to a thread.
+.LP
+To use
+.BR lwp_ctxinit(\|) ,
+it is first necessary to define a special context.
+.B lwp_ctxset(\|)
+specifies save and restore routines, as well
+as the size of the context that will be used
+to hold the switchable state.  The
+.I save
+routine will automatically be invoked
+when an active thread is blocked and the
+.I restore
+routine will be invoked when a blocked thread
+is restarted.
+These routines will be passed a
+pointer to a buffer (initialized to all 0's) of size
+.I ctxsize
+which is allocated by the LWP library and
+used to hold the volatile state.
+In addition,
+the identity of the thread whose special context is being saved
+(old)
+and the identity of the thread being restarted
+(new)
+are passed in to the
+.I save
+and
+.I restore
+routines.
+.B lwp_ctxset(\|)
+returns a cookie used by subsequent
+.B lwp_ctxinit(\|)
+calls to refer to the kind of context just defined.
+If the
+.I optimize
+flag is
+.SM TRUE\s0,
+a special context switch action will not be invoked unless
+the thread resuming execution differs from the last thread to
+use the special context and also uses the special context.
+If the
+.I optimize
+flag is
+.SM FALSE\s0,
+the
+.I save
+routine
+will always be invoked immediately when the thread using
+this context is scheduled out and the
+.I restore
+routine will
+be invoked immediately when a new thread using this context is scheduled in.
+Note that an unoptimized special context is protected from threads which
+do not use the special context but which do affect the context state.
+.B lwp_ctxremove(\|)
+can be used to remove a special context installed by
+.BR lwp_ctxinit(\|) .
+.LP
+Because context switching is done by the scheduler on behalf of a thread,
+it is an error to use an
+.SM LWP
+primitive in an action done at context
+switch time.
+Also, the stack used by the save and restore routines belongs
+to the scheduler, so care should be taken not to use lots of stack space.
+As a result of these restrictions, only knowledgeable users should
+write their own special context switching routines.
+.\"The scheduler does it because otherwise no easy way to optimize.
+.LP
+.B lwp_ctxmemget(\|)
+and
+.B lwp_ctxmemset(\|)
+are used to retrieve and set (respectively) the memory associated
+with a given special context
+.RI ( ctx )
+and a given thread
+.RI ( tid ).
+.I mem
+is the address of client memory that will hold the context information
+being retrieved or set.
+Note that the special context
+.I save
+and
+.I restore
+routines may be
+.SM NULL\s0,
+so pure data may be associated with a given
+thread using these primitives.
+.LP
+Several kinds of special contexts are predefined.
+To allow a thread to share floating point
+hardware with other threads, the
+.B lwp_fpset(\|)
+primitive is available.
+The floating-point hardware bound at compile-time is selected automatically.
+To multiplex the global variable
+.BR errno ,
+.B lwp_libcset(\|)
+is used to have
+.B errno
+become part of the context of thread
+.IR tid .
+.LP
+Special contexts can be used to assist in managing stacks.
+See
+.BR lwp_newstk (3L)
+for details.
+.SH RETURN VALUES
+.LP
+On success,
+.B lwp_ctxset(\|)
+returns a cookie to be used by subsequent calls to
+.BR lwp_ctxinit(\|) .
+If unable to define the context,
+it returns
+\-1.
+.SH ERRORS
+.B lwp_ctxinit(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM LE_INUSE
+This special context already set for this thread.
+.LP
+.B lwp_ctxremove(\|)
+will fail if one or more of the following are true:
+.TP 20
+.SM LE_NONEXIST
+The specified context is not set for this thread.
+.LP
+.B lwp_ctxset(\|)
+will fail if one or more of the following are
+true:
+.TP 20
+.SM LE_NOROOM
+Unable to allocate memory to define special context.
+.SH SEE ALSO
+.BR lwp_newstk (3L)
+.SH BUGS
+.LP
+The floating point contexts should be initialized implicitly for
+those threads that use floating point.

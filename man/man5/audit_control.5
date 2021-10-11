@@ -1,0 +1,210 @@
+'\" t
+.\" @(#)audit_control.5 1.1 92/07/30 SMI;
+.TH AUDIT_CONTROL 5 "19 October 1987"
+.SH NAME
+audit_control \- control information for system audit daemon
+.SH SYNOPSIS
+.B /etc/security/audit/audit_control
+.IX  "audit file"  ""  "\fLaudit\fP \(em audit control file"
+.SH DESCRIPTION
+.LP
+The
+.B audit_control
+file contains audit control information read by
+.BR auditd (8).
+Each line consists of a title and a string, separated by a colon.
+There are no restrictions on the order of lines in the file,
+although some lines must appear only once.
+A line beginning with
+.RB ` # '
+is a comment.
+.LP
+Directory definition lines list the directories to be used
+when creating audit files, in the order in which they are to be used.
+The format of a directory line is:
+.RS
+.BI dir:\0 directory-name
+.RE
+where
+.I directory-name
+is the name of a directory in which to create audit files,
+with the form:
+.RS
+.BI /etc/security/audit/ server / machine
+.RE
+where
+.I server
+is the name of an audit file system on the machine
+where this audit directory resides, and
+.I machine
+is the name of the local machine,
+since audit files belonging to different machines are, by convention,
+stored in separate subdirectories of a single audit directory.
+The naming convention normally has
+.I server
+be the name of a server machine, and all clients mount
+.BI /etc/security/audit/ server
+at the same location in their local file systems.
+If the same server exports several different file systems for auditing, their
+.I server
+names will, of course, be different.
+.LP
+The audit threshold line specifies the percentage of free space
+that must be present in the file system containing the current audit file.
+The format of the threshold line is:
+.RS
+.BI minfree:\0 percentage
+.RE
+where
+.I percentage
+is indicates the amount of free space required.
+If free space falls below this threshold, the audit daemon
+.BR auditd (8)
+invokes the shell script
+.BR /etc/security/audit/audit_warn .
+If no threshold is specified, the default is 0%.
+.LP
+The audit flags line specifies the default system audit value.
+This value is combined with the user audit value read from
+.B /etc/security/passwd.adjunct
+to form the process audit state.  The user audit value overrides
+the system audit value.
+The format of a flags line is:
+.RS
+.BI flags:\0 audit-flags
+.RE
+where
+.I audit-flags
+specifies which event classes are to be audited.
+The character string representation of
+.I audit-flags
+contains a series of flag
+names, each one identifying a single audit class, separated by commas.
+A name preceded by
+.RB ` \- '
+means that the class should be audited for failure only;
+successful attempts are not audited.
+A name preceded by
+.RB ` + '
+means that the class should be audited for success only;
+failing attempts are not audited.
+Without a prefix, the name indicates that the class is to be audited
+for both successes and failures.
+The special string
+.B all
+indicates that all events should be audited;
+.B \-all
+indicates that all failed attempts are to be audited, and
+.B +all
+all successful attempts.
+The prefixes
+.BR ^ ,
+.BR ^\- ,
+and
+.B ^+
+turn off
+flags specified earlier in the string
+.RB ( ^\-
+and
+.B ^+
+for failing and successful attempts,
+.B ^
+for both).
+They are typically used to reset flags.
+.LP
+The following table lists the audit classes:
+.LP
+.\" === troff version ===
+.if n .ig IG
+.TS
+c c c
+lb lb l .
+short name	long name	short description
+.sp .5
+dr	data_read	Read of data, open for reading, etc.
+dw	data_write	Write or modification of data
+dc	data_create	Creation or deletion of any object
+da	data_access_change	Change in object access (modes, owner)
+lo	login_logout	Login, logout, creation by \fBat\fR(1)
+ad	administrative	Normal administrative operation
+p0	minor_privilege	Privileged operation
+p1	major_privilege	Unusual privileged operation
+.TE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.TS
+c c c
+lb lb l .
+short name	long name	short description
+.sp .5
+dr	data_read	Read of data, open for 
+		reading, etc.
+dw	data_write	Write or modification of 
+		data
+dc	data_create	Creation or deletion of 
+		any object
+da	data_access_change	Change in object access 
+		(modes, owner)
+lo	login_logout	Login, logout, creation 
+		by \fBat\fR(1)
+ad	administrative	Normal administrative 
+		operation
+p0	minor_privilege	Privileged operation
+p1	major_privilege	Unusual privileged operation
+.TE
+.IG
+.\" === end nroff version ===
+.SH EXAMPLE
+.LP
+Here is a sample
+.B /etc/security/audit_control
+file for the machine eggplant:
+.RS
+.LP
+.nf
+.ft B
+dir: /etc/security/audit/jedgar/eggplant
+dir: /etc/security/audit/jedgar.aux/eggplant
+#
+# Last-ditch audit file system when jedgar fills up.
+#
+dir: /etc/security/audit/global/eggplant
+minfree: 20
+flags: lo,p0,p1,ad,-all,^-da
+.ft R
+.fi
+.LP
+.RE
+This identifies server
+.B jedgar
+with two file systems normally used for audit data, another server
+.B global
+used only when
+.B jedgar
+fills up or breaks,
+and specifies that the warning script is run
+when the file systems are 80% filled.
+It also specifies that all logins, privileged and administrative operations
+are to be audited (whether or not they succeed),
+and that failures of all types except failures to access data
+are to be audited.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/security/audit/audit_control
+.TP
+.B /etc/security/audit/audit_warn
+.TP
+.B /etc/security/audit/*/*/*
+.TP
+.B /etc/security/passwd_adjunct
+.PD
+.SH "SEE ALSO"
+.BR at (1),
+.BR audit (2),
+.BR getfauditflags (3),
+.BR audit.log (5),
+.BR audit (8),
+.BR auditd (8)

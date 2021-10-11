@@ -1,0 +1,76 @@
+.\" @(#)ldgetname.3x 1.1 92/07/30 SMI; from SVID
+.TH LDGETNAME 3X "19 February 1988"
+.SH NAME
+ldgetname \- retrieve symbol name for COFF file symbol table entry
+.SH SYNOPSIS
+.ta \w'\s-1LDFILE\s+1\ \ \ 'u
+.nf
+.ft B
+.B #include <stdio.h>
+.B #include <filehdr.h>
+.B #include <syms.h>
+.B #include <ldfcn.h>
+.PP
+.B char \(**ldgetname (ldptr, symbol)
+.B \s-1LDFILE\s+1 \(**ldptr;
+.B \s-1SYMENT\s+1 \(**symbol;
+.ft R
+.fi
+.DT
+.SH AVAILABILITY
+.LP
+Available only on Sun 386i systems running a SunOS 4.0.\fIx\fR
+release or earlier.  Not a SunOS 4.1 release feature.
+.SH DESCRIPTION
+.IX "ldgetname()" "" "\fLldgetname()\fP \(em retrieve symbol name for COFF file symbol table entry"
+.LP
+.B ldgetname(\|)
+returns a pointer to the name associated with
+.BR symbol\^
+as a string.
+The string is contained in a static buffer local to
+.B ldgetname(\|)
+that is overwritten by each call to
+.BR ldgetname(\|) ,
+and therefore must be copied by the caller if the name is to be saved.
+.PP
+.B ldgetname(\|)
+can be used to retrieve names from object files without any backward
+compatibility problems.
+.B ldgetname(\|)
+will return
+.SM NULL
+(defined in
+.BR stdio.h )
+for an
+object file if the name cannot be retrieved.  This situation can
+occur:
+.IP \(bu 3
+if the ``string table'' cannot be found,
+.IP \(bu
+if not enough memory can be allocated for the string table,
+.IP \(bu
+if the string table appears not to be a string table (for example,
+if an auxiliary entry is handed to
+.B ldgetname(\|)
+that looks like a reference to a name in a nonexistent string table), or
+.IP \(bu
+if the name's offset into the string table is past the end of the
+string table.
+.PP
+Typically,
+.B ldgetname(\|)
+will be called immediately after a successful call to
+.B ldtbread(\|)
+to retrieve the name associated with the symbol table entry
+filled by
+.BR ldtbread(\|) .
+.PP
+The program must be loaded with the object file access routine library
+.BR libld.a .
+.SH SEE ALSO
+.BR ldclose (3X),
+.BR ldfcn (3),
+.BR ldopen (3X),
+.BR ldtbread (3X),
+.BR ldtbseek (3X)

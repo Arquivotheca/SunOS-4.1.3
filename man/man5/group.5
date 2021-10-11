@@ -1,0 +1,222 @@
+'\" t
+.\" @(#)group.5 1.1 92/07/30 SMI; from UCB 4.2
+.TH GROUP 5 "14 December 1987"
+.SH NAME
+group \- group file
+.SH SYNOPSIS
+.B /etc/group
+.SH DESCRIPTION
+.IX  "group file"  ""  "\fLgroup\fP \(em group file format"
+.LP
+The
+.B group
+file contains a one-line entry for
+each group recognized by the system,
+of the form:
+.IP
+.IB groupname : password :\c
+.IB gid : user-list
+.LP
+where:
+.TP 15
+.I "groupname"
+is the name of the group.
+.\" .TP
+.\" .I "password"
+.\" is the encrypted group password, or the string
+.\" .BI  #$ groupname
+.\" if the encrypted password is to be found in the
+.\" .B /etc/security/group.adjunct
+.\" file (see
+.\" .BR group.adjunct (5)).
+.TP
+.I gid
+is the group's numerical
+.SM ID
+within the system; it must be unique.
+.TP
+.I user-list
+is a comma-separated list of users allowed in the group.
+.LP
+If the password field is empty, no password is demanded.
+The
+.B group
+file is an
+.SM ASCII
+file.  Because of the encrypted passwords, the
+.B group
+file can and does have general read permission,
+and can be used as a mapping of numerical group
+.SM ID\s0s
+to group names.
+.LP
+A group entry beginning with a
+.RB ` + '
+(plus sign), means to incorporate an entry
+or entries from the 
+Network Information Service
+(\s-1NIS\s0)
+A
+.RB ` + '
+on a line by itself means to insert the entire contents
+of the 
+.SM NIS
+group file at that point in the file.  An
+entry of the form:
+.RB ` + \fIgroupname\fR'
+means to insert the entry (if any) for
+.BR groupname .
+If a
+.RB ` + '
+entry has a non-empty
+.I password
+or
+.I user-list
+field, the contents of that field override
+the corresponding field from the 
+.SM NIS
+service.
+The
+.I gid
+field cannot be overridden in this way.
+.LP
+An entry of the form:
+.BI \- groupname
+indicates that the group is disallowed.
+All subsequent entries for the indicated
+.IR groupname ,
+whether originating from the 
+.SM NIS
+service,
+or the local
+.B group
+file, are ignored.
+.LP
+Malformed entries cause routines that
+read this file to halt, in which case group
+assignments specified further along are never
+made.  To prevent this from happening, use
+.BR grpck (8)
+to check the
+.B /etc/group
+database from time to time.
+.LP
+Sun386i systems uses the following group
+.SM ID\s0s
+as program privileges:
+.LP
+.TS
+lb r l .
+operator	5	Privilege to do backup as root.
+accounts	11	Privilege to update user accounts.
+networks	12	Privilege to change network configuration.
+devices	13	Privilege to modify printer, terminal, or modem configurations.
+.TE
+.LP
+On all Sun systems, Sun\s-1OS\s0 uses group
+.SM ID
+0 as privilege to run 
+.BR su (1V).
+.SH EXAMPLE
+.LP
+Here is a sample group file when the
+.B group.adjunct
+file does not exist:
+.RS
+.LP
+.ft B
+.nf
+primary:q.mJzTnu8icF.:10:fred,mary
++myproject:::bill,steve
++:
+.fi
+.ft R
+.LP
+.RE
+Here is a sample group file when the
+.B group.adjunct
+file does exist:
+.LP
+.RS
+.ft B
+.nf
+primary:#$primary:10:fred,mary
++myproject:::bill,steve
++:
+.fi
+.ft R
+.LP
+.RE
+If these entries appear at the end of
+a group file, then the group
+.I primary
+will have members
+.B fred
+and
+.BR mary ,
+and a group
+.SM ID
+of
+.BR 10 .
+The group
+.I myproject
+will have members
+.B bill
+and
+.BR steve ,
+and the password and group
+.SM ID
+of the 
+.SM NIS
+entry for the group
+.BR myproject .
+All groups listed in the 
+.SM NIS
+service are pulled in and placed after the entry for
+.BR myproject .
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/group
+.\" .TP
+.\" .BI /var/yp/ domainname /group.byname
+.\" .TP
+.\" .BI /var/yp/ domainname /group.bygid
+.\" .TP
+.\" .B /etc/security/group.adjunct
+.PD
+.SH "SEE ALSO"
+.BR passwd (1),
+.BR su (1V),
+.BR getgroups (2V),
+.BR crypt (3),
+.BR initgroups (3),
+.BR group.adjunct (5),
+.BR passwd (5),
+.BR grpck (8V)
+.SH NOTES
+.LP
+SunOS releases prior to SunOS 4.0, permitted a user to belong to no more
+then eight groups at a time.
+A user who belongs to more than eight
+groups may have trouble using the 
+.SM RPC
+service (and therefore
+.SM NFS\s0)
+to communicate
+with machines running older releases.
+In such cases,
+.SM RPC
+complains of an "Authentication Error".
+.LP
+The Network Information Service
+(\s-1NIS\s0)
+was formerly known as Sun Yellow Pages
+(\s-1YP\s0). 
+The functionality of the two remains the same;
+only the name has changed.
+.SH BUGS
+.LP
+The
+.BR passwd (1)
+command will not change group passwords.

@@ -1,0 +1,226 @@
+.\" @(#)switcher.1 1.1 92/07/30 SMI;
+.TH SWITCHER 1 "18 February 1988"
+.SH NAME
+switcher \- switch attention between multiple SunView desktops on the same physical screen
+.SH SYNOPSIS
+.B switcher
+[
+.B \-d
+.I frame-buffer
+] [
+.BR \-s
+.BR n \||\|\c
+.BR l \||\|\c
+.BR r \||\|\c
+.BR i \||\|\c
+.BR o \||\|\c
+.B f
+]
+.if n .ti +0.5i
+[
+.B \-m
+.I x y
+] [
+.B \-n
+] [
+.B \-e
+.BR 0 \||\|\c
+.B 1
+]
+.SH AVAILABILITY
+.LP
+This command is available with the
+.TX SVBG 
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  switcher  ""  "\fLswitcher\fP"
+.IX  "window management"  "switcher utility"  ""  "\fLswitcher\fP utility"
+.LP
+.B switcher
+is used as an alternative to
+.BR adjacentscreens (1)
+for getting between desktops on the Sun-3/110.
+Clicking the switcher icon
+gets you to another desktop using some amusing video-wipe animation.
+When using walking menus, a menu is available to invoke the switch as well.
+.B switcher
+can also be used to simply set the enable
+plane
+to 0 or 1 should it get out of wack.
+.LP
+.SH OPTIONS
+.TP
+.BI \-d " frame-buffer"
+The
+.I frame buffer
+is a frame buffer device name, such as
+.BR /dev/fb ,
+.B /dev/cgfour
+or
+.BR /dev/bwtwo0 ,
+on which the desktop that you
+want to get to resides.  This name is the same one supplied to
+.BR sunview .
+The
+.B \-d
+flag is optional; if not specified,
+the default device is
+.B /dev/fb
+.
+.HP
+.B \-s
+.BR n \||\|\c
+.BR l \||\|\c
+.BR r \||\|\c
+.BR i \||\|\c
+.BR o \||\|\c
+.B f
+.br
+The
+.B \-s
+flag specifies the type of animation used when switching:
+.B n
+(now),
+.B l
+(left wipe),
+.B r
+(right  wipe),
+.B i
+(tunnel in),
+.B o
+(tunnel out),
+or
+.B f
+(fade).
+The
+.B \-s
+flag is optional because if not specified,
+the default animation is to switch immediately.
+.B n
+(now) mode.
+.TP
+.BI \-m "x y"
+The
+.B \-m
+indicates what the mouse position should be on the
+destination desktop after the switch.
+An
+.RI ( x
+.IR y )
+value-pair of (\-1 \-1) says to use the position
+of the mouse on the desktop at the time of the switch as the mouse
+position on the destination desktop.
+The
+.B \-m
+flag is optional; if not specified,
+the default is (\-1 \-1).
+.TP
+.B \-n
+The
+.B \-n
+flag
+means no switcher icon is wanted so do the switch right now and exit
+.B switcher
+after the switch.  This is handy if you want to
+switch
+from a root menu command.
+.TP
+.BR "\-e 0" \||\| 1
+The
+.B \-e
+flag causes the overlay enable plane of the device specified
+with the
+.B -d
+flag to be set to either 0 (show color) or
+1 (show black and white).
+.B switcher
+run with this option has
+nothing to do with SunView, only the enable plane is set.
+.LP
+.SH EXAMPLE
+.LP
+A common multiple desktop configuration
+for the Sun-3/110 is one monochrome
+and one color desktop.   You could set up an instance of
+.BR sunview (1)
+on each plane group in the following ways:
+.TP
+1.
+Invoke
+.B sunview
+in the color plane group by running:
+.RS
+.IP
+.B "example% sunview \-8bit_color_only \-toggle_enable"
+.RE
+.IP
+This starts
+.B sunview
+on the default frame buffer named
+.B /dev/fb
+but limits access to the color plane
+group.
+.TP
+2.
+In a
+.BR shelltool (1),
+run:
+.RS
+.IP
+.B "example% sunview \-d /dev/bwtwo0 \-toggle_enable &"
+.RE
+.IP
+This starts
+.B sunview
+in the overlay plane that is accessed by
+.BR /dev/bwtwo0 .
+.br
+.ne 5
+.TP
+3.
+In a
+.B shelltool
+on the original desktop run:
+.RS
+.IP
+.B "example% switcher \-d /dev/bwtwo0 \-s i &"
+.RE
+.IP
+Clicking on the switcher icon when it is visible moves you to the
+.B /dev/bwtwo0
+desktop.
+.br
+.ne 5
+.TP
+4.
+In a
+.B shelltool
+on the
+.B /dev/bwtwo0
+desktop run:
+.RS
+.IP
+.B example% switcher \-s o &
+.RE
+.IP
+Clicking on the switcher icon when it is
+visible moves you back to the
+.B /dev/fb
+desktop.
+.SH FILES
+.PD 0
+.TP 20
+.B /usr/bin/switcher
+.TP
+.B /dev/bwtwo0
+.TP
+.B /dev/fb
+.TP
+.B /dev/cgfour
+.PD
+.SH "SEE ALSO"
+.BR adjacentscreens (1),
+.BR shelltool (1),
+.BR sunview (1)

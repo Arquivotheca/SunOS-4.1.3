@@ -1,0 +1,119 @@
+.\" @(#)filio.4 1.1 92/07/30 SMI;
+.TH FILIO 4 "23 November 1987"
+.SH NAME
+filio \- ioctls that operate directly on files, file descriptors, and sockets
+.SH SYNOPSIS
+.nf
+.B #include <sys/filio.h>
+.fi
+.SH DESCRIPTION
+.LP
+The
+.SM IOCTL\s0's
+listed in this manual page apply directly to files, file
+descriptors, and sockets, independent of any underlying device
+or protocol.
+.LP
+Note: the
+.BR fcntl (2V)
+system call is the primary method for operating on
+file descriptors as such, rather than on the underlying files.
+.SS IOCTLS for File Descriptors
+.TP 20
+.B FIOCLEX
+.IX  "FIOCLEX set close-on-exec flag for fd"  ""  "\fLFIOCLEX\fP \(em set close-on-exec flag for fd"
+.IX  set "close-on-exec for fd \fLioctl\fP \(em \fLFIOCLEX\fP"
+.IX  "ioctls for files"  "FIOCLEX"  "\fLioctl\fP's for files"  "\fLFIOCLEX\fP \(em set close-on-exec for fd"
+The argument is ignored.
+Set the close-on-exec flag for the file descriptor passed to
+.BR ioctl .
+This flag is also manipulated by the
+.SB F_SETFD
+command of
+.BR fcntl (2V).
+.TP 20
+.B FIONCLEX
+.IX  "FIONCLEX remove close-on-exec flag"  ""  "\fLFIONCLEX\fP \(em remove close-on-exec flag"
+.IX  remove "close-on-exec flag \fLioctl\fP \(em \fLFIONCLEX\fP"
+.IX  "ioctls for files"  "FIONCLEX"  "\fLioctl\fP's for files"  "\fLFIONCLEX\fP \(em remove close-on-exec flag"
+The argument is ignored.
+Clear the  close-on-exec flag for the file descriptor passed to
+.BR ioctl .
+.SS IOCTLs for Files
+.TP 20
+.B FIONREAD
+.IX  "FIONREAD get # bytes to read"  ""  "\fLFIONREAD\fP \(em get # bytes to read"
+.IX  get "count of bytes to read \fLioctl\fP \(em \fLFIONREAD\fP"
+.IX  "ioctls for files"  "FIONREAD"  "\fLioctl\fP's for files"  "\fLFIONREAD\fP \(em get # bytes to read"
+The argument is a pointer to a
+.BR long .
+Set the value of that
+.B long
+to the number of immediately readable characters from whatever the descriptor
+passed to
+.B ioctl
+refers to.  This works for files, pipes, sockets, and terminals.
+.TP 20
+.B FIONBIO
+.IX  "FIONBIO set/clear non-blocking I/O"  ""  "\fLFIONBIO\fP \(em set/clear non-blocking I/O"
+.IX  set/clear "non-blocking I/O \fLioctl\fP \(em \fLFIONBIO\fP"
+.IX  "ioctls for files"  "FIONBIO"  "\fLioctl\fP's for files"  "\fLFIONBIO\fP \(em set/clear non-blocking I/O"
+The argument is a pointer to an
+.BR int .
+Set or clear non-blocking I/O.
+If the value of that
+.B int
+is a 1 (one) the descriptor is set for non-blocking I/O.
+If the value of that
+.B int
+is a 0 (zero) the descriptor is cleared for non-blocking I/O.
+.TP 20
+.B FIOASYNC
+.IX  "FIOASYNC set/clear async I/O"  ""  "\fLFIOASYNC\fP \(em set/clear async I/O"
+.IX  set/clear "async I/O \fLioctl\fP \(em \fLFIOASYNC\fP"
+.IX  "ioctls for files"  "FIOASYNC"  "\fLioctl\fP's for files"  "\fLFIOASYNC\fP \(em set/clear async I/O"
+The argument is a pointer to an
+.BR int .
+Set or clear asynchronous I/O.  If the value of that
+.B int
+is a 1 (one) the descriptor is set for asynchronous I/O.
+If the value of that
+.B int
+is a 0 (zero) the descriptor is cleared for asynchronous I/O.
+.TP 20
+.B FIOSETOWN
+.IX  "FIOSETOWN set file owner"  ""  "\fLFIOSETOWN\fP \(em set file owner"
+.IX  set "file owner \fLioctl\fP \(em \fLFIOSETOWN\fP"
+.IX  "ioctls for files"  "FIOSETOWN"  "\fLioctl\fP's for files"  "\fLFIOSETOWN\fP \(em set owner"
+The argument is a pointer to an
+.BR int .
+Set the process-group ID that will subsequently receive
+.SB SIGIO
+or
+.SB SIGURG
+signals for the object referred to by the descriptor passed to
+.B ioctl
+to the value of that
+.BR int .
+.TP 20
+.B FIOGETOWN
+.IX  "FIOGETOWN get file owner"  ""  "\fLFIOGETOWN\fP \(em get file owner"
+.IX  get "file owner \fLioctl\fP \(em \fLFIOGETOWN\fP"
+.IX  "ioctls for files"  "FIOGETOWN"  "\fLioctl\fP's for files"  "\fLFIOGETOWN\fP get owner"
+The argument is a pointer to an
+.BR int .
+Set the value of that
+.B int
+to the process-group
+.SM ID
+that is receiving
+.SB SIGIO
+or
+.SB SIGURG
+signals for the object referred to by the descriptor passed to
+.BR ioctl .
+.SH SEE ALSO
+.BR ioctl (2),
+.BR fcntl (2V),
+.BR getsockopt (2),
+.BR sockio (4)

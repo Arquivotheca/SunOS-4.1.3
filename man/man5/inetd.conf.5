@@ -1,0 +1,153 @@
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)inetd.conf.5 1.1 92/07/30 SMI; from UCB 4.3 BSD 6.4
+.\"
+.TH INETD.CONF 5 "22 August 1989"
+.SH NAME
+inetd.conf \- Internet servers database
+.SH DESCRIPTION
+.IX  "inetd.conf file"  ""  "\fLinetd.conf\fP \(em Internet server database"
+.IX  "internet servers"  ""  "Internet servers database \(em \fLservers\fP"
+.LP
+The
+.B inetd.conf
+file contains the list of servers that
+.BR inetd (8C)
+invokes when it receives an Internet
+request over a socket.  Each server entry is
+composed of a single line of the form:
+.IP
+.I
+service-name\ \ \ socket-type\ \ \ protocol\ \ \ wait-status\ \ \ uid\ \ \ server-program\ \ \ server-arguments
+.LP
+Fields can be separated by either spaces or
+.SM TAB
+characters. A
+.RB ` # '
+(pound-sign) indicates the beginning of a
+comment; characters up to the end of the
+line are not interpreted by routines that
+search this file.
+.TP 20
+.I service-name
+is the name of a valid service listed in the file
+.BR /etc/services .
+For
+.SM RPC
+services, the value of the
+.I service-name
+field consists of the
+.SM RPC
+service name, followed by a slash and either
+a version number or a range of version numbers
+(for example,
+.BR mountd/1 ).
+.TP
+.I socket-type
+can be one of:
+.RS
+.RS
+.PD 0
+.TP 10
+.B stream
+for a stream socket,
+.TP
+.B dgram
+for a datagram socket,
+.TP
+.B raw
+for a raw socket,
+.TP
+.B rdm
+for a \*(lqreliably delivered message\*(rq socket, or
+.TP
+.B seqpacket
+for a sequenced packet socket.
+.PD
+.RE
+.RE
+.TP
+.I protocol
+must be a recognized protocol listed in the file
+.BR /etc/protocols .
+For
+.SM RPC
+services, the field consists of the string \*(lqrpc\*(rq
+followed by a slash and the name of
+the protocol (for example,
+.B rpc/udp
+for an
+.SM RPC
+service using the
+.SM UDP
+protocol as a transport mechanism).
+.TP
+.I wait-status
+is
+.B nowait
+for all but \*(lqsingle-threaded\*(rq datagram servers \(em servers which
+do not release the socket until a timeout occurs (such as
+.BR comsat (8C)
+and
+.BR talkd (8C)).
+These must have the status
+.BR wait .
+Although
+.BR tftpd (8C)
+establishes separate \*(lqpseudo-connections\*(rq, its forking
+behavior can lead to a race condition unless
+it is also given the status
+.BR wait .
+.TP
+.I uid
+is the user
+.SM ID
+under which the server should run.  This allows
+servers to run with access privileges
+other than those for root.
+.TP
+.I server-program
+is either the pathname of a server program
+to be invoked by
+.B inetd
+to perform the requested service, or the value
+.B internal
+if
+.B inetd
+itself provides the service.
+.TP
+.I server-arguments
+If a server must be invoked with command-line
+arguments, the
+entire command line (including argument 0) must appear
+in this field (which consists of all remaining words in the entry).
+If the server expects
+.B inetd
+to pass it the address of its peer
+(for compatibility with 4.2\s-1BSD\s0
+executable daemons), then the first argument
+to the command should be specified as
+.RB ` %A '.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/inetd.conf
+.TP
+.B /etc/services
+.TP
+.B /etc/protocols
+.PD
+.SH "SEE ALSO"
+.BR services (5),
+.BR comsat (8C),
+.BR inetd (8C),
+.BR talkd (8C),
+.BR tftpd (8C)
+.SH BUGS
+.LP
+.B inetd
+dumps core when the
+.B inetd.conf
+file contains blank lines.

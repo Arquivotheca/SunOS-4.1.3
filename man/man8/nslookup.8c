@@ -1,0 +1,431 @@
+.\" @(#)nslookup.8c 1.1 92/07/30 SMI; from UCB
+.\" Copyright (c) 1985 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.TH NSLOOKUP 8C "30 June 1989"
+.SH NAME
+nslookup \- query domain name servers interactively
+.SH SYNOPSIS
+.B nslookup
+[
+.B \-l
+] [
+.I address
+]
+.SH DESCRIPTION
+.IX "nslookup command" "" "\fLnslookup\fP command"
+.B nslookup
+is an interactive program to query
+Internet domain name servers. The user can contact servers to
+request information about a specific host or print
+a list of hosts in the domain.
+.SH OPTIONS
+.TP 9
+.B \-l
+Use the local host's name server instead of the servers in
+.BR /etc/resolv.conf .
+(If
+.B /etc/resolv.conf
+does not exist or does not contain server information, the
+.B \-l
+option does not have any effect).
+.TP 9
+.I address
+Use the name server on the host machine
+with the given Internet address.
+.SH USAGE
+.SS Overview
+The Internet domain name-space is tree-structured, with 
+top-level domains such as:
+.RS
+.TP
+.SB COM
+commercial establishments
+.PD 0
+.TP
+.SB EDU
+educational institutions
+.TP
+.SB GOV
+government agencies
+.TP
+.SB MIL
+.SB MILNET
+hosts
+.PD
+.RE
+.LP
+If you are looking for a specific host,
+you need to know something about the host's organization
+in order to determine the top-level domain it belongs to.
+For instance, if you want to find the Internet address of a machine at
+.SM UCLA\s0,
+do the following:
+.TP
+\(bu
+Connect with the root server using the
+.B root
+command.
+The root server of the name space has knowledge of the top-level
+domains.
+.TP
+\(bu
+Since
+.SM UCLA
+is a university, its domain name is
+.BR ucla.edu .
+Connect with a server for the
+.B ucla.edu
+domain with the command
+.BR server ucla.edu .
+The response will print
+the names of hosts that act as servers for that domain.
+Note: the root server does not have information about
+.BR ucla.edu ,
+but knows the names and addresses of hosts that do.
+Once located by the root server,
+all future queries will be sent to the
+.SM UCLA
+name server.
+.TP
+\(bu
+To request information about a particular host in the domain
+(for instance,
+.BR locus ),
+just type the host name.
+To request a listing of hosts in the
+.SM UCLA
+domain, use the
+.B ls
+command.
+The
+.B ls
+command requires a domain name (in this case,
+.BR ucla.edu )
+as an argument.
+.LP
+Note: if you are connected with a name server that handles
+more than one domain, all lookups for
+host names must be fully specified with its domain.
+For instance, the domain
+.B harvard.edu
+is served by
+.BR seismo.css.gov ,
+which also services the
+.B css.gov
+and
+.B cornell.edu
+domains. A lookup request for the host
+.B aiken
+in the
+.B harvard.edu
+domain must be specified as
+.BR aiken.harvard.edu .
+However, the
+.IP
+.BI set " domain" =\|name
+.LP
+and
+.IP
+.B set defname
+.LP
+commands can be used to automatically
+append a domain name to each request.
+.LP
+After a successful lookup of a host, use the
+.B finger
+command to
+see who is on the system, or to finger a specific person.
+To get other information about the host, use the
+.IP
+.BI set " querytype" =\|value
+.LP
+command to change the type of information desired and request another
+lookup.
+.RB ( finger
+requires the type to be A.)
+.SS Commands
+Commands may be interrupted at any time by typing
+\s-1CTRL-C\s0.
+To exit, type
+.SM CTRL-D
+(EOF).
+The command line length must be less than 80 characters.
+Note: an unrecognized command will be interpreted as a host name.
+.TP
+\fIhost\fP [\fIserver\fP]
+Look up information for
+.I host
+using the current default server or using
+.I server
+if it is specified.
+.
+.ne 5
+.TP
+.BI server " domain"
+.ns
+.TP
+.BI lserver " domain"
+Change the default server to
+.IR domain .
+.B lserver
+uses the initial server to look up
+information about
+.I domain
+while
+.B server
+uses the current default server.
+If an authoritative answer can't be found, the names of servers
+that might have the answer are returned.
+.
+.TP
+.B root
+Changes the default server to the server
+for the root of the domain name space.
+Currently, the host
+.B sri-nic.arpa
+is used; this command is a synonym for
+.RB ` "lserver sri-nic.arpa" '.)
+The name of the root server can be changed with the
+.B set root
+command.
+.
+.TP
+.BI "finger [ " name ]
+Connect with the finger server on the current host, which
+is defined by a previous successful lookup for a host's
+address information (see the
+.BI set " querytype" =\|A
+command).
+As with the shell, output can be redirected to a named file
+using
+.B >
+and
+.BR >> .
+.
+.TP \fIdomain\fR
+"\fBls \fR[\fB\-ah\fR]
+List the information available for
+.IR domain .
+The default output contains host names
+and their Internet addresses.  The
+.B \-a
+option lists aliases of hosts in the domain.  The
+.B \-h
+option lists
+.SM CPU
+and operating system information for the domain.
+As with the shell, output can be redirected to a named file
+using
+.B >
+and
+.BR >> .
+When output is directed to a file, hash marks are printed for every
+50 records received from the server.
+.TP
+.BI view\fP  filename
+Sort and list the output of the
+.B ls
+command with
+.BR more (1).
+.TP
+.B help
+.ns
+.TP
+.B ?
+Print a brief summary of commands.
+.HP
+.BI set keyword
+[
+.BI = " value"
+]
+This command is used to change state
+information that affects the lookups.
+Valid keywords are:
+.RS
+.TP
+.B all
+Prints the current values of the various options to
+.BR set .
+Information about the  current default
+server and host is also printed.
+.HP
+.RB [ no ] deb\c
+.RB [ ug ]
+.br
+Turn debugging mode on. A lot more information is printed about the
+packet sent to the server and the resulting answer.
+The default is
+.BR nodebug .
+.HP
+.RB [ no ] def\c
+.RB [ name ]
+.br
+Append the default domain name to every lookup.
+The default is
+.BR nodefname.
+.HP
+.BR do [ main ] =\c
+.I filename
+.br
+Change the default domain name to
+.IR filename .
+The default domain name is appended to all lookup requests if
+.B defname
+option has been set.
+The default is the value in
+.BR /etc/resolv.conf .
+.HP
+.BR q [ querytype ] =\c
+.I value
+.br
+Change the type of information returned from a query to one of:
+.RS
+.TP 7
+A
+.PD 0
+The host's Internet address (the default).
+.TP
+.SM \fBCNAME\fR
+The canonical name for an alias.
+.TP
+.SM \fBHINFO\fR
+The host
+.SM CPU
+and operating system type.
+.TP
+.SM \fBMD\fR
+The mail destination.
+.TP
+.SM \fBMX\fR
+The mail exchanger.
+.TP
+.SM \fBMB\fR
+The mailbox domain name.
+.TP
+.SM \fBMG\fR
+The mail group member.
+.TP
+.SM \fBMINFO\fR
+The mailbox or mail list information.
+.PD
+.RE
+.IP
+(Other types specified in the
+.SM RFC\s0883
+document are valid, but are not
+very useful.)
+.HP
+.RB [ no ] rec\c
+.RB urse
+.br
+Tell the name server to query other servers if it does not have the
+information.
+The default is
+.BR recurse .
+.HP
+.BR ret [ ry ] =\c
+.I count
+.br
+Set the number of times to retry a request before giving up to
+.IR count .
+When a reply to a request is not received within a certain
+amount of time (changed with
+\fBset timeout\fP),
+the request is resent.  The default is
+.I count
+is
+.BR 2 .
+.HP
+.BR ro [ ot ] =\c
+.I host
+.br
+Change the name of the root server to
+.IR host .
+This
+affects the
+.B root
+command.  The default root server is
+.BR sri-nic.arpa .
+.HP
+.BR t [ timeout ] =\c
+.I interval
+.br
+Change the time-out for a reply to
+.I interval
+seconds.
+The default
+.I interval is
+.B 10
+seconds.
+.HP
+.RB [ no ] v\c
+.RB [ c ]
+.br
+Always use a virtual circuit when sending requests to the server.
+The default is
+.BR novc .
+.RE
+.SH DIAGNOSTICS
+If the lookup request was not successful, an error message is printed.
+Possible errors are:
+.TP
+.B Time-out
+The server did not respond to a request after a certain amount of
+time (changed with
+.BI set " timeout" =\|value\fR)
+and a certain number of retries (changed with
+.BI set " retry" =\|value\fR).
+.TP
+.B No information
+Depending on the query type set with the
+.B set querytype
+command,
+no information about the host was available, though the host name is
+valid.
+.TP
+.B Non-existent domain
+The host or domain name does not exist.
+.TP
+.B Connection refused
+.ns
+.TP
+.B Network is unreachable
+The connection to the name or finger server could not be made
+at the current time.
+This error commonly occurs with
+.B finger
+requests.
+.TP
+.B Server failure
+The name server found an internal inconsistency in its database
+and could not return a valid answer.
+.TP
+.B Refused
+The name server refused to service the request.
+.sp 1
+.LP
+The following error should not occur and
+it indicates a bug in the program.
+.TP
+.B Format error
+The name server found that the request
+packet was not in the proper format.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/resolv.conf
+initial domain name and name server addresses.
+.br
+.ne 7
+.PD
+.SH SEE ALSO
+.BR resolver (3),
+.BR resolv.conf (5),
+.BR named (8C),
+.LP
+.SM RFC\s0 1034,
+.SM RFC\s0 1035
+.LP
+.TX ADMIN

@@ -1,0 +1,154 @@
+.\" @(#)kvm_getu.3k 1.1 92/07/30 SMI;
+.TH KVM_GETU 3K "1 July 1990"
+.SH NAME
+kvm_getu, kvm_getcmd \- get the u-area or invocation arguments for a process
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <kvm.h>
+#include <sys/param.h>
+#include <sys/user.h>
+#include <sys/proc.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct user *kvm_getu(kd, proc)
+kvm_t *kd;
+struct proc *proc;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int kvm_getcmd(kd, proc, u, arg, env)
+kvm_t *kd;
+struct proc *proc;
+struct user *u;
+char ***arg;
+char ***env;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "kvm_getu()" "" "\fLkvm_getu()\fP function"
+.IX "kvm_getcmd()" "" "\fLkvm_getcmd()\fP function"
+.LP
+.B kvm_getu(\|)
+reads the u-area of the process specified by
+.I proc
+to an area of static storage associated with
+.I kd
+and returns a pointer to it.
+Subsequent calls to
+.B kvm_getu(\|)
+will overwrite this static area.
+.LP
+.I kd
+is a pointer to a kernel identifier returned by
+.BR kvm_open (3K).
+.I proc
+is a pointer to a copy (in the current process' address space) of a
+.I proc
+structure (obtained, for instance, by a prior
+.BR kvm_nextproc (3K)
+call).
+As a side effect,
+.B kvm_getu(\|)
+sets the address space used to resolve user addresses
+in subsequent
+.B kvm_read(\|)
+and
+.B kvm_write(\|)
+calls to be the space belonging to 
+.IR proc .
+.LP
+.B kvm_getcmd(\|)
+constructs a list of string pointers that represent the command
+arguments and environment that were used to initiate the process specified by
+.IR proc .
+.LP
+.I kd
+is a pointer to a kernel identifier returned by
+.BR kvm_open (3K).
+.I u
+is a pointer to a copy (in the current process' address space) of a
+.I user
+structure (obtained, for instance, by a prior
+.B kvm_getu(\|)
+call).
+If
+.I arg
+is not
+.SM NULL\s0,
+then the command line arguments are formed into a
+null-terminated
+array of string pointers.  The address of the first
+such pointer is returned in
+.IR arg .
+If
+.I env
+is not
+.SM NULL\s0,
+then the environment is formed into a
+null-terminated
+array of string pointers.  The address of the first
+of these is returned in
+.IR env .
+.LP
+The pointers returned in
+.I arg
+and
+.I env
+refer to data allocated by
+.BR malloc (3V)
+and should be freed (by a call to
+.B free
+(see
+.BR malloc (3V))
+when no longer needed.
+Both the string pointers and the strings themselves are deallocated
+when freed.
+.LP
+Since the environment and command line arguments may have been modified
+by the user process,
+there is no guarantee that it will be possible to reconstruct
+the original command at all.
+Thus,
+.B kvm_getcmd(\|)
+will make the best attempt possible, returning \-1
+if the user process data is unrecognizable.
+.SH RETURN VALUES
+.LP
+On success,
+.B kvm_getu(\|)
+returns a pointer to a copy of
+the u-area of the process specified by
+.IR proc .
+On failure,
+it returns
+.SM NULL\s0.
+.LP
+.B kvm_getcmd(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure.
+.SH SEE ALSO
+.BR execve (2V),
+.BR kvm_nextproc (3K),
+.BR kvm_open (3K),
+.BR kvm_read (3K),
+.BR malloc (3V)
+.br
+.ne 8
+.SH NOTES
+.LP
+If
+.B kvm_getcmd(\|)
+returns \-1, the caller still has the option of using the command line
+fragment that is stored in the u-area.

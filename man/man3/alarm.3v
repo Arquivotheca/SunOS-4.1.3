@@ -1,0 +1,66 @@
+.\" Copyright (c) 1980 Regents of the University of California.
+.\" All rights reserved.  The Berkeley software License Agreement
+.\" specifies the terms and conditions for redistribution.
+.\"
+.\" @(#)alarm.3v 1.1 92/07/30 SMI; from UCB 6.3 5/27/86
+.TH ALARM 3V  "6 October 1989"
+.SH NAME
+alarm \- schedule signal after specified time
+.SH SYNOPSIS
+.nf
+.B unsigned int alarm(seconds)
+.B unsigned int seconds;
+.fi
+.SH DESCRIPTION
+.IX  "alarm()"  ""  "\fLalarm()\fP \(em schedule signal"
+.IX  "schedule signal"  ""  "schedule signal \(em \fLalarm()\fP"
+.IX  signal  schedule  signal  "schedule \(em \fLalarm()\fP"
+.LP
+.B alarm(\|)
+sends the signal
+.B \s-1SIGALRM\s0
+(see
+.BR sigvec (2)),
+to the invoking process after
+.I seconds
+seconds.
+Unless caught or ignored, the signal terminates the process.
+.LP
+.B alarm(\|)
+requests are not stacked;
+successive calls reset the alarm clock.
+If the argument is 0, any
+.B alarm(\|)
+request is canceled.
+Because of scheduling delays,
+resumption of execution of when the signal is
+caught may be delayed an arbitrary amount.
+The longest specifiable delay time is 2147483647 seconds.
+.LP
+The return value is the amount of time previously remaining
+in the alarm clock.
+.SH "SEE ALSO"
+.BR sigpause (2V),
+.BR sigvec (2),
+.BR signal (3V),
+.BR sleep (3V),
+.BR ualarm (3),
+.BR usleep (3)
+.SH "WARNINGS"
+.LP
+.B alarm(\|)
+is slightly incompatible with the
+default version of
+.BR sleep(3V).
+The alarm signal is not sent when one would expect
+for programs that wait one second of clock time between
+successive calls to
+.BR sleep(\|) .
+Each 
+.B sleep(\|)
+call postpones the alarm signal
+that would have been sent during the requested sleep period
+for one second.
+Use System V
+.BR sleep (3V)
+to avoid this delay.

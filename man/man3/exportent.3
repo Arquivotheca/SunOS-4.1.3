@@ -1,0 +1,151 @@
+.\" @(#)exportent.3 1.1 92/07/30 SMI;
+.TH EXPORTENT 3 "4 January 1987"
+.SH NAME
+exportent, getexportent, setexportent, addexportent, remexportent, endexportent, getexportopt \- get exported file system information
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <stdio.h>
+#include <exportent.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+\s-1FILE\s0 *setexportent(\|)
+.ft
+.fi
+.LP
+.nf
+.ft B
+struct exportent *getexportent(filep)
+\s-1FILE\s0 *filep;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int addexportent(filep, dirname, options)
+\s-1FILE\s0 *filep;
+char *dirname;
+char *options;
+.ft
+.fi
+.LP
+.nf
+.ft B
+int remexportent(filep, dirname)
+\s-1FILE\s0 *filep;
+char *dirname;
+.ft
+.ft
+.LP
+.nf
+.ft B
+char *getexportopt(xent, opt)
+struct exportent *xent;
+char *opt;
+.ft
+.fi
+.LP
+.nf
+.ft B
+void endexportent(filep)
+\s-1FILE\s0 *filep;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "exportent()" "" "\fLexportent()\fP function"
+.IX "getexportent()" "" "\fLgetexportent()\fP function"
+.IX "setexportent()" "" "\fLsetexportent()\fP function"
+.IX "addexportent()" "" "\fLaddexportent()\fP function"
+.IX "remexportent()" "" "\fLremexportent()\fP function"
+.IX "endexportent()" "" "\fLendexportent()\fP function"
+.IX "getexportopt()" "" "\fLgetexportopt()\fP function"
+.LP
+These routines access the exported filesystem information in
+.BR /etc/xtab .
+.LP
+.B setexportent(\|)
+opens the export information file and returns
+a file pointer to use with
+.BR getexportent ,
+.BR addexportent ,
+.BR remexportent ,
+and
+.BR endexportent .
+.B getexportent(\|)
+reads the next line from
+.I filep
+and returns a pointer to an object with the following structure
+containing the broken-out fields of a line in the file,
+.B /etc/xtab
+The fields have meanings described in
+.BR exports (5).
+.LP
+.RS
+.ft B
+.nf
+#define \s-1ACCESS_OPT\s0  "access"  /* machines that can mount fs */
+#define \s-1ROOT_OPT\s0    "root"    /* machines with root access of fs */
+#define \s-1RO_OPT\s0      "ro"      /* export read-only */
+#define \s-1ANON_OPT\s0    "anon"    /* uid for anonymous requests */
+#define \s-1SECURE_OPT\s0  "secure"  /* require secure NFS for access */
+#define \s-1WINDOW_OPT\s0  "window"  /* expiration window for credential */
+.sp
+struct exportent {
+	char *xent_dirname;	/* directory (or file) to export */
+	char *xent_options;	/* options, as above */
+};
+.fi
+.ft R
+.RE
+.LP
+.B addexportent(\|)
+adds the
+.B exportent(\|)
+to the end of the open file
+.IR filep .
+It returns 0 if successful and  \-1 on failure.
+.B remexportent(\|)
+removes the indicated entry from the list.  It also returns 0 on
+success and \-1 on failure.
+.B getexportopt(\|)
+scans the
+.I xent_options
+field of the
+.B exportent(\|)
+structure for a substring that matches
+.IR opt .
+It returns the string value of
+.IR opt ,
+or
+.SM NULL
+if the option is not found.
+.LP
+.B endexportent(\|)
+closes the file.
+.SH FILES
+.PD 0
+.TP 20
+.B /etc/exports
+.TP
+.B /etc/xtab
+.PD
+.SH SEE ALSO
+.BR exports (5),
+.BR exportfs (8)
+.br
+.ne 5
+.SH DIAGNOSTICS
+.LP
+.SM NULL
+pointer (0) returned on
+.SM EOF
+or error.
+.SH BUGS
+.LP
+The returned
+.B exportent(\|)
+structure points to static information that is overwritten in each call.

@@ -1,0 +1,48 @@
+.\" @(#)fpr.1 1.1 92/07/30 SMI; from UCB 4.1
+.ds f. fpr.tbl
+.TH FPR 1 "24 October 1983"
+.SH NAME
+fpr \- print FORTRAN file
+.SH SYNOPSIS
+.B fpr
+.SH DESCRIPTION
+.IX "fpr command"  ""  "\fLfpr\fP \(em print FORTRAN file"
+.IX print  "FORTRAN file \(em \fLfpr\fR"
+.IX "programming languages"  "print FORTRAN file \(em \fLfpr\fR"
+.IX FORTRAN  "print file \(em \fLfpr\fR"
+.I fpr
+transforms files formatted according to
+FORTRAN's carriage control conventions into files formatted
+according to UNIX line printer conventions.
+.LP
+.I Fpr
+copies its input onto its output, replacing the carriage
+control characters with characters that will produce the intended
+effects when printed using
+.IR lpr (1).
+The first character of each line determines the vertical spacing as follows:
+.IP (blank)
+one line
+.IP \fB0\fP
+two lines
+.IP \fB1\fP
+to first line of next page
+.IP \fB+\fP
+no advance
+.LP
+A blank line (that is, an empty line) is treated as if its first
+character is a blank. A blank that appears as a carriage control
+character is deleted. A zero is changed to a newline.  A one is
+changed to a form feed. The effects of a "+" are simulated using backspaces.
+.LP
+Note that 
+.I fpr
+is known as 
+.I asa
+in UNIX System V.
+.SH EXAMPLES
+a.out | fpr | lpr
+.LP
+fpr < f77.output | lpr
+.SH BUGS
+Results are undefined for input lines longer than 170 characters.

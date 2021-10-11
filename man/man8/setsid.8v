@@ -1,0 +1,68 @@
+.\" @(#)setsid.8v 1.1 92/07/30 SMI; new for 4.1; POSIX
+.TH SETSID 8V "20 January 1990"
+.SH NAME
+setsid \- set process to session leader
+.SH SYNOPSIS
+.B setsid
+[
+.B \-b
+]
+.I command
+[
+.I arguments
+]
+.SH DESCRIPTION
+.IX "setsid" "" "\fLsetsid\fP\(em set process to session leader" ""
+.LP
+.B setsid
+executes
+.I command
+after altering the execution environment such that the next
+non-controlling terminal opened will be assigned as
+.IR command 's
+controlling terminal.
+.SH OPTIONS
+.TP
+.B \-b
+Alteration to the execution environment persists across
+calls to
+.BR fork (2V).
+.LP
+The
+.B \-b
+option puts the process into a state that is supported in
+SunOS Release 4.1 solely as a migration aid;
+this option will not be supported in future releases.
+.SH EXAMPLES
+.LP
+Components of two SunLink products,
+.B /usr/sunlink/dni/dnilogind
+(the
+.SM DECNET 
+analog of
+.BR rlogind (8C)
+and
+.B /usr/sunlink/x25/x29
+(the 
+.SM OSI 
+analog of
+.BR rlogind ),
+are known to need this wrapper.
+Typical usage is:
+.LP
+.RS
+.nf
+.ft B
+example%  cd /usr/sunlink/dni
+example%  mv dnilogind .dnilogind
+example%  cat > dnilogind
+#!/bin/sh
+/usr/etc/setsid \-b /usr/sunlink/dni/.dnilogind "$@"
+^D
+example%  chmod +x dnilogind
+.fi
+.SH SEE ALSO
+.BR setsid (2V)
+.LP
+.I "IEEE Std 1003.1-1988"
+.\".BR "SunOS 4.1 Release notes"

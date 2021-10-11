@@ -1,0 +1,123 @@
+.\" @(#)rexecd.8c 1.1 92/07/30 SMI; from UCB 4.2
+.TH REXECD 8C "17 December 1987"
+.SH NAME
+rexecd, in.rexecd \- remote execution server
+.SH SYNOPSIS
+.B /usr/etc/in.rexecd
+.IB host . port
+.SH AVAILABILITY
+This program is available with the
+.I Networking
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX  "rexecd command"  ""  "\fLrexecd\fP \(em remote execution server"
+.IX  "remote execution server"  ""  "remote execution server \(em \fLrexecd\fP"
+.IX  servers  rexecd  ""  "\fLrexecd\fP \(em remote execution server"
+.B rexecd
+is the server for the
+.BR rexec (3N)
+routine.  The server provides remote execution facilities
+with authentication based on user names and encrypted passwords.
+It is invoked automatically as needed by
+.BR inetd (8C),
+and then executes the following protocol:
+.TP
+\(bu
+The server reads characters from the socket up
+to a null
+.RB ( \e0 )
+byte.  The resultant string is interpreted as an
+.SM ASCII
+number, base 10.
+.TP
+\(bu
+If the number received in step 1 is non-zero,
+it is interpreted as the port number of a secondary
+stream to be used for the
+.BR stderr .
+A second connection is then created to the specified
+port on the client's machine.
+.TP
+\(bu
+A null terminated user name of at most 16 characters
+is retrieved on the initial socket.
+.TP
+\(bu
+A null terminated, encrypted, password of at most
+16 characters is retrieved on the initial socket.
+.TP
+\(bu
+A null terminated command to be passed to a
+shell is retrieved on the initial socket.  The length of
+the command is limited by the upper bound on the size of
+the system's argument list.
+.TP
+\(bu
+.B rexecd
+then validates the user as is done at login time
+and, if the authentication was successful, changes
+to the user's home directory, and establishes the user
+and group protections of the user.
+If any of these steps fail the connection is
+aborted with a diagnostic message returned.
+.TP
+\(bu
+A null byte is returned on the connection associated
+with the
+.B stderr
+and the command line is passed to the normal login
+shell of the user.  The
+shell inherits the network connections established by
+.BR rexecd .
+.SH "SEE ALSO"
+.BR rexec (3N)
+.BR inetd (8C),
+.SH DIAGNOSTICS
+All diagnostic messages are returned on the connection
+associated with the
+.BR stderr ,
+after which any network connections are closed.
+An error is indicated by a leading byte with a value of
+1 (0 is returned in step 7 above upon successful completion
+of all the steps prior to the command execution).
+.TP
+.B username too long
+The name is longer than 16 characters.
+.TP
+.B password too long
+The password is longer than 16 characters.
+.TP
+.B command too long
+The command line passed exceeds the size of the argument
+list (as configured into the system).
+.TP
+.B Login incorrect.
+No password file entry for the user name existed.
+.TP
+.B Password incorrect.
+The wrong password was supplied.
+.TP
+.B No remote directory.
+The
+.B chdir
+command to the home directory failed.
+.TP
+.B Try again.
+A
+.B fork
+by the server failed.
+.TP
+.BR /usr/bin/sh: " .\|.\|."
+The user's login shell could not be started.
+.SH BUGS
+Indicating
+.RB ` "Login incorrect" '
+as opposed to
+.RB ` "Password incorrect" '
+is a security breach which allows people to probe a system for users
+with null passwords.
+.LP
+A facility to allow all data exchanges
+to be encrypted should be present.

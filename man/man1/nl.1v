@@ -1,0 +1,193 @@
+.\" @(#)nl.1v 1.1 92/07/30 SMI; from S5R2 6.2
+.TH NL 1V "17 September 1989"
+.SH NAME
+nl \- line numbering filter
+.SH SYNOPSIS
+.B nl
+[
+.B \-p
+] [
+.BI\-h type
+] [
+.BI \-b type
+] [
+.BI \-f t\|ype
+] [
+.BI \-v start
+] [
+.BI \-i incr
+] [
+.BI \-l num
+] [
+.BI \-s sep
+] [
+.BI \-w width
+]
+.if t .ti +.5i
+[
+.BI \-n fmt
+] [
+.BI \-d delim
+]
+.I filename
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX nl "" "\fLnl\fR \(em number lines"
+.IX "line numbering \(em \fLnl\fR"
+.B nl
+reads lines from
+.I filename
+(or the standard input), numbers them according to the options in
+effect, and sends its output to the standard output.
+.LP
+.B nl
+views the text it reads in terms of logical pages.
+Line numbering is normally reset at the start of each page.
+A logical page is composed of header, body and footer sections.
+The start of each page section is signaled by input
+lines containing section delimiters only:
+.RS
+.IP
+.nf
+.I Start of file
+.sp
+.B \e:\e:\e:
+.I header
+.sp
+.B \e:\e:
+.I body
+.sp
+.B \e:
+.I footer
+.fi
+.RE
+.LP
+Empty sections are valid.
+Different line-numbering options are available within
+each section.  The default scheme is no numbering for headers and
+footers.
+.SH OPTIONS
+.TP .75i
+.B \-p
+Do not restart numbering at logical page delimiters.
+.TP
+.BI \-b type
+Specify which logical page body lines are to be numbered.
+.I type
+is one of:
+.RS
+.PD 0
+.TP
+.B a
+number all lines
+.TP
+.B t
+number lines with printable text only (the default)
+.TP
+.B n
+no line numbering
+.TP
+.BI p " rexp"
+number only lines that contain the regular expression
+.I rexp
+.PD
+.RE
+.TP
+.BI \-h type
+Same as
+.BI \-b type
+except for the header.
+The default
+.I type
+for the logical page header is
+.B n
+(no lines numbered).
+.TP
+.BI \-f t\|ype
+Same as
+.BI \-b type
+except for the footer.
+The default for logical page footer is
+.B n
+(no lines numbered).
+.TP
+.BI \-v start
+.I start
+is the initial value used to number logical page lines.
+The default is 1.
+.TP
+.BI \-i incr
+.I incr
+is the increment by which to number logical page lines.
+The default is 1.
+.TP
+.BI \-s sep
+.I sep
+is the character(s) used to separate the line number from the
+corresponding text line.  The default is a
+.SM TAB.
+.TP
+.BI \-w width
+.I width
+is the number of characters to be used for the line-number field.
+The default is 6.
+.TP
+.BI \-n fmt
+.B fmt
+is the line numbering format.
+Recognized values are:
+.RS
+.PD 0
+.TP
+.B rn
+right justified, leading zeroes suppressed (the default)
+.TP
+.B ln
+left justified, leading zeroes suppressed
+.TP
+.B rz
+right justified, leading zeroes kept
+.PD
+.RE
+.TP
+.BI \-l num
+.I num
+is the number of blank lines to be considered as one.
+For example,
+.B \-l2
+results in only the second adjacent blank
+being numbered (if the appropriate
+.BR \-ha ,
+.BR \-ba ,
+and/or
+.B \-fa
+option is set).
+The default is 1.
+.TP
+.BI \-d xx
+The delimiter characters specifying the start of a logical page
+section may be changed from the default characters (\e:) to
+two user-specified characters.
+If only one character is entered,
+the second character remains the default character (:).
+No space should appear between the
+.B \-d
+and the delimiter characters.
+To enter a backslash, use two backslashes.
+.SH EXAMPLE
+The command:
+.IP
+.BI "nl \-v10 \-i10 \-d!+ " filename1
+.LP
+will number
+.I filename1
+starting at line number 10 with an increment of ten.
+The logical page delimiters are
+.BR !+ .
+.SH SEE ALSO
+.BR pr (1V)

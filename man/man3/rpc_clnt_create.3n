@@ -1,0 +1,599 @@
+.\" @(#)rpc_clnt_create.3n 1.1 92/07/30 SMI;
+.TH RPC_CLNT_CREATE 3N "20 January 1990"
+.SH NAME
+clnt_control, clnt_create, clnt_create_vers, clnt_destroy, clnt_pcreateerror, clntraw_create, clnt_spcreateerror, clnttcp_create, clntudp_bufcreate, rpc_createrr \- library routines for dealing with creation and manipulation of CLIENT handles
+.SH DESCRIPTION
+.IX "rpc routines" "clnt_control()" "" "\fLclnt_control()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clnt_create()" "" "\fLclnt_create()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clnt_create_vers()" "" "\fLclnt_create_vers()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clnt_destroy()" "" "\fLclnt_destroy()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clnt_pcreateerror()" "" "\fLclnt_pcreateerror()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clntraw_create()" "" "\fLclntraw_create()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clnt_spcreateerror()" "" "\fLclnt_spcreateerror()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clnttcp_create()" "" "\fLclnttcp_create()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clntudp_bufcreate()" "" "\fLclntudp_bufcreate()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "clntudp_create()" "" "\fLclntudp_create()\fP \(em creation of CLIENT handles"
+.IX "rpc routines" "rpc_createrr()" "" "\fLrpc_createrr()\fP \(em creation of CLIENT handles"
+.IX "clnt_control()" "" "\fLclnt_control()\fP \(em creation of CLIENT handles"
+.IX "clnt_create()" "" "\fLclnt_create()\fP \(em creation of CLIENT handles"
+.IX "clnt_create_vers()" "" "\fLclnt_create_vers()\fP \(em creation of CLIENT handles"
+.IX "clnt_destroy()" "" "\fLclnt_destroy()\fP \(em creation of CLIENT handles"
+.IX "clnt_pcreateerror()" "" "\fLclnt_pcreateerror()\fP \(em creation of CLIENT handles"
+.IX "clntraw_create()" "" "\fLclntraw_create()\fP \(em creation of CLIENT handles"
+.IX "clnt_spcreateerror()" "" "\fLclnt_spcreateerror()\fP \(em creation of CLIENT handles"
+.IX "clnttcp_create()" "" "\fLclnttcp_create()\fP \(em creation of CLIENT handles"
+.IX "clntudp_bufcreate()" "" "\fLclntudp_bufcreate()\fP \(em creation of CLIENT handles"
+.IX "clntudp_create()" "" "\fLclntudp_create()\fP \(em creation of CLIENT handles"
+.IX "rpc_createrr()" "" "\fLrpc_createrr()\fP \(em creation of CLIENT handles"
+.LP
+.SM RPC
+routines allow C programs to make procedure
+calls on other machines across the network.
+First, the client calls a procedure to send a
+request to the server.
+Upon receipt of the request, the server calls a dispatch routine
+to perform the requested service, and then sends back a
+reply.
+Finally, the procedure call returns to the client.
+.LP
+The
+.SB CLIENT
+data structure is defined in the
+.SM RPC/XDR
+Library Definition of the 
+.TX NETP .
+.LP
+.ft B
+.nf
+.sp .5
+#include <rpc/rpc.h>
+.fi
+.ft R
+.br
+.if t .ne 7
+.LP
+.ft B
+.nf
+.sp .5
+bool_t clnt_control(clnt, request, info)
+\s-1CLIENT\s0 *clnt;
+int request;
+char *info;
+.fi
+.ft R
+.IP
+Change or retrieve various information
+about a client object.
+.I request
+indicates the type of operation, and
+.I info
+is a pointer to the information. For both
+.SM UDP
+and
+.SM TCP\s0,
+the supported values of
+.I request
+and their argument types and what they do are:
+.RS
+.nf
+.ta +2.0i +1.5i +2.0i
+.SM CLSET_TIMEOUT\s0	struct timeval	set total timeout
+.SM CLGET_TIMEOUT\s0	struct timeval	get total timeout
+.SM CLGET_FD\s0	int	get associated socket
+.SM CLSET_FD_CLOSE\s0	void	close socket on \fBclnt_destroy(\|)\fR
+.SM CLSET_FD_NCLOSE\s0	void 	leave socket open on \fBclnt_destroy(\|)\fR
+.fi
+.RE
+.IP
+Note: 
+If you set the timeout using
+.BR clnt_control(\|) ,
+the timeout parameter passed to
+.B clnt_call(\|)
+(see
+.BR rpc_clnt_calls (3N))
+will be ignored in all future calls.
+.RS
+.nf
+.SM CLGET_SERVER_ADDR\s0	struct sockaddr_in 	get server's address
+.fi
+.RE
+.IP
+The following operations are valid for
+.SM UDP
+only:
+.RS
+.nf
+.ta +2.0i +1.5i +2.0i
+.SM CLSET_RETRY_TIMEOUT\s0	struct timeval	 set the retry timeout
+.SM CLGET_RETRY_TIMEOUT\s0	struct timeval	 get the retry timeout
+.fi
+.RE
+.IP
+The retry timeout is the time that
+.SM "UDP RPC"
+waits for the server to reply before
+retransmitting the request.
+.IP
+This routine returns
+.SM TRUE 
+on success, and
+.SM FALSE 
+on failure.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+\s-1CLIENT\s0 * clnt_create(host, prognum, versnum, protocol)
+char *host;
+u_long prognum, versnum;
+char *protocol;
+.fi
+.ft R
+.IP
+Generic client creation routine for program
+.I prognum
+and version
+.IR versnum .
+.I host
+identifies the name of the remote host where the server
+is located.
+.I protocol
+indicates which kind of transport protocol to use. The
+currently supported values for this field are \*(lqudp\*(rq
+and \*(lqtcp\*(rq.
+Default timeouts are set, but they can be modified using
+.BR clnt_control(\|) .
+If successful it returns a client handle, otherwise it 
+returns
+.SM NULL\s0.
+.br
+.ne 9
+.IP
+Warning:
+Using
+.SM UDP
+has its shortcomings.  Since
+.SM UDP\s0-based
+.SM RPC
+messages can only hold up to 8 Kbytes of encoded data,
+this transport cannot be used for procedures that take
+arguments or return results larger than 8 Kbytes.
+Use
+.SM TCP
+instead.
+.IP
+Note:
+If the requested version number
+.I versnum
+is not registered with the
+.BR portmap (8C)
+service on
+.IR host ,
+but at least a version number for the
+given program number is registered,
+.B clnt_create(\|)
+returns a handle.
+The version mismatch will be discovered by a
+.B clnt_call(\|)
+later
+(see
+.BR rpc_clnt_calls (3N)).
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+\s-1CLIENT\s0 * clnt_create_vers(host, prognum, vers_outp, vers_low, vers_high, protocol)
+char *host;
+u_long prognum;
+u_long *vers_outp;
+u_long vers_low, vers_high;
+char *protocol;
+.fi
+.ft R
+.IP
+This is a generic client creation routine which also checks for the version
+available. 
+.I  host
+identifies the name of the remote host where the server
+is located.
+.I protocol
+indicates which kind of transport protocol to use. The
+currently supported values for this field are \*(lqudp\*(rq
+and \*(lqtcp\*(rq.
+If the routine is successful it returns a client handle created for 
+the highest version between 
+.I vers_low
+and 
+.I vers_high
+that is supported by the server. 
+.I vers_outp 
+is set to this value.
+That is, after a successful return
+.I vers_low 
+<= 
+.I *vers_outp
+<= 
+.I
+vers_high.
+If no version between 
+.I vers_low 
+and  
+.I vers_high 
+is supported by the server then the routine fails and returns
+.SM NULL\s0.
+Default timeouts are set, but can be modified using
+.BR clnt_control(\|) .
+.br
+.ne 5
+.IP
+Note: 
+.BR clnt_create(\|)
+returns a valid client handle even
+if the particular version number supplied to 
+.BR clnt_create(\|) 
+is not 
+registered with the portmap service.
+This mismatch will be discovered by a 
+.BR clnt_call(\|) 
+later
+(see
+.BR rpc_clnt_calls (3N)).
+However, 
+.BR clnt_create_vers(\|) 
+does this for you and returns a valid handle
+only if a version within
+the range supplied is supported by the server.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+void clnt_destroy(clnt)
+\s-1CLIENT\s0 *clnt;
+.fi
+.ft R
+.IP
+Destroy the client's
+.SM RPC
+handle. Destruction usually involves deallocation
+of private data structures, including
+.I clnt
+itself.  Use of
+.I clnt
+is undefined after calling
+.BR clnt_destroy(\|) .
+If the
+.SM RPC
+library opened the associated socket, or
+.SB CLSET_FD_CLOSE
+was set using
+.BR clnt_control(\|) .
+.B clnt_destroy(\|)
+closes the socket.
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+void clnt_pcreateerror(str)
+char *str;
+.fi
+.ft R
+.IP
+Print a message to the standard error indicating
+why a client
+handle could not be created.
+The message is prepended with string
+.I s
+and a colon.
+Used when routines such as
+.BR clnt_create(\|) ,
+.BR clntraw_create(\|) ,
+.BR clnttcp_create(\|) ,
+or
+.B clntudp_create(\|)
+fails.
+.br
+.if t .ne 10
+.LP
+.ft B
+.nf
+.sp .5
+\s-1CLIENT\s0 * clntraw_create(prognum, versnum)
+u_long prognum, versnum;
+.fi
+.ft R
+.IP
+Create an 
+.SM RPC
+client for the remote program
+.IR prognum ,
+version
+.IR versnum .
+The transport used to pass messages to the service is
+actually a buffer within the process's address space, so the
+corresponding
+.SM RPC
+server should live in the same address space; also see
+.B svcraw_create(\|)
+(see
+.BR rpc_svc_create (3N)).
+This allows simulation of
+.SM RPC
+and getting
+.SM RPC
+overheads, such as round trip times, without any
+kernel interference. 
+If successful it returns a client handle, otherwise it 
+returns
+.SM NULL\s0.
+.br
+.if t .ne 9
+.LP
+.ft B
+.nf
+.sp .5
+char * clnt_spcreateerror(str)
+char *str;
+.fi
+.ft R
+.IP
+Like
+.BR clnt_pcreateerror(\|) ,
+except that it returns a string
+instead of printing to the standard error.
+It, however, does not append the message with a
+.SM NEWLINE\s0.
+.IP
+Note: 
+.B clnt_spcreateerror(\|)
+returns a pointer to a static buffer that is overwritten
+on each call.
+.br
+.if t .ne 15
+.LP
+.ft B
+.nf
+.sp .5
+\s-1CLIENT\s0 * clnttcp_create(addr, prognum, versnum, sockp, sendsz, recvsz)
+struct sockaddr_in *addr;
+u_long prognum, versnum;
+int *sockp;
+u_int sendsz, recvsz;
+.fi
+.ft R
+.IP
+Create a client handle for the remote program
+.IR prognum ,
+version
+.IR versnum ;
+the client uses
+.SM TCP/IP
+as a transport. The remote program is located at Internet
+address
+.IR addr .
+If
+.\"The following in-line font conversion is necessary for the hyphen indicator
+\fB\%addr\->sin_port\fR
+is zero, it is set to the  port on which the remote
+program is listening (the remote
+.B portmap
+service is consulted for this information).
+The parameter
+.I sockp
+is a pointer to a socket; if it is
+.BR \s-1RPC_ANYSOCK\s0 ,
+then a new socket is opened and 
+.IR sockp 
+is updated.
+Since
+.SM TCP\s0-based
+.SM RPC
+uses buffered
+.SM I/O\s0,
+the user may specify the size of the send and receive buffers
+with the parameters
+.I sendsz
+and
+.IR recvsz ;
+values of zero choose defaults.
+If successful it returns a client handle, otherwise it 
+returns
+.SM NULL\s0.
+.br
+.ne 5
+.IP
+Warning: 
+If
+\fB\%addr\->sin_port\fR
+is zero and the requested version number
+.I versnum
+is not registered with the remote portmap service,
+it returns a handle if at least a version number for the
+given program number is registered.  The version mismatch
+will be discovered by a
+.B clnt_call(\)
+later
+(see
+.BR rpc_clnt_calls (3N)).
+.br
+.if t .ne 15
+.LP
+.ft B
+.nf
+.sp .5
+\s-1CLIENT\s0 * clntudp_bufcreate(addr, prognum, versnum, wait, sockp, sendsz, recvsz)
+struct sockaddr_in *addr;
+u_long prognum, versnum;
+struct timeval wait;
+int *sockp;
+u_int sendsz;
+u_int recvsz;
+.fi
+.ft R
+.IP
+Create a
+client handle for the remote program
+.IR prognum ,
+on
+.IR versnum ;
+the client uses 
+.SM UDP/IP
+as the transport. The remote program is located at the Internet
+address
+.IR addr .
+If
+\fB\%addr\->sin_port\fR
+is zero, it is set to  port on which the remote
+program is listening on (the remote
+.B portmap
+service is consulted for this information). The parameter
+.I sockp
+is a pointer to a socket; if it is
+.BR \s-1RPC_ANYSOCK\s0 ,
+then a new socket is opened and
+.BR sockp 
+is updated.
+The
+.SM UDP
+transport resends the call message in intervals of
+.I wait
+time until a response is received or until the call times
+out.
+The total time for the call to time out is specified by
+.B clnt_call(\|)
+(see
+.BR rpc_clnt_calls (3N)).
+If successful it returns a client handle, otherwise it 
+returns
+.SM NULL\s0.
+.IP
+The user can specify the maximum packet size for sending and receiving 
+by using 
+.I sendsz
+and 
+.I recvsz
+arguments for
+.SM UDP\s0-based
+.SM RPC
+messages.
+.br
+.ne 5
+.IP
+Warning: 
+If
+\fB\%addr\->sin_port\fR
+is zero and the requested version number
+.I versnum
+is not registered with the remote portmap service,
+it returns a handle if at least a version number for the
+given program number is registered.  The version mismatch
+is discovered by a
+.B clnt_call(\|)
+later
+(see
+.BR rpc_clnt_calls (3N)).
+.br
+.if t .ne 8
+.LP
+.ft B
+.nf
+.sp .5
+\s-1CLIENT\s0 * clntudp_create(addr, prognum, versnum, wait, sockp)
+struct sockaddr_in *addr;
+u_long prognum, versnum;
+struct timeval wait;
+int *sockp;
+.fi
+.ft R
+.IP
+Create a
+client handle for the remote program
+.IR prognum ,
+version
+.IR versnum ;
+the client uses
+.SM UDP/IP
+as the transport. The remote program is located at the Internet
+address
+.IR addr .
+If
+.B \%addr\->sin_port
+is zero, then it is set to actual port that the remote
+program is listening on (the remote
+.B portmap
+service is consulted for this information). The parameter
+.I sockp
+is a pointer to a  socket; if it is
+.BR \s-1RPC_ANYSOCK\s0 ,
+a new socket is opened and
+.IR sockp 
+is updated.
+The
+.SM UDP
+transport resends the call message in intervals of
+.I wait
+time until a response is received or until the call times
+out.
+The total time for the call to time out is specified by
+.B clnt_call(\|)
+(see
+.BR rpc_clnt_calls (3N)).
+If successful it returns a client handle, otherwise it 
+returns
+.SM NULL\s0.
+.IP
+Warning: 
+Since
+.SM UDP\s0-based
+.SM RPC
+messages can only hold up to 8 Kbytes
+of encoded data, this transport cannot be used for procedures
+that take arguments or results larger than 8 Kbytes.
+.SM TCP
+should be used instead.
+.br
+.ne 5
+.IP
+Warning: 
+If
+\fB\%addr\->sin_port\fR
+is zero and the requested version number
+.I versnum
+is not registered with the remote portmap service,
+it returns a handle if any version number for the
+given program number is registered.
+The version mismatch is be discovered by a
+.B clnt_call(\|)
+later
+(see
+.BR rpc_clnt_calls (3N)).
+.br
+.if t .ne 5
+.LP
+.ft B
+.nf
+.sp .5
+struct rpc_createerr rpc_createerr;
+.fi
+.ft R
+.IP
+A global variable whose value is set by any
+.SM RPC
+client handle creation routine
+that fails.  It is used by the routine
+.B clnt_pcreateerror(\|)
+to print the reason for the failure.
+.SH SEE ALSO
+.BR portmap (3N),
+.BR rpc (3N),
+.BR rpc_clnt_auth (3N),
+.BR rpc_clnt_calls (3N),
+.BR rpc_svc_create (3N)

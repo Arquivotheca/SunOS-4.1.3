@@ -1,0 +1,209 @@
+.\" @(#)ttytab.5 1.1 92/07/30 SMI; from UCB 4.3
+.TH TTYTAB 5 "19 October 1988"
+.SH NAME
+ttytab, ttys \- terminal initialization data
+.SH DESCRIPTION
+.IX "ttytab file" "" "\fLttytab\fP file"
+.LP
+The
+.B /etc/ttytab
+file contains information that is used by various routines to initialize
+and control the use of terminal special files. This information is read
+with the
+.BR getttyent (3)
+library routines.
+There is one line in
+.B /etc/ttytab
+file per special file.
+.LP
+The
+.B /etc/ttys
+file should not be edited; it is derived from
+.B /etc/ttytab
+by
+.BR init(8)
+at boot time, and is only included for backward compatibility with
+programs that may still require it.
+.LP
+Fields are separated by
+.SM TAB
+and/or
+.SM SPACE
+characters.  Some fields may contain more than
+one word and should be enclosed in double quotes.
+Blank lines and comments can appear anywhere in
+the file; comments
+are delimited by
+.RB ` # '
+and
+.SM NEWLINE\s0.
+Unspecified fields default to
+.SM NULL\s0.
+The first field is the terminal's entry in the device directory,
+.BR /dev .
+The second field of the file is the command
+to execute for the line, typically
+.BR getty (8),
+which performs such tasks as baud-rate recognition, reading the login name,
+and calling
+.BR login (1).
+It can be, however, any desired command, for example
+the start up for a window system terminal emulator or some other
+daemon process, and can contain multiple words if quoted.
+The third field is the type of terminal normally connected to that
+tty line, as found in the
+.BR termcap (5)
+data base file.
+The remaining fields set flags in the
+.B ty_status
+entry (see
+.BR getttyent (3))
+or specify a window system process that
+.BR init (8)
+will maintain for the terminal line.
+.LP
+As flag values,
+the strings
+.B on
+and
+.B off
+specify whether
+.B init
+should execute the command
+given in the second field,
+while
+.B secure
+in addition to
+.B on
+allows \*(lqroot\*(rq to login on this line.
+If the console is not marked \*(lqsecure,\*(rq
+the system prompts for
+the root password before coming up in single-user mode.
+.B local
+in addition to
+.B on
+indicates that the line is a \*(lqlocal\*(rq line; the modem control signals for this
+line, such as Carrier Detect, will be ignored.
+These flag fields should not be quoted.
+The string
+.B window=
+is followed by a quoted command
+string which
+.B init
+will execute before starting
+.BR getty .
+.LP
+The flag
+.B local
+applies to terminals, and enables the software carrier mode in the kernel; the
+kernel ignores the state of carrier detect when opening the serial port.
+Alternately, if this field is set to any value other than
+.BR local ,
+this flag disables the software carrier mode in the
+kernel, 
+so the state of the carrier detect is not ignored.
+This usually applies to modems.
+See
+.BR termio (4).
+.LP
+If the line ends in a comment, the comment is included in the
+.B ty_comment
+field of the
+.B ttyent
+structure.
+.LP
+After changing the
+.B /etc/ttytab
+file,
+you must notify
+.BR init (8)
+before those changes will take effect.
+To do this, use:
+.RS
+.B kill  \-1  1
+.RE
+.SH EXAMPLES
+.LP
+Below is a sample
+.B /etc/ttytab
+file:
+.LP
+.nf
+.ft B
+.ta \w'console\ 'u +\w'"/usr/etc/getty std.9600"\ \ \ 'u +\w'hp2621-nl\ \ \ \ 'u +.7i
+console	"/usr/etc/getty std.1200"	vt100	on secure
+ttyd0	"/usr/etc/getty d1200"	dialup	on	# 555-1234
+ttyh0	"/usr/etc/getty std.9600"	hp2621-nl	on	# 254\s-1MC\s0
+ttyh1	"/usr/etc/getty std.9600"	plugboard	on	# John's office
+ttyp0	none	network
+ttyp1	none	network	off
+ttyv0	"/usr/new/xterm \-L :0"	vs100	on window="/usr/new/Xvs100 0"
+console "/usr/etc/getty \-n \-s    std.9600" sun          on      secure
+console "/usr/etc/getty \-n \-s \-l std.9600" sun          on      secure
+.ft R
+.fi
+.br
+.ne 11
+.LP
+The first line permits \*(lqroot\*(rq login on the console
+at 1200 baud, and indicates that the console is physically
+secure for single-user operation.
+The second line allows dialup at 1200 baud without \*(lqroot\*(rq login,
+and the third and fourth lines allow login
+at 9600 baud with terminal types of
+.B hp2621-nl
+and
+.BR plugboard ,
+respectively.
+The fifth and sixth lines are
+examples of network pseudo-ttys,
+.B ttyp0
+and 
+.B ttyp1 
+for which
+.B getty
+should  not be enabled.
+The seventh line shows a terminal emulator and
+window-system startup entry. 
+The last two lines instruct
+.BR getty,
+using the
+.B \-n
+argument, to run the
+.BR logintool (8)
+graphic login interface, and the 
+.B \-s
+argument instructing  
+.B logintool
+to start
+.BR screenblank (1)
+with a plain black screen.
+The
+.B \-l
+(lower case L) argument instructs
+.B logintool
+to start
+.BR lockscreen (1).
+.B lockscreen
+starts after 30 minutes;
+there is no way to change this interval.
+.SH FILES
+.PD 0
+.TP 20
+.B /dev
+.TP
+.B /etc/ttys
+.TP
+.B /etc/ttytab
+.PD
+.SH SEE ALSO
+.BR login (1),
+.BR ioctl (2),
+.BR getttyent (3),
+.BR termio (4),
+.BR gettytab (5),
+.BR termcap (5),
+.BR getty (8),
+.BR init (8),
+.BR logintool (8),
+.BR ttysoftcar (8)

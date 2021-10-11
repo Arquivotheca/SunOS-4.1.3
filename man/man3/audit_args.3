@@ -1,0 +1,56 @@
+.\" @(#)audit_args.3 1.1 92/07/30 SMI;
+.TH AUDIT_ARGS 3 "6 October 1987"
+.SH NAME
+audit_args, audit_text \- produce text audit message
+.SH SYNOPSIS
+.nf
+.ft B
+#include <sys/label.h>
+#include <sys/audit.h>
+.LP
+.ft B
+audit_args(event, argc, argv)
+int event;
+int argc;
+char **argv;
+.LP
+.ft B
+audit_text(event, error, retval, argc, argv)
+int event;
+int error;
+int retval;
+int argc;
+char **argv;
+.fi
+.SH DESCRIPTION
+.IX "audit_args()" "" "\fLaudit_args()\fP \(em produce text audit message"
+.IX "audit_text()" "" "\fLaudit_text()\fP \(em produce text audit message"
+.LP
+These functions provide text interfaces to the
+.BR audit (2)
+system call.  In both calls, the
+.I event
+parameter identifies the event class of the action, and
+.I argc
+is the number of strings found in the vector
+.I argv.
+The
+.B error
+parameter is used to determine the failure or success of the audited
+operation.  A negative value is always audited.
+A zero value is audited as a successful event.
+A positive value is audited as an event failure.  The
+.I retval
+parameter is the return value or exit code
+that the invoking program will have.
+.LP
+.B audit_args(\|)
+is equivalent to
+.B audit_text(\|)
+with
+.B error
+and
+.I retval
+parameters of \-1.
+.SH "SEE ALSO"
+.BR audit (2)

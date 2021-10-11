@@ -1,0 +1,83 @@
+.\"  @(#)setsid.2v 1.1 92/07/30 SMI; new for 4.1, POSIX
+.TH SETSID 2V "21 January 1990"
+.SH NAME
+setsid \- create session and set process group ID
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+.ft R
+.fi
+.LP
+.nf
+.ft B
+pid_t setsid(\|)
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "setsid()" "" "\fLsetsid()\fP \(em create session and set process group ID"
+.IX "create" "session and set process group ID"
+.IX session "create"
+.IX process "set process group ID"
+.IX group ID "create session and set process group ID"
+.LP
+If the calling process is not a process group
+leader, the
+.B setsid(\|)
+function creates a new session.
+The calling process is the session leader of this new session,
+the process group leader of a new process group,
+and has no controlling terminal.
+If the process had a controlling terminal,
+.B setsid(\|)
+breaks the association between the process and that
+controlling terminal.
+The process group
+.SM ID
+of the calling process is set equal to the process
+.SM ID
+of the calling process.
+The calling process
+is the only process in the new process group and the only process
+in the new session.
+.SH RETURN VALUES
+.LP
+.B setsid(\|)
+returns
+the process group
+.SM ID
+of the calling process
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.LP
+If any of the following conditions occur, 
+.B setsid(\|)
+returns \-1 and sets
+.B errno
+to the corresponding value:
+.TP 15
+.SM EPERM
+The calling process is already a process group leader.
+.IP
+The process
+.SM ID
+of the calling process equals
+the process group
+.SM ID
+of a different process.
+.SH SEE ALSO
+.BR execve (2V),
+.BR exit (2V),
+.BR fork (2V),
+.BR getpid (2V),
+.BR getpgrp (2V),
+.BR kill (2V),
+.BR setpgid (2V),
+.BR sigaction (3V)

@@ -1,0 +1,135 @@
+#!/bin/sh
+#
+# %Z%%M% %I% %E% SMI
+#
+# add user script for use with sys-config
+# arguments: uname uid gid fullname homedir shell
+#
+
+# dirname is in SystemV catagory - so put it herein
+shdirname()
+{
+expr \
+  ${1-.}'/' : '\(/\)[^/]*//*$' \
+  \| ${1-.}'/' : '\(.*[^/]\)//*[^/][^/]*//*$' \
+  \| .
+}
+
+myname=`basename $0`
+Passwd=/etc/passwd
+PATH=$PATH:/usr/ucb
+export PATH
+# check for root
+if [ "`whoami`x" != "root"x ]; then
+   echo "You must be root to do $myname!"
+   exit 1
+fi
+
+# check for number of args
+if [ $# -ne 6 ]; then
+	echo "${myname}: invalid number of arguments"
+	echo "   usage: ${myname} uname uid gid \"fullname\" homedir shell"
+	exit 1
+fi
+
+# put args into named variables
+uname=$1
+uid=$2
+gid=$3
+fullname=$4
+homedir=$5
+shell=$6
+
+# checks for validity of arguments
+# check uid
+if test $uid -lt 10 ; then
+	echo  "uid: uid must be greater than 10 and less than 60000"
+	exit 1
+elif test $uid -gt 60000 ; then 
+	echo  "uid: uid must be greater than 10 and less than 60000"
+	exit 1
+fi
+
+# check gid
+if test $gid -lt 10 ; then
+	echo  "gid: gid must be greater than 10 and less than 60000"
+	exit 1
+elif test $gid -gt 60000 ; then 
+	echo  "gid: gid must be greater than 10 and less than 60000"
+	exit 1
+fi
+
+
+# check shell
+if test ! -x $shell ; then
+	echo "$shell: the program does not exist or is not executable"
+	exit 1
+fi
+
+# check homedir
+# check if homedir already exists
+if [ -f ${homedir} ]; then
+	echo "${myname}: WARNING: a file named \"${homedir}\" already exists"
+	echo "and is NOT a directory, NOT setting up user account"
+	exit 1
+fi
+if [ -d ${homedir} ]; then
+	echo "${myname}: WARNING: home directory \"${homedir}\" already exists"
+	echo "    no files copied, NOT setting up user account"
+	exit 1
+fi
+# check if all but last path of homedir exits
+dir=`shdirname $homedir`
+if test ! -d $dir ; then
+	echo "$dir: does not exist or is not a directory"
+	exit 1
+fi
+# check if $homedir is local
+dfout=`df $dir | ( read aline; read aline; echo $aline )`
+case $dfout in
+  /dev*) ;; # $dir is on local machine
+      *) echo "$dir: is not on local machine"
+         exit 1;;
+esac
+
+# create a null /etc/passwd entry
+# first check if one already exists
+if grep -s "^${uname}:" ${Passwd} ; then
+	echo "${myname}: ERROR: ${uname} aleady in ${Passwd}";
+	exit 1;
+fi
+# check if uid already exists
+if grep -s ".*:.*:${uid}:" ${Passwd} ; then
+	echo "uid: ERROR: ${uid} already in ${Passwd}";
+	exit 1;
+fi
+pwent="${uname}::${uid}:${gid}:${fullname}:${homedir}:${shell}"
+# XXX sould we use tmp file and rename it?
+( echo '$' ;
+  echo 'i' ;
+  echo "${pwent}" ;
+  echo '.' ;
+  echo 'w' ;
+  echo 'q' ) | ed -s ${Passwd} > /dev/null
+if grep -s "^${uname}:" ${Passwd} ; then
+	:
+else
+	echo "${myname}: ERROR: password entry didn't go to ${Passwd}";
+	exit 1;
+fi
+
+# make the home directory
+/bin/mkdir ${homedir}
+/usr/etc/chown ${uname} ${homedir}
+/bin/chgrp ${gid} ${homedir}
+
+# add default user startup files
+cp /usr/lib/Cshrc ${homedir}/.cshrc
+cp /usr/lib/Login ${homedir}/.login
+cp /usr/lib/.sunview ${homedir}/.sunview
+cp /usr/lib/.rootmenu ${homedir}/.rootmenu
+/usr/etc/chown -R ${uname} ${homedir}
+/bin/chgrp -R ${gid} ${homedir}
+
+# is ok, exit 0
+exit 0

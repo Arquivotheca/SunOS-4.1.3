@@ -1,0 +1,248 @@
+|*	@(#)slnx.u 1.1 92/07/30 Copyright Sun Microsystems, Inc.  1988
+|*
+|*		Single Precision ln (x)
+|*
+routine xs.ln 001000001110	;				regtotmp;	rcssp imm2;
+	call ckmode;		;				;		;
+|* get: i = ( (j+0x004afb0c)&0xff800000 ) - 0x3f800000
+|* where j = an integer corresponding to the 32 bits of x
+	;			i2cmp enra halt;		regtoti;	rcssp ptr2;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst0
+	;			i2add enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst1
+	;			i2land enra halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst2
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		ptr5;		ptr5!0x700+0xD0
+|* Store i in D0 and in RA
+	;			i2cmp enra tioe tisp halt;	titoreg;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!szero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr2;
+	jeq primary;		i2cmp enra halt;		regtoti;	rcssp ptr2;
+|* Comparing x to 0
+	;			;				;		ptr5;		ptr5!sinf
+	jle bail.out;		i2cmp enrb halt;		regtoti;	rcssp ptr5;
+|* Comparing x to infinity
+	;			;				;		ptr5;		ptr5!sminnorm
+	jlt xsubnorm;		i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr2;		
+	;			enra enrb halt;			tmptoti;	rcssp;
+	;			;				;		;
+	jne sretnan;		halt;				;		;
+	;			;				;		ptr1;
+	call idle1;		;				tmptoreg;	rcssp ptr1;
+xsubnorm:
+|* x is a subnormal -- need to raise x by 2**24
+	jge preprimary;		swdnrm enra halt;		regtoti;	rcssp ptr2;
+	;			swdnrm halt;			;		ptr5;	ptr5!c_slnxtwo24
+	;			smwa mulaalu enrb halt;		regtoti;	rcssp ptr5;
+	;			smwa tioe tisp;			;		ptr5;	ptr5!0x700+0xE0
+	;			i2cmp enra tioe tisp halt;	titoreg;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst0
+	;			i2add enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		;
+	;			i2cmp enrb tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst1
+	;			i2land enra halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst2
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		ptr5;	ptr5!0x700+0xD0
+| j = j - i
+	;			i2cmp enrb tioe tisp halt;	titoreg;	rcssp ptr5;
+	;			;				;		ptr5;   ptr5!0x700+0xE0
+	;			i2sub enra halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		ptr5;		ptr5!0x700+0xD1
+	;			tioe tisp halt;			titoreg;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_siexp23
+| i = (i>>23) - 24
+	;			idiv enrb halt;			regtoti;	rcssp ptr5;	lpreg!2
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			tioe tisp halt;			;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_si24
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		ptr5;		ptr5!0x700+0xD0
+	call primary2;		tioe tisp halt;		 	titoreg;	rcssp ptr5;
+preprimary:
+|* j = j-i, i = i>>23  
+	;			;				;		ptr2;
+	;			i2cmp enra halt;		regtoti;	rcsmsw ptr2;
+	;			;				;		ptr5;		ptr5!0x700+0xD0
+	;			i2sub enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		ptr5;		ptr5!0x700+0xD1
+	;			tioe tisp halt;			titoreg;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_siexp23
+| i = (i>>23) - 24
+	;			idiv enrb halt;			regtoti;	rcssp ptr5;	lpreg!2
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			;				;		;
+	;			tioe tisp halt;			;		ptr5;		ptr5!0x700+0xD0
+	call primary2;		tioe tisp halt;			titoreg;	rcssp ptr5;
+primary:
+	;			;				;		ptr5;		ptr5!0x700+0xD1
+	call primary2;		;				tmptoreg;	rcssp ptr5;
+primary2:
+|* Check for inexact first
+	;			;				;		ptr5;		ptr5!c_ssin
+	;			smul enra enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst2
+	jtierr bail.out cstat;	i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD1
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_slnx_ap0
+	jeq almexit;		i2cmp halt;			regtotmp;	rcssp ptr5;
+	;			;				;		;
+	jlt getan;		halt;				;		;
+	;			;				;		ptr5;		ptr5!0x700+0xD2
+	;			;				tmptoreg;	rcssp ptr5;
+slnxcont:
+	;			;				;		ptr5;		ptr5!0x700+0xD1
+|*  x = j - one
+|*  z = x * x and store in C reg.
+	;			enra halt;			regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!sone
+	;			ssub enrb halt;			regtoti;	rcssp ptr5;
+	;			ssub;				;		;
+	;			srccalu clkcc tioe tisp;	;		ptr5;   ptr5!0x700+0xE0
+	;			tioe tisp halt;			titoreg;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD1
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst3
+	;			i2land enrb halt;		regtoti;	rcssp ptr5;
+	;			tioe tisp;			;		;
+	;			i2cmp enra tioe tisp halt;	;		;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst2
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst4
+	jeq shortexp;		i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_slnx_cnst2
+	jeq shortexp;		i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD1
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;	
+|* if j < 0x3f80000 then a[] = an[], else a[] = ap[].
+	;			;				;		ptr5;	ptr5!c_slnx_ap5
+	jlt doan;		smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			halt;				;		ptr5;	ptr5!c_slnx_ap4	
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_ap3
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_ap2
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_ap1
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_ap0
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			smul mulaalu mulbcreg;		;		;
+contap:
+	;			halt;				;		ptr5;	ptr5!shalf
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		;
+	;			smul mulacreg mulbmul;		;		;
+	;			srsub aluamul alubcreg halt;	;		;
+	;			srsub aluamul alubcreg halt;	;		;
+	;			tioe tisp halt;			;		;   
+	;			tioe tisp halt;			titotmp;	rcssp;
+	;			dnop;				;		;
+	;			scvtd enra loaddp halt;		tmptoti;	rcssp;
+	;			scvtd enra loaddp halt;		tmptoti;	rcssp;
+	;			scvtd tioe timsw;		;		ptr5;	ptr5!0x700+0xE0
+	;			tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	;			tioe tilsw halt;		titoreg;	rcslsw ptr5;
+exit:
+	;			;				;		ptr5;		ptr5!0x700+0xD0
+	;			i2cmp enra halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!c_sizero
+	;			i2cmp enrb halt;		regtoti;	rcssp ptr5;
+	;			;				;		ptr5;	ptr5!0x700+0xD0
+	jeq rettoidle;		dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat enra loaddp halt;	regtoti;	rcssp ptr5;
+	;			dfloat;				;		ptr5;	ptr5!c_dlnx_ln2
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dmul mulaalu enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dmul mulaalu;			;		ptr5;   ptr5!0x700+0xE0
+	;			dnop enrb loaddp halt;		regtoti;	rcsmsw ptr5;
+	;			dadd aluamul enrb loaddp halt;	regtoti;	rcslsw ptr5;
+	;			dnop tioe timsw;		;		;
+	;			dnop enra tioe timsw loaddp halt;;		;
+	;			dcvts enra tioe tilsw loaddp halt;;		;
+	;			tioe tisp;			;		ptr1;
+	call idle1;		tioe tisp halt;			titoreg;	rcssp ptr1;
+
+
+doan:	
+	;			;				;		ptr5;	ptr5!c_slnx_an5
+	;			smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			halt;				;		ptr5;	ptr5!c_slnx_an4
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_an3
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_an2
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_an1
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		ptr5;	ptr5!c_slnx_an0
+	;			sadd aluamul enrb halt;		regtoti;	rcssp ptr5;
+	call contap;		smul mulaalu mulbcreg;		;		;
+almexit:
+	;			;				;		ptr5;		ptr5!szero
+	;			;				regtotmp;	rcssp ptr5;
+	;			;				;		ptr5;   ptr5!0x700+0xE0
+	;			;				tmptoreg;	rcsmsw ptr5;
+	call exit;		;				tmptoreg;	rcslsw ptr5;
+shortexp:
+	;			;				;		ptr5;		ptr5!0x700+0xD2
+	;			smul mulacreg enrb halt;	regtoti;	rcssp ptr5;
+	;			halt;				;		ptr5;		ptr5!shalf
+	;			srsub aluamul enrb halt;	regtoti;	rcssp ptr5;
+	;			halt;				;		;
+	;			smul mulaalu mulbcreg;		;		;
+	;			smul mulacreg mulbmul;		;		;
+	;			srsub aluamul alubcreg halt;	;		;
+	;			srsub aluamul alubcreg halt;	;		;
+	;			tioe tisp halt;			;		;   
+	;			tioe tisp halt;			titotmp;	rcssp;
+	;			dnop;				;		;
+	;			scvtd enra loaddp halt;		tmptoti;	rcssp;
+	;			scvtd enra loaddp halt;		tmptoti;	rcssp;
+	;			scvtd tioe timsw;		;		ptr5;	ptr5!0x700+0xE0
+	;			tioe timsw halt;		titoreg;	rcsmsw ptr5;
+	call exit;		tioe tilsw halt;		titoreg;	rcslsw ptr5;
+getan:
+	;			;				;		ptr5;		ptr5!c_slnx_an0
+	;			;				regtotmp;	rcssp ptr5;
+	;			;				;		ptr5;		ptr5!0x700+0xD2
+	call slnxcont;		;				tmptoreg;	rcssp ptr5;
+rettoidle:
+	;			;				;		ptr1;
+	call idle1;		;				tmptoreg;	rcssp ptr1;

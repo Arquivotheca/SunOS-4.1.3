@@ -1,0 +1,151 @@
+.\" @(#)sdiff.1v 1.1 92/07/30 SMI; from S5R2 6.2
+.TH SDIFF 1V "17 September 1989"
+.SH NAME
+sdiff \- contrast two text files by displaying them side-by-side
+.SH SYNOPSIS
+.B sdiff
+[
+.B \-l
+] [
+.BI \-o " outfile"
+] [
+.B \-s
+] [
+.BI \-w " n"
+]
+.I filename1
+.I filename2
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "sdiff command"  ""  "\fLsdiff\fP \(em side-by-side compare"
+.IX files  "side-by-side compare"
+.IX compare  "files side-by-side"
+.B sdiff
+uses the output of
+.BR diff -b
+to produce a side-by-side listing of two files indicating those
+lines that are different.
+Each line of the two files is printed with a blank gutter between them
+if the lines are identical, a
+.B <
+in the gutter
+if the line only exists in
+.IR filename1 ,
+a
+.B >
+in the gutter
+if the line only exists in
+.IR filename2 ,
+and a
+.B |
+for lines that are different.
+See
+.SM EXAMPLES\s0.
+.SH OPTIONS
+.TP
+.BI \-w "  n"
+Use
+.IR n
+as the width of the output line.
+The default line length is 130 characters.
+.TP
+.B \-l
+Only print the left side of any identical lines.
+.TP
+.BR \-s
+Silent.  Do not print identical lines.
+.TP
+.BI \-o "  outfile"
+Use the next argument,
+.IR output ,
+as the name of an output file created as
+an interactively controlled merging of
+.I filename1
+and
+.IR filename2 .
+Identical lines of
+.I filename1
+and
+.I filename2
+are copied to
+.IR output .
+Sets of differences, as produced by
+.BR diff ,
+are printed; where a set of differences share a
+common gutter character.
+After printing each set of differences,
+.B sdiff
+prompts with a
+.B %
+and waits for you to type one of the following commands:
+.RS
+.TP
+.B l
+Append the
+left column to the output file.
+.TP
+.B r
+Append the
+right column to the output file.
+.TP
+.B s
+Turn on silent mode; do not print identical lines.
+.TP
+.B v
+Turn off silent mode.
+.TP
+.B e l
+Call the
+.BR ed (1)
+with the left column.
+.TP
+.B e r
+Call
+.BR ed (1)
+with the right column.
+.TP
+.B e b
+Call
+.BR ed (1)
+with the concatenation of left and right columns.
+.TP
+.B e
+Call
+.BR ed (1)
+with a zero length file.
+.IP
+On exit from
+.BR ed (1),
+the resulting file is concatenated to the named output file.
+.TP
+.B q
+Exit from the program.
+.RE
+.SH EXAMPLES
+.LP
+A sample output of
+.B sdiff
+would look like this:
+.RS
+.IP
+.nf
+.ft B
+.cs B 20
+     x    |    y
+     a         a
+     b    <
+     c    < 
+     d         d
+          >    c
+.fi
+.cs B
+.ft R
+.RE
+.SH SEE ALSO
+.BR diff (1),
+.BR ed (1)

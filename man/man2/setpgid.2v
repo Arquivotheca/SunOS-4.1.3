@@ -1,0 +1,141 @@
+.\"  @(#)setpgid.2v 1.1 92/07/30 SMI; new for 4.1, POSIX
+.TH SETPGID 2V "21 January 1990"
+.SH NAME
+setpgid \- set process group ID for job control
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <sys/types.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+int setpgid (pid, pgid)
+pid_t pid, pgid;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "setpgid()" "" "\fLsetpgid()\fP \(em set process group ID for job control" ""
+.IX "group ID" "set process group ID for job control"
+.IX process "set process group ID for job control"
+.IX set "process group ID for job control"
+.LP
+.B setpgid(\|) 
+is used to either join an existing process group
+or create a new process group within the session of the calling
+process
+(see
+.SM NOTES\s0).
+The process group
+.SM ID
+of a session leader does not change.
+Upon successful completion, the process group
+.SM ID
+of the process with a process
+.SM ID
+that matches
+.I pid
+is set to
+.IR pgid .
+As a special case, if
+.I pid
+is zero, the process
+.SM ID
+of the calling process is used.
+Also, if
+.I pgid
+is zero, the process
+.SM ID
+of the process indicated by
+.I pid
+is used.
+.SH RETURN VALUES
+.LP
+.B setpgid(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+The value of 
+.I pid 
+matches the process
+.SM ID
+of a child process of the calling process and the child
+process has successfully executed one of the
+.B exec(\|)
+functions.
+.TP
+.SM EINVAL
+The value of 
+.I pgid 
+is less than zero or is greater than
+.SM MAXPID\s0,
+the maximum process
+.SM ID
+as defined in
+.BR <sys/param.h> .
+.TP
+.SM EPERM
+The process indicated by 
+.I pid 
+is a session leader.
+The value of 
+.I pid 
+is valid but matches the process
+.SM ID
+of a child process of the calling process and the child process is
+not in the same session as the calling process.
+The value of 
+.I pgid
+does not match the process
+.SM ID
+of the process indicated by 
+.I pid 
+and there is no process with a process group
+.SM ID
+that matches the value of 
+.I pgid 
+in the same session as the
+calling process.
+.TP
+.SM ESRCH
+.I pid 
+does not match the
+.SM PID
+of the calling process or the
+.SM PID
+of a child of the calling
+process.
+.SH SEE ALSO
+.BR getpgrp (2V),
+.BR execve (2V),
+.BR setsid (2V),
+.BR tcgetpgrp (3V)
+.SH NOTES
+.LP
+For
+.B setpgid(\|)
+to behave as described above,
+.SM {_POSIX_JOB_CONTROL}
+must be in effect (see
+.BR sysconf (2V)).
+.SM {_POSIX_JOB_CONTROL}
+is always in effect
+on SunOS systems, but for portability, applications should call
+.B sysconf(\|)
+to determine whether
+.SM {_POSIX_JOB_CONTROL}
+is in effect for the current system.
+.\" This isn't strictly true.  The standard allows implementations to
+.\" support this function as described above even without supporting
+.\" job control (p. 76 in POSIX).  Cute.

@@ -1,0 +1,598 @@
+#
+# @(#)Make_int 1.1 92/07/30 SMI
+#
+
+# Makefile for Egret System Diagnostics
+
+.DEFAULT:
+	$(SCCS) get $(@F)
+
+SUNDIAG_DIR=	/usr/diag/sundiag
+BINDIR=	../bin
+TARGETS=	$(BINDIR)/esd_int
+
+#sources & objectS
+SRCS=		int_test.c\
+		timestamp.c\
+		catch_signals.c\
+		egret_test.c\
+		pr_test.c\
+		desktop.c\
+		chksum.c\
+		msg.c\
+		gpsi.c\
+		gpsi_3D_lines.c\
+		gpsi_3D_poligons.c\
+		gpsi_animation.c\
+		gpsi_clip_hid.c\
+		gpsi_depth_cueing.c\
+		gpsi_diag.c\
+		gpsi_shad.c\
+		gpsi_std.c\
+		gpsi_uti.c\
+		gpsi_xf.c\
+		patterns.c\
+		animation.c\
+		do_animation.c
+
+OBJS=	$(SRCS:.c=.o)
+
+# commands
+SCCS=		/usr/ucb/sccs
+RM=		/bin/rm -f
+ED=		/bin/ed
+CP=		/bin/cp
+ED=		/bin/ed
+CPP=		/lib/cpp -E
+LINT=		lint
+
+# system include directory
+STDINCL= /usr/include
+
+# used during development to include new or modified include files
+DEVEL_INCLPATH=
+
+# used during development to include new or modified include files
+DEVEL_LIBPATH=
+
+# compilation flags
+TARGET_ARCH=
+FLOAT= -fsoft
+OPTIM= -g
+DEFINES= -DINT_TEST
+INCLUDES= -I.
+
+CFLAGS= $(TARGET_ARCH) $(FLOAT) $(OPTIM)
+CPPFLAGS = $(INCLUDES) $(DEFINES)
+LDFLAGS= $(DEBUG)
+
+LINT_FLAGS= -abh $(INCLUDES) $(DEFINES)
+
+LIBS= -lsuntool -lsunwindow -lpixrect -lm
+
+LINT_LIB_PATH= /usr/lib/lint
+LINT_LIBS= $(LINT_LIB_PATH)/llib-lpixrect.ln\
+	   $(LINT_LIB_PATH)/llib-lsunwindow.ln\
+	   $(LINT_LIB_PATH)/llib-lpixrect.ln
+
+all: $(TARGETS)
+
+$(BINDIR)/esd_int:	$(OBJS)
+		$(CC) $(LDFLAGS) $(OBJS) -o $(BINDIR)/esd_int $(LIBS)
+
+install: all
+	$(CP) $(BINDIR)/esd_int $(DESTDIR)/esd_int
+
+
+lint:	$(SRCS) $(LINT_LIBS)
+	$(LINT) $(LINT_FLAGS) $(SRCS) $(LINT_LIBS)
+
+clean:
+	$(RM) *.o *.pp *.ln $(TARGETS) core *~ #*
+
+info: FRC
+	$(SCCS) info
+
+FRC:
+
+depend: $(SRCS)
+	$(RM) makedep eddep
+	for i in $(SRCS) ; do \
+	    ( $(CPP) -M $(CPPFLAGS) $$i >> makedep ); \
+	    echo `basename $$i .c`.h: $$i >> makedep ; \
+	done
+	echo '/^# DO NOT DELETE THIS LINE/+2,$$d' >eddep
+	echo '$$r makedep' >>eddep
+	echo 'w' >>eddep
+	$(CP) Make_int Make_int.bak
+	$(ED) - Make_int < eddep
+	echo '# DEPENDENCIES MUST END AT END OF FILE' >> Make_int
+	echo '# IF YOU PUT STUFF HERE IT WILL GO AWAY' >> Make_int
+	echo '# see make depend above' >> Make_int
+	$(RM) eddep makedep
+
+gpsi_diag_sim: gpsi_diag_sim.c gpsi_uti.c dump.c esd.h
+	cc -g -I. -o gpsi_diag_sim gpsi_diag_sim.c gpsi_uti.c dump.c msg.c -DRFS_1 -lpixrect
+# DO NOT DELETE THIS LINE -- make depend uses it
+# DEPENDENCIES MUST END AT END OF FILE
+int_test.o: int_test.c
+int_test.o: /usr/include/stdio.h
+int_test.o: /usr/include/strings.h
+int_test.o: ./esd.h
+int_test.h: int_test.c
+timestamp.o: timestamp.c
+timestamp.o: /usr/include/sys/types.h
+timestamp.o: /usr/include/sys/sysmacros.h
+timestamp.o: /usr/include/strings.h
+timestamp.h: timestamp.c
+catch_signals.o: catch_signals.c
+catch_signals.o: /usr/include/stdio.h
+catch_signals.o: /usr/include/signal.h
+catch_signals.o: /usr/include/vm/faultcode.h
+catch_signals.h: catch_signals.c
+egret_test.o: egret_test.c
+egret_test.o: /usr/include/suntool/sunview.h
+egret_test.o: /usr/include/signal.h
+egret_test.o: /usr/include/vm/faultcode.h
+egret_test.o: /usr/include/pixrect/pixrect_hs.h
+egret_test.o: /usr/include/sys/types.h
+egret_test.o: /usr/include/sys/sysmacros.h
+egret_test.o: /usr/include/pixrect/pixrect.h
+egret_test.o: /usr/include/sys/types.h
+egret_test.o: /usr/include/pixrect/pr_dblbuf.h
+egret_test.o: /usr/include/pixrect/pr_line.h
+egret_test.o: /usr/include/pixrect/pr_planegroups.h
+egret_test.o: /usr/include/pixrect/pr_util.h
+egret_test.o: /usr/include/pixrect/traprop.h
+egret_test.o: /usr/include/pixrect/bw1var.h
+egret_test.o: /usr/include/pixrect/cg1var.h
+egret_test.o: /usr/include/pixrect/bw2var.h
+egret_test.o: /usr/include/pixrect/cg2var.h
+egret_test.o: /usr/include/pixrect/gp1var.h
+egret_test.o: /usr/include/sun/fbio.h
+egret_test.o: /usr/include/pixrect/cg2var.h
+egret_test.o: /usr/include/pixrect/cg9var.h
+egret_test.o: /usr/include/sundev/cg9reg.h
+egret_test.o: /usr/include/sundev/ramdac.h
+egret_test.o: /usr/include/pixrect/pixrect.h
+egret_test.o: /usr/include/pixrect/memvar.h
+egret_test.o: /usr/include/sunwindow/cms.h
+egret_test.o: /usr/include/pixrect/cg4var.h
+egret_test.o: /usr/include/pixrect/memvar.h
+egret_test.o: /usr/include/pixrect/cg8var.h
+egret_test.o: /usr/include/pixrect/cg4var.h
+egret_test.o: /usr/include/sundev/cg8reg.h
+egret_test.o: /usr/include/machine/param.h
+egret_test.o: /usr/include/sundev/p4reg.h
+egret_test.o: /usr/include/sundev/ramdac.h
+egret_test.o: /usr/include/sunwindow/cms.h
+egret_test.o: /usr/include/pixrect/cg9var.h
+egret_test.o: /usr/include/pixrect/memvar.h
+egret_test.o: /usr/include/pixrect/pixfont.h
+egret_test.o: /usr/include/rasterfile.h
+egret_test.o: /usr/include/pixrect/pr_io.h
+egret_test.o: /usr/include/sunwindow/window_hs.h
+egret_test.o: /usr/include/sys/time.h
+egret_test.o: /usr/include/time.h
+egret_test.o: /usr/include/pixrect/pixrect_hs.h
+egret_test.o: /usr/include/sunwindow/notify.h
+egret_test.o: /usr/include/sunwindow/rect.h
+egret_test.o: /usr/include/sunwindow/rectlist.h
+egret_test.o: /usr/include/sunwindow/pixwin.h
+egret_test.o: /usr/include/sunwindow/attr.h
+egret_test.o: /usr/include/sunwindow/pw_util.h
+egret_test.o: /usr/include/sunwindow/win_struct.h
+egret_test.o: /usr/include/sunwindow/win_environ.h
+egret_test.o: /usr/include/sunwindow/cms.h
+egret_test.o: /usr/include/sunwindow/win_screen.h
+egret_test.o: /usr/include/sunwindow/win_input.h
+egret_test.o: /usr/include/sundev/vuid_event.h
+egret_test.o: /usr/include/sunwindow/win_cursor.h
+egret_test.o: /usr/include/sunwindow/attr.h
+egret_test.o: /usr/include/sunwindow/win_notify.h
+egret_test.o: /usr/include/suntool/icon.h
+egret_test.o: /usr/include/sunwindow/attr.h
+egret_test.o: /usr/include/suntool/walkmenu.h
+egret_test.o: /usr/include/sunwindow/attr.h
+egret_test.o: /usr/include/suntool/window.h
+egret_test.o: /usr/include/sunwindow/attr.h
+egret_test.o: /usr/include/suntool/frame.h
+egret_test.o: /usr/include/sunwindow/attr.h
+egret_test.o: ./esd.h
+egret_test.h: egret_test.c
+pr_test.o: pr_test.c
+pr_test.o: /usr/include/stdio.h
+pr_test.o: /usr/include/sys/types.h
+pr_test.o: /usr/include/sys/sysmacros.h
+pr_test.o: /usr/include/sys/timeb.h
+pr_test.o: /usr/include/string.h
+pr_test.o: /usr/include/pixrect/pixrect_hs.h
+pr_test.o: /usr/include/sys/types.h
+pr_test.o: /usr/include/pixrect/pixrect.h
+pr_test.o: /usr/include/sys/types.h
+pr_test.o: /usr/include/pixrect/pr_dblbuf.h
+pr_test.o: /usr/include/pixrect/pr_line.h
+pr_test.o: /usr/include/pixrect/pr_planegroups.h
+pr_test.o: /usr/include/pixrect/pr_util.h
+pr_test.o: /usr/include/pixrect/traprop.h
+pr_test.o: /usr/include/pixrect/bw1var.h
+pr_test.o: /usr/include/pixrect/cg1var.h
+pr_test.o: /usr/include/pixrect/bw2var.h
+pr_test.o: /usr/include/pixrect/cg2var.h
+pr_test.o: /usr/include/pixrect/gp1var.h
+pr_test.o: /usr/include/sun/fbio.h
+pr_test.o: /usr/include/pixrect/cg2var.h
+pr_test.o: /usr/include/pixrect/cg9var.h
+pr_test.o: /usr/include/sundev/cg9reg.h
+pr_test.o: /usr/include/sundev/ramdac.h
+pr_test.o: /usr/include/pixrect/pixrect.h
+pr_test.o: /usr/include/pixrect/memvar.h
+pr_test.o: /usr/include/sunwindow/cms.h
+pr_test.o: /usr/include/pixrect/cg4var.h
+pr_test.o: /usr/include/pixrect/memvar.h
+pr_test.o: /usr/include/pixrect/cg8var.h
+pr_test.o: /usr/include/pixrect/cg4var.h
+pr_test.o: /usr/include/sundev/cg8reg.h
+pr_test.o: /usr/include/machine/param.h
+pr_test.o: /usr/include/sundev/p4reg.h
+pr_test.o: /usr/include/sundev/ramdac.h
+pr_test.o: /usr/include/sunwindow/cms.h
+pr_test.o: /usr/include/pixrect/cg9var.h
+pr_test.o: /usr/include/pixrect/memvar.h
+pr_test.o: /usr/include/pixrect/pixfont.h
+pr_test.o: /usr/include/rasterfile.h
+pr_test.o: /usr/include/pixrect/pr_io.h
+pr_test.o: ./esd.h
+pr_test.h: pr_test.c
+desktop.o: desktop.c
+desktop.o: /usr/include/stdio.h
+desktop.o: /usr/include/sys/file.h
+desktop.o: /usr/include/sys/fcntlcom.h
+desktop.o: /usr/include/sys/filio.h
+desktop.o: /usr/include/sys/ioccom.h
+desktop.o: /usr/include/string.h
+desktop.o: /usr/include/suntool/sunview.h
+desktop.o: /usr/include/signal.h
+desktop.o: /usr/include/vm/faultcode.h
+desktop.o: /usr/include/pixrect/pixrect_hs.h
+desktop.o: /usr/include/sys/types.h
+desktop.o: /usr/include/sys/sysmacros.h
+desktop.o: /usr/include/pixrect/pixrect.h
+desktop.o: /usr/include/sys/types.h
+desktop.o: /usr/include/pixrect/pr_dblbuf.h
+desktop.o: /usr/include/pixrect/pr_line.h
+desktop.o: /usr/include/pixrect/pr_planegroups.h
+desktop.o: /usr/include/pixrect/pr_util.h
+desktop.o: /usr/include/pixrect/traprop.h
+desktop.o: /usr/include/pixrect/bw1var.h
+desktop.o: /usr/include/pixrect/cg1var.h
+desktop.o: /usr/include/pixrect/bw2var.h
+desktop.o: /usr/include/pixrect/cg2var.h
+desktop.o: /usr/include/pixrect/gp1var.h
+desktop.o: /usr/include/sun/fbio.h
+desktop.o: /usr/include/pixrect/cg2var.h
+desktop.o: /usr/include/pixrect/cg9var.h
+desktop.o: /usr/include/sundev/cg9reg.h
+desktop.o: /usr/include/sundev/ramdac.h
+desktop.o: /usr/include/pixrect/pixrect.h
+desktop.o: /usr/include/pixrect/memvar.h
+desktop.o: /usr/include/sunwindow/cms.h
+desktop.o: /usr/include/pixrect/cg4var.h
+desktop.o: /usr/include/pixrect/memvar.h
+desktop.o: /usr/include/pixrect/cg8var.h
+desktop.o: /usr/include/pixrect/cg4var.h
+desktop.o: /usr/include/sundev/cg8reg.h
+desktop.o: /usr/include/machine/param.h
+desktop.o: /usr/include/sundev/p4reg.h
+desktop.o: /usr/include/sundev/ramdac.h
+desktop.o: /usr/include/sunwindow/cms.h
+desktop.o: /usr/include/pixrect/cg9var.h
+desktop.o: /usr/include/pixrect/memvar.h
+desktop.o: /usr/include/pixrect/pixfont.h
+desktop.o: /usr/include/rasterfile.h
+desktop.o: /usr/include/pixrect/pr_io.h
+desktop.o: /usr/include/sunwindow/window_hs.h
+desktop.o: /usr/include/sys/time.h
+desktop.o: /usr/include/time.h
+desktop.o: /usr/include/pixrect/pixrect_hs.h
+desktop.o: /usr/include/sunwindow/notify.h
+desktop.o: /usr/include/sunwindow/rect.h
+desktop.o: /usr/include/sunwindow/rectlist.h
+desktop.o: /usr/include/sunwindow/pixwin.h
+desktop.o: /usr/include/sunwindow/attr.h
+desktop.o: /usr/include/sunwindow/pw_util.h
+desktop.o: /usr/include/sunwindow/win_struct.h
+desktop.o: /usr/include/sunwindow/win_environ.h
+desktop.o: /usr/include/sunwindow/cms.h
+desktop.o: /usr/include/sunwindow/win_screen.h
+desktop.o: /usr/include/sunwindow/win_input.h
+desktop.o: /usr/include/sundev/vuid_event.h
+desktop.o: /usr/include/sunwindow/win_cursor.h
+desktop.o: /usr/include/sunwindow/attr.h
+desktop.o: /usr/include/sunwindow/win_notify.h
+desktop.o: /usr/include/suntool/icon.h
+desktop.o: /usr/include/sunwindow/attr.h
+desktop.o: /usr/include/suntool/walkmenu.h
+desktop.o: /usr/include/sunwindow/attr.h
+desktop.o: /usr/include/suntool/window.h
+desktop.o: /usr/include/sunwindow/attr.h
+desktop.o: /usr/include/suntool/frame.h
+desktop.o: /usr/include/sunwindow/attr.h
+desktop.h: desktop.c
+chksum.o: chksum.c
+chksum.o: /usr/include/stdio.h
+chksum.o: /usr/include/string.h
+chksum.o: /usr/include/pixrect/pixrect_hs.h
+chksum.o: /usr/include/sys/types.h
+chksum.o: /usr/include/sys/sysmacros.h
+chksum.o: /usr/include/pixrect/pixrect.h
+chksum.o: /usr/include/sys/types.h
+chksum.o: /usr/include/pixrect/pr_dblbuf.h
+chksum.o: /usr/include/pixrect/pr_line.h
+chksum.o: /usr/include/pixrect/pr_planegroups.h
+chksum.o: /usr/include/pixrect/pr_util.h
+chksum.o: /usr/include/pixrect/traprop.h
+chksum.o: /usr/include/pixrect/bw1var.h
+chksum.o: /usr/include/pixrect/cg1var.h
+chksum.o: /usr/include/pixrect/bw2var.h
+chksum.o: /usr/include/pixrect/cg2var.h
+chksum.o: /usr/include/pixrect/gp1var.h
+chksum.o: /usr/include/sun/fbio.h
+chksum.o: /usr/include/pixrect/cg2var.h
+chksum.o: /usr/include/pixrect/cg9var.h
+chksum.o: /usr/include/sundev/cg9reg.h
+chksum.o: /usr/include/sundev/ramdac.h
+chksum.o: /usr/include/pixrect/pixrect.h
+chksum.o: /usr/include/pixrect/memvar.h
+chksum.o: /usr/include/sunwindow/cms.h
+chksum.o: /usr/include/pixrect/cg4var.h
+chksum.o: /usr/include/pixrect/memvar.h
+chksum.o: /usr/include/pixrect/cg8var.h
+chksum.o: /usr/include/pixrect/cg4var.h
+chksum.o: /usr/include/sundev/cg8reg.h
+chksum.o: /usr/include/machine/param.h
+chksum.o: /usr/include/sundev/p4reg.h
+chksum.o: /usr/include/sundev/ramdac.h
+chksum.o: /usr/include/sunwindow/cms.h
+chksum.o: /usr/include/pixrect/cg9var.h
+chksum.o: /usr/include/pixrect/memvar.h
+chksum.o: /usr/include/pixrect/pixfont.h
+chksum.o: /usr/include/rasterfile.h
+chksum.o: /usr/include/pixrect/pr_io.h
+chksum.o: ./esd.h
+chksum.h: chksum.c
+gpsi.o: gpsi.c
+gpsi.o: /usr/include/pixrect/pixrect_hs.h
+gpsi.o: /usr/include/sys/types.h
+gpsi.o: /usr/include/sys/sysmacros.h
+gpsi.o: /usr/include/pixrect/pixrect.h
+gpsi.o: /usr/include/sys/types.h
+gpsi.o: /usr/include/pixrect/pr_dblbuf.h
+gpsi.o: /usr/include/pixrect/pr_line.h
+gpsi.o: /usr/include/pixrect/pr_planegroups.h
+gpsi.o: /usr/include/pixrect/pr_util.h
+gpsi.o: /usr/include/pixrect/traprop.h
+gpsi.o: /usr/include/pixrect/bw1var.h
+gpsi.o: /usr/include/pixrect/cg1var.h
+gpsi.o: /usr/include/pixrect/bw2var.h
+gpsi.o: /usr/include/pixrect/cg2var.h
+gpsi.o: /usr/include/pixrect/gp1var.h
+gpsi.o: /usr/include/sun/fbio.h
+gpsi.o: /usr/include/pixrect/cg2var.h
+gpsi.o: /usr/include/pixrect/cg9var.h
+gpsi.o: /usr/include/sundev/cg9reg.h
+gpsi.o: /usr/include/sundev/ramdac.h
+gpsi.o: /usr/include/pixrect/pixrect.h
+gpsi.o: /usr/include/pixrect/memvar.h
+gpsi.o: /usr/include/sunwindow/cms.h
+gpsi.o: /usr/include/pixrect/cg4var.h
+gpsi.o: /usr/include/pixrect/memvar.h
+gpsi.o: /usr/include/pixrect/cg8var.h
+gpsi.o: /usr/include/pixrect/cg4var.h
+gpsi.o: /usr/include/sundev/cg8reg.h
+gpsi.o: /usr/include/machine/param.h
+gpsi.o: /usr/include/sundev/p4reg.h
+gpsi.o: /usr/include/sundev/ramdac.h
+gpsi.o: /usr/include/sunwindow/cms.h
+gpsi.o: /usr/include/pixrect/cg9var.h
+gpsi.o: /usr/include/pixrect/memvar.h
+gpsi.o: /usr/include/pixrect/pixfont.h
+gpsi.o: /usr/include/rasterfile.h
+gpsi.o: /usr/include/pixrect/pr_io.h
+gpsi.h: gpsi.c
+gpsi_3D_lines.o: gpsi_3D_lines.c
+gpsi_3D_lines.o: /usr/include/math.h
+gpsi_3D_lines.o: /usr/include/floatingpoint.h
+gpsi_3D_lines.o: /usr/include/sys/ieeefp.h
+gpsi_3D_lines.o: /usr/include/pixrect/gp1cmds.h
+gpsi_3D_lines.o: ./esd.h
+gpsi_3D_lines.h: gpsi_3D_lines.c
+gpsi_3D_poligons.o: gpsi_3D_poligons.c
+gpsi_3D_poligons.o: /usr/include/math.h
+gpsi_3D_poligons.o: /usr/include/floatingpoint.h
+gpsi_3D_poligons.o: /usr/include/sys/ieeefp.h
+gpsi_3D_poligons.o: /usr/include/pixrect/gp1cmds.h
+gpsi_3D_poligons.o: ./esd.h
+gpsi_3D_poligons.h: gpsi_3D_poligons.c
+gpsi_animation.o: gpsi_animation.c
+gpsi_animation.o: /usr/include/signal.h
+gpsi_animation.o: /usr/include/vm/faultcode.h
+gpsi_animation.o: ./esd.h
+gpsi_animation.h: gpsi_animation.c
+gpsi_clip_hid.o: gpsi_clip_hid.c
+gpsi_clip_hid.o: /usr/include/suntool/sunview.h
+gpsi_clip_hid.o: /usr/include/signal.h
+gpsi_clip_hid.o: /usr/include/vm/faultcode.h
+gpsi_clip_hid.o: /usr/include/pixrect/pixrect_hs.h
+gpsi_clip_hid.o: /usr/include/sys/types.h
+gpsi_clip_hid.o: /usr/include/sys/sysmacros.h
+gpsi_clip_hid.o: /usr/include/pixrect/pixrect.h
+gpsi_clip_hid.o: /usr/include/sys/types.h
+gpsi_clip_hid.o: /usr/include/pixrect/pr_dblbuf.h
+gpsi_clip_hid.o: /usr/include/pixrect/pr_line.h
+gpsi_clip_hid.o: /usr/include/pixrect/pr_planegroups.h
+gpsi_clip_hid.o: /usr/include/pixrect/pr_util.h
+gpsi_clip_hid.o: /usr/include/pixrect/traprop.h
+gpsi_clip_hid.o: /usr/include/pixrect/bw1var.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg1var.h
+gpsi_clip_hid.o: /usr/include/pixrect/bw2var.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg2var.h
+gpsi_clip_hid.o: /usr/include/pixrect/gp1var.h
+gpsi_clip_hid.o: /usr/include/sun/fbio.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg2var.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg9var.h
+gpsi_clip_hid.o: /usr/include/sundev/cg9reg.h
+gpsi_clip_hid.o: /usr/include/sundev/ramdac.h
+gpsi_clip_hid.o: /usr/include/pixrect/pixrect.h
+gpsi_clip_hid.o: /usr/include/pixrect/memvar.h
+gpsi_clip_hid.o: /usr/include/sunwindow/cms.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg4var.h
+gpsi_clip_hid.o: /usr/include/pixrect/memvar.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg8var.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg4var.h
+gpsi_clip_hid.o: /usr/include/sundev/cg8reg.h
+gpsi_clip_hid.o: /usr/include/machine/param.h
+gpsi_clip_hid.o: /usr/include/sundev/p4reg.h
+gpsi_clip_hid.o: /usr/include/sundev/ramdac.h
+gpsi_clip_hid.o: /usr/include/sunwindow/cms.h
+gpsi_clip_hid.o: /usr/include/pixrect/cg9var.h
+gpsi_clip_hid.o: /usr/include/pixrect/memvar.h
+gpsi_clip_hid.o: /usr/include/pixrect/pixfont.h
+gpsi_clip_hid.o: /usr/include/rasterfile.h
+gpsi_clip_hid.o: /usr/include/pixrect/pr_io.h
+gpsi_clip_hid.o: /usr/include/sunwindow/window_hs.h
+gpsi_clip_hid.o: /usr/include/sys/time.h
+gpsi_clip_hid.o: /usr/include/time.h
+gpsi_clip_hid.o: /usr/include/pixrect/pixrect_hs.h
+gpsi_clip_hid.o: /usr/include/sunwindow/notify.h
+gpsi_clip_hid.o: /usr/include/sunwindow/rect.h
+gpsi_clip_hid.o: /usr/include/sunwindow/rectlist.h
+gpsi_clip_hid.o: /usr/include/sunwindow/pixwin.h
+gpsi_clip_hid.o: /usr/include/sunwindow/attr.h
+gpsi_clip_hid.o: /usr/include/sunwindow/pw_util.h
+gpsi_clip_hid.o: /usr/include/sunwindow/win_struct.h
+gpsi_clip_hid.o: /usr/include/sunwindow/win_environ.h
+gpsi_clip_hid.o: /usr/include/sunwindow/cms.h
+gpsi_clip_hid.o: /usr/include/sunwindow/win_screen.h
+gpsi_clip_hid.o: /usr/include/sunwindow/win_input.h
+gpsi_clip_hid.o: /usr/include/sundev/vuid_event.h
+gpsi_clip_hid.o: /usr/include/sunwindow/win_cursor.h
+gpsi_clip_hid.o: /usr/include/sunwindow/attr.h
+gpsi_clip_hid.o: /usr/include/sunwindow/win_notify.h
+gpsi_clip_hid.o: /usr/include/suntool/icon.h
+gpsi_clip_hid.o: /usr/include/sunwindow/attr.h
+gpsi_clip_hid.o: /usr/include/suntool/walkmenu.h
+gpsi_clip_hid.o: /usr/include/sunwindow/attr.h
+gpsi_clip_hid.o: /usr/include/suntool/window.h
+gpsi_clip_hid.o: /usr/include/sunwindow/attr.h
+gpsi_clip_hid.o: /usr/include/suntool/frame.h
+gpsi_clip_hid.o: /usr/include/sunwindow/attr.h
+gpsi_clip_hid.o: /usr/include/pixrect/gp1cmds.h
+gpsi_clip_hid.o: ./esd.h
+gpsi_clip_hid.h: gpsi_clip_hid.c
+gpsi_depth_cueing.o: gpsi_depth_cueing.c
+gpsi_depth_cueing.o: /usr/include/pixrect/gp1cmds.h
+gpsi_depth_cueing.o: ./esd.h
+gpsi_depth_cueing.h: gpsi_depth_cueing.c
+gpsi_diag.o: gpsi_diag.c
+gpsi_diag.o: ./esd.h
+gpsi_diag.h: gpsi_diag.c
+gpsi_shad.o: gpsi_shad.c
+gpsi_shad.o: ./esd.h
+gpsi_shad.h: gpsi_shad.c
+gpsi_std.o: gpsi_std.c
+gpsi_std.h: gpsi_std.c
+gpsi_uti.o: gpsi_uti.c
+gpsi_uti.o: /usr/include/sys/types.h
+gpsi_uti.o: /usr/include/sys/sysmacros.h
+gpsi_uti.o: /usr/include/suntool/sunview.h
+gpsi_uti.o: /usr/include/signal.h
+gpsi_uti.o: /usr/include/vm/faultcode.h
+gpsi_uti.o: /usr/include/pixrect/pixrect_hs.h
+gpsi_uti.o: /usr/include/sys/types.h
+gpsi_uti.o: /usr/include/pixrect/pixrect.h
+gpsi_uti.o: /usr/include/sys/types.h
+gpsi_uti.o: /usr/include/pixrect/pr_dblbuf.h
+gpsi_uti.o: /usr/include/pixrect/pr_line.h
+gpsi_uti.o: /usr/include/pixrect/pr_planegroups.h
+gpsi_uti.o: /usr/include/pixrect/pr_util.h
+gpsi_uti.o: /usr/include/pixrect/traprop.h
+gpsi_uti.o: /usr/include/pixrect/bw1var.h
+gpsi_uti.o: /usr/include/pixrect/cg1var.h
+gpsi_uti.o: /usr/include/pixrect/bw2var.h
+gpsi_uti.o: /usr/include/pixrect/cg2var.h
+gpsi_uti.o: /usr/include/pixrect/gp1var.h
+gpsi_uti.o: /usr/include/sun/fbio.h
+gpsi_uti.o: /usr/include/pixrect/cg2var.h
+gpsi_uti.o: /usr/include/pixrect/cg9var.h
+gpsi_uti.o: /usr/include/sundev/cg9reg.h
+gpsi_uti.o: /usr/include/sundev/ramdac.h
+gpsi_uti.o: /usr/include/pixrect/pixrect.h
+gpsi_uti.o: /usr/include/pixrect/memvar.h
+gpsi_uti.o: /usr/include/sunwindow/cms.h
+gpsi_uti.o: /usr/include/pixrect/cg4var.h
+gpsi_uti.o: /usr/include/pixrect/memvar.h
+gpsi_uti.o: /usr/include/pixrect/cg8var.h
+gpsi_uti.o: /usr/include/pixrect/cg4var.h
+gpsi_uti.o: /usr/include/sundev/cg8reg.h
+gpsi_uti.o: /usr/include/machine/param.h
+gpsi_uti.o: /usr/include/sundev/p4reg.h
+gpsi_uti.o: /usr/include/sundev/ramdac.h
+gpsi_uti.o: /usr/include/sunwindow/cms.h
+gpsi_uti.o: /usr/include/pixrect/cg9var.h
+gpsi_uti.o: /usr/include/pixrect/memvar.h
+gpsi_uti.o: /usr/include/pixrect/pixfont.h
+gpsi_uti.o: /usr/include/rasterfile.h
+gpsi_uti.o: /usr/include/pixrect/pr_io.h
+gpsi_uti.o: /usr/include/sunwindow/window_hs.h
+gpsi_uti.o: /usr/include/sys/time.h
+gpsi_uti.o: /usr/include/time.h
+gpsi_uti.o: /usr/include/pixrect/pixrect_hs.h
+gpsi_uti.o: /usr/include/sunwindow/notify.h
+gpsi_uti.o: /usr/include/sunwindow/rect.h
+gpsi_uti.o: /usr/include/sunwindow/rectlist.h
+gpsi_uti.o: /usr/include/sunwindow/pixwin.h
+gpsi_uti.o: /usr/include/sunwindow/attr.h
+gpsi_uti.o: /usr/include/sunwindow/pw_util.h
+gpsi_uti.o: /usr/include/sunwindow/win_struct.h
+gpsi_uti.o: /usr/include/sunwindow/win_environ.h
+gpsi_uti.o: /usr/include/sunwindow/cms.h
+gpsi_uti.o: /usr/include/sunwindow/win_screen.h
+gpsi_uti.o: /usr/include/sunwindow/win_input.h
+gpsi_uti.o: /usr/include/sundev/vuid_event.h
+gpsi_uti.o: /usr/include/sunwindow/win_cursor.h
+gpsi_uti.o: /usr/include/sunwindow/attr.h
+gpsi_uti.o: /usr/include/sunwindow/win_notify.h
+gpsi_uti.o: /usr/include/suntool/icon.h
+gpsi_uti.o: /usr/include/sunwindow/attr.h
+gpsi_uti.o: /usr/include/suntool/walkmenu.h
+gpsi_uti.o: /usr/include/sunwindow/attr.h
+gpsi_uti.o: /usr/include/suntool/window.h
+gpsi_uti.o: /usr/include/sunwindow/attr.h
+gpsi_uti.o: /usr/include/suntool/frame.h
+gpsi_uti.o: /usr/include/sunwindow/attr.h
+gpsi_uti.o: /usr/include/pixrect/gp1cmds.h
+gpsi_uti.o: /usr/include/varargs.h
+gpsi_uti.o: ./esd.h
+gpsi_uti.h: gpsi_uti.c
+gpsi_xf.o: gpsi_xf.c
+gpsi_xf.o: /usr/include/sys/types.h
+gpsi_xf.o: /usr/include/sys/sysmacros.h
+gpsi_xf.o: /usr/include/math.h
+gpsi_xf.o: /usr/include/floatingpoint.h
+gpsi_xf.o: /usr/include/sys/ieeefp.h
+gpsi_xf.o: /usr/include/pixrect/pixrect.h
+gpsi_xf.o: /usr/include/sys/types.h
+gpsi_xf.o: /usr/include/pixrect/gp1cmds.h
+gpsi_xf.o: ./esd.h
+gpsi_xf.h: gpsi_xf.c
+patterns.o: patterns.c
+patterns.o: ./esd.h
+patterns.h: patterns.c
+animation.o: animation.c
+animation.h: animation.c
+do_animation.o: do_animation.c
+do_animation.h: do_animation.c
+# DEPENDENCIES MUST END AT END OF FILE
+# IF YOU PUT STUFF HERE IT WILL GO AWAY
+# see make depend above

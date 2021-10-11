@@ -1,0 +1,252 @@
+.\" @(#)gpconfig.8 1.1 92/07/30 SMI;
+.TH GPCONFIG 8 "3 July 1990"
+.SH NAME
+gpconfig \- initialize the VME Graphics Processor or SBus GS graphics accelerator
+.SH SYOPNSIS
+.B /usr/etc/gpconfig
+[
+.BI \-u " ucode-filename"
+]
+.I gpunit
+[
+[
+.B \-b
+]
+[
+.B \-f
+]
+[
+.B \-F
+]
+.IR fbunit .\|.\|.
+]
+.SH DESCRIPTION
+.IX gpconfig "" "\fLgpconfig\fR \(em bind \fLcgtwo\fR frame buffer to GP"
+.IX gpconfig "" "\fLgpconfig\fR \(em bind \fLcgnine\fR frame buffer to GP"
+.IX gpconfig "" "\fLgpconfig\fR \(em initialize \fLcgtwelve\fR accelerator/frame buffer"
+.IX "GP, initialize graphics processor \(em \fLgpconfig\fR"
+.IX "GS, initialize graphics accelerator \(em \fLgpconfig\fR"
+.LP
+.B gpconfig
+binds a 
+.SM VME
+color frame buffer (either the
+.BR cgtwo (4S)
+or
+.BR cgnine (4S))
+to the
+.SM VME 
+.SM GP
+(Graphics Processor),
+then loads and starts the appropriate microcode in the
+.SM GP\s0.
+.LP
+.B gpconfig 
+also loads and starts the appropriate microcode in the SBus
+.SM GS
+.\" What does GS stand for?
+.BR cgtwelve (4S)
+integrated accelerator and frame buffer.
+.LP
+For example, the command line:
+.LP
+.IP
+.B "/usr/etc/gpconfig gpone0  cgtwo0"
+.LP
+binds the 
+.SM VME
+.B cgtwo0
+frame buffer board to the 
+.SM VME
+.B gpone0
+Graphics Processor.
+The device
+.B /dev/gpone0a
+then refers to the combination of
+.B gpone
+and
+.BR cgtwo0 .
+.LP
+All 
+.SM VME
+frame buffer boards bound to a
+.SM VME
+.SM GP
+device must be configured to the same width and height.
+.LP
+The standard version of the file
+.B /etc/rc.local
+contains the following
+.B gpconfig
+command line:
+.IP
+.B "/usr/etc/gpconfig \-f \-b"
+.LP
+For
+.SM VME
+systems, this binds
+.B gpone0
+and either
+.B cgtwo0
+or 
+.B cgnine0
+as
+.BR gpone0a ,
+causes
+.B gpone0a
+to use the specified frame buffer if it is present, redirects
+.B /dev/fb
+to be
+.B /dev/gpone0a
+and loads and starts the appropriate microcode.
+.LP 
+For SBus systems, this loads and starts the appropriate microcode.
+.LP
+If another configuration is desired, edit the command line in
+.BR /etc/rc.local .
+.LP
+It is inadvisable to run the
+.B gpconfig
+command while the configured device is being used;
+unpredictable results may occur.
+If it is necessary to change
+the frame buffer bindings to the
+.SM GP
+(or to stop using the
+.SM GP
+altogether),
+bring the system down gently,
+boot single user, edit the
+.B gpconfig
+line in the
+.B /etc/rc.local
+file, and bring the system back up multi-user.
+.LP
+.B gpconfig
+tries to create the device special files under the
+.B /dev
+directory when they are absent.
+.LP
+For
+.SM VME
+systems, the default
+.I gpunit
+is
+.BR /dev/gpone0 ,
+and the default frame buffer is
+.B /dev/cgtwo0
+or
+.BR /dev/cgnine0 ,
+whichever is present.  The
+appropriate microcode file will be loaded based on the version of the
+.SM GP
+in the system.  The
+.BR cgnine (4S)
+frame buffer can be bound only to the
+.SM GP2
+device.
+.LP
+For SBus systems, the default
+.I fbunit
+is
+.BR /dev/cgtwelve0 .
+There is no 
+.IR gpunit .
+A
+.I gpunit
+specification on the command line is ignored.
+.SH OPTIONS
+.TP
+.B \-b
+Configure the
+.SM GP
+or
+.SM GP+
+to use the specified frame buffer, or to use the first frame buffer found,
+if none is specified.
+Only one
+.SM GP
+device, two
+.SM GP+
+devices, and four
+.SM GP2 
+devices may be bound to a frame buffer at a single time.
+Note:  this option has no effect on the SBus 
+.SM GS
+.BR cgtwelve (4S)
+device.
+.TP
+.B \-f
+Redirect
+.B /dev/fb
+to the device formed by binding
+.I gpunit
+with
+.IR fbunit .
+Only the last
+.B \-f
+option in the command line takes effect.
+Note:  this option has no effect on the SBus 
+.SM GS
+.BR cgtwelve (4S)
+device.
+.TP
+.B \-F
+Return the
+.B /dev/fb
+to the default device in effect before
+.B gpconfig
+was run.
+.TP
+.BI \-u " microcode-file"
+Load the specified file as the alternate microcode
+to the
+.SM GP
+or
+.SM GS\s0.
+.SH FILES
+.PD 0
+.TP 25
+.B /dev/fb
+default frame buffer
+.TP
+.B /dev/cgtwelve0
+SBus 24-bit frame buffer and graphics accelerator
+.TP
+.B /dev/cgtwo0
+.SM VME
+8-bit color frame buffer
+.TP
+.B /dev/cgnine0
+.SM VME
+24-bit color frame buffer
+.TP
+.B /dev/gpone0[abcd]
+.SM VME
+.SM GP
+graphics accelerator
+.TP
+.B /usr/lib/gs.ucode
+.SM GS
+microcode file
+.TP
+.B /usr/lib/gp2.ucode
+.SM GP\s02
+microcode file
+.TP
+.B /usr/lib/gp1cg2.1024.ucode
+.SM GP\s01
+microcode file
+.TP
+.B /usr/lib/gp1cg2.1152.ucode
+.SM GP\s01
+microcode file
+.TP
+.B /etc/rc.local
+local boot script
+.PD
+.SH "SEE ALSO"
+.BR cgnine (4S),
+.BR cgtwelve (4S),
+.BR cgtwo (4S),
+.BR gpone (4S)

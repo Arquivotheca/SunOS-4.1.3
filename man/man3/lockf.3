@@ -1,0 +1,290 @@
+.\" @(#)lockf.3 1.1 92/07/30 SMI; created 4/30/86
+.TH LOCKF 3 "21 January 1990"
+.SH NAME
+lockf \- record locking on files
+.SH SYNOPSIS
+.nf
+.ft B
+#include <unistd.h>
+.LP
+.ft B
+int lockf(fd, cmd, size)
+int fd, cmd;
+long size;
+.fi
+.IX  lockf()  ""  "\fLlockf()\fP \(em record locking on files"
+.IX  descriptors  lockf() "" \fLlockf()\fP
+.IX  "lock" "record" "lock" "record \(em \fLlockf()\fP"
+.SH DESCRIPTION
+.LP
+.B lockf(\|)
+places, removes, and tests for exclusive locks on sections of files.
+These locks are either advisory or mandatory depending
+on the mode bits of the file.
+The lock is mandatory if the
+set-\s-1GID\s0
+bit
+.RB ( \s-1S_ISGID\s0 )
+is set and the group execute bit
+.RB ( \s-1S_IXGRP\s0 )
+is clear
+(see
+.BR stat (2V)
+for information about mode bits).
+Otherwise, the lock is advisory.
+.LP
+If a process holds a mandatory exclusive lock on a segment of a file,
+both read and write operations block until the lock is removed (see
+.BR \s-1WARNINGS\s0 ).
+.LP
+An advisory lock does not affect read and write access to the locked
+segment.  Advisory locks may be used by cooperating processes
+checking for locks using
+.SB F_GETLCK
+and voluntarily observing the indicated read and write restrictions.
+.LP
+A locking call
+on an already locked file section 
+fails, returning an error value
+or putting the call
+to sleep until that
+file section is unlocked.
+All the locks on a process are
+removed when that process terminates.
+See
+.BR fcntl (2V)
+for more information about record locking.
+.LP
+.I fd
+is an open file descriptor.
+It must have
+.SB O_WRONLY
+or
+.SB O_RDWR
+permission for a
+successful locking call.
+.LP
+.I cmd
+is a control value which specifies the action to be taken.
+The accepted values for
+.I cmd
+are defined in
+.B <unistd.h>
+as follows:
+.br
+.RS
+.LP
+.nf
+.ft B
+.DT
+#define	\s-1F_ULOCK\s0	0	/* Unlock a previously locked section */
+#define	\s-1F_LOCK\s0	1	/* Lock a section for exclusive use */
+#define	\s-1F_TLOCK\s0	2	/* Test and lock a section (non-blocking) */
+#define	\s-1F_TEST\s0		3	/* Test section for other process' locks */
+.RE
+.fi
+.LP
+.SB F_TEST
+returns \-1 and sets
+.B errno
+to
+.SM EACCES
+if a lock by another process
+already exists on the specified section.  Otherwise, it returns 0.
+.SB F_LOCK
+and
+.SB F_TLOCK
+lock available file sections.
+.SB F_ULOCK
+removes locks from file sections.
+.LP
+All other values of
+.I cmd
+are reserved for future applications and,
+until implemented, return an error.
+.LP
+.I size
+is the number of contiguous bytes to be locked
+or unlocked.
+The resource to be locked starts
+at the current offset in the file and extends forward
+.I size
+bytes if
+.I size
+is
+positive, and extends backward
+.I size
+bytes
+(the preceding bytes up to
+but not including the current offset) if
+.I size
+is negative.
+If
+.I size
+is zero, the section from the current offset through the largest file
+offset is locked (that is, from the current offset through the
+present or any future
+.SM EOF\s0).
+An area need not be allocated to the file to be locked, such a lock
+may exist after the
+.SM EOF\s0.
+.LP
+Sections locked with
+.SB F_LOCK
+or
+.SB F_TLOCK
+may contain all or part of an already locked section.
+They may also be partially or completely contained by 
+an already locked section.
+Where these overlapping or adjacent locked sections occur,
+they are combined into a single section.
+If the table of active locks is full,
+a lock request requiring an additional table entry
+fails and an error value is returned.
+.LP
+.SB F_LOCK
+and
+.SB F_TLOCK
+differ only in their response to 
+requests for unavailable resources.
+If a section is already locked,
+.SB F_LOCK
+directs the calling process to sleep until
+the resource is available,
+.SB F_TLOCK
+directs the function to return \-1 and set
+.B errno
+to
+.SM EACCES
+(see
+.B
+.SM ERRORS\s0\fP).
+.LP
+When a
+.SB F_ULOCK
+request releases part of a section with overlapping
+locks, the remaining section or sections retain the lock.
+If
+.SB F_ULOCK
+removes the 
+center of a locked section, the two separate
+locked sections remain, but
+an additional element is
+required in the table of active
+locks.
+If this table is full,
+.B errno
+is set to
+.SM ENOLCK
+and the requested section is not released.
+.LP
+The danger of a deadlock exists when a
+process controlling a locked
+resource is put to sleep by
+requesting an unavailable resource.
+To avoid this danger,
+.B lockf(\|)
+and
+.B fcntl(\|)
+scan
+for this conflict before putting a locked resource to sleep.
+If a deadlock would result,
+an error value is returned.
+.LP
+The sleep process can be interrupted with any signal.
+.BR alarm (3V)
+may be used to provide a timeout facility where needed.
+.br
+.ne 6
+.SH RETURN VALUES
+.B lockf(\|)
+returns:
+.TP
+0
+on success.
+.TP
+\-1
+on failure and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EACCES
+.I cmd
+is
+.SB F_TLOCK
+or
+.SB F_TEST
+and the section is already locked by another process.
+.IP
+Note:
+In future,
+.B lockf(\|)
+may generate
+.SM EAGAIN
+under these conditions, so
+applications testing for
+.SM EACCES
+should also test for
+.SM EAGAIN\s0.
+.TP
+.SM EBADF
+.I fd
+is not a valid open descriptor.
+.IP
+.I cmd
+is
+.SB F_LOCK
+or
+.SB F_TLOCK
+and the process does
+not have write permission on the file.
+.TP
+.SM EDEADLK
+.I cmd
+is
+.SB F_LOCK
+and a deadlock would occur.
+.TP
+.SM EINTR
+.I cmd
+is
+.SB F_LOCK
+and a signal interrupted the process while it was waiting
+to complete the lock.
+.TP
+.SM ENOLCK
+.I cmd
+is
+.BR \s-1F_LOCK\s0 ,
+.BR \s-1F_TLOCK\s0 ,
+or
+.SB F_ULOCK
+and there are no more file lock entries available.
+.SH SEE ALSO
+.BR chmod (2V),
+.BR fcntl (2V),
+.BR flock (2),
+.BR fork (2V),
+.BR alarm (3V),
+.BR lockd (8C)
+.SH WARNINGS
+Mandatory record locks are dangerous.
+If a runaway or otherwise out-of-control process should hold a
+mandatory lock on a file critical to the system and fail to release
+that lock, the entire system could hang or crash.  For this reason,
+mandatory record locks may be removed in a future SunOS release.n
+Use advisory record locking whenever possible.
+.SH NOTES
+.LP
+A child process
+does not inherit locks from its parent on
+.BR fork (2V).
+.SH BUGS
+.LP
+.B lockf(\|)
+locks do not interact in any way
+with locks granted by
+.BR flock(\|) ,
+but are compatible with locks granted by
+.BR fcntl(\|) .

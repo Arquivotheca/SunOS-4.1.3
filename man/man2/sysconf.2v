@@ -1,0 +1,134 @@
+'\" t
+.\"  @(#)sysconf.2v 1.1 92/07/30 SMI; new for 4.1, POSIX
+.TH SYSCONF 2V "21 January 1990"
+.SH NAME
+sysconf \- query system related limits, values, options
+.SH SYNOPSIS
+.LP
+.nf
+.ft B
+#include <unistd.h>
+.ft
+.fi
+.LP
+.nf
+.ft B
+long sysconf(name)
+int name;
+.ft R
+.fi
+.SH DESCRIPTION
+.IX "sysconf()" "" "\fLsysconf()\fP \(em get configurable system variables" ""
+.IX configure "system variables"
+.IX variables "get configurable system variables"
+.LP
+The
+.B sysconf(\|)
+function provides a method for the
+application to determine the current value of a configurable system
+limit or option (variable).
+The value does not change during the
+lifetime of the calling process.
+.\".LP
+.\"Don's blurb about setrlimit()?
+.LP
+The convention used throughout sections 2 and 3 is that
+.SM {LIMIT}
+means that
+.SM LIMIT
+is something that
+can change from system to system and applications that 
+want accurate values need to call
+.BR sysconf(\|) .
+These values are things that have been historically available in
+header files such as
+.BR <sys/param.h> .
+.LP
+The following lists the conceptual name and meaning of each
+variable.
+.LP
+.\" === troff version ===
+.if n .ig IG
+.RS
+.TS
+lI lI
+l l .
+Name	Meaning
+_
+\s-1{ARG_MAX}\s0	Max combined size of \fBargv[\|]\fP & \fBenvp[\|]\fR.
+\s-1{CHILD_MAX}\s0	Max processes allowed to any \s-1UID\s0.
+\s-1{CLK_TCK}\s0	Ticks per second (\fBclock_t\fR).
+\s-1{NGROUPS_MAX}\s0	Max simultaneous groups one may belong to.
+\s-1{OPEN_MAX}\s0	Max open files per process.
+\s-1{_POSIX_JOB_CONTROL}\s0	Job control supported (boolean).
+\s-1{_POSIX_SAVED_IDS}\s0	Saved ids (\fBseteuid(\|)\fR) supported (boolean).
+\s-1{_POSIX_VERSION}\s0	Version of the \s-1POSIX.1\s0 standard supported.
+.TE
+.RE
+.IG
+.\" === end troff version ===
+.\" === nroff version ===
+.if t .ig IG
+.RS
+.TS
+lI lI
+l l .
+Name	Meaning
+\s-1{ARG_MAX}\s0	Max combined size of \fBargv[\|]\fP & \fBenvp[\|]\fR.
+\s-1{CHILD_MAX}\s0	Max processes allowed to any \s-1UID\s0.
+\s-1{CLK_TCK}\s0	Ticks per second (\fBclock_t\fR).
+\s-1{NGROUPS_MAX}\s0	Max simultaneous groups one may 
+	belong to.
+\s-1{OPEN_MAX}\s0	Max open files per process.
+\s-1{_POSIX_JOB_CONTROL}\s0	Job control supported (boolean).
+\s-1{_POSIX_SAVED_IDS}\s0	Saved ids (\fBseteuid(\|)\fR) supported 
+	(boolean).
+\s-1{_POSIX_VERSION}\s0	Version of the \s-1POSIX.1\s0 standard 
+	supported.
+.TE
+.RE
+.IG
+.\" === end nroff version ===
+.LP
+The following table lists the conceptual name of each variable
+and the flag passed to
+.B sysconf(\|)
+to retrieve the value of each variable.
+.LP
+.RS
+.TS
+lI lI
+l lB .
+Name	Sysconf flag
+_
+\s-1{ARG_MAX}\s0	\s-1_SC_ARG_MAX\s0
+\s-1{CHILD_MAX}\s0	\s-1_SC_CHILD_MAX\s0
+\s-1{CLK_TCK}\s0	\s-1_SC_CLK_TCK\s0
+\s-1{NGROUPS_MAX}\s0	\s-1_SC_NGROUPS_MAX\s0
+\s-1{OPEN_MAX}\s0	\s-1_SC_OPEN_MAX\s0
+\s-1{_POSIX_JOB_CONTROL}\s0	\s-1_SC_JOB_CONTROL\s0
+\s-1{_POSIX_SAVED_IDS}\s0	\s-1_SC_SAVED_IDS\s0
+\s-1{_POSIX_VERSION}\s0	\s-1_SC_VERSION\s0
+.TE
+.RE
+.LP
+.SH RETURN VALUES
+.LP
+.B sysconf(\|)
+returns
+the current variable value
+on success.
+On failure,
+it returns
+\-1
+and sets
+.B errno
+to indicate the error.
+.SH ERRORS
+.TP 15
+.SM EINVAL
+The value of 
+.I name 
+is invalid.
+.\".SH SEE ALSO
+.\".BR getrlimit (2)

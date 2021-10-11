@@ -1,0 +1,395 @@
+.\" @(#)pg.1v 1.1 92/07/30 SMI; from S5R2 6.4 9/2/83
+.TH PG 1V "16 November 1987"
+.SH NAME
+pg \- page through a file on a soft-copy terminal
+.SH SYNOPSIS
+.B /usr/5bin/pg
+[
+.B \-cefns
+] [
+.BI \- number
+] [
+.B \-p
+.B string
+] [
+.BI + linenumber
+] [
+.BI +/ pattern /
+] [
+.BI filename
+\&.\|.\|. ]
+.SH AVAILABILITY
+This command is available with the
+.I System V
+software installation option.  Refer to
+.TX INSTALL
+for information on how to install optional software.
+.SH DESCRIPTION
+.IX "System V commands" "\fLpg\fR"
+.IX  "pg command"  ""  "\fLpg\fP \(em browse text file"
+.IX  "text file"  "browse pg"  ""  "browse through \(em \fLpg\fP"
+.IX  file  "browse pg"  ""  "browse through text\(em \fLpg\fP"
+.LP
+.B pg
+is a filter that allows you to page through
+.IR filename ,
+one screenful at a time, on a soft-copy terminal.  With a
+.I filename
+of
+.RB ` \- ',
+or no
+.I filename
+specified,
+.B pg
+reads from the standard input.
+Each screenful is followed by a prompt.
+If the user types a
+.SM RETURN\s0,
+another page is displayed;
+other possibilities are enumerated below.
+.LP
+This command is different from previous paginators
+in that it allows you to back up
+and review something that has already passed.
+The method for doing this is explained below.
+.LP
+In order to determine terminal attributes,
+.B pg
+scans the
+.BR terminfo (5V)
+data base for the terminal type specified by the
+environment variable
+.SM TERM\s0.
+If
+.SM TERM\s0
+is not defined,
+the terminal type
+.B dumb
+is assumed.
+.LP
+The responses that may be typed when
+.B pg
+pauses can be divided
+into three categories: those causing further perusal, those that
+search, and those that modify the perusal environment.
+.LP
+Commands which cause further perusal normally take a preceding
+.IR address ,
+an optionally signed number indicating the point from which
+further text should be displayed.
+This
+.I address
+is interpreted in either pages or lines depending
+on the command.
+A signed
+.I address
+specifies a point relative to the current page
+or line, and an unsigned
+.I address
+specifies an address relative
+to the beginning of the file.
+Each command has a default address that is used if none is provided.
+.LP
+The perusal commands and their defaults are as follows:
+.TP
+(+1) \s-1NEWLINE\s0 or \s-1SPACE\s0
+Display one page.
+The address is specified in pages.
+.TP
+.RB "(+1) " l
+With a relative address
+.B pg
+will simulate scrolling the screen, forward or backward,
+the number of lines specified.
+With an absolute address
+this command prints a screenful
+beginning at the specified line.
+.TP
+.RB "(+1) " d " or " ^D
+Simulate scrolling half a screen forward or backward.
+.LP
+The following perusal commands take no
+.IR address .
+.TP
+.BR . " or " ^L
+Redisplay the current page
+of text.
+.TP
+.B $
+Display the last full window in the file.
+Use with caution when the input is a pipe.
+.LP
+The following commands are available for searching for text patterns
+in the text.
+The regular expressions described in
+.BR ed (1)
+are available.
+They must always be terminated by a
+\s-1NEWLINE\s0,
+even if the
+.B \-n
+option is specified.
+.TP
+.IB i / pattern /
+Search forward for the
+.IR i th
+(default
+.IR i =1)
+occurrence
+of
+.IR pattern .
+Searching begins immediately after the current
+page and continues to the
+end of the current file, without wrap-around.
+.LP
+.IB i ^ pattern ^
+.PD 0
+.TP
+.IB i ? pattern ?
+Search backwards for the
+.IR i th
+(default
+.IR i =1)
+occurrence of
+.IR pattern .
+Searching begins immediately before the current page
+and continues to the beginning of the current file, without
+wrap-around.
+The
+.B ^
+notation is useful for Adds 100 terminals which will not properly
+handle the
+.BR ? .
+.PD
+.LP
+After searching,
+.B pg
+will normally display the line found at the top of the screen.
+This can be modified by appending
+.B m
+or
+.B b
+to the search
+command to leave the line found in the middle or at the bottom of
+the window from now on.
+The suffix
+.B t
+can be used to restore the original situation.
+.LP
+The user of
+.B pg
+can modify the environment of perusal with the
+following commands:
+.TP 15
+.IB i n
+Begin perusing the
+.IR i th
+next file in the command line.
+The
+.I i
+is an unsigned number, default value is 1.
+.TP
+.IB i p
+Begin perusing the
+.IR i th
+previous file in the command line.
+.I i
+is an unsigned number, default is 1.
+.TP
+.IB i w
+Display another window of text.
+If
+.I i
+is present, set the window size to
+.IR i .
+.TP
+.BI "s " filename
+Save the input in the named file.
+Only the current file being perused is saved.
+The white space between the
+.B s
+and
+.I filename
+is optional.
+This command must always be terminated by a
+\s-1NEWLINE\s0,
+even if the
+.B \-n
+option is specified.
+.TP
+.B h
+Help by displaying an abbreviated summary of available commands.
+.TP
+.BR q " or " Q "
+Quit
+.BR pg .
+.TP
+.BI ! command
+.I command
+is passed to the shell, whose name is
+taken from the
+.SM SHELL\s0
+environment variable.
+If this is not available, the default shell is used.
+This command must always be terminated by a
+\s-1NEWLINE\s0,
+even if the
+.B \-n
+option is specified.
+.LP
+At any time when output is being sent to the terminal, the user can hit
+the quit key, normally
+\s-1CTRL\s0-\e
+or the
+.SM BREAK
+(interrupt) key.
+This causes
+.B pg
+to stop sending output, and display the prompt.
+The user may then enter one of the above commands in the normal manner.
+Unfortunately, some output is lost when this is done, due to the fact
+that any characters waiting in the terminal's output queue are flushed
+when the quit signal occurs.
+.LP
+If the standard output is not a terminal, then
+.B pg
+acts just like
+.BR cat (1V),
+except that a header is printed before each file (if there is
+more than one).
+.SH OPTIONS
+The command line options are:
+.TP 15
+.I \-number
+An integer specifying the size (in lines)
+of the window that
+.B pg
+is to use instead of the default.
+(On a terminal containing 24 lines, the default window size is 23).
+.TP
+.BI \-p " string"
+Use
+.B string
+as the prompt.
+If the prompt string contains a
+.RB ` %d ',
+the first occurrence
+of
+.RB ` %d '
+in the prompt will be replaced
+by the current page number when the prompt is issued.
+The default prompt string is
+.RB ` : '.
+.TP
+.B \-c
+Home the cursor and clear the screen before displaying each page.
+This option is ignored if
+.B clear_screen
+is not defined for this terminal type in the
+.BR terminfo (5V)
+data base.
+.TP
+.B \-e
+Do
+.I not
+pause at the end of each file.
+.TP
+.B \-f
+Inhibit
+.B pg
+from splitting lines.
+Normally,
+.B pg
+splits lines longer than the screen width,
+but some sequences of characters
+in the text being displayed
+(for instance, escape sequences for underlining)
+generate undesirable results.
+.TP
+.B \-n
+Automatic end of command as soon as a command
+letter is entered.
+Normally, commands must be terminated by a
+\s-1NEWLINE\s0
+character.
+.TP
+.B \-s
+Print all messages and prompts in standout
+mode (usually inverse video).
+.TP
+.BI + linenumber
+Start up at
+.IR linenumber .
+.br
+.ne 5
+.TP
+.BI +/ pattern /
+Start up at the first line containing
+the regular expression pattern.
+.SH EXAMPLES
+.LP
+A sample usage of
+.B pg
+in reading system news would be
+.IP
+.B news | pg \-p '(Page %d):'
+.SH FILES
+.PD 0
+.TP 25
+.B /usr/share/lib/terminfo/*
+terminal information data base
+.TP
+.B /tmp/pg*
+temporary file when input is from a pipe
+.PD
+.SH SEE ALSO
+.BR cat (1V),
+.BR crypt (1),
+.BR ed (1),
+.BR grep (1V),
+.BR more (1),
+.BR terminfo (5V)
+.SH BUGS
+.LP
+If terminal
+.SM TAB
+characters are not set every eight positions,
+undesirable results may occur.
+.LP
+When using
+.B pg
+as a filter with another command that changes the terminal
+.SM I/O
+options
+(for instance,
+.BR crypt (1)),
+terminal settings may not be restored correctly.
+.SH NOTES
+While waiting for terminal input,
+.B pg
+responds to
+.SM BREAK\s0 ,
+.SM DEL\s0 ,
+and
+.B ^
+by terminating execution.
+Between prompts, however, these signals interrupt
+.BR pg 's
+current task and place the user in prompt mode.
+These should be used with caution when input is being read from
+a pipe, since an interrupt is likely to terminate the other
+commands in the pipeline.
+.LP
+Users of
+.BR more (1)
+will find that the
+.B z
+and
+.B f
+commands are available,
+and that the terminal
+.RB ` / ',
+.RB ` ^ ',
+or
+.RB ` ? '
+may be omitted from the searching commands.

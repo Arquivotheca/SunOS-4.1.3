@@ -1,0 +1,42 @@
+#
+#	@(#)Makefile.customer 1.1 92/07/30 SMI
+#
+
+NORMAL_COMMANDS= bouncedemo canvas_demo cursor_demo framedemo gfxtool \
+		 jumpdemo overview selection_svc spheresdemo swin switcher \
+		 textedit cmdtool
+
+LIBS=	-lsuntool -lsunwindow -lpixrect
+MORE_LIBS= -lrpcsvc -lm
+CC= cc
+#
+# If you want to compile for debugging, change "-O" to "-g"
+#
+CFLAGS= -O
+# if you want pass special loader options to ld, set
+# LDFLAGS= ...
+#
+
+all:	${NORMAL_COMMANDS} sunview clock perfmeter toolplaces shelltool
+
+.c.o:
+	cc -c -O -DSTANDALONE $<
+
+${NORMAL_COMMANDS}: $$@.o
+	cc -O $@.o -o $@ ${LIBS}
+
+sunview: suntools.o suntools_menu.o
+	cc -O suntools.o suntools_menu.o -o sunview ${LIBS} ${MORE_LIBS}
+
+perfmeter: perfmeter.o meter.o perfmeter_hands.o
+	cc -O perfmeter.o meter.o perfmeter_hands.o -o perfmeter ${LIBS} ${MORE_LIBS}
+
+toolplaces: toolplaces.o
+	cc -O toolplaces.o -o toolplaces ${LIBS}  ${MORE_LIBS} -lkvm
+
+clock: clock.o clockhands.o clockhands.rom.o
+	cc -O clock.o clockhands.o clockhands.rom.o -o clock ${LIBS} ${MORE_LIBS}
+
+shelltool: cmdtool.c
+	${CC} ${CFLAGS} ${LDFLAGS} cmdtool.c -o shelltool ${LIBS}
+
